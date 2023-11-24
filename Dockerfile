@@ -24,9 +24,9 @@ ARG TZ=UTC
 ARG USER_ID=1000
 ENV IN_CONTAINER=1
 ENV UMASK=022
-ENV YTP_STATE_DIR=/config
-ENV YTP_TEMP_DIR=/tmp
-ENV YTP_DOWNLOAD_DIR=/downloads
+ENV YTP_CONFIG_PATH=/config
+ENV YTP_TEMP_PATH=/tmp
+ENV YTP_DOWNLOAD_PATH=/downloads
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
   apk add --update --no-cache bash ffmpeg aria2 coreutils curl shadow sqlite tzdata && \

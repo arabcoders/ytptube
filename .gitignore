@@ -21,7 +21,7 @@
 .history/*
 
 # Keep Var dir
-./var/*
+var/*
 !./var/config/.gitkeep
 !./var/downloads/.gitkeep
 !./var/tmp/.gitkeep

@@ -26,6 +26,47 @@ class Main:
 
     def __init__(self):
         self.config = Config()
+
+        try:
+            if not os.path.exists(self.config.download_path):
+                logging.info(
+                    f'Creating download folder at {self.config.download_path}')
+                os.makedirs(self.config.download_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create download folder at {self.config.download_path}')
+            raise e
+        try:
+            if not os.path.exists(self.config.temp_path):
+                logging.info(
+                    f'Creating temp folder at {self.config.temp_path}')
+                os.makedirs(self.config.temp_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create temp folder at {self.config.temp_path}')
+            raise e
+
+        try:
+            if not os.path.exists(self.config.config_path):
+                logging.info(
+                    f'Creating config folder at {self.config.config_path}')
+                os.makedirs(self.config.config_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create config folder at {self.config.config_path}')
+            raise e
+
+        try:
+            if not os.path.exists(self.config.db_file):
+                logging.info(
+                    f'Creating database file at {self.config.db_file}')
+                with open(self.config.db_file, 'w') as _:
+                    pass
+        except OSError as e:
+            logging.error(
+                f'Could not create database file at {self.config.db_file}')
+            raise e
+
         caribou.upgrade(self.config.db_file, './app/migrations')
 
         self.serializer = ObjectSerializer()

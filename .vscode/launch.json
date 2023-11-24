@@ -29,7 +29,7 @@
       "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
-        "YTP_STATE_PATH": "${workspaceFolder}/var/config",
+        "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_YTDL_OPTIONS_FILE": "${workspaceFolder}/var/config/ytdlp.json",

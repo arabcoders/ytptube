@@ -8,11 +8,11 @@ log = logging.getLogger('config')
 
 
 class Config:
-    state_path: str = '../../var/config'
-    download_path: str = '../../var/downloads'
-    temp_path: str = '../../var/tmp'
+    config_path: str = '.'
+    download_path: str = '.'
+    temp_path: str = '{download_path}'
 
-    db_file: str = '{state_path}/ytptube.db'
+    db_file: str = '{config_path}/ytptube.db'
 
     url_host: str = ''
     url_prefix: str = ''
@@ -34,7 +34,7 @@ class Config:
     def __init__(self):
         baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))
 
-        self.state_path = os.path.join(baseDefualtPath, 'var', 'config')
+        self.config_path = os.path.join(baseDefualtPath, 'var', 'config')
         self.download_path = os.path.join(baseDefualtPath, 'var', 'downloads')
         self.temp_path = os.path.join(baseDefualtPath, 'var', 'tmp')
 
@@ -77,34 +77,35 @@ class Config:
             try:
                 self.ytdl_options = json.loads(self.ytdl_options)
                 assert isinstance(self.ytdl_options, dict)
-            except (json.decoder.JSONDecodeError, AssertionError):
-                log.error('ytdl_options is invalid')
+            except (json.decoder.JSONDecodeError, AssertionError) as e:
+                log.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
                 sys.exit(1)
 
         if self.ytdl_options_file:
             log.info(
                 f'Loading yt-dlp custom options from "{self.ytdl_options_file}"')
             if not os.path.exists(self.ytdl_options_file):
-                log.error(f'File "{self.ytdl_options_file}" not found')
-                sys.exit(1)
-            try:
-                with open(self.ytdl_options_file) as json_data:
-                    opts = json.load(json_data)
-                assert isinstance(opts, dict)
-            except (json.decoder.JSONDecodeError, AssertionError):
-                log.error('ytdl_options_file contents is invalid')
-                sys.exit(1)
-
-            self.ytdl_options.update(opts)
+                log.error(f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
+            else:
+                try:
+                    with open(self.ytdl_options_file) as json_data:
+                        opts = json.load(json_data)
+                    assert isinstance(opts, dict)
+                    self.ytdl_options.update(opts)
+                except (json.decoder.JSONDecodeError, AssertionError) as e:
+                    log.error(f'JSON error in "{self.ytdl_options_file}": {e}')
+                    sys.exit(1)
 
     def getAttributes(self) -> dict:
         attrs: dict = {}
         vclass: str = self.__class__
 
         for attribute in vclass.__dict__.keys():
-            if not attribute.startswith('_'):
-                value = getattr(vclass, attribute)
-                if not callable(value):
-                    attrs[attribute] = value
+            if attribute.startswith('_'):
+                continue
+
+            value = getattr(vclass, attribute)
+            if not callable(value):
+                attrs[attribute] = value
 
         return attrs
