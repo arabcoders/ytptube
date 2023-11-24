@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       logLevel:
-        description: "Log level"
+        description: 'Log level'
         required: true
-        default: "warning"
+        default: 'warning'
         type: choice
         options:
-          - info
-          - warning
-          - debug
+        - info
+        - warning
+        - debug
   push:
     branches:
       - "*"
@@ -46,11 +46,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
             type=ref,event=branch
             type=ref,event=tag
-            type=ref,event=pr
-            type=raw,event=push,value={{branch}}-{{date 'YYYYMMDD'}}-{{sha}}
+            type=raw,value={{branch}}{{base_ref}}-{{date 'YYYYMMDD'}}-{{sha}}
           flavor: |
             latest=false
       - name: Login to GitHub Container Registry
