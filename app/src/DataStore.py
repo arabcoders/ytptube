@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+import logging
 import sqlite3
 from src.Utils import calcDownloadPath
 from src.Config import Config
@@ -47,12 +48,14 @@ class DataStore:
     def saved_items(self) -> list[tuple[str, ItemDTO]]:
         items: list[tuple[str, ItemDTO]] = []
         with sqlite3.connect(self.db_file) as db:
+            db.row_factory = sqlite3.Row
             cursor = db.execute(
                 'SELECT "id", "data" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
                 (self.type,)
             )
 
             for row in cursor:
+                logging.debug(row)
                 data: dict = json.loads(row['data'])
                 key: str = data.pop('_id')
                 item: ItemDTO = ItemDTO(**data)
@@ -80,17 +83,21 @@ class DataStore:
         return not bool(self.dict)
 
     def _updateStoreItem(self, type: str, item: ItemDTO) -> None:
+        sqlStatement = """
+        INSERT INTO "history" ("id", "type", "url", "data")
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?
+        """
         with sqlite3.connect(self.db_file) as db:
-            db.execute(
-                'INSERT INTO "history" ("id", "type", "data") VALUES (?, ?, ?) ON CONFLICT ("id") DO UPDATE SET "type" = ?, "data" = ?',
-                (
-                    item._id,
-                    type,
-                    item.json(),
-                    type,
-                    item.json(),
-                )
-            )
+            db.execute(sqlStatement.strip(), (
+                item._id,
+                type,
+                item.url,
+                item.json(),
+                type,
+                item.url,
+                item.json(),
+            ))
 
     def _deleteStoreItem(self, key: str) -> None:
         with sqlite3.connect(self.db_file) as db:

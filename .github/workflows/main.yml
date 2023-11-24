@@ -14,16 +14,16 @@ on:
           - debug
   push:
     branches:
-      - "*"
+      - '*'
     paths-ignore:
-      - "**.md"
-      - ".github/**"
+      - '**.md'
+      - '.github/**'
   pull_request:
     branches:
-      - "master"
+      - 'master'
     paths-ignore:
-      - "**.md"
-      - ".github/ISSUE_TEMPLATE/**"
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
 
 env:
   PLATFORMS: linux/amd64

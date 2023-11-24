@@ -41,6 +41,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`.
 * __YTP_YTDL_OPTIONS__: Additional options to pass to yt-dlp, in JSON format. [See available options here](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L183). They roughly correspond to command-line options, though some do not have exact equivalents here, for example `--recode-video` has to be specified via `postprocessors`. Also note that dashes are replaced with underscores.
 * __YTP_YTDL_OPTIONS_FILE__: A path to a JSON file that will be loaded and used for populating `YTDL_OPTIONS` above.
+* __YTP_KEEP_ARCHIVE__: Boolean. Whether to keep history of downloaded videos to prevent downloading same file multiple times.
 
 The following example value for `YTDL_OPTIONS` embeds English subtitles and chapter markers (for videos that have them), and also changes the permissions on the downloaded video and sets the file modification timestamp to the date of when it was downloaded:
 

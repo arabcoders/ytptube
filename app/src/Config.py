@@ -27,9 +27,11 @@ class Config:
     host: str = '0.0.0.0'
     port: int = 8081
 
+    keep_archive: bool = False
+
     base_path: str = ''
 
-    _boolean_vars: tuple = ()
+    _boolean_vars: tuple = ('keep_archive')
 
     def __init__(self):
         baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))
@@ -64,11 +66,11 @@ class Config:
                 setattr(self, k, v)
 
             if k in self._boolean_vars:
-                if v not in (True, False, 'True', 'false', 'true', 'false', 'on', 'off', '1', '0'):
+                if str(v).lower() not in (True, False, 'true', 'false', 'on', 'off', '1', '0'):
                     log.error(
                         f'Config variable "{k}" is set to a non-boolean value "{v}".')
                     sys.exit(1)
-                setattr(self, k, v in (True, 'true', 'True', 'on', '1'))
+                setattr(self, k, str(v).lower() in (True, 'True', 'on', '1'))
 
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
@@ -85,7 +87,8 @@ class Config:
             log.info(
                 f'Loading yt-dlp custom options from "{self.ytdl_options_file}"')
             if not os.path.exists(self.ytdl_options_file):
-                log.error(f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
+                log.error(
+                    f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
             else:
                 try:
                     with open(self.ytdl_options_file) as json_data:
@@ -95,6 +98,11 @@ class Config:
                 except (json.decoder.JSONDecodeError, AssertionError) as e:
                     log.error(f'JSON error in "{self.ytdl_options_file}": {e}')
                     sys.exit(1)
+
+        logging.info(f'keep archive: {self.keep_archive}')
+        if self.keep_archive:
+            self.ytdl_options['download_archive'] = os.path.join(
+                self.config_path, 'archive.log')
 
     def getAttributes(self) -> dict:
         attrs: dict = {}

@@ -11,6 +11,7 @@ def upgrade(connection):
     CREATE TABLE "history" (
         "id" TEXT PRIMARY KEY UNIQUE NOT NULL,
         "type" TEXT NOT NULL,
+        "url" TEXT NOT NULL,
         "data" JSON NOT NULL,
         "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -19,6 +20,11 @@ def upgrade(connection):
 
     sql = """
     CREATE INDEX "history_type" ON "history" ("type");
+    """
+    connection.execute(sql)
+
+    sql = """
+    CREATE UNIQUE INDEX "history_url" ON "history" ("url");
     """
     connection.execute(sql)
 
