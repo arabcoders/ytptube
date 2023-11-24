@@ -1,0 +1,198 @@
+<template>
+  <h1 class="is-size-3">
+    Queue
+  </h1>
+
+  <div class="columns has-text-centered" v-if="hasQueuedItems">
+    <div class="column">
+      <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
+        <span class="icon-text">
+          <span class="icon">
+            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'"></i>
+          </span>
+          <span v-if="!masterSelectAll">Select All</span>
+          <span v-else>Unselect All</span>
+        </span>
+      </button>
+    </div>
+    <div class="column">
+      <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
+        @click="$emit('deleteItem', 'queue', selectedElms); selectedElms = []">
+        <span class="icon-text">
+          <span class="icon">
+            <i class="fa-solid fa-trash-can"></i>
+          </span>
+          <span>Cancel Selected</span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="columns is-multiline">
+    <div class="column is-6" v-for="item in queue" :key="item._id">
+      <div class="card">
+        <header class="card-header el has-tooltip" :data-tooltip="item.title">
+          <div class="card-header-title has-text-centered el is-block">
+            {{ item.title }}
+          </div>
+        </header>
+        <div class="card-content">
+          <div class="columns is-multiline">
+            <div class="column is-12">
+              <progress class="progress is-large is-success show-value" :data-text="updateProgress(item)"
+                :value="item.percent ? percentPipe(item.percent) : ''" max="100">
+              </progress>
+            </div>
+            <div class="column is-half has-text-centered">
+              <span class="icon-text">
+                <span class="icon">
+                  <i v-if="item.status == 'finished'" class="has-text-success fa-solid fa-circle-check"></i>
+                  <i v-else class="has-text-danger fa-solid fa-times-circle"></i>
+                </span>
+                <span>{{ capitalize(item.status) }}</span>
+              </span>
+            </div>
+            <div class="column is-half has-text-centered">
+              <label class="checkbox is-block">
+                <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :value="item._id">
+                Select
+              </label>
+            </div>
+          </div>
+          <div class="columns">
+            <div class="column">
+              <a class="button is-danger is-fullwidth"
+                @click="$emit('deleteItem', 'queue', item._id)">
+                <span class="icon-text">
+                  <span class="icon">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </span>
+                  <span>Cancel</span>
+                </span>
+              </a>
+            </div>
+            <div class="column">
+              <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
+                <span class="icon-text">
+                  <span class="icon">
+                    <i class="fa-solid fa-up-right-from-square"></i>
+                  </span>
+                  <span>Visit Link</span>
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content has-text-centered" v-if="!hasQueuedItems">
+    <p>
+      <span class="icon-text">
+        <span class="icon has-text-success">
+          <i class="fa-solid fa-circle-check"></i>
+        </span>
+        <span v-if="config.isConnected">No Items are queued for downloading.</span>
+        <span v-else>
+          <span class="icon-text">
+            <span class="icon is-loading"></span>
+            <span>Connecting...</span>
+          </span>
+        </span>
+      </span>
+    </p>
+  </div>
+</template>
+
+<script setup>
+import { defineProps, defineEmits, ref, watch, computed } from 'vue';
+
+defineEmits(['deleteItem']);
+
+const props = defineProps({
+  queue: {
+    type: Object,
+    required: true
+  },
+  config: {
+    type: Object,
+    required: true
+  },
+})
+
+const selectedElms = ref([]);
+const masterSelectAll = ref(false);
+
+watch(masterSelectAll, (value) => {
+  for (const key in props.queue) {
+    const element = props.queue[key];
+    if (value) {
+      selectedElms.value.push(element._id);
+    } else {
+      selectedElms.value = [];
+    }
+  }
+})
+
+const hasSelected = computed(() => {
+  return selectedElms.value.length > 0;
+})
+const hasQueuedItems = computed(() => {
+  return Object.keys(props.queue)?.length > 0;
+})
+
+const ETAPipe = value => {
+  if (value === null || 0 === value) {
+    return 'Live';
+  }
+  if (value < 60) {
+    return `${Math.round(value)}s`;
+  }
+  if (value < 3600) {
+    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`;
+  }
+  const hours = Math.floor(value / 3600)
+  const minutes = value % 3600
+  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`;
+}
+
+const speedPipe = value => {
+  if (value === null || 0 === value) {
+    return '0KB/s';
+  }
+
+  const k = 1024;
+  const dm = 2;
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s'];
+  const i = Math.floor(Math.log(value) / Math.log(k));
+  return parseFloat((value / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+const percentPipe = value => {
+  if (value === null || 0 === value) {
+    return '00.00';
+  }
+  return parseFloat(value).toFixed(2);
+}
+
+const updateProgress = (item) => {
+  let string = '';
+
+  if (item.status == 'preparing') {
+    return 'Preparing';
+  }
+
+  if (item.status != null) {
+    string += item.percent && !item.is_live ? percentPipe(item.percent) + '%' : 'Live';
+  }
+
+  string += item.speed ? ' - ' + speedPipe(item.speed) : ' - Waiting..';
+
+  if (item.status != null && item.eta) {
+    string += ' - ' + ETAPipe(item.eta);
+  }
+
+  return string;
+}
+</script>

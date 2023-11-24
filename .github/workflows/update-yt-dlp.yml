@@ -1,0 +1,41 @@
+name: update-yt-dlp
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  update-yt-dlp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT_AUTO_UPDATE }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Update yt-dlp
+        run: |
+          pip install pipenv
+          pipenv sync
+          VER=`pipenv run pip list -o | awk '$1 == "yt-dlp" {print $3}'`
+          if [ -n "$VER" ]; then
+            pipenv update yt-dlp
+            git config --global user.email "updater@ytptube"
+            git config --global user.name "AutoUpdater"
+            git commit -m 'upgraded yt-dlp' Pipfile.lock
+            git push
+          fi
