@@ -70,7 +70,7 @@ class Config:
                     log.error(
                         f'Config variable "{k}" is set to a non-boolean value "{v}".')
                     sys.exit(1)
-                setattr(self, k, str(v).lower() in (True, 'True', 'on', '1'))
+                setattr(self, k, str(v).lower() in (True, 'true', 'on', '1'))
 
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
@@ -99,8 +99,8 @@ class Config:
                     log.error(f'JSON error in "{self.ytdl_options_file}": {e}')
                     sys.exit(1)
 
-        logging.info(f'keep archive: {self.keep_archive}')
         if self.keep_archive:
+            logging.info(f'keep archive: {self.keep_archive}')
             self.ytdl_options['download_archive'] = os.path.join(
                 self.config_path, 'archive.log')
 
