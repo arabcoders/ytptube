@@ -23,6 +23,7 @@ class Config:
 
     ytdl_options: dict | str = {}
     ytdl_options_file: str = ''
+    ytdl_debug: bool = False
 
     host: str = '0.0.0.0'
     port: int = 8081
@@ -31,7 +32,7 @@ class Config:
 
     base_path: str = ''
 
-    _boolean_vars: tuple = ('keep_archive')
+    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug')
 
     def __init__(self):
         baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))

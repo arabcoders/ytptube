@@ -156,11 +156,12 @@ const selectedQuality = useStorage('selectedQuality', '')
 const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
 const output_template = useStorage('output_template', null)
-const qualities = ref([])
-const url = ref('')
-const downloadPath = ref('')
-const addInProgress = ref(false)
+const downloadPath = useStorage('downloadPath', null)
+const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
+
+const qualities = ref([])
+const addInProgress = ref(false)
 
 const updateQualities = () => {
   for (const key in downloadFormats) {
@@ -190,7 +191,7 @@ const addDownload = () => {
     url: url.value,
     format: selectedFormat.value,
     quality: selectedQuality.value,
-    path: downloadPath.value,
+    folder: downloadPath.value,
     ytdlp_config: ytdlpConfig.value,
     ytdlp_cookies: ytdlpCookies.value,
     output_template: output_template.value,
@@ -206,6 +207,8 @@ const resetStorage = () => {
   ytdlpConfig.value = '';
   ytdlpCookies.value = '';
   output_template.value = null;
+  url.value = '';
+  downloadPath.value = '';
 }
 
 bus.on((event, data) => {

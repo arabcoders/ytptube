@@ -22,6 +22,7 @@ class Download:
     ytdl_opts: dict = None
     info: ItemDTO = None
     default_ytdl_opts: dict = None
+    debug: bool = False
 
     _ytdlp_fields: tuple = (
         'tmpfilename',
@@ -41,16 +42,19 @@ class Download:
         download_dir: str,
         temp_dir: str,
         output_template_chapter: str,
-        default_ytdl_opts: dict
+        default_ytdl_opts: dict,
+        debug: bool = False
     ):
         self.download_dir = download_dir
         self.temp_dir = temp_dir
         self.output_template_chapter = output_template_chapter
         self.output_template = info.output_template
         self.format = get_format(info.format, info.quality)
-        self.ytdl_opts = get_opts(info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
+        self.ytdl_opts = get_opts(
+            info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
         self.default_ytdl_opts = default_ytdl_opts
+        self.debug = debug
 
         self.canceled = False
         self.tmpfilename = None
@@ -82,7 +86,6 @@ class Download:
                     )
 
             params: dict = {
-                'quiet': True,
                 'no_color': True,
                 'format': self.format,
                 'paths': {
@@ -99,6 +102,12 @@ class Download:
                 **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),
             }
 
+            if self.debug:
+                params['verbose'] = True
+                params['logger'] = logging.getLogger('YTPTube-ytdl')
+            else:
+                params['quiet'] = True
+
             if self.info.ytdlp_cookies:
                 try:
                     data = jsonCookie(json.loads(self.info.ytdlp_cookies))
@@ -113,6 +122,8 @@ class Download:
                     logging.error(
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
+            logging.debug(
+                f'Downloading {self.info._id} {self.info.title}... {params}')
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
             self.status_queue.put(

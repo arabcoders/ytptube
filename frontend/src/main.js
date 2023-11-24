@@ -21,6 +21,7 @@ app.config.globalProperties.makeDownload = (config, item) => {
 
 app.use(Toast, {
   transition: "Vue-Toastification__bounce",
+  position: "bottom-right",
   maxToasts: 5,
   newestOnTop: true
 });

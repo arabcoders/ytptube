@@ -8,7 +8,7 @@ from src.Notifier import Notifier
 from src.Download import Download
 from src.DTO.ItemDTO import ItemDTO
 from src.DataStore import DataStore
-from src.Utils import ObjectSerializer, calcDownloadPath, ExtractInfo
+from src.Utils import ObjectSerializer, calcDownloadPath, ExtractInfo, mergeConfig
 from datetime import datetime, timezone
 
 log = logging.getLogger('DownloadQueue')
@@ -129,6 +129,7 @@ class DownloadQueue:
                         temp_dir=self.config.temp_path,
                         output_template_chapter=output_chapter,
                         default_ytdl_opts=self.config.ytdl_options,
+                        debug=bool(self.config.ytdl_debug)
                     )
                 )
 
@@ -163,6 +164,8 @@ class DownloadQueue:
         output_template: str = '',
         already=None
     ):
+        ytdlp_config = ytdlp_config if ytdlp_config else {}
+
         log.info(
             f'adding {url}: {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
 
@@ -173,7 +176,19 @@ class DownloadQueue:
         else:
             already.add(url)
         try:
-            entry = await asyncio.get_running_loop().run_in_executor(None, ExtractInfo, self.config.ytdl_options, url)
+            entry = await asyncio.get_running_loop().run_in_executor(
+                None,
+                ExtractInfo,
+                mergeConfig(self.config.ytdl_options, ytdlp_config),
+                url,
+                bool(self.config.ytdl_debug)
+            )
+            if not entry:
+                return {
+                    'status': 'error',
+                    'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
+                }
+            logging.debug(f'entry: extract info says: {entry}')
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
 

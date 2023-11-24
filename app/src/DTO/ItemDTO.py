@@ -19,7 +19,7 @@ class ItemDTO:
     ytdlp_cookies: str = None
     ytdlp_config: dict = field(default_factory=dict)
     output_template: str = None
-    timestamp: int = time.time_ns()
+    timestamp: float = time.time_ns()
     is_live: bool = None
 
     # yt-dlp injected fields.

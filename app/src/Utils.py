@@ -165,9 +165,8 @@ def calcDownloadPath(basePath: str, folder: str = None) -> str:
     return download_path
 
 
-def ExtractInfo(config: dict, url: str) -> dict:
+def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     params: dict = {
-        'quiet': True,
         'no_color': True,
         'extract_flat': True,
         'skip_download': True,
@@ -175,6 +174,12 @@ def ExtractInfo(config: dict, url: str) -> dict:
         'ignore_no_formats_error': True,
         **config,
     }
+
+    if debug:
+        params['verbose'] = True
+        params['logger'] = logging.getLogger('YTPTube-ytdl')
+    else:
+        params['quiet'] = True
 
     return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 

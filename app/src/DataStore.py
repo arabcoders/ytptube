@@ -50,7 +50,7 @@ class DataStore:
         with sqlite3.connect(self.db_file) as db:
             db.row_factory = sqlite3.Row
             cursor = db.execute(
-                'SELECT "id", "data" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
+                f'SELECT "id", "data" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
                 (self.type,)
             )
 

@@ -43,7 +43,7 @@
                 :value="item.percent ? percentPipe(item.percent) : ''" max="100">
               </progress>
             </div>
-            <div class="column is-half has-text-centered">
+            <div class="column is-4 has-text-centered">
               <span class="icon-text">
                 <span class="icon">
                   <i v-if="item.status == 'finished'" class="has-text-success fa-solid fa-circle-check"></i>
@@ -52,7 +52,12 @@
                 <span>{{ capitalize(item.status) }}</span>
               </span>
             </div>
-            <div class="column is-half has-text-centered">
+            <div class="column is-4 has-text-centered">
+              <span :data-tooltip="moment(item.timestamp / 1000000).format('MMMM Do YYYY, h:mm:ss a')">
+                {{ moment(item.timestamp / 1000000).fromNow() }}
+              </span>
+            </div>
+            <div class="column is-4 has-text-centered">
               <label class="checkbox is-block">
                 <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :value="item._id">
                 Select
@@ -61,8 +66,7 @@
           </div>
           <div class="columns">
             <div class="column">
-              <a class="button is-danger is-fullwidth"
-                @click="$emit('deleteItem', 'queue', item._id)">
+              <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'queue', item._id)">
                 <span class="icon-text">
                   <span class="icon">
                     <i class="fa-solid fa-trash-can"></i>
@@ -107,6 +111,7 @@
 
 <script setup>
 import { defineProps, defineEmits, ref, watch, computed } from 'vue';
+import moment from "moment";
 
 defineEmits(['deleteItem']);
 

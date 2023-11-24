@@ -74,7 +74,7 @@
             <div class="column is-12" v-if="item.error">
               <span class="has-text-danger">{{ item.error }}</span>
             </div>
-            <div class="column is-half has-text-centered">
+            <div class="column is-4 has-text-centered">
               <span class="icon-text">
                 <span class="icon">
                   <i v-if="item.status == 'finished'" class="has-text-success fa-solid fa-circle-check"></i>
@@ -83,7 +83,12 @@
                 <span>{{ capitalize(item.status) }}</span>
               </span>
             </div>
-            <div class="column is-half has-text-centered">
+            <div class="column is-4 has-text-centered">
+              <span :data-tooltip="moment(item.timestamp / 1000000).format('MMMM Do YYYY, h:mm:ss a')">
+                {{ moment(item.timestamp / 1000000).fromNow() }}
+              </span>
+            </div>
+            <div class="column is-4 has-text-centered">
               <label class="checkbox is-block">
                 <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                   :value="item._id">
@@ -159,6 +164,7 @@
 
 <script setup>
 import { defineProps, computed, ref, watch, defineEmits } from 'vue';
+import moment from "moment";
 
 const emits = defineEmits(['deleteItem', 'addItem']);
 
@@ -287,7 +293,7 @@ const reQueueItem = (id, item) => {
     url: item.url,
     format: item.format,
     quality: item.quality,
-    path: item.folder,
+    folder: item.folder,
     ytdlp_config: item.ytdlp_config,
     ytdlp_cookies: item.ytdlp_cookies,
     output_template: item.output_template,
