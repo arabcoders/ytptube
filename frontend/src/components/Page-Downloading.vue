@@ -46,8 +46,8 @@
             <div class="column is-4 has-text-centered">
               <span class="icon-text">
                 <span class="icon">
-                  <i v-if="item.status == 'finished'" class="has-text-success fa-solid fa-circle-check"></i>
-                  <i v-else class="has-text-danger fa-solid fa-times-circle"></i>
+                  <i v-if="item.status == 'downloading'" class="has-text-success fa-solid fa-download"></i>
+                  <i v-else class="fa-solid fa-spinner fa-spin"></i>
                 </span>
                 <span>{{ capitalize(item.status) }}</span>
               </span>
