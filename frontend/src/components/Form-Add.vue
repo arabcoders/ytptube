@@ -127,12 +127,12 @@
           <div class="column is-12 has-text-right">
             <div class="field">
               <div class="control">
-                <button type="submit" class="button is-danger" @click="resetStorage" :disabled="!config.isConnected"
+                <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!config.isConnected"
                   data-tooltip="This configuration are stored locally in your browser.">
                   <span class="icon">
                     <i class="fa-solid fa-trash"></i>
                   </span>
-                  <span>Reset Storage</span>
+                  <span>Reset Local Configuration</span>
                 </button>
               </div>
             </div>
@@ -198,8 +198,8 @@ const addDownload = () => {
   });
 }
 
-const resetStorage = () => {
-  if (!confirm('Are you sure you want to reset the storage?')) {
+const resetConfig = () => {
+  if (!confirm('Are you sure you want to reset the local configuration? this will NOT delete any downloads or server configuration.')) {
     return;
   }
   selectedFormat.value = 'any';
