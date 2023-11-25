@@ -12,8 +12,6 @@ import logging
 import caribou
 import sqlite3
 
-log = logging.getLogger('main')
-
 
 class Main:
     config: Config = None
@@ -87,7 +85,6 @@ class Main:
         self.start()
 
     def start(self):
-        log.info(f"Listening on {self.config.host}:{self.config.port}")
         web.run_app(
             self.app,
             host=self.config.host,
@@ -118,7 +115,7 @@ class Main:
             if ytdlp_config is None:
                 ytdlp_config = {}
 
-            status = await self.dqueue.add(
+            status = await self.add(
                 url=url,
                 quality=quality,
                 format=format,
@@ -127,6 +124,33 @@ class Main:
                 ytdlp_config=ytdlp_config,
                 output_template=output_template
             )
+
+            return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.post(self.config.url_prefix + 'add_batch')
+        async def add_batch(request: Request) -> Response:
+            status = {}
+
+            post = await request.json()
+            if not isinstance(post, list):
+                raise web.HTTPBadRequest()
+
+            for item in post:
+                if not isinstance(item, dict):
+                    raise web.HTTPBadRequest(
+                        'Invalid request body expecting list with dicts.')
+                if not item.get('url'):
+                    raise web.HTTPBadRequest(reason='url is required')
+
+                status[item.get('url')] = await self.add(
+                    url=item.get('url'),
+                    quality=item.get('quality'),
+                    format=item.get('format'),
+                    folder=item.get('folder'),
+                    ytdlp_cookies=item.get('ytdlp_cookies'),
+                    ytdlp_config=item.get('ytdlp_config'),
+                    output_template=item.get('output_template')
+                )
 
             return web.Response(text=self.serializer.encode(status))
 
@@ -207,6 +231,31 @@ class Main:
                 raise RuntimeError(
                     'Could not find the frontend UI static assets. Please run `node_modules/.bin/ng build` inside the frontend folder.') from e
             raise e
+
+    async def add(
+        self,
+            url: str,
+            quality: str,
+            format: str,
+            folder: str,
+            ytdlp_cookies: str,
+            ytdlp_config: dict,
+            output_template: str
+    ) -> dict[str, str]:
+        if ytdlp_config is None:
+            ytdlp_config = {}
+
+        status = await self.dqueue.add(
+            url=url,
+            quality=quality,
+            format=format,
+            folder=folder,
+            ytdlp_cookies=ytdlp_cookies,
+            ytdlp_config=ytdlp_config,
+            output_template=output_template
+        )
+
+        return status
 
 
 if __name__ == '__main__':

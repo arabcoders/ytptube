@@ -77,7 +77,6 @@ def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
     Returns:
       ytdl_opts: Extra options
     """
-    logging.debug(f"get_opts: {format} {quality} {ytdl_opts}")
     opts = copy.deepcopy(ytdl_opts)
     if not opts:
         opts: dict = {
@@ -107,8 +106,6 @@ def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
         postprocessors.append(
             {"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
 
-    logging.debug(
-        f"Postprocessors: {opts['postprocessors']} + {postprocessors}")
     opts["postprocessors"] = postprocessors + \
         (opts["postprocessors"] if "postprocessors" in opts else [])
     return opts
@@ -119,7 +116,6 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None) -> (Any | dict[str, Any] | N
         'quiet': True,
         'no_color': True,
         'extract_flat': True,
-
     }
 
     if ytdlp_opts:

@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import json
-import logging
 import sqlite3
 from src.Utils import calcDownloadPath
 from src.Config import Config
@@ -55,7 +54,6 @@ class DataStore:
             )
 
             for row in cursor:
-                logging.debug(row)
                 data: dict = json.loads(row['data'])
                 key: str = data.pop('_id')
                 item: ItemDTO = ItemDTO(**data)

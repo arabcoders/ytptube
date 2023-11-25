@@ -3,9 +3,7 @@ import logging
 import os
 import re
 import sys
-
-log = logging.getLogger('config')
-
+import coloredlogs
 
 class Config:
     config_path: str = '.'
@@ -31,6 +29,8 @@ class Config:
     keep_archive: bool = False
 
     base_path: str = ''
+
+    logging_level: str = 'info'
 
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug')
 
@@ -59,7 +59,7 @@ class Config:
                 for key in re.findall(r'\{.*?\}', v):
                     localKey: str = key[1:-1]
                     if localKey not in self.__dict__:
-                        log.error(
+                        logging.error(
                             f'Config variable "{k}" had non exisitng config reference "{key}"')
                         sys.exit(1)
                     v = v.replace(key, getattr(self, localKey))
@@ -68,27 +68,41 @@ class Config:
 
             if k in self._boolean_vars:
                 if str(v).lower() not in (True, False, 'true', 'false', 'on', 'off', '1', '0'):
-                    log.error(
+                    raise ValueError(
                         f'Config variable "{k}" is set to a non-boolean value "{v}".')
-                    sys.exit(1)
+
                 setattr(self, k, str(v).lower() in (True, 'true', 'on', '1'))
 
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
+
+        numeric_level = getattr(
+            logging, self.logging_level.upper(), None)
+
+        if not isinstance(numeric_level, int):
+            raise ValueError(f"Invalid log level: {self.logging_level}")
+
+        logging.basicConfig(
+            force=True,
+            level=numeric_level,
+            format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] %(message)s"
+        )
+
+        coloredlogs.install()
 
         if isinstance(self.ytdl_options, str):
             try:
                 self.ytdl_options = json.loads(self.ytdl_options)
                 assert isinstance(self.ytdl_options, dict)
             except (json.decoder.JSONDecodeError, AssertionError) as e:
-                log.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
+                logging.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
                 sys.exit(1)
 
         if self.ytdl_options_file:
-            log.info(
+            logging.info(
                 f'Loading yt-dlp custom options from "{self.ytdl_options_file}"')
             if not os.path.exists(self.ytdl_options_file):
-                log.error(
+                logging.error(
                     f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
             else:
                 try:
@@ -97,7 +111,8 @@ class Config:
                     assert isinstance(opts, dict)
                     self.ytdl_options.update(opts)
                 except (json.decoder.JSONDecodeError, AssertionError) as e:
-                    log.error(f'JSON error in "{self.ytdl_options_file}": {e}')
+                    logging.error(
+                        f'JSON error in "{self.ytdl_options_file}": {e}')
                     sys.exit(1)
 
         if self.keep_archive:
