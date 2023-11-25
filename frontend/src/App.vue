@@ -2,12 +2,21 @@
   <PageHeader :config="config" />
   <formAdd :config="config" @addItem="addItem" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
-  <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem" />
+  <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
+    @playItem="playItem" />
+
+  <div class="modal" :class="{ 'is-active': video_link }">
+    <div class="modal-background"></div>
+    <div class="modal-content">
+      <video :src="video_link" controls autoplay loop preload="auto" class="is-fullwidth"></video>
+    </div>
+    <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
+  </div>
   <PageFooter />
 </template>
 
 <script setup>
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import PageHeader from './components/Page-Header'
 import formAdd from './components/Form-Add'
 import DownloadingList from './components/Page-Downloading'
@@ -27,6 +36,7 @@ const config = reactive({
 
 const downloading = reactive({});
 const completed = reactive({});
+const video_link = ref('');
 
 onMounted(() => {
   const socket = io(process.env.VUE_APP_BASE_URL);
@@ -146,6 +156,16 @@ const addItem = (item) => {
     bus.emit('item_added', { status: "error", msg: error });
     toast.error(`Failed to add link. ${error.message}`);
   });
+};
+
+const playItem = (item) => {
+  let baseDir = 'download/';
+
+  if (item.folder) {
+    baseDir += item.folder + '/';
+  }
+
+  video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
 };
 </script>
 
