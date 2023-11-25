@@ -8,6 +8,7 @@ python-socketio = "~=5.0"
 aiohttp = "*"
 yt-dlp = "*"
 caribou = "*"
+coloredlogs = "*"
 
 [dev-packages]
 
