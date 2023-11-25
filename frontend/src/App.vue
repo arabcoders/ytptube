@@ -39,7 +39,9 @@ const completed = reactive({});
 const video_link = ref('');
 
 onMounted(() => {
-  const socket = io(process.env.VUE_APP_BASE_URL);
+  const socket = io(process.env.VUE_APP_BASE_URL, {
+    path: document.location.pathname + 'socket.io',
+  });
 
   socket.on('connect', () => config.isConnected = true);
   socket.on('disconnect', () => config.isConnected = false);
