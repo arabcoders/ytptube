@@ -6,6 +6,8 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 
 YTPTube is a fork of [meTube](https://github.com/alexta69/metube) project by alexta69.
 
+[![Short screenshot](/sc_short.png)](/sc_full.png)
+
 ## Run using Docker
 
 ```bash

@@ -119,8 +119,8 @@
                   :disabled="!config.isConnected"></textarea>
               </div>
               <span class="subtitle is-6 has-text-info">
-                Use something like <a href="https://github.com/jrie/flagCookies">flagCookies</a> to extract cookies as
-                JSON string.
+                Use something like <a class="has-text-danger" href="https://github.com/jrie/flagCookies">flagCookies</a>
+                to extract cookies as JSON string.
               </span>
             </div>
           </div>
