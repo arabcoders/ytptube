@@ -4,6 +4,7 @@ import Toast from 'vue-toastification'
 import 'vue-toastification/dist/index.css'
 import 'bulma/css/bulma.css'
 import './assets/css/style.css'
+import './assets/css/bulma-dark.css'
 import '@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css';
 
 const app = createApp(App);
