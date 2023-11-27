@@ -2,6 +2,7 @@ import json
 import logging
 import math
 import os
+from urllib.parse import quote
 from src.Utils import calcDownloadPath
 from ffprobe import FFProbe
 from src.Config import Config
@@ -68,7 +69,7 @@ class M3u8:
             else:
                 m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"
 
-            m3u8 += f"{self.config.url_prefix}segments/{i}/{file}"
+            m3u8 += f"{self.config.url_prefix}segments/{i}/{quote(file)}"
             if len(segmentParams) > 0:
                 m3u8 += '?'+'&'.join([f"{key}={value}" for key,
                                       value in segmentParams.items()])

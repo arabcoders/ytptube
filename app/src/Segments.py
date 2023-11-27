@@ -109,7 +109,8 @@ class Segments:
         ffmpegCmd.append('mpegts')
         ffmpegCmd.append('pipe:1')
 
-        logging.info(f'{self.aconvert}, {self.vconvert} '+' '.join(ffmpegCmd))
+        logging.debug(
+            f'Streaming {realFile} segment {self.segment_index}.' + ' '.join(ffmpegCmd))
         proc = subprocess.run(ffmpegCmd, stdout=subprocess.PIPE)
 
         return proc.stdout
