@@ -33,7 +33,11 @@ class M3u8:
         metadata = FFProbe(realFile)
 
         # video duration.
-        duration: float = float(metadata.streams[0].duration)
+
+        if not 'Duration' in metadata.metadata:
+            raise Exception(f"Unable to get {realFile} duration.")
+
+        duration: float = self.parseDuration(metadata.metadata.get('Duration'))
 
         m3u8 = "#EXTM3U\n"
         m3u8 += "#EXT-X-VERSION:3\n"
@@ -67,10 +71,21 @@ class M3u8:
             m3u8 += f"{self.config.url_prefix}segments/{i}/{file}"
             if len(segmentParams) > 0:
                 m3u8 += '?'+'&'.join([f"{key}={value}" for key,
-                                    value in segmentParams.items()])
+                                      value in segmentParams.items()])
             m3u8 += "\n"
 
         m3u8 += "#EXT-X-ENDLIST\n"
 
         # m3u8 = f"{json.dumps(metadata,indent=2,ensure_ascii=False,default=lambda o: o.__dict__)}\n{m3u8}"
         return m3u8
+
+    def parseDuration(self, duration: str):
+        if duration.find(':') > -1:
+            duration = duration.split(':')
+            duration.reverse()
+            duration = sum([float(duration[i]) * (60 ** i)
+                           for i in range(len(duration))])
+        else:
+            duration = float(duration)
+
+        return duration
