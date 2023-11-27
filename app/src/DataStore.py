@@ -92,7 +92,13 @@ class DataStore:
         VALUES (?, ?, ?, ?)
         ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?
         """
-        delattr(item, 'datetime')
+
+        if hasattr(item, 'datetime'):
+            try:
+                delattr(item, 'datetime')
+            except AttributeError:
+                pass
+
         with sqlite3.connect(self.db_file) as db:
             db.execute(sqlStatement.strip(), (
                 item._id,
