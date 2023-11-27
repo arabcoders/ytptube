@@ -108,8 +108,6 @@ class DownloadQueue:
                     is_live=entry['is_live'] if 'is_live' in entry else None,
                 )
 
-                logging.info(f'adding {dl.json()}')
-
                 try:
                     dldirectory = calcDownloadPath(
                         basePath=self.config.download_path,
