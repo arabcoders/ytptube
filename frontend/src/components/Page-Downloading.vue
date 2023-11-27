@@ -40,7 +40,7 @@
           <div class="columns is-multiline">
             <div class="column is-12">
               <progress class="progress is-large is-success show-value" :data-text="updateProgress(item)"
-                :value="item.percent ? percentPipe(item.percent) : ''" max="100">
+                :value="item.percent ? percentPipe(item.percent) : '100'" max="100">
               </progress>
             </div>
             <div class="column is-4 has-text-centered">
