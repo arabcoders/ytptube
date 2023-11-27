@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import datetime
 import json
 import sqlite3
 from src.Utils import calcDownloadPath
@@ -58,6 +59,10 @@ class DataStore:
                 key: str = data.pop('_id')
                 item: ItemDTO = ItemDTO(**data)
                 item._id = key
+                if not item.datetime:
+                    item.datetime = datetime.fromtimestamp(item.timestamp / 1_000_000_000).strftime(
+                        '%Y-%m-%dT%H:%M:%SZ')
+
                 items.append((row['id'], item))
 
         return items

@@ -53,8 +53,9 @@
               </span>
             </div>
             <div class="column is-4 has-text-centered">
-              <span :data-tooltip="moment(item.timestamp / 1000000).format('MMMM Do YYYY, h:mm:ss a')">
-                {{ moment(item.timestamp / 1000000).fromNow() }}
+              <span :data-datetime="item.datetime"
+                :data-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                {{ moment(item.datetime).fromNow() }}
               </span>
             </div>
             <div class="column is-4 has-text-centered">

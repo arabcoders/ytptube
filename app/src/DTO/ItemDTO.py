@@ -21,6 +21,7 @@ class ItemDTO:
     output_template: str = None
     timestamp: float = time.time_ns()
     is_live: bool = None
+    datetime: str = None
 
     # yt-dlp injected fields.
     tmpfilename: str = None
