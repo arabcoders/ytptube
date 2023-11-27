@@ -182,7 +182,7 @@ class DownloadQueue:
                 ExtractInfo,
                 mergeConfig(self.config.ytdl_options, ytdlp_config),
                 url,
-                True
+                bool(self.config.ytdl_debug)
             )
             if not entry:
                 return {
