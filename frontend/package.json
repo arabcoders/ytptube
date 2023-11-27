@@ -16,6 +16,7 @@
     "@vueuse/core": "^10.6.1",
     "bulma": "^0.9.4",
     "core-js": "^3.8.3",
+    "hls.js": "^1.4.12",
     "moment": "^2.29.4",
     "socket.io-client": "^4.7.2",
     "vue": "^3.2.13",

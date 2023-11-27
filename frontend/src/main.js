@@ -22,8 +22,8 @@ library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleC
 const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
-app.config.globalProperties.makeDownload = (config, item) => {
-  let baseDir = 'download/';
+app.config.globalProperties.makeDownload = (config, item, base = 'download') => {
+  let baseDir = `${base}/`;
 
   if (item.folder) {
     baseDir += item.folder + '/';

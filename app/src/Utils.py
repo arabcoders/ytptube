@@ -139,7 +139,7 @@ def getAttributes(vclass: str | type) -> dict:
     return attrs
 
 
-def calcDownloadPath(basePath: str, folder: str = None) -> str:
+def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True) -> str:
     """Calculates download path And prevents directory traversal attacks.
 
     Returns:
@@ -155,7 +155,7 @@ def calcDownloadPath(basePath: str, folder: str = None) -> str:
         raise Exception(
             f'Folder "{folder}" must resolve inside the base download directory "{realBasePath}"')
 
-    if not os.path.isdir(download_path):
+    if not os.path.isdir(download_path) and createPath:
         os.makedirs(download_path, exist_ok=True)
 
     return download_path

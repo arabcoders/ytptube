@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
 from src.Config import Config
 from src.Notifier import Notifier
@@ -7,6 +8,8 @@ from src.DownloadQueue import DownloadQueue
 from src.Utils import ObjectSerializer
 from aiohttp import web
 from aiohttp.web import Request, Response
+from src.M3u8 import M3u8
+from src.Segments import Segments
 import socketio
 import logging
 import caribou
@@ -177,6 +180,56 @@ class Main:
                 history['done'].append(v)
 
             return web.Response(text=self.serializer.encode(history))
+
+        @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
+        async def m3u8(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required')
+
+            return web.Response(
+                text=M3u8(self.config).make_stream(file),
+                headers={
+                    'Content-Type': 'application/x-mpegURL',
+                    'Cache-Control': 'no-cache',
+                    'Access-Control-Max-Age': "300",
+                }
+            )
+
+        @self.routes.get(self.config.url_prefix + 'segments/{segment:\d+}/{file:.*}')
+        async def segments(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+            segment: int = request.match_info.get('segment')
+            sd: int = request.query.get('sd')
+            vc: int = int(request.query.get('vc', 0))
+            ac: int = int(request.query.get('ac', 0))
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required')
+
+            if not segment:
+                raise web.HTTPBadRequest(reason='segment is required')
+
+            segmenter = Segments(
+                config=self.config,
+                segment_index=int(segment),
+                segment_duration=float('{:.6f}'.format(float(sd if sd else M3u8.segment_duration))),
+                vconvert=True if vc == 1 else False,
+                aconvert=True if ac == 1 else False
+            )
+
+            return web.Response(
+                body=await segmenter.stream(file),
+                headers={
+                    'Content-Type': 'video/mpegts',
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache',
+                    'X-Accel-Buffering': 'no',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Max-Age': "300",
+                }
+            )
 
         @self.routes.get(self.config.url_prefix)
         async def index(_) -> Response:

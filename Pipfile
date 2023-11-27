@@ -9,6 +9,7 @@ aiohttp = "*"
 yt-dlp = "*"
 caribou = "*"
 coloredlogs = "*"
+ffprobe-python = "*"
 
 [dev-packages]
 

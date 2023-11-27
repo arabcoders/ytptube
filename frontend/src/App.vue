@@ -5,10 +5,11 @@
   <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
     @playItem="playItem" />
 
-  <div class="modal" :class="{ 'is-active': video_link }">
+  <div class="modal is-active" v-if="video_link">
     <div class="modal-background"></div>
     <div class="modal-content">
-      <video :src="video_link" controls autoplay loop preload="auto" class="is-fullwidth"></video>
+      <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
+        class="is-fullwidth" />
     </div>
     <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
   </div>
@@ -22,6 +23,7 @@ import formAdd from './components/Form-Add'
 import DownloadingList from './components/Page-Downloading'
 import PageCompleted from './components/Page-Completed'
 import PageFooter from './components/Page-Footer'
+import VideoPlayer from './components/Video-Player'
 import { io } from "socket.io-client";
 import { useToast } from 'vue-toastification'
 import { useEventBus } from '@vueuse/core'
@@ -161,7 +163,7 @@ const addItem = (item) => {
 };
 
 const playItem = (item) => {
-  let baseDir = 'download/';
+  let baseDir = 'm3u8/';
 
   if (item.folder) {
     baseDir += item.folder + '/';
@@ -169,5 +171,7 @@ const playItem = (item) => {
 
   video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
 };
+
+
 </script>
 
