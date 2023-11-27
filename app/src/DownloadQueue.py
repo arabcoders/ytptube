@@ -105,10 +105,10 @@ class DownloadQueue:
                     ytdlp_config=ytdlp_config,
                     output_template=output_template if output_template else self.config.output_template,
                     error=error,
-                    datetime=formatdate(datetime.now(
-                        timezone.utc).timetuple()),
                     is_live=entry['is_live'] if 'is_live' in entry else None,
                 )
+
+                logging.info(f'adding {dl.json()}')
 
                 try:
                     dldirectory = calcDownloadPath(

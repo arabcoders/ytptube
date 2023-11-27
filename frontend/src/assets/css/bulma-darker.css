@@ -3179,7 +3179,7 @@
   .button.is-static {
     background-color: #ecf0f1;
     border-color: #5e6d6f;
-    color: #fff;
+    color: #5c2c2c;
     box-shadow: none;
     pointer-events: none
   }
