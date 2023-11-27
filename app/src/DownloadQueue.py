@@ -1,4 +1,5 @@
 import asyncio
+from email.utils import formatdate
 import logging
 import os
 import yt_dlp
@@ -104,7 +105,8 @@ class DownloadQueue:
                     ytdlp_config=ytdlp_config,
                     output_template=output_template if output_template else self.config.output_template,
                     error=error,
-                    datetime=datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S %z'),
+                    datetime=formatdate(datetime.now(
+                        timezone.utc).timetuple()),
                     is_live=entry['is_live'] if 'is_live' in entry else None,
                 )
 

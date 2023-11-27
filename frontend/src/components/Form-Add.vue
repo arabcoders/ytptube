@@ -8,7 +8,7 @@
               <input type="url" class="input" id="url" placeholder="Video or playlist link"
                 :disabled="!config.isConnected || addInProgress" v-model="url">
               <span class="icon is-small is-left">
-                <i class="fa-solid fa-link"></i>
+                <font-awesome-icon icon="fa-solid fa-link" />
               </span>
             </div>
           </div>
@@ -59,7 +59,7 @@
               :class="{ 'is-loading': !config.isConnected || addInProgress }"
               :disabled="!config.isConnected || addInProgress || !url">
               <span class="icon">
-                <i class="fa-solid fa-plus"></i>
+                <font-awesome-icon icon="fa-solid fa-plus" />
               </span>
               <span>Add Link</span>
             </button>
@@ -69,7 +69,7 @@
               data-tooltip="Show advanced options" :class="{ 'is-loading': !config.isConnected }"
               :disabled="!config.isConnected">
               <span class="icon">
-                <i class="fa-solid fa-cog"></i>
+                <font-awesome-icon icon="fa-solid fa-cog" />
               </span>
             </button>
           </div>
@@ -130,7 +130,7 @@
                 <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!config.isConnected"
                   data-tooltip="This configuration are stored locally in your browser.">
                   <span class="icon">
-                    <i class="fa-solid fa-trash"></i>
+                    <font-awesome-icon icon="fa-solid fa-trash" />
                   </span>
                   <span>Reset Local Configuration</span>
                 </button>

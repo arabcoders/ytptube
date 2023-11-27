@@ -8,7 +8,7 @@
       <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
         <span class="icon-text">
           <span class="icon">
-            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'"></i>
+            <font-awesome-icon :icon="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
           </span>
           <span v-if="!masterSelectAll">Select All</span>
           <span v-else>Unselect All</span>
@@ -20,7 +20,7 @@
         @click="$emit('deleteItem', 'queue', selectedElms); selectedElms = []">
         <span class="icon-text">
           <span class="icon">
-            <i class="fa-solid fa-trash-can"></i>
+            <font-awesome-icon icon="fa-solid fa-trash-can" />
           </span>
           <span>Cancel Selected</span>
         </span>
@@ -45,9 +45,9 @@
             </div>
             <div class="column is-4 has-text-centered">
               <span class="icon-text">
-                <span class="icon">
-                  <i v-if="item.status == 'downloading'" class="has-text-success fa-solid fa-download"></i>
-                  <i v-else class="fa-solid fa-spinner fa-spin"></i>
+                <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
+                  <font-awesome-icon
+                    :icon="item.status == 'downloading' ? 'fa-solid fa-download' : 'fa-solid fa-spinner fa-spin'" />
                 </span>
                 <span>{{ capitalize(item.status) }}</span>
               </span>
@@ -70,7 +70,7 @@
               <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'queue', item._id)">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-trash-can"></i>
+                    <font-awesome-icon icon="fa-solid fa-trash-can" />
                   </span>
                   <span>Cancel</span>
                 </span>
@@ -80,7 +80,7 @@
               <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-up-right-from-square"></i>
+                    <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
                   </span>
                   <span>Visit Link</span>
                 </span>
@@ -93,18 +93,20 @@
   </div>
 
   <div class="content has-text-centered" v-if="!hasQueuedItems">
-    <p>
+    <p v-if="config.isConnected">
       <span class="icon-text">
         <span class="icon has-text-success">
-          <i class="fa-solid fa-circle-check"></i>
+          <font-awesome-icon icon="fa-solid fa-circle-check" />
         </span>
-        <span v-if="config.isConnected">No Items are queued for downloading.</span>
-        <span v-else>
-          <span class="icon-text">
-            <span class="icon is-loading"></span>
-            <span>Connecting...</span>
-          </span>
+        <span>No queued items.</span>
+      </span>
+    </p>
+    <p v-else>
+      <span class="icon-text">
+        <span class="icon">
+          <font-awesome-icon icon="fa-solid fa-spinner fa-spin" />
         </span>
+        <span>Connecting...</span>
       </span>
     </p>
   </div>

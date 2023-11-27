@@ -1,3 +1,4 @@
+from email.utils import formatdate
 import json
 import time
 from dataclasses import dataclass, field
@@ -21,7 +22,7 @@ class ItemDTO:
     output_template: str = None
     timestamp: float = time.time_ns()
     is_live: bool = None
-    datetime: str = None
+    datetime: str = formatdate(time.time())
 
     # yt-dlp injected fields.
     tmpfilename: str = None

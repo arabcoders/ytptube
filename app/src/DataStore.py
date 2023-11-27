@@ -1,6 +1,8 @@
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
+from email.utils import formatdate
 import json
+import logging
 import sqlite3
 from src.Utils import calcDownloadPath
 from src.Config import Config
@@ -50,7 +52,7 @@ class DataStore:
         with sqlite3.connect(self.db_file) as db:
             db.row_factory = sqlite3.Row
             cursor = db.execute(
-                f'SELECT "id", "data" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
+                f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
                 (self.type,)
             )
 
@@ -59,10 +61,9 @@ class DataStore:
                 key: str = data.pop('_id')
                 item: ItemDTO = ItemDTO(**data)
                 item._id = key
-                if not item.datetime:
-                    item.datetime = datetime.fromtimestamp(item.timestamp / 1_000_000_000).strftime(
-                        '%Y-%m-%dT%H:%M:%SZ')
-
+                item.datetime = formatdate(datetime.strptime(
+                    row['created_at'], '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone.utc).timestamp()
+                )
                 items.append((row['id'], item))
 
         return items
@@ -91,6 +92,7 @@ class DataStore:
         VALUES (?, ?, ?, ?)
         ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?
         """
+        item.datetime = None
         with sqlite3.connect(self.db_file) as db:
             db.execute(sqlStatement.strip(), (
                 item._id,

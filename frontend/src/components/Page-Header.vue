@@ -10,8 +10,7 @@
       <div class="navbar-item">
         <span class="icon-text" :class="config.isConnected ? 'has-text-success' : 'has-text-danger'">
           <span class="icon">
-            <i v-if="config.isConnected" class="fa-solid fa-wifi"></i>
-            <i v-else class="fa-solid fa-signal"></i>
+            <font-awesome-icon :icon="config.isConnected ? 'fa-solid fa-wifi' : 'fa-solid fa-signal'" />
           </span>
           <span>
             {{ config.isConnected ? 'Connected' : 'Connecting' }}

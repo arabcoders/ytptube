@@ -8,7 +8,7 @@
       <button type="button" class="button is-fullwidth is-ghost is-inverted" @click="masterSelectAll = !masterSelectAll">
         <span class="icon-text">
           <span class="icon">
-            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular  fa-square'"></i>
+            <font-awesome-icon :icon="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
           </span>
           <span v-if="!masterSelectAll">Select All</span>
           <span v-else>Unselect All</span>
@@ -20,7 +20,7 @@
         @click="$emit('deleteItem', 'completed', selectedElms); selectedElms = []">
         <span class="icon-text">
           <span class="icon">
-            <i class="fa-solid fa-trash-can"></i>
+            <font-awesome-icon icon="fa-solid fa-trash-can" />
           </span>
           <span>Remove Selected</span>
         </span>
@@ -30,7 +30,7 @@
       <button type="button" class="button is-fullwidth is-primary is-inverted" @click="clearCompleted">
         <span class="icon-text">
           <span class="icon">
-            <i class="fa-solid fa-circle-check"></i>
+            <font-awesome-icon icon="fa-solid fa-circle-check" />
           </span>
           <span>Clear Completed</span>
         </span>
@@ -40,7 +40,7 @@
       <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearFailed">
         <span class="icon-text">
           <span class="icon">
-            <i class="fa-solid fa-circle-xmark"></i>
+            <font-awesome-icon icon="fa-solid fa-circle-xmark" />
           </span>
           <span>Clear Failed</span>
         </span>
@@ -50,7 +50,7 @@
       <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueFailed">
         <span class="icon-text">
           <span class="icon">
-            <i class="fa-solid fa-rotate-right"></i>
+            <font-awesome-icon icon="fa-solid fa-rotate-right" />
           </span>
           <span>Re-queue Failed</span>
         </span>
@@ -77,9 +77,10 @@
             </div>
             <div class="column is-4 has-text-centered">
               <span class="icon-text">
-                <span class="icon">
-                  <i v-if="item.status == 'finished'" class="has-text-success fa-solid fa-circle-check"></i>
-                  <i v-else class="has-text-danger fa-solid fa-times-circle"></i>
+                <span class="icon"
+                  :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
+                  <font-awesome-icon
+                    :icon="item.status == 'finished' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'" />
                 </span>
                 <span>{{ capitalize(item.status) }}</span>
               </span>
@@ -104,7 +105,7 @@
                 @click="reQueueItem(item._id, item)">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-rotate-right"></i>
+                    <font-awesome-icon icon="fa-solid fa-rotate-right" />
                   </span>
                   <span>Re-queue</span>
                 </span>
@@ -115,7 +116,7 @@
                 :download="item.filename?.split('/').reverse()[0]">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-download"></i>
+                    <font-awesome-icon icon="fa-solid fa-download" />
                   </span>
                   <span>Download</span>
                 </span>
@@ -125,7 +126,7 @@
               <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'completed', item._id)">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-trash-can"></i>
+                    <font-awesome-icon icon="fa-solid fa-trash-can" />
                   </span>
                   <span>Remove</span>
                 </span>
@@ -135,7 +136,7 @@
               <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
                 <span class="icon-text">
                   <span class="icon">
-                    <i class="fa-solid fa-up-right-from-square"></i>
+                    <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
                   </span>
                   <span>Visit Link</span>
                 </span>
@@ -148,18 +149,20 @@
   </div>
 
   <div class="content has-text-centered" v-if="!hasCompleted">
-    <p>
+    <p v-if="config.isConnected">
       <span class="icon-text">
         <span class="icon has-text-success">
-          <i class="fa-solid fa-circle-check"></i>
+          <font-awesome-icon icon="fa-solid fa-circle-check" />
         </span>
-        <span v-if="config.isConnected">No completed downloads.</span>
-        <span v-else>
-          <span class="icon-text">
-            <span class="icon is-loading"></span>
-            <span>Connecting...</span>
-          </span>
+        <span>No downloads records.</span>
+      </span>
+    </p>
+    <p v-else>
+      <span class="icon-text">
+        <span class="icon">
+          <font-awesome-icon icon="fa-solid fa-spinner fa-spin" />
         </span>
+        <span>Connecting...</span>
       </span>
     </p>
   </div>
