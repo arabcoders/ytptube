@@ -98,7 +98,7 @@ class DownloadQueue:
             if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
                 item = self.done.get(key=entry['id'], url=entry.get(
                     'webpage_url') or entry['url'])
-                self.done.clear([item.info._id])
+                self.clear([item.info._id])
 
             if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
                 return {'status': 'error', 'msg': 'Link already queued for downloading.'}
@@ -230,7 +230,7 @@ class DownloadQueue:
 
     async def clear(self, ids):
         for id in ids:
-            if not self.done.exists(id):
+            if not self.done.exists(key=id):
                 log.warn(f'requested delete for non-existent download {id}')
                 continue
             self.done.delete(id)
