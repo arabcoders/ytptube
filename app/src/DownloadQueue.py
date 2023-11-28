@@ -125,19 +125,17 @@ class DownloadQueue:
                         dl.output_template = dl.output_template.replace(
                             f"%({property})s", str(value))
 
-                self.queue.put(
-                    Download(
-                        info=dl,
-                        download_dir=dldirectory,
-                        temp_dir=self.config.temp_path,
-                        output_template_chapter=output_chapter,
-                        default_ytdl_opts=self.config.ytdl_options,
-                        debug=bool(self.config.ytdl_debug)
-                    )
-                )
+                itemDownload = self.queue.put(Download(
+                    info=dl,
+                    download_dir=dldirectory,
+                    temp_dir=self.config.temp_path,
+                    output_template_chapter=output_chapter,
+                    default_ytdl_opts=self.config.ytdl_options,
+                    debug=bool(self.config.ytdl_debug)
+                ))
 
                 self.event.set()
-                await self.notifier.added(dl)
+                await self.notifier.added(itemDownload.info)
 
             return {
                 'status': 'ok'
@@ -148,6 +146,9 @@ class DownloadQueue:
                 quality=quality,
                 format=format,
                 folder=folder,
+                ytdlp_config=ytdlp_config,
+                ytdlp_cookies=ytdlp_cookies,
+                output_template=output_template,
                 already=already
             )
 
