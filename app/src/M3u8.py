@@ -69,7 +69,7 @@ class M3u8:
             else:
                 m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"
 
-            m3u8 += f"{self.config.url_prefix}segments/{i}/{quote(file)}"
+            m3u8 += f"{self.config.url_host}{self.config.url_prefix}segments/{i}/{quote(file)}"
             if len(segmentParams) > 0:
                 m3u8 += '?'+'&'.join([f"{key}={value}" for key,
                                       value in segmentParams.items()])
@@ -77,7 +77,6 @@ class M3u8:
 
         m3u8 += "#EXT-X-ENDLIST\n"
 
-        # m3u8 = f"{json.dumps(metadata,indent=2,ensure_ascii=False,default=lambda o: o.__dict__)}\n{m3u8}"
         return m3u8
 
     def parseDuration(self, duration: str):

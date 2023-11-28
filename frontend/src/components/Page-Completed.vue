@@ -63,8 +63,8 @@
       <div class="card" :class="{ 'is-bordered-danger': item.error ? true : false }">
         <header class="card-header el has-tooltip" :data-tooltip="item.title">
           <div class="card-header-title has-text-centered el is-block">
-            <a v-if="item.filename" referrerpolicy="no-referrer" href="javascript:void(0)"
-              @click="$emit('playItem', item);">
+            <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
+              @click.prevent="$emit('playItem', item)">
               {{ item.title }}
             </a>
             <span v-else>{{ item.title }}</span>
