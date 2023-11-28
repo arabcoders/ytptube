@@ -2,6 +2,7 @@ import asyncio
 from email.utils import formatdate
 import logging
 import os
+import time
 import yt_dlp
 from sqlite3 import Connection
 from src.Config import Config
@@ -104,6 +105,7 @@ class DownloadQueue:
                     ytdlp_cookies=ytdlp_cookies,
                     ytdlp_config=ytdlp_config,
                     output_template=output_template if output_template else self.config.output_template,
+                    datetime=formatdate(time.time()),
                     error=error,
                     is_live=entry['is_live'] if 'is_live' in entry else None,
                 )

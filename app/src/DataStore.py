@@ -69,8 +69,12 @@ class DataStore:
         return items
 
     def put(self, value: Download) -> None:
-        _id: str = value.info._id
-        self.dict[_id] = value
+        for key in self.dict:
+            if self.dict[key].info.url == value.info.url:
+                value.info._id = key
+                return
+
+        self.dict[value.info._id] = value
         self._updateStoreItem(self.type, value.info)
 
     def delete(self, key: str) -> None:
