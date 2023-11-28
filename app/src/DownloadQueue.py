@@ -93,49 +93,57 @@ class DownloadQueue:
                 return {'status': 'error', 'msg': ', '.join(res['msg'] for res in results if res['status'] == 'error' and 'msg' in res)}
 
             return {'status': 'ok'}
-        elif etype == 'video' or etype.startswith('url') and 'id' in entry and 'title' in entry:
-            if not self.queue.exists(entry['id']):
-                dl = ItemDTO(
-                    id=entry['id'],
-                    title=entry['title'],
-                    url=entry.get('webpage_url') or entry['url'],
-                    quality=quality,
-                    format=format,
-                    folder=folder,
-                    ytdlp_cookies=ytdlp_cookies,
-                    ytdlp_config=ytdlp_config,
-                    output_template=output_template if output_template else self.config.output_template,
-                    datetime=formatdate(time.time()),
-                    error=error,
-                    is_live=entry['is_live'] if 'is_live' in entry else None,
+        elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
+
+            if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
+                item = self.done.get(key=entry['id'], url=entry.get(
+                    'webpage_url') or entry['url'])
+                self.done.clear([item.info._id])
+
+            if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
+                return {'status': 'error', 'msg': 'Link already queued for downloading.'}
+
+            dl = ItemDTO(
+                id=entry['id'],
+                title=entry['title'],
+                url=entry.get('webpage_url') or entry['url'],
+                quality=quality,
+                format=format,
+                folder=folder,
+                ytdlp_cookies=ytdlp_cookies,
+                ytdlp_config=ytdlp_config,
+                output_template=output_template if output_template else self.config.output_template,
+                datetime=formatdate(time.time()),
+                error=error,
+                is_live=entry['is_live'] if 'is_live' in entry else None,
+            )
+
+            try:
+                dldirectory = calcDownloadPath(
+                    basePath=self.config.download_path,
+                    folder=folder
                 )
+            except Exception as e:
+                return {'status': 'error', 'msg': str(e)}
 
-                try:
-                    dldirectory = calcDownloadPath(
-                        basePath=self.config.download_path,
-                        folder=folder
-                    )
-                except Exception as e:
-                    return {'status': 'error', 'msg': str(e)}
+            output_chapter = self.config.output_template_chapter
 
-                output_chapter = self.config.output_template_chapter
+            for property, value in entry.items():
+                if property.startswith("playlist"):
+                    dl.output_template = dl.output_template.replace(
+                        f"%({property})s", str(value))
 
-                for property, value in entry.items():
-                    if property.startswith("playlist"):
-                        dl.output_template = dl.output_template.replace(
-                            f"%({property})s", str(value))
+            itemDownload = self.queue.put(Download(
+                info=dl,
+                download_dir=dldirectory,
+                temp_dir=self.config.temp_path,
+                output_template_chapter=output_chapter,
+                default_ytdl_opts=self.config.ytdl_options,
+                debug=bool(self.config.ytdl_debug)
+            ))
 
-                itemDownload = self.queue.put(Download(
-                    info=dl,
-                    download_dir=dldirectory,
-                    temp_dir=self.config.temp_path,
-                    output_template_chapter=output_chapter,
-                    default_ytdl_opts=self.config.ytdl_options,
-                    debug=bool(self.config.ytdl_debug)
-                ))
-
-                self.event.set()
-                await self.notifier.added(itemDownload.info)
+            self.event.set()
+            await self.notifier.added(itemDownload.info)
 
             return {
                 'status': 'ok'

@@ -38,11 +38,33 @@ class DataStore:
                 default_ytdl_opts=self.config.ytdl_options,
             )
 
-    def exists(self, key: str) -> bool:
-        return key in self.dict
+    def exists(self, key: str = None, url: str = None) -> bool:
+        if not key and not url:
+            raise KeyError('key or url must be provided')
 
-    def get(self, key: str) -> Download:
-        return self.dict[key]
+        if key and key in self.dict:
+            return True
+
+        if url:
+            for key in self.dict:
+                if self.dict[key].info.url == url:
+                    return True
+
+        return False
+
+    def get(self, key: str, url: str = None) -> Download:
+        if not key and not url:
+            raise KeyError('key or url must be provided')
+
+        if key and key in self.dict:
+            return self.dict[key]
+
+        if url:
+            for key in self.dict:
+                if self.dict[key].info.url == url:
+                    return self.dict[key]
+
+        raise KeyError('key or url not found')
 
     def items(self) -> list[tuple[str, Download]]:
         return self.dict.items()
