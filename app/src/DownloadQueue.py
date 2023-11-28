@@ -233,11 +233,11 @@ class DownloadQueue:
     def get(self) -> dict[str, list[dict[str, ItemDTO]]]:
         items = {'queue': {}, 'done': {}}
 
-        for k, v in self.queue.items():
-            items['queue'][k] = v.info
+        for k, v in self.queue.saved_items():
+            items['queue'][k] = v
 
-        for k, v in self.done.items():
-            items['done'][k] = v.info
+        for k, v in self.done.saved_items():
+            items['done'][k] = v
 
         return items
 
