@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import copy
 from datetime import datetime, timezone
 from email.utils import formatdate
 import json
@@ -121,21 +122,23 @@ class DataStore:
         ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?
         """
 
-        if hasattr(item, 'datetime'):
+        stored = copy.deepcopy(item)
+
+        if hasattr(stored, 'datetime'):
             try:
-                delattr(item, 'datetime')
+                delattr(stored, 'datetime')
             except AttributeError:
                 pass
 
         with sqlite3.connect(self.db_file) as db:
             db.execute(sqlStatement.strip(), (
-                item._id,
+                stored._id,
                 type,
-                item.url,
-                item.json(),
+                stored.url,
+                stored.json(),
                 type,
-                item.url,
-                item.json(),
+                stored.url,
+                stored.json(),
             ))
 
     def _deleteStoreItem(self, key: str) -> None:
