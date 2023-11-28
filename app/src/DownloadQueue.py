@@ -239,6 +239,14 @@ class DownloadQueue:
         for k, v in self.done.saved_items():
             items['done'][k] = v
 
+        for k, v in self.queue.items():
+            if not k in items['queue']:
+                items['queue'][k] = v.info
+
+        for k, v in self.done.items():
+            if not k in items['done']:
+                items['done'][k] = v.info
+
         return items
 
     async def __download(self):
