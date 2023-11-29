@@ -67,7 +67,8 @@
               </div>
               <div class="column is-4 has-text-centered">
                 <label class="checkbox is-block">
-                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :value="item._id">
+                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
+                    :value="item._id">
                   Select
                 </label>
               </div>
