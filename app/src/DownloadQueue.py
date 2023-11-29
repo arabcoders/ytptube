@@ -95,12 +95,21 @@ class DownloadQueue:
             return {'status': 'ok'}
         elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
 
+            logging.debug(
+                f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None) }")
+
             if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
                 item = self.done.get(key=entry['id'], url=entry.get(
                     'webpage_url') or entry['url'])
-                self.clear([item.info._id])
+
+                logging.debug(
+                    f'Item [{item.info.title}] already downloaded. Removing from history.')
+
+                await self.clear([item.info._id])
 
             if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
+                logging.info(
+                    f'Item [{item.info.title}] already in download queue')
                 return {'status': 'error', 'msg': 'Link already queued for downloading.'}
 
             dl = ItemDTO(
@@ -265,7 +274,8 @@ class DownloadQueue:
                 self.event.clear()
 
             id, entry = self.queue.next()
-            log.info(f'downloading {id=} - {entry.info.title}')
+            log.info(
+                f'downloading {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}')
 
             await entry.start(self.notifier)
 

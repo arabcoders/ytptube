@@ -3,7 +3,6 @@ import copy
 from datetime import datetime, timezone
 from email.utils import formatdate
 import json
-import logging
 import sqlite3
 from src.Utils import calcDownloadPath
 from src.Config import Config
@@ -13,7 +12,7 @@ from src.DTO.ItemDTO import ItemDTO
 
 class DataStore:
     """
-    Persistent queue using shelve.
+    Persistent queue.
     """
     type: str = None
     db_file: str = None
@@ -119,7 +118,7 @@ class DataStore:
         sqlStatement = """
         INSERT INTO "history" ("id", "type", "url", "data")
         VALUES (?, ?, ?, ?)
-        ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?
+        ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?, created_at = ?
         """
 
         stored = copy.deepcopy(item)
@@ -139,6 +138,7 @@ class DataStore:
                 type,
                 stored.url,
                 stored.json(),
+                datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
             ))
 
     def _deleteStoreItem(self, key: str) -> None:
