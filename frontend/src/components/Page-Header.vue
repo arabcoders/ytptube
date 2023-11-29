@@ -44,7 +44,6 @@ const applyPreferredColorScheme = (scheme) => {
       const rule = document.styleSheets[s].cssRules[i];
 
       if (rule && rule.media && rule.media.mediaText.includes("prefers-color-scheme")) {
-        console.log(rule.media.mediaText, rule, scheme)
         switch (scheme) {
           case "light":
             rule.media.appendMedium("original-prefers-color-scheme");
