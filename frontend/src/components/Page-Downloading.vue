@@ -39,9 +39,10 @@
         <div class="card-content">
           <div class="columns is-multiline">
             <div class="column is-12">
-              <progress class="progress is-large is-success show-value" :data-text="updateProgress(item)"
-                :value="item.percent ? percentPipe(item.percent) : '100'" max="100">
-              </progress>
+              <div id="progress-bar" class="is-round">
+                <div id="progress-percentage">{{ updateProgress(item) }}</div>
+                <div id="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
+              </div>
             </div>
             <div class="column is-4 has-text-centered">
               <span class="icon-text">
@@ -204,3 +205,34 @@ const updateProgress = (item) => {
   return string;
 }
 </script>
+
+<style scoped>
+#progress-bar {
+  border-radius: 15px;
+  position: relative;
+  width: 100%;
+  height: 30px;
+  background-color: gray;
+}
+
+#progress,
+#progress-percentage {
+  border-radius: 15px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#progress-percentage {
+  text-align: center;
+  z-index: 2;
+  line-height: 30px;
+}
+
+#progress {
+  z-index: 1;
+  background-color: green;
+}
+</style>

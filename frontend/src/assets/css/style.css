@@ -14,77 +14,9 @@
     border-radius: 15px;
   }
 
-  progress.show-value {
-    position: relative;
-  }
-
-  progress.show-value:after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0;
-    left: 50%;
-    -ms-transform: translateX(-50%);
-    transform: translateX(-50%);
-    font-size: calc(1rem / 1.5);
-    line-height: 1rem;
-    white-space: pre;
-  }
-
-  progress.show-value.is-small:after {
-    font-size: calc(0.75rem / 1.5);
-    line-height: 0.75rem;
-  }
-
-  progress.show-value.is-medium:after {
-    font-size: calc(1.25rem / 1.5);
-    line-height: 1.25rem;
-  }
-
-  progress.show-value.is-large:after {
-    font-size: calc(1.5rem / 1.5);
-    line-height: 1.5rem;
-  }
-
-  table.is-fixed {
-    table-layout: fixed;
-  }
-
-  .progress.is-auto {
-    height: unset;
-    max-height: 35px;
-  }
-
-  .progress-text {
-    margin: 0 50%;
-    position: relative;
-    white-space: pre;
-  }
-
-  div.d-progress {
-    background-color: #ededed;
-    position: relative;
-  }
-
-  div.d-progress-bar {
-    width: 50%;
-    height: 1.5rem;
-    transition: width 150ms;
-  }
-
-  div.d-progress>span.d-progress-text {
-    position: absolute;
-    display: inline-block;
-    left: 50%;
-    transform: translateX(-50%);
-    overflow: hidden;
-    font-size: calc(1.5rem / 1.5);
-    white-space: nowrap;
-  }
-
   .is-bordered-danger {
     border: 1px solid red;
   }
-
 
   html,
   body {
@@ -116,84 +48,12 @@
       border-radius: 15px;
     }
 
-    progress.show-value {
-      position: relative;
-    }
-
-    progress.show-value:after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0;
-      left: 50%;
-      -ms-transform: translateX(-50%);
-      transform: translateX(-50%);
-      font-size: calc(1rem / 1.5);
-      line-height: 1rem;
-      white-space: pre;
-    }
-
-    progress.show-value.is-small:after {
-      font-size: calc(0.75rem / 1.5);
-      line-height: 0.75rem;
-    }
-
-    progress.show-value.is-medium:after {
-      font-size: calc(1.25rem / 1.5);
-      line-height: 1.25rem;
-    }
-
-    progress.show-value.is-large:after {
-      font-size: calc(1.5rem / 1.5);
-      line-height: 1.5rem;
-    }
-
-    table.is-fixed {
-      table-layout: fixed;
-    }
-
-    .progress.is-auto {
-      height: unset;
-      max-height: 35px;
-    }
-
-    .progress-text {
-      margin: 0 50%;
-      position: relative;
-      white-space: pre;
-    }
-
-    div.d-progress {
-      background-color: #ededed;
-      position: relative;
-    }
-
-    div.d-progress-bar {
-      width: 50%;
-      height: 1.5rem;
-      transition: width 150ms;
-    }
-
-    div.d-progress>span.d-progress-text {
-      position: absolute;
-      display: inline-block;
-      left: 50%;
-      transform: translateX(-50%);
-      overflow: hidden;
-      font-size: calc(1.5rem / 1.5);
-      white-space: nowrap;
-    }
-
     .is-bordered-danger {
       border: 1px solid red;
     }
 
     hr {
       background-color: #fff;
-    }
-
-    div.d-progress {
-      background-color: #999999;
-      color: #313131;
     }
 
     html,
