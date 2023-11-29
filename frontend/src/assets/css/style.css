@@ -31,6 +31,10 @@
     background-color: #000;
   }
 
+  .is-unselectable {
+    user-select: none;
+  }
+
   @media (prefers-color-scheme: dark) {
     * {
       unicode-bidi: plaintext;
@@ -63,5 +67,9 @@
 
     .container {
       background-color: #0f1010;
+    }
+
+    .is-unselectable {
+      user-select: none;
     }
   }
