@@ -17,12 +17,19 @@
           </span>
         </span>
       </div>
+      <div class="navbar-item">
+        <button data-tooltip="Switch to Light theme" class="button is-dark has-tooltip-bottom" @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">🌞</button>
+        <button data-tooltip="Switch to Dark theme" class="button is-dark  has-tooltip-bottom" @click="selectedTheme = 'dark'" v-if="selectedTheme == 'light'">🌚</button>
+      </div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { defineProps, watch, onMounted } from 'vue'
+import { useStorage } from '@vueuse/core'
+
+const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')());
 
 defineProps({
   config: {
@@ -30,4 +37,52 @@ defineProps({
     required: true
   }
 })
+
+const applyPreferredColorScheme = (scheme) => {
+  for (var s = 0; s < document.styleSheets.length; s++) {
+    for (var i = 0; i < document.styleSheets[s].cssRules.length; i++) {
+      const rule = document.styleSheets[s].cssRules[i];
+
+      if (rule && rule.media && rule.media.mediaText.includes("prefers-color-scheme")) {
+        console.log(rule.media.mediaText, rule, scheme)
+        switch (scheme) {
+          case "light":
+            rule.media.appendMedium("original-prefers-color-scheme");
+            if (rule.media.mediaText.includes("light")) {
+              rule.media.deleteMedium("(prefers-color-scheme: light)");
+            }
+            if (rule.media.mediaText.includes("dark")) {
+              rule.media.deleteMedium("(prefers-color-scheme: dark)");
+            }
+            break;
+          case "dark":
+            rule.media.appendMedium("(prefers-color-scheme: light)");
+            rule.media.appendMedium("(prefers-color-scheme: dark)");
+            if (rule.media.mediaText.includes("original")) {
+              rule.media.deleteMedium("original-prefers-color-scheme");
+            }
+            break;
+          default:
+            rule.media.appendMedium("(prefers-color-scheme: dark)");
+            if (rule.media.mediaText.includes("light")) {
+              rule.media.deleteMedium("(prefers-color-scheme: light)");
+            }
+            if (rule.media.mediaText.includes("original")) {
+              rule.media.deleteMedium("original-prefers-color-scheme");
+            }
+            break;
+        }
+      }
+    }
+  }
+}
+
+onMounted(() => {
+  applyPreferredColorScheme(selectedTheme.value);
+})
+
+watch(selectedTheme, (value) => {
+  applyPreferredColorScheme(value);
+})
+
 </script>
