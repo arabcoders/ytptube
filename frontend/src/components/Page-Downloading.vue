@@ -37,8 +37,8 @@
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in queue" :key="item._id">
         <div class="card">
-          <header class="card-header el has-tooltip" :data-tooltip="item.title">
-            <div class="card-header-title has-text-centered el is-block">
+          <header class="card-header has-tooltip" :data-tooltip="item.title">
+            <div class="card-header-title has-text-centered is-text-overflow is-block">
               {{ item.title }}
             </div>
           </header>

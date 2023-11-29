@@ -35,6 +35,13 @@
     user-select: none;
   }
 
+  .is-text-overflow {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   @media (prefers-color-scheme: dark) {
     * {
       unicode-bidi: plaintext;
@@ -71,5 +78,12 @@
 
     .is-unselectable {
       user-select: none;
+    }
+
+    .is-text-overflow {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
