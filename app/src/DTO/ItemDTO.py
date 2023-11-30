@@ -23,6 +23,7 @@ class ItemDTO:
     timestamp: float = time.time_ns()
     is_live: bool = None
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))
+    live_in: str = None
 
     # yt-dlp injected fields.
     tmpfilename: str = None

@@ -82,7 +82,7 @@
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
-              <div class="column is-4 has-text-centered">
+              <div class="column is-4 has-text-centered" v-if="!item.live_in">
                 <span class="icon-text">
                   <span class="icon"
                     :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
@@ -96,6 +96,11 @@
                 <span :date-datetime="item.datetime"
                   :data-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                   {{ moment(item.datetime).fromNow() }}
+                </span>
+              </div>
+              <div class="column is-4 has-text-centered" v-if="item.live_in && item.status != 'finished'">
+                <span :date-datetime="item.datetime" data-tooltip="Live in">
+                  {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
               <div class="column is-4 has-text-centered">

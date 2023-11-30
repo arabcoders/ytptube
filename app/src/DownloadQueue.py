@@ -54,11 +54,13 @@ class DownloadQueue:
             return {'status': 'error', 'msg': 'Invalid/empty data was given.'}
 
         error: str = None
+        live_in: str = None
 
         if 'live_status' in entry and 'release_timestamp' in entry and entry.get('live_status') == 'is_upcoming':
             dt_ts = datetime.fromtimestamp(
                 entry.get('release_timestamp'), tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S %z')
             error = f"Live stream is scheduled to start at {dt_ts}"
+            live_in = formatdate(entry.get('release_timestamp'))
         else:
             error = entry['msg'] if 'msg' in entry else None
 
@@ -125,6 +127,7 @@ class DownloadQueue:
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=entry['is_live'] if 'is_live' in entry else None,
+                live_in=live_in,
             )
 
             try:

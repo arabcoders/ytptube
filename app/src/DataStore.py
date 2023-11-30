@@ -129,6 +129,12 @@ class DataStore:
             except AttributeError:
                 pass
 
+        if hasattr(stored, 'live_in') and stored.status == 'finished':
+            try:
+                delattr(stored, 'live_in')
+            except AttributeError:
+                pass
+
         with sqlite3.connect(self.db_file) as db:
             db.execute(sqlStatement.strip(), (
                 stored._id,

@@ -1,11 +1,11 @@
 <template>
   <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue">
-    <icon class="icon-text">
+    <span class="icon-text">
       <span class="icon">
         <font-awesome-icon :icon="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
       <span>Queue <span v-if="hasQueuedItems">({{ getTotal }})</span></span>
-    </icon>
+    </span>
   </h1>
 
   <div v-if="showQueue">
