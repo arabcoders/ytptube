@@ -4,7 +4,7 @@
       <span class="icon">
         <font-awesome-icon :icon="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Completed</span>
+      <span>Completed <span v-if="hasItems">({{ getTotal }})</span></span>
     </span>
   </h1>
 
@@ -209,13 +209,9 @@ watch(masterSelectAll, (value) => {
   }
 })
 
-const hasSelected = computed(() => {
-  return selectedElms.value.length > 0;
-})
-
-const hasItems = computed(() => {
-  return Object.keys(props.completed)?.length > 0;
-})
+const hasSelected = computed(() => selectedElms.value.length > 0)
+const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
+const getTotal = computed(() => Object.keys(props.completed)?.length);
 
 const hasFailed = computed(() => {
   if (Object.keys(props.completed)?.length < 0) {

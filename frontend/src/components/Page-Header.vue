@@ -18,8 +18,10 @@
         </span>
       </div>
       <div class="navbar-item">
-        <button data-tooltip="Switch to Light theme" class="button is-dark has-tooltip-bottom" @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">🌞</button>
-        <button data-tooltip="Switch to Dark theme" class="button is-dark  has-tooltip-bottom" @click="selectedTheme = 'dark'" v-if="selectedTheme == 'light'">🌚</button>
+        <button data-tooltip="Switch to Light theme" class="button is-dark has-tooltip-bottom"
+          @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">🌞</button>
+        <button data-tooltip="Switch to Dark theme" class="button is-dark  has-tooltip-bottom"
+          @click="selectedTheme = 'dark'" v-if="selectedTheme == 'light'">🌚</button>
       </div>
     </div>
   </nav>
@@ -77,11 +79,19 @@ const applyPreferredColorScheme = (scheme) => {
 }
 
 onMounted(() => {
-  applyPreferredColorScheme(selectedTheme.value);
+  try {
+    applyPreferredColorScheme(selectedTheme.value);
+  } catch (e) {
+    console.log(e);
+  }
 })
 
 watch(selectedTheme, (value) => {
-  applyPreferredColorScheme(value);
+  try {
+    applyPreferredColorScheme(value);
+  } catch (e) {
+    console.log(e);
+  }
 })
 
 </script>

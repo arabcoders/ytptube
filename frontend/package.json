@@ -14,7 +14,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
     "@fortawesome/vue-fontawesome": "^3.0.5",
     "@vueuse/core": "^10.6.1",
-    "bulma": "^0.9.4",
     "core-js": "^3.8.3",
     "hls.js": "^1.4.12",
     "moment": "^2.29.4",

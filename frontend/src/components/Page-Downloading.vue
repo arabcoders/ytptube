@@ -4,7 +4,7 @@
       <span class="icon">
         <font-awesome-icon :icon="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Queue</span>
+      <span>Queue <span v-if="hasQueuedItems">({{ getTotal }})</span></span>
     </icon>
   </h1>
 
@@ -154,12 +154,9 @@ watch(masterSelectAll, (value) => {
   }
 })
 
-const hasSelected = computed(() => {
-  return selectedElms.value.length > 0;
-})
-const hasQueuedItems = computed(() => {
-  return Object.keys(props.queue)?.length > 0;
-})
+const hasSelected = computed(() => selectedElms.value.length > 0)
+const hasQueuedItems = computed(() => Object.keys(props.queue)?.length > 0)
+const getTotal = computed(() => Object.keys(props.completed)?.length);
 
 const ETAPipe = value => {
   if (value === null || 0 === value) {
@@ -222,7 +219,7 @@ const updateProgress = (item) => {
   position: relative;
   width: 100%;
   height: 30px;
-  background-color: gray;
+  background-color: #F5F5F5;
 }
 
 #progress,
@@ -243,6 +240,6 @@ const updateProgress = (item) => {
 
 #progress {
   z-index: 1;
-  background-color: green;
+  background-color: #00d1b2;
 }
 </style>

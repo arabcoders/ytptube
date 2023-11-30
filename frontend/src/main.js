@@ -11,9 +11,9 @@ import {
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
 
 import 'vue-toastification/dist/index.css'
-import 'bulma/css/bulma.css'
-import './assets/css/style.css'
+import './assets/css/bulma-light.css'
 import './assets/css/bulma-dark.css'
+import './assets/css/style.css'
 import '@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css';
 
 library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
