@@ -82,7 +82,7 @@ onMounted(() => {
   try {
     applyPreferredColorScheme(selectedTheme.value);
   } catch (e) {
-    console.log(e);
+    console.debug(e);
   }
 })
 
@@ -90,7 +90,7 @@ watch(selectedTheme, (value) => {
   try {
     applyPreferredColorScheme(value);
   } catch (e) {
-    console.log(e);
+    console.debug(e);
   }
 })
 
