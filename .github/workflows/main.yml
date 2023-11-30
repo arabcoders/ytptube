@@ -40,7 +40,7 @@ jobs:
       - name: Update Version File
         uses: ArabCoders/write-version-to-file@master
         with:
-          filename: "/src/version.py"
+          filename: "/app/version.py"
           placeholder: "dev-master"
 
       - name: Set up QEMU
