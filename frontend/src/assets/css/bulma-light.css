@@ -13067,3 +13067,32 @@ print {
   background-color: #fafafa;
   padding: 3rem 1.5rem 6rem;
 }
+
+#progress-bar {
+  border-radius: 15px;
+  position: relative;
+  width: 100%;
+  height: 30px;
+  background-color: #F5F5F5;
+}
+
+#progress,
+#progress-percentage {
+  border-radius: 15px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+#progress-percentage {
+  text-align: center;
+  z-index: 2;
+  line-height: 30px;
+}
+
+#progress {
+  z-index: 1;
+  background-color: #00d1b2;
+}

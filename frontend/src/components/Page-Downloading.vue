@@ -156,7 +156,7 @@ watch(masterSelectAll, (value) => {
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasQueuedItems = computed(() => Object.keys(props.queue)?.length > 0)
-const getTotal = computed(() => Object.keys(props.completed)?.length);
+const getTotal = computed(() => Object.keys(props.queue)?.length);
 
 const ETAPipe = value => {
   if (value === null || 0 === value) {
@@ -212,34 +212,3 @@ const updateProgress = (item) => {
   return string;
 }
 </script>
-
-<style scoped>
-#progress-bar {
-  border-radius: 15px;
-  position: relative;
-  width: 100%;
-  height: 30px;
-  background-color: #F5F5F5;
-}
-
-#progress,
-#progress-percentage {
-  border-radius: 15px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-}
-
-#progress-percentage {
-  text-align: center;
-  z-index: 2;
-  line-height: 30px;
-}
-
-#progress {
-  z-index: 1;
-  background-color: #00d1b2;
-}
-</style>
