@@ -12,6 +12,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) projec
 * Re-Imagined the frontend and re-wrote the code in VueJS.
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
+* Support per link, `yt-dlp config` and `cookies`.
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
