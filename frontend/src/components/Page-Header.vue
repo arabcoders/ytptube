@@ -8,14 +8,13 @@
 
     <div class="navbar-end">
       <div class="navbar-item">
-        <span class="icon-text" :class="config.isConnected ? 'has-text-success' : 'has-text-danger'">
-          <span class="icon">
-            <font-awesome-icon :icon="config.isConnected ? 'fa-solid fa-wifi' : 'fa-solid fa-signal'" />
+        <button class="button is-dark has-tooltip-bottom" :data-tooltip="config.isConnected ? 'Connected' : 'Connecting'">
+          <span class="icon-text" :class="config.isConnected ? 'has-text-success' : 'has-text-danger'">
+            <span class="icon">
+              <font-awesome-icon :icon="config.isConnected ? 'fa-solid fa-wifi' : 'fa-solid fa-signal'" />
+            </span>
           </span>
-          <span>
-            {{ config.isConnected ? 'Connected' : 'Connecting' }}
-          </span>
-        </span>
+        </button>
       </div>
       <div class="navbar-item">
         <button data-tooltip="Show/Hide Add Form" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
