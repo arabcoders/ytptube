@@ -13,7 +13,7 @@
     </div>
     <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
   </div>
-  <PageFooter />
+  <PageFooter :app_version="config?.app?.version" />
 </template>
 
 <script setup>

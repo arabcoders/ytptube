@@ -4,7 +4,29 @@
 
 Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel support. Allows you to download videos from YouTube and [dozens of other sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
 
-YTPTube is a fork of [meTube](https://github.com/alexta69/metube) project by alexta69.
+YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) project by alexta69. Since then it went under heavy changes, and it supports many new features.
+
+# YTPTube Features compared to meTube.
+* A built in video player that can play any video file regardless of the format.
+* New `/add_batch` endpoint that allow multiple links to be sent.
+* Re-Imagined the frontend and re-wrote the code in VueJS.
+* Switched out of binary file storage in favor of SQLite.
+* Handle live streams.
+
+### Tips
+Your `yt-dlp` config should include the following options for optimal working conditions.
+
+```json
+{
+    "windowsfilenames": true,
+    "continue_dl": true,
+    "live_from_start": true,
+    "format_sort": [
+        "codec:avc:m4a"
+    ]
+}
+```
+* Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
 
 [![Short screenshot](/sc_short.png)](/sc_full.png)
 

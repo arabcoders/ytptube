@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import asyncio
 import os
 from src.Config import Config
+from version import APP_VERSION
 from src.Notifier import Notifier
 from src.DownloadQueue import DownloadQueue
 from src.Utils import ObjectSerializer
@@ -27,6 +27,7 @@ class Main:
 
     def __init__(self):
         self.config = Config()
+        self.config.version = APP_VERSION
 
         try:
             if not os.path.exists(self.config.download_path):
@@ -92,7 +93,8 @@ class Main:
             self.app,
             host=self.config.host,
             port=self.config.port,
-            reuse_port=True
+            reuse_port=True,
+            print=lambda _: print(f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}')
         )
 
     async def connect(self, sid, environ):
@@ -214,7 +216,8 @@ class Main:
             segmenter = Segments(
                 config=self.config,
                 segment_index=int(segment),
-                segment_duration=float('{:.6f}'.format(float(sd if sd else M3u8.segment_duration))),
+                segment_duration=float('{:.6f}'.format(
+                    float(sd if sd else M3u8.segment_duration))),
                 vconvert=True if vc == 1 else False,
                 aconvert=True if ac == 1 else False
             )
