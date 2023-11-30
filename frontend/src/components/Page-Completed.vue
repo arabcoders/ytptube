@@ -1,5 +1,5 @@
 <template>
-  <h1 class="is-size-3 is-clickable is-unselectable" @click="showCompleted = !showCompleted">
+  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showCompleted = !showCompleted">
     <span class="icon-text">
       <span class="icon">
         <font-awesome-icon :icon="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />

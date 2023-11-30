@@ -1,6 +1,6 @@
 <template>
-  <PageHeader :config="config" />
-  <formAdd :config="config" @addItem="addItem" />
+  <PageHeader :config="config" @toggleForm="addForm = !addForm" />
+  <formAdd v-if="addForm" :config="config" @addItem="addItem" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
   <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
     @playItem="playItem" />
@@ -26,7 +26,7 @@ import PageFooter from './components/Page-Footer'
 import VideoPlayer from './components/Video-Player'
 import { io } from "socket.io-client";
 import { useToast } from 'vue-toastification'
-import { useEventBus } from '@vueuse/core'
+import { useStorage, useEventBus } from '@vueuse/core'
 
 const toast = useToast();
 const bus = useEventBus('item_added');
@@ -39,6 +39,7 @@ const config = reactive({
 const downloading = reactive({});
 const completed = reactive({});
 const video_link = ref('');
+const addForm = useStorage('addForm', true)
 
 onMounted(() => {
   const socket = io(process.env.VUE_APP_BASE_URL, {

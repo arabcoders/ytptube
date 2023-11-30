@@ -18,6 +18,11 @@
         </span>
       </div>
       <div class="navbar-item">
+        <button data-tooltip="Show/Hide Add Form" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
+          <font-awesome-icon icon="fa-solid fa-plus" />
+        </button>
+      </div>
+      <div class="navbar-item">
         <button data-tooltip="Switch to Light theme" class="button is-dark has-tooltip-bottom"
           @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">🌞</button>
         <button data-tooltip="Switch to Dark theme" class="button is-dark  has-tooltip-bottom"
@@ -28,10 +33,12 @@
 </template>
 
 <script setup>
-import { defineProps, watch, onMounted } from 'vue'
+import { defineProps, defineEmits, watch, onMounted } from 'vue'
 import { useStorage } from '@vueuse/core'
 
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')());
+
+defineEmits(['toggleForm'])
 
 defineProps({
   config: {
