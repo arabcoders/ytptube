@@ -95,7 +95,6 @@ onMounted(() => {
       return;
     }
 
-    toast.info('Download cleared: ' + completed[id]?.title);
     delete completed[id];
   });
 
