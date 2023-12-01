@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+
+import os
+from src.Config import Config
+from version import APP_VERSION
+from src.Notifier import Notifier
+from src.DownloadQueue import DownloadQueue
+from src.Utils import ObjectSerializer
+from aiohttp import web
+from aiohttp.web import Request, Response
+from src.M3u8 import M3u8
+from src.Segments import Segments
+import socketio
+import logging
+import caribou
+import sqlite3
+
+
+class Main:
+    config: Config = None
+    serializer: ObjectSerializer = None
+    app: web.Application = None
+    sio: socketio.AsyncServer = None
+    routes: web.RouteTableDef = None
+    connection: sqlite3.Connection = None
+    dqueue: DownloadQueue = None
+
+    def __init__(self):
+        self.config = Config()
+        self.config.version = APP_VERSION
+
+        try:
+            if not os.path.exists(self.config.download_path):
+                logging.info(
+                    f'Creating download folder at {self.config.download_path}')
+                os.makedirs(self.config.download_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create download folder at {self.config.download_path}')
+            raise e
+        try:
+            if not os.path.exists(self.config.temp_path):
+                logging.info(
+                    f'Creating temp folder at {self.config.temp_path}')
+                os.makedirs(self.config.temp_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create temp folder at {self.config.temp_path}')
+            raise e
+
+        try:
+            if not os.path.exists(self.config.config_path):
+                logging.info(
+                    f'Creating config folder at {self.config.config_path}')
+                os.makedirs(self.config.config_path, exist_ok=True)
+        except OSError as e:
+            logging.error(
+                f'Could not create config folder at {self.config.config_path}')
+            raise e
+
+        try:
+            if not os.path.exists(self.config.db_file):
+                logging.info(
+                    f'Creating database file at {self.config.db_file}')
+                with open(self.config.db_file, 'w') as _:
+                    pass
+        except OSError as e:
+            logging.error(
+                f'Could not create database file at {self.config.db_file}')
+            raise e
+
+        caribou.upgrade(self.config.db_file, './app/migrations')
+
+        self.serializer = ObjectSerializer()
+        self.app = web.Application()
+        self.sio = socketio.AsyncServer(cors_allowed_origins='*')
+        self.sio.attach(
+            self.app, socketio_path=self.config.url_prefix + 'socket.io')
+        self.routes = web.RouteTableDef()
+        self.connection = sqlite3.connect(self.config.db_file)
+        self.dqueue = DownloadQueue(
+            self.config,
+            Notifier(sio=self.sio, serializer=self.serializer),
+            connection=self.connection,
+            serializer=self.serializer
+        )
+        self.app.on_startup.append(lambda app: self.dqueue.initialize())
+        self.addRoutes()
+        self.start()
+
+    def start(self):
+        web.run_app(
+            self.app,
+            host=self.config.host,
+            port=self.config.port,
+            reuse_port=True,
+            print=lambda _: print(f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}')
+        )
+
+    async def connect(self, sid, environ):
+        await self.sio.emit('all', self.serializer.encode(self.dqueue.get()), to=sid)
+        await self.sio.emit('configuration', self.serializer.encode(self.config), to=sid)
+
+    def addRoutes(self):
+        @self.routes.post(self.config.url_prefix + 'add')
+        async def add(request: Request) -> Response:
+            post = await request.json()
+
+            url: str = post.get('url')
+            quality: str = post.get('quality')
+
+            if not url:
+                raise web.HTTPBadRequest()
+
+            format: str = post.get('format')
+            folder: str = post.get('folder')
+            ytdlp_cookies: str = post.get('ytdlp_cookies')
+            ytdlp_config: dict = post.get('ytdlp_config')
+            output_template: str = post.get('output_template')
+            if ytdlp_config is None:
+                ytdlp_config = {}
+
+            status = await self.add(
+                url=url,
+                quality=quality,
+                format=format,
+                folder=folder,
+                ytdlp_cookies=ytdlp_cookies,
+                ytdlp_config=ytdlp_config,
+                output_template=output_template
+            )
+
+            return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.post(self.config.url_prefix + 'add_batch')
+        async def add_batch(request: Request) -> Response:
+            status = {}
+
+            post = await request.json()
+            if not isinstance(post, list):
+                raise web.HTTPBadRequest()
+
+            for item in post:
+                if not isinstance(item, dict):
+                    raise web.HTTPBadRequest(
+                        'Invalid request body expecting list with dicts.')
+                if not item.get('url'):
+                    raise web.HTTPBadRequest(reason='url is required')
+
+                status[item.get('url')] = await self.add(
+                    url=item.get('url'),
+                    quality=item.get('quality'),
+                    format=item.get('format'),
+                    folder=item.get('folder'),
+                    ytdlp_cookies=item.get('ytdlp_cookies'),
+                    ytdlp_config=item.get('ytdlp_config'),
+                    output_template=item.get('output_template')
+                )
+
+            return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.delete(self.config.url_prefix + 'delete')
+        async def delete(request: Request) -> Response:
+            post = await request.json()
+            ids = post.get('ids')
+            where = post.get('where')
+
+            if not ids or where not in ['queue', 'done']:
+                raise web.HTTPBadRequest()
+
+            status = await (self.dqueue.cancel(ids) if where == 'queue' else self.dqueue.clear(ids))
+
+            return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.get(self.config.url_prefix + 'history')
+        async def history(_) -> Response:
+            history = {'done': [], 'queue': []}
+
+            for _, v in self.dqueue.queue.saved_items():
+                history['queue'].append(v)
+            for _, v in self.dqueue.done.saved_items():
+                history['done'].append(v)
+
+            return web.Response(text=self.serializer.encode(history))
+
+        @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
+        async def m3u8(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required')
+
+            return web.Response(
+                text=M3u8(self.config).make_stream(file),
+                headers={
+                    'Content-Type': 'application/x-mpegURL',
+                    'Cache-Control': 'no-cache',
+                    'Access-Control-Max-Age': "300",
+                }
+            )
+
+        @self.routes.get(self.config.url_prefix + 'segments/{segment:\d+}/{file:.*}')
+        async def segments(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+            segment: int = request.match_info.get('segment')
+            sd: int = request.query.get('sd')
+            vc: int = int(request.query.get('vc', 0))
+            ac: int = int(request.query.get('ac', 0))
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required')
+
+            if not segment:
+                raise web.HTTPBadRequest(reason='segment is required')
+
+            segmenter = Segments(
+                config=self.config,
+                segment_index=int(segment),
+                segment_duration=float('{:.6f}'.format(
+                    float(sd if sd else M3u8.segment_duration))),
+                vconvert=True if vc == 1 else False,
+                aconvert=True if ac == 1 else False
+            )
+
+            return web.Response(
+                body=await segmenter.stream(file),
+                headers={
+                    'Content-Type': 'video/mpegts',
+                    'Connection': 'keep-alive',
+                    'Cache-Control': 'no-cache',
+                    'X-Accel-Buffering': 'no',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Max-Age': "300",
+                }
+            )
+
+        @self.routes.get(self.config.url_prefix)
+        async def index(_) -> Response:
+            return web.FileResponse(os.path.join(
+                os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                'frontend/dist/index.html'
+            ))
+
+        @self.sio.event()
+        async def connect(sid, environ):
+            await self.connect(sid, environ)
+
+        if self.config.url_prefix != '/':
+            @self.routes.get('/')
+            async def redirect_d(_) -> Response:
+                return web.HTTPFound(self.config.url_prefix)
+
+            @self.routes.get(self.config.url_prefix[:-1])
+            async def redirect_w(_) -> Response:
+                return web.HTTPFound(self.config.url_prefix)
+
+        @self.routes.options(self.config.url_prefix + 'add')
+        async def add_cors(_) -> Response:
+            return web.Response(text=self.serializer.encode({"status": "ok"}))
+
+        @self.routes.options(self.config.url_prefix + 'delete')
+        async def delete_cors(_) -> Response:
+            return web.Response(text=self.serializer.encode({"status": "ok"}))
+
+        self.routes.static(
+            self.config.url_prefix +
+            'download/', self.config.download_path)
+
+        self.routes.static(
+            self.config.url_prefix,
+            os.path.join(os.path.dirname(os.path.dirname(
+                os.path.realpath(__file__))), 'frontend/dist')
+        )
+
+        try:
+            self.app.add_routes(self.routes)
+
+            async def on_prepare(request, response):
+                if 'Origin' in request.headers:
+                    response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
+                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+                    response.headers['Access-Control-Allow-Methods'] = 'PUT, POST, DELETE'
+
+            self.app.on_response_prepare.append(on_prepare)
+        except ValueError as e:
+            if 'frontend/dist' in str(e):
+                raise RuntimeError(
+                    'Could not find the frontend UI static assets. Please run `node_modules/.bin/ng build` inside the frontend folder.') from e
+            raise e
+
+    async def add(
+        self,
+            url: str,
+            quality: str,
+            format: str,
+            folder: str,
+            ytdlp_cookies: str,
+            ytdlp_config: dict,
+            output_template: str
+    ) -> dict[str, str]:
+        if ytdlp_config is None:
+            ytdlp_config = {}
+
+        status = await self.dqueue.add(
+            url=url,
+            quality=quality,
+            format=format,
+            folder=folder,
+            ytdlp_cookies=ytdlp_cookies,
+            ytdlp_config=ytdlp_config,
+            output_template=output_template
+        )
+
+        return status
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    main = Main()
