@@ -160,7 +160,7 @@
       </div>
     </div>
 
-    <div class="content has-text-centered" v-if="!hasCompleted">
+    <div class="content has-text-centered" v-if="!hasItems">
       <p v-if="config.isConnected">
         <span class="icon-text">
           <span class="icon has-text-success">
