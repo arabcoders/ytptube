@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar is-dark">
+  <nav class="navbar is-mobile is-dark">
     <div class="navbar-brand pl-5">
       <a class="navbar-item" href="#">
         <b>YTPTube</b>
@@ -101,3 +101,32 @@ watch(selectedTheme, (value) => {
 })
 
 </script>
+
+<style scoped>
+.navbar-item {
+  display: flex;
+}
+
+.navbar,
+.navbar-menu,
+.navbar-start,
+.navbar-end {
+  align-items: stretch;
+  display: flex;
+  padding: 0;
+}
+.navbar-menu {
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.navbar-start {
+  justify-content: flex-start;
+  margin-right: auto;
+}
+
+.navbar-end {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+</style>
