@@ -12,7 +12,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) projec
 * Re-Imagined the frontend and re-wrote the code in VueJS.
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
-* Support per link, `yt-dlp config` and `cookies`.
+* Support per link, `yt-dlp config` and `cookies`. and `output format`
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -61,30 +61,11 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __UMASK__: umask value used by YTPTube. Defaults to `022`.
 * __YTP_CONFIG_PATH__: path to where the queue persistence files will be saved. Defaults to `/config` in the docker image, and `./var/config` otherwise.
 * __YTP_DOWNLOAD_PATH__: path to where the downloads will be saved. Defaults to `/downloads` in the docker image, and `./var/downloads` otherwise.
-* __YTP_TEMP_PATH__: path where intermediary download files will be saved. Defaults to `/downloads` in the docker image, and `./var/tmp` otherwise. Set this to an SSD or RAM filesystem (e.g., `tmpfs`) for better performance __Note__: Using a RAM filesystem may prevent downloads from being resumed.
+* __YTP_TEMP_PATH__: path where intermediary download files will be saved. Defaults to `/tmp` in the docker image, and `./var/tmp` otherwise.
 * __YTP_URL_PREFIX__: base path for the web server (for use when hosting behind a reverse proxy). Defaults to `/`.
-* __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`.
-* __YTP_YTDL_OPTIONS__: Additional options to pass to yt-dlp, in JSON format. [See available options here](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L183). They roughly correspond to command-line options, though some do not have exact equivalents here, for example `--recode-video` has to be specified via `postprocessors`. Also note that dashes are replaced with underscores.
-* __YTP_YTDL_OPTIONS_FILE__: A path to a JSON file that will be loaded and used for populating `YTDL_OPTIONS` above.
-* __YTP_KEEP_ARCHIVE__: Boolean. Whether to keep history of downloaded videos to prevent downloading same file multiple times.
-
-The following example value for `YTDL_OPTIONS` embeds English subtitles and chapter markers (for videos that have them), and also changes the permissions on the downloaded video and sets the file modification timestamp to the date of when it was downloaded:
-
-```yaml
-    environment:
-      - 'YTP_YTDL_OPTIONS={"writesubtitles":true,"subtitleslangs":["en","-live_chat"],"updatetime":false,"postprocessors":[{"key":"Exec","exec_cmd":"chmod 0664","when":"after_move"},{"key":"FFmpegEmbedSubtitle","already_have_subtitle":false},{"key":"FFmpegMetadata","add_chapters":true}]}'
-```
-
-The following example value for `OUTPUT_TEMPLATE` sets:
-- playlist name and author, if present
-- playlist number and count, if present (zero-padded, if needed)
-- video author, title and release date in YYYY-MM-DD format, falling back to *UNKNOWN_...* if missing
-- sanitizes everything for valid UNIX filename
-
-```yaml
-    environment:
-      - 'OUTPUT_TEMPLATE=%(playlist_title&Playlist |)S%(playlist_title|)S%(playlist_uploader& by |)S%(playlist_uploader|)S%(playlist_autonumber& - |)S%(playlist_autonumber|)S%(playlist_count& of |)S%(playlist_count|)S%(playlist_autonumber& - |)S%(uploader,creator|UNKNOWN_AUTHOR)S - %(title|UNKNOWN_TITLE)S - %(release_date>%Y-%m-%d,upload_date>%Y-%m-%d|UNKNOWN_DATE)S.%(ext)s'
-```
+* __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
+* __YTP_YTDL_OPTIONS_FILE__: A path to a JSON file that will be loaded and used for populating `ytdlp options`.
+* __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `false`.
 
 ## Running behind a reverse proxy
 
@@ -96,11 +77,11 @@ When running behind a reverse proxy which remaps the URL (i.e. serves YTPTube un
 
 ```nginx
 location /ytptube/ {
-        proxy_pass http://ytptube:8081;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
+  proxy_pass http://ytptube:8081;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "upgrade";
+  proxy_set_header Host $host;
 }
 ```
 
@@ -125,11 +106,9 @@ The engine which powers the actual video downloads in YTPTube is [yt-dlp](https:
 
 There's an automatic nightly build of YTPTube which looks for a new version of yt-dlp, and if one exists, the build pulls it and publishes an updated docker image. Therefore, in order to keep up with the changes, it's recommended that you update your YTPTube container regularly with the latest image.
 
-I recommend installing and setting up [watchtower](https://github.com/containrrr/watchtower) for this purpose.
-
 ## Troubleshooting and submitting issues
 
-Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a UI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `YTDL_OPTIONS` configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, and once that is working, importing the options that worked for you into `YTDL_OPTIONS`.
+Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a UI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, and once that is working, importing the options that worked for you into `yt-dlp options` file.
 
 In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. Assuming your YTPTube container is called `YTPTube`, run the following on your Docker host to get a shell inside the container:
 
@@ -142,7 +121,7 @@ Once there, you can use the yt-dlp command freely.
 
 ## Building and running locally
 
-Make sure you have node.js and Python 3.8 installed.
+Make sure you have node.js and Python 3.11 installed.
 
 ```bash
 cd ytptube/frontend
@@ -162,5 +141,5 @@ python app/main.py
 A Docker image can be built locally (it will build the UI too):
 
 ```bash
-docker build -t ytptube .
+docker build . -t ytptube
 ```
