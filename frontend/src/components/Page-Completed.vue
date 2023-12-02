@@ -114,7 +114,7 @@
             <div class="columns">
               <div class="column" v-if="item.status != 'finished'">
                 <a class="button is-warning is-fullwidth" data-tooltip="Re-queue failed download."
-                  @click="reQueueItem(item._id, item)">
+                  @click="reQueueItem(item)">
                   <span class="icon-text">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-rotate-right" />
@@ -281,31 +281,29 @@ const clearFailed = () => {
 }
 
 const requeueFailed = () => {
-  const state = confirm('Are you sure you want to re-queue all failed downloads?');
-  if (false === state) {
-    return;
+  if (false === confirm('Are you sure you want to re-queue all failed downloads?')) {
+    return false;
   }
 
-  const keys = {};
-
   for (const key in props.completed) {
-    if (props.completed[key].status !== 'finished') {
-      keys[key] = props.completed[key]._id;
+    const item = props.completed[key];
+    if (item.status !== 'finished') {
       emits('deleteItem', 'completed', key);
       emits('addItem', {
-        url: props.completed[key].url,
-        format: props.completed[key].format,
-        quality: props.completed[key].quality,
-        path: props.completed[key].folder,
-        ytdlp_config: props.completed[key].ytdlp_config,
-        ytdlp_cookies: props.completed[key].ytdlp_cookies,
+        url: item.url,
+        format: item.format,
+        quality: item.quality,
+        folder: item.folder,
+        ytdlp_config: item.ytdlp_config,
+        ytdlp_cookies: item.ytdlp_cookies,
+        output_template: item.output_template,
       });
     }
   }
 }
 
-const reQueueItem = (id, item) => {
-  emits('deleteItem', 'completed', id);
+const reQueueItem = (item) => {
+  emits('deleteItem', 'completed', item._id);
   emits('addItem', {
     url: item.url,
     format: item.format,
