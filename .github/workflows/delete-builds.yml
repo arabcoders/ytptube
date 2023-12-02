@@ -1,0 +1,26 @@
+name: delete builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  delete-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/delete-package-versions@v4
+        with:
+          package-name: "ytptube"
+          package-type: "container"
+          min-versions-to-keep: 20
