@@ -29,7 +29,7 @@ Your `yt-dlp` config should include the following options for optimal working co
 ```
 * Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
 
-[![Short screenshot](/sc_short.png)](/sc_full.png)
+[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
 
 ## Run using Docker
 
@@ -143,3 +143,8 @@ A Docker image can be built locally (it will build the UI too):
 ```bash
 docker build . -t ytptube
 ```
+
+# Donation 
+
+If you feel like donating and appreciate my work, you can do so by donating to children charity. For example [Make-A-Wish](https://worldwish.org). 
+I Personally don't need the money, but I do appreciate the gesture. Making a child happy is more worthwhile.
