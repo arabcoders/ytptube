@@ -1,12 +1,7 @@
 <template>
   <div class="columns is-multiline mt-3">
     <div class="column has-text-left">
-      {{ Year }} © YTPtube - {{ app_version }}
-    </div>
-    <div class="column has-text-right">
-      <a href="https://github.com/ArabCoders/ytptube" target="_blank">
-        Github
-      </a>
+      © {{ Year }} <a href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</a> - {{ app_version }}
     </div>
   </div>
 </template>
