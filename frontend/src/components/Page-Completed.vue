@@ -94,12 +94,12 @@
               </div>
               <div class="column is-4 has-text-centered">
                 <span :date-datetime="item.datetime"
-                  :data-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                  :data-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
               <div class="column is-4 has-text-centered" v-if="item.live_in && item.status != 'finished'">
-                <span :date-datetime="item.datetime" data-tooltip="Live in">
+                <span :date-datetime="item.datetime" :data-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
