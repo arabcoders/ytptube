@@ -56,11 +56,14 @@ class DownloadQueue:
         error: str = None
         live_in: str = None
 
-        if 'live_status' in entry and 'release_timestamp' in entry and entry.get('live_status') == 'is_upcoming' and entry.get('release_timestamp'):
-            dt_ts = datetime.fromtimestamp(
-                entry.get('release_timestamp'), tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S %z')
-            error = f"Live stream is scheduled to start at {dt_ts}"
-            live_in = formatdate(entry.get('release_timestamp'))
+        if 'live_status' in entry and entry.get('live_status') == 'is_upcoming':
+            if 'release_timestamp' in entry and entry.get('release_timestamp'):
+                dt_ts = datetime.fromtimestamp(
+                    entry.get('release_timestamp'), tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S %z')
+                error = f"Live stream is scheduled to start at {dt_ts}"
+                live_in = formatdate(entry.get('release_timestamp'))
+            else:
+                error = 'Live stream not yet started. And no date is set.'
         else:
             error = entry['msg'] if 'msg' in entry else None
 
