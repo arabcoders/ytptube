@@ -13,6 +13,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) projec
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
 * Support per link, `yt-dlp config` and `cookies`. and `output format`
+* Tasks Runner. It allow you to queue channels for downloading using simple `json` file for configuration.
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -143,6 +144,34 @@ A Docker image can be built locally (it will build the UI too):
 ```bash
 docker build . -t ytptube
 ```
+
+### tasks.json File
+
+The `config/tasks.json`, is a json file, which can be used to queue URLs for downloading, it's mainly useful if you follow specific channels and you want it downloaded automatically, The schema for the file is as the following, Only the `URL` key is required.
+
+```json
+[
+  {
+    "url": "", // (URL: string) **REQUIRED**, URL to the content.
+    "name": "My super secret channel", // (Name: string) Optional field. Mainly used for logging. If omitted, random GUID will be shown.
+    "timer": "1 */1 * * *", // (Timer: string) Optional field. Using regular cronjob timer, if the field is omitted, it will run every hour in random minute.
+    "ytdlp_cookies": {}, // (yt-dlp cookies: object) Optional field. A JSON cookies exported by flagCookies.
+    "ytdlp_config": {}, // (yt-dlp config: object) Optional field. A JSON yt-dlp config.
+    "output_template": "", // (Output Template: string) Optional field. A File output format,
+    "folder":"", // (Folder: string) Optional field. Where to store the downloads relative to the main download path.
+    "format": "", // (Format: string) Optional field. Format as specified in Web GUI. Defaults to "any".
+    "quality": "", // (Quality: string), Optional field. Quality as specified in Web GUI. Defaults to "best".
+  },
+  {
+    "url": "https://..." // This is valid config, it will queue the channel for downloading every hour at random minute.
+  },
+  ...
+]
+```
+
+The task runner is doing what you are doing when you click the add button on the WebGUI, this just fancy way to automate that.
+
+**WARNING**: We strongly advice turning on `YTP_KEEP_ARCHIVE` option. Otherwise, you will keep re-downloading the items, and you will eventually get banned from the source or or you will waste space, bandwidth re-downloading content over and over.
 
 # Donation 
 

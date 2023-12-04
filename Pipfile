@@ -10,6 +10,7 @@ yt-dlp = "*"
 caribou = "*"
 coloredlogs = "*"
 ffprobe-python = "*"
+aiocron = "*"
 
 [dev-packages]
 
