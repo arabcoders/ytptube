@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
+import asyncio
+from datetime import datetime
+import json
 import os
+import random
 from src.Config import Config
 from version import APP_VERSION
 from src.Notifier import Notifier
@@ -14,6 +18,7 @@ import socketio
 import logging
 import caribou
 import sqlite3
+from aiocron import crontab
 
 
 class Main:
@@ -24,6 +29,7 @@ class Main:
     routes: web.RouteTableDef = None
     connection: sqlite3.Connection = None
     dqueue: DownloadQueue = None
+    loop: asyncio.AbstractEventLoop = None
 
     def __init__(self):
         self.config = Config()
@@ -71,6 +77,7 @@ class Main:
 
         caribou.upgrade(self.config.db_file, './app/migrations')
 
+        self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
         self.app = web.Application()
         self.sio = socketio.AsyncServer(cors_allowed_origins='*')
@@ -84,8 +91,9 @@ class Main:
             connection=self.connection,
             serializer=self.serializer
         )
-        self.app.on_startup.append(lambda app: self.dqueue.initialize())
+        self.app.on_startup.append(lambda _: self.dqueue.initialize())
         self.addRoutes()
+        self.addTasks()
         self.start()
 
     def start(self):
@@ -94,12 +102,60 @@ class Main:
             host=self.config.host,
             port=self.config.port,
             reuse_port=True,
-            print=lambda _: print(f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}')
+            loop=self.loop,
+            print=lambda _: print(
+                f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
         )
 
     async def connect(self, sid, environ):
         await self.sio.emit('all', self.serializer.encode(self.dqueue.get()), to=sid)
         await self.sio.emit('configuration', self.serializer.encode(self.config), to=sid)
+
+    def addTasks(self):
+        tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
+        if not os.path.exists(tasks_file):
+            logging.info(
+                f'No tasks file found at {tasks_file}. Skipping Tasks.')
+            return
+
+        with open(tasks_file, 'r') as f:
+            tasks = json.load(f)
+
+        for task in tasks:
+            if not task.get('url'):
+                logging.warning(f'Invalid task {task}.')
+                continue
+
+            cron_timer: str = task.get(
+                'timer', f'{random.randint(1,59)} */1 * * *')
+
+            async def cron_runner(task: dict):
+                logging.info(
+                    f'Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
+
+                await self.add(
+                    url=task.get('url'),
+                    quality=task.get('quality', 'best'),
+                    format=task.get('format', 'any'),
+                    folder=task.get('folder'),
+                    ytdlp_cookies=task.get('ytdlp_cookies'),
+                    ytdlp_config=task.get('ytdlp_config'),
+                    output_template=task.get('output_template')
+                )
+
+                logging.info(
+                    f'Finished Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
+
+            crontab(
+                spec=cron_timer,
+                func=cron_runner,
+                args=(task,),
+                start=True,
+                loop=self.loop
+            )
+
+            logging.info(
+                f'Added task to grab {task.get("name",task.get("url"))} content every [{cron_timer}].')
 
     def addRoutes(self):
         @self.routes.post(self.config.url_prefix + 'add')
@@ -301,10 +357,13 @@ class Main:
         if ytdlp_config is None:
             ytdlp_config = {}
 
+        if ytdlp_cookies and isinstance(ytdlp_cookies, dict):
+            ytdlp_cookies = self.serializer.encode(ytdlp_cookies)
+
         status = await self.dqueue.add(
             url=url,
-            quality=quality,
-            format=format,
+            format=format if format else 'any',
+            quality=quality if quality else 'best',
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,
