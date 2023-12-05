@@ -1,6 +1,7 @@
 <template>
-  <PageHeader :config="config" @toggleForm="addForm = !addForm" />
+  <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks" />
   <formAdd v-if="addForm" :config="config" @addItem="addItem" />
+  <pageTasks v-if="showTasks" :tasks="config.tasks" @removeTask="deleteTask" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
   <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
     @playItem="playItem" />
@@ -20,6 +21,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import PageHeader from './components/Page-Header'
 import formAdd from './components/Form-Add'
+import pageTasks from './components/Page-Tasks'
 import DownloadingList from './components/Page-Downloading'
 import PageCompleted from './components/Page-Completed'
 import PageFooter from './components/Page-Footer'
@@ -34,12 +36,14 @@ const bus = useEventBus('item_added');
 const config = reactive({
   isConnected: false,
   app: {},
+  tasks: [],
 });
 
 const downloading = reactive({});
 const completed = reactive({});
 const video_link = ref('');
 const addForm = useStorage('addForm', true)
+const showTasks = useStorage('showTasks', false)
 
 onMounted(() => {
   const socket = io(process.env.VUE_APP_BASE_URL, {
@@ -49,19 +53,17 @@ onMounted(() => {
   socket.on('connect', () => config.isConnected = true);
   socket.on('disconnect', () => config.isConnected = false);
 
-  socket.on('all', stream => {
+  socket.on('initial_data', stream => {
     const initialData = JSON.parse(stream);
-    for (const key in initialData) {
-      const element = initialData[key];
-      if (key === 'queue') {
-        for (const id in element) {
-          downloading[id] = element[id];
-        }
-      } else if (key === 'done') {
-        for (const id in element) {
-          completed[id] = element[id];
-        }
-      }
+    config.app = initialData['config'];
+    config.tasks = initialData['tasks'];
+
+    for (const id in initialData['queue']) {
+      downloading[id] = initialData['done'][id];
+    }
+
+    for (const id in initialData['done']) {
+      completed[id] = initialData['done'][id];
     }
   });
 
@@ -103,10 +105,6 @@ onMounted(() => {
     let dl = downloading[data._id] ?? {};
     data.deleting = dl?.deleting;
     downloading[data._id] = data;
-  });
-
-  socket.on('configuration', stream => {
-    config.app = JSON.parse(stream);
   });
 });
 
@@ -172,6 +170,14 @@ const playItem = (item) => {
   video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
 };
 
+const deleteTask = (indexNumber, item) => {
+  if (!confirm(`Are you sure you want to delete this task ${item?.name || item.url}?`)) {
+    return;
+  }
+  config.tasks = config.tasks.filter((_, index) => {
+    return index !== indexNumber;
+  });
+}
 
 </script>
 

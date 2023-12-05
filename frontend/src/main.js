@@ -5,7 +5,7 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSpinner, faWifi, faSignal, faArrowUp, faArrowDown,
+  faSpinner, faArrowUp, faArrowDown, faTasks
 } from '@fortawesome/free-solid-svg-icons'
 
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
@@ -17,7 +17,7 @@ import './assets/css/style.css'
 import '@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css';
 
 library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSquare, faSquareCheck, faSpinner, faWifi, faSignal, faArrowUp, faArrowDown,)
+  faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks,)
 const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);

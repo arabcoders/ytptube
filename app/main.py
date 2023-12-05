@@ -107,9 +107,21 @@ class Main:
                 f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
         )
 
-    async def connect(self, sid, environ):
-        await self.sio.emit('all', self.serializer.encode(self.dqueue.get()), to=sid)
-        await self.sio.emit('configuration', self.serializer.encode(self.config), to=sid)
+    async def connect(self, sid, _):
+        data: dict = {
+            **self.dqueue.get(),
+            "config": self.config,
+            "tasks": [],
+        }
+
+        if os.path.exists(os.path.join(self.config.config_path, 'tasks.json')):
+            try:
+                with open(os.path.join(self.config.config_path, 'tasks.json'), 'r') as f:
+                    data['tasks'] = json.load(f)
+            except Exception as e:
+                pass
+
+        await self.sio.emit('initial_data', self.serializer.encode(data), to=sid)
 
     def addTasks(self):
         tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
@@ -118,8 +130,13 @@ class Main:
                 f'No tasks file found at {tasks_file}. Skipping Tasks.')
             return
 
-        with open(tasks_file, 'r') as f:
-            tasks = json.load(f)
+        try:
+            with open(tasks_file, 'r') as f:
+                tasks = json.load(f)
+        except Exception as e:
+            logging.error(
+                f'Could not load tasks file [{tasks_file}]. Error message [{str(e)}]. Skipping Tasks.')
+            return
 
         for task in tasks:
             if not task.get('url'):
@@ -187,6 +204,22 @@ class Main:
             )
 
             return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.get(self.config.url_prefix + 'tasks')
+        async def tasks(_: Request) -> Response:
+            tasks_file: str = os.path.join(
+                self.config.config_path, 'tasks.json')
+
+            if not os.path.exists(tasks_file):
+                return web.json_response({"error": "No tasks defined."}, status=404)
+
+            try:
+                with open(tasks_file, 'r') as f:
+                    tasks = json.load(f)
+            except Exception as e:
+                return web.json_response({"error": str(e)}, status=500)
+
+            return web.json_response(tasks)
 
         @self.routes.post(self.config.url_prefix + 'add_batch')
         async def add_batch(request: Request) -> Response:
