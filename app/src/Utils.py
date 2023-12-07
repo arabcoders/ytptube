@@ -171,6 +171,9 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
         **config,
     }
 
+    if "download_archive" in params:
+        del params["download_archive"]
+
     if debug:
         params['verbose'] = True
         params['logger'] = logging.getLogger('YTPTube-ytdl')
