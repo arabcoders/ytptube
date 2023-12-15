@@ -235,10 +235,15 @@ class DownloadQueue:
             if not self.queue.exists(id):
                 log.warn(f'requested cancel for non-existent download {id}')
                 continue
+
+            item = self.queue.get(key=id)
+
             if self.queue.get(id).started():
+                log.info(f'Canceling {id=} {item.info.title=}')
                 self.queue.get(id).cancel()
             else:
                 self.queue.delete(id)
+                log.info(f'deleting {id=} {item.info.title=}')
                 await self.notifier.canceled(id)
 
         return {'status': 'ok'}
@@ -248,6 +253,8 @@ class DownloadQueue:
             if not self.done.exists(key=id):
                 log.warn(f'requested delete for non-existent download {id}')
                 continue
+            item = self.done.get(key=id)
+            log.info(f'deleting {id=} {item.info.title=}')
             self.done.delete(id)
             await self.notifier.cleared(id)
 
