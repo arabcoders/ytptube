@@ -12,8 +12,6 @@ on:
           - info
           - warning
           - debug
-  schedule:
-    - cron: "0 0 * * *"
 
 jobs:
   delete-builds:

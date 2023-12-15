@@ -29,7 +29,7 @@ ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apk add --update --no-cache bash ffmpeg aria2 coreutils curl shadow sqlite tzdata && \
+  apk add --update --no-cache bash ffmpeg mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata && \
   useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   rm -rf /var/cache/apk/*
 

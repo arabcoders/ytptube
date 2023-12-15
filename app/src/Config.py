@@ -5,6 +5,7 @@ import re
 import sys
 import coloredlogs
 
+
 class Config:
     config_path: str = '.'
     download_path: str = '.'
