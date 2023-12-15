@@ -114,7 +114,7 @@ class DownloadQueue:
 
             if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
                 logging.info(
-                    f'Item [{entry["id"]} {entry["title"]}] already in download queue.')
+                    f'Item [{item.info.title}] already in download queue')
                 return {'status': 'error', 'msg': 'Link already queued for downloading.'}
 
             dl = ItemDTO(

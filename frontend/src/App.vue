@@ -59,7 +59,7 @@ onMounted(() => {
     config.tasks = initialData['tasks'];
 
     for (const id in initialData['queue']) {
-      downloading[id] = initialData['done'][id];
+      downloading[id] = initialData['queue'][id];
     }
 
     for (const id in initialData['done']) {
