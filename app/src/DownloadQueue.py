@@ -237,12 +237,13 @@ class DownloadQueue:
                 continue
 
             item = self.queue.get(key=id)
-            log.notice(f'deleting {id=} {item.info.title=}')
 
             if self.queue.get(id).started():
+                log.notice(f'Canceling {id=} {item.info.title=}')
                 self.queue.get(id).cancel()
             else:
                 self.queue.delete(id)
+                log.notice(f'deleting {id=} {item.info.title=}')
                 await self.notifier.canceled(id)
 
         return {'status': 'ok'}
