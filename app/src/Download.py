@@ -104,9 +104,6 @@ class Download:
 
             if self.debug:
                 params['verbose'] = True
-                params['logger'] = logging.getLogger('YTPTube-ytdl')
-            else:
-                params['quiet'] = True
 
             if self.info.ytdlp_cookies:
                 try:
@@ -122,8 +119,8 @@ class Download:
                     logging.error(
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
-            logging.debug(
-                f'Downloading {self.info._id} {self.info.title}... {params}')
+            logging.info(
+                f'Downloading {self.info._id=} {self.info.title=}... {params=}')
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
             self.status_queue.put(

@@ -4,7 +4,7 @@ import math
 import os
 from urllib.parse import quote
 from src.Utils import calcDownloadPath
-from ffprobe import FFProbe
+from src.ffprobe import FFProbe
 from src.Config import Config
 
 
@@ -31,14 +31,15 @@ class M3u8:
         if not os.path.exists(realFile):
             raise Exception(f"File {realFile} does not exist.")
 
-        metadata = FFProbe(realFile)
+        try:
+            ffprobe = FFProbe(realFile)
+        except UnicodeDecodeError as e:
+            pass
 
-        # video duration.
-
-        if not 'Duration' in metadata.metadata:
+        if not 'duration' in ffprobe.metadata:
             raise Exception(f"Unable to get {realFile} duration.")
 
-        duration: float = self.parseDuration(metadata.metadata.get('Duration'))
+        duration: float = float(ffprobe.metadata.get('duration'))
 
         m3u8 = "#EXTM3U\n"
         m3u8 += "#EXT-X-VERSION:3\n"
@@ -52,11 +53,11 @@ class M3u8:
         segmentParams = {
         }
 
-        for stream in metadata.streams:
-            if stream.codec_type == 'video':
+        for stream in ffprobe.streams:
+            if stream.is_video():
                 if stream.codec_name not in self.ok_vcodecs:
                     segmentParams['vc'] = 1
-            if stream.codec_type == 'audio':
+            if stream.is_audio():
                 if stream.codec_name not in self.ok_acodecs:
                     segmentParams['ac'] = 1
 

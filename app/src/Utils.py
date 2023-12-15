@@ -191,6 +191,8 @@ def mergeDict(source: dict, destination: dict) -> dict:
                 source=value,
                 destination=destination_copy.setdefault(key, {})
             )
+        elif isinstance(value, list) and isinstance(destination_key_value, list):
+            destination_copy[key] = destination_key_value + value
         else:
             destination_copy[key] = value
 
@@ -202,6 +204,7 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
 
     ignored_keys: tuple = (
         'cookiefile',
+        'download_archive'
         'paths',
         'outtmpl',
         'progress_hooks',

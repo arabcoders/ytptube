@@ -1,24 +1,20 @@
 <template>
   <nav class="navbar is-mobile is-dark">
     <div class="navbar-brand pl-5">
-      <a class="navbar-item" href="#">
+      <a class="navbar-item has-tooltip-bottom" :class="config.isConnected ? 'has-text-success' : 'has-text-danger'"
+        :data-tooltip="config.isConnected ? 'Connected' : 'Connecting'" href="javascript:void(0);">
         <b>YTPTube</b>
       </a>
     </div>
-
     <div class="navbar-end">
-      <div class="navbar-item">
-        <button class="button is-dark has-tooltip-bottom" :data-tooltip="config.isConnected ? 'Connected' : 'Connecting'">
-          <span class="icon-text" :class="config.isConnected ? 'has-text-success' : 'has-text-danger'">
-            <span class="icon">
-              <font-awesome-icon :icon="config.isConnected ? 'fa-solid fa-wifi' : 'fa-solid fa-signal'" />
-            </span>
-          </span>
-        </button>
-      </div>
       <div class="navbar-item">
         <button data-tooltip="Show/Hide Add Form" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
           <font-awesome-icon icon="fa-solid fa-plus" />
+        </button>
+      </div>
+      <div class="navbar-item">
+        <button data-tooltip="Show/Hide Tasks" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
+          <font-awesome-icon icon="fa-solid fa-tasks" />
         </button>
       </div>
       <div class="navbar-item">
@@ -37,7 +33,7 @@ import { useStorage } from '@vueuse/core'
 
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')());
 
-defineEmits(['toggleForm'])
+defineEmits(['toggleForm', 'toggleTasks'])
 
 defineProps({
   config: {
@@ -115,6 +111,7 @@ watch(selectedTheme, (value) => {
   display: flex;
   padding: 0;
 }
+
 .navbar-menu {
   flex-grow: 1;
   flex-shrink: 0;
