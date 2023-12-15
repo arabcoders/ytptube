@@ -41,7 +41,7 @@ docker run -d --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:
 ## Run using docker-compose
 
 ```yaml
-version: "3"
+version: "3.9"
 services:
   ytptube:
     user: "1000:1000"
@@ -51,8 +51,10 @@ services:
     ports:
       - "8081:8081"
     volumes:
-      - ./config:/config
-      - ./downloads:/downloads
+      - ./config:/config:rw
+      - ./downloads:/downloads:rw
+    tmpfs:
+      - /tmp
 ```
 
 ## Configuration via environment variables
