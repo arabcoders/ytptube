@@ -65,6 +65,8 @@ class Segments:
 
         ffmpegCmd.append('-i')
         ffmpegCmd.append(f'file:{tmpFile}')
+        ffmpegCmd.append('-map_metadata')
+        ffmpegCmd.append('-1')
 
         ffmpegCmd.append('-pix_fmt')
         ffmpegCmd.append('yuv420p')
