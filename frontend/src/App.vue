@@ -8,7 +8,7 @@
 
   <div class="modal is-active" v-if="video_link">
     <div class="modal-background"></div>
-    <div class="modal-content">
+    <div class="modal-content" style="width:auto;">
       <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
         class="is-fullwidth" />
     </div>

@@ -1,13 +1,14 @@
 <template>
-  <video @pause="pause" @ended="pause" @keyup="changeSpeed" ref="video" :poster="previewImageLink" :controls="isControls"
-    :title="title">
+  <video ref="video" :poster="previewImageLink" :controls="isControls" :title="title">
     <source :src="link" type="application/x-mpegURL" />
   </video>
 </template>
 
 <script setup>
-import { onMounted, onUpdated, ref, defineProps, defineEmits } from 'vue'
+import { onMounted, onUpdated, ref, defineProps, onUnmounted } from 'vue'
 import Hls from 'hls.js'
+import Plyr from 'plyr'
+import 'plyr/dist/plyr.css'
 
 const props = defineProps({
   previewImageLink: {
@@ -18,17 +19,9 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  progress: {
-    type: Number,
-    default: 0
-  },
   title: {
     type: String,
     default: ''
-  },
-  isMuted: {
-    type: Boolean,
-    default: false
   },
   isControls: {
     type: Boolean,
@@ -36,8 +29,9 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['pause', 'test'])
 const video = ref(null)
+const player = ref(null)
+const hls = ref(null)
 
 onMounted(() => {
   prepareVideoPlayer()
@@ -47,35 +41,46 @@ onUpdated(() => {
   prepareVideoPlayer()
 })
 
+onUnmounted(() => {
+  player.value.destroy()
+  hls.value.destroy()
+})
+
 const prepareVideoPlayer = () => {
-  let hls = new Hls({
+  player.value = new Plyr(video.value, {
+    clickToPlay: true,
+    keyboard: { focused: true, global: true },
+    controls: [
+      'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'airplay', 'fullscreen'
+    ],
+    fullscreen: {
+      enabled: true,
+      fallback: true,
+      iosNative: true,
+    },
+    storage: {
+      enabled: true,
+      key: 'plyr_volume'
+    },
+    mediaMetadata: {
+      title: props.title.value
+    }
+  });
+
+  hls.value = new Hls({
     debug: false,
     enableWorker: true,
     lowLatencyMode: true,
     backBufferLength: 90,
   });
 
-  hls.loadSource(props.link)
+  hls.value.loadSource(props.link)
 
   if (video.value) {
-    hls.attachMedia(video.value)
-    video.value.muted = props.isMuted
-    video.value.currentTime = props.progress
-  }
-}
-
-const pause = () => {
-  const currentTime = video?.value?.currentTime || 0
-
-  emit('pause', currentTime)
-}
-
-const changeSpeed = (e) => {
-  if (e.key === 'w' && video.value) {
-    video.value.playbackRate = video.value.playbackRate + 0.25
-  } else if (e.key === 's' && video.value) {
-    video.value.playbackRate = video.value.playbackRate - 0.25
+    hls.value.attachMedia(video.value)
   }
 }
 
 </script>
+
+<style></style>
