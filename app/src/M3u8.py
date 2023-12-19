@@ -10,7 +10,7 @@ from src.Config import Config
 
 class M3u8:
     ok_vcodecs: tuple = ('h264', 'x264', 'avc',)
-    ok_acodecs: tuple = ('aac', 'mp3', 'opus',)
+    ok_acodecs: tuple = ('aac', 'mp3',)
 
     segment_duration: float = 10.000000
     config: Config = None
