@@ -54,8 +54,8 @@ EXPOSE 8081
 #
 USER app
 
-WORKDIR /app
+WORKDIR /tmp
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["/app/.venv/bin/python", "app/main.py"]
+CMD ["/app/.venv/bin/python", "/app/app/main.py"]
