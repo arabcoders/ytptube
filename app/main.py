@@ -75,7 +75,7 @@ class Main:
                 f'Could not create database file at {self.config.db_file}')
             raise e
 
-        caribou.upgrade(self.config.db_file, './app/migrations')
+        caribou.upgrade(self.config.db_file, os.path.join(os.path.realpath(os.path.dirname(__file__)), 'migrations'))
 
         self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
