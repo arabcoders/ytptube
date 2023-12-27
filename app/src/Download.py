@@ -137,6 +137,7 @@ class Download:
             self.status_queue.put({'status': 'error', 'msg': str(exc)})
 
         if self.tempPath and self.info._id and os.path.exists(self.tempPath):
+            logging.debug(f'Deleting Temp directory: {self.tempPath}')
             shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier):
