@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import os
 import re
+import shutil
 import yt_dlp
 from src.Utils import get_format, get_opts, jsonCookie, mergeConfig
 from src.DTO.ItemDTO import ItemDTO
@@ -23,6 +24,7 @@ class Download:
     info: ItemDTO = None
     default_ytdl_opts: dict = None
     debug: bool = False
+    tempPath: str = None
 
     _ytdlp_fields: tuple = (
         'tmpfilename',
@@ -85,12 +87,17 @@ class Download:
                         }
                     )
 
+            # Create temp dir for each download.
+            self.tempPath = os.path.join(self.temp_dir, self.info._id)
+            if not os.path.exists(self.tempPath):
+                os.makedirs(self.tempPath, exist_ok=True)
+
             params: dict = {
                 'no_color': True,
                 'format': self.format,
                 'paths': {
                     'home': self.download_dir,
-                    'temp': self.temp_dir
+                    'temp': self.tempPath,
                 },
                 'outtmpl': {
                     'default': self.output_template,
@@ -111,7 +118,7 @@ class Download:
                     if not data:
                         logging.warning(
                             f'The cookie string that was provided for {self.info.title} is empty or not in expected spec.')
-                    with open(os.path.join(self.temp_dir, f'{self.info._id}.txt'), 'w') as f:
+                    with open(os.path.join(self.tempPath, f'cookie_{self.info._id}.txt'), 'w') as f:
                         f.write(data)
 
                     params['cookiefile'] = f.name
@@ -128,6 +135,9 @@ class Download:
             )
         except yt_dlp.utils.YoutubeDLError as exc:
             self.status_queue.put({'status': 'error', 'msg': str(exc)})
+
+        if self.tempPath and self.info._id and os.path.exists(self.tempPath):
+            shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier):
         if self.manager is None:
