@@ -21,7 +21,6 @@ Your `yt-dlp` config should include the following options for optimal working co
 ```json
 {
     "windowsfilenames": true,
-    "continue_dl": true,
     "live_from_start": true,
     "format_sort": [
         "codec:avc:m4a"
