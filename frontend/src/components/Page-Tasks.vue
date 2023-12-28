@@ -40,7 +40,11 @@
             <tr v-for="item, key in tasks" :key="key">
               <td class="is-text-overflow has-text-centered" v-if="item.name">{{ item.name }}</td>
               <td class="has-text-centered" v-else>Not set</td>
-              <td class="is-text-overflow">{{ item.url }}</td>
+              <td class="is-text-overflow">
+                <a :href="item.url" target="_blank">
+                  {{ item.url }}
+                </a>
+              </td>
               <td class="has-text-centered" v-if="item.timer">{{ item.timer }}</td>
               <td class="has-text-centered" v-else>once an hour</td>
               <td class="has-text-centered">
@@ -92,5 +96,9 @@ defineProps({
 <style scoped>
 table.is-fixed {
   table-layout: fixed;
+}
+
+div.table-container {
+  overflow: hidden;
 }
 </style>
