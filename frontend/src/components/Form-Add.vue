@@ -148,7 +148,7 @@ import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { downloadFormats } from '../formats.js'
 import { useStorage, useEventBus } from '@vueuse/core'
 
-const bus = useEventBus('item_added', 'task_edit','show_form');
+const bus = useEventBus('item_added', 'task_edit');
 const emits = defineEmits(['addItem']);
 
 const selectedFormat = useStorage('selectedFormat', 'any')
@@ -212,40 +212,17 @@ const resetConfig = () => {
 }
 
 bus.on((event, data) => {
-  const allowedEvents = ['item_added', 'task_edit'];
+  const allowedEvents = ['item_added'];
   if (!allowedEvents.includes(event)) {
     return;
   }
 
-
-  if (event === 'item_added') {
+  if ('item_added' === event) {
     if (data?.status === 'ok') {
       url.value = '';
     }
     url.value = data.url;
     addInProgress.value = false;
   }
-
-  if ('task_edit' === event) {
-    console.log(data);
-    selectedFormat.value = data.format;
-    selectedQuality.value = data.quality;
-
-    if (typeof data.ytdlp_config === 'object') {
-      data.ytdlp_config = JSON.stringify(data.ytdlp_config);
-    }
-    if (typeof data.ytdlp_cookies === 'object') {
-      data.ytdlp_cookies = JSON.stringify(data.ytdlp_cookies);
-    }
-
-    ytdlpConfig.value = data.ytdlp_config;
-    ytdlpCookies.value = data.ytdlp_cookies;
-    output_template.value = data.output_template;
-    downloadPath.value = data.folder;
-    url.value = data.url;
-    showAdvanced.value = true;
-    bus.emit('show_form');
-  }
-
 });
 </script>
