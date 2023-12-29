@@ -14,17 +14,6 @@
   </div>
 
   <div class="columns is-multiline">
-    <div class="column is-12 has-text-right">
-      <button class="button is-primary" @click="$emit('task_new')">
-        <span class="icon-text">
-          <span class="icon">
-            <font-awesome-icon icon="fa-solid fa-plus" />
-          </span>
-          <span>New Task</span>
-        </span>
-      </button>
-    </div>
-
     <div class="column is-12">
       <div class="table-container">
         <table class="table is-bordered is-narrow is-hoverable is-striped is-fullwidth is-fixed">
@@ -45,12 +34,16 @@
                   {{ item.url }}
                 </a>
               </td>
-              <td class="has-text-centered" v-if="item.timer">{{ item.timer }}</td>
+              <td class="has-text-centered" v-if="item.timer">
+                <span :data-tooltip="'Timer: ' + item.timer">
+                  {{ moment(parseExpression(item.timer).next().toISOString()).fromNow() }}
+                </span>
+              </td>
               <td class="has-text-centered" v-else>once an hour</td>
               <td class="has-text-centered">
                 <div class="field is-grouped">
                   <div class="control is-expanded">
-                    <button class="button is-small is-danger" @click="$emit('removeTask', key, item)"
+                    <button class="button is-small is-danger" @click="$emit('task_remove', key, item)"
                       data-tooltip="Remove task">
                       <span class="icon">
                         <font-awesome-icon icon="fa-solid fa-trash" />
@@ -58,7 +51,7 @@
                     </button>
                   </div>
                   <div class="control is-expanded">
-                    <button class="button is-small is-info" data-tooltip="Modify task">
+                    <button class="button is-small is-info" @click="taskEdit(item)" data-tooltip="Modify task">
                       <span class="icon">
                         <font-awesome-icon icon="fa-solid fa-cog" />
                       </span>
@@ -81,14 +74,25 @@
 
 <script setup>
 import { defineProps, defineEmits } from 'vue'
+import { useEventBus } from '@vueuse/core'
 
-defineEmits(['task_new', 'task_add', 'removeTask', 'tasks_updated'])
+import moment from "moment";
+import { parseExpression } from 'cron-parser';
+
+require('cron-parser');
+defineEmits(['task_edit', 'task_remove'])
+
+const bus = useEventBus('item_added', 'task_edit');
+
+const taskEdit = (item) => {
+  bus.emit('task_edit', item);
+}
 
 defineProps({
   tasks: {
     type: Array,
     required: true
-  }
+  },
 })
 
 </script>

@@ -148,7 +148,7 @@ import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { downloadFormats } from '../formats.js'
 import { useStorage, useEventBus } from '@vueuse/core'
 
-const bus = useEventBus('item_added');
+const bus = useEventBus('item_added', 'task_edit');
 const emits = defineEmits(['addItem']);
 
 const selectedFormat = useStorage('selectedFormat', 'any')
@@ -212,13 +212,39 @@ const resetConfig = () => {
 }
 
 bus.on((event, data) => {
-  if (event !== 'item_added') {
+  const allowedEvents = ['item_added', 'task_edit'];
+  if (!allowedEvents.includes(event)) {
     return;
   }
 
-  if (data?.status === 'ok') {
-    url.value = '';
+
+  if (event === 'item_added') {
+    if (data?.status === 'ok') {
+      url.value = '';
+    }
+    url.value = data.url;
+    addInProgress.value = false;
   }
-  addInProgress.value = false;
+
+  if ('task_edit' === event) {
+    console.log(data);
+    selectedFormat.value = data.format;
+    selectedQuality.value = data.quality;
+
+    if (typeof data.ytdlp_config === 'object') {
+      data.ytdlp_config = JSON.stringify(data.ytdlp_config);
+    }
+    if (typeof data.ytdlp_cookies === 'object') {
+      data.ytdlp_cookies = JSON.stringify(data.ytdlp_cookies);
+    }
+
+    ytdlpConfig.value = data.ytdlp_config;
+    ytdlpCookies.value = data.ytdlp_cookies;
+    output_template.value = data.output_template;
+    downloadPath.value = data.folder;
+    url.value = data.url;
+    showAdvanced.value = true;
+  }
+
 });
 </script>

@@ -5077,7 +5077,7 @@
 
   .modal-card-body {
     -webkit-overflow-scrolling: touch;
-    background-color: white;
+    background-color: #000;
   }
 
   .navbar {

@@ -1,7 +1,7 @@
 <template>
   <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks" />
   <formAdd v-if="addForm" :config="config" @addItem="addItem" />
-  <pageTasks v-if="showTasks" :tasks="config.tasks" @removeTask="deleteTask" />
+  <pageTasks v-if="showTasks" :tasks="config.tasks" @task_remove="deleteTask" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
   <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
     @playItem="playItem" />
