@@ -80,12 +80,15 @@ import moment from "moment";
 import { parseExpression } from 'cron-parser';
 
 require('cron-parser');
-defineEmits(['task_edit', 'task_remove'])
+defineEmits(['task_edit', 'task_remove',])
 
-const bus = useEventBus('item_added', 'task_edit');
+const bus = useEventBus('item_added', 'task_edit', 'show_form');
 
 const taskEdit = (item) => {
-  bus.emit('task_edit', item);
+  bus.emit('show_form');
+  setTimeout(() => {
+    bus.emit('item_added', item);
+  }, 1000);
 }
 
 defineProps({

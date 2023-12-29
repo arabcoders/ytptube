@@ -148,7 +148,7 @@ import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { downloadFormats } from '../formats.js'
 import { useStorage, useEventBus } from '@vueuse/core'
 
-const bus = useEventBus('item_added', 'task_edit');
+const bus = useEventBus('item_added', 'task_edit','show_form');
 const emits = defineEmits(['addItem']);
 
 const selectedFormat = useStorage('selectedFormat', 'any')
@@ -244,6 +244,7 @@ bus.on((event, data) => {
     downloadPath.value = data.folder;
     url.value = data.url;
     showAdvanced.value = true;
+    bus.emit('show_form');
   }
 
 });

@@ -31,7 +31,7 @@ import { useToast } from 'vue-toastification'
 import { useStorage, useEventBus } from '@vueuse/core'
 
 const toast = useToast();
-const bus = useEventBus('item_added');
+const bus = useEventBus('item_added', 'show_form');
 
 const config = reactive({
   isConnected: false,
@@ -178,6 +178,15 @@ const deleteTask = (indexNumber, item) => {
     return index !== indexNumber;
   });
 }
+bus.on((event) => {
+  const allowedEvents = ['show_form'];
+  if (!allowedEvents.includes(event)) {
+    return;
+  }
+  if ('show_form' === event) {
+    addForm.value = true;
+  }
+});
 
 </script>
 
