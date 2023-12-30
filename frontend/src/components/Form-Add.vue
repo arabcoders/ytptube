@@ -148,7 +148,7 @@ import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { downloadFormats } from '../formats.js'
 import { useStorage, useEventBus } from '@vueuse/core'
 
-const bus = useEventBus('item_added');
+const bus = useEventBus('item_added', 'task_edit');
 const emits = defineEmits(['addItem']);
 
 const selectedFormat = useStorage('selectedFormat', 'any')
@@ -212,13 +212,17 @@ const resetConfig = () => {
 }
 
 bus.on((event, data) => {
-  if (event !== 'item_added') {
+  const allowedEvents = ['item_added'];
+  if (!allowedEvents.includes(event)) {
     return;
   }
 
-  if (data?.status === 'ok') {
-    url.value = '';
+  if ('item_added' === event) {
+    if (data?.status === 'ok') {
+      url.value = '';
+    }
+    url.value = data.url;
+    addInProgress.value = false;
   }
-  addInProgress.value = false;
 });
 </script>

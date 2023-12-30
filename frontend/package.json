@@ -15,6 +15,7 @@
     "@fortawesome/vue-fontawesome": "^3.0.5",
     "@vueuse/core": "^10.6.1",
     "core-js": "^3.8.3",
+    "cron-parser": "^4.9.0",
     "hls.js": "^1.4.12",
     "moment": "^2.29.4",
     "plyr": "^3.7.8",

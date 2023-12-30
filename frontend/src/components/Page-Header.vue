@@ -12,7 +12,7 @@
           <font-awesome-icon icon="fa-solid fa-plus" />
         </button>
       </div>
-      <div class="navbar-item">
+      <div class="navbar-item" v-if="config.tasks.length > 0">
         <button data-tooltip="Show/Hide Tasks" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
           <font-awesome-icon icon="fa-solid fa-tasks" />
         </button>

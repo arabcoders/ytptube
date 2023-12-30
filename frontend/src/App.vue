@@ -1,7 +1,7 @@
 <template>
   <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks" />
   <formAdd v-if="addForm" :config="config" @addItem="addItem" />
-  <pageTasks v-if="showTasks" :tasks="config.tasks" @removeTask="deleteTask" />
+  <pageTasks v-if="showTasks" :tasks="config.tasks" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
   <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
     @playItem="playItem" />
@@ -31,7 +31,7 @@ import { useToast } from 'vue-toastification'
 import { useStorage, useEventBus } from '@vueuse/core'
 
 const toast = useToast();
-const bus = useEventBus('item_added');
+const bus = useEventBus('item_added', 'show_form', 'task_edit');
 
 const config = reactive({
   isConnected: false,
@@ -164,20 +164,22 @@ const playItem = (item) => {
   let baseDir = 'm3u8/';
 
   if (item.folder) {
+    item.folder = item.folder.replace('#', '%23');
     baseDir += item.folder + '/';
   }
 
   video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
 };
 
-const deleteTask = (indexNumber, item) => {
-  if (!confirm(`Are you sure you want to delete this task ${item?.name || item.url}?`)) {
-    return;
+bus.on((event, data) => {
+  if (!['show_form'].includes(event)) {
+    return true;
   }
-  config.tasks = config.tasks.filter((_, index) => {
-    return index !== indexNumber;
-  });
-}
+  if ('show_form' === event) {
+    addForm.value = true;
+    setTimeout(() => bus.emit('task_edit', data), 500);
+  }
+});
 
 </script>
 

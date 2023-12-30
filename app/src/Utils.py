@@ -171,6 +171,11 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
         **config,
     }
 
+    # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
+    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub'):
+        if key in params:
+            del params[key]
+
     if debug:
         params['verbose'] = True
         params['logger'] = logging.getLogger('YTPTube-ytdl')
