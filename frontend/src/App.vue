@@ -164,6 +164,7 @@ const playItem = (item) => {
   let baseDir = 'm3u8/';
 
   if (item.folder) {
+    item.folder = item.folder.split('/').map(encodeURIComponent).join('/');
     baseDir += item.folder + '/';
   }
 
