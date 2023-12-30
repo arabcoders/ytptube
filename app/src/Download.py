@@ -109,6 +109,8 @@ class Download:
                 **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),
             }
 
+            params['ignoreerrors'] = False
+
             if self.debug:
                 params['verbose'] = True
 
@@ -133,8 +135,12 @@ class Download:
             self.status_queue.put(
                 {'status': 'finished' if ret == 0 else 'error'}
             )
-        except yt_dlp.utils.YoutubeDLError as exc:
-            self.status_queue.put({'status': 'error', 'msg': str(exc)})
+        except Exception as exc:
+            self.status_queue.put({
+                'status': 'error',
+                'msg': str(exc),
+                'error': str(exc)
+            })
 
         if self.tempPath and self.info._id and os.path.exists(self.tempPath):
             logging.debug(f'Deleting Temp directory: {self.tempPath}')

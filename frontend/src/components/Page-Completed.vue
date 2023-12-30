@@ -67,7 +67,7 @@
 
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in completed" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': item.error ? true : false }">
+        <div class="card" :class="{ 'is-bordered-danger': item.error || item.msg !== '' ? true : false }">
           <header class="card-header has-tooltip" :data-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -82,6 +82,9 @@
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
+              <div class="column is-12" v-if="item.msg !== ''">
+                <span class="has-text-danger">{{ item.msg }}</span>
+              </div>
               <div class="column is-4 has-text-centered" v-if="!item.live_in">
                 <span class="icon-text">
                   <span class="icon"
@@ -93,13 +96,13 @@
                 </span>
               </div>
               <div class="column is-4 has-text-centered">
-                <span :date-datetime="item.datetime"
-                  :data-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                <span :date-datetime="item.datetime" :data-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
               <div class="column is-4 has-text-centered" v-if="item.live_in && item.status != 'finished'">
-                <span :date-datetime="item.datetime" :data-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                <span :date-datetime="item.datetime"
+                  :data-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>

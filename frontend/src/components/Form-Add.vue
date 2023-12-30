@@ -221,7 +221,6 @@ bus.on((event, data) => {
     if (data?.status === 'ok') {
       url.value = '';
     }
-    url.value = data.url;
     addInProgress.value = false;
   }
 });
