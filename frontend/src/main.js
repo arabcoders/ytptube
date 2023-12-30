@@ -25,7 +25,7 @@ app.config.globalProperties.makeDownload = (config, item, base = 'download') => 
   let baseDir = `${base}/`;
 
   if (item.folder) {
-    item.folder = item.folder.split('/').map(encodeURIComponent).join('/');
+    item.folder = item.folder.replace('#', '%23');
     baseDir += item.folder + '/';
   }
 
