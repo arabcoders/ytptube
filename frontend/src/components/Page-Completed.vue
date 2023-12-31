@@ -82,7 +82,7 @@
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
-              <div class="column is-12" v-if="item.msg !== ''">
+              <div class="column is-12" v-if="!item.error && item.msg && item.msg.length() > 0">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
               <div class="column is-4 has-text-centered" v-if="!item.live_in">
