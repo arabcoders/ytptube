@@ -1,13 +1,12 @@
 import hashlib
-import json
 import logging
-import math
 import os
 import subprocess
 import tempfile
 from src.Utils import calcDownloadPath
 from src.Config import Config
 
+log = logging.getLogger('segments')
 
 class Segments:
     config: Config = None
@@ -111,7 +110,7 @@ class Segments:
         ffmpegCmd.append('mpegts')
         ffmpegCmd.append('pipe:1')
 
-        logging.debug(
+        log.debug(
             f'Streaming {realFile} segment {self.segment_index}.' + ' '.join(ffmpegCmd))
         proc = subprocess.run(ffmpegCmd, stdout=subprocess.PIPE)
 

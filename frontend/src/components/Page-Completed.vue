@@ -82,7 +82,7 @@
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
-              <div class="column is-12" v-if="!item.error && item.msg && item.msg.length() > 0">
+              <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
               <div class="column is-4 has-text-centered" v-if="!item.live_in">
@@ -227,6 +227,14 @@ const hasError = (item) => {
   }
 
   return (item.error || (item.msg && item.msg.length > 0)) ? true : false;
+}
+
+const showMessage = (item) => {
+  if (!item?.msg || item.msg === item?.error) {
+    return false
+  }
+
+  return item.msg.length > 0;
 }
 
 const hasFailed = computed(() => {
