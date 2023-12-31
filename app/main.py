@@ -285,7 +285,10 @@ class Main:
                 raise web.HTTPBadRequest(reason='file is required')
 
             return web.Response(
-                text=M3u8(self.config).make_stream(file),
+                text=M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+                    download_path=self.config.download_path,
+                    file=file
+                ),
                 headers={
                     'Content-Type': 'application/x-mpegURL',
                     'Cache-Control': 'no-cache',
@@ -308,7 +311,6 @@ class Main:
                 raise web.HTTPBadRequest(reason='segment is required')
 
             segmenter = Segments(
-                config=self.config,
                 segment_index=int(segment),
                 segment_duration=float('{:.6f}'.format(
                     float(sd if sd else M3u8.segment_duration))),
@@ -317,7 +319,7 @@ class Main:
             )
 
             return web.Response(
-                body=await segmenter.stream(file),
+                body=await segmenter.stream(download_path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
                     'Connection': 'keep-alive',

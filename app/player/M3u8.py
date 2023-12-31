@@ -3,7 +3,6 @@ import os
 from urllib.parse import quote
 from Utils import calcDownloadPath
 from .ffprobe import FFProbe
-from Config import Config
 
 
 class M3u8:
@@ -11,17 +10,15 @@ class M3u8:
     ok_acodecs: tuple = ('aac', 'mp3',)
 
     segment_duration: float = 10.000000
-    config: Config = None
-    download_path: str = None
+    url: str = None
 
-    def __init__(self, config: Config, segment_duration: float = 6.000000):
-        self.config = config
-        self.download_path = self.config.download_path
+    def __init__(self, url: str, segment_duration: float = 6.000000):
+        self.url = url
         self.segment_duration = float(segment_duration)
 
-    def make_stream(self, file: str):
+    def make_stream(self, download_path: str, file: str):
         realFile: str = calcDownloadPath(
-            basePath=self.download_path,
+            basePath=download_path,
             folder=file,
             createPath=False
         )
@@ -68,7 +65,7 @@ class M3u8:
             else:
                 m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"
 
-            m3u8 += f"{self.config.url_host}{self.config.url_prefix}segments/{i}/{quote(file)}"
+            m3u8 += f"{self.url}segments/{i}/{quote(file)}"
             if len(segmentParams) > 0:
                 m3u8 += '?'+'&'.join([f"{key}={value}" for key,
                                       value in segmentParams.items()])
