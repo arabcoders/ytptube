@@ -3,30 +3,27 @@ import logging
 import os
 import subprocess
 import tempfile
-from src.Utils import calcDownloadPath
-from src.Config import Config
+from Utils import calcDownloadPath
+from Config import Config
 
 log = logging.getLogger('segments')
 
+
 class Segments:
-    config: Config = None
-    download_path: str = None
     segment_duration: int
     segment_index: int
     vconvert: bool
     aconvert: bool
 
-    def __init__(self, config: Config, segment_index: int, segment_duration: float, vconvert: bool, aconvert: bool):
-        self.config = config
-        self.download_path = self.config.download_path
+    def __init__(self, segment_index: int, segment_duration: float, vconvert: bool, aconvert: bool):
         self.segment_duration = float(segment_duration)
         self.segment_index = int(segment_index)
         self.vconvert = bool(vconvert)
         self.aconvert = bool(aconvert)
 
-    async def stream(self, file: str) -> bytes:
+    async def stream(self, download_path: str, file: str) -> bytes:
         realFile: str = calcDownloadPath(
-            basePath=self.download_path,
+            basePath=download_path,
             folder=file,
             createPath=False
         )

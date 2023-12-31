@@ -4,10 +4,10 @@ from datetime import datetime, timezone
 from email.utils import formatdate
 import json
 import sqlite3
-from src.Utils import calcDownloadPath
-from src.Config import Config
-from src.Download import Download
-from src.DTO.ItemDTO import ItemDTO
+from Utils import calcDownloadPath
+from Config import Config
+from Download import Download
+from ItemDTO import ItemDTO
 
 
 class DataStore:

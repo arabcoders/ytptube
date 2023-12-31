@@ -6,7 +6,6 @@ import json
 import operator
 import os
 import pipes
-import re
 import subprocess
 
 

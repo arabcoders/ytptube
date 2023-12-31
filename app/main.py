@@ -5,23 +5,18 @@ from datetime import datetime
 import json
 import os
 import random
-from src.Config import Config
-from version import APP_VERSION
-from src.Notifier import Notifier
-from src.DownloadQueue import DownloadQueue
-from src.Utils import ObjectSerializer
+from Config import Config
+from DownloadQueue import DownloadQueue
+from Utils import ObjectSerializer, Notifier
 from aiohttp import web
 from aiohttp.web import Request, Response
-from src.M3u8 import M3u8
-from src.Segments import Segments
+from player.M3u8 import M3u8
+from player.Segments import Segments
 import socketio
 import logging
 import caribou
 import sqlite3
 from aiocron import crontab
-
-log: logging.Logger = None
-
 
 class Main:
     config: Config = None
@@ -36,7 +31,6 @@ class Main:
 
     def __init__(self):
         self.config = Config()
-        self.config.version = APP_VERSION
         self.logger = logging.getLogger('main')
 
         try:
@@ -113,6 +107,7 @@ class Main:
         )
 
     async def connect(self, sid, _):
+        self.logger.info(f'Config [{self.config.__dict__}].')
         data: dict = {
             **self.dqueue.get(),
             "config": self.config,
@@ -285,7 +280,10 @@ class Main:
                 raise web.HTTPBadRequest(reason='file is required')
 
             return web.Response(
-                text=M3u8(self.config).make_stream(file),
+                text=M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+                    download_path=self.config.download_path,
+                    file=file
+                ),
                 headers={
                     'Content-Type': 'application/x-mpegURL',
                     'Cache-Control': 'no-cache',
@@ -308,7 +306,6 @@ class Main:
                 raise web.HTTPBadRequest(reason='segment is required')
 
             segmenter = Segments(
-                config=self.config,
                 segment_index=int(segment),
                 segment_duration=float('{:.6f}'.format(
                     float(sd if sd else M3u8.segment_duration))),
@@ -317,7 +314,7 @@ class Main:
             )
 
             return web.Response(
-                body=await segmenter.stream(file),
+                body=await segmenter.stream(download_path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
                     'Connection': 'keep-alive',
