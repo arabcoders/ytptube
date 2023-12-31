@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import coloredlogs
+from version import APP_VERSION
 
 
 class Config:
@@ -33,7 +34,10 @@ class Config:
 
     logging_level: str = 'info'
 
-    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug')
+    version: str = APP_VERSION
+
+    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug',)
+    _immutable: tuple = ('version',)
 
     def __init__(self):
         baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))
@@ -46,6 +50,11 @@ class Config:
             if k.startswith('_'):
                 continue
 
+            # If the variable is not updateable, set it to the default value.
+            if k in self._immutable:
+                setattr(self, k, v)
+                continue
+
             lookUpKey: str = f'YTP_{k}'.upper()
             setattr(
                 self, k,
@@ -53,7 +62,7 @@ class Config:
             )
 
         for k, v in self.__dict__.items():
-            if k.startswith('_'):
+            if k.startswith('_') or k in self._immutable:
                 continue
 
             if isinstance(v, str) and '{' in v and '}' in v:

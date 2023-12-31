@@ -7,9 +7,8 @@ import os
 import re
 import shutil
 import yt_dlp
-from Utils import get_format, get_opts, jsonCookie, mergeConfig
+from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
-from Notifier import Notifier
 
 log = logging.getLogger('download')
 

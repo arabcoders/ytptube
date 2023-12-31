@@ -6,10 +6,8 @@ import json
 import os
 import random
 from Config import Config
-from version import APP_VERSION
-from Notifier import Notifier
 from DownloadQueue import DownloadQueue
-from Utils import ObjectSerializer
+from Utils import ObjectSerializer, Notifier
 from aiohttp import web
 from aiohttp.web import Request, Response
 from player.M3u8 import M3u8
@@ -19,9 +17,6 @@ import logging
 import caribou
 import sqlite3
 from aiocron import crontab
-
-log: logging.Logger = None
-
 
 class Main:
     config: Config = None
@@ -36,7 +31,6 @@ class Main:
 
     def __init__(self):
         self.config = Config()
-        self.config.version = APP_VERSION
         self.logger = logging.getLogger('main')
 
         try:
@@ -113,6 +107,7 @@ class Main:
         )
 
     async def connect(self, sid, _):
+        self.logger.info(f'Config [{self.config.__dict__}].')
         data: dict = {
             **self.dqueue.get(),
             "config": self.config,
