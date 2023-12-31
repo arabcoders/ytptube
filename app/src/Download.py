@@ -9,6 +9,7 @@ import shutil
 import yt_dlp
 from src.Utils import get_format, get_opts, jsonCookie, mergeConfig
 from src.DTO.ItemDTO import ItemDTO
+from src.Notifier import Notifier
 
 log = logging.getLogger('download')
 
@@ -25,7 +26,7 @@ class Download:
     default_ytdl_opts: dict = None
     debug: bool = False
     tempPath: str = None
-
+    notifier: Notifier = None
     _ytdlp_fields: tuple = (
         'tmpfilename',
         'filename',
@@ -146,15 +147,15 @@ class Download:
             logging.debug(f'Deleting Temp directory: {self.tempPath}')
             shutil.rmtree(self.tempPath, ignore_errors=True)
 
-    async def start(self, notifier):
+    async def start(self, notifier: Notifier):
         if self.manager is None:
             self.manager = multiprocessing.Manager()
 
         self.status_queue = self.manager.Queue()
-        self.proc = multiprocessing.Process(target=self._download)
-        self.proc.start()
         self.loop = asyncio.get_running_loop()
         self.notifier = notifier
+        self.proc = multiprocessing.Process(target=self._download)
+        self.proc.start()
         self.info.status = 'preparing'
         await self.notifier.updated(self.info)
         asyncio.create_task(self.update_status())
@@ -198,13 +199,16 @@ class Download:
 
             self.info.status = status['status']
             self.info.msg = status.get('msg')
+            if 'error' == self.info.status:
+                self.info.error = status.get('msg')
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get(
                     'total_bytes_estimate')
                 if total:
-                    self.info.percent = status['downloaded_bytes'] / \
-                        total * 100
+                    perc = status['downloaded_bytes'] / total * 100
+                    self.info.percent = perc
+                    self.info.total_bytes = total
 
             self.info.speed = status.get('speed')
             self.info.eta = status.get('eta')

@@ -26,16 +26,21 @@ jobs:
         with:
           python-version: "3.11"
       - name: Update yt-dlp
+        id: ytdlp_update
         run: |
           pip install pipenv
           pipenv sync
           VER=`pipenv run pip list -o | awk '$1 == "yt-dlp" {print $3}'`
           if [ -n "$VER" ]; then
+            echo "YTLDLP_VER=${VER}" >> "$GITHUB_OUTPUT"
             pipenv update yt-dlp
           fi
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
+          title: "Update yt-dlp"
+          commit-message: "Update yt-dlp to ${{ steps.ytdlp_update.outputs.YTLDLP_VER }}"
+          body: "This is an automated request to update yt-dlp dependency to ${{ steps.ytdlp_update.outputs.YTLDLP_VER }}"
           delete-branch: true
 
 
