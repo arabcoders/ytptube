@@ -199,8 +199,6 @@ class Download:
 
             self.info.status = status['status']
             self.info.msg = status.get('msg')
-            if 'error' == self.info.status:
-                self.info.error = status.get('msg')
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get(
