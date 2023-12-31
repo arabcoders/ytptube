@@ -1,5 +1,5 @@
 from socketio import AsyncServer
-from src.Utils import ObjectSerializer
+from Utils import ObjectSerializer
 
 
 class Notifier:

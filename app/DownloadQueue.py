@@ -5,12 +5,12 @@ import os
 import time
 import yt_dlp
 from sqlite3 import Connection
-from src.Config import Config
-from src.Notifier import Notifier
-from src.Download import Download
-from src.DTO.ItemDTO import ItemDTO
-from src.DataStore import DataStore
-from src.Utils import ObjectSerializer, calcDownloadPath, ExtractInfo, mergeConfig
+from Config import Config
+from Notifier import Notifier
+from Download import Download
+from ItemDTO import ItemDTO
+from DataStore import DataStore
+from Utils import ObjectSerializer, calcDownloadPath, ExtractInfo, mergeConfig
 from datetime import datetime, timezone
 
 log = logging.getLogger('DownloadQueue')

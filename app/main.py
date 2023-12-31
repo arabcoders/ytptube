@@ -5,15 +5,15 @@ from datetime import datetime
 import json
 import os
 import random
-from src.Config import Config
+from Config import Config
 from version import APP_VERSION
-from src.Notifier import Notifier
-from src.DownloadQueue import DownloadQueue
-from src.Utils import ObjectSerializer
+from Notifier import Notifier
+from DownloadQueue import DownloadQueue
+from Utils import ObjectSerializer
 from aiohttp import web
 from aiohttp.web import Request, Response
-from src.M3u8 import M3u8
-from src.Segments import Segments
+from player.M3u8 import M3u8
+from player.Segments import Segments
 import socketio
 import logging
 import caribou

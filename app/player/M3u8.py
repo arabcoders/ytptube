@@ -1,9 +1,9 @@
 import math
 import os
 from urllib.parse import quote
-from src.Utils import calcDownloadPath
-from src.ffprobe import FFProbe
-from src.Config import Config
+from Utils import calcDownloadPath
+from .ffprobe import FFProbe
+from Config import Config
 
 
 class M3u8:

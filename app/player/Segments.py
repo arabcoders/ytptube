@@ -3,8 +3,8 @@ import logging
 import os
 import subprocess
 import tempfile
-from src.Utils import calcDownloadPath
-from src.Config import Config
+from Utils import calcDownloadPath
+from Config import Config
 
 log = logging.getLogger('segments')
 
