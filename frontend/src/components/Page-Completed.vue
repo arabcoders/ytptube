@@ -67,7 +67,7 @@
 
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in completed" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': item.error || item.msg !== '' ? true : false }">
+        <div class="card" :class="{ 'is-bordered-danger': hasError(item) }">
           <header class="card-header has-tooltip" :data-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -220,6 +220,14 @@ watch(masterSelectAll, (value) => {
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
 const getTotal = computed(() => Object.keys(props.completed)?.length);
+
+const hasError = (item) => {
+  if (item.status === 'finished') {
+    return false;
+  }
+
+  return (item.error || (item.msg && item.msg.length > 0)) ? true : false;
+}
 
 const hasFailed = computed(() => {
   if (Object.keys(props.completed)?.length < 0) {
