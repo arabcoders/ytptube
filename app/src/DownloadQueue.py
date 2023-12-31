@@ -100,20 +100,20 @@ class DownloadQueue:
             return {'status': 'ok'}
         elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
 
-            logging.debug(
+            log.debug(
                 f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None) }")
 
             if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
                 item = self.done.get(key=entry['id'], url=entry.get(
                     'webpage_url') or entry['url'])
 
-                logging.debug(
+                log.debug(
                     f'Item [{item.info.title}] already downloaded. Removing from history.')
 
                 await self.clear([item.info._id])
 
             if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
-                logging.info(
+                log.info(
                     f'Item [{item.info.title}] already in download queue')
                 return {'status': 'error', 'msg': 'Link already queued for downloading.'}
 
@@ -215,7 +215,7 @@ class DownloadQueue:
                     'status': 'error',
                     'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
                 }
-            logging.debug(f'entry: extract info says: {entry}')
+            log.debug(f'entry: extract info says: {entry}')
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
 

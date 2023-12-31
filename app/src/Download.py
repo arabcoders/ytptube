@@ -119,17 +119,17 @@ class Download:
                 try:
                     data = jsonCookie(json.loads(self.info.ytdlp_cookies))
                     if not data:
-                        logging.warning(
+                        log.warning(
                             f'The cookie string that was provided for {self.info.title} is empty or not in expected spec.')
                     with open(os.path.join(self.tempPath, f'cookie_{self.info._id}.txt'), 'w') as f:
                         f.write(data)
 
                     params['cookiefile'] = f.name
                 except ValueError as e:
-                    logging.error(
+                    log.error(
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
-            logging.info(
+            log.info(
                 f'Downloading {self.info._id=} {self.info.title=}... {params=}')
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
@@ -144,7 +144,7 @@ class Download:
             })
 
         if self.tempPath and self.info._id and os.path.exists(self.tempPath):
-            logging.debug(f'Deleting Temp directory: {self.tempPath}')
+            log.debug(f'Deleting Temp directory: {self.tempPath}')
             shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier: Notifier):

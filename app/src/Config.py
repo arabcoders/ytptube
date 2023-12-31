@@ -89,6 +89,8 @@ class Config:
             format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] %(message)s"
         )
 
+        log = logging.getLogger('config')
+
         coloredlogs.install()
 
         if isinstance(self.ytdl_options, str):
@@ -96,14 +98,14 @@ class Config:
                 self.ytdl_options = json.loads(self.ytdl_options)
                 assert isinstance(self.ytdl_options, dict)
             except (json.decoder.JSONDecodeError, AssertionError) as e:
-                logging.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
+                log.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
                 sys.exit(1)
 
         if self.ytdl_options_file:
-            logging.info(
+            log.info(
                 f'Loading yt-dlp custom options from "{self.ytdl_options_file}"')
             if not os.path.exists(self.ytdl_options_file):
-                logging.error(
+                log.error(
                     f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
             else:
                 try:
@@ -112,12 +114,12 @@ class Config:
                     assert isinstance(opts, dict)
                     self.ytdl_options.update(opts)
                 except (json.decoder.JSONDecodeError, AssertionError) as e:
-                    logging.error(
+                    log.error(
                         f'JSON error in "{self.ytdl_options_file}": {e}')
                     sys.exit(1)
 
         if self.keep_archive:
-            logging.info(f'keep archive: {self.keep_archive}')
+            log.info(f'keep archive: {self.keep_archive}')
             self.ytdl_options['download_archive'] = os.path.join(
                 self.config_path, 'archive.log')
 

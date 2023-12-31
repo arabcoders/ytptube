@@ -1,5 +1,3 @@
-import json
-import logging
 import math
 import os
 from urllib.parse import quote

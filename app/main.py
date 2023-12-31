@@ -20,6 +20,8 @@ import caribou
 import sqlite3
 from aiocron import crontab
 
+log: logging.Logger = None
+
 
 class Main:
     config: Config = None
@@ -30,52 +32,55 @@ class Main:
     connection: sqlite3.Connection = None
     dqueue: DownloadQueue = None
     loop: asyncio.AbstractEventLoop = None
+    logger: logging.Logger = None
 
     def __init__(self):
         self.config = Config()
         self.config.version = APP_VERSION
+        self.logger = logging.getLogger('main')
 
         try:
             if not os.path.exists(self.config.download_path):
-                logging.info(
+                self.logger.info(
                     f'Creating download folder at {self.config.download_path}')
                 os.makedirs(self.config.download_path, exist_ok=True)
         except OSError as e:
-            logging.error(
+            self.logger.error(
                 f'Could not create download folder at {self.config.download_path}')
             raise e
         try:
             if not os.path.exists(self.config.temp_path):
-                logging.info(
+                self.logger.info(
                     f'Creating temp folder at {self.config.temp_path}')
                 os.makedirs(self.config.temp_path, exist_ok=True)
         except OSError as e:
-            logging.error(
+            self.logger.error(
                 f'Could not create temp folder at {self.config.temp_path}')
             raise e
 
         try:
             if not os.path.exists(self.config.config_path):
-                logging.info(
+                self.logger.info(
                     f'Creating config folder at {self.config.config_path}')
                 os.makedirs(self.config.config_path, exist_ok=True)
         except OSError as e:
-            logging.error(
+            self.logger.error(
                 f'Could not create config folder at {self.config.config_path}')
             raise e
 
         try:
             if not os.path.exists(self.config.db_file):
-                logging.info(
+                self.logger.info(
                     f'Creating database file at {self.config.db_file}')
                 with open(self.config.db_file, 'w') as _:
                     pass
         except OSError as e:
-            logging.error(
+            self.logger.error(
                 f'Could not create database file at {self.config.db_file}')
             raise e
 
-        caribou.upgrade(self.config.db_file, os.path.join(os.path.realpath(os.path.dirname(__file__)), 'migrations'))
+        caribou.upgrade(self.config.db_file, os.path.join(
+            os.path.realpath(os.path.dirname(__file__)), 'migrations'))
 
         self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
@@ -126,7 +131,7 @@ class Main:
     def addTasks(self):
         tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
         if not os.path.exists(tasks_file):
-            logging.info(
+            self.logger.info(
                 f'No tasks file found at {tasks_file}. Skipping Tasks.')
             return
 
@@ -134,20 +139,20 @@ class Main:
             with open(tasks_file, 'r') as f:
                 tasks = json.load(f)
         except Exception as e:
-            logging.error(
+            self.logger.error(
                 f'Could not load tasks file [{tasks_file}]. Error message [{str(e)}]. Skipping Tasks.')
             return
 
         for task in tasks:
             if not task.get('url'):
-                logging.warning(f'Invalid task {task}.')
+                self.logger.warning(f'Invalid task {task}.')
                 continue
 
             cron_timer: str = task.get(
                 'timer', f'{random.randint(1,59)} */1 * * *')
 
             async def cron_runner(task: dict):
-                logging.info(
+                self.logger.info(
                     f'Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
 
                 await self.add(
@@ -160,7 +165,7 @@ class Main:
                     output_template=task.get('output_template')
                 )
 
-                logging.info(
+                self.logger.info(
                     f'Finished Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
 
             crontab(
@@ -171,7 +176,7 @@ class Main:
                 loop=self.loop
             )
 
-            logging.info(
+            self.logger.info(
                 f'Added task to grab {task.get("name",task.get("url"))} content every [{cron_timer}].')
 
     def addRoutes(self):
