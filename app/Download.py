@@ -185,6 +185,10 @@ class Download:
             if status is None:
                 return
 
+            if isinstance(status, str):
+                await self.notifier.updated(self.info)
+                return
+
             self.tmpfilename = status.get('tmpfilename')
 
             if 'filename' in status:
@@ -196,7 +200,7 @@ class Download:
                     self.info.filename = re.sub(
                         r'\.webm$', '.jpg', self.info.filename)
 
-            self.info.status = status['status']
+            self.info.status = status.get('status', self.info.status)
             self.info.msg = status.get('msg')
 
             if 'downloaded_bytes' in status:
@@ -209,5 +213,8 @@ class Download:
 
             self.info.speed = status.get('speed')
             self.info.eta = status.get('eta')
+
+            if self.info.status == 'finished' and 'filename' in status and self.info.format != 'thumbnail':
+                self.info.file_size = os.path.getsize(status.get('filename'))
 
             await self.notifier.updated(self.info)

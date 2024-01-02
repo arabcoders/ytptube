@@ -85,7 +85,7 @@
               <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
-              <div class="column is-4 has-text-centered" v-if="!item.live_in">
+              <div class="column has-text-centered" v-if="!item.live_in">
                 <span class="icon-text">
                   <span class="icon"
                     :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
@@ -95,18 +95,21 @@
                   <span>{{ capitalize(item.status) }}</span>
                 </span>
               </div>
-              <div class="column is-4 has-text-centered">
+              <div class="column has-text-centered">
                 <span :date-datetime="item.datetime" :data-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-4 has-text-centered" v-if="item.live_in && item.status != 'finished'">
+              <div class="column has-text-centered" v-if="item.live_in && item.status != 'finished'">
                 <span :date-datetime="item.datetime"
                   :data-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
-              <div class="column is-4 has-text-centered">
+              <div class="column has-text-centered" v-if="item.file_size">
+                {{ formatBytes(item.file_size) }}
+              </div>
+              <div class="column has-text-centered">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
