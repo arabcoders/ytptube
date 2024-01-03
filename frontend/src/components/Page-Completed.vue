@@ -63,6 +63,16 @@
           </span>
         </button>
       </div>
+      <div class="column is-1">
+        <button type="button" class="button is-fullwidth"
+          @click="direction = direction === 'desc' ? 'asc' : 'desc'">
+          <span class="icon-text">
+            <span class="icon">
+              <font-awesome-icon :icon="direction === 'desc' ? 'fa-solid fa-arrow-down-a-z' :'fa-solid fa-arrow-up-a-z'"/>
+            </span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="columns is-multiline">
@@ -223,6 +233,7 @@ const props = defineProps({
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showCompleted = useStorage('showCompleted', true)
+const direction = useStorage('sortCompleted', 'desc')
 
 watch(masterSelectAll, (value) => {
   for (const key in props.completed) {
@@ -236,7 +247,11 @@ watch(masterSelectAll, (value) => {
 })
 
 const sortCompleted = computed(() => {
+  const thisDirection = direction.value;
   return Object.values(props.completed).sort((a, b) => {
+    if (thisDirection === 'asc') {
+      return new Date(a.datetime) - new Date(b.datetime);
+    }
     return new Date(b.datetime) - new Date(a.datetime);
   })
 })
