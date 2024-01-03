@@ -66,7 +66,7 @@
     </div>
 
     <div class="columns is-multiline">
-      <div class="column is-6" v-for="item in completed" :key="item._id">
+      <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
         <div class="card" :class="{ 'is-bordered-danger': hasError(item) }">
           <header class="card-header has-tooltip" :data-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
@@ -235,6 +235,11 @@ watch(masterSelectAll, (value) => {
   }
 })
 
+const sortCompleted = computed(() => {
+  return Object.values(props.completed).sort((a, b) => {
+    return new Date(b.datetime) - new Date(a.datetime);
+  })
+})
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
 const getTotal = computed(() => Object.keys(props.completed)?.length);
