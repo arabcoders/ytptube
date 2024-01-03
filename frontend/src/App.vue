@@ -73,6 +73,11 @@ onMounted(() => {
     toast.success(`Item queued successfully: ${downloading[item._id]?.title}`);
   });
 
+  socket.on('error', stream => {
+    const [item, error] = JSON.parse(stream);
+    toast.error(`${item?.id}: Error: ${error}`);
+  });
+
   socket.on('completed', stream => {
     const item = JSON.parse(stream);
     if (item._id in downloading) {

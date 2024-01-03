@@ -286,20 +286,23 @@ class Notifier:
         self.sio = sio
         self.serializer = serializer
 
-    async def added(self, dl):
+    async def added(self, dl: dict):
         await self.emit('added', dl)
 
-    async def updated(self, dl):
+    async def updated(self, dl: dict):
         await self.emit('updated', dl)
 
-    async def completed(self, dl):
+    async def completed(self, dl: dict):
         await self.emit('completed', dl)
 
-    async def canceled(self, id):
+    async def canceled(self, id: str):
         await self.emit('canceled', id)
 
-    async def cleared(self, id):
+    async def cleared(self, id: str):
         await self.emit('cleared', id)
+
+    async def error(self, dl: dict, message: str):
+        await self.emit('error', (dl, message))
 
     async def emit(self, event: str, data):
         await self.sio.emit(event, self.serializer.encode(data))

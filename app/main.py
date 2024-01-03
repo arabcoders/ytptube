@@ -107,7 +107,6 @@ class Main:
         )
 
     async def connect(self, sid, _):
-        self.logger.info(f'Config [{self.config.__dict__}].')
         data: dict = {
             **self.dqueue.get(),
             "config": self.config,

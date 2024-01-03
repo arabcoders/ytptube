@@ -5,7 +5,7 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSpinner, faArrowUp, faArrowDown, faTasks
+  faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar
 } from '@fortawesome/free-solid-svg-icons'
 
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
@@ -17,7 +17,7 @@ import './assets/css/style.css'
 import '@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css';
 
 library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks,)
+  faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar)
 const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
@@ -30,6 +30,17 @@ app.config.globalProperties.makeDownload = (config, item, base = 'download') => 
   }
 
   return config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
+}
+app.config.globalProperties.formatBytes = (bytes, decimals = 2) => {
+  if (!+bytes) return '0 Bytes'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
 app.use(Toast, {

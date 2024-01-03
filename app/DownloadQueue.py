@@ -57,14 +57,11 @@ class DownloadQueue:
 
         if 'live_status' in entry and entry.get('live_status') == 'is_upcoming':
             if 'release_timestamp' in entry and entry.get('release_timestamp'):
-                dt_ts = datetime.fromtimestamp(
-                    entry.get('release_timestamp'), tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S %z')
-                error = f"Live stream is scheduled to start at {dt_ts}"
                 live_in = formatdate(entry.get('release_timestamp'))
             else:
                 error = 'Live stream not yet started. And no date is set.'
         else:
-            error = entry['msg'] if 'msg' in entry else None
+            error = entry.get('msg', None)
 
         etype = entry.get('_type') or 'video'
         if etype == 'playlist':
@@ -73,12 +70,12 @@ class DownloadQueue:
             playlist_index_digits = len(str(len(entries)))
             results = []
             for index, etr in enumerate(entries, start=1):
-                etr['playlist'] = entry['id']
+                etr['playlist'] = entry.get('id')
                 etr['playlist_index'] = '{{0:0{0:d}d}}'.format(
                     playlist_index_digits).format(index)
                 for property in ('id', 'title', 'uploader', 'uploader_id'):
                     if property in entry:
-                        etr[f'playlist_{property}'] = entry[property]
+                        etr[f'playlist_{property}'] = entry.get(property)
 
                 results.append(
                     await self.__add_entry(
@@ -98,11 +95,10 @@ class DownloadQueue:
 
             return {'status': 'ok'}
         elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
-
             log.debug(
                 f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None) }")
 
-            if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
+            if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry.get('url')):
                 item = self.done.get(key=entry['id'], url=entry.get(
                     'webpage_url') or entry['url'])
 
@@ -111,15 +107,15 @@ class DownloadQueue:
 
                 await self.clear([item.info._id])
 
-            if self.queue.exists(key=entry['id'], url=entry.get('webpage_url') or entry['url']):
+            if self.queue.exists(key=entry.get('id'), url=entry.get('webpage_url') or entry.get('url')):
                 log.info(
                     f'Item [{item.info.title}] already in download queue')
                 return {'status': 'error', 'msg': 'Link already queued for downloading.'}
 
             dl = ItemDTO(
-                id=entry['id'],
-                title=entry['title'],
-                url=entry.get('webpage_url') or entry['url'],
+                id=entry.get('id'),
+                title=entry.get('title'),
+                url=entry.get('webpage_url') or entry.get('url'),
                 quality=quality,
                 format=format,
                 folder=folder,
@@ -128,7 +124,7 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry['is_live'] if 'is_live' in entry else None,
+                is_live=entry.get('is_live', None),
                 live_in=live_in,
             )
 
@@ -164,7 +160,7 @@ class DownloadQueue:
             }
         elif etype.startswith('url'):
             return await self.add(
-                entry=entry['url'],
+                entry=entry.get('url'),
                 quality=quality,
                 format=format,
                 folder=folder,
@@ -193,7 +189,7 @@ class DownloadQueue:
         ytdlp_config = ytdlp_config if ytdlp_config else {}
 
         log.info(
-            f'adding {url}: {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
+            f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
 
         already = set() if already is None else already
         if url in already:
@@ -232,7 +228,7 @@ class DownloadQueue:
     async def cancel(self, ids):
         for id in ids:
             if not self.queue.exists(id):
-                log.warn(f'requested cancel for non-existent download {id}')
+                log.warn(f'Requested cancel for non-existent download {id=}')
                 continue
 
             item = self.queue.get(key=id)
@@ -242,7 +238,7 @@ class DownloadQueue:
                 self.queue.get(id).cancel()
             else:
                 self.queue.delete(id)
-                log.info(f'deleting {id=} {item.info.title=}')
+                log.info(f'Deleting {id=} {item.info.title=}')
                 await self.notifier.canceled(id)
 
         return {'status': 'ok'}
@@ -250,10 +246,10 @@ class DownloadQueue:
     async def clear(self, ids):
         for id in ids:
             if not self.done.exists(key=id):
-                log.warn(f'requested delete for non-existent download {id}')
+                log.warn(f'Requested delete for non-existent download {id}')
                 continue
             item = self.done.get(key=id)
-            log.info(f'deleting {id=} {item.info.title=}')
+            log.info(f'Deleting {id=} {item.info.title=}')
             self.done.delete(id)
             await self.notifier.cleared(id)
 
@@ -287,7 +283,7 @@ class DownloadQueue:
 
             id, entry = self.queue.next()
             log.info(
-                f'downloading {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}')
+                f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
 
             await entry.start(self.notifier)
 
