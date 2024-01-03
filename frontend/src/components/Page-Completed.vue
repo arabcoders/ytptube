@@ -79,20 +79,35 @@
           </header>
           <div class="card-content">
             <div class="columns is-multiline">
+              <div class="column is-12" v-if="item.status === 'error' && item.live_in">
+                <span class="has-text-info">
+                  LIVE stream is scheduled to start at {{ moment(item.datetime).format() }}
+                </span>
+              </div>
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
               <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
-              <div class="column has-text-centered" v-if="!item.live_in">
-                <span class="icon-text">
-                  <span class="icon"
-                    :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
-                    <font-awesome-icon
-                      :icon="item.status == 'finished' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'" />
+              <div class="column has-text-centered">
+                <span v-if="!item.live_in">
+                  <span class="icon-text">
+                    <span class="icon"
+                      :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
+                      <font-awesome-icon
+                        :icon="item.status == 'finished' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'" />
+                    </span>
+                    <span>{{ capitalize(item.status) }}</span>
                   </span>
-                  <span>{{ capitalize(item.status) }}</span>
+                </span>
+                <span v-else>
+                  <span class="icon-text">
+                    <span class="icon has-text-info">
+                      <font-awesome-icon icon="fa-solid fa-calendar" />
+                    </span>
+                    <span>Live Stream</span>
+                  </span>
                 </span>
               </div>
               <div class="column has-text-centered">

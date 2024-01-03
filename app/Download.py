@@ -129,7 +129,7 @@ class Download:
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
             log.info(
-                f'Downloading {self.info._id=} {self.info.title=}... {params=}')
+                f'Downloading id="{self.info.id}" title="{self.info.title}".')
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
             self.status_queue.put(
@@ -141,10 +141,10 @@ class Download:
                 'msg': str(exc),
                 'error': str(exc)
             })
-
-        if self.tempPath and self.info._id and os.path.exists(self.tempPath):
-            log.debug(f'Deleting Temp directory: {self.tempPath}')
-            shutil.rmtree(self.tempPath, ignore_errors=True)
+        finally:
+            if self.tempPath and self.info._id and os.path.exists(self.tempPath):
+                log.debug(f'Deleting Temp directory: {self.tempPath}')
+                shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier: Notifier):
         if self.manager is None:
@@ -153,11 +153,12 @@ class Download:
         self.status_queue = self.manager.Queue()
         self.loop = asyncio.get_running_loop()
         self.notifier = notifier
+
         self.proc = multiprocessing.Process(target=self._download)
         self.proc.start()
         self.info.status = 'preparing'
         await self.notifier.updated(self.info)
-        asyncio.create_task(self.update_status())
+        asyncio.create_task(self.progress_update())
         return await self.loop.run_in_executor(None, self.proc.join)
 
     def cancel(self):
@@ -179,11 +180,17 @@ class Download:
     def started(self):
         return self.proc is not None
 
-    async def update_status(self):
+    async def progress_update(self):
+        """
+        Update status of download task and notify the client.
+        """
         while True:
             status = await self.loop.run_in_executor(None, self.status_queue.get)
-            if status is None:
+            if not status:
                 return
+
+            if self.debug:
+                log.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
                 await self.notifier.updated(self.info)
@@ -202,6 +209,10 @@ class Download:
 
             self.info.status = status.get('status', self.info.status)
             self.info.msg = status.get('msg')
+
+            if self.info.status == 'error' and 'error' in status:
+                self.info.error = status.get('error')
+                await self.notifier.error(self.info, self.info.error)
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get(
