@@ -169,7 +169,6 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
         'skip_download': True,
         'ignoreerrors': True,
         'ignore_no_formats_error': True,
-        'break_on_existing': True,
         **config,
     }
 

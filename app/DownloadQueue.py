@@ -54,14 +54,6 @@ class DownloadQueue:
         error: str = None
         live_in: str = None
 
-        if 'live_status' in entry and entry.get('live_status') == 'is_upcoming':
-            if 'release_timestamp' in entry and entry.get('release_timestamp'):
-                live_in = formatdate(entry.get('release_timestamp'))
-            else:
-                error = 'Live stream not yet started. And no date is set.'
-        else:
-            error = entry.get('msg', None)
-
         etype = entry.get('_type') or 'video'
         if etype == 'playlist':
             entries = entry['entries']
@@ -94,6 +86,15 @@ class DownloadQueue:
 
             return {'status': 'ok'}
         elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
+            # check if the video is live stream.
+            if 'live_status' in entry and entry.get('live_status') == 'is_upcoming':
+                if 'release_timestamp' in entry and entry.get('release_timestamp'):
+                    live_in = formatdate(entry.get('release_timestamp'))
+                else:
+                    error = 'Live stream not yet started. And no date is set.'
+            else:
+                error = entry.get('msg', None)
+
             log.debug(
                 f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None) }")
 
@@ -149,7 +150,7 @@ class DownloadQueue:
                 output_template_chapter=output_chapter,
                 default_ytdl_opts=self.config.ytdl_options,
                 debug=bool(self.config.ytdl_debug)
-            );
+            )
 
             if dlInfo.info.live_in:
                 dlInfo.info.status = 'not_live'
