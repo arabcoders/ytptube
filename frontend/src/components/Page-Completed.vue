@@ -64,11 +64,11 @@
         </button>
       </div>
       <div class="column is-1">
-        <button type="button" class="button is-fullwidth"
-          @click="direction = direction === 'desc' ? 'asc' : 'desc'">
+        <button type="button" class="button is-fullwidth" @click="direction = direction === 'desc' ? 'asc' : 'desc'">
           <span class="icon-text">
             <span class="icon">
-              <font-awesome-icon :icon="direction === 'desc' ? 'fa-solid fa-arrow-down-a-z' :'fa-solid fa-arrow-up-a-z'"/>
+              <font-awesome-icon
+                :icon="direction === 'desc' ? 'fa-solid fa-arrow-down-a-z' : 'fa-solid fa-arrow-up-a-z'" />
             </span>
           </span>
         </button>
@@ -77,7 +77,7 @@
 
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': hasError(item) }">
+        <div class="card" :class="{ 'is-bordered-danger': hasError(item), 'is-bordered-info': item.live_in }">
           <header class="card-header has-tooltip" :data-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -89,7 +89,7 @@
           </header>
           <div class="card-content">
             <div class="columns is-multiline">
-              <div class="column is-12" v-if="item.status === 'error' && item.live_in">
+              <div class="column is-12" v-if="item.live_in">
                 <span class="has-text-info">
                   LIVE stream is scheduled to start at {{ moment(item.datetime).format() }}
                 </span>

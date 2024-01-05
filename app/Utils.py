@@ -169,9 +169,11 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
         'skip_download': True,
         'ignoreerrors': True,
         'ignore_no_formats_error': True,
+        'break_on_existing': True,
         **config,
     }
 
+    logging.info(params)
     # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
     for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub'):
         if key in params:

@@ -10,7 +10,6 @@ from Download import Download
 from ItemDTO import ItemDTO
 from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, mergeConfig
-from datetime import datetime, timezone
 
 log = logging.getLogger('DownloadQueue')
 
@@ -143,17 +142,23 @@ class DownloadQueue:
                     dl.output_template = dl.output_template.replace(
                         f"%({property})s", str(value))
 
-            itemDownload = self.queue.put(Download(
+            dlInfo: Download = Download(
                 info=dl,
                 download_dir=dldirectory,
                 temp_dir=self.config.temp_path,
                 output_template_chapter=output_chapter,
                 default_ytdl_opts=self.config.ytdl_options,
                 debug=bool(self.config.ytdl_debug)
-            ))
+            );
 
-            self.event.set()
-            await self.notifier.added(itemDownload.info)
+            if dlInfo.info.live_in:
+                dlInfo.info.status = 'not_live'
+                itemDownload = self.done.put(dlInfo)
+            else:
+                itemDownload = self.queue.put(dlInfo)
+                self.event.set()
+
+            await self.notifier.emit('completed' if itemDownload.info.live_in else 'added', itemDownload.info)
 
             return {
                 'status': 'ok'
@@ -211,6 +216,8 @@ class DownloadQueue:
                     'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
                 }
             log.debug(f'entry: extract info says: {entry}')
+        except yt_dlp.utils.ExistingVideoReached:
+            return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
 

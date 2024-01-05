@@ -103,7 +103,9 @@ class Download:
                     'default': self.output_template,
                     'chapter': self.output_template_chapter
                 },
-                'socket_timeout': 30,
+                'socket_timeout': 60,
+                'break_per_url': True,
+                'ignoreerrors': False,
                 'progress_hooks': [put_status],
                 'postprocessor_hooks': [put_status_postprocessor],
                 **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),

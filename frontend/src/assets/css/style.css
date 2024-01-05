@@ -18,6 +18,10 @@
     border: 1px solid red;
   }
 
+  .is-bordered-info {
+    border: 1px solid #3e8ed0;
+  }
+
   html,
   body {
     background-color: #eaeaea;
@@ -61,6 +65,10 @@
 
     .is-bordered-danger {
       border: 1px solid red;
+    }
+
+    .is-bordered-info {
+      border: 1px solid #3e8ed0;
     }
 
     hr {
