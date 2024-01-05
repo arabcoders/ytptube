@@ -63,11 +63,21 @@
           </span>
         </button>
       </div>
+      <div class="column is-1">
+        <button type="button" class="button is-fullwidth" @click="direction = direction === 'desc' ? 'asc' : 'desc'">
+          <span class="icon-text">
+            <span class="icon">
+              <font-awesome-icon
+                :icon="direction === 'desc' ? 'fa-solid fa-arrow-down-a-z' : 'fa-solid fa-arrow-up-a-z'" />
+            </span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="columns is-multiline">
-      <div class="column is-6" v-for="item in completed" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': hasError(item) }">
+      <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
+        <div class="card" :class="{ 'is-bordered-danger': hasError(item), 'is-bordered-info': item.live_in }">
           <header class="card-header has-tooltip" :data-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -79,7 +89,7 @@
           </header>
           <div class="card-content">
             <div class="columns is-multiline">
-              <div class="column is-12" v-if="item.status === 'error' && item.live_in">
+              <div class="column is-12" v-if="item.live_in">
                 <span class="has-text-info">
                   LIVE stream is scheduled to start at {{ moment(item.datetime).format() }}
                 </span>
@@ -223,6 +233,7 @@ const props = defineProps({
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showCompleted = useStorage('showCompleted', true)
+const direction = useStorage('sortCompleted', 'desc')
 
 watch(masterSelectAll, (value) => {
   for (const key in props.completed) {
@@ -235,6 +246,15 @@ watch(masterSelectAll, (value) => {
   }
 })
 
+const sortCompleted = computed(() => {
+  const thisDirection = direction.value;
+  return Object.values(props.completed).sort((a, b) => {
+    if (thisDirection === 'asc') {
+      return new Date(a.datetime) - new Date(b.datetime);
+    }
+    return new Date(b.datetime) - new Date(a.datetime);
+  })
+})
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
 const getTotal = computed(() => Object.keys(props.completed)?.length);
