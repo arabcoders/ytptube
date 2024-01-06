@@ -173,7 +173,7 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     }
 
     # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
-    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub', 'download_archive',):
+    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub',):
         if key in params:
             del params[key]
 
