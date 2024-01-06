@@ -34,9 +34,14 @@ class Config:
 
     logging_level: str = 'info'
 
+    allow_manifestless: bool = False
+
     version: str = APP_VERSION
 
-    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'temp_keep',)
+    _boolean_vars: tuple = (
+        'keep_archive', 'ytdl_debug',
+        'temp_keep', 'allow_manifestless',
+    )
     _immutable: tuple = ('version', '__instance', 'ytdl_options',)
 
     @staticmethod

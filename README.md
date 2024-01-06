@@ -68,6 +68,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
 * __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `false`.
 * __YTP_YTDL_DEBUG__: Whether to turn debug logging for the internal `yt-dlp` package. Defaults to `false`.
+* __YTP_ALLOW_MANIFESTLESS__: Allow `yt-dlp` to download live streams videos which are yet to be processed by YouTube. Defaults to `false`
 * __YTP_HOST__: Which ip address to bind to. Defaults to `0.0.0.0`.
 * __YTP_PORT__: Which port to bind to. Defaults to `8081`.
 * __YTP_LOGGING_LEVEL__: Logging level. Defaults to `info`.

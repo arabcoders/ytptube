@@ -221,11 +221,17 @@ class DownloadQueue:
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
 
+            if not self.config.allow_manifestless and 'live_status' in entry and entry.get('live_status') is 'post_live':
+                raise yt_dlp.utils.YoutubeDLError(
+                    'Video is in Post-Live Manifestless mode.')
+
             log.debug(f'entry: extract info says: {entry}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
+
+        #
 
         return await self.__add_entry(
             entry=entry,
