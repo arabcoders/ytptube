@@ -173,7 +173,7 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     }
 
     # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
-    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub'):
+    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub',):
         if key in params:
             del params[key]
 
@@ -222,6 +222,18 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
             del new_config[key]
 
     return mergeDict(new_config, config)
+
+
+def isDownloaded(archive_file: str, info: dict) -> bool:
+    if not info or not archive_file or not os.path.exists(archive_file):
+        return False
+
+    id = yt_dlp.YoutubeDL()._make_archive_id(info)
+    if not id:
+        return False
+
+    with open(archive_file, 'r') as f:
+        return id in f.read()
 
 
 def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:

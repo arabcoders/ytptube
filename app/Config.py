@@ -8,10 +8,11 @@ from version import APP_VERSION
 
 
 class Config:
+    __instance = None
     config_path: str = '.'
     download_path: str = '.'
     temp_path: str = '{download_path}'
-
+    temp_keep: bool = False
     db_file: str = '{config_path}/ytptube.db'
 
     url_host: str = ''
@@ -22,7 +23,6 @@ class Config:
     output_template_chapter: str = '%(title)s - %(section_number)s %(section_title)s.%(ext)s'
 
     ytdl_options: dict | str = {}
-    ytdl_options_file: str = ''
     ytdl_debug: bool = False
 
     host: str = '0.0.0.0'
@@ -34,19 +34,36 @@ class Config:
 
     logging_level: str = 'info'
 
+    allow_manifestless: bool = False
+
     version: str = APP_VERSION
 
-    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug',)
-    _immutable: tuple = ('version',)
+    _boolean_vars: tuple = (
+        'keep_archive', 'ytdl_debug',
+        'temp_keep', 'allow_manifestless',
+    )
+    _immutable: tuple = ('version', '__instance', 'ytdl_options',)
+
+    @staticmethod
+    def get_instance():
+        """ Static access method. """
+        return Config() if not Config.__instance else Config.__instance
 
     def __init__(self):
+        """ Virtually private constructor. """
+        if Config.__instance is not None:
+            raise Exception(
+                "This class is a singleton!. Use Config.getInstance() instead.")
+        else:
+            Config.__instance = self
+
         baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))
 
         self.config_path = os.path.join(baseDefualtPath, 'var', 'config')
         self.download_path = os.path.join(baseDefualtPath, 'var', 'downloads')
         self.temp_path = os.path.join(baseDefualtPath, 'var', 'tmp')
 
-        for k, v in self.getAttributes().items():
+        for k, v in self._getAttributes().items():
             if k.startswith('_'):
                 continue
 
@@ -102,37 +119,28 @@ class Config:
 
         coloredlogs.install()
 
-        if isinstance(self.ytdl_options, str):
-            try:
-                self.ytdl_options = json.loads(self.ytdl_options)
-                assert isinstance(self.ytdl_options, dict)
-            except (json.decoder.JSONDecodeError, AssertionError) as e:
-                log.error(f'JSON error in "YTP_YTDL_OPTIONS": {e}')
-                sys.exit(1)
+        optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
+        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
+            log.info(f'Loading yt-dlp custom options from "{optsFile}"')
 
-        if self.ytdl_options_file:
-            log.info(
-                f'Loading yt-dlp custom options from "{self.ytdl_options_file}"')
-            if not os.path.exists(self.ytdl_options_file):
+            try:
+                with open(optsFile) as json_data:
+                    opts = json.load(json_data)
+                assert isinstance(opts, dict)
+                self.ytdl_options.update(opts)
+            except (json.decoder.JSONDecodeError, AssertionError) as e:
                 log.error(
-                    f'"YTP_YTDL_OPTIONS_FILE" ENV points to non-existent file: "{self.ytdl_options_file}"')
-            else:
-                try:
-                    with open(self.ytdl_options_file) as json_data:
-                        opts = json.load(json_data)
-                    assert isinstance(opts, dict)
-                    self.ytdl_options.update(opts)
-                except (json.decoder.JSONDecodeError, AssertionError) as e:
-                    log.error(
-                        f'JSON error in "{self.ytdl_options_file}": {e}')
-                    sys.exit(1)
+                    f'JSON error in "{optsFile}": {e}')
+                sys.exit(1)
+        else:
+            log.info(f'No custom yt-dlp options found in "{self.config_path}"')
 
         if self.keep_archive:
             log.info(f'keep archive: {self.keep_archive}')
             self.ytdl_options['download_archive'] = os.path.join(
                 self.config_path, 'archive.log')
 
-    def getAttributes(self) -> dict:
+    def _getAttributes(self) -> dict:
         attrs: dict = {}
         vclass: str = self.__class__
 

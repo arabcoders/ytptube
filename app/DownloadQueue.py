@@ -1,5 +1,6 @@
 import asyncio
 from email.utils import formatdate
+import json
 import logging
 import os
 import time
@@ -9,7 +10,7 @@ from Config import Config
 from Download import Download
 from ItemDTO import ItemDTO
 from DataStore import DataStore
-from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, mergeConfig
+from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 
 log = logging.getLogger('DownloadQueue')
 
@@ -216,11 +217,21 @@ class DownloadQueue:
                     'status': 'error',
                     'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
                 }
+
+            if self.isDownloaded(entry):
+                raise yt_dlp.utils.ExistingVideoReached()
+
+            if self.config.allow_manifestless is False and 'live_status' in entry and 'post_live' == entry.get('live_status'):
+                raise yt_dlp.utils.YoutubeDLError(
+                    'Video is in Post-Live Manifestless mode.')
+
             log.debug(f'entry: extract info says: {entry}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
+
+        #
 
         return await self.__add_entry(
             entry=entry,
@@ -313,3 +324,6 @@ class DownloadQueue:
                 else:
                     self.done.put(entry)
                     await self.notifier.completed(entry.info)
+
+    def isDownloaded(self, info: dict) -> bool:
+        return self.config.keep_archive and isDownloaded(self.config.ytdl_options.get('download_archive', None), info)

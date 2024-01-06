@@ -9,6 +9,7 @@ import shutil
 import yt_dlp
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
+from Config import Config
 
 log = logging.getLogger('download')
 
@@ -37,6 +38,7 @@ class Download:
         'speed',
         'eta',
     )
+    tempKeep: bool = False
 
     def __init__(
         self,
@@ -64,6 +66,7 @@ class Download:
         self.proc = None
         self.loop = None
         self.notifier = None
+        self.tempKeep = bool(Config.get_instance().temp_keep)
 
     def _download(self):
         try:
@@ -88,7 +91,8 @@ class Download:
                     )
 
             # Create temp dir for each download.
-            self.tempPath = os.path.join(self.temp_dir, self.info._id)
+            self.tempPath = os.path.join(
+                self.temp_dir, self.info.id if self.info.id else self.info._id)
             if not os.path.exists(self.tempPath):
                 os.makedirs(self.tempPath, exist_ok=True)
 
@@ -144,9 +148,13 @@ class Download:
                 'error': str(exc)
             })
         finally:
-            if self.tempPath and self.info._id and os.path.exists(self.tempPath):
-                log.debug(f'Deleting Temp directory: {self.tempPath}')
-                shutil.rmtree(self.tempPath, ignore_errors=True)
+            if self.tempKeep is False and self.tempPath and os.path.exists(self.tempPath):
+                if self.tempPath == self.temp_dir:
+                    log.warning(
+                        f'Attempted to delete video temp directory: {self.tempPath}, but it is the same as main temp directory.')
+                else:
+                    log.debug(f'Deleting Temp directory: {self.tempPath}')
+                    shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier: Notifier):
         if self.manager is None:

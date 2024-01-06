@@ -60,14 +60,18 @@ services:
 
 Certain values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in docker-compose.
 
-* __UMASK__: umask value used by YTPTube. Defaults to `022`.
 * __YTP_CONFIG_PATH__: path to where the queue persistence files will be saved. Defaults to `/config` in the docker image, and `./var/config` otherwise.
 * __YTP_DOWNLOAD_PATH__: path to where the downloads will be saved. Defaults to `/downloads` in the docker image, and `./var/downloads` otherwise.
 * __YTP_TEMP_PATH__: path where intermediary download files will be saved. Defaults to `/tmp` in the docker image, and `./var/tmp` otherwise.
+* __YTP_TEMP_KEEP__: Whether to keep the Individual video temp directory or remove it. Useful for live streams that don't keep archive. Defaults to `false`.
 * __YTP_URL_PREFIX__: base path for the web server (for use when hosting behind a reverse proxy). Defaults to `/`.
 * __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
-* __YTP_YTDL_OPTIONS_FILE__: A path to a JSON file that will be loaded and used for populating `ytdlp options`.
 * __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `false`.
+* __YTP_YTDL_DEBUG__: Whether to turn debug logging for the internal `yt-dlp` package. Defaults to `false`.
+* __YTP_ALLOW_MANIFESTLESS__: Allow `yt-dlp` to download live streams videos which are yet to be processed by YouTube. Defaults to `false`
+* __YTP_HOST__: Which ip address to bind to. Defaults to `0.0.0.0`.
+* __YTP_PORT__: Which port to bind to. Defaults to `8081`.
+* __YTP_LOGGING_LEVEL__: Logging level. Defaults to `info`.
 
 ## Running behind a reverse proxy
 
@@ -146,25 +150,94 @@ A Docker image can be built locally (it will build the UI too):
 docker build . -t ytptube
 ```
 
+### ytdlp.json File
+
+The `config/ytdlp.json`, is a json file which can be used to alter the default `yt-dlp` config settings. For example these are the options i personally use,
+
+```json5
+{
+  // Make the final filename windows compatible.
+  "windowsfilenames": true,
+  // Write subtitles if the stream has them.
+  "writesubtitles": true,
+  // How many parts to download at the same time.
+  "concurrent_fragment_downloads": 10,
+  // If we encounter error during downloading how many times should we retry.
+  "fragment_retries": 10,
+  // Should we skip fragments? sometimes skipping fragments leads to missing live stream fragments.
+  "skip_unavailable_fragments": false,
+  // Write info.json file for each download. It can be used by many tools to generate info etc.
+  "writeinfojson": true,
+  // Write thumbnail if available.
+  "writethumbnail": true,
+  // Do not download automatically generated subtitles. 
+  "writeautomaticsub": false,
+  // MP4 is limited with the codecs we use, so "mkv" make sense.
+  "merge_output_format": "mkv",
+  // Record live stream from the start.
+  "live_from_start": true,
+  // For YouTube try to force H264 video codec & AAC audio.
+  "format_sort": [
+      "codec:avc:m4a"
+  ],
+  // Your Choice of subtitle languages to download.
+  "subtitleslangs": [ "en", "ar" ],
+  // postprocessors to run on the file
+  "postprocessors": [
+      // this processor convert the downloaded thumbnail to JPG.
+      {
+          "key": "FFmpegThumbnailsConvertor",
+          "format": "jpg"
+      },
+      // This processor convert subtitles to SRT
+      {
+          "key": "FFmpegSubtitlesConvertor",
+          "format": "srt"
+      },
+      // This processor embed metadata & info.json file into the final MKV file.
+      {
+          "key": "FFmpegMetadata",
+          "add_infojson": true,
+          "add_metadata": true
+      },
+      // This process embed subtitles into the final file if it doesn't subtitles embedded.
+      {
+          "key": "FFmpegEmbedSubtitle",
+          "already_have_subtitle": false
+      }
+  ]
+}
+``` 
+
 ### tasks.json File
 
 The `config/tasks.json`, is a json file, which can be used to queue URLs for downloading, it's mainly useful if you follow specific channels and you want it downloaded automatically, The schema for the file is as the following, Only the `URL` key is required.
 
-```json
+```json5
 [
   {
-    "url": "", // (URL: string) **REQUIRED**, URL to the content.
-    "name": "My super secret channel", // (Name: string) Optional field. Mainly used for logging. If omitted, random GUID will be shown.
-    "timer": "1 */1 * * *", // (Timer: string) Optional field. Using regular cronjob timer, if the field is omitted, it will run every hour in random minute.
-    "ytdlp_cookies": {}, // (yt-dlp cookies: object) Optional field. A JSON cookies exported by flagCookies.
-    "ytdlp_config": {}, // (yt-dlp config: object) Optional field. A JSON yt-dlp config.
-    "output_template": "", // (Output Template: string) Optional field. A File output format,
-    "folder":"", // (Folder: string) Optional field. Where to store the downloads relative to the main download path.
-    "format": "", // (Format: string) Optional field. Format as specified in Web GUI. Defaults to "any".
-    "quality": "", // (Quality: string), Optional field. Quality as specified in Web GUI. Defaults to "best".
+    // (URL: string) **REQUIRED**, URL to the content.
+    "url": "", 
+    // (Name: string) Optional field. Mainly used for logging. If omitted, random GUID will be shown.
+    "name": "My super secret channel", 
+    // (Timer: string) Optional field. Using regular cronjob timer, if the field is omitted, it will run every hour in random minute.
+    "timer": "1 */1 * * *", 
+    // (yt-dlp cookies: object) Optional field. A JSON cookies exported by flagCookies.
+    "ytdlp_cookies": {}, 
+    // (yt-dlp config: object) Optional field. A JSON yt-dlp config.
+    "ytdlp_config": {},
+    // (Output Template: string) Optional field. A File output format,
+    "output_template": "",
+    // (Folder: string) Optional field. Where to store the downloads relative to the main download path.
+    "folder":"",
+    // (Format: string) Optional field. Format as specified in Web GUI. Defaults to "any".
+    "format": "",
+    // (Quality: string), Optional field. Quality as specified in Web GUI. Defaults to "best".
+    "quality": "", 
   },
   {
-    "url": "https://..." // This is valid config, it will queue the channel for downloading every hour at random minute.
+   // (URL: string) **REQUIRED**, URL to the content.
+   "url": "https://..." // This is valid config, it will queue the channel for downloading every hour at random minute.
   },
   ...
 ]

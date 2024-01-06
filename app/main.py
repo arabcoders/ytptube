@@ -18,6 +18,7 @@ import caribou
 import sqlite3
 from aiocron import crontab
 
+
 class Main:
     config: Config = None
     serializer: ObjectSerializer = None
@@ -30,7 +31,7 @@ class Main:
     logger: logging.Logger = None
 
     def __init__(self):
-        self.config = Config()
+        self.config = Config.get_instance()
         self.logger = logging.getLogger('main')
 
         try:
@@ -42,6 +43,7 @@ class Main:
             self.logger.error(
                 f'Could not create download folder at {self.config.download_path}')
             raise e
+
         try:
             if not os.path.exists(self.config.temp_path):
                 self.logger.info(
