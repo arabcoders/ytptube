@@ -156,15 +156,18 @@ class DownloadQueue:
             if dlInfo.info.live_in:
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
+                NotifiyEvent = 'completed'
             elif self.config.allow_manifestless is False and 'live_status' in entry and 'post_live' == entry.get('live_status'):
                 dlInfo.info.status = 'error'
                 dlInfo.info.error = 'Video is in Post-Live Manifestless mode.'
                 itemDownload = self.done.put(dlInfo)
+                NotifiyEvent = 'completed'
             else:
+                NotifiyEvent = 'added'
                 itemDownload = self.queue.put(dlInfo)
                 self.event.set()
 
-            await self.notifier.emit('completed' if itemDownload.info.live_in else 'added', itemDownload.info)
+            await self.notifier.emit(NotifiyEvent, itemDownload.info)
 
             return {
                 'status': 'ok'
