@@ -221,7 +221,7 @@ class DownloadQueue:
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
 
-            if not self.config.allow_manifestless and 'live_status' in entry and 'post_live' == entry.get('live_status'):
+            if self.config.allow_manifestless is False and 'live_status' in entry and 'post_live' == entry.get('live_status'):
                 raise yt_dlp.utils.YoutubeDLError(
                     'Video is in Post-Live Manifestless mode.')
 
