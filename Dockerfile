@@ -28,8 +28,12 @@ ENV YTP_CONFIG_PATH=/config
 ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads
 
+# removed ffmpeg as 6.1.0 is broken with DASH protocal downloads
+COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/bin/
+COPY --from=mwader/static-ffmpeg:6.1.1 /ffprobe /usr/bin/
+
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apk add --update --no-cache bash ffmpeg mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata && \
+  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata && \
   useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   rm -rf /var/cache/apk/*
 
