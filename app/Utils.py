@@ -1,3 +1,4 @@
+import asyncio
 import copy
 from datetime import datetime, timezone
 import json
@@ -6,6 +7,7 @@ import os
 from typing import Any
 import yt_dlp
 from socketio import AsyncServer
+from Webhooks import Webhooks
 
 log = logging.getLogger('Utils')
 
@@ -294,9 +296,21 @@ class Notifier:
     This class is used to send events to the frontend.
     '''
 
-    def __init__(self, sio: AsyncServer, serializer: ObjectSerializer):
+    sio: AsyncServer = None
+    "SocketIO server instance"
+    serializer: ObjectSerializer = None
+    "Serializer used to serialize objects to JSON"
+    webhooks: Webhooks = None
+    "Send webhooks events."
+    webhooks_allowed_events: tuple = (
+        'added', 'completed', 'error', 'not_live'
+    )
+    "Events that are allowed to be sent to webhooks."
+
+    def __init__(self, sio: AsyncServer, serializer: ObjectSerializer, webhooks: Webhooks = None):
         self.sio = sio
         self.serializer = serializer
+        self.webhooks = webhooks
 
     async def added(self, dl: dict):
         await self.emit('added', dl)
@@ -317,4 +331,10 @@ class Notifier:
         await self.emit('error', (dl, message))
 
     async def emit(self, event: str, data):
-        await self.sio.emit(event, self.serializer.encode(data))
+        tasks = []
+        tasks.append(self.sio.emit(event, self.serializer.encode(data)))
+
+        if self.webhooks and event in self.webhooks_allowed_events:
+            tasks.append(self.webhooks.send(event, data))
+
+        await asyncio.gather(*tasks)

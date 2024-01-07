@@ -10,6 +10,7 @@ from DownloadQueue import DownloadQueue
 from Utils import ObjectSerializer, Notifier
 from aiohttp import web
 from aiohttp.web import Request, Response
+from Webhooks import Webhooks
 from player.M3u8 import M3u8
 from player.Segments import Segments
 import socketio
@@ -77,7 +78,8 @@ class Main:
 
         caribou.upgrade(self.config.db_file, os.path.join(
             os.path.realpath(os.path.dirname(__file__)), 'migrations'))
-
+        self.webhooks = Webhooks(os.path.join(
+            self.config.config_path, 'webhooks.json'))
         self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
         self.app = web.Application()
@@ -87,10 +89,11 @@ class Main:
         self.routes = web.RouteTableDef()
         self.connection = sqlite3.connect(self.config.db_file)
         self.dqueue = DownloadQueue(
-            self.config,
-            Notifier(sio=self.sio, serializer=self.serializer),
+            config=self.config,
+            notifier=Notifier(
+                sio=self.sio, serializer=self.serializer, webhooks=self.webhooks),
             connection=self.connection,
-            serializer=self.serializer
+            serializer=self.serializer,
         )
         self.app.on_startup.append(lambda _: self.dqueue.initialize())
         self.addRoutes()

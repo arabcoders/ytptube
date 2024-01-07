@@ -28,7 +28,7 @@ class Config:
     host: str = '0.0.0.0'
     port: int = 8081
 
-    keep_archive: bool = False
+    keep_archive: bool = True
 
     base_path: str = ''
 

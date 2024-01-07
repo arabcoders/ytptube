@@ -13,7 +13,8 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) projec
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
 * Support per link, `yt-dlp config` and `cookies`. and `output format`
-* Tasks Runner. It allow you to queue channels for downloading using simple `json` file for configuration.
+* Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
+* Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -246,6 +247,32 @@ The `config/tasks.json`, is a json file, which can be used to queue URLs for dow
 The task runner is doing what you are doing when you click the add button on the WebGUI, this just fancy way to automate that.
 
 **WARNING**: We strongly advice turning on `YTP_KEEP_ARCHIVE` option. Otherwise, you will keep re-downloading the items, and you will eventually get banned from the source or or you will waste space, bandwidth re-downloading content over and over.
+
+### webhooks.json File
+
+The `config/webhooks.json`, is a json file, which can be used to add webhook endpoints that would receive events related to the downloads.
+
+```json5
+[
+  {
+    // (name: string) - REQUIRED - The webhook name.
+    "name": "my very smart webhook receiver",
+    // (on: array) - OPTIONAL - List of accepted events, if left empty it will send all events.
+    // Allowed events ["added", "completed", "error", "not_live" ] you can choose one or all of them.
+    "on": [ "added", "completed", "error", "not_live" ],
+    "request":{
+      // (url: string) - REQUIRED-  The webhook url
+      "url": "https://mysecert.webhook.com/endpoint", 
+      // (method: string) - OPTIONAL - The request method, it can be POST or PUT
+      "method": "POST",
+      // (headers: dictionary) - OPTIONAL - Extra headers to include.
+      "headers":{
+        "Authorization": "Bearer my_secret_token"
+      }
+  }
+  ...
+]
+```
 
 # Donation 
 

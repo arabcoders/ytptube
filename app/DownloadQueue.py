@@ -1,6 +1,5 @@
 import asyncio
 from email.utils import formatdate
-import json
 import logging
 import os
 import time
