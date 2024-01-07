@@ -14,10 +14,14 @@ class Webhooks:
     def __init__(self, file: str):
         if os.path.exists(file):
             try:
+                if os.path.getsize(file) < 2:
+                    raise Exception(f'file is empty.')
+
                 log.info(f'Loading webhooks from {file}')
                 with open(file, 'r') as f:
                     self.targets = json.load(f)
             except Exception as e:
+                log.error(f'Error loading webhooks from {file}: {e}')
                 pass
 
     async def send(self, event: str, item: ItemDTO) -> list[dict]:
