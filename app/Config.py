@@ -44,6 +44,7 @@ class Config:
         'keep_archive', 'ytdl_debug',
         'temp_keep', 'allow_manifestless',
     )
+    _int_vars: tuple = ('port', 'max_workers',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options',)
 
     @staticmethod
@@ -102,6 +103,9 @@ class Config:
 
                 setattr(self, k, str(v).lower() in (True, 'true', 'on', '1'))
 
+            if k in self._int_vars:
+                setattr(self, k, int(v))
+
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
 
@@ -141,6 +145,8 @@ class Config:
             log.info(f'keep archive: {self.keep_archive}')
             self.ytdl_options['download_archive'] = os.path.join(
                 self.config_path, 'archive.log')
+
+        log.info(f'Keep temp: {self.temp_keep}')
 
     def _getAttributes(self) -> dict:
         attrs: dict = {}

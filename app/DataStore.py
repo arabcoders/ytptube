@@ -3,6 +3,7 @@ import copy
 from datetime import datetime, timezone
 from email.utils import formatdate
 import json
+import logging
 import sqlite3
 from Utils import calcDownloadPath
 from Config import Config
@@ -45,10 +46,9 @@ class DataStore:
         if key and key in self.dict:
             return True
 
-        if url:
-            for key in self.dict:
-                if self.dict[key].info.url == url:
-                    return True
+        for i in self.dict:
+            if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
+                return True
 
         return False
 
@@ -56,13 +56,9 @@ class DataStore:
         if not key and not url:
             raise KeyError('key or url must be provided')
 
-        if key and key in self.dict:
-            return self.dict[key]
-
-        if url:
-            for key in self.dict:
-                if self.dict[key].info.url == url:
-                    return self.dict[key]
+        for i in self.dict:
+            if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
+                return self.dict[i]
 
         raise KeyError('key or url not found')
 
@@ -91,10 +87,10 @@ class DataStore:
         return items
 
     def put(self, value: Download) -> Download:
-        for key in self.dict:
-            if self.dict[key].info.url == value.info.url:
-                value.info._id = key
-                return
+        # for key in self.dict:
+        #     if self.dict[key].info.url == value.info.url:
+        #         value.info._id = key
+        #         return
 
         self.dict[value.info._id] = value
         self._updateStoreItem(self.type, value.info)
@@ -123,6 +119,13 @@ class DataStore:
                 return True
 
         return False
+
+    def getNextDownload(self) -> Download:
+        for key in self.dict:
+            if self.dict[key].started() is False and self.dict[key].is_canceled() is False:
+                return self.dict[key]
+
+        return None
 
     def _updateStoreItem(self, type: str, item: ItemDTO) -> None:
         sqlStatement = """
