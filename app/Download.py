@@ -28,6 +28,8 @@ class Download:
     debug: bool = False
     tempPath: str = None
     notifier: Notifier = None
+    canceled: bool = False
+
     _ytdlp_fields: tuple = (
         'tmpfilename',
         'filename',
@@ -94,12 +96,6 @@ class Download:
                         'filename': filename
                     })
 
-            # Create temp dir for each download.
-            self.tempPath = os.path.join(
-                self.temp_dir, self.info.id if self.info.id else self.info._id)
-            if not os.path.exists(self.tempPath):
-                os.makedirs(self.tempPath, exist_ok=True)
-
             params: dict = {
                 'no_color': True,
                 'format': self.format,
@@ -154,14 +150,6 @@ class Download:
                 'msg': str(exc),
                 'error': str(exc)
             })
-        finally:
-            if self.tempKeep is False and self.tempPath and os.path.exists(self.tempPath):
-                if self.tempPath == self.temp_dir:
-                    log.warning(
-                        f'Attempted to delete video temp directory: {self.tempPath}, but it is the same as main temp directory.')
-                else:
-                    log.debug(f'Deleting Temp directory: {self.tempPath}')
-                    shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def start(self, notifier: Notifier):
         if self.manager is None:
@@ -171,6 +159,11 @@ class Download:
         self.loop = asyncio.get_running_loop()
         self.notifier = notifier
 
+        # Create temp dir for each download.
+        self.tempPath = os.path.join(self.temp_dir, self.info._id)
+        if not os.path.exists(self.tempPath):
+            os.makedirs(self.tempPath, exist_ok=True)
+
         self.proc = multiprocessing.Process(target=self._download)
         self.proc.start()
         self.info.status = 'preparing'
@@ -178,25 +171,44 @@ class Download:
         asyncio.create_task(self.progress_update())
         return await self.loop.run_in_executor(None, self.proc.join)
 
+    def started(self) -> bool:
+        return self.proc is not None
+
     def cancel(self):
-        if self.running():
-            self.proc.kill()
+        self.kill()
         self.canceled = True
 
     def close(self):
         if self.started():
             self.proc.close()
-            if self.max_workers < 1:
-                self.status_queue.put(None)
+
+        self.delete_temp()
 
     def running(self) -> bool:
-        try:
-            return self.proc is not None and self.proc.is_alive()
-        except ValueError:
-            return False
+        return self.started() and self.proc.is_alive()
 
-    def started(self) -> bool:
-        return self.proc is not None
+    def is_canceled(self) -> bool:
+        return self.canceled
+
+    def kill(self):
+        if self.running():
+            log.info(f'Killing download process: {self.proc.ident}')
+            self.proc.kill()
+
+    def delete_temp(self):
+        if self.tempKeep is True or not self.tempPath:
+            return
+
+        if not os.path.exists(self.tempPath):
+            return
+
+        if self.tempPath == self.temp_dir:
+            log.warning(
+                f'Attempted to delete video temp directory: {self.tempPath}, but it is the same as main temp directory.')
+            return
+
+        log.info(f'Deleting Temp directory: {self.tempPath}')
+        shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def progress_update(self):
         """
@@ -204,7 +216,7 @@ class Download:
         """
         while True:
             status = await self.loop.run_in_executor(None, self.status_queue.get)
-            if not status or status.get('id') != self.id:
+            if status.get('id') != self.id or len(status) < 2:
                 return
 
             if self.debug:

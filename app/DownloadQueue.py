@@ -257,17 +257,18 @@ class DownloadQueue:
 
     async def cancel(self, ids):
         for id in ids:
-            if not self.queue.exists(id):
+            if self.queue.exists(key=id) is False:
                 log.warn(f'Requested cancel for non-existent download {id=}')
                 continue
 
             item = self.queue.get(key=id)
 
-            if item.started():
+            if item.started() is True:
                 log.info(f'Canceling {id=} {item.info.title=}')
                 item.cancel()
             else:
                 self.queue.delete(id)
+                item.close()
                 log.info(f'Deleting {id=} {item.info.title=}')
                 await self.notifier.canceled(id)
 
@@ -326,11 +327,12 @@ class DownloadQueue:
                     else:
                         break
 
-                for id in self.queue.dict:
-                    entry = self.queue.get(key=id)
-                    if entry.started() is False and entry.canceled is False:
-                        await executor.push(id=id, entry=entry)
-                        await asyncio.sleep(1)
+                entry = self.queue.getNextDownload()
+                await asyncio.sleep(0.2)
+
+                if entry.started() is False and entry.is_canceled() is False:
+                    await executor.push(id=entry.info._id, entry=entry)
+                    await asyncio.sleep(1)
 
     async def __downloadFile(self, id: str, entry: Download):
         log.info(
@@ -349,12 +351,12 @@ class DownloadQueue:
 
         entry.close()
 
-        if self.queue.exists(id):
-            self.queue.delete(id)
-            if entry.canceled:
+        if self.queue.exists(key=id):
+            self.queue.delete(key=id)
+            if entry.is_canceled() is True:
                 await self.notifier.canceled(id)
             else:
-                self.done.put(entry)
+                self.done.put(value=entry)
                 await self.notifier.completed(entry.info)
 
     async def __download(self):
