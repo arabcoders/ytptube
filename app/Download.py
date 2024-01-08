@@ -1,9 +1,9 @@
-
 import asyncio
 import json
 import logging
 import multiprocessing
 import os
+import queue
 import re
 import shutil
 import yt_dlp
@@ -15,6 +15,7 @@ log = logging.getLogger('download')
 
 
 class Download:
+    id: str = None
     manager = None
     download_dir: str = None
     temp_dir: str = None
@@ -57,6 +58,7 @@ class Download:
         self.ytdl_opts = get_opts(
             info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
+        self.id = info._id
         self.default_ytdl_opts = default_ytdl_opts
         self.debug = debug
 
@@ -66,13 +68,15 @@ class Download:
         self.proc = None
         self.loop = None
         self.notifier = None
-        self.tempKeep = bool(Config.get_instance().temp_keep)
+        config = Config.get_instance()
+        self.max_workers = int(config.max_workers)
+        self.tempKeep = bool(config.temp_keep)
 
     def _download(self):
         try:
             def put_status(st):
-                self.status_queue.put(
-                    {k: v for k, v in st.items() if k in self._ytdlp_fields})
+                dicto = {k: v for k, v in st.items() if k in self._ytdlp_fields}
+                self.status_queue.put({'id': self.id, **dicto})
 
             def put_status_postprocessor(d):
                 if d['postprocessor'] == 'MoveFiles' and d['status'] == 'finished':
@@ -83,12 +87,12 @@ class Download:
                         )
                     else:
                         filename = d['info_dict']['filepath']
-                    self.status_queue.put(
-                        {
-                            'status': 'finished',
-                            'filename': filename
-                        }
-                    )
+
+                    self.status_queue.put({
+                        'id': self.id,
+                        'status': 'finished',
+                        'filename': filename
+                    })
 
             # Create temp dir for each download.
             self.tempPath = os.path.join(
@@ -136,13 +140,16 @@ class Download:
 
             log.info(
                 f'Downloading id="{self.info.id}" title="{self.info.title}".')
+
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
-            self.status_queue.put(
-                {'status': 'finished' if ret == 0 else 'error'}
-            )
+            self.status_queue.put({
+                'id': self.id,
+                'status': 'finished' if ret == 0 else 'error'
+            })
         except Exception as exc:
             self.status_queue.put({
+                'id': self.id,
                 'status': 'error',
                 'msg': str(exc),
                 'error': str(exc)
@@ -179,15 +186,16 @@ class Download:
     def close(self):
         if self.started():
             self.proc.close()
-            self.status_queue.put(None)
+            if self.max_workers < 1:
+                self.status_queue.put(None)
 
-    def running(self):
+    def running(self) -> bool:
         try:
             return self.proc is not None and self.proc.is_alive()
         except ValueError:
             return False
 
-    def started(self):
+    def started(self) -> bool:
         return self.proc is not None
 
     async def progress_update(self):
@@ -196,7 +204,7 @@ class Download:
         """
         while True:
             status = await self.loop.run_in_executor(None, self.status_queue.get)
-            if not status:
+            if not status or status.get('id') != self.id:
                 return
 
             if self.debug:

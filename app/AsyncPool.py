@@ -32,7 +32,7 @@ class AsyncPool:
         @param expected_total: (optional) expected total number of jobs (used for `log_event_n` logging)
         @return: instance of AsyncWorkerPool
         """
-        loop = loop or asyncio.get_event_loop()
+        loop = loop if loop else asyncio.get_event_loop()
         self._loop = loop
         self._num_workers = num_workers
         self._logger = logger
@@ -65,7 +65,7 @@ class AsyncPool:
                 future, args, kwargs = item
                 # the wait_for will cancel the task (task sees CancelledError) and raises a TimeoutError from here
                 # so be wary of catching TimeoutErrors in this loop
-                result = await asyncio.wait_for(self._worker_co(*args, **kwargs), self._max_task_time, loop=self._loop)
+                result = await asyncio.wait_for(self._worker_co(*args, **kwargs), self._max_task_time)
 
                 if future:
                     future.set_result(result)
@@ -93,6 +93,12 @@ class AsyncPool:
     @property
     def total_queued(self):
         return self._total_queued
+
+    def has_open_workers(self) -> bool:
+        """
+        :return: True if there are open workers.
+        """
+        return self._queue.qsize() < self._num_workers
 
     async def __aenter__(self):
         self.start()
@@ -144,7 +150,7 @@ class AsyncPool:
             await self._queue.put(Terminator())
 
         try:
-            await asyncio.gather(*self._workers, loop=self._loop)
+            await asyncio.gather(*self._workers)
             self._workers = None
         except:
             self._logger.exception('Exception joining {}'.format(self._name))

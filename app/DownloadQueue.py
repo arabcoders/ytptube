@@ -10,8 +10,11 @@ from Download import Download
 from ItemDTO import ItemDTO
 from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
+from AsyncPool import AsyncPool
+from concurrent.futures import ProcessPoolExecutor
 
 log = logging.getLogger('DownloadQueue')
+dl_queue = asyncio.Queue()
 
 
 class DownloadQueue:
@@ -35,7 +38,15 @@ class DownloadQueue:
 
     async def initialize(self):
         self.event = asyncio.Event()
-        asyncio.create_task(self.__download())
+        if self.config.max_workers > 0:
+            log.info(
+                f'Using {self.config.max_workers} workers for downloading.')
+        else:
+            log.info('Using single threaded download.')
+
+        asyncio.create_task(
+            self.__download_pool() if self.config.max_workers > 0 else self.__download()
+        )
 
     async def __add_entry(
         self,
@@ -252,9 +263,9 @@ class DownloadQueue:
 
             item = self.queue.get(key=id)
 
-            if self.queue.get(id).started():
+            if item.started():
                 log.info(f'Canceling {id=} {item.info.title=}')
-                self.queue.get(id).cancel()
+                item.cancel()
             else:
                 self.queue.delete(id)
                 log.info(f'Deleting {id=} {item.info.title=}')
@@ -293,6 +304,59 @@ class DownloadQueue:
 
         return items
 
+    async def __download_pool(self):
+        async with AsyncPool(
+            loop=asyncio.get_running_loop(),
+            num_workers=self.config.max_workers,
+            worker_co=self.__downloadFile,
+            name='WorkerPool',
+            logger=logging.getLogger('WorkerPool')
+        ) as executor:
+            while True:
+                while not self.queue.hasDownloads():
+                    log.info('waiting for item to download.')
+                    await self.event.wait()
+                    self.event.clear()
+
+                while True:
+                    if executor.has_open_workers() is False:
+                        log.info(
+                            f'Waiting for workers to finish. {executor.total_queued} items in queue.')
+                        await asyncio.sleep(1)
+                    else:
+                        break
+
+                for id in self.queue.dict:
+                    entry = self.queue.get(key=id)
+                    if entry.started() is False and entry.canceled is False:
+                        await executor.push(id=id, entry=entry)
+                        await asyncio.sleep(1)
+
+    async def __downloadFile(self, id: str, entry: Download):
+        log.info(
+            f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
+
+        await entry.start(self.notifier)
+
+        if entry.info.status != 'finished':
+            if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
+                try:
+                    os.remove(entry.tmpfilename)
+                except:
+                    pass
+
+            entry.info.status = 'error'
+
+        entry.close()
+
+        if self.queue.exists(id):
+            self.queue.delete(id)
+            if entry.canceled:
+                await self.notifier.canceled(id)
+            else:
+                self.done.put(entry)
+                await self.notifier.completed(entry.info)
+
     async def __download(self):
         while True:
             while self.queue.empty():
@@ -301,29 +365,7 @@ class DownloadQueue:
                 self.event.clear()
 
             id, entry = self.queue.next()
-            log.info(
-                f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
-
-            await entry.start(self.notifier)
-
-            if entry.info.status != 'finished':
-                if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
-                    try:
-                        os.remove(entry.tmpfilename)
-                    except:
-                        pass
-
-                entry.info.status = 'error'
-
-            entry.close()
-
-            if self.queue.exists(id):
-                self.queue.delete(id)
-                if entry.canceled:
-                    await self.notifier.canceled(id)
-                else:
-                    self.done.put(entry)
-                    await self.notifier.completed(entry.info)
+            await self.__downloadFile(id, entry)
 
     def isDownloaded(self, info: dict) -> bool:
         return self.config.keep_archive and isDownloaded(self.config.ytdl_options.get('download_archive', None), info)

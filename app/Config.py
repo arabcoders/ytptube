@@ -36,6 +36,8 @@ class Config:
 
     allow_manifestless: bool = False
 
+    max_workers: int = 0
+
     version: str = APP_VERSION
 
     _boolean_vars: tuple = (
