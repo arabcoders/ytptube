@@ -34,9 +34,9 @@
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_YTDL_OPTIONS_FILE": "${workspaceFolder}/var/config/ytdlp.json",
         "YTP_URL_HOST": "http://localhost:8081",
-        "YTP_YTDL_DEBUG": "true",
+        "YTP_YTDL_DEBUG": "false",
         "YTP_TEMP_KEEP": "true",
-        "YTP_KEEP_ARCHIVE": "true",
+        "YTP_KEEP_ARCHIVE": "false",
       }
     }
   ]

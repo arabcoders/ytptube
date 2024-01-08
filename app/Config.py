@@ -28,13 +28,15 @@ class Config:
     host: str = '0.0.0.0'
     port: int = 8081
 
-    keep_archive: bool = False
+    keep_archive: bool = True
 
     base_path: str = ''
 
     logging_level: str = 'info'
 
     allow_manifestless: bool = False
+
+    max_workers: int = 0
 
     version: str = APP_VERSION
 

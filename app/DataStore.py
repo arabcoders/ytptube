@@ -114,6 +114,16 @@ class DataStore:
     def empty(self):
         return not bool(self.dict)
 
+    def hasDownloads(self):
+        if 0 == len(self.dict):
+            return False
+
+        for key in self.dict:
+            if self.dict[key].started() is False:
+                return True
+
+        return False
+
     def _updateStoreItem(self, type: str, item: ItemDTO) -> None:
         sqlStatement = """
         INSERT INTO "history" ("id", "type", "url", "data")
