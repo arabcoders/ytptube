@@ -10,6 +10,7 @@ yt-dlp = "*"
 caribou = "*"
 coloredlogs = "*"
 aiocron = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
