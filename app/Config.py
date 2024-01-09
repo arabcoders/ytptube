@@ -5,6 +5,7 @@ import re
 import sys
 import coloredlogs
 from version import APP_VERSION
+from dotenv import load_dotenv
 
 
 class Config:
@@ -60,11 +61,20 @@ class Config:
         else:
             Config.__instance = self
 
-        baseDefualtPath: str = os.path.dirname(os.path.dirname(__file__))
+        baseDefualtPath: str = os.path.dirname(__file__)
 
-        self.config_path = os.path.join(baseDefualtPath, 'var', 'config')
-        self.download_path = os.path.join(baseDefualtPath, 'var', 'downloads')
-        self.temp_path = os.path.join(baseDefualtPath, 'var', 'tmp')
+        self.config_path = os.environ.get('YTP_CONFIG_PATH', None) or os.path.join(
+            baseDefualtPath, 'var', 'config')
+        self.download_path = os.environ.get('YTP_DOWNLOAD_PATH', None) or os.path.join(
+            baseDefualtPath, 'var', 'downloads')
+        self.temp_path = os.environ.get('YTP_TEMP_PATH', None) or os.path.join(
+            baseDefualtPath, 'var', 'tmp')
+
+        envFile: str = os.path.join(self.config_path, '.env')
+
+        if os.path.exists(envFile):
+            logging.info(f'Loading environment variables from [{envFile}].')
+            load_dotenv(envFile)
 
         for k, v in self._getAttributes().items():
             if k.startswith('_'):

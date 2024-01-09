@@ -10,6 +10,7 @@ import yt_dlp
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
 from Config import Config
+import hashlib
 
 log = logging.getLogger('download')
 
@@ -160,7 +161,11 @@ class Download:
         self.notifier = notifier
 
         # Create temp dir for each download.
-        self.tempPath = os.path.join(self.temp_dir, self.info._id)
+        self.tempPath = os.path.join(
+            self.temp_dir,
+            hashlib.shake_256(self.info.id.encode('utf-8')).hexdigest(5)
+        )
+
         if not os.path.exists(self.tempPath):
             os.makedirs(self.tempPath, exist_ok=True)
 
@@ -197,6 +202,11 @@ class Download:
 
     def delete_temp(self):
         if self.tempKeep is True or not self.tempPath:
+            return
+
+        if self.info.status != 'finished' and (self.info.live_in or self.info.is_live):
+            log.warning(
+                f'Keeping live temp directory: {self.tempPath}, as the reported status is not finished [{self.info.status}].')
             return
 
         if not os.path.exists(self.tempPath):
