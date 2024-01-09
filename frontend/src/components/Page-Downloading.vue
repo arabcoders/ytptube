@@ -9,10 +9,10 @@
   </h1>
 
   <div v-if="showQueue">
-    <div class="columns has-text-centered" v-if="hasQueuedItems">
-      <div class="column">
+    <div class="columns is-multiline is-mobile has-text-centered" v-if="hasQueuedItems">
+      <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon :icon="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
             </span>
@@ -21,10 +21,10 @@
           </span>
         </button>
       </div>
-      <div class="column">
+      <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
           @click="$emit('deleteItem', 'queue', selectedElms); selectedElms = []">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-trash-can" />
             </span>
@@ -37,20 +37,20 @@
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in queue" :key="item._id">
         <div class="card">
-          <header class="card-header has-tooltip" :data-tooltip="item.title">
+          <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               {{ item.title }}
             </div>
           </header>
           <div class="card-content">
-            <div class="columns is-multiline">
+            <div class="columns is-multiline is-mobile">
               <div class="column is-12">
                 <div id="progress-bar" class="is-round">
                   <div id="progress-percentage">{{ updateProgress(item) }}</div>
                   <div id="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
                 </div>
               </div>
-              <div class="column is-4 has-text-centered">
+              <div class="column is-half-mobile has-text-centered">
                 <span class="icon-text">
                   <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
                     <font-awesome-icon
@@ -59,13 +59,12 @@
                   <span>{{ capitalize(item.status) }}</span>
                 </span>
               </div>
-              <div class="column is-4 has-text-centered">
-                <span :data-datetime="item.datetime"
-                  :data-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+              <div class="column is-half-mobile has-text-centered">
+                <span :data-datetime="item.datetime" v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-4 has-text-centered">
+              <div class="column is-half-mobile has-text-centered">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
@@ -73,26 +72,35 @@
                 </label>
               </div>
             </div>
-            <div class="columns">
-              <div class="column">
-                <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'queue', item._id)">
-                  <span class="icon-text">
+            <div class="columns is-multiline is-mobile">
+              <div class="column is-half-mobile">
+                <button class="button is-danger is-fullwidth" @click="confirmDelete(item);">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-trash-can" />
                     </span>
                     <span>Cancel</span>
                   </span>
-                </a>
+                </button>
               </div>
-              <div class="column">
+              <div class="column is-half-mobile">
                 <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
-                  <span class="icon-text">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
                     </span>
                     <span>Visit Link</span>
                   </span>
                 </a>
+              </div>
+              <div class="column is-1-tablet is-half-mobile">
+                <button class="button is-fullwidth is-borderless" @click="copyId(item)" v-tooltip="'Copy link ID'">
+                  <span class="icon-text">
+                    <span class="icon">
+                      <font-awesome-icon icon="fa-solid fa-asterisk" />
+                    </span>
+                  </span>
+                </button>
               </div>
             </div>
           </div>
@@ -126,7 +134,7 @@ import { defineProps, defineEmits, ref, watch, computed } from 'vue';
 import moment from "moment";
 import { useStorage } from '@vueuse/core'
 
-defineEmits(['deleteItem']);
+const emit = defineEmits(['deleteItem']);
 
 const props = defineProps({
   queue: {
@@ -211,4 +219,14 @@ const updateProgress = (item) => {
 
   return string;
 }
+
+const confirmDelete = (item) => {
+  if (!confirm(`Are you sure you want to delete (${item.title})?`)) {
+    return false;
+  }
+
+  emit('deleteItem', 'queue', item._id);
+  return true;
+}
+
 </script>

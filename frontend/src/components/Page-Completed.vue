@@ -9,11 +9,11 @@
   </h1>
 
   <div v-if="showCompleted">
-    <div class="columns has-text-centered" v-if="hasItems">
-      <div class="column">
+    <div class="columns is-multiline is-mobile has-text-centered" v-if="hasItems">
+      <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-ghost is-inverted"
           @click="masterSelectAll = !masterSelectAll">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon :icon="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
             </span>
@@ -22,10 +22,10 @@
           </span>
         </button>
       </div>
-      <div class="column">
+      <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-danger is-inverted" :disabled="!hasSelected"
           @click="$emit('deleteItem', 'completed', selectedElms); selectedElms = []">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-trash-can" />
             </span>
@@ -33,9 +33,9 @@
           </span>
         </button>
       </div>
-      <div class="column" v-if="hasCompleted">
+      <div class="column is-half-mobile" v-if="hasCompleted">
         <button type="button" class="button is-fullwidth is-primary is-inverted" @click="clearCompleted">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-circle-check" />
             </span>
@@ -43,9 +43,9 @@
           </span>
         </button>
       </div>
-      <div class="column" v-if="hasFailed">
+      <div class="column is-half-mobile" v-if="hasFailed">
         <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearFailed">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-circle-xmark" />
             </span>
@@ -53,9 +53,9 @@
           </span>
         </button>
       </div>
-      <div class="column" v-if="hasFailed">
+      <div class="column is-half-mobile" v-if="hasFailed">
         <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueFailed">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-rotate-right" />
             </span>
@@ -63,9 +63,9 @@
           </span>
         </button>
       </div>
-      <div class="column is-1">
+      <div class="column is-1-tablet">
         <button type="button" class="button is-fullwidth" @click="direction = direction === 'desc' ? 'asc' : 'desc'">
-          <span class="icon-text">
+          <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon
                 :icon="direction === 'desc' ? 'fa-solid fa-arrow-down-a-z' : 'fa-solid fa-arrow-up-a-z'" />
@@ -78,7 +78,7 @@
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
         <div class="card" :class="{ 'is-bordered-danger': hasError(item), 'is-bordered-info': item.live_in }">
-          <header class="card-header has-tooltip" :data-tooltip="item.title">
+          <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
                 @click.prevent="$emit('playItem', item)">
@@ -88,7 +88,7 @@
             </div>
           </header>
           <div class="card-content">
-            <div class="columns is-multiline">
+            <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.live_in">
                 <span class="has-text-info">
                   LIVE stream is scheduled to start at {{ moment(item.datetime).format() }}
@@ -100,7 +100,7 @@
               <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
-              <div class="column has-text-centered">
+              <div class="column is-half-mobile has-text-centered">
                 <span v-if="!item.live_in">
                   <span class="icon-text">
                     <span class="icon"
@@ -120,21 +120,21 @@
                   </span>
                 </span>
               </div>
-              <div class="column has-text-centered">
-                <span :date-datetime="item.datetime" :data-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+              <div class="column is-half-mobile has-text-centered">
+                <span :date-datetime="item.datetime" v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column has-text-centered" v-if="item.live_in && item.status != 'finished'">
+              <div class="column is-half-mobile has-text-centered" v-if="item.live_in && item.status != 'finished'">
                 <span :date-datetime="item.datetime"
-                  :data-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                  v-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
-              <div class="column has-text-centered" v-if="item.file_size">
+              <div class="column is-half-mobile has-text-centered" v-if="item.file_size">
                 {{ formatBytes(item.file_size) }}
               </div>
-              <div class="column has-text-centered">
+              <div class="column is-half-mobile has-text-centered">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
@@ -142,9 +142,9 @@
                 </label>
               </div>
             </div>
-            <div class="columns">
-              <div class="column" v-if="item.status != 'finished'">
-                <a class="button is-warning is-fullwidth" data-tooltip="Re-queue failed download."
+            <div class="columns is-mobile is-multiline">
+              <div class="column is-half-mobile" v-if="item.status != 'finished'">
+                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue failed download.'"
                   @click="reQueueItem(item)">
                   <span class="icon-text">
                     <span class="icon">
@@ -154,7 +154,7 @@
                   </span>
                 </a>
               </div>
-              <div class="column" v-if="item.filename">
+              <div class="column is-half-mobile" v-if="item.filename">
                 <a class="button is-fullwidth is-primary" :href="makeDownload(config, item)"
                   :download="item.filename?.split('/').reverse()[0]">
                   <span class="icon-text">
@@ -165,7 +165,7 @@
                   </span>
                 </a>
               </div>
-              <div class="column">
+              <div class="column is-half-mobile">
                 <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'completed', item._id)">
                   <span class="icon-text">
                     <span class="icon">
@@ -175,7 +175,7 @@
                   </span>
                 </a>
               </div>
-              <div class="column">
+              <div class="column is-half-mobile">
                 <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
                   <span class="icon-text">
                     <span class="icon">
@@ -184,6 +184,15 @@
                     <span>Visit Link</span>
                   </span>
                 </a>
+              </div>
+              <div class="column is-1-tablet is-half-mobile">
+                <button class="button is-fullwidth is-borderless" @click="copyId(item)" v-tooltip="'Copy link ID'">
+                  <span class="icon-text">
+                    <span class="icon">
+                      <font-awesome-icon icon="fa-solid fa-asterisk" />
+                    </span>
+                  </span>
+                </button>
               </div>
             </div>
           </div>

@@ -16,6 +16,7 @@
     "@vueuse/core": "^10.6.1",
     "core-js": "^3.8.3",
     "cron-parser": "^4.9.0",
+    "floating-vue": "^5.0.2",
     "hls.js": "^1.4.12",
     "moment": "^2.29.4",
     "plyr": "^3.7.8",
@@ -26,7 +27,6 @@
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
-    "@creativebulma/bulma-tooltip": "^1.2.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "^5.0.8",
