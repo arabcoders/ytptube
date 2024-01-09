@@ -3,7 +3,6 @@ import json
 import logging
 import multiprocessing
 import os
-import queue
 import re
 import shutil
 import yt_dlp
@@ -75,30 +74,32 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.tempKeep = bool(config.temp_keep)
 
+    def _progress_hook(self, data: dict):
+        dicto = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+        self.status_queue.put({'id': self.id, **dicto})
+
+    def _postprocessor_hook(self, data: dict):
+        if data.get('postprocessor') != 'MoveFiles' or data.get('status') != 'finished':
+            return
+
+        if '__finaldir' in data['info_dict']:
+            filename = os.path.join(
+                data['info_dict']['__finaldir'],
+                os.path.basename(data['info_dict']['filepath'])
+            )
+        else:
+            filename = data['info_dict']['filepath']
+
+        self.status_queue.put({
+            'id': self.id,
+            'status': 'finished',
+            'filename': filename
+        })
+
     def _download(self):
         try:
-            def put_status(st):
-                dicto = {k: v for k, v in st.items() if k in self._ytdlp_fields}
-                self.status_queue.put({'id': self.id, **dicto})
-
-            def put_status_postprocessor(d):
-                if d['postprocessor'] == 'MoveFiles' and d['status'] == 'finished':
-                    if '__finaldir' in d['info_dict']:
-                        filename = os.path.join(
-                            d['info_dict']['__finaldir'],
-                            os.path.basename(d['info_dict']['filepath'])
-                        )
-                    else:
-                        filename = d['info_dict']['filepath']
-
-                    self.status_queue.put({
-                        'id': self.id,
-                        'status': 'finished',
-                        'filename': filename
-                    })
-
             params: dict = {
-                'no_color': True,
+                'color': 'no_color',
                 'format': self.format,
                 'paths': {
                     'home': self.download_dir,
@@ -108,11 +109,11 @@ class Download:
                     'default': self.output_template,
                     'chapter': self.output_template_chapter
                 },
-                'socket_timeout': 60,
-                'break_per_url': True,
+                'noprogress': True if self.max_workers < 1 else False,
+                'break_on_existing': True,
                 'ignoreerrors': False,
-                'progress_hooks': [put_status],
-                'postprocessor_hooks': [put_status_postprocessor],
+                'progress_hooks': [self._progress_hook],
+                'postprocessor_hooks': [self._postprocessor_hook],
                 **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),
             }
 
@@ -136,7 +137,7 @@ class Download:
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
             log.info(
-                f'Downloading id="{self.info.id}" title="{self.info.title}".')
+                f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
@@ -151,6 +152,9 @@ class Download:
                 'msg': str(exc),
                 'error': str(exc)
             })
+
+        log.info(
+            f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
     async def start(self, notifier: Notifier):
         if self.manager is None:

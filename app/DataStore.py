@@ -28,7 +28,7 @@ class DataStore:
 
     def load(self) -> None:
         for id, item in self.saved_items():
-            self.dict[id] = Download(
+            self.dict.update({id: Download(
                 info=item,
                 download_dir=calcDownloadPath(
                     basePath=self.config.download_path,
@@ -36,8 +36,8 @@ class DataStore:
                 ),
                 temp_dir=self.config.temp_path,
                 output_template_chapter=self.config.output_template_chapter,
-                default_ytdl_opts=self.config.ytdl_options,
-            )
+                default_ytdl_opts=self.config.ytdl_options)
+            })
 
     def exists(self, key: str = None, url: str = None) -> bool:
         if not key and not url:
@@ -54,13 +54,13 @@ class DataStore:
 
     def get(self, key: str, url: str = None) -> Download:
         if not key and not url:
-            raise KeyError('key or url must be provided')
+            raise KeyError('key or url must be provided.')
 
         for i in self.dict:
             if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
                 return self.dict[i]
 
-        raise KeyError('key or url not found')
+        raise KeyError(f'{key=} or {url=} not found.')
 
     def items(self) -> list[tuple[str, Download]]:
         return self.dict.items()
@@ -92,16 +92,13 @@ class DataStore:
         #         value.info._id = key
         #         return
 
-        self.dict[value.info._id] = value
+        self.dict.update({value.info._id: value})
         self._updateStoreItem(self.type, value.info)
 
         return self.dict[value.info._id]
 
     def delete(self, key: str) -> None:
-        if not key in self.dict:
-            return
-
-        del self.dict[key]
+        self.dict.pop(key, None)
         self._deleteStoreItem(key)
 
     def next(self) -> tuple[str, Download]:

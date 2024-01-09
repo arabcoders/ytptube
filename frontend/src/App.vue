@@ -92,7 +92,7 @@ onMounted(() => {
       return
     }
 
-    toast.info('Download canceled: ' + completed[id]?.title);
+    toast.info('Download canceled: ' + downloading[id]?.title);
     delete downloading[id];
   });
 

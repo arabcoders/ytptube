@@ -257,30 +257,39 @@ class DownloadQueue:
 
     async def cancel(self, ids):
         for id in ids:
-            if self.queue.exists(key=id) is False:
-                log.warn(f'Requested cancel for non-existent download {id=}')
-                continue
+            # if self.queue.exists(key=id) is False:
+            #     log.warn(f'Requested cancel for non-existent download {id=}')
+            #     continue
 
-            item = self.queue.get(key=id)
+            try:
+                item = self.queue.get(key=id)
+            except KeyError as e:
+                log.warn(
+                    f'Requested cancel for non-existent download {id=}. {str(e)}')
+                continue
 
             if item.started() is True:
                 log.info(f'Canceling {id=} {item.info.title=}')
                 item.cancel()
             else:
-                self.queue.delete(id)
                 item.close()
-                log.info(f'Deleting {id=} {item.info.title=}')
+                log.info(f'Deleting from queue {id=} {item.info.title=}')
+                self.queue.delete(id)
                 await self.notifier.canceled(id)
 
         return {'status': 'ok'}
 
     async def clear(self, ids):
         for id in ids:
-            if not self.done.exists(key=id):
-                log.warn(f'Requested delete for non-existent download {id}')
+
+            try:
+                item = self.done.get(key=id)
+            except KeyError as e:
+                log.warn(
+                    f'Requested delete for non-existent download {id=}. {str(e)}')
                 continue
-            item = self.done.get(key=id)
-            log.info(f'Deleting {id=} {item.info.title=}')
+
+            log.info(f'Deleting completed download {id=} {item.info.title=}')
             self.done.delete(id)
             await self.notifier.cleared(id)
 
@@ -311,7 +320,7 @@ class DownloadQueue:
             num_workers=self.config.max_workers,
             worker_co=self.__downloadFile,
             name='WorkerPool',
-            logger=logging.getLogger('WorkerPool')
+            logger=log,
         ) as executor:
             while True:
                 while not self.queue.hasDownloads():
@@ -321,8 +330,6 @@ class DownloadQueue:
 
                 while True:
                     if executor.has_open_workers() is False:
-                        log.info(
-                            f'Waiting for workers to finish. {executor.total_queued} items in queue.')
                         await asyncio.sleep(1)
                     else:
                         break

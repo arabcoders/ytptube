@@ -143,7 +143,7 @@ class AsyncPool:
         if not self._workers:
             return
 
-        self._logger.debug('Joining {}'.format(self._name))
+        self._logger.info('Joining {}'.format(self._name))
         # The Terminators will kick each worker from being blocked against the _queue.get() and allow
         # each one to exit
         for _ in range(self._num_workers):
@@ -156,7 +156,7 @@ class AsyncPool:
             self._logger.exception('Exception joining {}'.format(self._name))
             raise
         finally:
-            self._logger.debug('Completed {}'.format(self._name))
+            self._logger.info('Completed {}'.format(self._name))
 
         if self._exceptions and self._raise_on_join:
             raise Exception("Exception occurred in pool {}".format(self._name))
