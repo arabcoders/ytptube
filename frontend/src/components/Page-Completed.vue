@@ -185,7 +185,7 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-1-tablet is-half-mobile">
+              <div class="column is-1-tablet is-hidden-touch">
                 <button class="button is-fullwidth is-borderless" @click="copyId(item)" v-tooltip="'Copy link ID'">
                   <span class="icon-text">
                     <span class="icon">
