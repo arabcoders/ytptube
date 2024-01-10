@@ -6,7 +6,7 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ, faArrowDownAZ, faAsterisk
+  faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ, faArrowDownAZ, faEject
 } from '@fortawesome/free-solid-svg-icons'
 
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
@@ -18,11 +18,10 @@ import './assets/css/style.css'
 import 'floating-vue/dist/style.css'
 
 library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
-  faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ, faArrowDownAZ, faAsterisk)
+  faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ, faArrowDownAZ, faEject)
 const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
-app.config.globalProperties.copyId = item => navigator.clipboard.writeText(item.id);
 app.config.globalProperties.makeDownload = (config, item, base = 'download') => {
   let baseDir = `${base}/`;
 

@@ -109,7 +109,7 @@ class Download:
                     'default': self.output_template,
                     'chapter': self.output_template_chapter
                 },
-                'noprogress': True if self.max_workers < 1 else False,
+                'noprogress': True,
                 'break_on_existing': True,
                 'ignoreerrors': False,
                 'progress_hooks': [self._progress_hook],
@@ -121,6 +121,7 @@ class Download:
 
             if self.debug:
                 params['verbose'] = True
+                params['noprogress'] = False
 
             if self.info.ytdlp_cookies:
                 try:

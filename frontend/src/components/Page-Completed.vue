@@ -77,7 +77,7 @@
 
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': hasError(item), 'is-bordered-info': item.live_in }">
+        <div class="card" :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in }">
           <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -105,8 +105,7 @@
                   <span class="icon-text">
                     <span class="icon"
                       :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
-                      <font-awesome-icon
-                        :icon="item.status == 'finished' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark'" />
+                      <font-awesome-icon :icon="setIcon(item)" />
                     </span>
                     <span>{{ capitalize(item.status) }}</span>
                   </span>
@@ -146,7 +145,7 @@
               <div class="column is-half-mobile" v-if="item.status != 'finished'">
                 <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue failed download.'"
                   @click="reQueueItem(item)">
-                  <span class="icon-text">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-rotate-right" />
                     </span>
@@ -157,7 +156,7 @@
               <div class="column is-half-mobile" v-if="item.filename">
                 <a class="button is-fullwidth is-primary" :href="makeDownload(config, item)"
                   :download="item.filename?.split('/').reverse()[0]">
-                  <span class="icon-text">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-download" />
                     </span>
@@ -167,7 +166,7 @@
               </div>
               <div class="column is-half-mobile">
                 <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'completed', item._id)">
-                  <span class="icon-text">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-trash-can" />
                     </span>
@@ -177,22 +176,13 @@
               </div>
               <div class="column is-half-mobile">
                 <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
-                  <span class="icon-text">
+                  <span class="icon-text is-block">
                     <span class="icon">
                       <font-awesome-icon icon="fa-solid fa-up-right-from-square" />
                     </span>
                     <span>Visit Link</span>
                   </span>
                 </a>
-              </div>
-              <div class="column is-1-tablet is-hidden-touch">
-                <button class="button is-fullwidth is-borderless" @click="copyId(item)" v-tooltip="'Copy link ID'">
-                  <span class="icon-text">
-                    <span class="icon">
-                      <font-awesome-icon icon="fa-solid fa-asterisk" />
-                    </span>
-                  </span>
-                </button>
               </div>
             </div>
           </div>
@@ -268,14 +258,6 @@ const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
 const getTotal = computed(() => Object.keys(props.completed)?.length);
 
-const hasError = (item) => {
-  if (item.status === 'finished') {
-    return false;
-  }
-
-  return (item.error || (item.msg && item.msg.length > 0)) ? true : false;
-}
-
 const showMessage = (item) => {
   if (!item?.msg || item.msg === item?.error) {
     return false
@@ -344,6 +326,21 @@ const clearFailed = () => {
   }
 
   emits('deleteItem', 'completed', keys);
+}
+const setIcon = (item) => {
+  if (item.status === 'finished') {
+    return 'fa-solid fa-circle-check';
+  }
+
+  if (item.status === 'error') {
+    return 'fa-solid fa-circle-xmark';
+  }
+
+  if (item.status === 'canceled') {
+    return 'fa-solid fa-eject';
+  }
+
+  return 'fa-solid fa-circle';
 }
 
 const requeueFailed = () => {

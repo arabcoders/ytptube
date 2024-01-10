@@ -49,6 +49,7 @@ class AsyncPool:
         self._total_queued = 0
         self._log_every_n = log_every_n
         self._expected_total = expected_total
+        self._active_workers = 0
 
     async def _worker_loop(self):
         while True:
@@ -62,6 +63,7 @@ class AsyncPool:
                 if item.__class__ is Terminator:
                     break
 
+                self._active_workers += 1
                 future, args, kwargs = item
                 # the wait_for will cancel the task (task sees CancelledError) and raises a TimeoutError from here
                 # so be wary of catching TimeoutErrors in this loop
@@ -83,6 +85,7 @@ class AsyncPool:
                 else:
                     self._logger.exception('Worker call failed')
             finally:
+                self._active_workers -= 1
                 if got_obj:
                     self._queue.task_done()
 
@@ -98,7 +101,13 @@ class AsyncPool:
         """
         :return: True if there are open workers.
         """
-        return self._queue.qsize() < self._num_workers
+        return self._active_workers < self._num_workers
+
+    def get_avalialbe_workers(self) -> int:
+        """
+        :return: number of available workers.
+        """
+        return self._num_workers - self._active_workers
 
     async def __aenter__(self):
         self.start()
