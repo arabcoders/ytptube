@@ -44,7 +44,7 @@
             </div>
           </div>
           <div class="column is-4">
-            <div class="field has-addons" :data-tooltip="'Download path relative to ' + config.app.download_path">
+            <div class="field has-addons" v-tooltip="'Download path relative to ' + config.app.download_path">
               <div class="control">
                 <a href="#" class="button is-static">Download Path</a>
               </div>
@@ -66,7 +66,7 @@
           </div>
           <div class="column">
             <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
-              data-tooltip="Show advanced options" :class="{ 'is-loading': !config.isConnected }"
+              v-tooltip="'Show advanced options'" :class="{ 'is-loading': !config.isConnected }"
               :disabled="!config.isConnected">
               <span class="icon">
                 <font-awesome-icon icon="fa-solid fa-cog" />
@@ -78,7 +78,7 @@
           <div class="column is-12">
             <div class="field">
               <label class="label is-inline" for="output_format"
-                :data-tooltip="'Default Format: ' + config.app.output_template">
+                v-tooltip="'Default Format: ' + config.app.output_template">
                 Output Format
               </label>
               <div class="control">
@@ -94,7 +94,7 @@
           <div class="column is-6">
             <div class="field">
               <label class="label is-inline" for="ytdlpConfig"
-                data-tooltip="Extends current global yt-dlp config. (JSON)">
+                v-tooltip="'Extends current global yt-dlp config. (JSON)'">
                 JSON yt-dlp config
               </label>
               <div class="control">
@@ -111,7 +111,7 @@
           </div>
           <div class="column is-6">
             <div class="field">
-              <label class="label is-inline" for="ytdlpCookies" data-tooltip="JSON exported cookies for downloading.">
+              <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
                 yt-dlp Cookies
               </label>
               <div class="control">
@@ -128,7 +128,7 @@
             <div class="field">
               <div class="control">
                 <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!config.isConnected"
-                  data-tooltip="This configuration are stored locally in your browser.">
+                  v-tooltip="'This configuration are stored locally in your browser.'">
                   <span class="icon">
                     <font-awesome-icon icon="fa-solid fa-trash" />
                   </span>

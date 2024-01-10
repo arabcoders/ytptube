@@ -2,19 +2,20 @@
 
 ![Build Status](https://github.com/ArabCoders/ytptube/actions/workflows/main.yml/badge.svg)
 
-Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel support. Allows you to download videos from YouTube and [dozens of other sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
+Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel support.
 
-YTPTube started as a fork of [meTube](https://github.com/alexta69/metube) project by alexta69. Since then it went under heavy changes, and it supports many new features.
+YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since then it went under heavy changes, and it supports many new features.
 
-# YTPTube Features compared to meTube.
+# YTPTube Features.
 * A built in video player that can play any video file regardless of the format.
 * New `/add_batch` endpoint that allow multiple links to be sent.
-* Re-Imagined the frontend and re-wrote the code in VueJS.
+* Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
-* Support per link, `yt-dlp config` and `cookies`. and `output format`
+* Support per link, `yt-dlp config` and `cookies`. and `output format`.
 * Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
+* **Experimental** Multi-downloads support.
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -73,6 +74,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_HOST__: Which ip address to bind to. Defaults to `0.0.0.0`.
 * __YTP_PORT__: Which port to bind to. Defaults to `8081`.
 * __YTP_LOGGING_LEVEL__: Logging level. Defaults to `info`.
+* __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
 
 ## Running behind a reverse proxy
 

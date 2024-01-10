@@ -107,6 +107,7 @@ class Main:
             port=self.config.port,
             reuse_port=True,
             loop=self.loop,
+            access_log=None,
             print=lambda _: print(
                 f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
         )

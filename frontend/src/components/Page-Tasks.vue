@@ -31,7 +31,7 @@
                 </a>
               </td>
               <td class="has-text-centered" v-if="item.timer">
-                <span :data-tooltip="'Timer: ' + item.timer">
+                <span v-tooltip="'Timer: ' + item.timer">
                   {{ moment(parseExpression(item.timer).next().toISOString()).fromNow() }}
                 </span>
               </td>

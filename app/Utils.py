@@ -117,7 +117,7 @@ def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
 def getVideoInfo(url: str, ytdlp_opts: dict = None) -> (Any | dict[str, Any] | None):
     params: dict = {
         'quiet': True,
-        'no_color': True,
+        'color': 'no_color',
         'extract_flat': True,
     }
 
@@ -143,7 +143,7 @@ def getAttributes(vclass: str | type) -> dict:
 
 
 def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True) -> str:
-    """Calculates download path And prevents directory traversal attacks.
+    """Calculates download path and prevents directory traversal.
 
     Returns:
         Dir with base dir factored in.
@@ -166,7 +166,7 @@ def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True)
 
 def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     params: dict = {
-        'no_color': True,
+        'color': 'no_color',
         'extract_flat': True,
         'skip_download': True,
         'ignoreerrors': True,
