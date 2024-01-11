@@ -26,8 +26,7 @@
       "type": "python",
       "request": "launch",
       "program": "app/main.py",
-      "console": "integratedTerminal",
-      "justMyCode": true,
+      "console": "internalConsole",
       "env": {
         "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
