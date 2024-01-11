@@ -29,6 +29,7 @@ class Download:
     tempPath: str = None
     notifier: Notifier = None
     canceled: bool = False
+    is_live: bool = False
 
     _ytdlp_fields: tuple = (
         'tmpfilename',
@@ -73,6 +74,7 @@ class Download:
         config = Config.get_instance()
         self.max_workers = int(config.max_workers)
         self.tempKeep = bool(config.temp_keep)
+        self.is_live = bool(info.is_live) or info.live_in is not None
 
     def _progress_hook(self, data: dict):
         dicto = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -209,7 +211,7 @@ class Download:
         if self.tempKeep is True or not self.tempPath:
             return
 
-        if self.info.status != 'finished' and (self.info.live_in or self.info.is_live):
+        if self.info.status != 'finished' and self.is_live:
             log.warning(
                 f'Keeping live temp directory: {self.tempPath}, as the reported status is not finished [{self.info.status}].')
             return

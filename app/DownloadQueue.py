@@ -130,7 +130,7 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry.get('is_live', None),
+                is_live=entry.get('is_live', None) or live_in is not None,
                 live_in=live_in,
             )
 
