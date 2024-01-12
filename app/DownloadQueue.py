@@ -57,6 +57,8 @@ class DownloadQueue:
         if not entry:
             return {'status': 'error', 'msg': 'Invalid/empty data was given.'}
 
+        options: dict = {}
+
         error: str = None
         live_in: str = None
 
@@ -123,6 +125,11 @@ class DownloadQueue:
             except KeyError:
                 pass
 
+            is_manifestless = 'post_live' == entry.get(
+                'live_status') if 'live_status' in entry else None
+
+            options.update({'is_manifestless': is_manifestless})
+
             dl = ItemDTO(
                 id=entry.get('id'),
                 title=entry.get('title'),
@@ -137,6 +144,7 @@ class DownloadQueue:
                 error=error,
                 is_live=entry.get('is_live', None) or live_in is not None,
                 live_in=live_in,
+                options=options
             )
 
             try:
@@ -167,7 +175,7 @@ class DownloadQueue:
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
                 NotifiyEvent = 'completed'
-            elif self.config.allow_manifestless is False and 'live_status' in entry and 'post_live' == entry.get('live_status'):
+            elif self.config.allow_manifestless is False and is_manifestless is True:
                 dlInfo.info.status = 'error'
                 dlInfo.info.error = 'Video is in Post-Live Manifestless mode.'
                 itemDownload = self.done.put(dlInfo)

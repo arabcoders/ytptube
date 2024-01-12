@@ -15,6 +15,9 @@ log = logging.getLogger('download')
 
 
 class Download:
+    """
+    Download task.
+    """
     id: str = None
     manager = None
     download_dir: str = None
@@ -30,6 +33,13 @@ class Download:
     notifier: Notifier = None
     canceled: bool = False
     is_live: bool = False
+
+    bad_live_options: list = [
+        "concurrent_fragment_downloads",
+        "fragment_retries",
+        "skip_unavailable_fragments",
+    ]
+    "Bad yt-dlp options which are known to cause issues with live stream and post manifestless mode."
 
     _ytdlp_fields: tuple = (
         'tmpfilename',
@@ -75,6 +85,8 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.tempKeep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
+        self.is_manifestless = 'is_manifestless' in self.info.options and self.info.options[
+            'is_manifestless'] is True
 
     def _progress_hook(self, data: dict):
         dicto = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -138,6 +150,13 @@ class Download:
                 except ValueError as e:
                     log.error(
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
+
+            if self.is_live or self.is_manifestless:
+                log.debug(
+                    f'Live stream or post manifestless mode detected, disabling options: {self.bad_live_options}')
+                for opt in self.bad_live_options:
+                    if opt in params:
+                        del params[opt]
 
             log.info(
                 f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
