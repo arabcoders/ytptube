@@ -113,10 +113,15 @@ class DownloadQueue:
 
                 await self.clear([item.info._id])
 
-            if self.queue.exists(key=entry.get('id'), url=entry.get('webpage_url') or entry.get('url')):
-                log.info(
-                    f'Item [{item.info.title}] already in download queue')
-                return {'status': 'error', 'msg': 'Link already queued for downloading.'}
+            try:
+                item = self.queue.get(key=entry.get('id'), url=entry.get(
+                    'webpage_url') or entry.get('url'))
+                if item is not None:
+                    log.info(
+                        f'Item [{item.info.title}] already in download queue.')
+                    return {'status': 'error', 'msg': 'Link already queued for downloading.'}
+            except KeyError:
+                pass
 
             dl = ItemDTO(
                 id=entry.get('id'),
