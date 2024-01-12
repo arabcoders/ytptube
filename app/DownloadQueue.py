@@ -117,9 +117,9 @@ class DownloadQueue:
                 item = self.queue.get(key=entry.get('id'), url=entry.get(
                     'webpage_url') or entry.get('url'))
                 if item is not None:
-                    log.info(
-                        f'Item [{item.info.title}] already in download queue.')
-                    return {'status': 'error', 'msg': 'Link already queued for downloading.'}
+                    err_message = f'Item [{item.info.id}: {item.info.title}] already in download queue.'
+                    log.info(err_message)
+                    return {'status': 'error', 'msg': err_message}
             except KeyError:
                 pass
 
