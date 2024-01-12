@@ -163,12 +163,6 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
   "windowsfilenames": true,
   // Write subtitles if the stream has them.
   "writesubtitles": true,
-  // How many parts to download at the same time.
-  "concurrent_fragment_downloads": 10,
-  // If we encounter error during downloading how many times should we retry.
-  "fragment_retries": 10,
-  // Should we skip fragments? sometimes skipping fragments leads to missing live stream fragments.
-  "skip_unavailable_fragments": false,
   // Write info.json file for each download. It can be used by many tools to generate info etc.
   "writeinfojson": true,
   // Write thumbnail if available.

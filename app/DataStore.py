@@ -3,7 +3,6 @@ import copy
 from datetime import datetime, timezone
 from email.utils import formatdate
 import json
-import logging
 import sqlite3
 from Utils import calcDownloadPath
 from Config import Config

@@ -25,6 +25,7 @@ class ItemDTO:
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))
     live_in: str = None
     file_size: int = None
+    options: dict = field(default_factory=dict)
 
     # yt-dlp injected fields.
     tmpfilename: str = None
