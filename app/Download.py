@@ -152,11 +152,17 @@ class Download:
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
             if self.is_live or self.is_manifestless:
-                log.debug(
-                    f'Live stream or post manifestless mode detected, disabling options: {self.bad_live_options}')
+                hasDeletedOptions = False
+                deletedOpts: list = []
                 for opt in self.bad_live_options:
                     if opt in params:
-                        del params[opt]
+                        params.pop(opt, None)
+                        hasDeletedOptions = True
+                        deletedOpts.append(opt)
+
+                if hasDeletedOptions:
+                    log.warning(
+                        f'Live stream detected for [{self.info.title}], The following opts [{deletedOpts=}] have been deleted which are known to cause issues with live stream and post stream manifestless mode.')
 
             log.info(
                 f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')

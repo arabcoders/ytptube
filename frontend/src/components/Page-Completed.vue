@@ -327,6 +327,7 @@ const clearFailed = () => {
 
   emits('deleteItem', 'completed', keys);
 }
+
 const setIcon = (item) => {
   if (item.status === 'finished' && item.is_live) {
     return 'fa-solid fa-globe';

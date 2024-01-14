@@ -53,10 +53,10 @@
               <div class="column is-half-mobile has-text-centered">
                 <span class="icon-text">
                   <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
-                    <font-awesome-icon
-                      :icon="item.status == 'downloading' ? 'fa-solid fa-download' : 'fa-solid fa-spinner fa-spin'" />
+                    <font-awesome-icon :icon="setIcon(item)" />
                   </span>
-                  <span>{{ capitalize(item.status) }}</span>
+                  <span v-if="item.status == 'downloading' && item.is_live">Streaming</span>
+                  <span v-else>{{ capitalize(item.status) }}</span>
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered">
@@ -156,6 +156,18 @@ watch(masterSelectAll, (value) => {
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasQueuedItems = computed(() => Object.keys(props.queue)?.length > 0)
 const getTotal = computed(() => Object.keys(props.queue)?.length);
+
+const setIcon = (item) => {
+  if (item.status === 'downloading' && item.is_live) {
+    return 'fa-solid fa-globe';
+  }
+
+  if (item.status === 'downloading') {
+    return 'fa-solid fa-circle-check';
+  }
+
+  return 'fa-solid fa-spinner fa-spin';
+}
 
 const ETAPipe = value => {
   if (value === null || 0 === value) {
