@@ -107,7 +107,8 @@
                       :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
                       <font-awesome-icon :icon="setIcon(item)" />
                     </span>
-                    <span>{{ capitalize(item.status) }}</span>
+                    <span v-if="item.status == 'finished' && item.is_live">Stream Ended</span>
+                    <span v-else>{{ capitalize(item.status) }}</span>
                   </span>
                 </span>
                 <span v-else>

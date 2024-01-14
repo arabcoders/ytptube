@@ -55,7 +55,7 @@
                   <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
                     <font-awesome-icon :icon="setIcon(item)" />
                   </span>
-                  <span v-if="item.status == 'downloading' && item.is_live">Streaming</span>
+                  <span v-if="item.status == 'downloading' && item.is_live">Live Streaming</span>
                   <span v-else>{{ capitalize(item.status) }}</span>
                 </span>
               </div>
