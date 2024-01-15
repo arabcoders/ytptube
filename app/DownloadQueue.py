@@ -65,7 +65,7 @@ class DownloadQueue:
         etype = entry.get('_type') or 'video'
         if etype == 'playlist':
             entries = entry['entries']
-            log.info(f'playlist detected with {len(entries)} entries')
+            log.info(f'Found [{len(entries)}] new entries for [{entry.get("id")}: {entry.get("title")}].')
             playlist_index_digits = len(str(len(entries)))
             results = []
             for index, etr in enumerate(entries, start=1):

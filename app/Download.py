@@ -298,6 +298,13 @@ class Download:
             self.info.eta = status.get('eta')
 
             if self.info.status == 'finished' and 'filename' in status and self.info.format != 'thumbnail':
-                self.info.file_size = os.path.getsize(status.get('filename'))
+                try:
+                    self.info.file_size = os.path.getsize(
+                        status.get('filename'))
+                except FileNotFoundError:
+                    log.warning(
+                        f'File not found: {status.get("filename")}')
+                    self.info.file_size = None
+                    pass
 
             await self.notifier.updated(self.info)
