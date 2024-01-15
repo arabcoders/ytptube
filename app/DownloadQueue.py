@@ -77,9 +77,6 @@ class DownloadQueue:
                     if property in entry:
                         etr[f'playlist_{property}'] = entry.get(property)
 
-                log.info(
-                    f'Extracted [{entry.get("id",None)}: {entry.get("title",None)}] - [{etr.get("id", None)}: {etr.get("title",None)}].')
-
                 results.append(
                     await self.__add_entry(
                         entry=etr,
