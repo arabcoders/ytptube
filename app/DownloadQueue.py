@@ -65,7 +65,8 @@ class DownloadQueue:
         etype = entry.get('_type') or 'video'
         if etype == 'playlist':
             entries = entry['entries']
-            log.info(f'Found [{len(entries)}] new entries for [{entry.get("id")}: {entry.get("title")}].')
+            log.info(
+                f'Found [{len(entries)}] new entries for [{entry.get("id")}: {entry.get("title")}].')
             playlist_index_digits = len(str(len(entries)))
             results = []
             for index, etr in enumerate(entries, start=1):
@@ -75,6 +76,9 @@ class DownloadQueue:
                 for property in ('id', 'title', 'uploader', 'uploader_id'):
                     if property in entry:
                         etr[f'playlist_{property}'] = entry.get(property)
+
+                log.info(
+                    f'Extracted [{entry.get("id",None)}: {entry.get("title",None)}] - [{etr.get("id", None)}: {etr.get("title",None)}].')
 
                 results.append(
                     await self.__add_entry(
