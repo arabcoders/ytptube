@@ -92,7 +92,6 @@ jobs:
 
       - name: Version tag
         uses: Jorricks/action-python-autotagging@1.0.1
-        if: github.event_name != 'pull_request'
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           path: app/version.py
