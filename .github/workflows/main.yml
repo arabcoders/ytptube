@@ -90,6 +90,14 @@ jobs:
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, scope=${{ github.workflow }}
 
+      - name: Version tag
+        uses: Jorricks/action-python-autotagging@1.0.1
+        if: github.event_name != 'pull_request'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: app/version.py
+          variable: APP_VERSION
+
   dockerhub-sync-readme:
     needs: push-build
     if: github.event_name != 'pull_request'
