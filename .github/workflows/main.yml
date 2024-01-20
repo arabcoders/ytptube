@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,10 +92,11 @@ jobs:
           cache-to: type=gha, scope=${{ github.workflow }}
 
       - name: Version tag
-        uses: Jorricks/action-python-autotagging@1.0.1
         if: github.event_name != 'pull_request'
+        uses: arabcoders/action-python-autotagger@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          repo_name: arabcoders/ytptube
           path: app/version.py
           variable: APP_VERSION
 

@@ -8,7 +8,7 @@ import random
 from Config import Config
 from DownloadQueue import DownloadQueue
 from Utils import ObjectSerializer, Notifier
-from aiohttp import web
+from aiohttp import web, client
 from aiohttp.web import Request, Response
 from Webhooks import Webhooks
 from player.M3u8 import M3u8
@@ -127,6 +127,30 @@ class Main:
                 pass
 
         await self.sio.emit('initial_data', self.serializer.encode(data), to=sid)
+
+    async def version_check(self):
+        try:
+            with client.ClientSession() as session:
+                async with session.get('https://api.github.com/repos/ytptube/ytptube/tags') as r:
+                    if r.status != 200:
+                        return
+
+                    tags = await r.json()
+
+                    for tag in tags:
+                        tagName = tag.get('name')
+                        splitTagName = tagName.split('-')
+                        if len(splitTagName) > 1:
+                            tagName = splitTagName[0]
+                        cvDate = self.config.version.split('-')
+                        if tagName > cvDate[0]:
+                            self.config.new_version_available = True
+                            self.logger.info(
+                                f'New version {tagName} available at')
+                        break
+
+        except Exception as e:
+            pass
 
     def addTasks(self):
         tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
