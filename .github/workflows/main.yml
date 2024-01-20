@@ -92,6 +92,7 @@ jobs:
           cache-to: type=gha, scope=${{ github.workflow }}
 
       - name: Version tag
+        if: github.event_name != 'pull_request'
         uses: arabcoders/action-python-autotagger@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
