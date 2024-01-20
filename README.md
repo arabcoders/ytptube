@@ -270,6 +270,11 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
 ]
 ```
 
+# Social contact
+
+If you have short or quick questions, you are free to join my [discord server](https://discord.gg/haUXHJyj6Y) and ask
+the question. keep in mind it's solo project, as such it might take me a bit of time to reply.
+
 # Donation 
 
 If you feel like donating and appreciate my work, you can do so by donating to children charity. For example [Make-A-Wish](https://worldwish.org). 

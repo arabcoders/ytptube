@@ -15,7 +15,10 @@ ENV PYTHONFAULTHANDLER 1
 # Install dependencies
 RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev && pip install pipenv
 
+WORKDIR /app
+
 COPY ./Pipfile* .
+
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
 
 FROM python:3.11-alpine
@@ -43,7 +46,7 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=npm_builder /ytptube/dist /app/frontend/dist
-COPY --chown=app:app --from=python_builder /.venv /app/.venv
+COPY --chown=app:app --from=python_builder /app/.venv /app/.venv
 
 ENV PATH="/app/.venv/bin:$PATH"
 
