@@ -164,7 +164,7 @@ def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True)
     return download_path
 
 
-def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
+def ExtractInfo(config: dict, url: str, debug: bool = False, forceLookup: bool = False) -> dict:
     params: dict = {
         'color': 'no_color',
         'extract_flat': True,
@@ -177,13 +177,16 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
     for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub',):
         if key in params:
-            del params[key]
+            params.pop(key)
 
     if debug:
         params['verbose'] = True
         params['logger'] = logging.getLogger('YTPTube-ytdl')
     else:
         params['quiet'] = True
+
+    if forceLookup and 'download_archive' in params:
+        params.pop('download_archive')
 
     return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
@@ -230,12 +233,20 @@ def isDownloaded(archive_file: str, info: dict) -> bool:
     if not info or not archive_file or not os.path.exists(archive_file):
         return False
 
-    id = yt_dlp.YoutubeDL()._make_archive_id(info)
-    if not id:
+    try:
+        id = yt_dlp.YoutubeDL()._make_archive_id(info)
+        if not id:
+            return False
+    except Exception as e:
+        log.error(f'Error generating archive id: {e}')
         return False
 
     with open(archive_file, 'r') as f:
-        return id in f.read()
+        for line in f.readlines():
+            if id in line:
+                return True
+
+    return False
 
 
 def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
