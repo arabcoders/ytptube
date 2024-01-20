@@ -91,7 +91,7 @@
             <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.live_in">
                 <span class="has-text-info">
-                  LIVE stream is scheduled to start at {{ moment(item.datetime).format() }}
+                  LIVE stream is scheduled to start at {{ moment(item.live_in).format() }}
                 </span>
               </div>
               <div class="column is-12" v-if="item.error">
