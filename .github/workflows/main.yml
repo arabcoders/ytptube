@@ -91,9 +91,10 @@ jobs:
           cache-to: type=gha, scope=${{ github.workflow }}
 
       - name: Version tag
-        uses: Jorricks/action-python-autotagging@1.0.1
+        uses: arabcoders/action-python-autotagger@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          repo_name: arabcoders/ytptube
           path: app/version.py
           variable: APP_VERSION
 
