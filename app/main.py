@@ -204,6 +204,10 @@ class Main:
                 f'Added task to grab {task.get("name",task.get("url"))} content every [{cron_timer}].')
 
     def addRoutes(self):
+        @self.routes.get(self.config.url_prefix + 'ping')
+        async def ping(_) -> Response:
+            return web.Response(text='pong')
+
         @self.routes.post(self.config.url_prefix + 'add')
         async def add(request: Request) -> Response:
             post = await request.json()
