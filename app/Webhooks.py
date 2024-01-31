@@ -49,6 +49,7 @@ class Webhooks:
             async with client.ClientSession() as session:
                 headers = req.get('headers', {}) if 'headers' in req else {}
                 async with session.request(method=req.get('method', 'POST'), url=req.get('url'), json=item.__dict__, headers=headers) as response:
+                    log.info(f"Sent {event=} {item.id=} to [{target.get('name')}] and responsed with [status: {response.status}].")
                     return {
                         'url': req.get('url'),
                         'status': response.status,
