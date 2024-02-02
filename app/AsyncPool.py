@@ -103,7 +103,7 @@ class AsyncPool:
         """
         return self._active_workers < self._num_workers
 
-    def get_avalialbe_workers(self) -> int:
+    def get_available_workers(self) -> int:
         """
         :return: number of available workers.
         """

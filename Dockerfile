@@ -30,6 +30,7 @@ ENV UMASK=022
 ENV YTP_CONFIG_PATH=/config
 ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads
+ENV YTP_PORT=8081
 
 # removed ffmpeg as 6.1.0 is broken with DASH protocal downloads
 COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/bin/
@@ -47,21 +48,22 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=npm_builder /ytptube/dist /app/frontend/dist
 COPY --chown=app:app --from=python_builder /app/.venv /app/.venv
+COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN chown -R app:app /config /downloads
+RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck
 
 VOLUME /config
 VOLUME /downloads
 
 EXPOSE 8081
 
-# Switch to user
-#
 USER app
 
 WORKDIR /tmp
+
+HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/usr/local/bin/healthcheck" ]
 
 ENTRYPOINT ["/entrypoint.sh"]
 

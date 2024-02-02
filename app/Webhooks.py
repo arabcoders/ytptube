@@ -5,7 +5,7 @@ import os
 from ItemDTO import ItemDTO
 from aiohttp import client
 
-log = logging.getLogger('Webhooks')
+LOG = logging.getLogger('Webhooks')
 
 
 class Webhooks:
@@ -13,16 +13,19 @@ class Webhooks:
 
     def __init__(self, file: str):
         if os.path.exists(file):
-            try:
-                if os.path.getsize(file) < 2:
-                    raise Exception(f'file is empty.')
+            self.load(file)
 
-                log.info(f'Loading webhooks from {file}')
-                with open(file, 'r') as f:
-                    self.targets = json.load(f)
-            except Exception as e:
-                log.error(f'Error loading webhooks from {file}: {e}')
-                pass
+    def load(self, file: str):
+        try:
+            if os.path.getsize(file) < 2:
+                raise Exception(f'file is empty.')
+
+            LOG.info(f'Loading webhooks from {file}')
+            with open(file, 'r') as f:
+                self.targets = json.load(f)
+        except Exception as e:
+            LOG.error(f'Error loading webhooks from {file}: {e}')
+            pass
 
     async def send(self, event: str, item: ItemDTO) -> list[dict]:
         if len(self.targets) == 0:
@@ -45,10 +48,11 @@ class Webhooks:
     async def __send(self, event: str, target: dict, item: ItemDTO) -> dict:
         req: dict = target.get('request')
         try:
-            log.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
+            LOG.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
             async with client.ClientSession() as session:
                 headers = req.get('headers', {}) if 'headers' in req else {}
                 async with session.request(method=req.get('method', 'POST'), url=req.get('url'), json=item.__dict__, headers=headers) as response:
+                    LOG.info(f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status}].")
                     return {
                         'url': req.get('url'),
                         'status': response.status,

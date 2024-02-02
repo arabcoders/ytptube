@@ -12,6 +12,7 @@ import subprocess
 class FFProbeError(Exception):
     pass
 
+
 class FFStream:
     """
     An object representation of an individual stream in a multimedia file.
@@ -24,8 +25,7 @@ class FFStream:
         try:
             self.__dict__['framerate'] = round(
                 functools.reduce(
-                    operator.truediv, map(int, self.__dict__.get(
-                        'avg_frame_rate', '').split('/'))
+                    operator.truediv, map(int, self.__dict__.get('avg_frame_rate', '').split('/'))
                 )
             )
         except ValueError:
@@ -41,8 +41,7 @@ class FFStream:
             return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}, {self.framerate}, ({self.width}x{self.height})>"
 
         if self.is_audio():
-            return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}, channels: {self.channels} ({self.channel_layout}), " \
-                "{sample_rate}Hz> "
+            return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}, channels: {self.channels} ({self.channel_layout}), " "{sample_rate}Hz> "
 
         if self.is_subtitle() or self.is_attachment():
             return f"<Stream: #{self.index} [{self.codec_type}] {self.codec_long_name}>"
@@ -87,8 +86,7 @@ class FFStream:
                 try:
                     size = (int(width), int(height))
                 except ValueError:
-                    raise FFProbeError(
-                        "None integer size {}:{}".format(width, height))
+                    raise FFProbeError("None integer size {}:{}".format(width, height))
         else:
             return None
 
@@ -163,6 +161,7 @@ class FFStream:
         except ValueError:
             raise FFProbeError('None integer bit_rate')
 
+
 class FFProbe:
     """
     FFProbe wraps the ffprobe command and pulls the data into an object form::
@@ -181,8 +180,7 @@ class FFProbe:
 
         try:
             with open(os.devnull, 'w') as tempf:
-                subprocess.check_call(
-                    ["ffprobe", "-h"], stdout=tempf, stderr=tempf)
+                subprocess.check_call(["ffprobe", "-h"], stdout=tempf, stderr=tempf)
         except FileNotFoundError:
             raise IOError('ffprobe not found.')
 
@@ -232,15 +230,3 @@ class FFProbe:
     def __repr__(self):
         return "<FFprobe: {metadata}, {video}, {audio}, {subtitle}, {attachment}>".format(**vars(self))
 
-
-
-
-if __name__ == '__main__':
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Usage: ffprobe.py <path to media file>")
-        sys.exit(1)
-
-    ff = FFProbe(sys.argv[1])
-    print(ff)

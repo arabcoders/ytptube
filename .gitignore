@@ -18,6 +18,7 @@
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+!.vscode/settings.json
 .history/*
 
 # Keep Var dir

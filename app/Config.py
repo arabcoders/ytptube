@@ -41,12 +41,11 @@ class Config:
 
     version: str = APP_VERSION
 
-    _boolean_vars: tuple = (
-        'keep_archive', 'ytdl_debug',
-        'temp_keep', 'allow_manifestless',
-    )
+    new_version_available: bool = False
+
     _int_vars: tuple = ('port', 'max_workers',)
-    _immutable: tuple = ('version', '__instance', 'ytdl_options',)
+    _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available')
+    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'temp_keep', 'allow_manifestless',)
 
     @staticmethod
     def get_instance():
@@ -56,19 +55,15 @@ class Config:
     def __init__(self):
         """ Virtually private constructor. """
         if Config.__instance is not None:
-            raise Exception(
-                "This class is a singleton!. Use Config.getInstance() instead.")
+            raise Exception("This class is a singleton!. Use Config.getInstance() instead.")
         else:
             Config.__instance = self
 
-        baseDefualtPath: str = os.path.dirname(__file__)
+        baseDefaultPath: str = os.path.dirname(__file__)
 
-        self.config_path = os.environ.get('YTP_CONFIG_PATH', None) or os.path.join(
-            baseDefualtPath, 'var', 'config')
-        self.download_path = os.environ.get('YTP_DOWNLOAD_PATH', None) or os.path.join(
-            baseDefualtPath, 'var', 'downloads')
-        self.temp_path = os.environ.get('YTP_TEMP_PATH', None) or os.path.join(
-            baseDefualtPath, 'var', 'tmp')
+        self.temp_path = os.environ.get('YTP_TEMP_PATH', None) or os.path.join(baseDefaultPath, 'var', 'tmp')
+        self.config_path = os.environ.get('YTP_CONFIG_PATH', None) or os.path.join(baseDefaultPath, 'var', 'config')
+        self.download_path = os.environ.get('YTP_DOWNLOAD_PATH', None) or os.path.join(baseDefaultPath, 'var', 'downloads')
 
         envFile: str = os.path.join(self.config_path, '.env')
 
@@ -80,16 +75,13 @@ class Config:
             if k.startswith('_'):
                 continue
 
-            # If the variable is not updateable, set it to the default value.
+            # If the variable declared as immutable, set it to the default value.
             if k in self._immutable:
                 setattr(self, k, v)
                 continue
 
             lookUpKey: str = f'YTP_{k}'.upper()
-            setattr(
-                self, k,
-                os.environ[lookUpKey] if lookUpKey in os.environ else v
-            )
+            setattr(self, k, os.environ[lookUpKey] if lookUpKey in os.environ else v)
 
         for k, v in self.__dict__.items():
             if k.startswith('_') or k in self._immutable:
@@ -99,17 +91,16 @@ class Config:
                 for key in re.findall(r'\{.*?\}', v):
                     localKey: str = key[1:-1]
                     if localKey not in self.__dict__:
-                        logging.error(
-                            f'Config variable "{k}" had non exisitng config reference "{key}"')
+                        logging.error(f'Config variable "{k}" had non existing config reference "{key}"')
                         sys.exit(1)
+
                     v = v.replace(key, getattr(self, localKey))
 
                 setattr(self, k, v)
 
             if k in self._boolean_vars:
                 if str(v).lower() not in (True, False, 'true', 'false', 'on', 'off', '1', '0'):
-                    raise ValueError(
-                        f'Config variable "{k}" is set to a non-boolean value "{v}".')
+                    raise ValueError(f'Config variable "{k}" is set to a non-boolean value "{v}".')
 
                 setattr(self, k, str(v).lower() in (True, 'true', 'on', '1'))
 
@@ -119,25 +110,21 @@ class Config:
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
 
-        numeric_level = getattr(
-            logging, self.logging_level.upper(), None)
-
+        numeric_level = getattr(logging, self.logging_level.upper(), None)
         if not isinstance(numeric_level, int):
             raise ValueError(f"Invalid log level: {self.logging_level}")
 
-        logging.basicConfig(
-            force=True,
+        coloredlogs.install(
             level=numeric_level,
-            format="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] %(message)s"
+            fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s",
+            datefmt='%H:%M:%S'
         )
 
-        log = logging.getLogger('config')
-
-        coloredlogs.install()
+        LOG = logging.getLogger('config')
 
         optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
         if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
-            log.info(f'Loading yt-dlp custom options from "{optsFile}"')
+            LOG.info(f'Loading yt-dlp custom options from "{optsFile}"')
 
             try:
                 with open(optsFile) as json_data:
@@ -145,28 +132,27 @@ class Config:
                 assert isinstance(opts, dict)
                 self.ytdl_options.update(opts)
             except (json.decoder.JSONDecodeError, AssertionError) as e:
-                log.error(
-                    f'JSON error in "{optsFile}": {e}')
+                LOG.error(f'JSON error in "{optsFile}": {e}')
                 sys.exit(1)
         else:
-            log.info(f'No custom yt-dlp options found in "{self.config_path}"')
+            LOG.info(f'No custom yt-dlp options found in "{self.config_path}"')
 
         if self.keep_archive:
-            log.info(f'keep archive: {self.keep_archive}')
+            LOG.info(f'keep archive: {self.keep_archive}')
             self.ytdl_options['download_archive'] = os.path.join(
                 self.config_path, 'archive.log')
 
-        log.info(f'Keep temp: {self.temp_keep}')
+        LOG.info(f'Keep temp: {self.temp_keep}')
 
     def _getAttributes(self) -> dict:
         attrs: dict = {}
-        vclass: str = self.__class__
+        vClass: str = self.__class__
 
-        for attribute in vclass.__dict__.keys():
+        for attribute in vClass.__dict__.keys():
             if attribute.startswith('_'):
                 continue
 
-            value = getattr(vclass, attribute)
+            value = getattr(vClass, attribute)
             if not callable(value):
                 attrs[attribute] = value
 
