@@ -116,7 +116,7 @@ class Config:
 
         coloredlogs.install(
             level=numeric_level,
-            fmt="%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s] %(message)s",
+            fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s",
             datefmt='%H:%M:%S'
         )
 
