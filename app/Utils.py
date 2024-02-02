@@ -9,19 +9,10 @@ import yt_dlp
 from socketio import AsyncServer
 from Webhooks import Webhooks
 
-log = logging.getLogger('Utils')
+LOG = logging.getLogger('Utils')
 
-IGNORED_KEYS: tuple = (
-    'cookiefile',
-    'paths',
-    'outtmpl',
-    'progress_hooks',
-    'postprocessor_hooks',
-)
-
-AUDIO_FORMATS: tuple = (
-    'm4a', 'mp3', 'opus', 'wav'
-)
+AUDIO_FORMATS: tuple = ('m4a', 'mp3', 'opus', 'wav')
+IGNORED_KEYS: tuple = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
 
 
 def get_format(format: str, quality: str) -> str:
@@ -55,16 +46,15 @@ def get_format(format: str, quality: str) -> str:
         if quality == 'audio':
             return "bestaudio/best"
 
-        vfmt, afmt = (
-            '[ext=mp4]', '[ext=m4a]') if format == "mp4" else ('', '')
+        videoFormat, audioFormat = ('[ext=mp4]', '[ext=m4a]') if format == "mp4" else ('', '')
 
-        vres = f'[height<={quality}]' if quality != 'best' else ''
+        videoResolution = f'[height<={quality}]' if quality != 'best' else ''
 
-        vcombo = vres + vfmt
+        videoCombo = videoResolution + videoFormat
 
-        return f'bestvideo{vcombo}+bestaudio{afmt}/best{vcombo}'
+        return f'bestvideo{videoCombo}+bestaudio{audioFormat}/best{videoCombo}'
 
-    raise Exception(f"Unkown format {format}")
+    raise Exception(f"Unknown format {format}")
 
 
 def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
@@ -98,19 +88,16 @@ def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
         # Audio formats without thumbnail
         if format not in ("wav") and "writethumbnail" not in opts:
             opts["writethumbnail"] = True
-            postprocessors.append(
-                {"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
+            postprocessors.append({"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
             postprocessors.append({"key": "FFmpegMetadata"})
             postprocessors.append({"key": "EmbedThumbnail"})
 
     if format == "thumbnail":
         opts["skip_download"] = True
         opts["writethumbnail"] = True
-        postprocessors.append(
-            {"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
+        postprocessors.append({"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
 
-    opts["postprocessors"] = postprocessors + \
-        (opts["postprocessors"] if "postprocessors" in opts else [])
+    opts["postprocessors"] = postprocessors + (opts["postprocessors"] if "postprocessors" in opts else [])
     return opts
 
 
@@ -127,26 +114,11 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None) -> (Any | dict[str, Any] | N
     return yt_dlp.YoutubeDL().extract_info(url, download=False)
 
 
-def getAttributes(vclass: str | type) -> dict:
-    attrs: dict = {}
-
-    if not isinstance(vclass, type):
-        vclass = vclass.__class__
-
-    for attribute in vclass.__dict__.keys():
-        if not attribute.startswith('_'):
-            value = getattr(vclass, attribute)
-            if not callable(value):
-                attrs[attribute] = value
-
-    return attrs
-
-
 def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True) -> str:
     """Calculates download path and prevents directory traversal.
 
     Returns:
-        Dir with base dir factored in.
+        Download path with base directory factored in.
     """
     if not folder:
         return basePath
@@ -155,8 +127,7 @@ def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True)
     download_path = os.path.realpath(os.path.join(basePath, folder))
 
     if not download_path.startswith(realBasePath):
-        raise Exception(
-            f'Folder "{folder}" must resolve inside the base download directory "{realBasePath}"')
+        raise Exception(f'Folder "{folder}" must resolve inside the base download directory "{realBasePath}".')
 
     if not os.path.isdir(download_path) and createPath:
         os.makedirs(download_path, exist_ok=True)
@@ -198,10 +169,7 @@ def mergeDict(source: dict, destination: dict) -> dict:
     for key, value in source.items():
         destination_key_value = destination_copy.get(key)
         if isinstance(value, dict) and isinstance(destination_key_value, dict):
-            destination_copy[key] = mergeDict(
-                source=value,
-                destination=destination_copy.setdefault(key, {})
-            )
+            destination_copy[key] = mergeDict(source=value, destination=destination_copy.setdefault(key, {}))
         elif isinstance(value, list) and isinstance(destination_key_value, list):
             destination_copy[key] = destination_key_value + value
         else:
@@ -238,7 +206,7 @@ def isDownloaded(archive_file: str, info: dict) -> bool:
         if not id:
             return False
     except Exception as e:
-        log.error(f'Error generating archive id: {e}')
+        LOG.error(f'Error generating archive id: {e}')
         return False
 
     with open(archive_file, 'r') as f:
@@ -270,22 +238,20 @@ def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
                 if not isinstance(cookies[domain][subDomain][cookie], dict):
                     continue
 
-                dicto = cookies[domain][subDomain][cookie]
+                cookieDict = cookies[domain][subDomain][cookie]
 
-                if 0 == int(dicto['expirationDate']):
-                    dicto['expirationDate']: float = datetime.now(
-                        timezone.utc).timestamp() + (86400 * 1000)
+                if 0 == int(cookieDict['expirationDate']):
+                    cookieDict['expirationDate']: float = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
 
                 hasCookies = True
                 netscapeCookies += "\t".join([
-                    dicto['domain'] if str(dicto['domain']).startswith(
-                        '.') else '.' + dicto['domain'],
+                    cookieDict['domain'] if str(cookieDict['domain']).startswith('.') else '.' + cookieDict['domain'],
                     'TRUE',
-                    dicto['path'],
-                    'TRUE' if dicto['secure'] else 'FALSE',
-                    str(int(dicto['expirationDate'])),
-                    dicto['name'],
-                    dicto['value']
+                    cookieDict['path'],
+                    'TRUE' if cookieDict['secure'] else 'FALSE',
+                    str(int(cookieDict['expirationDate'])),
+                    cookieDict['name'],
+                    cookieDict['value']
                 ])+"\n"
 
     return netscapeCookies if hasCookies else None
@@ -309,10 +275,13 @@ class Notifier:
 
     sio: AsyncServer = None
     "SocketIO server instance"
+
     serializer: ObjectSerializer = None
     "Serializer used to serialize objects to JSON"
+
     webhooks: Webhooks = None
     "Send webhooks events."
+
     webhooks_allowed_events: tuple = (
         'added', 'completed', 'error', 'not_live'
     )

@@ -11,7 +11,7 @@ from ItemDTO import ItemDTO
 from Config import Config
 import hashlib
 
-log = logging.getLogger('download')
+LOG = logging.getLogger('download')
 
 
 class Download:
@@ -52,7 +52,10 @@ class Download:
         'speed',
         'eta',
     )
+    "Fields to be extracted from yt-dlp progress hook."
+
     tempKeep: bool = False
+    "Keep temp directory after download."
 
     def __init__(
         self,
@@ -68,8 +71,7 @@ class Download:
         self.output_template_chapter = output_template_chapter
         self.output_template = info.output_template
         self.format = get_format(info.format, info.quality)
-        self.ytdl_opts = get_opts(
-            info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
+        self.ytdl_opts = get_opts(info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = default_ytdl_opts
@@ -81,26 +83,21 @@ class Download:
         self.proc = None
         self.loop = None
         self.notifier = None
-        config = Config.get_instance()
-        self.max_workers = int(config.max_workers)
-        self.tempKeep = bool(config.temp_keep)
+        self.max_workers = int(Config.get_instance().max_workers)
+        self.tempKeep = bool(Config.get_instance().temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
-        self.is_manifestless = 'is_manifestless' in self.info.options and self.info.options[
-            'is_manifestless'] is True
+        self.is_manifestless = 'is_manifestless' in self.info.options and self.info.options['is_manifestless'] is True
 
     def _progress_hook(self, data: dict):
-        dicto = {k: v for k, v in data.items() if k in self._ytdlp_fields}
-        self.status_queue.put({'id': self.id, **dicto})
+        dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+        self.status_queue.put({'id': self.id, **dataDict})
 
     def _postprocessor_hook(self, data: dict):
         if data.get('postprocessor') != 'MoveFiles' or data.get('status') != 'finished':
             return
 
         if '__finaldir' in data['info_dict']:
-            filename = os.path.join(
-                data['info_dict']['__finaldir'],
-                os.path.basename(data['info_dict']['filepath'])
-            )
+            filename = os.path.join(data['info_dict']['__finaldir'], os.path.basename(data['info_dict']['filepath']))
         else:
             filename = data['info_dict']['filepath']
 
@@ -141,14 +138,14 @@ class Download:
                 try:
                     data = jsonCookie(json.loads(self.info.ytdlp_cookies))
                     if not data:
-                        log.warning(
+                        LOG.warning(
                             f'The cookie string that was provided for {self.info.title} is empty or not in expected spec.')
                     with open(os.path.join(self.tempPath, f'cookie_{self.info._id}.txt'), 'w') as f:
                         f.write(data)
 
                     params['cookiefile'] = f.name
                 except ValueError as e:
-                    log.error(
+                    LOG.error(
                         f'Invalid cookies: was provided for {self.info.title} - {str(e)}')
 
             if self.is_live or self.is_manifestless:
@@ -161,18 +158,14 @@ class Download:
                         deletedOpts.append(opt)
 
                 if hasDeletedOptions:
-                    log.warning(
+                    LOG.warning(
                         f'Live stream detected for [{self.info.title}], The following opts [{deletedOpts=}] have been deleted which are known to cause issues with live stream and post stream manifestless mode.')
 
-            log.info(
-                f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
+            LOG.info(f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
             ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
 
-            self.status_queue.put({
-                'id': self.id,
-                'status': 'finished' if ret == 0 else 'error'
-            })
+            self.status_queue.put({'id': self.id, 'status': 'finished' if ret == 0 else 'error'})
         except Exception as exc:
             self.status_queue.put({
                 'id': self.id,
@@ -181,22 +174,17 @@ class Download:
                 'error': str(exc)
             })
 
-        log.info(
-            f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
+        LOG.info(f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
     async def start(self, notifier: Notifier):
-        if self.manager is None:
-            self.manager = multiprocessing.Manager()
+        self.manager = multiprocessing.Manager() if self.manager is None else self.manager
 
         self.status_queue = self.manager.Queue()
         self.loop = asyncio.get_running_loop()
         self.notifier = notifier
 
         # Create temp dir for each download.
-        self.tempPath = os.path.join(
-            self.temp_dir,
-            hashlib.shake_256(self.info.id.encode('utf-8')).hexdigest(5)
-        )
+        self.tempPath = os.path.join(self.temp_dir, hashlib.shake_256(self.info.id.encode('utf-8')).hexdigest(5))
 
         if not os.path.exists(self.tempPath):
             os.makedirs(self.tempPath, exist_ok=True)
@@ -229,7 +217,7 @@ class Download:
 
     def kill(self):
         if self.running():
-            log.info(f'Killing download process: {self.proc.ident}')
+            LOG.info(f'Killing download process: {self.proc.ident}')
             self.proc.kill()
 
     def delete_temp(self):
@@ -237,19 +225,19 @@ class Download:
             return
 
         if self.info.status != 'finished' and self.is_live:
-            log.warning(
-                f'Keeping live temp directory: {self.tempPath}, as the reported status is not finished [{self.info.status}].')
+            LOG.warning(
+                f'Keeping live temp directory [{self.tempPath}], as the reported status is not finished [{self.info.status}].')
             return
 
         if not os.path.exists(self.tempPath):
             return
 
         if self.tempPath == self.temp_dir:
-            log.warning(
+            LOG.warning(
                 f'Attempted to delete video temp directory: {self.tempPath}, but it is the same as main temp directory.')
             return
 
-        log.info(f'Deleting Temp directory: {self.tempPath}')
+        LOG.info(f'Deleting Temp directory: {self.tempPath}')
         shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def progress_update(self):
@@ -262,7 +250,7 @@ class Download:
                 return
 
             if self.debug:
-                log.debug(f'Status Update: {self.info._id=} {status=}')
+                LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
                 await self.notifier.updated(self.info)
@@ -271,13 +259,11 @@ class Download:
             self.tmpfilename = status.get('tmpfilename')
 
             if 'filename' in status:
-                self.info.filename = os.path.relpath(
-                    status.get('filename'), self.download_dir)
+                self.info.filename = os.path.relpath(status.get('filename'), self.download_dir)
 
                 # Set correct file extension for thumbnails
                 if self.info.format == 'thumbnail':
-                    self.info.filename = re.sub(
-                        r'\.webm$', '.jpg', self.info.filename)
+                    self.info.filename = re.sub(r'\.webm$', '.jpg', self.info.filename)
 
             self.info.status = status.get('status', self.info.status)
             self.info.msg = status.get('msg')
@@ -287,11 +273,9 @@ class Download:
                 await self.notifier.error(self.info, self.info.error)
 
             if 'downloaded_bytes' in status:
-                total = status.get('total_bytes') or status.get(
-                    'total_bytes_estimate')
+                total = status.get('total_bytes') or status.get('total_bytes_estimate')
                 if total:
-                    perc = status['downloaded_bytes'] / total * 100
-                    self.info.percent = perc
+                    self.info.percent = status['downloaded_bytes'] / total * 100
                     self.info.total_bytes = total
 
             self.info.speed = status.get('speed')
@@ -299,11 +283,9 @@ class Download:
 
             if self.info.status == 'finished' and 'filename' in status and self.info.format != 'thumbnail':
                 try:
-                    self.info.file_size = os.path.getsize(
-                        status.get('filename'))
+                    self.info.file_size = os.path.getsize(status.get('filename'))
                 except FileNotFoundError:
-                    log.warning(
-                        f'File not found: {status.get("filename")}')
+                    LOG.warning(f'File not found: {status.get("filename")}')
                     self.info.file_size = None
                     pass
 

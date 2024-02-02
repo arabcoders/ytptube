@@ -4,9 +4,8 @@ import os
 import subprocess
 import tempfile
 from Utils import calcDownloadPath
-from Config import Config
 
-log = logging.getLogger('segments')
+LOG = logging.getLogger('segments')
 
 
 class Segments:
@@ -22,18 +21,13 @@ class Segments:
         self.aconvert = bool(aconvert)
 
     async def stream(self, download_path: str, file: str) -> bytes:
-        realFile: str = calcDownloadPath(
-            basePath=download_path,
-            folder=file,
-            createPath=False
-        )
+        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
 
         if not os.path.exists(realFile):
             raise Exception(f"File {realFile} does not exist.")
 
         tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(
-            tmpDir, f'ytptube_stream.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')
+        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')
 
         if not os.path.exists(tmpFile):
             os.symlink(realFile, tmpFile)
@@ -41,9 +35,7 @@ class Segments:
         if self.segment_index == 0:
             startTime: float = '{:.6f}'.format(0)
         else:
-            startTime: float = '{:.6f}'.format(
-                (self.segment_duration * self.segment_index
-                 ))
+            startTime: float = '{:.6f}'.format((self.segment_duration * self.segment_index))
 
         ffmpegCmd = []
         ffmpegCmd.append('ffmpeg')
@@ -107,8 +99,7 @@ class Segments:
         ffmpegCmd.append('mpegts')
         ffmpegCmd.append('pipe:1')
 
-        log.debug(
-            f'Streaming {realFile} segment {self.segment_index}.' + ' '.join(ffmpegCmd))
+        LOG.debug(f'Streaming {realFile} segment {self.segment_index}.' + ' '.join(ffmpegCmd))
         proc = subprocess.run(ffmpegCmd, stdout=subprocess.PIPE)
 
         return proc.stdout

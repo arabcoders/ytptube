@@ -12,32 +12,31 @@ from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 from AsyncPool import AsyncPool
 
-log = logging.getLogger('DownloadQueue')
-dl_queue = asyncio.Queue()
+LOG = logging.getLogger('DownloadQueue')
+TYPE_DONE: str = 'done'
+TYPE_QUEUE: str = 'queue'
 
 
 class DownloadQueue:
     config: Config = None
     notifier: Notifier = None
-    connection: Connection = None
     serializer: ObjectSerializer = None
     queue: DataStore = None
     done: DataStore = None
     event: asyncio.Event = None
 
-    def __init__(self, config: Config, notifier: Notifier, connection: Connection, serializer: ObjectSerializer):
-        self.config = config
+    def __init__(self, notifier: Notifier, connection: Connection, serializer: ObjectSerializer):
+        self.config = Config.get_instance()
         self.notifier = notifier
-        self.connection = connection
         self.serializer = serializer
-        self.done = DataStore(type='done', config=self.config)
-        self.queue = DataStore(type='queue', config=self.config)
+        self.done = DataStore(type=TYPE_DONE, connection=connection)
+        self.queue = DataStore(type=TYPE_QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
 
     async def initialize(self):
         self.event = asyncio.Event()
-        log.info(f'Using {self.config.max_workers} workers for downloading.')
+        LOG.info(f'Using {self.config.max_workers} workers for downloading.')
 
         asyncio.create_task(
             self.__download_pool() if self.config.max_workers > 1 else self.__download()
@@ -62,15 +61,14 @@ class DownloadQueue:
         error: str = None
         live_in: str = None
 
-        etype = entry.get('_type') or 'video'
-        if etype == 'playlist':
+        eventType = entry.get('_type') or 'video'
+        if eventType == 'playlist':
             entries = entry['entries']
             playlist_index_digits = len(str(len(entries)))
             results = []
             for index, etr in enumerate(entries, start=1):
                 etr['playlist'] = entry.get('id')
-                etr['playlist_index'] = '{{0:0{0:d}d}}'.format(
-                    playlist_index_digits).format(index)
+                etr['playlist_index'] = '{{0:0{0:d}d}}'.format(playlist_index_digits).format(index)
                 for property in ('id', 'title', 'uploader', 'uploader_id'):
                     if property in entry:
                         etr[f'playlist_{property}'] = entry.get(property)
@@ -92,7 +90,7 @@ class DownloadQueue:
                 return {'status': 'error', 'msg': ', '.join(res['msg'] for res in results if res['status'] == 'error' and 'msg' in res)}
 
             return {'status': 'ok'}
-        elif (etype == 'video' or etype.startswith('url')) and 'id' in entry and 'title' in entry:
+        elif (eventType == 'video' or eventType.startswith('url')) and 'id' in entry and 'title' in entry:
             # check if the video is live stream.
             if 'live_status' in entry and entry.get('live_status') == 'is_upcoming':
                 if 'release_timestamp' in entry and entry.get('release_timestamp'):
@@ -102,30 +100,25 @@ class DownloadQueue:
             else:
                 error = entry.get('msg', None)
 
-            log.debug(
-                f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None) }")
+            LOG.debug(f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None)}")
 
             if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry.get('url')):
-                item = self.done.get(key=entry['id'], url=entry.get(
-                    'webpage_url') or entry['url'])
+                item = self.done.get(key=entry['id'], url=entry.get('webpage_url') or entry['url'])
 
-                log.debug(
-                    f'Item [{item.info.title}] already downloaded. Removing from history.')
+                LOG.debug(f'Item [{item.info.title}] already downloaded. Removing from history.')
 
                 await self.clear([item.info._id])
 
             try:
-                item = self.queue.get(key=entry.get('id'), url=entry.get(
-                    'webpage_url') or entry.get('url'))
+                item = self.queue.get(key=entry.get('id'), url=entry.get('webpage_url') or entry.get('url'))
                 if item is not None:
                     err_message = f'Item [{item.info.id}: {item.info.title}] already in download queue.'
-                    log.info(err_message)
+                    LOG.info(err_message)
                     return {'status': 'error', 'msg': err_message}
             except KeyError:
                 pass
 
-            is_manifestless = 'post_live' == entry.get(
-                'live_status') if 'live_status' in entry else None
+            is_manifestless = 'post_live' == entry.get('live_status') if 'live_status' in entry else None
 
             options.update({'is_manifestless': is_manifestless})
 
@@ -147,23 +140,20 @@ class DownloadQueue:
             )
 
             try:
-                dldirectory = calcDownloadPath(
-                    basePath=self.config.download_path,
-                    folder=folder
-                )
+                download_dir = calcDownloadPath(basePath=self.config.download_path, folder=folder)
             except Exception as e:
+                LOG.exception(e)
                 return {'status': 'error', 'msg': str(e)}
 
             output_chapter = self.config.output_template_chapter
 
             for property, value in entry.items():
                 if property.startswith("playlist"):
-                    dl.output_template = dl.output_template.replace(
-                        f"%({property})s", str(value))
+                    dl.output_template = dl.output_template.replace(f"%({property})s", str(value))
 
             dlInfo: Download = Download(
                 info=dl,
-                download_dir=dldirectory,
+                download_dir=download_dir,
                 temp_dir=self.config.temp_path,
                 output_template_chapter=output_chapter,
                 default_ytdl_opts=self.config.ytdl_options,
@@ -173,23 +163,23 @@ class DownloadQueue:
             if dlInfo.info.live_in:
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
-                NotifiyEvent = 'completed'
+                NotifyEvent = 'completed'
             elif self.config.allow_manifestless is False and is_manifestless is True:
                 dlInfo.info.status = 'error'
                 dlInfo.info.error = 'Video is in Post-Live Manifestless mode.'
                 itemDownload = self.done.put(dlInfo)
-                NotifiyEvent = 'completed'
+                NotifyEvent = 'completed'
             else:
-                NotifiyEvent = 'added'
+                NotifyEvent = 'added'
                 itemDownload = self.queue.put(dlInfo)
                 self.event.set()
 
-            await self.notifier.emit(NotifiyEvent, itemDownload.info)
+            await self.notifier.emit(NotifyEvent, itemDownload.info)
 
             return {
                 'status': 'ok'
             }
-        elif etype.startswith('url'):
+        elif eventType.startswith('url'):
             return await self.add(
                 entry=entry.get('url'),
                 quality=quality,
@@ -203,7 +193,7 @@ class DownloadQueue:
 
         return {
             'status': 'error',
-            'msg': f'Unsupported resource "{etype}"'
+            'msg': f'Unsupported resource "{eventType}"'
         }
 
     async def add(
@@ -219,12 +209,11 @@ class DownloadQueue:
     ):
         ytdlp_config = ytdlp_config if ytdlp_config else {}
 
-        log.info(
-            f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
+        LOG.info(f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
 
         already = set() if already is None else already
         if url in already:
-            log.info('recursion detected, skipping')
+            LOG.info('recursion detected, skipping')
             return {'status': 'ok'}
         else:
             already.add(url)
@@ -252,8 +241,7 @@ class DownloadQueue:
                         return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
                     if self.isDownloaded(entry):
-                        log.info(
-                            f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
+                        LOG.info(f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
                         return {
                             'status': 'error',
                             'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
@@ -267,7 +255,7 @@ class DownloadQueue:
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
 
-            log.debug(f'entry: extract info says: {entry}')
+            LOG.debug(f'entry: extract info says: {entry}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
@@ -289,16 +277,15 @@ class DownloadQueue:
             try:
                 item = self.queue.get(key=id)
             except KeyError as e:
-                log.warn(
-                    f'Requested cancel for non-existent download {id=}. {str(e)}')
+                LOG.warning(f'Requested cancel for non-existent download {id=}. {str(e)}')
                 continue
 
             if item.started() is True:
-                log.info(f'Canceling {id=} {item.info.title=}')
+                LOG.info(f'Canceling {id=} {item.info.title=}')
                 item.cancel()
             else:
                 item.close()
-                log.info(f'Deleting from queue {id=} {item.info.title=}')
+                LOG.info(f'Deleting from queue {id=} {item.info.title=}')
                 self.queue.delete(id)
                 await self.notifier.canceled(id)
                 self.done.put(item)
@@ -312,11 +299,10 @@ class DownloadQueue:
             try:
                 item = self.done.get(key=id)
             except KeyError as e:
-                log.warn(
-                    f'Requested delete for non-existent download {id=}. {str(e)}')
+                LOG.warning(f'Requested delete for non-existent download {id=}. {str(e)}')
                 continue
 
-            log.info(f'Deleting completed download {id=} {item.info.title=}')
+            LOG.info(f'Deleting completed download {id=} {item.info.title=}')
             self.done.delete(id)
             await self.notifier.cleared(id)
 
@@ -347,7 +333,7 @@ class DownloadQueue:
             num_workers=self.config.max_workers,
             worker_co=self.__downloadFile,
             name='WorkerPool',
-            logger=log,
+            logger=logging.getLogger('WorkerPool'),
         ) as executor:
             while True:
                 while True:
@@ -357,8 +343,7 @@ class DownloadQueue:
                         break
 
                 while not self.queue.hasDownloads():
-                    log.info(
-                        f'Waiting for item to download. [{executor.get_avalialbe_workers()}] Workers available.')
+                    LOG.info(f'Waiting for item to download. [{executor.get_available_workers()}] workers available.')
                     await self.event.wait()
                     self.event.clear()
 
@@ -372,7 +357,7 @@ class DownloadQueue:
     async def __download(self):
         while True:
             while self.queue.empty():
-                log.info('waiting for item to download.')
+                LOG.info('waiting for item to download.')
                 await self.event.wait()
                 self.event.clear()
 
@@ -380,8 +365,7 @@ class DownloadQueue:
             await self.__downloadFile(id, entry)
 
     async def __downloadFile(self, id: str, entry: Download):
-        log.info(
-            f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
+        LOG.info(f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
 
         await entry.start(self.notifier)
 

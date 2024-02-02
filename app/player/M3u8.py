@@ -17,11 +17,7 @@ class M3u8:
         self.segment_duration = float(segment_duration)
 
     def make_stream(self, download_path: str, file: str):
-        realFile: str = calcDownloadPath(
-            basePath=download_path,
-            folder=file,
-            createPath=False
-        )
+        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
 
         if not os.path.exists(realFile):
             raise Exception(f"File {realFile} does not exist.")
@@ -45,8 +41,7 @@ class M3u8:
         segmentSize: float = '{:.6f}'.format(self.segment_duration)
         splits: int = math.ceil(duration / self.segment_duration)
 
-        segmentParams = {
-        }
+        segmentParams: dict = {}
 
         for stream in ffprobe.streams:
             if stream.is_video():
@@ -58,17 +53,14 @@ class M3u8:
 
         for i in range(splits):
             if (i + 1) == splits:
-                segmentParams.update({
-                    'sd': '{:.6f}'.format(duration - (i * self.segment_duration))
-                })
+                segmentParams.update({'sd': '{:.6f}'.format(duration - (i * self.segment_duration))})
                 m3u8 += f"#EXTINF:{segmentParams['sd']}, nodesc\n"
             else:
                 m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"
 
             m3u8 += f"{self.url}segments/{i}/{quote(file)}"
             if len(segmentParams) > 0:
-                m3u8 += '?'+'&'.join([f"{key}={value}" for key,
-                                      value in segmentParams.items()])
+                m3u8 += '?'+'&'.join([f"{key}={value}" for key, value in segmentParams.items()])
             m3u8 += "\n"
 
         m3u8 += "#EXT-X-ENDLIST\n"
@@ -79,8 +71,7 @@ class M3u8:
         if duration.find(':') > -1:
             duration = duration.split(':')
             duration.reverse()
-            duration = sum([float(duration[i]) * (60 ** i)
-                           for i in range(len(duration))])
+            duration = sum([float(duration[i]) * (60 ** i) for i in range(len(duration))])
         else:
             duration = float(duration)
 

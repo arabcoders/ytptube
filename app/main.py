@@ -19,6 +19,8 @@ import caribou
 import sqlite3
 from aiocron import crontab
 
+LOG = logging.getLogger('app')
+
 
 class Main:
     config: Config = None
@@ -27,75 +29,68 @@ class Main:
     sio: socketio.AsyncServer = None
     routes: web.RouteTableDef = None
     connection: sqlite3.Connection = None
-    dqueue: DownloadQueue = None
+    queue: DownloadQueue = None
     loop: asyncio.AbstractEventLoop = None
-    logger: logging.Logger = None
 
     def __init__(self):
         self.config = Config.get_instance()
-        self.logger = logging.getLogger('main')
 
         try:
             if not os.path.exists(self.config.download_path):
-                self.logger.info(
-                    f'Creating download folder at {self.config.download_path}')
+                LOG.info(f'Creating download folder at [{self.config.download_path}]')
                 os.makedirs(self.config.download_path, exist_ok=True)
         except OSError as e:
-            self.logger.error(
-                f'Could not create download folder at {self.config.download_path}')
+            LOG.error(f'Could not create download folder at [{self.config.download_path}]')
             raise e
 
         try:
             if not os.path.exists(self.config.temp_path):
-                self.logger.info(
-                    f'Creating temp folder at {self.config.temp_path}')
+                LOG.info(f'Creating temp folder at [{self.config.temp_path}]')
                 os.makedirs(self.config.temp_path, exist_ok=True)
         except OSError as e:
-            self.logger.error(
-                f'Could not create temp folder at {self.config.temp_path}')
+            LOG.error(f'Could not create temp folder at [{self.config.temp_path}]')
             raise e
 
         try:
             if not os.path.exists(self.config.config_path):
-                self.logger.info(
-                    f'Creating config folder at {self.config.config_path}')
+                LOG.info(f'Creating config folder at [{self.config.config_path}]')
                 os.makedirs(self.config.config_path, exist_ok=True)
         except OSError as e:
-            self.logger.error(
-                f'Could not create config folder at {self.config.config_path}')
+            LOG.error(f'Could not create config folder at [{self.config.config_path}]')
             raise e
 
         try:
             if not os.path.exists(self.config.db_file):
-                self.logger.info(
-                    f'Creating database file at {self.config.db_file}')
+                LOG.info(f'Creating database file at [{self.config.db_file}]')
                 with open(self.config.db_file, 'w') as _:
                     pass
         except OSError as e:
-            self.logger.error(
-                f'Could not create database file at {self.config.db_file}')
+            LOG.error(f'Could not create database file at [{self.config.db_file}]')
             raise e
 
-        caribou.upgrade(self.config.db_file, os.path.join(
-            os.path.realpath(os.path.dirname(__file__)), 'migrations'))
-        self.webhooks = Webhooks(os.path.join(
-            self.config.config_path, 'webhooks.json'))
+        caribou.upgrade(self.config.db_file, os.path.join(os.path.realpath(os.path.dirname(__file__)), 'migrations'))
+
+        self.webhooks = Webhooks(os.path.join(self.config.config_path, 'webhooks.json'))
         self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
+
         self.app = web.Application()
         self.sio = socketio.AsyncServer(cors_allowed_origins='*')
-        self.sio.attach(
-            self.app, socketio_path=self.config.url_prefix + 'socket.io')
+        self.sio.attach(self.app, socketio_path=self.config.url_prefix + 'socket.io')
+
         self.routes = web.RouteTableDef()
-        self.connection = sqlite3.connect(self.config.db_file)
-        self.dqueue = DownloadQueue(
-            config=self.config,
-            notifier=Notifier(
-                sio=self.sio, serializer=self.serializer, webhooks=self.webhooks),
+
+        self.connection = sqlite3.connect(self.config.db_file, isolation_level=None)
+        self.connection.row_factory = sqlite3.Row
+        self.connection.execute('PRAGMA journal_mode=wal')
+
+        self.queue = DownloadQueue(
+            notifier=Notifier(sio=self.sio, serializer=self.serializer, webhooks=self.webhooks),
             connection=self.connection,
             serializer=self.serializer,
         )
-        self.app.on_startup.append(lambda _: self.dqueue.initialize())
+
+        self.app.on_startup.append(lambda _: self.queue.initialize())
         self.addRoutes()
         self.addTasks()
         self.start()
@@ -114,7 +109,7 @@ class Main:
 
     async def connect(self, sid, _):
         data: dict = {
-            **self.dqueue.get(),
+            **self.queue.get(),
             "config": self.config,
             "tasks": [],
         }
@@ -145,17 +140,15 @@ class Main:
                         cvDate = self.config.version.split('-')
                         if tagName > cvDate[0]:
                             self.config.new_version_available = True
-                            self.logger.info(
-                                f'New version {tagName} available at')
+                            LOG.info(f'New version [{tagName}] is available.')
                         break
-
         except Exception as e:
             pass
 
     def addTasks(self):
         tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
         if not os.path.exists(tasks_file):
-            self.logger.info(
+            LOG.info(
                 f'No tasks file found at {tasks_file}. Skipping Tasks.')
             return
 
@@ -163,21 +156,20 @@ class Main:
             with open(tasks_file, 'r') as f:
                 tasks = json.load(f)
         except Exception as e:
-            self.logger.error(
-                f'Could not load tasks file [{tasks_file}]. Error message [{str(e)}]. Skipping Tasks.')
+            LOG.error(f'Could not load tasks file [{tasks_file}]. Error message [{str(e)}]. Skipping Tasks.')
             return
 
         for task in tasks:
             if not task.get('url'):
-                self.logger.warning(f'Invalid task {task}.')
+                LOG.warning(f'Invalid task {task}.')
                 continue
 
-            cron_timer: str = task.get(
-                'timer', f'{random.randint(1,59)} */1 * * *')
+            cron_timer: str = task.get('timer', f'{random.randint(1,59)} */1 * * *')
 
             async def cron_runner(task: dict):
-                self.logger.info(
-                    f'Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
+                taskName = task.get("name", task.get("url"))
+                timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                LOG.info(f'Started [Task: {taskName}] at [{timeNow}].')
 
                 await self.add(
                     url=task.get('url'),
@@ -189,8 +181,8 @@ class Main:
                     output_template=task.get('output_template')
                 )
 
-                self.logger.info(
-                    f'Finished Running task [{task.get("name",task.get("url"))}] at [{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}].')
+                timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                LOG.info(f'Completed [Task: {taskName}] at [{timeNow}].')
 
             crontab(
                 spec=cron_timer,
@@ -200,12 +192,12 @@ class Main:
                 loop=self.loop
             )
 
-            self.logger.info(
-                f'Added task to grab {task.get("name",task.get("url"))} content every [{cron_timer}].')
+            LOG.info(f'Added [Task: {task.get("name", task.get("url"))}] executed every [{cron_timer}].')
 
     def addRoutes(self):
         @self.routes.get(self.config.url_prefix + 'ping')
         async def ping(_) -> Response:
+            self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
             return web.Response(text='pong')
 
         @self.routes.post(self.config.url_prefix + 'add')
@@ -240,8 +232,7 @@ class Main:
 
         @self.routes.get(self.config.url_prefix + 'tasks')
         async def tasks(_: Request) -> Response:
-            tasks_file: str = os.path.join(
-                self.config.config_path, 'tasks.json')
+            tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
 
             if not os.path.exists(tasks_file):
                 return web.json_response({"error": "No tasks defined."}, status=404)
@@ -264,10 +255,9 @@ class Main:
 
             for item in post:
                 if not isinstance(item, dict):
-                    raise web.HTTPBadRequest(
-                        'Invalid request body expecting list with dicts.')
+                    raise web.HTTPBadRequest(reason='Invalid request body expecting list with dicts.')
                 if not item.get('url'):
-                    raise web.HTTPBadRequest(reason='url is required')
+                    raise web.HTTPBadRequest(reason='url is required.')
 
                 status[item.get('url')] = await self.add(
                     url=item.get('url'),
@@ -290,7 +280,7 @@ class Main:
             if not ids or where not in ['queue', 'done']:
                 raise web.HTTPBadRequest()
 
-            status = await (self.dqueue.cancel(ids) if where == 'queue' else self.dqueue.clear(ids))
+            status = await (self.queue.cancel(ids) if where == 'queue' else self.queue.clear(ids))
 
             return web.Response(text=self.serializer.encode(status))
 
@@ -298,9 +288,9 @@ class Main:
         async def history(_) -> Response:
             history = {'done': [], 'queue': []}
 
-            for _, v in self.dqueue.queue.saved_items():
+            for _, v in self.queue.queue.saved_items():
                 history['queue'].append(v)
-            for _, v in self.dqueue.done.saved_items():
+            for _, v in self.queue.done.saved_items():
                 history['done'].append(v)
 
             return web.Response(text=self.serializer.encode(history))
@@ -310,7 +300,7 @@ class Main:
             file: str = request.match_info.get('file')
 
             if not file:
-                raise web.HTTPBadRequest(reason='file is required')
+                raise web.HTTPBadRequest(reason='file is required.')
 
             return web.Response(
                 text=M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
@@ -340,8 +330,7 @@ class Main:
 
             segmenter = Segments(
                 segment_index=int(segment),
-                segment_duration=float('{:.6f}'.format(
-                    float(sd if sd else M3u8.segment_duration))),
+                segment_duration=float('{:.6f}'.format(float(sd if sd else M3u8.segment_duration))),
                 vconvert=True if vc == 1 else False,
                 aconvert=True if ac == 1 else False
             )
@@ -408,8 +397,7 @@ class Main:
             self.app.on_response_prepare.append(on_prepare)
         except ValueError as e:
             if 'frontend/dist' in str(e):
-                raise RuntimeError(
-                    'Could not find the frontend UI static assets. Please run `node_modules/.bin/ng build` inside the frontend folder.') from e
+                raise RuntimeError('Could not find the frontend UI static assets.') from e
             raise e
 
     async def add(
@@ -428,7 +416,7 @@ class Main:
         if ytdlp_cookies and isinstance(ytdlp_cookies, dict):
             ytdlp_cookies = self.serializer.encode(ytdlp_cookies)
 
-        status = await self.dqueue.add(
+        status = await self.queue.add(
             url=url,
             format=format if format else 'any',
             quality=quality if quality else 'best',

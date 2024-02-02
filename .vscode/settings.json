@@ -1,0 +1,34 @@
+{
+  "files.exclude": {
+    "**/__pycache__": true
+  },
+  "autopep8.args": [
+    "--max-line-length",
+    "120",
+    "--experimental"
+  ],
+  "editor.rulers": [
+    120
+  ],
+  "cSpell.words": [
+    "aconvert",
+    "aiocron",
+    "copyts",
+    "dotenv",
+    "finaldir",
+    "getpid",
+    "libcurl",
+    "libx",
+    "mpegts",
+    "muxdelay",
+    "nodesc",
+    "noprogress",
+    "postprocessor",
+    "preferredcodec",
+    "preferredquality",
+    "tmpfilename",
+    "vconvert",
+    "writedescription",
+    "xerror"
+  ],
+}
