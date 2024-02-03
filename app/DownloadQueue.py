@@ -118,7 +118,8 @@ class DownloadQueue:
             except KeyError:
                 pass
 
-            options.update({'is_manifestless': 'post_live' == entry.get('live_status', None)})
+            is_manifestless = entry.get('is_manifestless', False)
+            options.update({'is_manifestless': is_manifestless})
 
             dl = ItemDTO(
                 id=entry.get('id'),
@@ -134,7 +135,7 @@ class DownloadQueue:
                 error=error,
                 is_live=entry.get('is_live', None) or 'is_live' == entry.get('live_status', None) or live_in,
                 live_in=live_in,
-                options=options,
+                options=options
             )
 
             try:
