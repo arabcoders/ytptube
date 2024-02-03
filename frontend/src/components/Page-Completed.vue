@@ -4,7 +4,7 @@
       <span class="icon">
         <font-awesome-icon :icon="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Completed <span v-if="hasItems">({{ getTotal }})</span></span>
+      <span>History <span v-if="hasItems">({{ getTotal }})</span></span>
     </span>
   </h1>
 
@@ -197,7 +197,7 @@
           <span class="icon has-text-success">
             <font-awesome-icon icon="fa-solid fa-circle-check" />
           </span>
-          <span>No downloads records.</span>
+          <span>No records.</span>
         </span>
       </p>
       <p v-else>
