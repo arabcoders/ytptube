@@ -118,9 +118,7 @@ class DownloadQueue:
             except KeyError:
                 pass
 
-            is_manifestless = 'post_live' == entry.get('live_status') if 'live_status' in entry else None
-
-            options.update({'is_manifestless': is_manifestless})
+            options.update({'is_manifestless': 'post_live' == entry.get('live_status', None)})
 
             dl = ItemDTO(
                 id=entry.get('id'),
@@ -134,9 +132,9 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry.get('is_live', None) or live_in is not None,
+                is_live=entry.get('is_live', None) or 'is_live' == entry.get('live_status', None) or live_in,
                 live_in=live_in,
-                options=options
+                options=options,
             )
 
             try:
