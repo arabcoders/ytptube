@@ -31,6 +31,7 @@ class Main:
     connection: sqlite3.Connection = None
     queue: DownloadQueue = None
     loop: asyncio.AbstractEventLoop = None
+    appLoader: str = None
 
     def __init__(self):
         self.config = Config.get_instance()
@@ -349,10 +350,14 @@ class Main:
 
         @self.routes.get(self.config.url_prefix)
         async def index(_) -> Response:
-            return web.FileResponse(os.path.join(
-                os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-                'frontend/dist/index.html'
-            ))
+            if not self.appLoader:
+                with open(os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
+                    'frontend/dist/index.html'
+                ), 'r') as f:
+                    self.appLoader = f.read()
+
+            return web.Response(text=self.appLoader, content_type='text/html', charset='utf-8', status=200)
 
         @self.sio.event()
         async def connect(sid, environ):
