@@ -52,12 +52,17 @@ class Webhooks:
             async with client.ClientSession() as session:
                 headers = req.get('headers', {}) if 'headers' in req else {}
                 async with session.request(method=req.get('method', 'POST'), url=req.get('url'), json=item.__dict__, headers=headers) as response:
-                    LOG.info(f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status}].")
-                    return {
+                    respData = {
                         'url': req.get('url'),
                         'status': response.status,
                         'text': await response.text()
                     }
+                    msg = f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status}]."
+                    if respData.get('text'):
+                        msg += f" [Body: {respData.get('text','??')}]"
+                    LOG.info(msg)
+
+                    return respData
         except Exception as e:
             return {
                 'url': req.get('url'),
