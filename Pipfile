@@ -11,6 +11,7 @@ caribou = "*"
 coloredlogs = "*"
 aiocron = "*"
 python-dotenv = "*"
+python-magic = "*"
 
 [dev-packages]
 
