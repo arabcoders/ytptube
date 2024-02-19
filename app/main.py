@@ -18,8 +18,10 @@ import logging
 import caribou
 import sqlite3
 from aiocron import crontab
+import magic
 
 LOG = logging.getLogger('app')
+MIME = magic.Magic(mime=True)
 
 
 class Main:
@@ -32,6 +34,16 @@ class Main:
     queue: DownloadQueue = None
     loop: asyncio.AbstractEventLoop = None
     appLoader: str = None
+
+    staticHolder: dict = {}
+
+    extToMime: dict = {
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.json': 'application/json',
+        '.ico': 'image/x-icon',
+    }
 
     def __init__(self):
         self.config = Config.get_instance()
@@ -340,7 +352,6 @@ class Main:
                 body=await segmenter.stream(download_path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
-                    'Connection': 'keep-alive',
                     'Cache-Control': 'no-cache',
                     'X-Accel-Buffering': 'no',
                     'Access-Control-Allow-Origin': '*',
@@ -376,19 +387,38 @@ class Main:
         async def add_cors(_) -> Response:
             return web.Response(text=self.serializer.encode({"status": "ok"}))
 
-        @self.routes.options(self.config.url_prefix + 'delete')
+        @self.routes.options(f'{self.config.url_prefix}delete')
         async def delete_cors(_) -> Response:
             return web.Response(text=self.serializer.encode({"status": "ok"}))
 
-        self.routes.static(
-            self.config.url_prefix +
-            'download/', self.config.download_path)
+        self.routes.static(f'{self.config.url_prefix}download/', self.config.download_path)
 
-        self.routes.static(
-            self.config.url_prefix,
-            os.path.join(os.path.dirname(os.path.dirname(
-                os.path.realpath(__file__))), 'frontend/dist')
-        )
+        async def staticFile(req: Request) -> Response:
+            if req.path not in self.staticHolder:
+                return web.HTTPNotFound()
+
+            return web.FileResponse(path=self.staticHolder[req.path].get('file'), headers={
+                'Cache-Control': 'public, max-age=31536000',
+                'Pragma': 'public',
+            })
+
+        staticDir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'frontend/dist')
+        for root, _, files in os.walk(staticDir):
+            for file in files:
+                if file.endswith('.map'):
+                    continue
+
+                file = os.path.join(root, file)
+                urlPath = f"{self.config.url_prefix}{file.replace(f'{staticDir}/', '')}"
+
+                self.staticHolder[urlPath] = {
+                    'file': file,
+                    # 'content': open(file, 'rb').read(),
+                    'content_type': self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file)),
+                }
+
+                self.app.router.add_get(urlPath, staticFile)
+                LOG.debug(f'Preloading: [{urlPath}].')
 
         try:
             self.app.add_routes(self.routes)

@@ -37,7 +37,7 @@ COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/bin/
 COPY --from=mwader/static-ffmpeg:6.1.1 /ffprobe /usr/bin/
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata && \
+  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic && \
   useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   rm -rf /var/cache/apk/*
 
