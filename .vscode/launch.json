@@ -23,7 +23,7 @@
     },
     {
       "name": "Python: main.py",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "app/main.py",
       "console": "internalConsole",

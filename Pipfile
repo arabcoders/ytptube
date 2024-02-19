@@ -11,6 +11,8 @@ caribou = "*"
 coloredlogs = "*"
 aiocron = "*"
 python-dotenv = "*"
+fastapi = "*"
+uvicorn = "*"
 
 [dev-packages]
 

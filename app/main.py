@@ -5,12 +5,12 @@ from datetime import datetime
 import json
 import os
 import random
+from fastapi.responses import HTMLResponse, RedirectResponse
 from Config import Config
 from DownloadQueue import DownloadQueue
 from Utils import ObjectSerializer, Notifier
-from aiohttp import web, client
-from aiohttp.web import Request, Response
 from Webhooks import Webhooks
+from Models import ItemAddRequest, ItemAddRequestCollection, deleteItemRequest
 from player.M3u8 import M3u8
 from player.Segments import Segments
 import socketio
@@ -18,6 +18,10 @@ import logging
 import caribou
 import sqlite3
 from aiocron import crontab
+from fastapi import FastAPI, HTTPException, status, Response
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 LOG = logging.getLogger('app')
 
@@ -25,13 +29,13 @@ LOG = logging.getLogger('app')
 class Main:
     config: Config = None
     serializer: ObjectSerializer = None
-    app: web.Application = None
+    app: FastAPI = None
     sio: socketio.AsyncServer = None
-    routes: web.RouteTableDef = None
     connection: sqlite3.Connection = None
     queue: DownloadQueue = None
     loop: asyncio.AbstractEventLoop = None
     appLoader: str = None
+    mapp: socketio.ASGIApp = None
 
     def __init__(self):
         self.config = Config.get_instance()
@@ -75,11 +79,7 @@ class Main:
         self.loop = asyncio.get_event_loop()
         self.serializer = ObjectSerializer()
 
-        self.app = web.Application()
-        self.sio = socketio.AsyncServer(cors_allowed_origins='*')
-        self.sio.attach(self.app, socketio_path=self.config.url_prefix + 'socket.io')
-
-        self.routes = web.RouteTableDef()
+        self.sio = socketio.AsyncServer(async_mode="asgi", cors_allowed_origins='*')
 
         self.connection = sqlite3.connect(self.config.db_file, isolation_level=None)
         self.connection.row_factory = sqlite3.Row
@@ -91,21 +91,43 @@ class Main:
             serializer=self.serializer,
         )
 
-        self.app.on_startup.append(lambda _: self.queue.initialize())
+        def startup_logo():
+            print(f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
+
+        self.app = FastAPI(
+            debug=self.config.ytdl_debug,
+            title='YTPTube',
+            version=self.config.version,
+            on_startup=[startup_logo, self.queue.initialize],
+        )
+
+        self.mapp = socketio.ASGIApp(
+            socketio_server=self.sio,
+            socketio_path=f'{self.config.url_prefix}socket.io',
+            other_asgi_app=self.app,
+        )
+
         self.addRoutes()
+
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
         self.addTasks()
-        self.start()
 
     def start(self):
-        web.run_app(
-            self.app,
+        uvicorn.run(
+            app='main:app',
             host=self.config.host,
             port=self.config.port,
-            reuse_port=True,
-            loop=self.loop,
-            access_log=None,
-            print=lambda _: print(
-                f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
+            log_level='info',
+            access_log=True,
+            reload=True,
+            workers=4,
         )
 
     async def connect(self, sid, _):
@@ -196,151 +218,142 @@ class Main:
             LOG.info(f'Added [Task: {task.get("name", task.get("url"))}] executed every [{cron_timer}].')
 
     def addRoutes(self):
-        @self.routes.get(self.config.url_prefix + 'ping')
-        async def ping(_) -> Response:
+        @self.app.get(f'{self.config.url_prefix}ping')
+        async def ping() -> dict:
             self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
-            return web.Response(text='pong')
+            return {'response': 'pong'}
 
-        @self.routes.post(self.config.url_prefix + 'add')
-        async def add(request: Request) -> Response:
-            post = await request.json()
-
-            url: str = post.get('url')
-            quality: str = post.get('quality')
-
-            if not url:
-                raise web.HTTPBadRequest()
-
-            format: str = post.get('format')
-            folder: str = post.get('folder')
-            ytdlp_cookies: str = post.get('ytdlp_cookies')
-            ytdlp_config: dict = post.get('ytdlp_config')
-            output_template: str = post.get('output_template')
-            if ytdlp_config is None:
-                ytdlp_config = {}
+        @self.app.post(f'{self.config.url_prefix}add')
+        async def add(req: ItemAddRequest) -> dict:
+            if not req.url:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='url is required.')
 
             status = await self.add(
-                url=url,
-                quality=quality,
-                format=format,
-                folder=folder,
-                ytdlp_cookies=ytdlp_cookies,
-                ytdlp_config=ytdlp_config,
-                output_template=output_template
+                url=req.url,
+                quality=req.quality,
+                format=req.format,
+                folder=req.folder,
+                ytdlp_cookies=req.ytdlp_cookies,
+                ytdlp_config=req.ytdlp_config if req.ytdlp_config else {},
+                output_template=req.output_template
             )
 
-            return web.Response(text=self.serializer.encode(status))
+            return status
 
-        @self.routes.get(self.config.url_prefix + 'tasks')
-        async def tasks(_: Request) -> Response:
+        @self.app.get(f'{self.config.url_prefix}tasks')
+        async def task() -> dict:
             tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
 
             if not os.path.exists(tasks_file):
-                return web.json_response({"error": "No tasks defined."}, status=404)
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"error": 'No tasks defined.'})
 
             try:
                 with open(tasks_file, 'r') as f:
-                    tasks = json.load(f)
+                    return json.load(f)
             except Exception as e:
-                return web.json_response({"error": str(e)}, status=500)
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"error": str(e)})
 
-            return web.json_response(tasks)
+        @self.app.post(f'{self.config.url_prefix}add_batch')
+        async def add_batch(req: ItemAddRequestCollection) -> dict:
+            r_status = {}
 
-        @self.routes.post(self.config.url_prefix + 'add_batch')
-        async def add_batch(request: Request) -> Response:
-            status = {}
-
-            post = await request.json()
-            if not isinstance(post, list):
-                raise web.HTTPBadRequest()
-
-            for item in post:
-                if not isinstance(item, dict):
-                    raise web.HTTPBadRequest(reason='Invalid request body expecting list with dicts.')
-                if not item.get('url'):
-                    raise web.HTTPBadRequest(reason='url is required.')
-
-                status[item.get('url')] = await self.add(
-                    url=item.get('url'),
-                    quality=item.get('quality'),
-                    format=item.get('format'),
-                    folder=item.get('folder'),
-                    ytdlp_cookies=item.get('ytdlp_cookies'),
-                    ytdlp_config=item.get('ytdlp_config'),
-                    output_template=item.get('output_template')
+            if not isinstance(req.items, list):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Invalid request body expecting list with dicts.'
                 )
 
-            return web.Response(text=self.serializer.encode(status))
+            for item in req.items:
+                if not isinstance(item, ItemAddRequest):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail='Invalid request body expecting list with dicts.')
 
-        @self.routes.delete(self.config.url_prefix + 'delete')
-        async def delete(request: Request) -> Response:
-            post = await request.json()
-            ids = post.get('ids')
-            where = post.get('where')
+                if item.url is None:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='url is required.')
 
-            if not ids or where not in ['queue', 'done']:
-                raise web.HTTPBadRequest()
+                r_status[item.url] = await self.add(
+                    url=item.url,
+                    quality=item.quality,
+                    format=item.format,
+                    folder=item.folder,
+                    ytdlp_cookies=item.ytdlp_cookies,
+                    ytdlp_config=item.ytdlp_config if item.ytdlp_config else {},
+                    output_template=item.output_template
+                )
 
-            status = await (self.queue.cancel(ids) if where == 'queue' else self.queue.clear(ids))
+            return r_status
 
-            return web.Response(text=self.serializer.encode(status))
+        @self.app.delete(f'{self.config.url_prefix}delete')
+        async def delete(req: deleteItemRequest) -> dict:
+            if not req.ids or req.where not in ['queue', 'done']:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='ids and where are required.'
+                )
 
-        @self.routes.get(self.config.url_prefix + 'history')
-        async def history(_) -> Response:
-            history = {'done': [], 'queue': []}
+            if req.where == 'queue':
+                status = await self.queue.cancel(req.ids)
+            else:
+                status = self.queue.clear(req.ids)
+
+            LOG.info(f'Deleted [{len(req.ids)}] items from [{req.where}].')
+
+            return status
+
+        @self.app.get(f'{self.config.url_prefix}history')
+        async def history() -> dict:
+            queue = []
+            done = []
 
             for _, v in self.queue.queue.saved_items():
-                history['queue'].append(v)
+                queue.append(v)
+
             for _, v in self.queue.done.saved_items():
-                history['done'].append(v)
+                done.append(v)
 
-            return web.Response(text=self.serializer.encode(history))
+            return {'queue': queue, 'done': done}
 
-        @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
-        async def m3u8(request: Request) -> Response:
-            file: str = request.match_info.get('file')
-
+        @self.app.get(self.config.url_prefix + 'm3u8/{file:.*}')
+        async def m3u8(file: str) -> Response:
             if not file:
-                raise web.HTTPBadRequest(reason='file is required.')
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='file is required')
 
-            return web.Response(
-                text=M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+            return Response(
+                content=M3u8(
+                    url=f"{self.config.url_host}{self.config.url_prefix}"
+                ).make_stream(
                     download_path=self.config.download_path,
                     file=file
                 ),
+                status_code=status.HTTP_200_OK,
+                media_type='application/x-mpegURL',
                 headers={
-                    'Content-Type': 'application/x-mpegURL',
                     'Cache-Control': 'no-cache',
                     'Access-Control-Max-Age': "300",
                 }
             )
 
-        @self.routes.get(self.config.url_prefix + 'segments/{segment:\d+}/{file:.*}')
-        async def segments(request: Request) -> Response:
-            file: str = request.match_info.get('file')
-            segment: int = request.match_info.get('segment')
-            sd: int = request.query.get('sd')
-            vc: int = int(request.query.get('vc', 0))
-            ac: int = int(request.query.get('ac', 0))
-
+        @self.app.get(self.config.url_prefix + 'segments/{segment:\d+}/{file:.*}')
+        async def segments(segment: int, file: str, sd: int = 0, vc: int = 0, ac: int = 0) -> Response:
             if not file:
-                raise web.HTTPBadRequest(reason='file is required')
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='file is required')
 
             if not segment:
-                raise web.HTTPBadRequest(reason='segment is required')
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='segment is required')
 
             segmenter = Segments(
-                segment_index=int(segment),
+                segment_index=segment,
                 segment_duration=float('{:.6f}'.format(float(sd if sd else M3u8.segment_duration))),
                 vconvert=True if vc == 1 else False,
                 aconvert=True if ac == 1 else False
             )
 
-            return web.Response(
-                body=await segmenter.stream(download_path=self.config.download_path, file=file),
+            return Response(
+                content=await segmenter.stream(download_path=self.config.download_path, file=file),
+                status_code=status.HTTP_200_OK,
+                media_type='video/mpegts',
                 headers={
-                    'Content-Type': 'video/mpegts',
-                    'Connection': 'keep-alive',
                     'Cache-Control': 'no-cache',
                     'X-Accel-Buffering': 'no',
                     'Access-Control-Allow-Origin': '*',
@@ -348,8 +361,8 @@ class Main:
                 }
             )
 
-        @self.routes.get(self.config.url_prefix)
-        async def index(_) -> Response:
+        @self.app.get(f'{self.config.url_prefix}')
+        async def index() -> HTMLResponse:
             if not self.appLoader:
                 with open(os.path.join(
                     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
@@ -357,64 +370,46 @@ class Main:
                 ), 'r') as f:
                     self.appLoader = f.read()
 
-            return web.Response(text=self.appLoader, content_type='text/html', charset='utf-8', status=200)
+            return HTMLResponse(content=self.appLoader, status_code=status.HTTP_200_OK)
 
-        @self.sio.event()
-        async def connect(sid, environ):
+        @self.sio.event
+        async def connect(sid, environ, auth):
             await self.connect(sid, environ)
 
         if self.config.url_prefix != '/':
-            @self.routes.get('/')
-            async def redirect_d(_) -> Response:
-                return web.HTTPFound(self.config.url_prefix)
+            @self.app.get('/')
+            async def redirect_d() -> RedirectResponse:
+                return RedirectResponse(self.config.url_prefix)
 
-            @self.routes.get(self.config.url_prefix[:-1])
-            async def redirect_w(_) -> Response:
-                return web.HTTPFound(self.config.url_prefix)
+            @self.app.get(self.config.url_prefix[:-1])
+            async def redirect_w() -> RedirectResponse:
+                return RedirectResponse(self.config.url_prefix)
 
-        @self.routes.options(self.config.url_prefix + 'add')
-        async def add_cors(_) -> Response:
-            return web.Response(text=self.serializer.encode({"status": "ok"}))
+        @self.app.options(f'{self.config.url_prefix}add')
+        async def add_cors() -> dict:
+            return {"status": "ok"}
 
-        @self.routes.options(self.config.url_prefix + 'delete')
-        async def delete_cors(_) -> Response:
-            return web.Response(text=self.serializer.encode({"status": "ok"}))
+        @self.app.options(f'{self.config.url_prefix}delete')
+        async def delete_cors() -> dict:
+            return {"status": "ok"}
 
-        self.routes.static(
-            self.config.url_prefix +
-            'download/', self.config.download_path)
-
-        self.routes.static(
-            self.config.url_prefix,
-            os.path.join(os.path.dirname(os.path.dirname(
-                os.path.realpath(__file__))), 'frontend/dist')
+        self.app.mount(
+            path=f'{self.config.url_prefix}download/',
+            app=StaticFiles(directory=self.config.download_path),
+            name="downloads"
         )
 
-        try:
-            self.app.add_routes(self.routes)
+        self.app.mount(
+            path=self.config.url_prefix,
+            app=StaticFiles(
+                directory=os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'frontend/dist')
+            ),
+            name="frontend"
+        )
 
-            async def on_prepare(request, response):
-                if 'Origin' in request.headers:
-                    response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
-                    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-                    response.headers['Access-Control-Allow-Methods'] = 'PUT, POST, DELETE'
+    async def add(self, url: str, quality: str, format: str, folder: str, ytdlp_cookies: str,
+                  ytdlp_config: dict, output_template: str) -> dict[str, str]:
 
-            self.app.on_response_prepare.append(on_prepare)
-        except ValueError as e:
-            if 'frontend/dist' in str(e):
-                raise RuntimeError('Could not find the frontend UI static assets.') from e
-            raise e
-
-    async def add(
-        self,
-            url: str,
-            quality: str,
-            format: str,
-            folder: str,
-            ytdlp_cookies: str,
-            ytdlp_config: dict,
-            output_template: str
-    ) -> dict[str, str]:
         if ytdlp_config is None:
             ytdlp_config = {}
 
@@ -434,6 +429,9 @@ class Main:
         return status
 
 
+main = Main()
+app = main.mapp
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    main = Main()
+    main.start()
