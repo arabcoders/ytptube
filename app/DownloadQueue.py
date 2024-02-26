@@ -337,30 +337,39 @@ class DownloadQueue:
             name='download_pool',
             logger=logging.getLogger('WorkerPool'),
         ) as executor:
+            lastLog = time.time()
+
             while True:
                 while True:
-                    if executor.has_open_workers() is False:
-                        LOG.debug(f'Waiting for workers to be available.')
-                        await asyncio.sleep(1)
-                    else:
+                    if executor.has_open_workers() is True:
                         break
+                    if time.time() - lastLog > 120:
+                        lastLog = time.time()
+                        LOG.info(f'Waiting for workers to be free.')
+                    await asyncio.sleep(1)
+
+                LOG.debug(f"Has '{executor.get_available_workers()}' free workers.")
 
                 while not self.queue.hasDownloads():
-                    LOG.info(f'Waiting for item to download. [{executor.get_available_workers()}] workers available.')
+                    LOG.info(f'Waiting for item to download.')
                     await self.event.wait()
                     self.event.clear()
+                    LOG.debug(f"Cleared wait event.")
 
                 entry = self.queue.getNextDownload()
                 await asyncio.sleep(0.2)
 
+                LOG.debug(f"Pushing {entry=} to executor.")
+
                 if entry.started() is False and entry.is_canceled() is False:
                     await executor.push(id=entry.info._id, entry=entry)
+                    LOG.debug(f"Pushed {entry=} to executor.")
                     await asyncio.sleep(1)
 
     async def __download(self):
         while True:
             while self.queue.empty():
-                LOG.info('waiting for item to download.')
+                LOG.info('Waiting for item to download.')
                 await self.event.wait()
                 self.event.clear()
 

@@ -140,6 +140,8 @@ class AsyncPool:
         if self._log_every_n is not None and (self._total_queued % self._log_every_n) == 0:
             self._logger.info(f"pushed {self._total_queued}/{self._expected_total} items to {self._name} pool.")
 
+        self._logger.debug(f"'{self._name}' pool has received a new job. {args} {kwargs}")
+
         return future
 
     def start(self):
