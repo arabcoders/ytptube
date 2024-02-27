@@ -36,10 +36,26 @@
       }
     },
     {
-      "name": "Python: attach to process.",
+      "name": "Python: Attach To Process",
       "type": "debugpy",
       "request": "attach",
       "processId": "${command:pickProcess}",
+    },
+    {
+      "name": "Python: Attach To Container",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/app/app"
+        }
+      ],
+      "justMyCode": true
     }
   ]
 }

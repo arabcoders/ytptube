@@ -41,11 +41,13 @@ class Config:
 
     version: str = APP_VERSION
 
+    debug: bool = False
+
     new_version_available: bool = False
 
     _int_vars: tuple = ('port', 'max_workers',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available')
-    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'temp_keep', 'allow_manifestless',)
+    _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
 
     @staticmethod
     def get_instance():
@@ -63,7 +65,9 @@ class Config:
 
         self.temp_path = os.environ.get('YTP_TEMP_PATH', None) or os.path.join(baseDefaultPath, 'var', 'tmp')
         self.config_path = os.environ.get('YTP_CONFIG_PATH', None) or os.path.join(baseDefaultPath, 'var', 'config')
-        self.download_path = os.environ.get('YTP_DOWNLOAD_PATH', None) or os.path.join(baseDefaultPath, 'var', 'downloads')
+        self.download_path = os.environ.get(
+            'YTP_DOWNLOAD_PATH', None) or os.path.join(
+            baseDefaultPath, 'var', 'downloads')
 
         envFile: str = os.path.join(self.config_path, '.env')
 
@@ -121,6 +125,14 @@ class Config:
         )
 
         LOG = logging.getLogger('config')
+
+        if self.debug:
+            try:
+                import debugpy
+                debugpy.listen(("0.0.0.0", 5678))
+                LOG.info("starting debugpy server on [0.0.0.0:5678]")
+            except ImportError:
+                LOG.error("debugpy not found, please install it with 'pip install debugpy'")
 
         optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
         if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
