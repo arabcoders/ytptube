@@ -52,7 +52,7 @@
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",
-          "remoteRoot": "/app/app"
+          "remoteRoot": "/app/"
         }
       ],
       "justMyCode": true
