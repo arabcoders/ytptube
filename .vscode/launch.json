@@ -34,6 +34,12 @@
         "YTP_URL_HOST": "http://localhost:8081",
         "YTP_LOG_LEVEL": "DEBUG"
       }
+    },
+    {
+      "name": "Python: attach to process.",
+      "type": "debugpy",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
     }
   ]
 }
