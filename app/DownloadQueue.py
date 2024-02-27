@@ -11,7 +11,7 @@ from ItemDTO import ItemDTO
 from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 from AsyncPool import AsyncPool
-
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 LOG = logging.getLogger('DownloadQueue')
 TYPE_DONE: str = 'done'
 TYPE_QUEUE: str = 'queue'
@@ -217,18 +217,26 @@ class DownloadQueue:
         else:
             already.add(url)
         try:
-            entry = await asyncio.get_running_loop().run_in_executor(
-                None,
-                ExtractInfo,
-                mergeConfig(self.config.ytdl_options, ytdlp_config),
-                url,
-                bool(self.config.ytdl_debug)
-            )
+            with ThreadPoolExecutor(thread_name_prefix='extract_info') as pool:
+                LOG.debug(f'extracting info from {url=}')
+                entry = await asyncio.get_running_loop().run_in_executor(
+                    pool,
+                    ExtractInfo,
+                    mergeConfig(self.config.ytdl_options, ytdlp_config),
+                    url,
+                    bool(self.config.ytdl_debug)
+                )
 
-            if not entry:
-                if self.config.keep_archive:
+                if not entry:
+                    if not self.config.keep_archive:
+                        return {
+                            'status': 'error',
+                            'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
+                        }
+
+                    LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
                     entry = await asyncio.get_running_loop().run_in_executor(
-                        None,
+                        pool,
                         ExtractInfo,
                         mergeConfig(self.config.ytdl_options, ytdlp_config),
                         url,
@@ -245,11 +253,6 @@ class DownloadQueue:
                             'status': 'error',
                             'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
                         }
-
-                return {
-                    'status': 'error',
-                    'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
-                }
 
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
@@ -331,32 +334,42 @@ class DownloadQueue:
             loop=asyncio.get_running_loop(),
             num_workers=self.config.max_workers,
             worker_co=self.__downloadFile,
-            name='WorkerPool',
+            name='download_pool',
             logger=logging.getLogger('WorkerPool'),
         ) as executor:
+            lastLog = time.time()
+
             while True:
                 while True:
-                    if executor.has_open_workers() is False:
-                        await asyncio.sleep(1)
-                    else:
+                    if executor.has_open_workers() is True:
                         break
+                    if time.time() - lastLog > 120:
+                        lastLog = time.time()
+                        LOG.info(f'Waiting for workers to be free.')
+                    await asyncio.sleep(1)
+
+                LOG.debug(f"Has '{executor.get_available_workers()}' free workers.")
 
                 while not self.queue.hasDownloads():
-                    LOG.info(f'Waiting for item to download. [{executor.get_available_workers()}] workers available.')
+                    LOG.info(f'Waiting for item to download.')
                     await self.event.wait()
                     self.event.clear()
+                    LOG.debug(f"Cleared wait event.")
 
                 entry = self.queue.getNextDownload()
                 await asyncio.sleep(0.2)
 
+                LOG.debug(f"Pushing {entry=} to executor.")
+
                 if entry.started() is False and entry.is_canceled() is False:
                     await executor.push(id=entry.info._id, entry=entry)
+                    LOG.debug(f"Pushed {entry=} to executor.")
                     await asyncio.sleep(1)
 
     async def __download(self):
         while True:
             while self.queue.empty():
-                LOG.info('waiting for item to download.')
+                LOG.info('Waiting for item to download.')
                 await self.event.wait()
                 self.event.clear()
 

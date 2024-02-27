@@ -33,7 +33,7 @@ class Config:
 
     base_path: str = ''
 
-    logging_level: str = 'info'
+    log_level: str = 'info'
 
     allow_manifestless: bool = False
 
@@ -110,9 +110,9 @@ class Config:
         if not self.url_prefix.endswith('/'):
             self.url_prefix += '/'
 
-        numeric_level = getattr(logging, self.logging_level.upper(), None)
+        numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):
-            raise ValueError(f"Invalid log level: {self.logging_level}")
+            raise ValueError(f"Invalid log level: {self.log_level}")
 
         coloredlogs.install(
             level=numeric_level,

@@ -71,9 +71,9 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `true`.
 * __YTP_YTDL_DEBUG__: Whether to turn debug logging for the internal `yt-dlp` package. Defaults to `false`.
 * __YTP_ALLOW_MANIFESTLESS__: Allow `yt-dlp` to download live streams videos which are yet to be processed by YouTube. Defaults to `false`
-* __YTP_HOST__: Which ip address to bind to. Defaults to `0.0.0.0`.
+* __YTP_HOST__: Which IP address to bind to. Defaults to `0.0.0.0`.
 * __YTP_PORT__: Which port to bind to. Defaults to `8081`.
-* __YTP_LOGGING_LEVEL__: Logging level. Defaults to `info`.
+* __YTP_LOG_LEVEL__: Log level. Defaults to `info`.
 * __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
 
 ## Running behind a reverse proxy
@@ -130,7 +130,7 @@ Once there, you can use the yt-dlp command freely.
 
 ## Building and running locally
 
-Make sure you have node.js and Python 3.11 installed.
+Make sure you have `node.js` and Python `3.11+` installed.
 
 ```bash
 cd ytptube/frontend
