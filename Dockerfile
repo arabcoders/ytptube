@@ -67,4 +67,4 @@ HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["/app/.venv/bin/python", "/app/app/main.py", "--mainprocess"]
+CMD ["/app/.venv/bin/python", "/app/app/main.py", "--ytptube-mp"]
