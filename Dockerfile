@@ -67,4 +67,6 @@ HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["/app/.venv/bin/python", "/app/app/main.py"]
+ENV PYDEVD_DISABLE_FILE_VALIDATION=1
+
+CMD ["/app/.venv/bin/python", "/app/app/main.py", "--ytptube-mp"]

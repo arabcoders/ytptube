@@ -12,6 +12,7 @@ coloredlogs = "*"
 aiocron = "*"
 python-dotenv = "*"
 python-magic = "*"
+debugpy = "*"
 
 [dev-packages]
 
