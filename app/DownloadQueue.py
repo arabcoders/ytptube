@@ -257,7 +257,7 @@ class DownloadQueue:
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
 
-            LOG.debug(f'entry: extract info says: {entry}')
+            LOG.debug(f'extract_info length: {len(entry)}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
@@ -345,19 +345,22 @@ class DownloadQueue:
                         break
                     if time.time() - lastLog > 120:
                         lastLog = time.time()
-                        LOG.info(f'Waiting for workers to be free.')
+                        LOG.info(f'Waiting for worker to be free.')
                     await asyncio.sleep(1)
 
                 LOG.debug(f"Has '{executor.get_available_workers()}' free workers.")
 
                 while not self.queue.hasDownloads():
-                    LOG.info(f'Waiting for item to download.')
+                    LOG.info('Waiting for item to download.')
                     await self.event.wait()
                     self.event.clear()
                     LOG.debug(f"Cleared wait event.")
 
                 entry = self.queue.getNextDownload()
                 await asyncio.sleep(0.2)
+
+                if entry is None:
+                    continue
 
                 LOG.debug(f"Pushing {entry=} to executor.")
 
@@ -403,6 +406,8 @@ class DownloadQueue:
 
             self.done.put(value=entry)
             await self.notifier.completed(entry.info)
+
+        self.event.set()
 
     def isDownloaded(self, info: dict) -> bool:
         return self.config.keep_archive and isDownloaded(self.config.ytdl_options.get('download_archive', None), info)
