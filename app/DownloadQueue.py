@@ -218,13 +218,15 @@ class DownloadQueue:
             already.add(url)
         try:
             LOG.debug(f'extracting info from {url=}')
-            entry = await asyncio.get_running_loop().run_in_executor(
+            data = asyncio.get_running_loop().run_in_executor(
                 None,
                 ExtractInfo,
                 mergeConfig(self.config.ytdl_options, ytdlp_config),
                 url,
                 bool(self.config.ytdl_debug)
             )
+
+            entry = await asyncio.wait_for(data, timeout=self.config.extract_info_timeout)
 
             if not entry:
                 if not self.config.keep_archive:
@@ -234,7 +236,7 @@ class DownloadQueue:
                     }
 
                 LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
-                entry = await asyncio.get_running_loop().run_in_executor(
+                data = await asyncio.get_running_loop().run_in_executor(
                     None,
                     ExtractInfo,
                     mergeConfig(self.config.ytdl_options, ytdlp_config),
@@ -242,6 +244,8 @@ class DownloadQueue:
                     bool(self.config.ytdl_debug),
                     True
                 )
+                
+                entry = await asyncio.wait_for(data, timeout=self.config.extract_info_timeout)
 
                 if not entry:
                     return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
@@ -261,6 +265,8 @@ class DownloadQueue:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
+        except asyncio.exceptions.TimeoutError as exc:
+            return {'status': 'error', 'msg': 'TimeoutError: Unable to extract info.'}
 
         return await self.__add_entry(
             entry=entry,
