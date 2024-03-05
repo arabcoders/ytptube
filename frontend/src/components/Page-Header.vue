@@ -18,6 +18,11 @@
         </button>
       </div>
       <div class="navbar-item">
+        <button v-tooltip="'Reload window'" class="button is-dark has-tooltip-bottom" @click="$emit('reload')">
+          <font-awesome-icon icon="fa-solid fa-rotate-right" />
+        </button>
+      </div>
+      <div class="navbar-item">
         <button v-tooltip="'Switch to Light theme'" class="button is-dark has-tooltip-bottom"
           @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">
           <span class="icon is-small is-left has-text-warning">
