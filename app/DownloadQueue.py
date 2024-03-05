@@ -217,47 +217,46 @@ class DownloadQueue:
         else:
             already.add(url)
         try:
-            with ThreadPoolExecutor(thread_name_prefix='extract_info') as pool:
-                LOG.debug(f'extracting info from {url=}')
+            LOG.debug(f'extracting info from {url=}')
+            entry = await asyncio.get_running_loop().run_in_executor(
+                None,
+                ExtractInfo,
+                mergeConfig(self.config.ytdl_options, ytdlp_config),
+                url,
+                bool(self.config.ytdl_debug)
+            )
+
+            if not entry:
+                if not self.config.keep_archive:
+                    return {
+                        'status': 'error',
+                        'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
+                    }
+
+                LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
                 entry = await asyncio.get_running_loop().run_in_executor(
-                    pool,
+                    None,
                     ExtractInfo,
                     mergeConfig(self.config.ytdl_options, ytdlp_config),
                     url,
-                    bool(self.config.ytdl_debug)
+                    bool(self.config.ytdl_debug),
+                    True
                 )
 
                 if not entry:
-                    if not self.config.keep_archive:
-                        return {
-                            'status': 'error',
-                            'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
-                        }
+                    return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
-                    LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
-                    entry = await asyncio.get_running_loop().run_in_executor(
-                        pool,
-                        ExtractInfo,
-                        mergeConfig(self.config.ytdl_options, ytdlp_config),
-                        url,
-                        bool(self.config.ytdl_debug),
-                        True
-                    )
-
-                    if not entry:
-                        return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
-
-                    if self.isDownloaded(entry):
-                        LOG.info(f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
-                        return {
-                            'status': 'error',
-                            'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
-                        }
+                if self.isDownloaded(entry):
+                    LOG.info(f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
+                    return {
+                        'status': 'error',
+                        'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
+                    }
 
             if self.isDownloaded(entry):
                 raise yt_dlp.utils.ExistingVideoReached()
 
-            LOG.debug(f'extract_info length: {len(entry)}')
+            LOG.debug(f'extract_info for [{url=}] length: {len(entry)}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
@@ -348,10 +347,8 @@ class DownloadQueue:
                         LOG.info(f'Waiting for worker to be free.')
                     await asyncio.sleep(1)
 
-                LOG.debug(f"Has '{executor.get_available_workers()}' free workers.")
-
                 while not self.queue.hasDownloads():
-                    LOG.info('Waiting for item to download.')
+                    LOG.info(f"Waiting for item to download. '{executor.get_available_workers()}' free workers.")
                     await self.event.wait()
                     self.event.clear()
                     LOG.debug(f"Cleared wait event.")
