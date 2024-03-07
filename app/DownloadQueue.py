@@ -211,11 +211,13 @@ class DownloadQueue:
         LOG.info(f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
 
         already = set() if already is None else already
+
         if url in already:
-            LOG.info('recursion detected, skipping')
+            LOG.info('recursion detected, skipping.')
             return {'status': 'ok'}
-        else:
-            already.add(url)
+
+        already.add(url)
+
         try:
             LOG.debug(f'extracting info from {url=}')
             entry = await asyncio.wait_for(
@@ -289,31 +291,37 @@ class DownloadQueue:
                 LOG.warning(f'Requested cancel for non-existent download {id=}. {str(e)}')
                 continue
 
+            itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
+
             if item.started() is True:
-                LOG.info(f'Canceling {id=} {item.info.title=}')
+                LOG.debug(f'Canceling {itemMessage}')
                 item.cancel()
+                LOG.info(f'Cancelled {itemMessage}')
+
             else:
                 item.close()
-                LOG.info(f'Deleting from queue {id=} {item.info.title=}')
+                LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
                 await self.notifier.canceled(id)
                 self.done.put(item)
                 await self.notifier.completed(item)
+                LOG.info(f'Deleted from queue {itemMessage}')
 
         return {'status': 'ok'}
 
     async def clear(self, ids):
         for id in ids:
-
             try:
                 item = self.done.get(key=id)
             except KeyError as e:
                 LOG.warning(f'Requested delete for non-existent download {id=}. {str(e)}')
                 continue
 
-            LOG.info(f'Deleting completed download {id=} {item.info.title=}')
+            itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
+            LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
             await self.notifier.cleared(id)
+            LOG.info(f'Deleted completed download {itemMessage}')
 
         return {'status': 'ok'}
 
