@@ -1,5 +1,6 @@
 <template>
-  <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks" />
+  <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks"
+    @reload="reloadWindow" />
   <formAdd v-if="addForm" :config="config" @addItem="addItem" />
   <pageTasks v-if="showTasks" :tasks="config.tasks" />
   <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
@@ -176,6 +177,8 @@ const playItem = (item) => {
   video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
 };
 
+const reloadWindow = () => window.location.reload();
+
 bus.on((event, data) => {
   if (!['show_form'].includes(event)) {
     return true;
@@ -187,4 +190,3 @@ bus.on((event, data) => {
 });
 
 </script>
-

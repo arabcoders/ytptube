@@ -211,57 +211,43 @@ class DownloadQueue:
         LOG.info(f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
 
         already = set() if already is None else already
+
         if url in already:
-            LOG.info('recursion detected, skipping')
+            LOG.info('recursion detected, skipping.')
             return {'status': 'ok'}
-        else:
-            already.add(url)
+
+        already.add(url)
+
         try:
-            with ThreadPoolExecutor(thread_name_prefix='extract_info') as pool:
-                LOG.debug(f'extracting info from {url=}')
-                entry = await asyncio.get_running_loop().run_in_executor(
-                    pool,
+            downloaded, id_dict = self.isDownloaded(url)
+            if downloaded is True:
+                message = f"[ { id_dict.get('id') } ]: has been downloaded already."
+                LOG.info(message)
+                return {'status': 'error', 'msg': message}
+
+            started = time.perf_counter()
+            LOG.debug(f'extract_info: checking {url=}')
+
+            entry = await asyncio.wait_for(
+                fut=asyncio.get_running_loop().run_in_executor(
+                    None,
                     ExtractInfo,
                     mergeConfig(self.config.ytdl_options, ytdlp_config),
                     url,
                     bool(self.config.ytdl_debug)
-                )
+                ),
+                timeout=self.config.extract_info_timeout)
 
-                if not entry:
-                    if not self.config.keep_archive:
-                        return {
-                            'status': 'error',
-                            'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
-                        }
+            if not entry:
+                return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
-                    LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
-                    entry = await asyncio.get_running_loop().run_in_executor(
-                        pool,
-                        ExtractInfo,
-                        mergeConfig(self.config.ytdl_options, ytdlp_config),
-                        url,
-                        bool(self.config.ytdl_debug),
-                        True
-                    )
-
-                    if not entry:
-                        return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
-
-                    if self.isDownloaded(entry):
-                        LOG.info(f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
-                        return {
-                            'status': 'error',
-                            'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
-                        }
-
-            if self.isDownloaded(entry):
-                raise yt_dlp.utils.ExistingVideoReached()
-
-            LOG.debug(f'extract_info length: {len(entry)}')
+            LOG.debug(f'extract_info: for [{url=}] is done in {time.perf_counter() - started}. Length: {len(entry)}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
             return {'status': 'error', 'msg': str(exc)}
+        except asyncio.exceptions.TimeoutError as exc:
+            return {'status': 'error', 'msg': 'TimeoutError: Unable to extract info.'}
 
         return await self.__add_entry(
             entry=entry,
@@ -282,31 +268,37 @@ class DownloadQueue:
                 LOG.warning(f'Requested cancel for non-existent download {id=}. {str(e)}')
                 continue
 
+            itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
+
             if item.started() is True:
-                LOG.info(f'Canceling {id=} {item.info.title=}')
+                LOG.debug(f'Canceling {itemMessage}')
                 item.cancel()
+                LOG.info(f'Cancelled {itemMessage}')
+
             else:
                 item.close()
-                LOG.info(f'Deleting from queue {id=} {item.info.title=}')
+                LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
                 await self.notifier.canceled(id)
                 self.done.put(item)
                 await self.notifier.completed(item)
+                LOG.info(f'Deleted from queue {itemMessage}')
 
         return {'status': 'ok'}
 
     async def clear(self, ids):
         for id in ids:
-
             try:
                 item = self.done.get(key=id)
             except KeyError as e:
                 LOG.warning(f'Requested delete for non-existent download {id=}. {str(e)}')
                 continue
 
-            LOG.info(f'Deleting completed download {id=} {item.info.title=}')
+            itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
+            LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
             await self.notifier.cleared(id)
+            LOG.info(f'Deleted completed download {itemMessage}')
 
         return {'status': 'ok'}
 
@@ -348,10 +340,8 @@ class DownloadQueue:
                         LOG.info(f'Waiting for worker to be free.')
                     await asyncio.sleep(1)
 
-                LOG.debug(f"Has '{executor.get_available_workers()}' free workers.")
-
                 while not self.queue.hasDownloads():
-                    LOG.info('Waiting for item to download.')
+                    LOG.info(f"Waiting for item to download. '{executor.get_available_workers()}' free workers.")
                     await self.event.wait()
                     self.event.clear()
                     LOG.debug(f"Cleared wait event.")
@@ -409,5 +399,8 @@ class DownloadQueue:
 
         self.event.set()
 
-    def isDownloaded(self, info: dict) -> bool:
-        return self.config.keep_archive and isDownloaded(self.config.ytdl_options.get('download_archive', None), info)
+    def isDownloaded(self, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+        if not url or not self.config.keep_archive:
+            return False, None
+
+        return isDownloaded(self.config.ytdl_options.get('download_archive', None), url)

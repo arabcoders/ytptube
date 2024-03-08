@@ -44,6 +44,8 @@ class Config:
     debug: bool = False
 
     new_version_available: bool = False
+    
+    extract_info_timeout: int = 70
 
     _int_vars: tuple = ('port', 'max_workers',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available')
