@@ -272,7 +272,7 @@ def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
                 cookieDict = cookies[domain][subDomain][cookie]
 
                 if 0 == int(cookieDict['expirationDate']):
-                    cookieDict['expirationDate']: float = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
+                    cookieDict['expirationDate'] = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
 
                 hasCookies = True
                 netscapeCookies += "\t".join([
