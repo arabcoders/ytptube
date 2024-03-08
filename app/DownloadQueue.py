@@ -219,7 +219,15 @@ class DownloadQueue:
         already.add(url)
 
         try:
-            LOG.debug(f'extracting info from {url=}')
+            downloaded, id_dict = self.isDownloaded(url)
+            if downloaded is True:
+                message = f"[ { id_dict.get('id') } ]: has been downloaded already."
+                LOG.info(message)
+                return {'status': 'error', 'msg': message}
+
+            started = time.perf_counter()
+            LOG.debug(f'extract_info: checking {url=}')
+
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
@@ -231,40 +239,9 @@ class DownloadQueue:
                 timeout=self.config.extract_info_timeout)
 
             if not entry:
-                if not self.config.keep_archive:
-                    return {
-                        'status': 'error',
-                        'msg': 'No metadata, most likely video has been downloaded before.' if self.config.keep_archive else 'Unable to extract info check logs.'
-                    }
+                return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
-                LOG.debug(f'No metadata, Rechecking with archive disabled. {url=}')
-
-                entry = await asyncio.wait_for(
-                    fut=asyncio.get_running_loop().run_in_executor(
-                        None,
-                        ExtractInfo,
-                        mergeConfig(self.config.ytdl_options, ytdlp_config),
-                        url,
-                        bool(self.config.ytdl_debug),
-                        True
-                    ),
-                    timeout=self.config.extract_info_timeout
-                )
-
-                if not entry:
-                    return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
-
-                if self.isDownloaded(entry):
-                    LOG.info(f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.')
-                    return {
-                        'status': 'error',
-                        'msg': f'[{entry.get("id")}: {entry.get("title")}]: has been downloaded already.'
-                    }
-
-            if self.isDownloaded(entry):
-                raise yt_dlp.utils.ExistingVideoReached()
-
-            LOG.debug(f'extract_info for [{url=}] length: {len(entry)}')
+            LOG.debug(f'extract_info: for [{url=}] is done in {time.perf_counter() - started}. Length: {len(entry)}')
         except yt_dlp.utils.ExistingVideoReached:
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
@@ -422,5 +399,8 @@ class DownloadQueue:
 
         self.event.set()
 
-    def isDownloaded(self, info: dict) -> bool:
-        return self.config.keep_archive and isDownloaded(self.config.ytdl_options.get('download_archive', None), info)
+    def isDownloaded(self, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+        if not url or not self.config.keep_archive:
+            return False, None
+
+        return isDownloaded(self.config.ytdl_options.get('download_archive', None), url)

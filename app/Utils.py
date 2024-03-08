@@ -14,6 +14,8 @@ LOG = logging.getLogger('Utils')
 AUDIO_FORMATS: tuple = ('m4a', 'mp3', 'opus', 'wav')
 IGNORED_KEYS: tuple = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
 
+YTDLP_INFO_CLS = None
+
 
 def get_format(format: str, quality: str) -> str:
     """
@@ -197,24 +199,53 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
     return mergeDict(new_config, config)
 
 
-def isDownloaded(archive_file: str, info: dict) -> bool:
-    if not info or not archive_file or not os.path.exists(archive_file):
-        return False
+def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+    global YTDLP_INFO_CLS
 
-    try:
-        id = yt_dlp.YoutubeDL()._make_archive_id(info)
-        if not id:
-            return False
-    except Exception as e:
-        LOG.error(f'Error generating archive id: {e}')
-        return False
+    idDict = {
+        'id': None,
+        'ie_key': None,
+        'archive_id': None,
+    }
+
+    if not url or not archive_file or not os.path.exists(archive_file):
+        return False, idDict,
+
+    if not YTDLP_INFO_CLS:
+        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(params={
+            'color': 'no_color',
+            'extract_flat': True,
+            'skip_download': True,
+            'ignoreerrors': True,
+            'ignore_no_formats_error': True,
+            'quiet': True,
+        })
+
+    for key, ie in YTDLP_INFO_CLS._ies.items():
+        if not ie.suitable(url):
+            continue
+
+        if not ie.working():
+            break
+
+        temp_id = ie.get_temp_id(url)
+        if not temp_id:
+            break
+
+        idDict['id'] = temp_id
+        idDict['ie_key'] = key
+        idDict['archive_id'] = YTDLP_INFO_CLS._make_archive_id(idDict)
+        break
+
+    if not idDict['archive_id']:
+        return False, idDict,
 
     with open(archive_file, 'r') as f:
         for line in f.readlines():
-            if id in line:
-                return True
+            if idDict['archive_id'] in line:
+                return True, idDict,
 
-    return False
+    return False, idDict,
 
 
 def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
