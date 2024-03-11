@@ -15,7 +15,8 @@
     </div>
     <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
   </div>
-  <PageFooter :app_version="config?.app?.version || 'unknown'" />
+  <PageFooter :app_version="config?.app?.version || 'unknown'"
+    :ytdlp_version="config?.app.ytdlp_version || 'unknown'" />
 </template>
 
 <script setup>

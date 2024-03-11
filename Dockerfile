@@ -17,9 +17,9 @@ RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev && p
 
 WORKDIR /app
 
+ARG PIPENV_FLAGS="--deploy"
 COPY ./Pipfile* .
-
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+RUN PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
 
 FROM python:3.11-alpine
 
