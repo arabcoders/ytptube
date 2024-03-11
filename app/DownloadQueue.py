@@ -242,11 +242,14 @@ class DownloadQueue:
                 return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
             LOG.debug(f'extract_info: for [{url=}] is done in {time.perf_counter() - started}. Length: {len(entry)}')
-        except yt_dlp.utils.ExistingVideoReached:
+        except yt_dlp.utils.ExistingVideoReached as exc:
+            LOG.error(f'Video has been downloaded already and recorded in archive.log file. {str(exc)}')
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
+            LOG.error(f'YoutubeDLError: Unable to extract info. {str(exc)}')
             return {'status': 'error', 'msg': str(exc)}
         except asyncio.exceptions.TimeoutError as exc:
+            LOG.error(f'TimeoutError: Unable to extract info. {str(exc)}')
             return {'status': 'error', 'msg': 'TimeoutError: Unable to extract info.'}
 
         return await self.__add_entry(

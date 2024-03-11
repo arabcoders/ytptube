@@ -261,6 +261,9 @@ class Download:
             if 'filename' in status:
                 self.info.filename = os.path.relpath(status.get('filename'), self.download_dir)
 
+                if os.path.exists(status.get('filename')):
+                    self.info.file_size = os.path.getsize(status.get('filename'))
+
                 # Set correct file extension for thumbnails
                 if self.info.format == 'thumbnail':
                     self.info.filename = re.sub(r'\.webm$', '.jpg', self.info.filename)
