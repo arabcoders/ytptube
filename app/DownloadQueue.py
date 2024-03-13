@@ -229,7 +229,7 @@ class DownloadQueue:
             started = time.perf_counter()
             LOG.debug(f'extract_info: checking {url=}')
 
-            with ThreadPoolExecutor as executor:
+            with ThreadPoolExecutor(1) as executor:
                 entry = await asyncio.wait_for(
                     fut=asyncio.get_running_loop().run_in_executor(
                         executor,
