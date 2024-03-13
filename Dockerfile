@@ -31,6 +31,8 @@ ENV YTP_CONFIG_PATH=/config
 ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads
 ENV YTP_PORT=8081
+ENV XDG_CONFIG_HOME=/config
+ENV XDG_CACHE_HOME=/tmp
 
 # removed ffmpeg as 6.1.0 is broken with DASH protocal downloads
 COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/bin/
@@ -47,10 +49,10 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=npm_builder /ytptube/dist /app/frontend/dist
-COPY --chown=app:app --from=python_builder /app/.venv /app/.venv
+COPY --chown=app:app --from=python_builder /app/.venv /opt/python
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
-ENV PATH="/app/.venv/bin:$PATH"
+ENV PATH="/opt/python/bin:$PATH"
 
 RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck
 
@@ -69,4 +71,4 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 ENV PYDEVD_DISABLE_FILE_VALIDATION=1
 
-CMD ["/app/.venv/bin/python", "/app/app/main.py", "--ytptube-mp"]
+CMD ["/opt/python/bin/python", "/app/app/main.py", "--ytptube-mp"]

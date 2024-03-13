@@ -397,9 +397,13 @@ class Main:
             if req.path not in self.staticHolder:
                 return web.HTTPNotFound()
 
-            return web.FileResponse(path=self.staticHolder[req.path].get('file'), headers={
-                'Cache-Control': 'public, max-age=31536000',
+            item: dict = self.staticHolder[req.path]
+
+            return web.Response(body=item.get('content'), headers={
                 'Pragma': 'public',
+                'Cache-Control': 'public, max-age=31536000',
+                'Content-Type': item.get('content_type'),
+                'X-Via': 'memory' if not item.get('file', None) else 'disk',
             })
 
         staticDir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'frontend/dist')
@@ -412,8 +416,8 @@ class Main:
                 urlPath = f"{self.config.url_prefix}{file.replace(f'{staticDir}/', '')}"
 
                 self.staticHolder[urlPath] = {
-                    'file': file,
-                    # 'content': open(file, 'rb').read(),
+                    # 'file': file,
+                    'content': open(file, 'rb').read(),
                     'content_type': self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file)),
                 }
 

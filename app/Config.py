@@ -8,6 +8,7 @@ from version import APP_VERSION
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
 
+
 class Config:
     __instance = None
     config_path: str = '.'
@@ -47,9 +48,11 @@ class Config:
 
     extract_info_timeout: int = 70
 
+    socket_timeout: int = 30
+
     ytdlp_version: str = YTDLP_VERSION
 
-    _int_vars: tuple = ('port', 'max_workers',)
+    _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version',)
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
 
@@ -152,6 +155,8 @@ class Config:
                 sys.exit(1)
         else:
             LOG.info(f'No custom yt-dlp options found in "{self.config_path}"')
+
+        self.ytdl_options['socket_timeout'] = self.socket_timeout
 
         if self.keep_archive:
             LOG.info(f'keep archive: {self.keep_archive}')

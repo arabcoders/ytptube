@@ -11,7 +11,8 @@ from ItemDTO import ItemDTO
 from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 from AsyncPool import AsyncPool
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+
 LOG = logging.getLogger('DownloadQueue')
 TYPE_DONE: str = 'done'
 TYPE_QUEUE: str = 'queue'
@@ -228,26 +229,30 @@ class DownloadQueue:
             started = time.perf_counter()
             LOG.debug(f'extract_info: checking {url=}')
 
-            entry = await asyncio.wait_for(
-                fut=asyncio.get_running_loop().run_in_executor(
-                    None,
-                    ExtractInfo,
-                    mergeConfig(self.config.ytdl_options, ytdlp_config),
-                    url,
-                    bool(self.config.ytdl_debug)
-                ),
-                timeout=self.config.extract_info_timeout)
+            with ThreadPoolExecutor(1) as executor:
+                entry = await asyncio.wait_for(
+                    fut=asyncio.get_running_loop().run_in_executor(
+                        executor,
+                        ExtractInfo,
+                        mergeConfig(self.config.ytdl_options, ytdlp_config),
+                        url,
+                        bool(self.config.ytdl_debug)
+                    ),
+                    timeout=self.config.extract_info_timeout)
 
             if not entry:
                 return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
             LOG.debug(f'extract_info: for [{url=}] is done in {time.perf_counter() - started}. Length: {len(entry)}')
-        except yt_dlp.utils.ExistingVideoReached:
+        except yt_dlp.utils.ExistingVideoReached as exc:
+            LOG.error(f'Video has been downloaded already and recorded in archive.log file. {str(exc)}')
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
         except yt_dlp.utils.YoutubeDLError as exc:
+            LOG.error(f'YoutubeDLError: Unable to extract info. {str(exc)}')
             return {'status': 'error', 'msg': str(exc)}
         except asyncio.exceptions.TimeoutError as exc:
-            return {'status': 'error', 'msg': 'TimeoutError: Unable to extract info.'}
+            LOG.error(f'TimeoutError: Unable to extract info. {str(exc)}')
+            return {'status': 'error', 'msg': f'TimeoutError: {self.config.extract_info_timeout}s reached Unable to extract info.'}
 
         return await self.__add_entry(
             entry=entry,
