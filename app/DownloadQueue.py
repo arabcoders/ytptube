@@ -134,7 +134,7 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry.get('is_live', None) or 'is_live' == entry.get('live_status', None) or live_in,
+                is_live=entry.get('is_live', None) or entry.get('live_status', None) in ['is_live', 'is_upcoming'] or live_in,
                 live_in=live_in,
                 options=options
             )
