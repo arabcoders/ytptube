@@ -160,7 +160,7 @@ class DownloadQueue:
                 debug=bool(self.config.ytdl_debug)
             )
 
-            if dlInfo.info.live_in:
+            if dlInfo.info.live_in or 'is_upcoming' == entry.get('live_status',None):
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = 'completed'

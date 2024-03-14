@@ -77,7 +77,7 @@
 
     <div class="columns is-multiline">
       <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in }">
+        <div class="card" :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
@@ -101,7 +101,7 @@
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered">
-                <span v-if="!item.live_in">
+                <span v-if="!item.live_in && !item.is_live">
                   <span class="icon-text">
                     <span class="icon"
                       :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
