@@ -134,7 +134,7 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry.get('is_live', None) or 'is_live' == entry.get('live_status', None) or live_in,
+                is_live=entry.get('is_live', None) or entry.get('live_status', None) in ['is_live', 'is_upcoming'] or live_in,
                 live_in=live_in,
                 options=options
             )
@@ -157,10 +157,11 @@ class DownloadQueue:
                 temp_dir=self.config.temp_path,
                 output_template_chapter=output_chapter,
                 default_ytdl_opts=self.config.ytdl_options,
+                info_dict=entry,
                 debug=bool(self.config.ytdl_debug)
             )
 
-            if dlInfo.info.live_in:
+            if dlInfo.info.live_in or 'is_upcoming' == entry.get('live_status',None):
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = 'completed'
