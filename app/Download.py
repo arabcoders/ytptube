@@ -9,6 +9,7 @@ import yt_dlp
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
 from Config import Config
+
 import hashlib
 
 LOG = logging.getLogger('download')
@@ -33,6 +34,8 @@ class Download:
     notifier: Notifier = None
     canceled: bool = False
     is_live: bool = False
+    info_dict: dict = None
+    "yt-dlp metadata dict."
 
     bad_live_options: list = [
         "concurrent_fragment_downloads",
@@ -64,6 +67,7 @@ class Download:
         temp_dir: str,
         output_template_chapter: str,
         default_ytdl_opts: dict,
+        info_dict: dict = None,
         debug: bool = False
     ):
         self.download_dir = download_dir
@@ -87,6 +91,7 @@ class Download:
         self.tempKeep = bool(Config.get_instance().temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.is_manifestless = 'is_manifestless' in self.info.options and self.info.options['is_manifestless'] is True
+        self.info_dict = info_dict
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -163,7 +168,15 @@ class Download:
 
             LOG.info(f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
-            ret = yt_dlp.YoutubeDL(params=params).download([self.info.url])
+            cls = yt_dlp.YoutubeDL(params=params)
+
+            if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
+                LOG.debug(f'Downloading using pre-info.')
+                cls.process_ie_result(self.info_dict, download=True)
+                ret = cls._download_retcode
+            else:
+                LOG.debug(f'Downloading using url: {self.info.url}')
+                ret = cls.download([self.info.url])
 
             self.status_queue.put({'id': self.id, 'status': 'finished' if ret == 0 else 'error'})
         except Exception as exc:

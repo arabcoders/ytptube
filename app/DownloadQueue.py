@@ -157,6 +157,7 @@ class DownloadQueue:
                 temp_dir=self.config.temp_path,
                 output_template_chapter=output_chapter,
                 default_ytdl_opts=self.config.ytdl_options,
+                info_dict=entry,
                 debug=bool(self.config.ytdl_debug)
             )
 
