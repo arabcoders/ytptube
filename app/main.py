@@ -97,11 +97,8 @@ class Main:
         self.connection.row_factory = sqlite3.Row
         self.connection.execute('PRAGMA journal_mode=wal')
 
-        self.queue = DownloadQueue(
-            notifier=Notifier(sio=self.sio, serializer=self.serializer, webhooks=self.webhooks),
-            connection=self.connection,
-            serializer=self.serializer,
-        )
+        self.notifier = Notifier(sio=self.sio, serializer=self.serializer, webhooks=self.webhooks)
+        self.queue = DownloadQueue(notifier=self.notifier, connection=self.connection, serializer=self.serializer)
 
         self.app.on_startup.append(lambda _: self.queue.initialize())
         self.addRoutes()
@@ -296,6 +293,43 @@ class Main:
             status = await (self.queue.cancel(ids) if where == 'queue' else self.queue.clear(ids))
 
             return web.Response(text=self.serializer.encode(status))
+
+        @self.routes.post(self.config.url_prefix + 'item/{id}')
+        async def update_item(request: Request) -> Response:
+            id: str = request.match_info.get('id')
+            if not id:
+                raise web.HTTPBadRequest(reason='id is required.')
+
+            item = self.queue.done.getById(id)
+            if not item:
+                raise web.HTTPNotFound(reason='Item not found.')
+
+            try:
+                post = await request.json()
+                if not post:
+                    raise web.HTTPBadRequest(reason='no data provided.')
+            except Exception as e:
+                raise web.HTTPBadRequest(reason=str(e))
+
+            updated = False
+
+            for k, v in post.items():
+                if not hasattr(item.info, k):
+                    continue
+
+                if getattr(item.info, k) == v:
+                    continue
+
+                updated = True
+                setattr(item.info, k, v)
+                LOG.info(f'Updated [{k}] to [{v}] for [{item.info.id}]')
+
+            status = 200 if updated else 304
+            if updated:
+                self.queue.done.put(item)
+                await self.notifier.emit('update', item.info)
+
+            return web.Response(text=self.serializer.encode(item.info), status=status)
 
         @self.routes.get(self.config.url_prefix + 'history')
         async def history(_) -> Response:

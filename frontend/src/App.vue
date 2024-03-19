@@ -113,6 +113,15 @@ onMounted(() => {
     data.deleting = dl?.deleting;
     downloading[data._id] = data;
   });
+
+  socket.on("update", stream => {
+    const data = JSON.parse(stream);
+    if (false === (data._id in completed)) {
+      return;
+    }
+    completed[data._id] = data;
+  });
+
 });
 
 const deleteItem = (type, item) => {

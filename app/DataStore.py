@@ -59,6 +59,9 @@ class DataStore:
 
         raise KeyError(f'{key=} or {url=} not found.')
 
+    def getById(self, id: str) -> Download | None:
+        return self.dict[id] if id in self.dict else None
+
     def items(self) -> list[tuple[str, Download]]:
         return self.dict.items()
 
