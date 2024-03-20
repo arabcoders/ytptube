@@ -364,7 +364,11 @@ class Main:
                 def default(o): return f"<<non-serializable: {type(o).__qualname__}>>"
                 return json.dumps(obj, default=default)
 
-            return web.Response(text=safe_serialize(data), headers={
+            return web.Response(text=safe_serialize({
+                'open': self.queue.pool.has_open_workers(),
+                'count': self.queue.pool.get_available_workers(),
+                'workers': data,
+            }), headers={
                 'Content-Type': 'application/json',
             })
 
