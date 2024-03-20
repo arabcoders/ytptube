@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timezone
+import logging
 
 
 class Terminator:
@@ -7,9 +8,13 @@ class Terminator:
 
 
 class AsyncPool:
-    def __init__(self, loop, num_workers: int, name: str, logger, worker_co, load_factor: int = 1,
-                 job_accept_duration: int = None, max_task_time: int = None, return_futures: bool = False,
-                 raise_on_join: bool = False, log_every_n: int = None, expected_total=None):
+    def __init__(self,
+                 num_workers: int, worker_co,
+                 name: str, logger: logging.Logger,
+                 loop: asyncio.AbstractEventLoop = None,
+                 load_factor: int = 1, max_task_time: int = None,
+                 return_futures: bool = False, raise_on_join: bool = False
+                 ):
         """
         This class will create `num_workers` asyncio tasks to work against a queue of
         `num_workers * load_factor` items of back-pressure (IOW we will block after such
@@ -23,37 +28,27 @@ class AsyncPool:
         :param logger: logger to use
         :param worker_co: async coroutine to call when an item is retrieved from the queue
         :param load_factor: multiplier used for number of items in queue
-        :param job_accept_duration: maximum number of seconds from first push to last push before a TimeoutError will be thrown.
-                Set to None for no limit.  Note this does not get reset on aenter/aexit.
         :param max_task_time: maximum time allowed for each task before a CancelledError is raised in the task.
             Set to None for no limit.
         :param return_futures: set to reture to return a future for each `push` (imposes CPU overhead)
         :param raise_on_join: raise on join if any exceptions have occurred, default is False
-        :param log_every_n: (optional) set to number of `push`s each time a log statement should be printed (default does not print every-n pushes)
-        :param expected_total: (optional) expected total number of jobs (used for `log_event_n` logging)
 
         :return: instance of AsyncWorkerPool
         """
-        loop = loop if loop else asyncio.get_event_loop()
-        self._loop = loop
+        self._loop = loop if loop else asyncio.get_event_loop()
         self._num_workers = num_workers
-        self._logger = logger
+        self._logger = logger if logger else logging.getLogger(__name__)
         self._queue = asyncio.Queue(num_workers * load_factor)
         self._workers = None
         self._exceptions = False
-        self._job_accept_duration = job_accept_duration
-        self._first_push_dt = None
         self._max_task_time = max_task_time
         self._return_futures = return_futures
         self._raise_on_join = raise_on_join
         self._name = name
         self._worker_co = worker_co
-        self._total_queued = 0
-        self._log_every_n = log_every_n
-        self._expected_total = expected_total
-        self._active_workers = 0
+        self._active_worker: dict[str, dict | None] = {}
 
-    async def _worker_loop(self):
+    async def _worker_loop(self, worker_id: str):
         while True:
             got_obj = False
             future = None
@@ -65,11 +60,16 @@ class AsyncPool:
                 if item.__class__ is Terminator:
                     break
 
-                self._active_workers += 1
                 future, args, kwargs = item
+
+                self._active_worker[worker_id] = {
+                    'started': self._time().isoformat(),
+                    'data': kwargs.get('entry', {'info': {}}).info.__dict__,
+                }
+
                 # the wait_for will cancel the task (task sees CancelledError) and raises a TimeoutError from here
                 # so be wary of catching TimeoutErrors in this loop
-                result = await asyncio.wait_for(self._worker_co(*args, **kwargs), self._max_task_time)
+                result = await asyncio.wait_for(self._worker_co(*args, **kwargs), timeout=self._max_task_time)
 
                 if future:
                     future.set_result(result)
@@ -85,9 +85,10 @@ class AsyncPool:
                     # don't log the failure when the client is receiving the future
                     future.set_exception(e)
                 else:
-                    self._logger.exception('Worker call failed')
+                    self._logger.exception(f'Worker call failed. {str(e)}')
             finally:
-                self._active_workers -= 1
+                self._active_worker[worker_id] = None
+
                 if got_obj:
                     self._queue.task_done()
 
@@ -95,21 +96,23 @@ class AsyncPool:
     def exceptions(self):
         return self._exceptions
 
-    @property
-    def total_queued(self):
-        return self._total_queued
-
     def has_open_workers(self) -> bool:
         """
         :return: True if there are open workers.
         """
-        return self._active_workers < self._num_workers
+        return self.get_available_workers() > 0
 
     def get_available_workers(self) -> int:
         """
         :return: number of available workers.
         """
-        return self._num_workers - self._active_workers
+        return sum(1 for worker_status in self._active_worker.values() if worker_status is None)
+
+    def get_workers_status(self) -> dict[str, datetime | None]:
+        """
+        :return: dictionary of worker status.
+        """
+        return self._active_worker
 
     async def __aenter__(self):
         self.start()
@@ -127,18 +130,8 @@ class AsyncPool:
 
         :return: future of result.
         """
-        if self._first_push_dt is None:
-            self._first_push_dt = self._time()
-
-        if self._job_accept_duration is not None and (self._time() - self._first_push_dt) > self._job_accept_duration:
-            raise TimeoutError(f"Max life time of {self._job_accept_duration}s exceeded for {self._name} pool.")
-
         future = asyncio.futures.Future(loop=self._loop) if self._return_futures else None
         await self._queue.put((future, args, kwargs))
-        self._total_queued += 1
-
-        if self._log_every_n is not None and (self._total_queued % self._log_every_n) == 0:
-            self._logger.info(f"pushed {self._total_queued}/{self._expected_total} items to {self._name} pool.")
 
         self._logger.debug(f"'{self._name}' pool has received a new job. {args} {kwargs}")
 
@@ -150,13 +143,15 @@ class AsyncPool:
         self._exceptions = False
 
         self._workers = []
-        for _ in range(self._num_workers):
+        for worker_number in range(self._num_workers):
+            workerName = f"worker_{worker_number+1}"
             self._workers.append(
                 asyncio.ensure_future(
-                    coro_or_future=self._worker_loop(),
+                    coro_or_future=self._worker_loop(worker_id=workerName),
                     loop=self._loop
                 )
             )
+            self._active_worker[workerName] = None
 
     async def join(self):
         # no-op if workers aren't running
@@ -166,7 +161,7 @@ class AsyncPool:
         self._logger.info(f'Joining {self._name}')
 
         # The Terminators will kick each worker from being blocked against the _queue.get() and allow
-        # each one to exit
+        # each one to exit.
         for _ in range(self._num_workers):
             await self._queue.put(Terminator())
 
@@ -183,5 +178,4 @@ class AsyncPool:
             raise Exception(f"Exception occurred in {self._name} pool")
 
     def _time(self):
-        # utcnow returns a naive datetime, so we have to set the timezone manually <sigh>
-        return datetime.utcnow().replace(tzinfo=timezone.utc)
+        return datetime.now(tz=timezone.utc)

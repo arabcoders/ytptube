@@ -293,7 +293,9 @@ class ObjectSerializer(json.JSONEncoder):
     """
 
     def default(self, obj):
-        return obj.__dict__ if isinstance(obj, object) else json.JSONEncoder.default(self, obj)
+        if isinstance(obj, object) and hasattr(obj, '__dict__'):
+            return obj.__dict__
+        return json.JSONEncoder.default(self, obj)
 
 
 class Notifier:

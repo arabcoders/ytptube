@@ -11,6 +11,7 @@ from Utils import ObjectSerializer, Notifier
 from aiohttp import web, client
 from aiohttp.web import Request, Response
 from Webhooks import Webhooks
+from Download import Download
 from player.M3u8 import M3u8
 from player.Segments import Segments
 import socketio
@@ -341,6 +342,31 @@ class Main:
                 history['done'].append(v)
 
             return web.Response(text=self.serializer.encode(history))
+
+        @self.routes.get(self.config.url_prefix + 'workers')
+        async def workers(_) -> Response:
+            if self.queue.pool is None:
+                return web.json_response({"error": "Worker pool not initialized."}, status=404)
+
+            status = self.queue.pool.get_workers_status()
+
+            data = []
+
+            for worker in status:
+                worker_status = status.get(worker)
+
+                data.append({
+                    'id': worker,
+                    'data': {"status": 'Waiting for download.'} if worker_status is None else worker_status,
+                })
+
+            def safe_serialize(obj):
+                def default(o): return f"<<non-serializable: {type(o).__qualname__}>>"
+                return json.dumps(obj, default=default)
+
+            return web.Response(text=safe_serialize(data), headers={
+                'Content-Type': 'application/json',
+            })
 
         @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
         async def m3u8(request: Request) -> Response:
