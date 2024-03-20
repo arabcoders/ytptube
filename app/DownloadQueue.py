@@ -25,6 +25,7 @@ class DownloadQueue:
     queue: DataStore = None
     done: DataStore = None
     event: asyncio.Event = None
+    pool: AsyncPool = None
 
     def __init__(self, notifier: Notifier, connection: Connection, serializer: ObjectSerializer):
         self.config = Config.get_instance()
@@ -122,6 +123,9 @@ class DownloadQueue:
             is_manifestless = entry.get('is_manifestless', False)
             options.update({'is_manifestless': is_manifestless})
 
+            live_status: list = ['is_live', 'is_upcoming']
+            is_live = entry.get('is_live', None) or live_in or entry.get('live_status', None) in live_status
+
             dl = ItemDTO(
                 id=entry.get('id'),
                 title=entry.get('title'),
@@ -134,7 +138,7 @@ class DownloadQueue:
                 output_template=output_template if output_template else self.config.output_template,
                 datetime=formatdate(time.time()),
                 error=error,
-                is_live=entry.get('is_live', None) or entry.get('live_status', None) in ['is_live', 'is_upcoming'] or live_in,
+                is_live=is_live,
                 live_in=live_in,
                 options=options
             )
@@ -161,7 +165,7 @@ class DownloadQueue:
                 debug=bool(self.config.ytdl_debug)
             )
 
-            if dlInfo.info.live_in or 'is_upcoming' == entry.get('live_status',None):
+            if dlInfo.info.live_in or 'is_upcoming' == entry.get('live_status', None):
                 dlInfo.info.status = 'not_live'
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = 'completed'
@@ -328,42 +332,45 @@ class DownloadQueue:
         return items
 
     async def __download_pool(self):
-        async with AsyncPool(
+        self.pool = AsyncPool(
             loop=asyncio.get_running_loop(),
             num_workers=self.config.max_workers,
             worker_co=self.__downloadFile,
             name='download_pool',
             logger=logging.getLogger('WorkerPool'),
-        ) as executor:
-            lastLog = time.time()
+        )
 
+        self.pool.start()
+
+        lastLog = time.time()
+
+        while True:
             while True:
-                while True:
-                    if executor.has_open_workers() is True:
-                        break
-                    if time.time() - lastLog > 120:
-                        lastLog = time.time()
-                        LOG.info(f'Waiting for worker to be free.')
-                    await asyncio.sleep(1)
+                if self.pool.has_open_workers() is True:
+                    break
+                if time.time() - lastLog > 120:
+                    lastLog = time.time()
+                    LOG.info(f'Waiting for worker to be free. {self.pool.get_workers_status()}')
+                await asyncio.sleep(1)
 
-                while not self.queue.hasDownloads():
-                    LOG.info(f"Waiting for item to download. '{executor.get_available_workers()}' free workers.")
-                    await self.event.wait()
-                    self.event.clear()
-                    LOG.debug(f"Cleared wait event.")
+            while not self.queue.hasDownloads():
+                LOG.info(f"Waiting for item to download. '{self.pool.get_available_workers()}' free workers.")
+                await self.event.wait()
+                self.event.clear()
+                LOG.debug(f"Cleared wait event.")
 
-                entry = self.queue.getNextDownload()
-                await asyncio.sleep(0.2)
+            entry = self.queue.getNextDownload()
+            await asyncio.sleep(0.2)
 
-                if entry is None:
-                    continue
+            if entry is None:
+                continue
 
-                LOG.debug(f"Pushing {entry=} to executor.")
+            LOG.debug(f"Pushing {entry=} to executor.")
 
-                if entry.started() is False and entry.is_canceled() is False:
-                    await executor.push(id=entry.info._id, entry=entry)
-                    LOG.debug(f"Pushed {entry=} to executor.")
-                    await asyncio.sleep(1)
+            if entry.started() is False and entry.is_canceled() is False:
+                await self.pool.push(id=entry.info._id, entry=entry)
+                LOG.debug(f"Pushed {entry=} to executor.")
+                await asyncio.sleep(1)
 
     async def __download(self):
         while True:
