@@ -372,6 +372,41 @@ class Main:
                 'Content-Type': 'application/json',
             })
 
+        @self.routes.post(self.config.url_prefix + 'workers')
+        async def restart_pool(_) -> Response:
+            if self.queue.pool is None:
+                return web.json_response({"error": "Worker pool not initialized."}, status=404)
+
+            status = self.queue.pool.start()
+
+            return web.Response()
+
+        @self.routes.patch(self.config.url_prefix + 'workers/{id}')
+        async def restart_worker(request: Request) -> Response:
+            id: str = request.match_info.get('id')
+            if not id:
+                raise web.HTTPBadRequest(reason='worker id is required.')
+
+            if self.queue.pool is None:
+                return web.json_response({"error": "Worker pool not initialized."}, status=404)
+
+            status = await self.queue.pool.restart(id, 'requested by user.')
+
+            return web.json_response({"status": "restarted" if status else "in_error_state"})
+
+        @self.routes.delete(self.config.url_prefix + 'workers/{id}')
+        async def stop_worker(request: Request) -> Response:
+            id: str = request.match_info.get('id')
+            if not id:
+                raise web.HTTPBadRequest(reason='worker id is required.')
+
+            if self.queue.pool is None:
+                return web.json_response({"error": "Worker pool not initialized."}, status=404)
+
+            status = await self.queue.pool.stop(id, 'requested by user.')
+
+            return web.json_response({"status": "stopped" if status else "in_error_state"})
+
         @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
         async def m3u8(request: Request) -> Response:
             file: str = request.match_info.get('file')

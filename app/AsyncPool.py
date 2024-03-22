@@ -39,20 +39,19 @@ class AsyncPool:
         self._num_workers = num_workers
         self._logger = logger if logger else logging.getLogger(__name__)
         self._queue = asyncio.Queue(num_workers * load_factor)
-        self._workers = None
+        self._workers: dict[str, asyncio.Future] = {}
         self._exceptions = False
         self._max_task_time = max_task_time
         self._return_futures = return_futures
         self._raise_on_join = raise_on_join
         self._name = name
         self._worker_co = worker_co
-        self._active_worker: dict[str, dict | None] = {}
+        self._status: dict[str, dict | None] = {}
 
     async def _worker_loop(self, worker_id: str):
         while True:
             got_obj = False
             future = None
-
             try:
                 item = await self._queue.get()
                 got_obj = True
@@ -62,7 +61,7 @@ class AsyncPool:
 
                 future, args, kwargs = item
 
-                self._active_worker[worker_id] = {
+                self._status[worker_id] = {
                     'started': self._time().isoformat(),
                     'data': kwargs.get('entry', {'info': {}}).info.__dict__,
                 }
@@ -79,6 +78,9 @@ class AsyncPool:
                 self._exceptions = True
                 raise
             except BaseException as e:
+                if isinstance(e, asyncio.exceptions.CancelledError):
+                    raise e
+
                 self._exceptions = True
 
                 if future:
@@ -87,7 +89,7 @@ class AsyncPool:
                 else:
                     self._logger.exception(f'Worker call failed. {str(e)}')
             finally:
-                self._active_worker[worker_id] = None
+                self._status[worker_id] = None
 
                 if got_obj:
                     self._queue.task_done()
@@ -106,13 +108,13 @@ class AsyncPool:
         """
         :return: number of available workers.
         """
-        return sum(1 for worker_status in self._active_worker.values() if worker_status is None)
+        return sum(1 for worker_status in self._status.values() if worker_status is None)
 
     def get_workers_status(self) -> dict[str, datetime | None]:
         """
         :return: dictionary of worker status.
         """
-        return self._active_worker
+        return self._status
 
     async def __aenter__(self):
         self.start()
@@ -139,23 +141,55 @@ class AsyncPool:
 
     def start(self):
         """ Will start up worker pool and reset exception state """
-        assert self._workers is None
         self._exceptions = False
 
-        self._workers = []
         for worker_number in range(self._num_workers):
-            workerName = f"worker_{worker_number+1}"
-            self._workers.append(
-                asyncio.ensure_future(
-                    coro_or_future=self._worker_loop(worker_id=workerName),
-                    loop=self._loop
-                )
-            )
-            self._active_worker[workerName] = None
+            worker_id = f"worker_{worker_number+1}"
+            self._createWorker(worker_id)
 
-    async def join(self):
+    async def restart(self, worker_id: str, msg: str = None) -> bool:
+        """ Will restart the worker pool """
+        if worker_id not in self._workers:
+            self._logger.warning(f'Worker {worker_id} does not exist.')
+            return False
+
+        try:
+            self._workers[worker_id].cancel(msg)
+            await self._workers[worker_id]
+        except asyncio.exceptions.CancelledError as e:
+            self._logger.warning(f'Worker {worker_id} restarted. {str(e)}')
+            if worker_id in self._status:
+                self._status.pop(worker_id)
+
+            if worker_id in self._workers:
+                self._workers.pop(worker_id)
+
+            self._createWorker(worker_id)
+
+        return True
+
+    async def stop(self, worker_id: str, msg: str = None) -> bool:
+        """ Will stop the worker """
+        if worker_id not in self._workers:
+            self._logger.warning(f'Worker {worker_id} does not exist.')
+            return False
+
+        if self._workers[worker_id].cancel(msg):
+            try:
+                await self._workers[worker_id]
+            except asyncio.exceptions.CancelledError as e:
+                self._logger.warning(f'Worker {worker_id} stopped. {str(e)}')
+                if worker_id in self._status:
+                    self._status.pop(worker_id)
+
+                if worker_id in self._workers:
+                    self._workers.pop(worker_id)
+
+        return True
+
+    async def join(self) -> None:
         # no-op if workers aren't running
-        if not self._workers:
+        if len(self._workers) < 1:
             return
 
         self._logger.info(f'Joining {self._name}')
@@ -166,8 +200,8 @@ class AsyncPool:
             await self._queue.put(Terminator())
 
         try:
-            await asyncio.gather(*self._workers)
-            self._workers = None
+            await asyncio.gather(*list(self._workers))
+            self._workers = {}
         except:
             self._logger.exception(f'Exception joining {self._name}')
             raise
@@ -177,5 +211,20 @@ class AsyncPool:
         if self._exceptions and self._raise_on_join:
             raise Exception(f"Exception occurred in {self._name} pool")
 
-    def _time(self):
+    def _createWorker(self, worker_id: str) -> asyncio.Future:
+        if worker_id in self._workers:
+            self._logger.debug(f'Worker {worker_id} already exists.')
+            return self._workers[worker_id]
+
+        self._status[worker_id] = None
+        self._workers[worker_id] = asyncio.ensure_future(
+            coro_or_future=self._worker_loop(worker_id=worker_id),
+            loop=self._loop
+        )
+
+        self._logger.debug(f'Created {worker_id}')
+
+        return self._workers[worker_id]
+
+    def _time(self) -> datetime:
         return datetime.now(tz=timezone.utc)

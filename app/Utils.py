@@ -11,10 +11,10 @@ from Webhooks import Webhooks
 
 LOG = logging.getLogger('Utils')
 
-AUDIO_FORMATS: tuple = ('m4a', 'mp3', 'opus', 'wav')
-IGNORED_KEYS: tuple = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
+AUDIO_FORMATS: tuple[str] = ('m4a', 'mp3', 'opus', 'wav',)
+IGNORED_KEYS: tuple[str] = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
 
-YTDLP_INFO_CLS = None
+YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 
 
 def get_format(format: str, quality: str) -> str:
@@ -347,4 +347,7 @@ class Notifier:
         if self.webhooks and event in self.webhooks_allowed_events:
             tasks.append(self.webhooks.send(event, data))
 
-        await asyncio.gather(*tasks)
+        try:
+            await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
+        except asyncio.TimeoutError:
+            LOG.error(f"Timed out sending event {event} to webhooks.")
