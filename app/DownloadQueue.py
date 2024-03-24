@@ -126,6 +126,12 @@ class DownloadQueue:
             live_status: list = ['is_live', 'is_upcoming']
             is_live = entry.get('is_live', None) or live_in or entry.get('live_status', None) in live_status
 
+            try:
+                download_dir = calcDownloadPath(basePath=self.config.download_path, folder=folder)
+            except Exception as e:
+                LOG.exception(e)
+                return {'status': 'error', 'msg': str(e)}
+
             dl = ItemDTO(
                 id=entry.get('id'),
                 title=entry.get('title'),
@@ -133,37 +139,24 @@ class DownloadQueue:
                 quality=quality,
                 format=format,
                 folder=folder,
+                download_dir=download_dir,
+                temp_dir=self.config.temp_path,
                 ytdlp_cookies=ytdlp_cookies,
                 ytdlp_config=ytdlp_config,
                 output_template=output_template if output_template else self.config.output_template,
+                output_template_chapter=self.config.output_template_chapter,
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
                 live_in=live_in,
-                options=options
+                options=options,
             )
-
-            try:
-                download_dir = calcDownloadPath(basePath=self.config.download_path, folder=folder)
-            except Exception as e:
-                LOG.exception(e)
-                return {'status': 'error', 'msg': str(e)}
-
-            output_chapter = self.config.output_template_chapter
 
             for property, value in entry.items():
                 if property.startswith("playlist"):
                     dl.output_template = dl.output_template.replace(f"%({property})s", str(value))
 
-            dlInfo: Download = Download(
-                info=dl,
-                download_dir=download_dir,
-                temp_dir=self.config.temp_path,
-                output_template_chapter=output_chapter,
-                default_ytdl_opts=self.config.ytdl_options,
-                info_dict=entry,
-                debug=bool(self.config.ytdl_debug)
-            )
+            dlInfo: Download = Download(info=dl, info_dict=entry, debug=bool(self.config.ytdl_debug))
 
             if dlInfo.info.live_in or 'is_upcoming' == entry.get('live_status', None):
                 dlInfo.info.status = 'not_live'
@@ -179,7 +172,7 @@ class DownloadQueue:
                 itemDownload = self.queue.put(dlInfo)
                 self.event.set()
 
-            await self.notifier.emit(NotifyEvent, itemDownload.info)
+            asyncio.create_task(self.notifier.emit(NotifyEvent, itemDownload.info))
 
             return {
                 'status': 'ok'
@@ -270,11 +263,15 @@ class DownloadQueue:
             already=already,
         )
 
-    async def cancel(self, ids):
+    async def cancel(self, ids: list[str]) -> dict[str, str]:
+
+        status: dict[str, str] = {"status": "ok"}
         for id in ids:
             try:
                 item = self.queue.get(key=id)
             except KeyError as e:
+                status[id] = str(e)
+                status['status'] = 'error'
                 LOG.warning(f'Requested cancel for non-existent download {id=}. {str(e)}')
                 continue
 
@@ -284,33 +281,39 @@ class DownloadQueue:
                 LOG.debug(f'Canceling {itemMessage}')
                 item.cancel()
                 LOG.info(f'Cancelled {itemMessage}')
-
             else:
                 item.close()
                 LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
-                await self.notifier.canceled(id)
+                asyncio.create_task(self.notifier.canceled(id))
                 self.done.put(item)
-                await self.notifier.completed(item)
+                asyncio.create_task(self.notifier.completed(item))
                 LOG.info(f'Deleted from queue {itemMessage}')
 
-        return {'status': 'ok'}
+            status[id] = 'ok'
 
-    async def clear(self, ids):
+        return status
+
+    async def clear(self, ids: list[str]) -> dict[str, str]:
+        status: dict[str, str] = {"status": "ok"}
+
         for id in ids:
             try:
                 item = self.done.get(key=id)
             except KeyError as e:
+                status[id] = str(e)
+                status['status'] = 'error'
                 LOG.warning(f'Requested delete for non-existent download {id=}. {str(e)}')
                 continue
 
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
             LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
-            await self.notifier.cleared(id)
+            asyncio.create_task(self.notifier.cleared(id))
             LOG.info(f'Deleted completed download {itemMessage}')
+            status[id] = 'ok'
 
-        return {'status': 'ok'}
+        return status
 
     def get(self) -> dict[str, list[dict[str, ItemDTO]]]:
         items = {'queue': {}, 'done': {}}
@@ -391,6 +394,7 @@ class DownloadQueue:
             if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
                 try:
                     os.remove(entry.tmpfilename)
+                    entry.tmpfilename = None
                 except:
                     pass
 
@@ -403,12 +407,12 @@ class DownloadQueue:
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                await self.notifier.canceled(id)
+                asyncio.create_task(self.notifier.canceled(id))
                 entry.info.status = 'canceled'
                 entry.info.error = 'Canceled by user.'
 
             self.done.put(value=entry)
-            await self.notifier.completed(entry.info)
+            asyncio.create_task(self.notifier.completed(entry.info))
 
         self.event.set()
 
