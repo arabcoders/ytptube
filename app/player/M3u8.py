@@ -9,12 +9,12 @@ class M3u8:
     ok_vcodecs: tuple = ('h264', 'x264', 'avc',)
     ok_acodecs: tuple = ('aac', 'mp3',)
 
-    segment_duration: float = 10.000000
     url: str = None
+    duration: float = 6.000000
 
-    def __init__(self, url: str, segment_duration: float = 6.000000):
+    def __init__(self, url: str, segment_duration: float = None):
         self.url = url
-        self.segment_duration = float(segment_duration)
+        self.duration = float(segment_duration) if segment_duration is not None else self.duration
 
     async def make_stream(self, download_path: str, file: str):
         realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
@@ -35,12 +35,12 @@ class M3u8:
 
         m3u8 = "#EXTM3U\n"
         m3u8 += "#EXT-X-VERSION:3\n"
-        m3u8 += f"#EXT-X-TARGETDURATION:{int(self.segment_duration)}\n"
+        m3u8 += f"#EXT-X-TARGETDURATION:{int(self.duration)}\n"
         m3u8 += "#EXT-X-MEDIA-SEQUENCE:0\n"
         m3u8 += "#EXT-X-PLAYLIST-TYPE:VOD\n"
 
-        segmentSize: float = '{:.6f}'.format(self.segment_duration)
-        splits: int = math.ceil(duration / self.segment_duration)
+        segmentSize: float = '{:.6f}'.format(self.duration)
+        splits: int = math.ceil(duration / self.duration)
 
         segmentParams: dict = {}
 
@@ -54,7 +54,7 @@ class M3u8:
 
         for i in range(splits):
             if (i + 1) == splits:
-                segmentParams.update({'sd': '{:.6f}'.format(duration - (i * self.segment_duration))})
+                segmentParams.update({'sd': '{:.6f}'.format(duration - (i * self.duration))})
                 m3u8 += f"#EXTINF:{segmentParams['sd']}, nodesc\n"
             else:
                 m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"

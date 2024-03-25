@@ -443,14 +443,14 @@ class Main:
                 raise web.HTTPBadRequest(reason='segment is required')
 
             segmenter = Segments(
-                segment_index=int(segment),
-                segment_duration=float('{:.6f}'.format(float(sd if sd else M3u8.segment_duration))),
+                index=int(segment),
+                duration=float('{:.6f}'.format(float(sd if sd else M3u8.duration))),
                 vconvert=True if vc == 1 else False,
                 aconvert=True if ac == 1 else False
             )
 
             return web.Response(
-                body=await segmenter.stream(download_path=self.config.download_path, file=file),
+                body=await segmenter.stream(path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
                     'Cache-Control': 'no-cache',
