@@ -16,10 +16,13 @@ class ItemDTO:
     quality: str
     format: str
     folder: str
+    download_dir: str = None
+    temp_dir: str = None
     status: str = None
     ytdlp_cookies: str = None
     ytdlp_config: dict = field(default_factory=dict)
     output_template: str = None
+    output_template_chapter: str = None
     timestamp: float = time.time_ns()
     is_live: bool = None
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))

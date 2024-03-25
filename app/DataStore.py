@@ -28,13 +28,7 @@ class DataStore:
 
     def load(self) -> None:
         for id, item in self.saved_items():
-            self.dict.update({id: Download(
-                info=item,
-                download_dir=calcDownloadPath(basePath=self.config.download_path, folder=item.folder),
-                temp_dir=self.config.temp_path,
-                output_template_chapter=self.config.output_template_chapter,
-                default_ytdl_opts=self.config.ytdl_options)
-            })
+            self.dict.update({id: Download(info=item)})
 
     def exists(self, key: str = None, url: str = None) -> bool:
         if not key and not url:

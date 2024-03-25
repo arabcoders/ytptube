@@ -1,8 +1,10 @@
 """
 Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 """
+import asyncio
 import functools
 import json
+import logging
 import operator
 import os
 import pipes
@@ -178,55 +180,60 @@ class FFProbe:
     def __init__(self, path_to_video):
         self.path_to_video = path_to_video
 
+    async def run(self):
         try:
             with open(os.devnull, 'w') as tempf:
-                subprocess.check_call(["ffprobe", "-h"], stdout=tempf, stderr=tempf)
+                await asyncio.create_subprocess_exec(
+                    "ffprobe", "-h", stdout=tempf, stderr=tempf
+                )
         except FileNotFoundError:
             raise IOError('ffprobe not found.')
 
-        if os.path.isfile(self.path_to_video):
-            cmd: list = [
-                "ffprobe -v quiet -of json -show_format -show_streams " +
-                pipes.quote(self.path_to_video)
-            ]
+        if not os.path.isfile(self.path_to_video):
+            raise IOError(f"No such media file '{self.path_to_video}'.")
 
-            p = subprocess.Popen(
-                args=cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True
-            )
-            p.wait()
-            data, err = p.communicate()
-            if p.returncode == 0:
-                parsed: dict = json.loads(data.decode('utf-8'))
-            else:
-                raise FFProbeError(f"FFProbe error: {err}")
+        args = [
+            '-v', 'quiet',
+            '-of', 'json',
+            '-show_streams',
+            '-show_format',
+            self.path_to_video,
+        ]
+        p = await asyncio.create_subprocess_exec(
+            'ffprobe', *args,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
 
-            stream = False
-            self.streams = []
-            self.video = []
-            self.audio = []
-            self.subtitle = []
-            self.attachment = []
+        exitCode = await p.wait()
 
-            for stream in parsed['streams'] if 'streams' in parsed else []:
-                self.streams.append(FFStream(stream))
-
-            self.metadata = parsed['format'] if 'format' in parsed else {}
-
-            for stream in self.streams:
-                if stream.is_audio():
-                    self.audio.append(stream)
-                elif stream.is_video():
-                    self.video.append(stream)
-                elif stream.is_subtitle():
-                    self.subtitle.append(stream)
-                elif stream.is_attachment():
-                    self.attachment.append(stream)
+        data, err = await p.communicate()
+        if 0 == exitCode:
+            parsed: dict = json.loads(data.decode('utf-8'))
         else:
-            raise IOError('No such media file ' + self.path_to_video)
+            raise FFProbeError(f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'")
+
+        stream = False
+        self.streams = []
+        self.video = []
+        self.audio = []
+        self.subtitle = []
+        self.attachment = []
+
+        for stream in parsed.get('streams', []):
+            self.streams.append(FFStream(stream))
+
+        self.metadata = parsed.get('format', {})
+
+        for stream in self.streams:
+            if stream.is_audio():
+                self.audio.append(stream)
+            elif stream.is_video():
+                self.video.append(stream)
+            elif stream.is_subtitle():
+                self.subtitle.append(stream)
+            elif stream.is_attachment():
+                self.attachment.append(stream)
 
     def __repr__(self):
         return "<FFprobe: {metadata}, {video}, {audio}, {subtitle}, {attachment}>".format(**vars(self))
-

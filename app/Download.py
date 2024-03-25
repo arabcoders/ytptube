@@ -6,11 +6,11 @@ import os
 import re
 import shutil
 import yt_dlp
+import hashlib
+
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
 from Config import Config
-
-import hashlib
 
 LOG = logging.getLogger('download')
 
@@ -60,25 +60,18 @@ class Download:
     tempKeep: bool = False
     "Keep temp directory after download."
 
-    def __init__(
-        self,
-        info: ItemDTO,
-        download_dir: str,
-        temp_dir: str,
-        output_template_chapter: str,
-        default_ytdl_opts: dict,
-        info_dict: dict = None,
-        debug: bool = False
-    ):
-        self.download_dir = download_dir
-        self.temp_dir = temp_dir
-        self.output_template_chapter = output_template_chapter
+    def __init__(self, info: ItemDTO, info_dict: dict = None, debug: bool = False):
+        config = Config.get_instance()
+
+        self.download_dir = info.download_dir
+        self.temp_dir = info.temp_dir
+        self.output_template_chapter = info.output_template_chapter
         self.output_template = info.output_template
         self.format = get_format(info.format, info.quality)
         self.ytdl_opts = get_opts(info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
         self.id = info._id
-        self.default_ytdl_opts = default_ytdl_opts
+        self.default_ytdl_opts = config.ytdl_options
         self.debug = debug
 
         self.canceled = False
@@ -87,8 +80,8 @@ class Download:
         self.proc = None
         self.loop = None
         self.notifier = None
-        self.max_workers = int(Config.get_instance().max_workers)
-        self.tempKeep = bool(Config.get_instance().temp_keep)
+        self.max_workers = int(config.max_workers)
+        self.tempKeep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.is_manifestless = 'is_manifestless' in self.info.options and self.info.options['is_manifestless'] is True
         self.info_dict = info_dict
@@ -190,9 +183,7 @@ class Download:
         LOG.info(f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
     async def start(self, notifier: Notifier):
-        self.manager = multiprocessing.Manager() if self.manager is None else self.manager
-
-        self.status_queue = self.manager.Queue()
+        self.status_queue = multiprocessing.Manager().Queue()
         self.loop = asyncio.get_running_loop()
         self.notifier = notifier
 
@@ -205,33 +196,59 @@ class Download:
         self.proc = multiprocessing.Process(target=self._download)
         self.proc.start()
         self.info.status = 'preparing'
-        await self.notifier.updated(self.info)
+
+        asyncio.create_task(self.notifier.updated(self.info))
         asyncio.create_task(self.progress_update())
+
         return await self.loop.run_in_executor(None, self.proc.join)
 
     def started(self) -> bool:
         return self.proc is not None
 
-    def cancel(self):
-        self.kill()
-        self.canceled = True
+    def cancel(self) -> bool:
+        if not self.started():
+            return False
 
-    def close(self):
-        if self.started():
+        if self.kill():
+            self.canceled = True
+
+        return True
+
+    def close(self) -> bool:
+        if not self.started():
+            return False
+
+        try:
+            LOG.info(f"Closing download process: '{self.proc.ident}'.")
             self.proc.close()
+            self.delete_temp()
+            return True
+        except Exception as e:
+            LOG.error(f"Failed to close process: '{self.proc.ident}'. {e}")
 
-        self.delete_temp()
+        return False
 
     def running(self) -> bool:
-        return self.started() and self.proc.is_alive()
+        try:
+            return self.proc is not None and self.proc.is_alive()
+        except ValueError:
+            return False
 
     def is_canceled(self) -> bool:
         return self.canceled
 
-    def kill(self):
-        if self.running():
-            LOG.info(f'Killing download process: {self.proc.ident}')
+    def kill(self) -> bool:
+        if not self.started():
+            return False
+
+        try:
+            LOG.info(f"Killing download process: '{self.proc.ident}'.")
             self.proc.kill()
+            return True
+        except Exception as e:
+            LOG.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
+
+        return False
 
     def delete_temp(self):
         if self.tempKeep is True or not self.tempPath:
@@ -266,7 +283,7 @@ class Download:
                 LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
-                await self.notifier.updated(self.info)
+                asyncio.create_task(self.notifier.updated(self.info))
                 return
 
             self.tmpfilename = status.get('tmpfilename')
@@ -286,7 +303,7 @@ class Download:
 
             if self.info.status == 'error' and 'error' in status:
                 self.info.error = status.get('error')
-                await self.notifier.error(self.info, self.info.error)
+                asyncio.create_task(self.notifier.error(self.info, self.info.error))
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get('total_bytes_estimate')
@@ -305,4 +322,4 @@ class Download:
                     self.info.file_size = None
                     pass
 
-            await self.notifier.updated(self.info)
+            asyncio.create_task(self.notifier.updated(self.info))

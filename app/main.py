@@ -291,6 +291,8 @@ class Main:
             if not ids or where not in ['queue', 'done']:
                 raise web.HTTPBadRequest()
 
+            status: dict[str, str] = {}
+
             status = await (self.queue.cancel(ids) if where == 'queue' else self.queue.clear(ids))
 
             return web.Response(text=self.serializer.encode(status))
@@ -415,7 +417,7 @@ class Main:
                 raise web.HTTPBadRequest(reason='file is required.')
 
             return web.Response(
-                text=M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+                text=await M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
                     download_path=self.config.download_path,
                     file=file
                 ),
