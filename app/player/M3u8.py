@@ -16,19 +16,20 @@ class M3u8:
         self.url = url
         self.segment_duration = float(segment_duration)
 
-    def make_stream(self, download_path: str, file: str):
+    async def make_stream(self, download_path: str, file: str):
         realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
 
         if not os.path.exists(realFile):
-            raise Exception(f"File {realFile} does not exist.")
+            raise Exception(f"File '{realFile}' does not exist.")
 
         try:
             ffprobe = FFProbe(realFile)
+            await ffprobe.run()
         except UnicodeDecodeError as e:
             pass
 
         if not 'duration' in ffprobe.metadata:
-            raise Exception(f"Unable to get {realFile} duration.")
+            raise Exception(f"Unable to get '{realFile}' duration.")
 
         duration: float = float(ffprobe.metadata.get('duration'))
 

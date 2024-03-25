@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import logging
 import os
@@ -37,69 +38,80 @@ class Segments:
         else:
             startTime: float = '{:.6f}'.format((self.segment_duration * self.segment_index))
 
-        ffmpegCmd = []
-        ffmpegCmd.append('ffmpeg')
-        ffmpegCmd.append('-xerror')
-        ffmpegCmd.append('-hide_banner')
-        ffmpegCmd.append('-loglevel')
-        ffmpegCmd.append('error')
+        fargs = []
+        fargs.append('-xerror')
+        fargs.append('-hide_banner')
+        fargs.append('-loglevel')
+        fargs.append('error')
 
-        ffmpegCmd.append('-ss')
-        ffmpegCmd.append(str(startTime if startTime else '0.00000'))
-        ffmpegCmd.append('-t')
-        ffmpegCmd.append(str('{:.6f}'.format(self.segment_duration)))
+        fargs.append('-ss')
+        fargs.append(str(startTime if startTime else '0.00000'))
+        fargs.append('-t')
+        fargs.append(str('{:.6f}'.format(self.segment_duration)))
 
-        ffmpegCmd.append('-copyts')
+        fargs.append('-copyts')
 
-        ffmpegCmd.append('-i')
-        ffmpegCmd.append(f'file:{tmpFile}')
-        ffmpegCmd.append('-map_metadata')
-        ffmpegCmd.append('-1')
+        fargs.append('-i')
+        fargs.append(f'file:{tmpFile}')
+        fargs.append('-map_metadata')
+        fargs.append('-1')
 
-        ffmpegCmd.append('-pix_fmt')
-        ffmpegCmd.append('yuv420p')
-        ffmpegCmd.append('-g')
-        ffmpegCmd.append('52')
+        fargs.append('-pix_fmt')
+        fargs.append('yuv420p')
+        fargs.append('-g')
+        fargs.append('52')
 
-        ffmpegCmd.append('-map')
-        ffmpegCmd.append('0:v:0')
-        ffmpegCmd.append('-strict')
-        ffmpegCmd.append('-2')
+        fargs.append('-map')
+        fargs.append('0:v:0')
+        fargs.append('-strict')
+        fargs.append('-2')
 
-        ffmpegCmd.append('-codec:v')
-        ffmpegCmd.append('libx264' if self.vconvert else 'copy')
+        fargs.append('-codec:v')
+        fargs.append('libx264' if self.vconvert else 'copy')
         if self.vconvert:
-            ffmpegCmd.append('-crf')
-            ffmpegCmd.append('23')
-            ffmpegCmd.append('-preset:v')
-            ffmpegCmd.append('fast')
-            ffmpegCmd.append('-level')
-            ffmpegCmd.append('4.1')
-            ffmpegCmd.append('-profile:v')
-            ffmpegCmd.append('baseline')
+            fargs.append('-crf')
+            fargs.append('23')
+            fargs.append('-preset:v')
+            fargs.append('fast')
+            fargs.append('-level')
+            fargs.append('4.1')
+            fargs.append('-profile:v')
+            fargs.append('baseline')
 
         # audio section.
-        ffmpegCmd.append('-map')
-        ffmpegCmd.append('0:a:0')
-        ffmpegCmd.append('-codec:a')
-        ffmpegCmd.append('aac' if self.aconvert else 'copy')
+        fargs.append('-map')
+        fargs.append('0:a:0')
+        fargs.append('-codec:a')
+        fargs.append('aac' if self.aconvert else 'copy')
         if self.aconvert:
-            ffmpegCmd.append('-b:a')
-            ffmpegCmd.append('192k')
-            ffmpegCmd.append('-ar')
-            ffmpegCmd.append('22050')
-            ffmpegCmd.append('-ac')
-            ffmpegCmd.append('2')
+            fargs.append('-b:a')
+            fargs.append('192k')
+            fargs.append('-ar')
+            fargs.append('22050')
+            fargs.append('-ac')
+            fargs.append('2')
 
-        ffmpegCmd.append('-sn')
+        fargs.append('-sn')
 
-        ffmpegCmd.append('-muxdelay')
-        ffmpegCmd.append('0')
-        ffmpegCmd.append('-f')
-        ffmpegCmd.append('mpegts')
-        ffmpegCmd.append('pipe:1')
+        fargs.append('-muxdelay')
+        fargs.append('0')
+        fargs.append('-f')
+        fargs.append('mpegts')
+        fargs.append('pipe:1')
 
-        LOG.debug(f'Streaming {realFile} segment {self.segment_index}.' + ' '.join(ffmpegCmd))
-        proc = subprocess.run(ffmpegCmd, stdout=subprocess.PIPE)
+        LOG.debug(f"Streaming '{realFile}' segment '{self.segment_index}'. " + " ".join(fargs))
 
-        return proc.stdout
+        proc = await asyncio.subprocess.create_subprocess_exec(
+            'ffmpeg', *fargs,
+            stdin=asyncio.subprocess.DEVNULL,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+
+        data, err = await proc.communicate()
+
+        if 0 != proc.returncode:
+            LOG.error(f'Failed to stream {realFile} segment {self.segment_index}. {err.decode("utf-8")}')
+            raise Exception(f'Failed to stream {realFile} segment {self.segment_index}.')
+
+        return data

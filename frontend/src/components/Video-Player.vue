@@ -72,6 +72,7 @@ const prepareVideoPlayer = () => {
     enableWorker: true,
     lowLatencyMode: true,
     backBufferLength: 90,
+    fragLoadingTimeOut: 200000,
   });
 
   hls.value.loadSource(props.link)
