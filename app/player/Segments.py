@@ -2,7 +2,6 @@ import asyncio
 import hashlib
 import logging
 import os
-import subprocess
 import tempfile
 from Utils import calcDownloadPath
 

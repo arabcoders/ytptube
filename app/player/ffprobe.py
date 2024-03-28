@@ -4,11 +4,8 @@ Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 import asyncio
 import functools
 import json
-import logging
 import operator
 import os
-import pipes
-import subprocess
 
 
 class FFProbeError(Exception):

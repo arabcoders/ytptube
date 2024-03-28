@@ -11,7 +11,6 @@ from Utils import ObjectSerializer, Notifier
 from aiohttp import web, client
 from aiohttp.web import Request, Response
 from Webhooks import Webhooks
-from Download import Download
 from player.M3u8 import M3u8
 from player.Segments import Segments
 import socketio
@@ -416,11 +415,16 @@ class Main:
             if not file:
                 raise web.HTTPBadRequest(reason='file is required.')
 
-            return web.Response(
-                text=await M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+            try:
+                text = await M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
                     download_path=self.config.download_path,
                     file=file
-                ),
+                )
+            except Exception as e:
+                return web.HTTPNotFound(reason=str(e))
+
+            return web.Response(
+                text=text,
                 headers={
                     'Content-Type': 'application/x-mpegURL',
                     'Cache-Control': 'no-cache',
