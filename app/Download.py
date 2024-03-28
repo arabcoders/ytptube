@@ -278,15 +278,19 @@ class Download:
         """
         while True:
             status = await self.loop.run_in_executor(None, self.status_queue.get)
-            if status.get('id') != self.id or len(status) < 2:
+
+            if status is None:
                 return
+
+            if status.get('id') != self.id or len(status) < 2:
+                continue
 
             if self.debug:
                 LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
                 asyncio.create_task(self.notifier.updated(self.info))
-                return
+                continue
 
             self.tmpfilename = status.get('tmpfilename')
 

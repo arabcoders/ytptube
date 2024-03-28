@@ -388,19 +388,20 @@ class DownloadQueue:
     async def __downloadFile(self, id: str, entry: Download):
         LOG.info(f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
 
-        await entry.start(self.notifier)
+        try:
+            await entry.start(self.notifier)
 
-        if entry.info.status != 'finished':
-            if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
-                try:
-                    os.remove(entry.tmpfilename)
-                    entry.tmpfilename = None
-                except:
-                    pass
+            if entry.info.status != 'finished':
+                if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
+                    try:
+                        os.remove(entry.tmpfilename)
+                        entry.tmpfilename = None
+                    except:
+                        pass
 
-            entry.info.status = 'error'
-
-        entry.close()
+                entry.info.status = 'error'
+        finally:
+            entry.close()
 
         if self.queue.exists(key=id):
 
