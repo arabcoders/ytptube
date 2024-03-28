@@ -13,6 +13,7 @@ aiocron = ">=1.8"
 python-dotenv = ">=1.0.1"
 python-magic = ">=0.4.27"
 debugpy = ">=1.8.1"
+httpx = "*"
 
 [dev-packages]
 

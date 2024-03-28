@@ -17,6 +17,7 @@
     "dotenv",
     "finaldir",
     "getpid",
+    "httpx",
     "libcurl",
     "libx",
     "mpegts",
