@@ -2,7 +2,6 @@ import asyncio
 import hashlib
 import logging
 import os
-import subprocess
 import tempfile
 from Utils import calcDownloadPath
 
@@ -10,19 +9,19 @@ LOG = logging.getLogger('segments')
 
 
 class Segments:
-    segment_duration: int
-    segment_index: int
+    duration: int
+    index: int
     vconvert: bool
     aconvert: bool
 
-    def __init__(self, segment_index: int, segment_duration: float, vconvert: bool, aconvert: bool):
-        self.segment_duration = float(segment_duration)
-        self.segment_index = int(segment_index)
+    def __init__(self, index: int, duration: float, vconvert: bool, aconvert: bool):
+        self.index = int(index)
+        self.duration = float(duration)
         self.vconvert = bool(vconvert)
         self.aconvert = bool(aconvert)
 
-    async def stream(self, download_path: str, file: str) -> bytes:
-        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
+    async def stream(self, path: str, file: str) -> bytes:
+        realFile: str = calcDownloadPath(basePath=path, folder=file, createPath=False)
 
         if not os.path.exists(realFile):
             raise Exception(f"File {realFile} does not exist.")
@@ -33,10 +32,10 @@ class Segments:
         if not os.path.exists(tmpFile):
             os.symlink(realFile, tmpFile)
 
-        if self.segment_index == 0:
+        if self.index == 0:
             startTime: float = '{:.6f}'.format(0)
         else:
-            startTime: float = '{:.6f}'.format((self.segment_duration * self.segment_index))
+            startTime: float = '{:.6f}'.format((self.duration * self.index))
 
         fargs = []
         fargs.append('-xerror')
@@ -47,7 +46,7 @@ class Segments:
         fargs.append('-ss')
         fargs.append(str(startTime if startTime else '0.00000'))
         fargs.append('-t')
-        fargs.append(str('{:.6f}'.format(self.segment_duration)))
+        fargs.append(str('{:.6f}'.format(self.duration)))
 
         fargs.append('-copyts')
 
@@ -99,7 +98,7 @@ class Segments:
         fargs.append('mpegts')
         fargs.append('pipe:1')
 
-        LOG.debug(f"Streaming '{realFile}' segment '{self.segment_index}'. " + " ".join(fargs))
+        LOG.debug(f"Streaming '{realFile}' segment '{self.index}'. " + " ".join(fargs))
 
         proc = await asyncio.subprocess.create_subprocess_exec(
             'ffmpeg', *fargs,
@@ -111,7 +110,7 @@ class Segments:
         data, err = await proc.communicate()
 
         if 0 != proc.returncode:
-            LOG.error(f'Failed to stream {realFile} segment {self.segment_index}. {err.decode("utf-8")}')
-            raise Exception(f'Failed to stream {realFile} segment {self.segment_index}.')
+            LOG.error(f'Failed to stream {realFile} segment {self.index}. {err.decode("utf-8")}')
+            raise Exception(f'Failed to stream {realFile} segment {self.index}.')
 
         return data

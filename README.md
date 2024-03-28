@@ -259,6 +259,8 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
     "request":{
       // (url: string) - REQUIRED-  The webhook url
       "url": "https://mysecert.webhook.com/endpoint", 
+      // (type: string) - OPTIONAL - The request type, it can be json or form.
+      "type": "json",
       // (method: string) - OPTIONAL - The request method, it can be POST or PUT
       "method": "POST",
       // (headers: dictionary) - OPTIONAL - Extra headers to include.

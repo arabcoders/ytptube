@@ -3,8 +3,8 @@ import json
 import logging
 import os
 from ItemDTO import ItemDTO
-from aiohttp import client
-
+import httpx
+from version import APP_VERSION
 LOG = logging.getLogger('Webhooks')
 
 
@@ -49,20 +49,43 @@ class Webhooks:
         req: dict = target.get('request')
         try:
             LOG.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
-            async with client.ClientSession() as session:
-                headers = req.get('headers', {}) if 'headers' in req else {}
-                async with session.request(method=req.get('method', 'POST'), url=req.get('url'), json=item.__dict__, headers=headers) as response:
-                    respData = {
-                        'url': req.get('url'),
-                        'status': response.status,
-                        'text': await response.text()
-                    }
-                    msg = f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status}]."
-                    if respData.get('text'):
-                        msg += f" [Body: {respData.get('text','??')}]"
-                    LOG.info(msg)
+            async with httpx.AsyncClient() as client:
+                request_type = req.get('type', 'json')
 
-                    return respData
+                reqBody = {
+                    'method': req.get('method', 'POST'),
+                    'url': req.get('url'),
+                    'headers': {
+                        'User-Agent': f"YTPTube/{APP_VERSION}"
+                    },
+                }
+
+                if req.get('headers', None):
+                    reqBody['headers'].update(req.get('headers'))
+
+                match(request_type):
+                    case 'json':
+                        reqBody['json'] = item.__dict__
+                        reqBody['headers']['Content-Type'] = 'application/json'
+                    case _:
+                        reqBody['data'] = item.__dict__
+                        reqBody['headers']['Content-Type'] = 'application/x-www-form-urlencoded'
+
+                response = await client.request(**reqBody)
+
+                respData = {
+                    'url': req.get('url'),
+                    'status': response.status_code,
+                    'text': response.text
+                }
+
+                msg = f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status_code}]."
+                if respData.get('text'):
+                    msg += f" [Body: {respData.get('text','??')}]"
+
+                LOG.info(msg)
+
+                return respData
         except Exception as e:
             return {
                 'url': req.get('url'),
