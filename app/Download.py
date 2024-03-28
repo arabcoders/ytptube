@@ -193,7 +193,7 @@ class Download:
         if not os.path.exists(self.tempPath):
             os.makedirs(self.tempPath, exist_ok=True)
 
-        self.proc = multiprocessing.Process(target=self._download)
+        self.proc = multiprocessing.Process(name=f"download-{self.id}", target=self._download)
         self.proc.start()
         self.info.status = 'preparing'
 
@@ -244,6 +244,8 @@ class Download:
         try:
             LOG.info(f"Killing download process: '{self.proc.ident}'.")
             self.proc.kill()
+            if self.proc.is_alive():
+                self.proc.terminate()
             return True
         except Exception as e:
             LOG.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
