@@ -7,7 +7,7 @@ import re
 import shutil
 import yt_dlp
 import hashlib
-
+from AsyncPool import Terminator
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
 from Config import Config
@@ -32,10 +32,12 @@ class Download:
     debug: bool = False
     tempPath: str = None
     notifier: Notifier = None
+    manager: multiprocessing.Manager = None
     canceled: bool = False
     is_live: bool = False
     info_dict: dict = None
     "yt-dlp metadata dict."
+    update_task = None
 
     bad_live_options: list = [
         "concurrent_fragment_downloads",
@@ -73,12 +75,10 @@ class Download:
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
         self.debug = debug
-
         self.canceled = False
         self.tmpfilename = None
         self.status_queue = None
         self.proc = None
-        self.loop = None
         self.notifier = None
         self.max_workers = int(config.max_workers)
         self.tempKeep = bool(config.temp_keep)
@@ -183,9 +183,9 @@ class Download:
         LOG.info(f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
     async def start(self, notifier: Notifier):
-        self.status_queue = multiprocessing.Manager().Queue()
-        self.loop = asyncio.get_running_loop()
+        self.manager = multiprocessing.Manager()
         self.notifier = notifier
+        self.status_queue = self.manager.Queue()
 
         # Create temp dir for each download.
         self.tempPath = os.path.join(self.temp_dir, hashlib.shake_256(self.info.id.encode('utf-8')).hexdigest(5))
@@ -197,10 +197,10 @@ class Download:
         self.proc.start()
         self.info.status = 'preparing'
 
-        asyncio.create_task(self.notifier.updated(self.info))
-        asyncio.create_task(self.progress_update())
+        asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-{self.id}")
+        asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
-        return await self.loop.run_in_executor(None, self.proc.join)
+        return await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
 
     def started(self) -> bool:
         return self.proc is not None
@@ -209,22 +209,54 @@ class Download:
         if not self.started():
             return False
 
-        if self.kill():
-            self.canceled = True
+        self.canceled = True
 
         return True
 
-    def close(self) -> bool:
+    async def close(self) -> bool:
+        """
+        Close download process.
+        This method MUST be called to clear resources.
+        """
         if not self.started():
             return False
 
+        procId = self.proc.ident
         try:
-            LOG.info(f"Closing download process: '{self.proc.ident}'.")
-            self.proc.close()
+            LOG.info(f"Closing download process: '{procId}'.")
+            try:
+                if 'update_task' in self.__dict__ and self.update_task.done() is False:
+                    self.status_queue.put(Terminator(), timeout=3)
+                    LOG.debug(f"Closed status queue: '{procId}'.")
+            except Exception as e:
+                LOG.error(f"Failed to close status queue: '{procId}'. {e}")
+                pass
+
+            self.kill()
+
+            loop = asyncio.get_running_loop()
+            tasks = []
+
+            if self.proc.is_alive():
+                tasks.append(loop.run_in_executor(None, self.proc.join))
+
+            if self.manager:
+                tasks.append(loop.run_in_executor(None, self.manager.shutdown))
+
+            if len(tasks) > 0:
+                await asyncio.gather(*tasks)
+
+            if self.proc:
+                self.proc.close()
+                self.proc = None
+
             self.delete_temp()
+
+            LOG.debug(f"Closed download process: '{procId}'.")
+
             return True
         except Exception as e:
-            LOG.error(f"Failed to close process: '{self.proc.ident}'. {e}")
+            LOG.error(f"Failed to close process: '{procId}'. {e}")
 
         return False
 
@@ -238,14 +270,12 @@ class Download:
         return self.canceled
 
     def kill(self) -> bool:
-        if not self.started():
+        if not self.running():
             return False
 
         try:
             LOG.info(f"Killing download process: '{self.proc.ident}'.")
             self.proc.kill()
-            if self.proc.is_alive():
-                self.proc.terminate()
             return True
         except Exception as e:
             LOG.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
@@ -277,9 +307,12 @@ class Download:
         Update status of download task and notify the client.
         """
         while True:
-            status = await self.loop.run_in_executor(None, self.status_queue.get)
+            self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
 
-            if status is None:
+            status = await self.update_task
+
+            if status is None or status.__class__ is Terminator:
+                LOG.debug(f'Closing progress update for: {self.info._id=}.')
                 return
 
             if status.get('id') != self.id or len(status) < 2:
@@ -289,7 +322,7 @@ class Download:
                 LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
-                asyncio.create_task(self.notifier.updated(self.info))
+                asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-u-{self.id}")
                 continue
 
             self.tmpfilename = status.get('tmpfilename')
@@ -309,7 +342,7 @@ class Download:
 
             if self.info.status == 'error' and 'error' in status:
                 self.info.error = status.get('error')
-                asyncio.create_task(self.notifier.error(self.info, self.info.error))
+                asyncio.create_task(self.notifier.error(self.info, self.info.error), name=f"notifier-e-{self.id}")
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get('total_bytes_estimate')
@@ -328,4 +361,4 @@ class Download:
                     self.info.file_size = None
                     pass
 
-            asyncio.create_task(self.notifier.updated(self.info))
+            asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-u-{self.id}")

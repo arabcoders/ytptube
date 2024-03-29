@@ -283,9 +283,9 @@ class DownloadQueue:
                 LOG.debug(f'Canceling {itemMessage}')
                 item.cancel()
                 LOG.info(f'Cancelled {itemMessage}')
-                item.close()
+                await item.close()
             else:
-                item.close()
+                await item.close()
                 LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
                 asyncio.create_task(self.notifier.canceled(id), name=f'notifier-c-{id}')
@@ -404,7 +404,7 @@ class DownloadQueue:
 
                 entry.info.status = 'error'
         finally:
-            entry.close()
+            await entry.close()
 
         if self.queue.exists(key=id):
 
