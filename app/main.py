@@ -106,6 +106,7 @@ class Main:
         self.start()
 
     def start(self):
+        start: str = f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'
         web.run_app(
             self.app,
             host=self.config.host,
@@ -113,8 +114,7 @@ class Main:
             reuse_port=True,
             loop=self.loop,
             access_log=None,
-            print=lambda _: print(
-                f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'),
+            print=lambda _: LOG.info(start)
         )
 
     async def connect(self, sid, _):
