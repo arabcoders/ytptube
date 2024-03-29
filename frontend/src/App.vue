@@ -148,6 +148,19 @@ const deleteItem = (type, item) => {
     headers: {
       'Content-Type': 'application/json'
     }
+  }).then(resp => resp.json()).then(json => {
+    for (const key in items) {
+      const itemId = items[key];
+      if (itemId in json && json[itemId] === 'ok') {
+        if (true === (itemId in completed)) {
+          delete completed[itemId];
+        }
+        if (true === (itemId in downloading)) {
+          toast.info('Download canceled: ' + downloading[itemId]?.title);
+          delete downloading[itemId];
+        }
+      }
+    }
   }).catch((error) => {
     console.log(error);
     toast.error('Failed to delete/cancel item/s. ' + error);

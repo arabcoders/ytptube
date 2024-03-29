@@ -41,7 +41,8 @@ class DownloadQueue:
         LOG.info(f'Using {self.config.max_workers} workers for downloading.')
 
         asyncio.create_task(
-            self.__download_pool() if self.config.max_workers > 1 else self.__download()
+            self.__download_pool() if self.config.max_workers > 1 else self.__download(),
+            name='download_pool' if self.config.max_workers > 1 else 'download_worker'
         )
 
     async def __add_entry(
@@ -172,7 +173,9 @@ class DownloadQueue:
                 itemDownload = self.queue.put(dlInfo)
                 self.event.set()
 
-            asyncio.create_task(self.notifier.emit(NotifyEvent, itemDownload.info))
+            asyncio.create_task(
+                self.notifier.emit(NotifyEvent, itemDownload.info),
+                name=f'notifier-{NotifyEvent}-{itemDownload.info.id}')
 
             return {
                 'status': 'ok'
@@ -227,16 +230,15 @@ class DownloadQueue:
             started = time.perf_counter()
             LOG.debug(f'extract_info: checking {url=}')
 
-            with ThreadPoolExecutor(1) as executor:
-                entry = await asyncio.wait_for(
-                    fut=asyncio.get_running_loop().run_in_executor(
-                        executor,
-                        ExtractInfo,
-                        mergeConfig(self.config.ytdl_options, ytdlp_config),
-                        url,
-                        bool(self.config.ytdl_debug)
-                    ),
-                    timeout=self.config.extract_info_timeout)
+            entry = await asyncio.wait_for(
+                fut=asyncio.get_running_loop().run_in_executor(
+                    None,
+                    ExtractInfo,
+                    mergeConfig(self.config.ytdl_options, ytdlp_config),
+                    url,
+                    bool(self.config.ytdl_debug)
+                ),
+                timeout=self.config.extract_info_timeout)
 
             if not entry:
                 return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
@@ -277,17 +279,18 @@ class DownloadQueue:
 
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
 
-            if item.started() is True:
+            if item.running():
                 LOG.debug(f'Canceling {itemMessage}')
                 item.cancel()
                 LOG.info(f'Cancelled {itemMessage}')
+                await item.close()
             else:
-                item.close()
+                await item.close()
                 LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
-                asyncio.create_task(self.notifier.canceled(id))
+                asyncio.create_task(self.notifier.canceled(id), name=f'notifier-c-{id}')
                 self.done.put(item)
-                asyncio.create_task(self.notifier.completed(item))
+                asyncio.create_task(self.notifier.completed(item), name=f'notifier-d-{id}')
                 LOG.info(f'Deleted from queue {itemMessage}')
 
             status[id] = 'ok'
@@ -309,7 +312,7 @@ class DownloadQueue:
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
             LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
-            asyncio.create_task(self.notifier.cleared(id))
+            asyncio.create_task(self.notifier.cleared(id), name=f'notifier-c-{id}')
             LOG.info(f'Deleted completed download {itemMessage}')
             status[id] = 'ok'
 
@@ -388,31 +391,32 @@ class DownloadQueue:
     async def __downloadFile(self, id: str, entry: Download):
         LOG.info(f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
 
-        await entry.start(self.notifier)
+        try:
+            await entry.start(self.notifier)
 
-        if entry.info.status != 'finished':
-            if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
-                try:
-                    os.remove(entry.tmpfilename)
-                    entry.tmpfilename = None
-                except:
-                    pass
+            if entry.info.status != 'finished':
+                if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
+                    try:
+                        os.remove(entry.tmpfilename)
+                        entry.tmpfilename = None
+                    except:
+                        pass
 
-            entry.info.status = 'error'
-
-        entry.close()
+                entry.info.status = 'error'
+        finally:
+            await entry.close()
 
         if self.queue.exists(key=id):
 
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                asyncio.create_task(self.notifier.canceled(id))
+                asyncio.create_task(self.notifier.canceled(id), name=f'notifier-c-{id}')
                 entry.info.status = 'canceled'
                 entry.info.error = 'Canceled by user.'
 
             self.done.put(value=entry)
-            asyncio.create_task(self.notifier.completed(entry.info))
+            asyncio.create_task(self.notifier.completed(entry.info), name=f'notifier-d-{id}')
 
         self.event.set()
 
