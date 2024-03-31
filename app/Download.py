@@ -226,8 +226,7 @@ class Download:
             LOG.info(f"Closing download process: '{procId}'.")
             try:
                 if 'update_task' in self.__dict__ and self.update_task.done() is False:
-                    self.status_queue.put(Terminator(), timeout=3)
-                    LOG.debug(f"Closed status queue: '{procId}'.")
+                    self.update_task.cancel()
             except Exception as e:
                 LOG.error(f"Failed to close status queue: '{procId}'. {e}")
                 pass
@@ -307,7 +306,11 @@ class Download:
         Update status of download task and notify the client.
         """
         while True:
-            self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
+            try:
+                self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
+            except asyncio.CancelledError:
+                LOG.debug(f'Closing progress update for: {self.info._id=}.')
+                return
 
             status = await self.update_task
 
