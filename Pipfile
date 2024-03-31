@@ -14,6 +14,7 @@ python-dotenv = ">=1.0.1"
 python-magic = ">=0.4.27"
 debugpy = ">=1.8.1"
 httpx = "*"
+async-timeout = "*"
 
 [dev-packages]
 
