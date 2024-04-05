@@ -54,7 +54,9 @@ COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/python/bin:$PATH"
 
-RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck
+RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck && \
+  sed -i 's$#!\/app\/\.venv\/bin\/python$#!/opt/python/bin/python$' /opt/python/bin/* && \
+  sed -i "s%'\/app\/\.venv'%'/opt/python'%" /opt/python/bin/activate*
 
 VOLUME /config
 VOLUME /downloads

@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import sys
+import time
 import coloredlogs
 from version import APP_VERSION
 from dotenv import load_dotenv
@@ -50,10 +51,12 @@ class Config:
 
     socket_timeout: int = 30
 
+    started: int = 0
+
     ytdlp_version: str = YTDLP_VERSION
 
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout',)
-    _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version',)
+    _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version', 'started')
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
 
     @staticmethod
@@ -164,6 +167,8 @@ class Config:
                 self.config_path, 'archive.log')
 
         LOG.info(f'Keep temp: {self.temp_keep}')
+
+        self.started = time.time()
 
     def _getAttributes(self) -> dict:
         attrs: dict = {}
