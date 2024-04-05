@@ -15,7 +15,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Support per link, `yt-dlp config` and `cookies`. and `output format`.
 * Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
-* **Experimental** Multi-downloads support.
+* Multi-downloads support.
 
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -94,7 +94,7 @@ location /ytptube/ {
 }
 ```
 
-Note: the extra `proxy_set_header` directives are there to make WebSocket work.
+Note: the extra `proxy_set_header` directives are there to make web socket connection work.
 
 ### Caddy
 
@@ -122,8 +122,9 @@ Before asking a question or submitting an issue for YTPTube, please remember tha
 In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. Assuming your YTPTube container is called `YTPTube`, run the following on your Docker host to get a shell inside the container:
 
 ```bash
-docker exec -ti ytptube sh
+docker exec -ti ytptube bash
 cd /downloads
+yt-dlp ....
 ```
 
 Once there, you can use the yt-dlp command freely.
@@ -181,23 +182,23 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
   "subtitleslangs": [ "en", "ar" ],
   // postprocessors to run on the file
   "postprocessors": [
-      // this processor convert the downloaded thumbnail to JPG.
+      // this processor convert the downloaded thumbnail to jpg.
       {
           "key": "FFmpegThumbnailsConvertor",
           "format": "jpg"
       },
-      // This processor convert subtitles to SRT
+      // This processor convert subtitles to srt format.
       {
           "key": "FFmpegSubtitlesConvertor",
           "format": "srt"
       },
-      // This processor embed metadata & info.json file into the final MKV file.
+      // This processor embed metadata & info.json file into the final mkv file.
       {
           "key": "FFmpegMetadata",
           "add_infojson": true,
           "add_metadata": true
       },
-      // This process embed subtitles into the final file if it doesn't subtitles embedded.
+      // This process embed subtitles into the final file if it doesn't have subtitles embedded.
       {
           "key": "FFmpegEmbedSubtitle",
           "already_have_subtitle": false
