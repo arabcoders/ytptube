@@ -34,12 +34,8 @@ ENV YTP_PORT=8081
 ENV XDG_CONFIG_HOME=/config
 ENV XDG_CACHE_HOME=/tmp
 
-# removed ffmpeg as 6.1.0 is broken with DASH protocal downloads
-COPY --from=mwader/static-ffmpeg:6.1.1 /ffmpeg /usr/bin/
-COPY --from=mwader/static-ffmpeg:6.1.1 /ffprobe /usr/bin/
-
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic && \
+  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic ffmpeg && \
   useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   rm -rf /var/cache/apk/*
 
