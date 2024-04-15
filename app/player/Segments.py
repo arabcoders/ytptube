@@ -4,6 +4,7 @@ import logging
 import os
 import tempfile
 from Utils import calcDownloadPath
+from Config import Config
 
 LOG = logging.getLogger('segments')
 
@@ -13,12 +14,18 @@ class Segments:
     index: int
     vconvert: bool
     aconvert: bool
+    vcodec: str
+    acodec: str
 
     def __init__(self, index: int, duration: float, vconvert: bool, aconvert: bool):
+        config = Config.get_instance()
         self.index = int(index)
         self.duration = float(duration)
         self.vconvert = bool(vconvert)
         self.aconvert = bool(aconvert)
+        self.vcodec = config.streamer_vcodec
+        self.acodec = config.streamer_acodec
+        self.vconvert = True
 
     async def stream(self, path: str, file: str) -> bytes:
         realFile: str = calcDownloadPath(basePath=path, folder=file, createPath=False)
@@ -66,29 +73,13 @@ class Segments:
         fargs.append('-2')
 
         fargs.append('-codec:v')
-        fargs.append('libx264' if self.vconvert else 'copy')
-        if self.vconvert:
-            fargs.append('-crf')
-            fargs.append('23')
-            fargs.append('-preset:v')
-            fargs.append('fast')
-            fargs.append('-level')
-            fargs.append('4.1')
-            fargs.append('-profile:v')
-            fargs.append('baseline')
+        fargs.append(self.vcodec if self.vconvert else 'copy')
 
         # audio section.
         fargs.append('-map')
         fargs.append('0:a:0')
         fargs.append('-codec:a')
-        fargs.append('aac' if self.aconvert else 'copy')
-        if self.aconvert:
-            fargs.append('-b:a')
-            fargs.append('192k')
-            fargs.append('-ar')
-            fargs.append('22050')
-            fargs.append('-ac')
-            fargs.append('2')
+        fargs.append(self.acodec if self.aconvert else 'copy')
 
         fargs.append('-sn')
 
@@ -110,7 +101,7 @@ class Segments:
         data, err = await proc.communicate()
 
         if 0 != proc.returncode:
-            LOG.error(f'Failed to stream {realFile} segment {self.index}. {err.decode("utf-8")}')
+            LOG.error(f'Failed to stream {realFile} segment {self.index}. {err.decode("utf-8")}.')
             raise Exception(f'Failed to stream {realFile} segment {self.index}.')
 
         return data

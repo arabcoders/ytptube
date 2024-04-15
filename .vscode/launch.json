@@ -33,7 +33,7 @@
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_URL_HOST": "http://localhost:8081",
-        "YTP_LOG_LEVEL": "DEBUG"
+        "YTP_LOG_LEVEL": "DEBUG",
       }
     },
     {
@@ -48,7 +48,7 @@
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_URL_HOST": "http://localhost:8081",
-        "YTP_LOG_LEVEL": "DEBUG"
+        "YTP_LOG_LEVEL": "DEBUG",
       }
     },
     {
