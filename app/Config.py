@@ -53,6 +53,9 @@ class Config:
 
     started: int = 0
 
+    streamer_vcodec = 'libx264'
+    streamer_acodec = 'aac'
+
     ytdlp_version: str = YTDLP_VERSION
 
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout',)

@@ -28,6 +28,7 @@
     "preferredcodec",
     "preferredquality",
     "tmpfilename",
+    "vcodec",
     "vconvert",
     "writedescription",
     "xerror"
