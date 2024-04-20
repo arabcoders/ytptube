@@ -4,7 +4,9 @@ import asyncio
 from datetime import datetime
 import json
 import os
+import pathlib
 import random
+import time
 from Config import Config
 from DownloadQueue import DownloadQueue
 from Utils import ObjectSerializer, Notifier
@@ -18,6 +20,7 @@ import logging
 import caribou
 import sqlite3
 from aiocron import crontab
+from aiohttp.helpers import parse_http_date
 import magic
 
 LOG = logging.getLogger('app')
@@ -440,6 +443,11 @@ class Main:
             vc: int = int(request.query.get('vc', 0))
             ac: int = int(request.query.get('ac', 0))
 
+            if request.if_modified_since:
+                file_path = os.path.join(self.config.download_path, file)
+                if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
+                    return web.Response(status=304)
+
             if not file:
                 raise web.HTTPBadRequest(reason='file is required')
 
@@ -457,10 +465,14 @@ class Main:
                 body=await segmenter.stream(path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
-                    'Cache-Control': 'no-cache',
                     'X-Accel-Buffering': 'no',
                     'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Max-Age': "300",
+                    'Pragma': 'public',
+                    'Cache-Control': f'public, max-age={time.time() + 31536000}',
+                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
+                        os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
+                    ),
+                    'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
                 }
             )
 
