@@ -12,8 +12,7 @@ import {
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
 
 import 'vue-toastification/dist/index.css'
-import './assets/css/bulma-light.css'
-import './assets/css/bulma-dark.css'
+import './assets/css/bulma.css'
 import './assets/css/style.css'
 import 'floating-vue/dist/style.css'
 

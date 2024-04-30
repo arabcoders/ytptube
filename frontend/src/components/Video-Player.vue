@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUpdated, ref, defineProps, onUnmounted } from 'vue'
+import { onMounted, onUpdated, ref, defineProps, defineEmits, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
@@ -29,12 +29,20 @@ const props = defineProps({
   },
 })
 
+const emitter = defineEmits(['closeModel'])
+
 const video = ref(null)
 const player = ref(null)
 const hls = ref(null)
+let eventHandler = null
 
 onMounted(() => {
   prepareVideoPlayer()
+  eventHandler = window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      emitter('closeModel')
+    }
+  })
 })
 
 onUpdated(() => {
@@ -44,6 +52,7 @@ onUpdated(() => {
 onUnmounted(() => {
   player.value.destroy()
   hls.value.destroy()
+  window.removeEventListener('keydown', eventHandler)
 })
 
 const prepareVideoPlayer = () => {
