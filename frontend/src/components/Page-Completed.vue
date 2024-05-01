@@ -23,7 +23,7 @@
         </button>
       </div>
       <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-danger is-inverted" :disabled="!hasSelected"
+        <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
           @click="$emit('deleteItem', 'completed', selectedElms); selectedElms = []">
           <span class="icon-text is-block">
             <span class="icon">
