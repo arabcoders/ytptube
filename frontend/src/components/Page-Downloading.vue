@@ -45,9 +45,9 @@
           <div class="card-content">
             <div class="columns is-multiline is-mobile">
               <div class="column is-12">
-                <div id="progress-bar" class="is-round">
-                  <div id="progress-percentage">{{ updateProgress(item) }}</div>
-                  <div id="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
+                <div class="progress-bar is-round">
+                  <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                  <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
                 </div>
               </div>
               <div class="column is-half-mobile has-text-centered">
