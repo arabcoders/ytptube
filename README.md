@@ -134,7 +134,7 @@ Once there, you can use the yt-dlp command freely.
 
 ## Building and running locally
 
-Make sure you have `node.js` and Python `3.11+` installed.
+Make sure you have `nodejs` and `Python 3.11+` installed.
 
 ```bash
 cd ytptube/frontend
@@ -181,7 +181,7 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
   "format_sort": [
       "codec:avc:m4a"
   ],
-  // Your Choice of subtitle languages to download.
+  // Your choice of subtitle languages to download.
   "subtitleslangs": [ "en", "ar" ],
   // postprocessors to run on the file
   "postprocessors": [
@@ -260,7 +260,7 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
     // (on: array) - OPTIONAL - List of accepted events, if left empty it will send all events.
     // Allowed events ["added", "completed", "error", "not_live" ] you can choose one or all of them.
     "on": [ "added", "completed", "error", "not_live" ],
-    "request":{
+    "request": {
       // (url: string) - REQUIRED-  The webhook url
       "url": "https://mysecert.webhook.com/endpoint", 
       // (type: string) - OPTIONAL - The request type, it can be json or form.
@@ -268,7 +268,7 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
       // (method: string) - OPTIONAL - The request method, it can be POST or PUT
       "method": "POST",
       // (headers: dictionary) - OPTIONAL - Extra headers to include.
-      "headers":{
+      "headers": {
         "Authorization": "Bearer my_secret_token"
       }
   }
@@ -278,7 +278,7 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
 
 # Social contact
 
-If you have short or quick questions, you are free to join my [discord server](https://discord.gg/haUXHJyj6Y) and ask
+If you have short or quick questions, you are free to join my [discord server](https://discord.gg/G3GpVR8xpb) and ask
 the question. keep in mind it's solo project, as such it might take me a bit of time to reply.
 
 # Donation 
