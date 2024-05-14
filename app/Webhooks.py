@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import os
 from ItemDTO import ItemDTO
@@ -9,7 +8,7 @@ LOG = logging.getLogger('Webhooks')
 
 
 class Webhooks:
-    targets: list[dict] = {}
+    targets: list[dict] = []
 
     def __init__(self, file: str):
         if os.path.exists(file):
@@ -21,8 +20,12 @@ class Webhooks:
                 raise Exception(f'file is empty.')
 
             LOG.info(f'Loading webhooks from {file}')
-            with open(file, 'r') as f:
-                self.targets = json.load(f)
+            from Utils import load_file
+            (target, status, error) = load_file(file, list)
+            if not status:
+                raise Exception(f'{error}')
+
+            self.targets = target
         except Exception as e:
             LOG.error(f'Error loading webhooks from {file}: {e}')
             pass

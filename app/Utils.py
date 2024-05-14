@@ -351,3 +351,40 @@ class Notifier:
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
         except asyncio.TimeoutError:
             LOG.error(f"Timed out sending event {event} to webhooks.")
+
+
+def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
+    """
+    Load a JSON or JSON5 file and return the contents as a dictionary
+
+    Args:
+        file (str): File path
+        check_type (type): Type to check the loaded file against.
+
+    Returns tuple:
+        dict|list: Dictionary or list of the file contents. Empty dict if the file could not be loaded.
+        bool: True if the file was loaded successfully.
+        str: Error message if the file could not be loaded.
+    """
+    try:
+        with open(file) as json_data:
+            opts = json.load(json_data)
+
+        if check_type:
+            assert isinstance(opts, check_type)
+
+        return (opts, True, '',)
+    except Exception:
+        with open(file) as json_data:
+            from pyjson5 import load as json5_load
+            try:
+                opts = json5_load(json_data)
+
+                if check_type:
+                    assert isinstance(opts, check_type)
+
+                return (opts, True, '',)
+            except AssertionError:
+                return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.",)
+            except Exception as e:
+                return ({}, False, f'{e}',)

@@ -4,12 +4,11 @@ import asyncio
 from datetime import datetime
 import json
 import os
-import pathlib
 import random
 import time
 from Config import Config
 from DownloadQueue import DownloadQueue
-from Utils import ObjectSerializer, Notifier
+from Utils import ObjectSerializer, Notifier, load_file
 from aiohttp import web, client
 from aiohttp.web import Request, Response
 from Webhooks import Webhooks
@@ -129,8 +128,12 @@ class Main:
 
         if os.path.exists(os.path.join(self.config.config_path, 'tasks.json')):
             try:
-                with open(os.path.join(self.config.config_path, 'tasks.json'), 'r') as f:
-                    data['tasks'] = json.load(f)
+                (tasks, status, error) = load_file(os.path.join(self.config.config_path, 'tasks.json'), list)
+                if status is False:
+                    LOG.error(f"Could not load tasks file. Error message '{error}'.")
+                else:
+                    data['tasks'] = tasks
+
             except Exception as e:
                 pass
 
@@ -166,10 +169,12 @@ class Main:
             return
 
         try:
-            with open(tasks_file, 'r') as f:
-                tasks = json.load(f)
+            (tasks, status, error) = load_file(tasks_file, list)
+            if status is False:
+                raise Exception(error)
+
         except Exception as e:
-            LOG.error(f'Could not load tasks file [{tasks_file}]. Error message [{str(e)}]. Skipping Tasks.')
+            LOG.error(f"Could not load tasks file '{tasks_file}'. Error message '{str(e)}'. Skipping Tasks.")
             return
 
         for task in tasks:

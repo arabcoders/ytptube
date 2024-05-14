@@ -8,6 +8,7 @@ import coloredlogs
 from version import APP_VERSION
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
+from Utils import load_file
 
 
 class Config:
@@ -151,14 +152,12 @@ class Config:
         if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
             LOG.info(f'Loading yt-dlp custom options from "{optsFile}"')
 
-            try:
-                with open(optsFile) as json_data:
-                    opts = json.load(json_data)
-                assert isinstance(opts, dict)
-                self.ytdl_options.update(opts)
-            except (json.decoder.JSONDecodeError, AssertionError) as e:
-                LOG.error(f'JSON error in "{optsFile}": {e}')
+            (opts, status, error) = load_file(optsFile, dict)
+            if not status:
+                LOG.error(f'Error loading "{optsFile}": {error}')
                 sys.exit(1)
+
+            self.ytdl_options.update(opts)
         else:
             LOG.info(f'No custom yt-dlp options found in "{self.config_path}"')
 

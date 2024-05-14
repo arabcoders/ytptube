@@ -15,6 +15,7 @@ python-magic = ">=0.4.27"
 debugpy = ">=1.8.1"
 httpx = "*"
 async-timeout = "*"
+pyjson5 = "*"
 
 [dev-packages]
 
