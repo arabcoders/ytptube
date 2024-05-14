@@ -43,23 +43,23 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="hasFailed">
-        <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearFailed">
+      <div class="column is-half-mobile" v-if="hasIncomplete">
+        <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearIncomplete">
           <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-circle-xmark" />
             </span>
-            <span>Clear Failed</span>
+            <span>Clear Incomplete</span>
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="hasFailed">
-        <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueFailed">
+      <div class="column is-half-mobile" v-if="hasIncomplete">
+        <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueIncomplete">
           <span class="icon-text is-block">
             <span class="icon">
               <font-awesome-icon icon="fa-solid fa-rotate-right" />
             </span>
-            <span>Re-queue Failed</span>
+            <span>Re-queue Incomplete</span>
           </span>
         </button>
       </div>
@@ -144,7 +144,7 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished'">
-                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue failed download.'"
+                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue incomplete download.'"
                   @click="reQueueItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon">
@@ -267,7 +267,7 @@ const showMessage = (item) => {
   return item.msg.length > 0;
 }
 
-const hasFailed = computed(() => {
+const hasIncomplete = computed(() => {
   if (Object.keys(props.completed)?.length < 0) {
     return false;
   }
@@ -312,8 +312,8 @@ const clearCompleted = () => {
   emits('deleteItem', 'completed', keys);
 }
 
-const clearFailed = () => {
-  const state = confirm('Are you sure you want to clear all failed downloads?');
+const clearIncomplete = () => {
+  const state = confirm('Are you sure you want to clear all incomplete downloads?');
   if (false === state) {
     return;
   }
@@ -349,8 +349,8 @@ const setIcon = (item) => {
   return 'fa-solid fa-circle';
 }
 
-const requeueFailed = () => {
-  if (false === confirm('Are you sure you want to re-queue all failed downloads?')) {
+const requeueIncomplete = () => {
+  if (false === confirm('Are you sure you want to re-queue all incomplete downloads?')) {
     return false;
   }
 
