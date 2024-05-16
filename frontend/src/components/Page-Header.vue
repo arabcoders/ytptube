@@ -8,12 +8,18 @@
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
-        <button v-tooltip="'Show/Hide Add Form'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
+        <button v-tooltip="'Toggle Console'" class="button is-dark has-tooltip-bottom"
+          @click="$emit('toggleConsole')">
+          <font-awesome-icon icon="fa-solid fa-terminal" />
+        </button>
+      </div>
+      <div class="navbar-item">
+        <button v-tooltip="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
           <font-awesome-icon icon="fa-solid fa-plus" />
         </button>
       </div>
       <div class="navbar-item" v-if="config.tasks.length > 0">
-        <button v-tooltip="'Show/Hide Tasks'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
+        <button v-tooltip="'Toggle Tasks'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
           <font-awesome-icon icon="fa-solid fa-tasks" />
         </button>
       </div>

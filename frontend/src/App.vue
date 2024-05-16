@@ -1,11 +1,16 @@
 <template>
   <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks"
-    @reload="reloadWindow" />
-  <formAdd v-if="addForm" :config="config" @addItem="addItem" />
-  <pageTasks v-if="showTasks" :tasks="config.tasks" />
-  <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
-  <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
-    @playItem="playItem" />
+    @toggleConsole="showConsole = !showConsole" @reload="reloadWindow" />
+
+  <CliConsole v-if="showConsole" @runCommand="runCommand" :cli_output="cli_output" :isLoading="cli_isLoading"
+    @cli_clear="cli_output = []" />
+  <template v-else>
+    <formAdd v-if="addForm" :config="config" @addItem="addItem" />
+    <pageTasks v-if="showTasks" :tasks="config.tasks" />
+    <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
+    <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
+      @playItem="playItem" />
+  </template>
 
   <div class="modal is-active" v-if="video_link">
     <div class="modal-background"></div>
@@ -31,31 +36,43 @@ import VideoPlayer from './components/Video-Player'
 import { io } from "socket.io-client";
 import { useToast } from 'vue-toastification'
 import { useStorage, useEventBus } from '@vueuse/core'
+import CliConsole from './components/CLI-Console.vue'
 
-const toast = useToast();
-const bus = useEventBus('item_added', 'show_form', 'task_edit');
+const toast = useToast()
+const bus = useEventBus('item_added', 'show_form', 'task_edit')
 
 const config = reactive({
   isConnected: false,
   app: {},
   tasks: [],
-});
+})
 
-const downloading = reactive({});
-const completed = reactive({});
-const video_link = ref('');
+const socket = ref()
+const downloading = reactive({})
+const completed = reactive({})
+const video_link = ref('')
 const addForm = useStorage('addForm', true)
 const showTasks = useStorage('showTasks', false)
+const cli_output = ref([])
+const cli_isLoading = ref(false)
+const showConsole = ref(false)
+
+const runCommand = (args) => {
+  cli_output.value = [];
+  cli_isLoading.value = true;
+  console.log(args)
+  socket.value.emit('cli_post', args);
+}
 
 onMounted(() => {
-  const socket = io(process.env.VUE_APP_BASE_URL, {
+  socket.value = io(process.env.VUE_APP_BASE_URL, {
     path: document.location.pathname + 'socket.io',
-  });
+  })
 
-  socket.on('connect', () => config.isConnected = true);
-  socket.on('disconnect', () => config.isConnected = false);
+  socket.value.on('connect', () => config.isConnected = true);
+  socket.value.on('disconnect', () => config.isConnected = false);
 
-  socket.on('initial_data', stream => {
+  socket.value.on('initial_data', stream => {
     const initialData = JSON.parse(stream);
     config.app = initialData['config'];
     config.tasks = initialData['tasks'];
@@ -67,20 +84,20 @@ onMounted(() => {
     for (const id in initialData['done']) {
       completed[id] = initialData['done'][id];
     }
-  });
+  })
 
-  socket.on('added', stream => {
+  socket.value.on('added', stream => {
     const item = JSON.parse(stream);
     downloading[item._id] = item;
     toast.success(`Item queued successfully: ${downloading[item._id]?.title}`);
   });
 
-  socket.on('error', stream => {
+  socket.value.on('error', stream => {
     const [item, error] = JSON.parse(stream);
     toast.error(`${item?.id}: Error: ${error}`);
   });
 
-  socket.on('completed', stream => {
+  socket.value.on('completed', stream => {
     const item = JSON.parse(stream);
     if (item._id in downloading) {
       delete downloading[item._id];
@@ -88,7 +105,7 @@ onMounted(() => {
     completed[item._id] = item;
   });
 
-  socket.on('canceled', stream => {
+  socket.value.on('canceled', stream => {
     const id = JSON.parse(stream);
     if (false === (id in downloading)) {
       return
@@ -98,7 +115,7 @@ onMounted(() => {
     delete downloading[id];
   });
 
-  socket.on('cleared', stream => {
+  socket.value.on('cleared', stream => {
     const id = JSON.parse(stream);
     if (false === (id in completed)) {
       return;
@@ -107,14 +124,14 @@ onMounted(() => {
     delete completed[id];
   });
 
-  socket.on("updated", stream => {
+  socket.value.on("updated", stream => {
     const data = JSON.parse(stream);
     let dl = downloading[data._id] ?? {};
     data.deleting = dl?.deleting;
     downloading[data._id] = data;
   });
 
-  socket.on("update", stream => {
+  socket.value.on("update", stream => {
     const data = JSON.parse(stream);
     if (false === (data._id in completed)) {
       return;
@@ -122,6 +139,11 @@ onMounted(() => {
     completed[data._id] = data;
   });
 
+  socket.value.on('cli_close', () => cli_isLoading.value = false);
+  socket.value.on('cli_output', stream => {
+    console.log(stream)
+    cli_output.value.push(stream)
+  });
 });
 
 const deleteItem = (type, item) => {
