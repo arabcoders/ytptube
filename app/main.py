@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import os
 import random
+import selectors
 import time
 from Config import Config
 from DownloadQueue import DownloadQueue
@@ -491,6 +492,40 @@ class Main:
                     self.appLoader = f.read()
 
             return web.Response(text=self.appLoader, content_type='text/html', charset='utf-8', status=200)
+
+        @self.sio.event()
+        async def cli_post(sid, data):
+            if not data:
+                return
+
+            async def _read_stream(streamType, stream):
+                while True:
+                    line = await stream.readline()
+                    if line:
+                        await self.sio.emit('cli_output', {
+                            'type': streamType,
+                            'line': line.decode('utf-8')
+                        })
+                    else:
+                        break
+
+            proc = await asyncio.subprocess.create_subprocess_exec(
+                'yt-dlp', data,
+                cwd=self.config.download_path,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+
+            await asyncio.gather(
+                _read_stream('stdout', proc.stdout),
+                _read_stream('stderr', proc.stderr),
+            )
+
+            while proc.returncode is None:
+                await asyncio.sleep(0.1)
+
+            await self.sio.emit('cli_close', {'exitcode': proc.returncode})
 
         @self.sio.event()
         async def connect(sid, environ):

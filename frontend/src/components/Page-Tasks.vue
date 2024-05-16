@@ -1,14 +1,10 @@
 <template>
-  <div class="mt-3 is-unselectable">
-    <p class="title is-3">
-      <span class="icon-text">
-        <span class="icon">
-          <font-awesome-icon icon="fa-solid fa-tasks" />
-        </span>
-        <span>Tasks</span>
-      </span>
-    </p>
-  </div>
+  <h1 class="mt-3 is-size-3 is-clickable is-unselectable">
+    <span class="icon-text title is-4">
+      <span class="icon"><font-awesome-icon icon="fa-solid fa-tasks" /></span>
+      <span>Tasks</span>
+    </span>
+  </h1>
 
   <div class="columns is-multiline">
     <div class="column is-12">
