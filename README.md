@@ -122,7 +122,16 @@ There's an automatic nightly build of YTPTube which looks for a new version of y
 
 Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a UI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, and once that is working, importing the options that worked for you into `yt-dlp options` file.
 
-In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. Assuming your YTPTube container is called `YTPTube`, run the following on your Docker host to get a shell inside the container:
+In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. 
+
+
+#### Via HTTP
+
+Simply go to `Console` button in your navbar and directly use the yt-dlp command.
+
+#### Via CLI 
+
+Assuming your YTPTube container is called `ytptube`, run the following on your Docker host to get a shell inside the container:
 
 ```bash
 docker exec -ti ytptube bash
