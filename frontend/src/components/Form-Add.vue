@@ -50,7 +50,7 @@
               </div>
               <div class="control is-expanded">
                 <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
-                  :disabled="!config.isConnected">
+                  :disabled="!config.isConnected" list="directories">
               </div>
             </div>
           </div>
@@ -86,8 +86,8 @@
                   placeholder="Uses default format if non is given.">
               </div>
               <span class="subtitle is-6 has-text-info">
-                All format options can be found at <a class="has-text-danger" target="_blank" referrerpolicy="no-referrer"
-                  href="https://github.com/yt-dlp/yt-dlp#output-template">this page</a>.
+                All format options can be found at <a class="has-text-danger" target="_blank"
+                  referrerpolicy="no-referrer" href="https://github.com/yt-dlp/yt-dlp#output-template">this page</a>.
               </span>
             </div>
           </div>
@@ -140,6 +140,9 @@
         </div>
       </div>
     </div>
+    <datalist id="directories" v-if="config?.directories">
+      <option v-for="dir in config.directories" :key="dir" :value="dir" />
+    </datalist>
   </main>
 </template>
 

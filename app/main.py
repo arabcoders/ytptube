@@ -138,6 +138,10 @@ class Main:
             except Exception as e:
                 pass
 
+        # get directory listing
+        dlDir: str = self.config.download_path
+        data['directories'] = [ name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name)) ]
+
         await self.sio.emit('initial_data', self.serializer.encode(data), to=sid)
 
     async def version_check(self):

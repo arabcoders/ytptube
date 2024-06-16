@@ -76,6 +76,7 @@ onMounted(() => {
     const initialData = JSON.parse(stream);
     config.app = initialData['config'];
     config.tasks = initialData['tasks'];
+    config.directories = initialData['directories'];
 
     for (const id in initialData['queue']) {
       downloading[id] = initialData['queue'][id];
