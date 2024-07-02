@@ -76,7 +76,7 @@
     </div>
 
     <div class="columns is-multiline">
-      <div class="column is-6" v-for="item in sortCompleted" :key="item._id">
+      <LazyLoader :unrender="true" :min-height="210" class="column is-6" v-for="item in sortCompleted" :key="item._id">
         <div class="card" :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
@@ -188,7 +188,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </LazyLoader>
     </div>
 
     <div class="content has-text-centered" v-if="!hasItems">
@@ -216,6 +216,7 @@
 import { defineProps, computed, ref, watch, defineEmits } from 'vue';
 import moment from "moment";
 import { useStorage } from '@vueuse/core'
+import LazyLoader from './Lazy-Loader'
 
 const emits = defineEmits(['deleteItem', 'addItem', 'playItem']);
 

@@ -8,8 +8,7 @@
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
-        <button v-tooltip="'Toggle Console'" class="button is-dark has-tooltip-bottom"
-          @click="$emit('toggleConsole')">
+        <button v-tooltip="'Toggle Console'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleConsole')">
           <font-awesome-icon icon="fa-solid fa-terminal" />
         </button>
       </div>
@@ -96,7 +95,7 @@ const applyPreferredColorScheme = (scheme) => {
           }
         }
       } catch (e) {
-        console.debug(e);
+        // pass
       }
     }
   }
@@ -106,7 +105,7 @@ onMounted(() => {
   try {
     applyPreferredColorScheme(selectedTheme.value);
   } catch (e) {
-    console.debug(e);
+    // pass
   }
 })
 
@@ -114,7 +113,7 @@ watch(selectedTheme, (value) => {
   try {
     applyPreferredColorScheme(value);
   } catch (e) {
-    console.debug(e);
+    // pass
   }
 })
 
