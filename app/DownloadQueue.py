@@ -1,5 +1,6 @@
 import asyncio
 from email.utils import formatdate
+import json
 import logging
 import os
 import time
@@ -211,6 +212,12 @@ class DownloadQueue:
         ytdlp_config = ytdlp_config if ytdlp_config else {}
 
         LOG.info(f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
+        if isinstance(ytdlp_config, str):
+            try:
+                ytdlp_config = json.loads(ytdlp_config)
+            except Exception as e:
+                LOG.error(f"Unable to load '{ytdlp_config=}'. {str(e)}")
+                return {'status': 'error', 'msg': f"Failed to parse json yt-dlp config. {str(e)}"}
 
         already = set() if already is None else already
 
