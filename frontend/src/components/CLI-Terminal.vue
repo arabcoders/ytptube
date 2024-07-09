@@ -75,7 +75,7 @@ watch(() => props.isLoading, async value => {
   }
   command.value = ''
   await nextTick();
-  focusInput()
+  command_input.value.focus()
 }, { immediate: true })
 
 watch(() => props.cli_output, v => {
@@ -103,10 +103,6 @@ const reSizeTerminal = () => {
 }
 
 const runCommand = async () => {
-  if ('' === command.value) {
-    return
-  }
-
   if (!terminal.value) {
     terminal.value = new Terminal({
       fontSize: 14,
@@ -115,9 +111,7 @@ const runCommand = async () => {
       cursorStyle: 'underline',
       cols: 108,
       rows: 10,
-      buffer: 1000,
       disableStdin: true,
-      scrollback: 1000,
     })
     terminalFit.value = new FitAddon()
     terminal.value.loadAddon(terminalFit.value)
@@ -125,39 +119,24 @@ const runCommand = async () => {
     terminalFit.value.fit();
   }
 
-  if ('clear' === command.value) {
-    clearOutput(true)
-    return
-  }
-
   emitter('runCommand', command.value)
   terminal.value.writeln(`~ ${command.value}`)
 }
 
-const clearOutput = async (withCommand = false) => {
+const clearOutput = async () => {
   if (terminal.value) {
     terminal.value.clear()
   }
 
   emitter('cli_clear', {})
-  if (true === withCommand) {
-    command.value = ''
-  }
-  focusInput()
-}
-
-onMounted(async () => {
-  window.addEventListener('resize', reSizeTerminal);
-  focusInput()
-})
-
-
-const focusInput = () => {
-  if (!command_input.value) {
-    return
-  }
   command_input.value.focus()
 }
 
-onUnmounted(() => window.removeEventListener('resize', reSizeTerminal));
+onMounted(async () => {
+  window.addEventListener("resize", reSizeTerminal);
+  command_input.value.focus()
+
+})
+
+onUnmounted(() => window.removeEventListener("resize", reSizeTerminal));
 </script>

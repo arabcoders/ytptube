@@ -140,7 +140,7 @@ class Main:
 
         # get directory listing
         dlDir: str = self.config.download_path
-        data['directories'] = [ name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name)) ]
+        data['directories'] = [name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name))]
 
         await self.sio.emit('initial_data', self.serializer.encode(data), to=sid)
 
@@ -500,36 +500,55 @@ class Main:
         @self.sio.event()
         async def cli_post(sid, data):
             if not data:
+                await self.sio.emit('cli_close', {'exitcode': 0})
                 return
 
-            async def _read_stream(streamType, stream):
-                while True:
-                    line = await stream.readline()
-                    if line:
-                        await self.sio.emit('cli_output', {
-                            'type': streamType,
-                            'line': line.decode('utf-8')
-                        })
-                    else:
-                        break
+            proc = None
 
-            proc = await asyncio.subprocess.create_subprocess_exec(
-                'yt-dlp', data,
-                cwd=self.config.download_path,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
+            try:
+                async def _read_stream(streamType, stream):
+                    while True:
+                        line = await stream.readline()
+                        if line:
+                            await self.sio.emit('cli_output', {
+                                'type': streamType,
+                                'line': line.decode('utf-8')
+                            })
+                        else:
+                            break
 
-            await asyncio.gather(
-                _read_stream('stdout', proc.stdout),
-                _read_stream('stderr', proc.stderr),
-            )
+                LOG.info(f'CLI: {data}')
+                proc = await asyncio.subprocess.create_subprocess_exec(
+                    'yt-dlp', data,
+                    cwd=self.config.download_path,
+                    stdin=asyncio.subprocess.DEVNULL,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    env=os.environ.copy().update({
+                        "TERM": "xterm-256color",
+                        "LANG": "en_US.UTF-8",
+                        "SHELL": "/bin/bash",
+                        "LC_ALL": "en_US.UTF-8",
+                        "PWD": self.config.download_path,
+                    }),
+                )
 
-            while proc.returncode is None:
-                await asyncio.sleep(0.1)
+                await asyncio.gather(
+                    _read_stream('stdout', proc.stdout),
+                    _read_stream('stderr', proc.stderr),
+                )
 
-            await self.sio.emit('cli_close', {'exitcode': proc.returncode})
+                while proc.returncode is None:
+                    await asyncio.sleep(0.1)
+
+                await self.sio.emit('cli_close', {'exitcode': proc.returncode})
+            except Exception as e:
+                LOG.error(f'CLI Error: {str(e)}')
+                await self.sio.emit('cli_output', {
+                    'type': 'stderr',
+                    'line': str(e),
+                })
+                await self.sio.emit('cli_close', {'exitcode': -1})
 
         @self.sio.event()
         async def connect(sid, environ):
