@@ -1,6 +1,6 @@
 <template>
   <PageHeader :config="config" @toggleForm="addForm = !addForm" @toggleTasks="showTasks = !showTasks"
-    @toggleConsole="showConsole = !showConsole" @reload="reloadWindow" />
+    @toggleConsole="showConsole = !showConsole" @toggleConsole2="showConsole2 = !showConsole2" @reload="reloadWindow" />
 
   <CliConsole v-if="showConsole" @runCommand="runCommand" :cli_output="cli_output" :isLoading="cli_isLoading"
     @cli_clear="cli_output = []" />
@@ -36,7 +36,7 @@ import VideoPlayer from './components/Video-Player'
 import { io } from "socket.io-client";
 import { useToast } from 'vue-toastification'
 import { useStorage, useEventBus } from '@vueuse/core'
-import CliConsole from './components/CLI-Console.vue'
+import CliConsole from './components/CLI-Console'
 
 const toast = useToast()
 const bus = useEventBus('item_added', 'show_form', 'task_edit')
@@ -56,11 +56,11 @@ const showTasks = useStorage('showTasks', false)
 const cli_output = ref([])
 const cli_isLoading = ref(false)
 const showConsole = ref(false)
+const showConsole2 = ref(false)
 
 const runCommand = (args) => {
   cli_output.value = [];
   cli_isLoading.value = true;
-  console.log(args)
   socket.value.emit('cli_post', args);
 }
 
@@ -142,8 +142,8 @@ onMounted(() => {
 
   socket.value.on('cli_close', () => cli_isLoading.value = false);
   socket.value.on('cli_output', stream => {
-    console.log(stream)
     cli_output.value.push(stream)
+    console.log(stream);
   });
 });
 
@@ -212,7 +212,7 @@ const addItem = (item) => {
   });
 };
 
-const playItem = (item) => {
+const playItem = item => {
   let baseDir = 'm3u8/';
 
   if (item.folder) {

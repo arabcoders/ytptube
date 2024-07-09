@@ -51,7 +51,7 @@ import { useStorage } from '@vueuse/core'
 
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')());
 
-defineEmits(['toggleForm', 'toggleTasks'])
+defineEmits(['toggleForm', 'toggleTasks', 'toggleConsole', 'reload'])
 
 defineProps({
   config: {
