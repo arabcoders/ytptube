@@ -161,7 +161,7 @@ const archiveItem = (type, item) => {
     return
   }
   sendData('archive_item', item);
-  deleteItem(type, item);
+  deleteItem(type, item._id);
 }
 
 const deleteItem = (type, item) => {
