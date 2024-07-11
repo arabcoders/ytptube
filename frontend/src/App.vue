@@ -9,7 +9,7 @@
     <pageTasks v-if="showTasks" :tasks="config.tasks" />
     <DownloadingList :config="config" :queue="downloading" @deleteItem="deleteItem" />
     <PageCompleted :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
-      @playItem="playItem" />
+      @playItem="playItem" @archiveItem="archiveItem" />
   </template>
 
   <div class="modal is-active" v-if="video_link">
@@ -62,6 +62,18 @@ const runCommand = (args) => {
   cli_output.value = [];
   cli_isLoading.value = true;
   socket.value.emit('cli_post', args);
+}
+
+const sendData = (type, data, stringify = false) => {
+  if (!socket.value) {
+    return;
+  }
+
+  if (true === Boolean(stringify)) {
+    data = JSON.stringify(data);
+  }
+
+  socket.value.emit(type, data);
 }
 
 onMounted(() => {
@@ -141,11 +153,16 @@ onMounted(() => {
   });
 
   socket.value.on('cli_close', () => cli_isLoading.value = false);
-  socket.value.on('cli_output', stream => {
-    cli_output.value.push(stream)
-    console.log(stream);
-  });
+  socket.value.on('cli_output', s => cli_output.value.push(s));
 });
+
+const archiveItem = (type, item) => {
+  if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)){
+    return
+  }
+  sendData('archive_item', item);
+  deleteItem(type, item._id);
+}
 
 const deleteItem = (type, item) => {
   const items = []
@@ -234,5 +251,4 @@ bus.on((event, data) => {
     setTimeout(() => bus.emit('task_edit', data), 500);
   }
 });
-
 </script>

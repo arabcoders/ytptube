@@ -9,7 +9,7 @@ import selectors
 import time
 from Config import Config
 from DownloadQueue import DownloadQueue
-from Utils import ObjectSerializer, Notifier, load_file
+from Utils import ObjectSerializer, Notifier, isDownloaded, load_file
 from aiohttp import web, client
 from aiohttp.web import Request, Response
 from Webhooks import Webhooks
@@ -549,6 +549,25 @@ class Main:
                     'line': str(e),
                 })
                 await self.sio.emit('cli_close', {'exitcode': -1})
+
+        @self.sio.event()
+        async def archive_item(sid, data):
+            if not isinstance(data, dict) or 'url' not in data or not self.config.keep_archive:
+                return
+
+            file: str = self.config.ytdl_options.get('download_archive', None)
+
+            if not file:
+                return
+
+            exists, idDict = isDownloaded(file, data['url'])
+            if exists or 'archive_id' not in idDict or idDict['archive_id'] is None:
+                return
+
+            with open(file, 'a') as f:
+                f.write(f"{idDict['archive_id']}\n")
+
+            LOG.info(f'Archiving item: {data["url"]=}')
 
         @self.sio.event()
         async def connect(sid, environ):

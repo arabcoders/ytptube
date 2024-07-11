@@ -77,14 +77,21 @@
 
     <div class="columns is-multiline">
       <LazyLoader :unrender="true" :min-height="210" class="column is-6" v-for="item in sortCompleted" :key="item._id">
-        <div class="card" :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
-          <header class="card-header has-tooltip" v-tooltip="item.title">
-            <div class="card-header-title has-text-centered is-text-overflow is-block">
+        <div class="card"
+          :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
+          <header class="card-header has-tooltip">
+            <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
               <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
                 @click.prevent="$emit('playItem', item)">
                 {{ item.title }}
               </a>
               <span v-else>{{ item.title }}</span>
+            </div>
+            <div class="card-header-icon" v-if="item.filename">
+              <a :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]" class="has-text-primary"
+              v-tooltip="'Download item.'">
+                <span class="icon"><font-awesome-icon icon="fa-solid fa-download" /></span>
+              </a>
             </div>
           </header>
           <div class="card-content">
@@ -154,17 +161,6 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-half-mobile" v-if="item.filename">
-                <a class="button is-fullwidth is-primary" :href="makeDownload(config, item)"
-                  :download="item.filename?.split('/').reverse()[0]">
-                  <span class="icon-text is-block">
-                    <span class="icon">
-                      <font-awesome-icon icon="fa-solid fa-download" />
-                    </span>
-                    <span>Download</span>
-                  </span>
-                </a>
-              </div>
               <div class="column is-half-mobile">
                 <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'completed', item._id)">
                   <span class="icon-text is-block">
@@ -172,6 +168,17 @@
                       <font-awesome-icon icon="fa-solid fa-trash-can" />
                     </span>
                     <span>Remove</span>
+                  </span>
+                </a>
+              </div>
+              <div class="column is-half-mobile" v-if="config.app?.keep_archive && item.status != 'finished'">
+                <a class="button is-danger is-light is-fullwidth" v-tooltip="'Add link to archive.'"
+                  @click="$emit('archiveItem', 'completed', item)">
+                  <span class="icon-text is-block">
+                    <span class="icon">
+                      <font-awesome-icon icon="fa-solid fa-box-archive" />
+                    </span>
+                    <span>Archive</span>
                   </span>
                 </a>
               </div>
@@ -218,7 +225,7 @@ import moment from "moment";
 import { useStorage } from '@vueuse/core'
 import LazyLoader from './Lazy-Loader'
 
-const emits = defineEmits(['deleteItem', 'addItem', 'playItem']);
+const emits = defineEmits(['deleteItem', 'addItem', 'playItem', 'archiveItem']);
 
 const props = defineProps({
   completed: {

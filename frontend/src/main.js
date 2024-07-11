@@ -11,7 +11,8 @@ import {
   faBroom,
   faServer,
   faPowerOff,
-  faPaperPlane
+  faPaperPlane,
+  faBoxArchive
 } from '@fortawesome/free-solid-svg-icons'
 
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
@@ -24,7 +25,7 @@ import 'floating-vue/dist/style.css'
 library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload,
   faUpRightFromSquare, faSquare, faSquareCheck, faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ,
   faArrowDownAZ, faEject, faGlobe, faMoon, faSun, faTerminal, faBroom, faServer, faPowerOff, faBroom, faServer,
-  faPowerOff, faPaperPlane)
+  faPowerOff, faPaperPlane, faBoxArchive)
 const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
