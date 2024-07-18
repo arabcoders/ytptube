@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
 import asyncio
+import base64
 from datetime import datetime
 import json
 import os
 import random
-import selectors
 import time
 from Config import Config
 from DownloadQueue import DownloadQueue
 from Utils import ObjectSerializer, Notifier, isDownloaded, load_file
 from aiohttp import web, client
-from aiohttp.web import Request, Response
+from aiohttp.web import Request, Response, RequestHandler
 from Webhooks import Webhooks
 from player.M3u8 import M3u8
 from player.Segments import Segments
@@ -20,7 +20,6 @@ import logging
 import caribou
 import sqlite3
 from aiocron import crontab
-from aiohttp.helpers import parse_http_date
 import magic
 
 LOG = logging.getLogger('app')
@@ -91,6 +90,12 @@ class Main:
         self.serializer = ObjectSerializer()
 
         self.app = web.Application()
+
+        if self.config.auth_username and self.config.auth_password:
+            self.app.middlewares.append(
+                Main.basic_auth(self.config.auth_username, self.config.auth_password)
+            )
+
         self.sio = socketio.AsyncServer(cors_allowed_origins='*')
         self.sio.attach(self.app, socketio_path=self.config.url_prefix + 'socket.io')
 
@@ -119,6 +124,31 @@ class Main:
             access_log=None,
             print=lambda _: LOG.info(start)
         )
+
+    def basic_auth(username: str, password: str):
+        @web.middleware
+        async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            auth_header = request.headers.get('Authorization')
+
+            if auth_header is None:
+                return web.Response(status=401, headers={
+                    'WWW-Authenticate': 'Basic realm="Authorization Required."',
+                }, text='Unauthorized.')
+
+            auth_type, encoded_credentials = auth_header.split(' ', 1)
+
+            if 'basic' != auth_type.lower():
+                return web.Response(status=401, text="Unsupported authentication method.")
+
+            decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
+            user_name, _, user_password = decoded_credentials.partition(':')
+
+            if user_name != username or user_password != password:
+                return web.Response(status=401, text='Unauthorized (Invalid credentials).')
+
+            return await handler(request)
+
+        return middleware_handler
 
     async def connect(self, sid, _):
         data: dict = {

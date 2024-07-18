@@ -16,7 +16,8 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 * Multi-downloads support.
-
+* Basic Authentication support.
+    
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
 
@@ -75,9 +76,10 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_PORT__: Which port to bind to. Defaults to `8081`.
 * __YTP_LOG_LEVEL__: Log level. Defaults to `info`.
 * __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
-* __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
 * __YTP_STREAMER_VCODEC__: The video codec to use for in-browser streaming. Defaults to `libx264`.
 * __YTP_STREAMER_ACODEC__: The audio codec to use for in-browser streaming. Defaults to `aac`.
+* __YTP_AUTH_USERNAME__: Username for basic authentication. Defaults open for all
+* __YTP_AUTH_PASSWORD__: Password for basic authentication. Defaults open for all.
 
 ## Running behind a reverse proxy
 
@@ -284,6 +286,14 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
   ...
 ]
 ```
+
+## Authentication
+
+To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart the container.
+This will prompt the user to enter the username and password before accessing the web interface/API.
+As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
+
+`http://username:password@your_ytptube_url:port`
 
 # Social contact
 
