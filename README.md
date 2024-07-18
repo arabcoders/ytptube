@@ -76,7 +76,6 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_PORT__: Which port to bind to. Defaults to `8081`.
 * __YTP_LOG_LEVEL__: Log level. Defaults to `info`.
 * __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
-* __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
 * __YTP_STREAMER_VCODEC__: The video codec to use for in-browser streaming. Defaults to `libx264`.
 * __YTP_STREAMER_ACODEC__: The audio codec to use for in-browser streaming. Defaults to `aac`.
 * __YTP_AUTH_USERNAME__: Username for basic authentication. Defaults open for all
