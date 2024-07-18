@@ -1,15 +1,15 @@
-FROM node:lts-alpine as npm_builder
+FROM node:lts-alpine AS npm_builder
 
 WORKDIR /ytptube
 COPY frontend ./
 RUN npm ci && npm run build
 
-FROM python:3.11-alpine as python_builder
+FROM python:3.11-alpine AS python_builder
 
-ENV LANG C.UTF-8
-ENV LC_ALL C.UTF-8
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONFAULTHANDLER 1
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONFAULTHANDLER=1
 
 # Use sed to strip carriage-return characters from the entrypoint script (in case building on Windows)
 # Install dependencies

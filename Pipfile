@@ -16,6 +16,7 @@ debugpy = ">=1.8.1"
 httpx = "*"
 async-timeout = "*"
 pyjson5 = "*"
+curl_cffi = "*"
 
 [dev-packages]
 
