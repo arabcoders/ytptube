@@ -57,6 +57,9 @@ class Config:
     streamer_vcodec = 'libx264'
     streamer_acodec = 'aac'
 
+    auth_username: str = None
+    auth_password: str = None
+
     ytdlp_version: str = YTDLP_VERSION
 
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout',)
@@ -169,6 +172,9 @@ class Config:
                 self.config_path, 'archive.log')
 
         LOG.info(f'Keep temp: {self.temp_keep}')
+
+        if self.auth_password and self.auth_username:
+            LOG.warn(f"Basic Auth enabled with username: '{self.auth_username}'.")
 
         self.started = time.time()
 
