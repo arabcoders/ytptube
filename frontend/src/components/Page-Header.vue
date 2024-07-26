@@ -8,33 +8,33 @@
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
-        <button v-tooltip="'Toggle Console'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleConsole')">
+        <button v-tooltip.bottom="'Toggle Console'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleConsole')">
           <font-awesome-icon icon="fa-solid fa-terminal" />
         </button>
       </div>
       <div class="navbar-item">
-        <button v-tooltip="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
+        <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
           <font-awesome-icon icon="fa-solid fa-plus" />
         </button>
       </div>
       <div class="navbar-item" v-if="config.tasks.length > 0">
-        <button v-tooltip="'Toggle Tasks'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
+        <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
           <font-awesome-icon icon="fa-solid fa-tasks" />
         </button>
       </div>
       <div class="navbar-item">
-        <button v-tooltip="'Reload window'" class="button is-dark has-tooltip-bottom" @click="$emit('reload')">
+        <button v-tooltip.bottom="'Reload window'" class="button is-dark has-tooltip-bottom" @click="$emit('reload')">
           <font-awesome-icon icon="fa-solid fa-rotate-right" />
         </button>
       </div>
       <div class="navbar-item">
-        <button v-tooltip="'Switch to Light theme'" class="button is-dark has-tooltip-bottom"
+        <button v-tooltip.bottom="'Switch to Light theme'" class="button is-dark has-tooltip-bottom"
           @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">
           <span class="icon is-small is-left has-text-warning">
             <font-awesome-icon icon="fa-solid fa-sun" />
           </span>
         </button>
-        <button v-tooltip="'Switch to Dark theme'" class="button is-dark  has-tooltip-bottom"
+        <button v-tooltip.bottom="'Switch to Dark theme'" class="button is-dark  has-tooltip-bottom"
           @click="selectedTheme = 'dark'" v-if="selectedTheme == 'light'">
           <span class="icon is-small is-left">
             <font-awesome-icon icon="fa-solid fa-moon" />

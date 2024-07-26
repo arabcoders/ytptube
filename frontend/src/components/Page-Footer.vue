@@ -9,9 +9,10 @@
   <div class="columns mt-3 is-mobile">
     <div class="column is-8-mobile">
       <div class="has-text-left" v-if="app_version">
-        © {{ Year }} - <a v-tooltip="'App Version: ' + app_version" href="https://github.com/ArabCoders/ytptube"
-          target="_blank">YTPTube</a>
-        - <a v-tooltip="'yt-dlp Version: ' + ytdlp_version" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+        © {{ Year }} - <a href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</a>
+        <span class="is-hidden-mobile" v-if="app_version">&nbsp;({{ app_version }})</span>
+        - <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+        <span class="is-hidden-mobile" v-if="ytdlp_version">&nbsp;({{ ytdlp_version }})</span>
       </div>
     </div>
     <div class="column is-4-mobile" v-if="started > 1">
