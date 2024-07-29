@@ -8,35 +8,49 @@
     </div>
     <div class="navbar-end">
       <div class="navbar-item">
-        <button v-tooltip.bottom="'Toggle Console'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleConsole')">
-          <font-awesome-icon icon="fa-solid fa-terminal" />
+        <button v-tooltip.bottom="'Toggle Console'" class="button is-dark has-tooltip-bottom"
+          @click="$emit('toggleConsole')">
+          <span class="icon">
+            <font-awesome-icon icon="fa-solid fa-terminal" />
+          </span>
+          <span class="is-hidden-mobile">Console</span>
         </button>
       </div>
       <div class="navbar-item">
-        <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleForm')">
-          <font-awesome-icon icon="fa-solid fa-plus" />
+        <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
+          @click="$emit('toggleForm')">
+          <span class="icon">
+            <font-awesome-icon icon="fa-solid fa-plus" />
+          </span>
+          <span class="is-hidden-mobile">Add</span>
         </button>
       </div>
       <div class="navbar-item" v-if="config.tasks.length > 0">
-        <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom" @click="$emit('toggleTasks')">
-          <font-awesome-icon icon="fa-solid fa-tasks" />
+        <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
+          @click="$emit('toggleTasks')">
+          <span class="icon">
+            <font-awesome-icon icon="fa-solid fa-tasks" />
+          </span>
+          <span class="is-hidden-mobile">Tasks</span>
         </button>
       </div>
       <div class="navbar-item">
         <button v-tooltip.bottom="'Reload window'" class="button is-dark has-tooltip-bottom" @click="$emit('reload')">
-          <font-awesome-icon icon="fa-solid fa-rotate-right" />
+          <span class="icon">
+            <font-awesome-icon icon="fa-solid fa-rotate-right" />
+          </span>
         </button>
       </div>
       <div class="navbar-item">
         <button v-tooltip.bottom="'Switch to Light theme'" class="button is-dark has-tooltip-bottom"
           @click="selectedTheme = 'light'" v-if="selectedTheme == 'dark'">
-          <span class="icon is-small is-left has-text-warning">
+          <span class="icon has-text-warning">
             <font-awesome-icon icon="fa-solid fa-sun" />
           </span>
         </button>
         <button v-tooltip.bottom="'Switch to Dark theme'" class="button is-dark  has-tooltip-bottom"
           @click="selectedTheme = 'dark'" v-if="selectedTheme == 'light'">
-          <span class="icon is-small is-left">
+          <span class="icon">
             <font-awesome-icon icon="fa-solid fa-moon" />
           </span>
         </button>

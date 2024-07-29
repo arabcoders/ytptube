@@ -188,7 +188,10 @@ class Download:
         self.status_queue = self.manager.Queue()
 
         # Create temp dir for each download.
-        self.tempPath = os.path.join(self.temp_dir, hashlib.shake_256(self.info.id.encode('utf-8')).hexdigest(5))
+        self.tempPath = os.path.join(
+            self.temp_dir,
+            hashlib.shake_256(f"D-{self.info.id}".encode('utf-8')).hexdigest(5)
+        )
 
         if not os.path.exists(self.tempPath):
             os.makedirs(self.tempPath, exist_ok=True)

@@ -15,7 +15,7 @@
             <span class="icon"><font-awesome-icon icon="fa-solid fa-terminal" /></span> Terminal
           </p>
           <p class="card-header-icon">
-            <span class="icon" @click="clearOutput"><font-awesome-icon icon="fa-solid fa-broom" /></span>
+            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput"><font-awesome-icon icon="fa-solid fa-broom" /></span>
           </p>
         </header>
         <section class="card-content p-0 m-0">
@@ -26,11 +26,12 @@
             <div class="control is-expanded has-icons-left">
               <input type="text" class="input" v-model="command" placeholder="ls -la" autocomplete="off"
                 ref="command_input" @keydown.enter="runCommand" :disabled="props.isLoading" id="command">
-              <span class="icon is-left"><font-awesome-icon icon="fa-solid fa-terminal" /></span>
+              <span class="icon is-left"><font-awesome-icon icon="fa-solid fa-terminal"
+                  :spin="props.isLoading" /></span>
             </div>
             <p class="control">
               <button class="button is-primary" type="button" :disabled="props.isLoading || '' === command"
-                :class="{ 'is-loading': props.isLoading }" @click="runCommand">
+                @click="runCommand">
                 <span class="icon"><font-awesome-icon icon="fa-solid fa-paper-plane" /></span>
               </button>
             </p>
