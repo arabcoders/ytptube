@@ -157,7 +157,7 @@ onMounted(() => {
 });
 
 const archiveItem = (type, item) => {
-  if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)){
+  if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
     return
   }
   sendData('archive_item', item);
@@ -230,14 +230,14 @@ const addItem = (item) => {
 };
 
 const playItem = item => {
-  let baseDir = 'm3u8/';
+  let baseDir = 'player/playlist/';
 
   if (item.folder) {
     item.folder = item.folder.replace('#', '%23');
     baseDir += item.folder + '/';
   }
 
-  video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
+  video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename) + '.m3u8';
 };
 
 const reloadWindow = () => window.location.reload();
