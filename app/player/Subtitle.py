@@ -5,8 +5,21 @@ import os
 import tempfile
 from Utils import calcDownloadPath
 import pathlib
+import pysubs2
+from pysubs2.time import ms_to_times
+from pysubs2.formats.substation import SubstationFormat
 
 LOG = logging.getLogger('player.subtitle')
+
+
+def ms_to_timestamp(ms: int) -> str:
+    ms = max(0, ms)
+    h, m, s, ms = ms_to_times(ms)
+    cs = ms // 10
+    return f"{h:01d}:{m:02d}:{s:02d}.{cs:02d}"
+
+
+SubstationFormat.ms_to_timestamp = ms_to_timestamp
 
 
 class Subtitle:
@@ -30,37 +43,15 @@ class Subtitle:
 
             return subData
 
-        tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f'player.subtitle.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')
+        subs = pysubs2.load(path=str(rFile))
 
-        if not os.path.exists(tmpFile):
-            os.symlink(realFile, tmpFile)
+        if len(subs.events) < 1:
+            raise Exception(f"No subtitle events were found in '{rFile}'.")
 
-        fargs = []
-        fargs.append('-xerror')
-        fargs.append('-hide_banner')
-        fargs.append('-loglevel')
-        fargs.append('error')
-        fargs.append('-i')
-        fargs.append(f'file:{tmpFile}')
-        fargs.append('-f')
-        fargs.append('webvtt')
-        fargs.append('pipe:1')
+        if len(subs.events) < 2:
+            return subs.to_string('vtt')
 
-        LOG.debug(f"Converting '{realFile}' into 'webvtt'. " + " ".join(fargs))
+        if subs.events[0].end == subs.events[len(subs.events)-1].end:
+            subs.events.pop(0)
 
-        proc = await asyncio.subprocess.create_subprocess_exec(
-            'ffmpeg', *fargs,
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-
-        data, err = await proc.communicate()
-
-        if 0 != proc.returncode:
-            msg = f"Failed to convert '{realFile}' into 'webvtt'."
-            LOG.error(f'{msg} {err.decode("utf-8")}.')
-            raise Exception(msg)
-
-        return data
+        return subs.to_string('vtt')

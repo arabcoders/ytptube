@@ -6,7 +6,7 @@ import tempfile
 from Utils import calcDownloadPath
 from Config import Config
 
-LOG = logging.getLogger('segments')
+LOG = logging.getLogger('player.segments')
 
 
 class Segments:
