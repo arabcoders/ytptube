@@ -17,6 +17,7 @@ httpx = "*"
 async-timeout = "*"
 pyjson5 = "*"
 curl_cffi = "*"
+pysubs2 = "*"
 
 [dev-packages]
 
