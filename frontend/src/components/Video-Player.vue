@@ -1,3 +1,21 @@
+<style>
+:root {
+  --plyr-captions-background: rgba(0, 0, 0, 0.6);
+  --plyr-captions-text-color: #f3db4d;
+  --webkit-text-track-display: none;
+}
+
+.plyr__caption {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+  font-size: 140%;
+  font-weight: bold;
+}
+
+.plyr--full-ui ::-webkit-media-text-track-container {
+  display: var(--webkit-text-track-display);
+}
+</style>
+
 <template>
   <video ref="video" :poster="previewImageLink" :controls="isControls" :title="title">
     <source :src="link" type="application/x-mpegURL" />
@@ -32,35 +50,43 @@ const props = defineProps({
 const emitter = defineEmits(['closeModel'])
 
 const video = ref(null)
-const player = ref(null)
-const hls = ref(null)
-let eventHandler = null
+let player = null;
+let hls = null;
+
+const eventFunc = e => {
+  if (e.key === 'Escape') {
+    emitter('closeModel')
+  }
+}
 
 onMounted(() => {
+  if (/(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)) {
+    document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
+  }
+
   prepareVideoPlayer()
-  eventHandler = window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      emitter('closeModel')
-    }
-  })
+  window.addEventListener('keydown', eventFunc)
 })
 
-onUpdated(() => {
-  prepareVideoPlayer()
-})
+onUpdated(() => prepareVideoPlayer())
 
 onUnmounted(() => {
-  player.value.destroy()
-  hls.value.destroy()
-  window.removeEventListener('keydown', eventHandler)
+  if (player) {
+    player.destroy()
+  }
+  if (hls) {
+    hls.destroy()
+  }
+  window.removeEventListener('keydown', eventFunc)
 })
 
 const prepareVideoPlayer = () => {
-  player.value = new Plyr(video.value, {
+  player = new Plyr(video.value, {
+    debug: false,
     clickToPlay: true,
     keyboard: { focused: true, global: true },
     controls: [
-      'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'airplay', 'fullscreen'
+      'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
     ],
     fullscreen: {
       enabled: true,
@@ -69,14 +95,17 @@ const prepareVideoPlayer = () => {
     },
     storage: {
       enabled: true,
-      key: 'plyr_volume'
+      key: 'plyr'
     },
     mediaMetadata: {
-      title: props.title.value
+      title: props.title
+    },
+    captions: {
+      update: true,
     }
   });
 
-  hls.value = new Hls({
+  hls = new Hls({
     debug: false,
     enableWorker: true,
     lowLatencyMode: true,
@@ -84,13 +113,10 @@ const prepareVideoPlayer = () => {
     fragLoadingTimeOut: 200000,
   });
 
-  hls.value.loadSource(props.link)
+  hls.loadSource(props.link)
 
   if (video.value) {
-    hls.value.attachMedia(video.value)
+    hls.attachMedia(video.value)
   }
 }
-
 </script>
-
-<style></style>

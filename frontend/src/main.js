@@ -30,15 +30,17 @@ const app = createApp(App);
 
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
 app.config.globalProperties.makeDownload = (config, item, base = 'download') => {
-  let baseDir = `${base}/`;
+  let baseDir = 'download' === base ? `${base}/` : 'player/playlist/';
 
   if (item.folder) {
     item.folder = item.folder.replace('#', '%23');
     baseDir += item.folder + '/';
   }
 
-  return config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
+  let url = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
+  return ('m3u8' === base) ? url + '.m3u8' : url;
 }
+
 app.config.globalProperties.formatBytes = (bytes, decimals = 2) => {
   if (!+bytes) return '0 Bytes'
 

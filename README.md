@@ -7,7 +7,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since then it went under heavy changes, and it supports many new features.
 
 # YTPTube Features.
-* A built in video player that can play any video file regardless of the format.
+* A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
 * New `/add_batch` endpoint that allow multiple links to be sent.
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
@@ -17,6 +17,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 * Multi-downloads support.
 * Basic Authentication support.
+* Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
     
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.

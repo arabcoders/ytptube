@@ -13,8 +13,10 @@ from Utils import ObjectSerializer, Notifier, isDownloaded, load_file
 from aiohttp import web, client
 from aiohttp.web import Request, Response, RequestHandler
 from Webhooks import Webhooks
+from player.Playlist import Playlist
 from player.M3u8 import M3u8
 from player.Segments import Segments
+from player.Subtitle import Subtitle
 import socketio
 import logging
 import caribou
@@ -451,18 +453,53 @@ class Main:
 
             return web.json_response({"status": "stopped" if status else "in_error_state"})
 
-        @self.routes.get(self.config.url_prefix + 'm3u8/{file:.*}')
-        async def m3u8(request: Request) -> Response:
+        @self.routes.get(self.config.url_prefix + 'player/playlist/{file:.*}.m3u8')
+        async def playlist(request: Request) -> Response:
             file: str = request.match_info.get('file')
 
             if not file:
                 raise web.HTTPBadRequest(reason='file is required.')
 
             try:
-                text = await M3u8(url=f"{self.config.url_host}{self.config.url_prefix}").make_stream(
+                text = await Playlist(url=f"{self.config.url_host}{self.config.url_prefix}").make(
                     download_path=self.config.download_path,
                     file=file
                 )
+            except Exception as e:
+                return web.HTTPNotFound(reason=str(e))
+
+            return web.Response(text=text, headers={
+                'Content-Type': 'application/x-mpegURL',
+                'Cache-Control': 'no-cache',
+                'Access-Control-Max-Age': "300",
+            })
+
+        @self.routes.get(self.config.url_prefix + 'player/m3u8/{mode}/{file:.*}.m3u8')
+        async def m3u8(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+            mode: str = request.match_info.get('mode')
+
+            if mode not in ['video', 'subtitle']:
+                raise web.HTTPBadRequest(reason='Only video and subtitle modes are supported.')
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required.')
+
+            duration = request.query.get('duration', None)
+
+            if 'subtitle' in mode:
+                if not duration:
+                    raise web.HTTPBadRequest(reason='duration is required.')
+
+                duration = float(duration)
+
+            try:
+                cls = M3u8(f"{self.config.url_host}{self.config.url_prefix}")
+                if 'subtitle' in mode:
+                    text = await cls.make_subtitle(self.config.download_path, file, duration)
+                else:
+                    text = await cls.make_stream(self.config.download_path, file)
+
             except Exception as e:
                 return web.HTTPNotFound(reason=str(e))
 
@@ -475,7 +512,7 @@ class Main:
                 }
             )
 
-        @self.routes.get(self.config.url_prefix + 'segments/{segment:\d+}/{file:.*}')
+        @self.routes.get(self.config.url_prefix + 'player/segments/{segment:\d+}/{file:.*}.ts')
         async def segments(request: Request) -> Response:
             file: str = request.match_info.get('file')
             segment: int = request.match_info.get('segment')
@@ -505,6 +542,36 @@ class Main:
                 body=await segmenter.stream(path=self.config.download_path, file=file),
                 headers={
                     'Content-Type': 'video/mpegts',
+                    'X-Accel-Buffering': 'no',
+                    'Access-Control-Allow-Origin': '*',
+                    'Pragma': 'public',
+                    'Cache-Control': f'public, max-age={time.time() + 31536000}',
+                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
+                        os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
+                    ),
+                    'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
+                }
+            )
+
+        @self.routes.get(self.config.url_prefix + 'player/subtitle/{file:.*}.vtt')
+        async def subtitles(request: Request) -> Response:
+            file: str = request.match_info.get('file')
+
+            if request.if_modified_since:
+                file_path = os.path.join(self.config.download_path, file)
+                lastMod = time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
+                    os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
+                )
+                if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
+                    return web.Response(status=304, headers={'Last-Modified': lastMod})
+
+            if not file:
+                raise web.HTTPBadRequest(reason='file is required')
+
+            return web.Response(
+                body=await Subtitle().make(path=self.config.download_path, file=file),
+                headers={
+                    'Content-Type': 'text/vtt; charset=UTF-8',
                     'X-Accel-Buffering': 'no',
                     'Access-Control-Allow-Origin': '*',
                     'Pragma': 'public',

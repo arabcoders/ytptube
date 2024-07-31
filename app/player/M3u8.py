@@ -33,11 +33,13 @@ class M3u8:
 
         duration: float = float(ffprobe.metadata.get('duration'))
 
-        m3u8 = "#EXTM3U\n"
-        m3u8 += "#EXT-X-VERSION:3\n"
-        m3u8 += f"#EXT-X-TARGETDURATION:{int(self.duration)}\n"
-        m3u8 += "#EXT-X-MEDIA-SEQUENCE:0\n"
-        m3u8 += "#EXT-X-PLAYLIST-TYPE:VOD\n"
+        m3u8 = []
+
+        m3u8.append("#EXTM3U")
+        m3u8.append("#EXT-X-VERSION:3")
+        m3u8.append(f"#EXT-X-TARGETDURATION:{int(self.duration)}")
+        m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
+        m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
 
         segmentSize: float = '{:.6f}'.format(self.duration)
         splits: int = math.ceil(duration / self.duration)
@@ -54,26 +56,36 @@ class M3u8:
 
         for i in range(splits):
             if (i + 1) == splits:
-                segmentParams.update({'sd': '{:.6f}'.format(duration - (i * self.duration))})
-                m3u8 += f"#EXTINF:{segmentParams['sd']}, nodesc\n"
-            else:
-                m3u8 += f"#EXTINF:{segmentSize}, nodesc\n"
+                segmentSize = '{:.6f}'.format(duration - (i * self.duration))
+                segmentParams.update({'sd': segmentSize})
 
-            m3u8 += f"{self.url}segments/{i}/{quote(file)}"
+            m3u8.append(f"#EXTINF:{segmentSize},")
+
+            url = f"{self.url}player/segments/{i}/{quote(file)}.ts"
             if len(segmentParams) > 0:
-                m3u8 += '?'+'&'.join([f"{key}={value}" for key, value in segmentParams.items()])
-            m3u8 += "\n"
+                url += '?'+'&'.join([f"{key}={value}" for key, value in segmentParams.items()])
 
-        m3u8 += "#EXT-X-ENDLIST\n"
+            m3u8.append(url)
 
-        return m3u8
+        m3u8.append("#EXT-X-ENDLIST")
 
-    def parseDuration(self, duration: str):
-        if duration.find(':') > -1:
-            duration = duration.split(':')
-            duration.reverse()
-            duration = sum([float(duration[i]) * (60 ** i) for i in range(len(duration))])
-        else:
-            duration = float(duration)
+        return '\n'.join(m3u8)
 
-        return duration
+    async def make_subtitle(self, download_path: str, file: str, duration: float):
+        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
+
+        if not os.path.exists(realFile):
+            raise Exception(f"File '{realFile}' does not exist.")
+
+        m3u8 = []
+
+        m3u8.append("#EXTM3U")
+        m3u8.append("#EXT-X-VERSION:3")
+        m3u8.append(f"#EXT-X-TARGETDURATION:{int(self.duration)}")
+        m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
+        m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
+        m3u8.append(f"#EXTINF:{duration},")
+        m3u8.append(f"{self.url}player/subtitle/{quote(file)}.vtt")
+        m3u8.append("#EXT-X-ENDLIST")
+
+        return '\n'.join(m3u8)
