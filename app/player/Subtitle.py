@@ -36,7 +36,7 @@ class Subtitle:
         if not rFile.suffix in self.allowedExtensions:
             raise Exception(f"File '{file}' subtitle type is not supported.")
 
-        if rFile.suffix is ".vtt":
+        if rFile.suffix == ".vtt":
             subData = ''
             with open(realFile, 'r') as f:
                 subData = f.read()

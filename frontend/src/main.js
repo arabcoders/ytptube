@@ -28,6 +28,14 @@ library.add(faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleC
   faPowerOff, faPaperPlane, faBoxArchive)
 const app = createApp(App);
 
+app.config.globalProperties.encodePath = item => {
+  if (!item) {
+    return item
+  }
+
+  return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/').replace(/#/g, '%23')
+}
+
 app.config.globalProperties.capitalize = s => s && s[0].toUpperCase() + s.slice(1);
 app.config.globalProperties.makeDownload = (config, item, base = 'download') => {
   let baseDir = 'download' === base ? `${base}/` : 'player/playlist/';
@@ -37,7 +45,7 @@ app.config.globalProperties.makeDownload = (config, item, base = 'download') => 
     baseDir += item.folder + '/';
   }
 
-  let url = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename);
+  let url = config.app.url_host + app.config.globalProperties.encodePath(config.app.url_prefix + baseDir + item.filename);
   return ('m3u8' === base) ? url + '.m3u8' : url;
 }
 
@@ -52,6 +60,8 @@ app.config.globalProperties.formatBytes = (bytes, decimals = 2) => {
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
+
+app.provide('makeDownload', app.config.globalProperties.makeDownload)
 
 app.use(Toast, {
   transition: "Vue-Toastification__bounce",
