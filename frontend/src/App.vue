@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, inject } from 'vue'
 import PageHeader from './components/Page-Header'
 import formAdd from './components/Form-Add'
 import pageTasks from './components/Page-Tasks'
@@ -46,6 +46,8 @@ const config = reactive({
   app: {},
   tasks: [],
 })
+
+const makeDownload = inject('makeDownload')
 
 const socket = ref()
 const downloading = reactive({})
@@ -229,16 +231,7 @@ const addItem = (item) => {
   });
 };
 
-const playItem = item => {
-  let baseDir = 'player/playlist/';
-
-  if (item.folder) {
-    item.folder = item.folder.replace('#', '%23');
-    baseDir += item.folder + '/';
-  }
-
-  video_link.value = config.app.url_host + config.app.url_prefix + baseDir + encodeURIComponent(item.filename) + '.m3u8';
-};
+const playItem = item => video_link.value = makeDownload(config, item, 'm3u8');
 
 const reloadWindow = () => window.location.reload();
 
