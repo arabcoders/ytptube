@@ -17,7 +17,7 @@
 </style>
 
 <template>
-  <video ref="video" :poster="previewImageLink" :controls="isControls" :title="title">
+  <video ref="video" :poster="previewImageLink" :controls="isControls" :title="title" playsinline>
     <source :src="link" type="application/x-mpegURL" />
   </video>
 </template>
