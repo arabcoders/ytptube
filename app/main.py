@@ -664,6 +664,19 @@ class Main:
             with open(file, 'a') as f:
                 f.write(f"{idDict['archive_id']}\n")
 
+            manual_archive = self.config.manual_archive
+            if manual_archive:
+                previouslyArchived = False
+                with open(manual_archive, 'r') as f:
+                    for line in f.readlines():
+                        if idDict['archive_id'] in line:
+                            previouslyArchived = True
+                            break
+
+                if not previouslyArchived:
+                    with open(manual_archive, 'a') as f:
+                        f.write(f"{idDict['archive_id']} - at: {datetime.now().isoformat()}\n")
+
             LOG.info(f'Archiving item: {data["url"]=}')
 
         @self.sio.event()
