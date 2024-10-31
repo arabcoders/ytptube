@@ -18,6 +18,7 @@ class Config:
     temp_path: str = '{download_path}'
     temp_keep: bool = False
     db_file: str = '{config_path}/ytptube.db'
+    manual_archive: str = '{config_path}/archive.manual.log'
 
     url_host: str = ''
     url_prefix: str = ''
