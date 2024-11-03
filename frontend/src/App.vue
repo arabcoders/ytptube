@@ -16,7 +16,7 @@
     <div class="modal-background"></div>
     <div class="modal-content">
       <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
-        class="is-fullwidth" @closeModel="video_link = ''" />
+        :title="video_title" class="is-fullwidth" @closeModel="video_link = ''; video_title = ''" />
     </div>
     <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
   </div>
@@ -53,6 +53,7 @@ const socket = ref()
 const downloading = reactive({})
 const completed = reactive({})
 const video_link = ref('')
+const video_title = ref('')
 const addForm = useStorage('addForm', true)
 const showTasks = useStorage('showTasks', false)
 const cli_output = ref([])
@@ -231,7 +232,10 @@ const addItem = (item) => {
   });
 };
 
-const playItem = item => video_link.value = makeDownload(config, item, 'm3u8');
+const playItem = item => {
+  video_link.value = makeDownload(config, item, 'm3u8');
+  video_title.value = item.title;
+}
 
 const reloadWindow = () => window.location.reload();
 

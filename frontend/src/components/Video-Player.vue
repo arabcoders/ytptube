@@ -77,7 +77,13 @@ onUnmounted(() => {
   if (hls) {
     hls.destroy()
   }
+
   window.removeEventListener('keydown', eventFunc)
+
+  if (props.title) {
+    window.document.title = 'YTPTube'
+  }
+
 })
 
 const prepareVideoPlayer = () => {
@@ -97,6 +103,7 @@ const prepareVideoPlayer = () => {
       enabled: true,
       key: 'plyr'
     },
+    title: props.title,
     mediaMetadata: {
       title: props.title
     },
@@ -118,5 +125,11 @@ const prepareVideoPlayer = () => {
   if (video.value) {
     hls.attachMedia(video.value)
   }
+
+  if (props.title) {
+    window.document.title = `YTPTube - Playing: ${props.title}`
+  }
+
 }
+
 </script>
