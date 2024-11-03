@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 import json
 import logging
 import os
+import pathlib
+import re
 from typing import Any
 import yt_dlp
 from socketio import AsyncServer
@@ -388,3 +390,32 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.",)
             except Exception as e:
                 return ({}, False, f'{e}',)
+
+
+def checkId(basePath: str, file: pathlib.Path) -> bool | str:
+    """
+    Check if we are able to get an id from the file name.
+    if so check if any video file with the same id exists.
+
+    :param basePath: Base path to strip.
+    :param file: File to check.
+
+    :return: False if no id found, otherwise the id.
+    """
+
+    match = re.search(r'(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])', file.stem, re.IGNORECASE)
+    if not match:
+        return False
+
+    id = match.groupdict().get('id')
+
+    for f in file.parent.iterdir():
+        if id not in f.stem:
+            continue
+
+        if f.suffix not in ('.mp4', '.mkv', '.webm', '.m4v', '.m4a', '.mp3', '.aac', '.ogg',):
+            continue
+
+        return f.absolute()
+
+    return False

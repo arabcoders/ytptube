@@ -6,6 +6,7 @@ from Utils import calcDownloadPath
 import pathlib
 from .ffprobe import FFProbe
 from .Subtitle import Subtitle
+from aiohttp.web import Response
 
 
 class Playlist:
@@ -14,11 +15,17 @@ class Playlist:
     def __init__(self, url: str):
         self.url = url
 
-    async def make(self, download_path: str, file: str):
+    async def make(self, download_path: str, file: str) -> str | Response:
         rFile = pathlib.Path(calcDownloadPath(basePath=download_path, folder=file, createPath=False))
 
         if not rFile.exists():
-            raise Exception(f"File '{rFile}' does not exist.")
+            possibleFile = self.checkId(download_path, rFile)
+            if not possibleFile:
+                raise Exception(f"File '{rFile}' does not exist.")
+
+            return Response(status=302, headers={
+                'Location': f"{self.url}player/playlist/{quote(possibleFile.replace(download_path, '').strip('/'))}.m3u8"
+            })
 
         try:
             ffprobe = FFProbe(rFile)

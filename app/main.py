@@ -465,6 +465,8 @@ class Main:
                     download_path=self.config.download_path,
                     file=file
                 )
+                if isinstance(text, Response):
+                    return text
             except Exception as e:
                 return web.HTTPNotFound(reason=str(e))
 
