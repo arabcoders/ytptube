@@ -41,7 +41,7 @@ app.config.globalProperties.makeDownload = (config, item, base = 'download') => 
   let baseDir = 'download' === base ? `${base}/` : 'player/playlist/';
 
   if (item.folder) {
-    item.folder = item.folder.replace('#', '%23');
+    item.folder = item.folder.replace(/#/g, '%23');
     baseDir += item.folder + '/';
   }
 

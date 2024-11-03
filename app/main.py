@@ -465,6 +465,8 @@ class Main:
                     download_path=self.config.download_path,
                     file=file
                 )
+                if isinstance(text, Response):
+                    return text
             except Exception as e:
                 return web.HTTPNotFound(reason=str(e))
 
@@ -519,9 +521,11 @@ class Main:
             sd: int = request.query.get('sd')
             vc: int = int(request.query.get('vc', 0))
             ac: int = int(request.query.get('ac', 0))
+            file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
+            if not file_path.startswith(self.config.download_path):
+                raise web.HTTPBadRequest(reason='Invalid file path.')
 
             if request.if_modified_since:
-                file_path = os.path.join(self.config.download_path, file)
                 if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
                     return web.Response(status=304)
 
@@ -546,9 +550,7 @@ class Main:
                     'Access-Control-Allow-Origin': '*',
                     'Pragma': 'public',
                     'Cache-Control': f'public, max-age={time.time() + 31536000}',
-                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
-                        os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
-                    ),
+                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
                     'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
                 }
             )
@@ -556,12 +558,13 @@ class Main:
         @self.routes.get(self.config.url_prefix + 'player/subtitle/{file:.*}.vtt')
         async def subtitles(request: Request) -> Response:
             file: str = request.match_info.get('file')
+            file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
+            if not file_path.startswith(self.config.download_path):
+                raise web.HTTPBadRequest(reason='Invalid file path.')
 
             if request.if_modified_since:
-                file_path = os.path.join(self.config.download_path, file)
                 lastMod = time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
-                    os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
-                )
+                    os.path.getmtime(file_path)).timetuple())
                 if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
                     return web.Response(status=304, headers={'Last-Modified': lastMod})
 
@@ -576,9 +579,7 @@ class Main:
                     'Access-Control-Allow-Origin': '*',
                     'Pragma': 'public',
                     'Cache-Control': f'public, max-age={time.time() + 31536000}',
-                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
-                        os.path.getmtime(os.path.join(self.config.download_path, file))).timetuple()
-                    ),
+                    'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
                     'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
                 }
             )
