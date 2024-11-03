@@ -2,7 +2,7 @@ import glob
 import pathlib
 import re
 from urllib.parse import quote
-from Utils import calcDownloadPath
+from Utils import calcDownloadPath, checkId
 import pathlib
 from .ffprobe import FFProbe
 from .Subtitle import Subtitle
@@ -19,7 +19,7 @@ class Playlist:
         rFile = pathlib.Path(calcDownloadPath(basePath=download_path, folder=file, createPath=False))
 
         if not rFile.exists():
-            possibleFile = self.checkId(download_path, rFile)
+            possibleFile = checkId(download_path, rFile)
             if not possibleFile:
                 raise Exception(f"File '{rFile}' does not exist.")
 
