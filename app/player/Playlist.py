@@ -24,7 +24,7 @@ class Playlist:
                 raise Exception(f"File '{rFile}' does not exist.")
 
             return Response(status=302, headers={
-                'Location': f"{self.url}player/playlist/{quote(possibleFile.replace(download_path, '').strip('/'))}.m3u8"
+                'Location': f"{self.url}player/playlist/{quote(str(possibleFile).replace(download_path, '').strip('/'))}.m3u8"
             })
 
         try:
