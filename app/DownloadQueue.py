@@ -183,7 +183,7 @@ class DownloadQueue:
             }
         elif eventType.startswith('url'):
             return await self.add(
-                entry=entry.get('url'),
+                url=entry.get('url'),
                 quality=quality,
                 format=format,
                 folder=folder,
