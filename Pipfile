@@ -17,8 +17,8 @@ async-timeout = "*"
 pyjson5 = "*"
 curl_cffi = "*"
 pysubs2 = "*"
-yt-dlp = "*"
 regex = "*"
+yt-dlp = "*"
 
 [dev-packages]
 
