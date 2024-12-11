@@ -15,7 +15,8 @@
             <span class="icon"><font-awesome-icon icon="fa-solid fa-terminal" /></span> Terminal
           </p>
           <p class="card-header-icon">
-            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput"><font-awesome-icon icon="fa-solid fa-broom" /></span>
+            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput"><font-awesome-icon
+                icon="fa-solid fa-broom" /></span>
           </p>
         </header>
         <section class="card-content p-0 m-0">
@@ -23,16 +24,23 @@
         </section>
         <section class="card-content p-1 m-1">
           <div class="field is-grouped">
-            <div class="control is-expanded has-icons-left">
+            <div class="control">
+              <span class="icon-text input is-unselectable">
+                <span class="icon"><font-awesome-icon icon="fa-solid fa-terminal" /></span>
+                <span>yt-dlp</span>
+              </span>
+            </div>
+            <div class="control is-expanded">
               <input type="text" class="input" v-model="command" placeholder="ls -la" autocomplete="off"
                 ref="command_input" @keydown.enter="runCommand" :disabled="props.isLoading" id="command">
-              <span class="icon is-left"><font-awesome-icon icon="fa-solid fa-terminal"
-                  :spin="props.isLoading" /></span>
             </div>
             <p class="control">
               <button class="button is-primary" type="button" :disabled="props.isLoading || '' === command"
                 @click="runCommand">
-                <span class="icon"><font-awesome-icon icon="fa-solid fa-paper-plane" /></span>
+                <span class="icon">
+                  <font-awesome-icon icon="fa-solid fa-spinner" spin v-if="props.isLoading" />
+                  <font-awesome-icon icon="fa-solid fa-paper-plane" v-else />
+                </span>
               </button>
             </p>
           </div>
@@ -132,7 +140,8 @@ const runCommand = async () => {
   }
 
   emitter('runCommand', command.value)
-  terminal.value.writeln(`~ ${command.value}`)
+  terminal.value.writeln(`user@YTPTube ~`)
+  terminal.value.writeln(`$ yt-dlp ${command.value}`)
 }
 
 const clearOutput = async (withCommand = false) => {

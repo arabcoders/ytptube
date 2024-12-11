@@ -4,8 +4,10 @@ import argparse
 import asyncio
 import base64
 from datetime import datetime
+import errno
 import json
 import os
+import pty
 import random
 import shlex
 import time
@@ -603,46 +605,80 @@ class Main:
                 await self.sio.emit('cli_close', {'exitcode': 0})
                 return
 
-            proc = None
             try:
-                async def _read_stream(streamType, stream):
-                    while True:
-                        line = await stream.readline()
-                        if line:
-                            await self.sio.emit('cli_output', {
-                                'type': streamType,
-                                'line': line.decode('utf-8')
-                            })
-                        else:
-                            break
-
                 LOG.info(f'CLI: {data}')
 
-                args = ['yt-dlp', *shlex.split(data)]
+                args = ['yt-dlp'] + shlex.split(data)
+                _env = os.environ.copy()
+                _env.update({
+                    "TERM": "xterm-256color",
+                    "LANG": "en_US.UTF-8",
+                    "SHELL": "/bin/bash",
+                    "LC_ALL": "en_US.UTF-8",
+                    "PWD": self.config.download_path,
+                    "FORCE_COLOR": "1",
+                    "PYTHONUNBUFFERED": "1",
+                })
+
+                master_fd, slave_fd = pty.openpty()
+
                 proc = await asyncio.create_subprocess_exec(
                     *args,
                     cwd=self.config.download_path,
                     stdin=asyncio.subprocess.DEVNULL,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    env=os.environ.copy().update({
-                        "TERM": "xterm-256color",
-                        "LANG": "en_US.UTF-8",
-                        "SHELL": "/bin/bash",
-                        "LC_ALL": "en_US.UTF-8",
-                        "PWD": self.config.download_path,
-                    }),
+                    stdout=slave_fd,
+                    stderr=slave_fd,
+                    env=_env,
                 )
 
-                await asyncio.gather(
-                    _read_stream('stdout', proc.stdout),
-                    _read_stream('stderr', proc.stderr),
-                )
+                try:
+                    os.close(slave_fd)
+                except Exception as e:
+                    LOG.error(f'Error closing PTY: {str(e)}')
 
-                while proc.returncode is None:
-                    await asyncio.sleep(0.1)
+                async def read_pty():
+                    loop = asyncio.get_running_loop()
+                    buffer = b''
+                    while True:
+                        try:
+                            chunk = await loop.run_in_executor(None, lambda: os.read(master_fd, 1024))
+                        except OSError as e:
+                            if e.errno == errno.EIO:
+                                break
+                            else:
+                                raise
 
-                await self.sio.emit('cli_close', {'exitcode': proc.returncode})
+                        if not chunk:
+                            # No more output
+                            if buffer:
+                                # Emit any remaining partial line
+                                await self.sio.emit('cli_output', {
+                                    'type': 'stdout',
+                                    'line': buffer.decode('utf-8', errors='replace')
+                                })
+                            break
+                        buffer += chunk
+                        *lines, buffer = buffer.split(b'\n')
+                        for line in lines:
+                            await self.sio.emit('cli_output', {
+                                'type': 'stdout',
+                                'line': line.decode('utf-8', errors='replace')
+                            })
+                    try:
+                        os.close(master_fd)
+                    except Exception as e:
+                        LOG.error(f'Error closing PTY: {str(e)}')
+
+                # Start reading output from PTY
+                read_task = asyncio.create_task(read_pty())
+
+                # Wait until process finishes
+                returncode = await proc.wait()
+
+                # Ensure reading is done
+                await read_task
+
+                await self.sio.emit('cli_close', {'exitcode': returncode})
             except Exception as e:
                 LOG.error(f'CLI Error: {str(e)}')
                 await self.sio.emit('cli_output', {
