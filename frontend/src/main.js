@@ -7,12 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import {
   faCog, faTrash, faLink, faPlus, faTrashCan, faCircleXmark, faCircleCheck, faRotateRight, faDownload, faUpRightFromSquare,
   faSpinner, faArrowUp, faArrowDown, faTasks, faCalendar, faArrowUpAZ, faArrowDownAZ, faEject, faGlobe, faMoon, faSun,
-  faTerminal,
-  faBroom,
-  faServer,
-  faPowerOff,
-  faPaperPlane,
-  faBoxArchive
+  faTerminal, faBroom, faServer, faPowerOff, faPaperPlane, faBoxArchive,
 } from '@fortawesome/free-solid-svg-icons'
 
 import { faSquare, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
