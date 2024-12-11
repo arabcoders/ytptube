@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
+import argparse
 import asyncio
 import base64
 from datetime import datetime
 import json
 import os
 import random
+import shlex
 import time
 from Config import Config
 from DownloadQueue import DownloadQueue
@@ -602,7 +604,6 @@ class Main:
                 return
 
             proc = None
-
             try:
                 async def _read_stream(streamType, stream):
                     while True:
@@ -616,8 +617,10 @@ class Main:
                             break
 
                 LOG.info(f'CLI: {data}')
-                proc = await asyncio.subprocess.create_subprocess_exec(
-                    'yt-dlp', data,
+
+                args = ['yt-dlp', *shlex.split(data)]
+                proc = await asyncio.create_subprocess_exec(
+                    *args,
                     cwd=self.config.download_path,
                     stdin=asyncio.subprocess.DEVNULL,
                     stdout=asyncio.subprocess.PIPE,
