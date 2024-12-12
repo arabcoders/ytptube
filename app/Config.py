@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import re
@@ -47,6 +46,8 @@ class Config:
 
     debug: bool = False
 
+    debugpy_port: int = 5678
+
     new_version_available: bool = False
 
     extract_info_timeout: int = 70
@@ -63,7 +64,7 @@ class Config:
 
     ytdlp_version: str = YTDLP_VERSION
 
-    _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout',)
+    _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version', 'started')
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
 
@@ -147,10 +148,12 @@ class Config:
         if self.debug:
             try:
                 import debugpy
-                debugpy.listen(("0.0.0.0", 5678))
-                LOG.info("starting debugpy server on [0.0.0.0:5678]")
+                debugpy.listen(("0.0.0.0", self.debugpy_port))
+                LOG.info(f"starting debugpy server on [0.0.0.0:{self.debugpy_port}]")
             except ImportError:
                 LOG.error("debugpy not found, please install it with 'pip install debugpy'")
+            except Exception as e:
+                LOG.error(f"Error starting debugpy server at [0.0.0.0:{self.debugpy_port}]: {e}")
 
         optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
         if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:

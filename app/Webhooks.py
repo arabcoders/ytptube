@@ -49,6 +49,7 @@ class Webhooks:
         return await asyncio.gather(*tasks)
 
     async def __send(self, event: str, target: dict, item: ItemDTO) -> dict:
+        from Config import Config
         req: dict = target.get('request')
         try:
             LOG.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
@@ -83,7 +84,7 @@ class Webhooks:
                 }
 
                 msg = f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status_code}]."
-                if respData.get('text'):
+                if Config.get_instance().debug and respData.get('text'):
                     msg += f" [Body: {respData.get('text','??')}]"
 
                 LOG.info(msg)

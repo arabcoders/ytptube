@@ -11,7 +11,7 @@ from AsyncPool import Terminator
 from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
 from ItemDTO import ItemDTO
 from Config import Config
-
+from multiprocessing.managers import SyncManager
 LOG = logging.getLogger('download')
 
 
@@ -32,7 +32,7 @@ class Download:
     debug: bool = False
     tempPath: str = None
     notifier: Notifier = None
-    manager: multiprocessing.Manager = None
+    manager: SyncManager = None
     canceled: bool = False
     is_live: bool = False
     info_dict: dict = None
@@ -69,7 +69,7 @@ class Download:
         self.temp_dir = info.temp_dir
         self.output_template_chapter = info.output_template_chapter
         self.output_template = info.output_template
-        self.format = get_format(info.format, info.quality)
+        self.format = config.ytdl_options.get('format', get_format(info.format, info.quality))
         self.ytdl_opts = get_opts(info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
         self.id = info._id
@@ -159,7 +159,8 @@ class Download:
                     LOG.warning(
                         f'Live stream detected for [{self.info.title}], The following opts [{deletedOpts=}] have been deleted which are known to cause issues with live stream and post stream manifestless mode.')
 
-            LOG.info(f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
+            LOG.info(
+                f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}" format="{self.format}" fq="{self.info.format}/{self.info.quality}".')
 
             cls = yt_dlp.YoutubeDL(params=params)
 
