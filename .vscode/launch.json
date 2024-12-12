@@ -34,6 +34,7 @@
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_URL_HOST": "http://localhost:8081",
         "YTP_LOG_LEVEL": "DEBUG",
+        "YTP_DEBUG": "false",
       }
     },
     {

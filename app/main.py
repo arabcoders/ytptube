@@ -161,6 +161,7 @@ class Main:
             **self.queue.get(),
             "config": self.config,
             "tasks": [],
+            "presets": [],
         }
 
         if os.path.exists(os.path.join(self.config.config_path, 'tasks.json')):
