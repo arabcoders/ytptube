@@ -73,6 +73,23 @@
         }
       ],
       "justMyCode": true
+    },
+    {
+      "name": "Node: NuxtJS",
+      "request": "launch",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "8082"
+      ],
+      "runtimeExecutable": "npm",
+      "type": "node",
+      "cwd": "${workspaceFolder}/ui",
+      "env": {
+        "VUE_APP_BASE_URL": "http://localhost:8081",
+      }
     }
   ]
 }

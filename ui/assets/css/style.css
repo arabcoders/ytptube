@@ -1,0 +1,190 @@
+* {
+  unicode-bidi: plaintext;
+}
+
+.container {
+  padding: 1em;
+  margin-top: 1em;
+}
+
+.container,
+.card,
+.box,
+.navbar {
+  border-radius: 15px;
+}
+
+.is-bordered-danger {
+  border: 1px solid red;
+}
+
+.is-bordered-info {
+  border: 1px solid #3e8ed0;
+}
+
+html,
+body {
+  background-color: #eaeaea;
+}
+
+.container {
+  background-color: #ffffff;
+}
+
+hr {
+  background-color: #000;
+}
+
+.is-unselectable {
+  user-select: none;
+}
+
+.is-text-overflow {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  * {
+    unicode-bidi: plaintext;
+  }
+
+  .container {
+    padding: 1em;
+    margin-top: 1em;
+  }
+
+  .container,
+  .card,
+  .box,
+  .navbar {
+    border-radius: 15px;
+  }
+
+  .is-bordered-danger {
+    border: 1px solid red;
+  }
+
+  .is-bordered-info {
+    border: 1px solid #3e8ed0;
+  }
+
+  hr {
+    background-color: #fff;
+  }
+
+  html,
+  body {
+    background-color: #000000;
+  }
+
+  .container {
+    background-color: #0f1010;
+  }
+
+  .is-unselectable {
+    user-select: none;
+  }
+
+  .is-text-overflow {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.is-borderless {
+  border: none;
+}
+
+.is-marginless {
+  margin: 0 !important;
+}
+
+.is-paddingless {
+  padding: 0 !important;
+}
+
+.section {
+  padding: 3rem 3rem;
+}
+
+.section.is-medium {
+  padding: 9rem 4.5rem;
+}
+
+.section.is-large {
+  padding: 18rem 6rem;
+}
+
+.footer {
+  background-color: #fafafa;
+  padding: 3rem 1.5rem 6rem;
+}
+
+.progress-bar {
+  border-radius: 15px;
+  position: relative;
+  width: 100%;
+  height: 30px;
+  background-color: #F5F5F5;
+}
+
+.progress,
+.progress-percentage {
+  border-radius: 15px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.progress-percentage {
+  text-align: center;
+  z-index: 2;
+  line-height: 30px;
+}
+
+.progress {
+  z-index: 1;
+  background-color: #00d1b2;
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer {
+    background-color: #121212;
+  }
+
+  .progress-bar {
+    border-radius: 15px;
+    position: relative;
+    width: 100%;
+    height: 30px;
+    background-color: #383636;
+  }
+
+  .progress,
+  .progress-percentage {
+    border-radius: 15px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+  }
+
+  .progress-percentage {
+    text-align: center;
+    z-index: 2;
+    line-height: 30px;
+  }
+
+  .progress {
+    z-index: 1;
+    background-color: #087363;
+  }
+}

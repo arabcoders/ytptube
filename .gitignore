@@ -2,7 +2,8 @@
 /frontend/dist
 
 # dependencies
-/frontend/node_modules
+**/node_modules/*
+**/.nuxt/*
 
 # IDEs and editors
 /ui/.idea
