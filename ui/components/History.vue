@@ -223,20 +223,13 @@ import { defineProps, computed, ref, watch, defineEmits } from 'vue';
 import moment from "moment";
 import { useStorage } from '@vueuse/core'
 import LazyLoader from './LazyLoader'
-import { makeDownload, formatBytes, ucFirst } from '../utils/index'
+import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
+import { useConfigStore } from '~/store/ConfigStore';
+import { useStateStore } from '~/store/StateStore';
 
-const emits = defineEmits(['deleteItem', 'addItem', 'playItem', 'archiveItem']);
-
-const props = defineProps({
-  completed: {
-    type: Object,
-    required: true
-  },
-  config: {
-    type: Object,
-    required: true
-  },
-})
+const emits = defineEmits(['deleteItem', 'addItem', 'playItem', 'archiveItem'])
+const config = useConfigStore()
+const stateStore = useStateStore()
 
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
@@ -244,8 +237,8 @@ const showCompleted = useStorage('showCompleted', true)
 const direction = useStorage('sortCompleted', 'desc')
 
 watch(masterSelectAll, (value) => {
-  for (const key in props.completed) {
-    const element = props.completed[key];
+  for (const key in stateStore.history) {
+    const element = stateStore.history[key];
     if (value) {
       selectedElms.value.push(element._id);
     } else {
@@ -256,16 +249,17 @@ watch(masterSelectAll, (value) => {
 
 const sortCompleted = computed(() => {
   const thisDirection = direction.value;
-  return Object.values(props.completed).sort((a, b) => {
-    if (thisDirection === 'asc') {
+  return Object.values(stateStore.history).sort((a, b) => {
+    if ('asc' === thisDirection) {
       return new Date(a.datetime) - new Date(b.datetime);
     }
     return new Date(b.datetime) - new Date(a.datetime);
   })
 })
+
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasItems = computed(() => Object.keys(props.completed)?.length > 0)
-const getTotal = computed(() => Object.keys(props.completed)?.length);
+const hasItems = computed(() => stateStore.count('history') > 0)
+const getTotal = computed(() => stateStore.count('history'));
 
 const showMessage = (item) => {
   if (!item?.msg || item.msg === item?.error) {
@@ -276,12 +270,12 @@ const showMessage = (item) => {
 }
 
 const hasIncomplete = computed(() => {
-  if (Object.keys(props.completed)?.length < 0) {
+  if (Object.keys(stateStore.history)?.length < 0) {
     return false;
   }
 
-  for (const key in props.completed) {
-    const element = props.completed[key];
+  for (const key in stateStore.history) {
+    const element = stateStore.history[key];
     if (element.status !== 'finished') {
       return true;
     }
@@ -290,12 +284,12 @@ const hasIncomplete = computed(() => {
 })
 
 const hasCompleted = computed(() => {
-  if (Object.keys(props.completed)?.length < 0) {
+  if (Object.keys(stateStore.history)?.length < 0) {
     return false;
   }
 
-  for (const key in props.completed) {
-    const element = props.completed[key];
+  for (const key in stateStore.history) {
+    const element = stateStore.history[key];
     if (element.status === 'finished') {
       return true;
     }
@@ -311,33 +305,27 @@ const clearCompleted = () => {
 
   const keys = {};
 
-  for (const key in props.completed) {
-    if (props.completed[key].status === 'finished') {
-      keys[key] = props.completed[key]._id;
+  for (const key in stateStore.history) {
+    if (stateStore.history[key].status === 'finished') {
+      keys[key] = stateStore.history[key]._id;
+      stateStore.remove('history', key);
     }
   }
-
-  emits('deleteItem', 'completed', keys);
 }
 
 const clearIncomplete = () => {
-  const state = confirm('Are you sure you want to clear all incomplete downloads?');
-  if (false === state) {
+  if (false === confirm('Are you sure you want to clear all incomplete downloads?')) {
     return;
   }
 
-  const keys = {};
-
-  for (const key in props.completed) {
-    if (props.completed[key].status !== 'finished') {
-      keys[key] = props.completed[key]._id;
+  for (const key in stateStore.history) {
+    if (stateStore.history[key].status !== 'finished') {
+      stateStore.remove('history', key);
     }
   }
-
-  emits('deleteItem', 'completed', keys);
 }
 
-const setIcon = (item) => {
+const setIcon = item => {
   if (item.status === 'finished' && item.is_live) {
     return 'fa-solid fa-globe';
   }
@@ -362,8 +350,8 @@ const requeueIncomplete = () => {
     return false;
   }
 
-  for (const key in props.completed) {
-    const item = props.completed[key];
+  for (const key in stateStore.history) {
+    const item = stateStore.history[key];
     if (item.status !== 'finished') {
       emits('deleteItem', 'completed', key);
       emits('addItem', {

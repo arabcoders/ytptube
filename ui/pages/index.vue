@@ -1,27 +1,24 @@
 <template>
   <div>
-    <Queue :config="config" :queue="downloading" @deleteItem="deleteItem" />
-    <History :config="config" :completed="completed" @deleteItem="deleteItem" @addItem="addItem"
-    @playItem="playItem" @archiveItem="archiveItem" />
+    <Queue />
+    <History />
   </div>
 </template>
 
 <script setup>
-import { io } from "socket.io-client";
-const bus = useEventBus('item_added', 'show_form', 'task_edit')
+import { io } from "socket.io-client"
+import { useConfigStore } from "~/store/ConfigStore"
+import { useStateStore } from "~/store/StateStore"
 
-const config = reactive({
-  isConnected: false,
-  app: {},
-  tasks: [],
-})
+const bus = useEventBus('item_added', 'show_form', 'task_edit')
+const config = useConfigStore()
 
 const runtimeConfig = useRuntimeConfig()
 const socket = ref()
 const downloading = reactive({})
-const completed = reactive({})
 const cli_output = ref([])
 const cli_isLoading = ref(false)
+const stateStore = useStateStore()
 
 useHead({ title: 'Index' })
 
@@ -34,23 +31,20 @@ onMounted(() => {
   socket.value.on('disconnect', () => config.isConnected = false);
 
   socket.value.on('initial_data', stream => {
-    const initialData = JSON.parse(stream);
-    config.app = initialData['config'];
-    config.tasks = initialData['tasks'];
-    config.directories = initialData['directories'];
+    const initialData = JSON.parse(stream)
 
-    for (const id in initialData['queue']) {
-      downloading[id] = initialData['queue'][id];
-    }
-
-    for (const id in initialData['done']) {
-      completed[id] = initialData['done'][id];
-    }
+    config.setAll({
+      app: initialData['config'],
+      tasks: initialData['tasks'],
+      directories: initialData['directories'],
+    })
+    stateStore.addAll('queue', initialData['queue'] ?? {})
+    stateStore.addAll('history', initialData['done'] ?? {})
   })
 
   socket.value.on('added', stream => {
     const item = JSON.parse(stream);
-    downloading[item._id] = item;
+    stateStore.add('queue', item);
     toast.success(`Item queued successfully: ${downloading[item._id]?.title}`);
   });
 
@@ -61,15 +55,17 @@ onMounted(() => {
 
   socket.value.on('completed', stream => {
     const item = JSON.parse(stream);
-    if (item._id in downloading) {
-      delete downloading[item._id];
+    if (true === stateStore.has('queue', item._id)) {
+      stateStore.move('queue', 'history', item._id);
+      return
     }
-    completed[item._id] = item;
+    stateStore.add('history', item);
   });
 
   socket.value.on('canceled', stream => {
     const id = JSON.parse(stream);
-    if (false === (id in downloading)) {
+
+    if (true !== stateStore.has('queue', id)) {
       return
     }
 
@@ -79,31 +75,28 @@ onMounted(() => {
 
   socket.value.on('cleared', stream => {
     const id = JSON.parse(stream);
-    if (false === (id in completed)) {
-      return;
+    if (true !== stateStore.has('history', id)) {
+      return
     }
-
-    delete completed[id];
+    stateStore.remove('history', id);
   });
 
   socket.value.on("updated", stream => {
     const data = JSON.parse(stream);
-    let dl = downloading[data._id] ?? {};
+    let dl = stateStore.get('queue', data._id, {});
     data.deleting = dl?.deleting;
-    downloading[data._id] = data;
+    stateStore.update('queue', data._id, data);
   });
 
   socket.value.on("update", stream => {
     const data = JSON.parse(stream);
-    if (false === (data._id in completed)) {
+    if (true === stateStore.has('history', data._id)) {
+      stateStore.update('history', data._id, data);
       return;
     }
-    completed[data._id] = data;
   });
 
   socket.value.on('cli_close', () => cli_isLoading.value = false);
   socket.value.on('cli_output', s => cli_output.value.push(s));
 });
-
-
 </script>

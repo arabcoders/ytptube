@@ -35,7 +35,8 @@
     </div>
 
     <div class="columns is-multiline">
-      <LazyLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in queue" :key="item._id">
+      <LazyLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.queue"
+        :key="item._id">
         <div class="card">
           <header class="card-header has-tooltip" v-tooltip="item.title">
             <div class="card-header-title has-text-centered is-text-overflow is-block">
@@ -126,27 +127,21 @@ import { defineProps, defineEmits, ref, watch, computed } from 'vue';
 import moment from "moment";
 import { useStorage } from '@vueuse/core'
 import LazyLoader from './LazyLoader'
+import { useConfigStore } from '~/store/ConfigStore';
+import { useStateStore } from '~/store/StateStore';
 
 const emit = defineEmits(['deleteItem']);
 
-const props = defineProps({
-  queue: {
-    type: Object,
-    required: true
-  },
-  config: {
-    type: Object,
-    required: true
-  },
-})
+const config = useConfigStore();
+const stateStore = useStateStore();
 
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
 
 watch(masterSelectAll, (value) => {
-  for (const key in props.queue) {
-    const element = props.queue[key];
+  for (const key in stateStore.queue) {
+    const element = stateStore.queue[key];
     if (value) {
       selectedElms.value.push(element._id);
     } else {
@@ -156,10 +151,10 @@ watch(masterSelectAll, (value) => {
 })
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasQueuedItems = computed(() => Object.keys(props.queue)?.length > 0)
-const getTotal = computed(() => Object.keys(props.queue)?.length);
+const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
+const getTotal = computed(() => stateStore.count('queue'));
 
-const setIcon = (item) => {
+const setIcon = item => {
   if (item.status === 'downloading' && item.is_live) {
     return 'fa-solid fa-globe';
   }
@@ -231,6 +226,7 @@ const confirmDelete = (item) => {
   }
 
   emit('deleteItem', 'queue', item._id);
+  stateStore.remove('queue', item._id);
   return true;
 }
 
