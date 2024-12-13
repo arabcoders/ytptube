@@ -1,5 +1,5 @@
 <template>
-  <div id="main_container" class="container" :class="{'is-max-fullwidth': expandContainer}">
+  <div id="main_container" class="container" :class="{ 'is-max-fullwidth': expandContainer }">
     <nav class="navbar is-dark mb-5">
       <div class="navbar-brand pl-5">
         <NuxtLink class="navbar-item" to="/">
@@ -20,15 +20,44 @@
         </button>
       </div>
 
-      <div class="navbar-menu is-unselectable" :class="{'is-active':showMenu}">
+      <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
         <div class="navbar-end pr-3">
+
+          <div class="navbar-item">
+            <button v-tooltip.bottom="'Toggle Console'" class="button is-dark has-tooltip-bottom"
+              @click="config.showConsole = !config.showConsole">
+              <span class="icon">
+                <i class="fa-solid fa-terminal" />
+              </span>
+              <span class="is-hidden-mobile">Console</span>
+            </button>
+          </div>
+
+          <div class="navbar-item">
+            <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
+            @click="config.showForm = !config.showForm">
+              <span class="icon"><i class="fa-solid fa-plus" /></span>
+              <span class="is-hidden-mobile">Add</span>
+            </button>
+          </div>
+
+          <div class="navbar-item" v-if="config.tasks.length > 0">
+            <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
+              @click="config.showTasks = !config.showTasks">
+              <span class="icon">
+                <i class="fa-solid fa-tasks" />
+              </span>
+              <span class="is-hidden-mobile">Tasks</span>
+            </button>
+          </div>
+
           <div class="navbar-item">
             <button class="button is-dark" @click="selectedTheme = 'light'" v-if="'dark' === selectedTheme"
-                    v-tooltip="'Switch to light theme'">
+              v-tooltip="'Switch to light theme'">
               <span class="icon has-text-warning"><i class="fas fa-sun"></i></span>
             </button>
             <button class="button is-dark" @click="selectedTheme = 'dark'" v-if="'light' === selectedTheme"
-                    v-tooltip="'Switch to dark theme'">
+              v-tooltip="'Switch to dark theme'">
               <span class="icon"><i class="fas fa-moon"></i></span>
             </button>
           </div>
@@ -56,24 +85,25 @@
       </div>
     </div>
 
-    <NuxtNotifications position="top right" :speed="800" :ignoreDuplicates="true" :width="340" :pauseOnHover="true"/>
+    <NuxtNotifications position="top right" :speed="800" :ignoreDuplicates="true" :width="340" :pauseOnHover="true" />
   </div>
 </template>
 
 <script setup>
-import {ref} from 'vue'
+import { ref } from 'vue'
 import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
-import {useStorage} from '@vueuse/core'
-import {notification} from '~/utils/index'
+import { useStorage } from '@vueuse/core'
+import { useConfigStore } from '~/store/ConfigStore'
 
 const runtimeConfig = useRuntimeConfig()
-
+const config = useConfigStore()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
 const showMenu = ref(false)
 const VERSION = ref(runtimeConfig.public.version)
 const expandContainer = ref(false)
+const bus = useEventBus('show_form')
 
 const applyPreferredColorScheme = scheme => {
   for (let s = 0; s < document.styleSheets.length; s++) {
@@ -127,9 +157,13 @@ onMounted(async () => {
 watch(selectedTheme, value => {
   try {
     applyPreferredColorScheme(value)
-  } catch (e) {
-  }
+  } catch (e) { }
 })
 
 const reloadPage = () => window.location.reload()
+const toggleForm = () => {
+  console.log('emitting show_form');
+  bus.emit('show_form', { foo: 'bar' })
+  dEvent('show_form', { foo: 'bar' })
+}
 </script>

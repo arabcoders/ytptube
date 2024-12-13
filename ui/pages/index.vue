@@ -1,5 +1,6 @@
 <template>
   <div>
+    <NewDownload v-if="config.showForm" />
     <Queue />
     <History />
   </div>
@@ -15,13 +16,24 @@ const config = useConfigStore()
 
 const runtimeConfig = useRuntimeConfig()
 const socket = ref()
-const downloading = reactive({})
 const cli_output = ref([])
 const cli_isLoading = ref(false)
 const stateStore = useStateStore()
 
-useHead({ title: 'Index' })
+bus.on((event, data) => {
+  console.log({ e: event, d: data })
 
+  if (!['show_form'].includes(event)) {
+    return true;
+  }
+
+  if ('show_form' === event) {
+    addForm.value = true;
+    setTimeout(() => bus.emit('task_edit', data), 500);
+  }
+})
+
+useHead({ title: 'Index' })
 onMounted(() => {
   socket.value = io(runtimeConfig.public.wss, {
     path: document.location.pathname + 'socket.io',
@@ -45,7 +57,7 @@ onMounted(() => {
   socket.value.on('added', stream => {
     const item = JSON.parse(stream);
     stateStore.add('queue', item);
-    toast.success(`Item queued successfully: ${downloading[item._id]?.title}`);
+    toast.success(`Item queued successfully: ${stateStore.get('queue', item._id)?.title}`);
   });
 
   socket.value.on('error', stream => {
@@ -69,8 +81,11 @@ onMounted(() => {
       return
     }
 
-    toast.info('Download canceled: ' + downloading[id]?.title);
-    delete downloading[id];
+    toast.info('Download canceled: ' + stateStore.get('queue', id)?.title);
+
+    if (true === stateStore.has('queue', id)) {
+      stateStore.remove('queue', id);
+    }
   });
 
   socket.value.on('cleared', stream => {
@@ -99,4 +114,6 @@ onMounted(() => {
   socket.value.on('cli_close', () => cli_isLoading.value = false);
   socket.value.on('cli_output', s => cli_output.value.push(s));
 });
+
+
 </script>

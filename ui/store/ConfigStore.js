@@ -2,6 +2,9 @@ import { defineStore } from 'pinia';
 
 const CONFIG_KEYS = {
   isConnected: false,
+  showForm: false,
+  showConsole: false,
+  showTasks: false,
   tasks: [],
   app: {
     host: '',
