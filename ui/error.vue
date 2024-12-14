@@ -49,6 +49,5 @@ defineProps({
     required: true
   }
 })
-
 const showStacks = ref(false)
 </script>

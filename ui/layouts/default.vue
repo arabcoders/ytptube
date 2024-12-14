@@ -1,87 +1,77 @@
 <template>
-  <div id="main_container" class="container" :class="{ 'is-max-fullwidth': expandContainer }">
-    <nav class="navbar is-dark mb-5">
+  <div id="main_container" class="container">
+    <nav class="navbar is-mobile is-dark">
       <div class="navbar-brand pl-5">
-        <NuxtLink class="navbar-item" to="/">
+        <NuxtLink class="navbar-item  has-tooltip-bottom" to="/"
+          v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span class="icon-text">
             <span class="icon"><i class="fas fa-home"></i></span>
-            <span>Home</span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'"><b>YTPTube</b></span>
           </span>
         </NuxtLink>
-
-        <a class="navbar-item is-hidden-tablet" id="top" href="#bottom">
-          <span class="icon"><i class="fas fa-arrow-down"></i></span>
-        </a>
-
-        <button class="navbar-burger burger" @click="showMenu = !showMenu">
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-          <span aria-hidden="true"></span>
-        </button>
       </div>
+      <div class="navbar-end is-flex">
+        <div class="navbar-item">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
+            <span class="icon"><i class="fa-solid fa-terminal" /></span>
+            <span>Terminal</span>
+          </NuxtLink>
+        </div>
 
-      <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
-        <div class="navbar-end pr-3">
-
-          <div class="navbar-item">
-            <button v-tooltip.bottom="'Toggle Console'" class="button is-dark has-tooltip-bottom"
-              @click="config.showConsole = !config.showConsole">
-              <span class="icon">
-                <i class="fa-solid fa-terminal" />
-              </span>
-              <span class="is-hidden-mobile">Console</span>
-            </button>
-          </div>
-
-          <div class="navbar-item">
-            <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
+        <div class="navbar-item">
+          <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
             @click="config.showForm = !config.showForm">
-              <span class="icon"><i class="fa-solid fa-plus" /></span>
-              <span class="is-hidden-mobile">Add</span>
-            </button>
-          </div>
+            <span class="icon"><i class="fa-solid fa-plus" /></span>
+            <span>Add</span>
+          </button>
+        </div>
 
-          <div class="navbar-item" v-if="config.tasks.length > 0">
-            <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
-              @click="config.showTasks = !config.showTasks">
-              <span class="icon">
-                <i class="fa-solid fa-tasks" />
-              </span>
-              <span class="is-hidden-mobile">Tasks</span>
-            </button>
-          </div>
+        <div class="navbar-item" v-if="config.tasks.length > 0">
+          <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
+            @click="config.showTasks = !config.showTasks">
+            <span class="icon">
+              <i class="fa-solid fa-tasks" />
+            </span>
+            <span class="is-hidden-mobile">Tasks</span>
+          </button>
+        </div>
 
-          <div class="navbar-item">
-            <button class="button is-dark" @click="selectedTheme = 'light'" v-if="'dark' === selectedTheme"
-              v-tooltip="'Switch to light theme'">
-              <span class="icon has-text-warning"><i class="fas fa-sun"></i></span>
-            </button>
-            <button class="button is-dark" @click="selectedTheme = 'dark'" v-if="'light' === selectedTheme"
-              v-tooltip="'Switch to dark theme'">
-              <span class="icon"><i class="fas fa-moon"></i></span>
-            </button>
-          </div>
-          <div class="navbar-item">
-            <button class="button is-dark" @click="reloadPage">
-              <span class="icon"><i class="fas fa-refresh"></i></span>
-            </button>
-          </div>
+        <div class="navbar-item">
+          <button class="button is-dark" @click="selectedTheme = 'light'" v-if="'dark' === selectedTheme"
+            v-tooltip="'Switch to light theme'">
+            <span class="icon has-text-warning"><i class="fas fa-sun"></i></span>
+          </button>
+          <button class="button is-dark" @click="selectedTheme = 'dark'" v-if="'light' === selectedTheme"
+            v-tooltip="'Switch to dark theme'">
+            <span class="icon"><i class="fas fa-moon"></i></span>
+          </button>
+        </div>
+        <div class="navbar-item">
+          <button class="button is-dark" @click="reloadPage">
+            <span class="icon"><i class="fas fa-refresh"></i></span>
+          </button>
         </div>
       </div>
     </nav>
 
     <NuxtPage />
 
-    <div class="columns is-multiline is-mobile mt-3">
-      <div class="column is-12 is-hidden-tablet has-text-centered">
-        <a href="#top" id="bottom" class="button">
-          <span class="icon"><i class="fas fa-arrow-up"></i>&nbsp;</span>
-          <span>Go to Top</span>
-        </a>
+    <div class="columns mt-3 is-mobile">
+      <div class="column is-8-mobile">
+        <div class="has-text-left" v-if="config.app?.version">
+          © {{ Year }} - <a href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</a>
+          <span class="is-hidden-mobile">&nbsp;({{ config.app?.version || 'unknown' }})</span>
+          - <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+          <span class="is-hidden-mobile">&nbsp;({{ config?.app.ytdlp_version || 'unknown' }})</span>
+        </div>
       </div>
-      <div class="column is-6 is-9-mobile has-text-left"></div>
-      <div class="column is-6 is-4-mobile has-text-right">
-        v{{ VERSION }}
+      <div class="column is-4-mobile" v-if="config.app?.started">
+        <div class="has-text-right">
+          <span class="user-hint"
+            v-tooltip="'App Started: ' + moment.unix(config.app?.started).format('YYYY-M-DD H:mm Z')">
+            {{ moment.unix(config.app?.started).fromNow() }}
+          </span>
+        </div>
       </div>
     </div>
 
@@ -95,15 +85,13 @@ import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
-import { useConfigStore } from '~/store/ConfigStore'
+import moment from "moment";
 
-const runtimeConfig = useRuntimeConfig()
-const config = useConfigStore()
+const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
-const showMenu = ref(false)
-const VERSION = ref(runtimeConfig.public.version)
-const expandContainer = ref(false)
 const bus = useEventBus('show_form')
+const socket = useSocketStore()
+const config = useConfigStore()
 
 const applyPreferredColorScheme = scheme => {
   for (let s = 0; s < document.styleSheets.length; s++) {
@@ -167,3 +155,11 @@ const toggleForm = () => {
   dEvent('show_form', { foo: 'bar' })
 }
 </script>
+
+<style>
+.user-hint {
+  user-select: none;
+  cursor: help;
+  border-bottom: 1px dotted;
+}
+</style>

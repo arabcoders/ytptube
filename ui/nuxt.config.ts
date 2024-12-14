@@ -12,7 +12,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       domain: '/',
-      wss: ':8081',
+      wss: ':8081/',
       version: '2.0.0',
     }
   },

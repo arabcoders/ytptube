@@ -224,8 +224,6 @@ import moment from "moment";
 import { useStorage } from '@vueuse/core'
 import LazyLoader from './LazyLoader'
 import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
-import { useConfigStore } from '~/store/ConfigStore';
-import { useStateStore } from '~/store/StateStore';
 
 const emits = defineEmits(['deleteItem', 'addItem', 'playItem', 'archiveItem'])
 const config = useConfigStore()

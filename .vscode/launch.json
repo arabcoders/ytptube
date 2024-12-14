@@ -84,7 +84,7 @@
         "--port",
         "8082"
       ],
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "yarn",
       "type": "node",
       "cwd": "${workspaceFolder}/ui",
       "env": {

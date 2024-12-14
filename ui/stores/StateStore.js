@@ -1,5 +1,3 @@
-import { defineStore } from 'pinia';
-
 export const useStateStore = defineStore('state', () => {
   const state = reactive({
     queue: {},

@@ -1,5 +1,3 @@
-import { defineStore } from 'pinia';
-
 const CONFIG_KEYS = {
   isConnected: false,
   showForm: false,
@@ -12,6 +10,12 @@ const CONFIG_KEYS = {
     keep_archive: false,
     output_template: '',
   },
+  presets: [
+    {
+      name: 'Default - Use Predefined yt-dlp Format',
+      format: 'default',
+    }
+  ],
   directories: [],
 };
 

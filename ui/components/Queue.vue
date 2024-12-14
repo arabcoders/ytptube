@@ -102,7 +102,7 @@
     </div>
 
     <div class="content has-text-centered" v-if="!hasQueuedItems">
-      <p v-if="config.isConnected">
+      <p v-if="socket.isConnected">
         <span class="icon-text">
           <span class="icon has-text-success">
             <i class="fa-solid fa-circle-check" />
@@ -127,13 +127,12 @@ import { defineProps, defineEmits, ref, watch, computed } from 'vue';
 import moment from "moment";
 import { useStorage } from '@vueuse/core'
 import LazyLoader from './LazyLoader'
-import { useConfigStore } from '~/store/ConfigStore';
-import { useStateStore } from '~/store/StateStore';
 
 const emit = defineEmits(['deleteItem']);
 
 const config = useConfigStore();
 const stateStore = useStateStore();
+const socket = useSocketStore();
 
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);

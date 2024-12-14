@@ -6,7 +6,7 @@
           <div class="column is-12">
             <div class="control has-icons-left">
               <input type="url" class="input" id="url" placeholder="Video or playlist link"
-                :disabled="!config.isConnected || addInProgress" v-model="url">
+                :disabled="!socket.isConnected || addInProgress" v-model="url">
               <span class="icon is-small is-left">
                 <i class="fa-solid fa-link" />
               </span>
@@ -19,9 +19,9 @@
               </div>
               <div class="control is-expanded">
                 <div class="select is-fullwidth">
-                  <select id="preset" class="is-fullwidth" :disabled="!config.isConnected" v-model="selectedPreset">
-                    <option v-for="item in downloadFormats" :key="item.id" :value="item.id">
-                      {{ item.text }}
+                  <select id="preset" class="is-fullwidth" :disabled="!socket.isConnected" v-model="selectedPreset">
+                    <option v-for="item in config.presets" :key="item.name" :value="item.format">
+                      {{ item.name }}
                     </option>
                   </select>
                 </div>
@@ -35,27 +35,23 @@
               </div>
               <div class="control is-expanded">
                 <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
-                  :disabled="!config.isConnected" list="directories">
+                  :disabled="!socket.isConnected" list="directories">
               </div>
             </div>
           </div>
           <div class="column">
             <button type="submit" class="button is-primary" @click="addDownload"
-              :class="{ 'is-loading': !config.isConnected || addInProgress }"
-              :disabled="!config.isConnected || addInProgress || !url">
-              <span class="icon">
-                <i class="fa-solid fa-plus" />
-              </span>
-              <span>Add Link</span>
+              :class="{ 'is-loading': !socket.isConnected || addInProgress }"
+              :disabled="!socket.isConnected || addInProgress || !url">
+              <span class="icon"><i class="fa-solid fa-plus" /></span>
+              <span>Add</span>
             </button>
           </div>
           <div class="column">
             <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
-              v-tooltip="'Show advanced options'" :class="{ 'is-loading': !config.isConnected }"
-              :disabled="!config.isConnected">
-              <span class="icon">
-                <i class="fa-solid fa-cog" />
-              </span>
+              v-tooltip="'Show advanced options'" :class="{ 'is-loading': !socket.isConnected }"
+              :disabled="!socket.isConnected">
+              <span class="icon"><i class="fa-solid fa-cog" /></span>
             </button>
           </div>
         </div>
@@ -84,7 +80,7 @@
               </label>
               <div class="control">
                 <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig"
-                  :disabled="!config.isConnected"></textarea>
+                  :disabled="!socket.isConnected"></textarea>
               </div>
               <span class="subtitle is-6 has-text-info">
                 Some config fields are ignored like cookiefile, path, and output_format etc.
@@ -101,7 +97,7 @@
               </label>
               <div class="control">
                 <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
-                  :disabled="!config.isConnected"></textarea>
+                  :disabled="!socket.isConnected"></textarea>
               </div>
               <span class="subtitle is-6 has-text-info">
                 Use something like <a class="has-text-danger" href="https://github.com/jrie/flagCookies">flagCookies</a>
@@ -112,7 +108,7 @@
           <div class="column is-12 has-text-right">
             <div class="field">
               <div class="control">
-                <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!config.isConnected"
+                <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
                   v-tooltip="'This configuration are stored locally in your browser.'">
                   <span class="icon">
                     <i class="fa-solid fa-trash" />
@@ -132,15 +128,16 @@
 </template>
 
 <script setup>
-import { defineEmits, defineProps, onMounted, ref } from 'vue'
 import { useStorage, useEventBus } from '@vueuse/core'
-import { useConfigStore } from '~/store/ConfigStore';
 
 const config = useConfigStore();
+const socket = useSocketStore();
+
 const bus = useEventBus('item_added', 'task_edit');
 const emits = defineEmits(['addItem']);
 
 const selectedFormat = useStorage('selectedFormat', 'any')
+const selectedPreset = useStorage('selectedPreset', 'default')
 const selectedQuality = useStorage('selectedQuality', '')
 const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
