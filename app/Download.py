@@ -201,7 +201,7 @@ class Download:
         self.proc.start()
         self.info.status = 'preparing'
 
-        asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-{self.id}")
+        asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-{self.id}")
         asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
         return await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
@@ -329,7 +329,7 @@ class Download:
                 LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
-                asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-u-{self.id}")
+                asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-u-{self.id}")
                 continue
 
             self.tmpfilename = status.get('tmpfilename')
@@ -349,7 +349,9 @@ class Download:
 
             if self.info.status == 'error' and 'error' in status:
                 self.info.error = status.get('error')
-                asyncio.create_task(self.notifier.error(self.info, self.info.error), name=f"notifier-e-{self.id}")
+                asyncio.create_task(
+                    self.notifier.error(dl=self.info, message=self.info.error),
+                    name=f"notifier-e-{self.id}")
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get('total_bytes_estimate')
@@ -368,4 +370,4 @@ class Download:
                     self.info.file_size = None
                     pass
 
-            asyncio.create_task(self.notifier.updated(self.info), name=f"notifier-u-{self.id}")
+            asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-u-{self.id}")

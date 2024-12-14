@@ -12,7 +12,6 @@ from ItemDTO import ItemDTO
 from DataStore import DataStore
 from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 from AsyncPool import AsyncPool
-from concurrent.futures import ThreadPoolExecutor
 
 LOG = logging.getLogger('DownloadQueue')
 TYPE_DONE: str = 'done'
@@ -295,9 +294,9 @@ class DownloadQueue:
                 await item.close()
                 LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
-                asyncio.create_task(self.notifier.canceled(id), name=f'notifier-c-{id}')
+                asyncio.create_task(self.notifier.canceled(id=id, dl=item), name=f'notifier-c-{id}')
                 self.done.put(item)
-                asyncio.create_task(self.notifier.completed(item), name=f'notifier-d-{id}')
+                asyncio.create_task(self.notifier.completed(dl=item), name=f'notifier-d-{id}')
                 LOG.info(f'Deleted from queue {itemMessage}')
 
             status[id] = 'ok'
@@ -319,7 +318,7 @@ class DownloadQueue:
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
             LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
-            asyncio.create_task(self.notifier.cleared(id), name=f'notifier-c-{id}')
+            asyncio.create_task(self.notifier.cleared(id, dl=item), name=f'notifier-c-{id}')
             LOG.info(f'Deleted completed download {itemMessage}')
             status[id] = 'ok'
 
@@ -418,12 +417,12 @@ class DownloadQueue:
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                asyncio.create_task(self.notifier.canceled(id), name=f'notifier-c-{id}')
+                asyncio.create_task(self.notifier.canceled(id, dl=entry.info), name=f'notifier-c-{id}')
                 entry.info.status = 'canceled'
                 entry.info.error = 'Canceled by user.'
 
             self.done.put(value=entry)
-            asyncio.create_task(self.notifier.completed(entry.info), name=f'notifier-d-{id}')
+            asyncio.create_task(self.notifier.completed(dl=entry.info), name=f'notifier-d-{id}')
 
         self.event.set()
 

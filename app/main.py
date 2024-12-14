@@ -717,19 +717,28 @@ class Main:
             await self.sio.emit('status', self.serializer.encode(status))
 
         @self.sio.event
-        async def cancel_items(sid, post: dict):
-            ids = post.get('ids')
-            identifier: str = post.get('identifier')
-
-            if not ids:
+        async def item_cancel(sid, id: str):
+            if not id:
                 await self.notifier.warning('Invalid request.')
                 return
 
             status: dict[str, str] = {}
-            status = await self.queue.cancel(ids)
-            status.update({'identifier': identifier})
+            status = await self.queue.cancel([id])
+            status.update({'identifier': id})
 
-            await self.sio.emit('cancel_items', self.serializer.encode(status))
+            await self.sio.emit('item_cancel', self.serializer.encode(status))
+
+        @self.sio.event
+        async def item_delete(sid, id: str):
+            if not id:
+                await self.notifier.warning('Invalid request.')
+                return
+
+            status: dict[str, str] = {}
+            status = await self.queue.clear([id])
+            status.update({'identifier': id})
+
+            await self.sio.emit('item_delete', self.serializer.encode(status))
 
         @self.sio.event()
         async def archive_item(sid, data):

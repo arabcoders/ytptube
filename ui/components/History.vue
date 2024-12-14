@@ -4,7 +4,7 @@
       <span class="icon">
         <i :class="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>History <span v-if="hasItems">({{ getTotal }})</span></span>
+      <span>History <span v-if="hasItems">({{ stateStore.count('history') }})</span></span>
     </span>
   </h1>
 
@@ -24,7 +24,7 @@
       </div>
       <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
-          @click="$emit('deleteItem', 'completed', selectedElms); selectedElms = []">
+          @click="deleteSelectedItems">
           <span class="icon-text is-block">
             <span class="icon">
               <i class="fa-solid fa-trash-can" />
@@ -75,7 +75,7 @@
     </div>
 
     <div class="columns is-multiline">
-      <LazyLoader :unrender="true" :min-height="210" class="column is-6" v-for="item in sortCompleted" :key="item._id">
+      <LateLoader :unrender="true" :min-height="210" class="column is-6" v-for="item in sortCompleted" :key="item._id">
         <div class="card"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip">
@@ -127,7 +127,8 @@
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered">
-                <span :date-datetime="item.datetime" v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                <span class="user-hint" :date-datetime="item.datetime"
+                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
@@ -150,33 +151,26 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished'">
-                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue incomplete download.'"
-                  @click="reQueueItem(item)">
+                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue item.'" @click="reQueueItem(item)">
                   <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-rotate-right" />
-                    </span>
+                    <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     <span>Re-queue</span>
                   </span>
                 </a>
               </div>
               <div class="column is-half-mobile">
-                <a class="button is-danger is-fullwidth" @click="$emit('deleteItem', 'completed', item._id)">
+                <a class="button is-danger is-fullwidth" @click="socket.emit('item_delete', item._id)">
                   <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-trash-can" />
-                    </span>
+                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                     <span>Remove</span>
                   </span>
                 </a>
               </div>
               <div class="column is-half-mobile" v-if="config.app?.keep_archive && item.status != 'finished'">
                 <a class="button is-danger is-light is-fullwidth" v-tooltip="'Add link to archive.'"
-                  @click="$emit('archiveItem', 'completed', item)">
+                  @click="archiveItem(item)">
                   <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-box-archive" />
-                    </span>
+                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                     <span>Archive</span>
                   </span>
                 </a>
@@ -194,11 +188,11 @@
             </div>
           </div>
         </div>
-      </LazyLoader>
+      </LateLoader>
     </div>
 
     <div class="content has-text-centered" v-if="!hasItems">
-      <p v-if="config.isConnected">
+      <p v-if="socket.isConnected">
         <span class="icon-text">
           <span class="icon has-text-success">
             <i class="fa-solid fa-circle-check" />
@@ -219,15 +213,14 @@
 </template>
 
 <script setup>
-import { defineProps, computed, ref, watch, defineEmits } from 'vue';
-import moment from "moment";
+import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import LazyLoader from './LazyLoader'
 import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
+import toast from '~/plugins/toast'
 
-const emits = defineEmits(['deleteItem', 'addItem', 'playItem', 'archiveItem'])
 const config = useConfigStore()
 const stateStore = useStateStore()
+const socket = useSocketStore()
 
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
@@ -257,7 +250,6 @@ const sortCompleted = computed(() => {
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasItems = computed(() => stateStore.count('history') > 0)
-const getTotal = computed(() => stateStore.count('history'));
 
 const showMessage = (item) => {
   if (!item?.msg || item.msg === item?.error) {
@@ -295,18 +287,34 @@ const hasCompleted = computed(() => {
   return false;
 })
 
+const deleteSelectedItems = () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No items selected.');
+    return;
+  }
+
+  if (false === confirm('Are you sure you want to delete selected items?')) {
+    return;
+  }
+
+  for (const key in selectedElms.value) {
+    const item = stateStore.history[selectedElms.value[key]];
+    if (item.status === 'finished') {
+      archiveItem(item);
+    }
+    socket.emit('item_delete', item._id);
+  }
+}
+
 const clearCompleted = () => {
   const state = confirm('Are you sure you want to clear all completed downloads?');
   if (false === state) {
     return;
   }
 
-  const keys = {};
-
   for (const key in stateStore.history) {
-    if (stateStore.history[key].status === 'finished') {
-      keys[key] = stateStore.history[key]._id;
-      stateStore.remove('history', key);
+    if (ag(stateStore.get('history', key, {}), 'status') === 'finished') {
+      socket.emit('item_delete', stateStore.history[key]._id);
     }
   }
 }
@@ -318,7 +326,7 @@ const clearIncomplete = () => {
 
   for (const key in stateStore.history) {
     if (stateStore.history[key].status !== 'finished') {
-      stateStore.remove('history', key);
+      socket.emit('item_delete', stateStore.history[key]._id);
     }
   }
 }
@@ -349,25 +357,34 @@ const requeueIncomplete = () => {
   }
 
   for (const key in stateStore.history) {
-    const item = stateStore.history[key];
-    if (item.status !== 'finished') {
-      emits('deleteItem', 'completed', key);
-      emits('addItem', {
-        url: item.url,
-        format: item.format,
-        quality: item.quality,
-        folder: item.folder,
-        ytdlp_config: item.ytdlp_config,
-        ytdlp_cookies: item.ytdlp_cookies,
-        output_template: item.output_template,
-      });
+    const item = stateStore.get('history', key, {});
+    if ('finished' === item.status) {
+      continue;
     }
+
+    emits('deleteItem', 'completed', key);
+    emits('addItem', {
+      url: item.url,
+      format: item.preset,
+      folder: item.folder,
+      ytdlp_config: item.ytdlp_config,
+      ytdlp_cookies: item.ytdlp_cookies,
+      output_template: item.output_template,
+    });
   }
 }
 
-const reQueueItem = (item) => {
-  emits('deleteItem', 'completed', item._id);
-  emits('addItem', {
+const archiveItem = item => {
+  if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
+    return
+  }
+  socket.emit('archive_item', item);
+  socket.emit('item_delete', item._id);
+}
+
+const reQueueItem = item => {
+  socket.emit('item_delete', item._id)
+  socket.emit('add_url', {
     url: item.url,
     format: item.format,
     quality: item.quality,

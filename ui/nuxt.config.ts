@@ -8,7 +8,9 @@ export default defineNuxtConfig({
     port: 8082,
     host: "0.0.0.0",
   },
-
+  css: [
+    'vue-toastification/dist/index.css'
+  ],
   runtimeConfig: {
     public: {
       domain: '/',
@@ -16,7 +18,9 @@ export default defineNuxtConfig({
       version: '2.0.0',
     }
   },
-
+  build: {
+    transpile: ['vue-toastification'],
+  },
   app: {
     buildAssetsDir: "assets",
     head: {

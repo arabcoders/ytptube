@@ -1,10 +1,11 @@
 import { io } from "socket.io-client";
-import { notification, ag } from "~/utils/index"
+import { ag } from "~/utils/index"
 
 export const useSocketStore = defineStore('socket', () => {
   const runtimeConfig = useRuntimeConfig()
   const config = useConfigStore()
   const stateStore = useStateStore()
+  const toast = useToast()
 
   const socket = ref(null);
   const isConnected = ref(false);
@@ -31,31 +32,34 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on('added', stream => {
       const item = JSON.parse(stream);
       stateStore.add('queue', item._id, item);
-      notification('success', `Item queued successfully: ${ag(stateStore.get('queue', item._id, {}), 'title')}`);
+      toast.success(`Item queued successfully: ${ag(stateStore.get('queue', item._id, {}), 'title')}`);
     });
 
     socket.value.on('error', stream => {
       const [item, error] = JSON.parse(stream);
-      notification('error', `${item?.id}: Error: ${error}`);
+      toast.error(`${item?.id}: Error: ${error}`);
     });
 
     socket.value.on('completed', stream => {
       const item = JSON.parse(stream);
+
+      console.log(item)
       if (true === stateStore.has('queue', item._id)) {
-        stateStore.move('queue', 'history', item._id);
-        return
+        stateStore.remove('queue', item._id);
       }
-      stateStore.add('history', item);
+
+      stateStore.add('history', item._id, item);
     });
 
     socket.value.on('canceled', stream => {
       const id = JSON.parse(stream);
 
       if (true !== stateStore.has('queue', id)) {
+        console.log(stream)
         return
       }
 
-      notification('info', `Download canceled: ${ag(stateStore.get('queue', id, {}), 'title')}`);
+      toast.info(`Download canceled: ${ag(stateStore.get('queue', id, {}), 'title')}`);
 
       if (true === stateStore.has('queue', id)) {
         stateStore.remove('queue', id);
@@ -64,9 +68,12 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value.on('cleared', stream => {
       const id = JSON.parse(stream);
+
       if (true !== stateStore.has('history', id)) {
+        console.log(stream)
         return
       }
+
       stateStore.remove('history', id);
     });
 

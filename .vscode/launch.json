@@ -5,18 +5,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Node: App.Vue",
+      "name": "Node: Nuxt3",
       "request": "launch",
       "runtimeArgs": [
         "run",
-        "serve",
+        "dev",
         "--",
         "--port",
-        "3000"
+        "8082"
       ],
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "yarn",
       "type": "node",
-      "cwd": "${workspaceFolder}/frontend",
+      "cwd": "${workspaceFolder}/ui",
       "env": {
         "VUE_APP_BASE_URL": "http://localhost:8081",
       }
@@ -73,23 +73,6 @@
         }
       ],
       "justMyCode": true
-    },
-    {
-      "name": "Node: NuxtJS",
-      "request": "launch",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "8082"
-      ],
-      "runtimeExecutable": "yarn",
-      "type": "node",
-      "cwd": "${workspaceFolder}/ui",
-      "env": {
-        "VUE_APP_BASE_URL": "http://localhost:8081",
-      }
     }
   ]
 }

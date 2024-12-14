@@ -128,13 +128,11 @@
 </template>
 
 <script setup>
-import { useStorage, useEventBus } from '@vueuse/core'
+import { useStorage } from '@vueuse/core'
 
 const config = useConfigStore();
 const socket = useSocketStore();
-
-const bus = useEventBus('item_added', 'task_edit');
-const emits = defineEmits(['addItem']);
+const toast = useToast();
 
 const selectedFormat = useStorage('selectedFormat', 'any')
 const selectedPreset = useStorage('selectedPreset', 'default')
@@ -152,8 +150,7 @@ const addDownload = () => {
   addInProgress.value = true;
   socket.emit('add_url', {
     url: url.value,
-    format: selectedFormat.value,
-    quality: selectedQuality.value,
+    preset: selectedPreset.value,
     folder: downloadPath.value,
     ytdlp_config: ytdlpConfig.value,
     ytdlp_cookies: ytdlpCookies.value,
@@ -165,8 +162,7 @@ const resetConfig = () => {
   if (!confirm('Are you sure you want to reset the local configuration? this will NOT delete any downloads or server configuration.')) {
     return;
   }
-  selectedFormat.value = 'any';
-  selectedQuality.value = '';
+  selectedPreset.value = 'default';
   ytdlpConfig.value = '';
   ytdlpCookies.value = '';
   output_template.value = null;
@@ -174,34 +170,17 @@ const resetConfig = () => {
   downloadPath.value = '';
 }
 
-bus.on((event, data) => {
-  const allowedEvents = ['item_added'];
-  if (!allowedEvents.includes(event)) {
-    return;
-  }
-
-  if ('item_added' === event) {
-    if (data?.status === 'ok') {
-      url.value = '';
-    }
-    addInProgress.value = false;
-  }
-});
-
 const statusHandler = async data => {
   const { status, msg } = JSON.parse(data)
 
   addInProgress.value = false
 
-  console.log(data)
-
   if ('error' === status) {
-    notification('error', 'Add error', msg, 5000)
+    toast.error(msg)
     return
   }
 
-  notification('success', 'Add success', msg, 3000)
-  await navigateTo('/')
+  url.value = '';
 }
 
 onMounted(() => socket.on('status', statusHandler))

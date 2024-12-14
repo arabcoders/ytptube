@@ -35,7 +35,7 @@
     </div>
 
     <div class="columns is-multiline">
-      <LazyLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.history"
+      <LateLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.queue"
         :key="item._id">
         <div class="card">
           <header class="card-header has-tooltip" v-tooltip="item.title">
@@ -98,7 +98,7 @@
             </div>
           </div>
         </div>
-      </LazyLoader>
+      </LateLoader>
     </div>
 
     <div class="content has-text-centered" v-if="!hasQueuedItems">
@@ -125,9 +125,9 @@
 <script setup>
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import LazyLoader from '~/components/LazyLoader'
 import { ucFirst } from '~/utils/index'
 
+const toast = useToast();
 const config = useConfigStore();
 const stateStore = useStateStore();
 const socket = useSocketStore();
@@ -135,7 +135,6 @@ const socket = useSocketStore();
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
-const actionId = ref(null);
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {
@@ -149,8 +148,7 @@ watch(masterSelectAll, (value) => {
 })
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasQueuedItems = computed(() => stateStore.count('history') > 0)
-const getTotal = computed(() => stateStore.count('history'));
+const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
 
 const setIcon = item => {
   if (item.status === 'downloading' && item.is_live) {
@@ -222,11 +220,11 @@ const confirmCancel = item => {
   if (true !== confirm(`Are you sure you want to cancel (${item.title})?`)) {
     return false;
   }
-  deleteItem('queue', item._id);
+  cancelItems(item._id);
   return true;
 }
 
-const deleteItem = (type, item) => {
+const cancelItems = item => {
   const items = []
 
   if (typeof item === 'object') {
@@ -241,51 +239,6 @@ const deleteItem = (type, item) => {
     return;
   }
 
-  actionId.value = makeId();
-
-  socket.emit('cancel_items', {
-    identifier: actionId.value,
-    ids: items,
-  });
+  items.forEach(id => socket.emit('item_cancel', id));
 }
-
-const cancelHandler = async ev => {
-  if (!actionId.value) {
-    return;
-  }
-
-  const data = JSON.parse(ev)
-
-  if (data.identifier !== actionId.value) {
-    console.log('Invalid action identifier', data);
-    return;
-  }
-
-  if ('error' === data.status) {
-    notification('error', 'Failed to cancel item/s.');
-    return;
-  }
-
-  for (const key in items) {
-    const itemId = items[key];
-    if (itemId in json && json[itemId] === 'ok') {
-      if (true === stateStore.has('history', itemId)) {
-        stateStore.remove('history', itemId);
-      }
-      if (true === stateStore.has('queue', itemId)) {
-        notification('info', 'Download canceled: ' + ag(stateStore.get(itemId), 'title'));
-        stateStore.remove('queue', itemId);
-      }
-    }
-  }
-}
-
-onMounted(() => {
-  socket.on('cancel_items', cancelHandler)
-})
-
-onUnmounted(() => {
-  socket.off('cancel_items', cancelHandler)
-})
-
 </script>

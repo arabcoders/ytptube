@@ -46,6 +46,12 @@ hr {
   white-space: nowrap;
 }
 
+.user-hint {
+  user-select: none;
+  cursor: help;
+  border-bottom: 1px dotted;
+}
+
 @media (prefers-color-scheme: dark) {
   * {
     unicode-bidi: plaintext;

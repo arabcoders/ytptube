@@ -333,10 +333,10 @@ class Notifier:
     async def completed(self, dl: dict):
         await self.emit('completed', dl)
 
-    async def canceled(self, id: str):
+    async def canceled(self, id: str, dl: dict = None):
         await self.emit('canceled', id)
 
-    async def cleared(self, id: str):
+    async def cleared(self, id: str, dl: dict = None):
         await self.emit('cleared', id)
 
     async def error(self, dl: dict, message: str):

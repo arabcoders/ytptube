@@ -21,12 +21,13 @@
         </div>
 
         <div class="navbar-item">
-          <NuxtLink v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" to="/add">
+          <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
+            @click="config.showForm = !config.showForm">
             <span class="icon-text">
               <span class="icon"><i class="fa-solid fa-plus" /></span>
               <span>Add</span>
             </span>
-          </NuxtLink>
+          </button>
         </div>
 
         <div class="navbar-item" v-if="config.tasks.length > 0">
@@ -56,6 +57,7 @@
       </div>
     </nav>
 
+    <NewDownload v-if="config.showForm" />
     <NuxtPage />
 
     <div class="columns mt-3 is-mobile">
@@ -151,17 +153,4 @@ watch(selectedTheme, value => {
 })
 
 const reloadPage = () => window.location.reload()
-const toggleForm = () => {
-  console.log('emitting show_form');
-  bus.emit('show_form', { foo: 'bar' })
-  dEvent('show_form', { foo: 'bar' })
-}
 </script>
-
-<style>
-.user-hint {
-  user-select: none;
-  cursor: help;
-  border-bottom: 1px dotted;
-}
-</style>
