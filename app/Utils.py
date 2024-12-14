@@ -342,6 +342,9 @@ class Notifier:
     async def error(self, dl: dict, message: str):
         await self.emit('error', (dl, message))
 
+    async def warning(self, message: str):
+        await self.emit('error', message)
+
     async def emit(self, event: str, data):
         tasks = []
         tasks.append(self.sio.emit(event, self.serializer.encode(data)))

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 import asyncio
 import base64
 from datetime import datetime
@@ -687,6 +686,49 @@ class Main:
                     'line': str(e),
                 })
                 await self.sio.emit('cli_close', {'exitcode': -1})
+
+        @self.sio.event()
+        async def add_url(sid, post: dict):
+            url: str = post.get('url')
+            quality: str = post.get('quality')
+
+            if not url:
+                self.notifier.warning('No URL provided.')
+                return
+
+            format: str = post.get('format')
+            folder: str = post.get('folder')
+            ytdlp_cookies: str = post.get('ytdlp_cookies')
+            ytdlp_config: dict = post.get('ytdlp_config')
+            output_template: str = post.get('output_template')
+            if ytdlp_config is None:
+                ytdlp_config = {}
+
+            status = await self.add(
+                url=url,
+                quality=quality,
+                format=format,
+                folder=folder,
+                ytdlp_cookies=ytdlp_cookies,
+                ytdlp_config=ytdlp_config,
+                output_template=output_template
+            )
+            await self.sio.emit('status', self.serializer.encode(status))
+
+        @self.sio.event
+        async def cancel_items(sid, post: dict):
+            ids = post.get('ids')
+            identifier: str = post.get('identifier')
+
+            if not ids:
+                await self.notifier.warning('Invalid request.')
+                return
+
+            status: dict[str, str] = {}
+            status = await self.queue.cancel(ids)
+            status.update({'identifier': identifier})
+
+            await self.sio.emit('cancel_items', self.serializer.encode(status))
 
         @self.sio.event()
         async def archive_item(sid, data):
