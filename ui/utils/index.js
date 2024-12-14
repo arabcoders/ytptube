@@ -126,9 +126,6 @@ const notification = (type, title, text, duration = 3000) => {
       if (3000 === duration) {
         duration = 10000
       }
-      if ('crit' === notificationType) {
-        log_error(`${title} ${text}`)
-      }
       break
   }
 

@@ -4,7 +4,7 @@
       <span class="icon">
         <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Queue <span v-if="hasQueuedItems">({{ getTotal }})</span></span>
+      <span>Queue <span v-if="hasQueuedItems">({{ stateStore.count('queue') }})</span></span>
     </span>
   </h1>
 
@@ -35,7 +35,7 @@
     </div>
 
     <div class="columns is-multiline">
-      <LazyLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.queue"
+      <LazyLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.history"
         :key="item._id">
         <div class="card">
           <header class="card-header has-tooltip" v-tooltip="item.title">
@@ -57,7 +57,7 @@
                     <i class="fas" :class="setIcon(item)" />
                   </span>
                   <span v-if="item.status == 'downloading' && item.is_live">Live Streaming</span>
-                  <span v-else>{{ capitalize(item.status) }}</span>
+                  <span v-else>{{ ucFirst(item.status) }}</span>
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered">
@@ -76,7 +76,7 @@
             </div>
             <div class="columns is-multiline is-mobile">
               <div class="column is-half-mobile">
-                <button class="button is-danger is-fullwidth" @click="confirmDelete(item);">
+                <button class="button is-danger is-fullwidth" @click="confirmCancel(item);">
                   <span class="icon-text is-block">
                     <span class="icon">
                       <i class="fa-solid fa-trash-can" />
@@ -123,12 +123,10 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref, watch, computed } from 'vue';
-import moment from "moment";
+import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import LazyLoader from './LazyLoader'
-
-const emit = defineEmits(['deleteItem']);
+import LazyLoader from '~/components/LazyLoader'
+import { ucFirst } from '~/utils/index'
 
 const config = useConfigStore();
 const stateStore = useStateStore();
@@ -137,6 +135,7 @@ const socket = useSocketStore();
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
+const actionId = ref(null);
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {
@@ -150,8 +149,8 @@ watch(masterSelectAll, (value) => {
 })
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
-const getTotal = computed(() => stateStore.count('queue'));
+const hasQueuedItems = computed(() => stateStore.count('history') > 0)
+const getTotal = computed(() => stateStore.count('history'));
 
 const setIcon = item => {
   if (item.status === 'downloading' && item.is_live) {
@@ -219,14 +218,74 @@ const updateProgress = (item) => {
   return string;
 }
 
-const confirmDelete = (item) => {
-  if (!confirm(`Are you sure you want to delete (${item.title})?`)) {
+const confirmCancel = item => {
+  if (true !== confirm(`Are you sure you want to cancel (${item.title})?`)) {
     return false;
   }
-
-  emit('deleteItem', 'queue', item._id);
-  stateStore.remove('queue', item._id);
+  deleteItem('queue', item._id);
   return true;
 }
+
+const deleteItem = (type, item) => {
+  const items = []
+
+  if (typeof item === 'object') {
+    for (const key in item) {
+      items.push(item[key]);
+    }
+  } else {
+    items.push(item);
+  }
+
+  if (items.length < 0) {
+    return;
+  }
+
+  actionId.value = makeId();
+
+  socket.emit('cancel_items', {
+    identifier: actionId.value,
+    ids: items,
+  });
+}
+
+const cancelHandler = async ev => {
+  if (!actionId.value) {
+    return;
+  }
+
+  const data = JSON.parse(ev)
+
+  if (data.identifier !== actionId.value) {
+    console.log('Invalid action identifier', data);
+    return;
+  }
+
+  if ('error' === data.status) {
+    notification('error', 'Failed to cancel item/s.');
+    return;
+  }
+
+  for (const key in items) {
+    const itemId = items[key];
+    if (itemId in json && json[itemId] === 'ok') {
+      if (true === stateStore.has('history', itemId)) {
+        stateStore.remove('history', itemId);
+      }
+      if (true === stateStore.has('queue', itemId)) {
+        notification('info', 'Download canceled: ' + ag(stateStore.get(itemId), 'title'));
+        stateStore.remove('queue', itemId);
+      }
+    }
+  }
+}
+
+onMounted(() => {
+  socket.on('cancel_items', cancelHandler)
+})
+
+onUnmounted(() => {
+  socket.off('cancel_items', cancelHandler)
+})
 
 </script>

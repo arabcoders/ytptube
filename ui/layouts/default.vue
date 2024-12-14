@@ -13,25 +13,26 @@
       <div class="navbar-end is-flex">
         <div class="navbar-item">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
-            <span class="icon"><i class="fa-solid fa-terminal" /></span>
-            <span>Terminal</span>
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-terminal" /></span>
+              <span>Terminal</span>
+            </span>
           </NuxtLink>
         </div>
 
         <div class="navbar-item">
-          <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
-            @click="config.showForm = !config.showForm">
-            <span class="icon"><i class="fa-solid fa-plus" /></span>
-            <span>Add</span>
-          </button>
+          <NuxtLink v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom" to="/add">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-plus" /></span>
+              <span>Add</span>
+            </span>
+          </NuxtLink>
         </div>
 
         <div class="navbar-item" v-if="config.tasks.length > 0">
           <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
             @click="config.showTasks = !config.showTasks">
-            <span class="icon">
-              <i class="fa-solid fa-tasks" />
-            </span>
+            <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span class="is-hidden-mobile">Tasks</span>
           </button>
         </div>
@@ -46,6 +47,7 @@
             <span class="icon"><i class="fas fa-moon"></i></span>
           </button>
         </div>
+
         <div class="navbar-item">
           <button class="button is-dark" @click="reloadPage">
             <span class="icon"><i class="fas fa-refresh"></i></span>

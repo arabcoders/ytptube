@@ -135,7 +135,6 @@ const focusInput = () => {
   command_input.value.focus()
 }
 
-onUnmounted(() => window.removeEventListener('resize', reSizeTerminal));
 
 const writer = s => {
   if (!terminal.value) {
@@ -154,4 +153,10 @@ onMounted(async () => {
   socket.on('cli_close', loader)
   socket.on('cli_output', writer)
 })
+
+onUnmounted(() => {
+  socket.off('cli_close', loader)
+  socket.off('cli_output', writer)
+  window.removeEventListener('resize', reSizeTerminal)
+});
 </script>

@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { notification, ag } from "~/utils/index"
 
 export const useSocketStore = defineStore('socket', () => {
   const runtimeConfig = useRuntimeConfig()
@@ -29,13 +30,13 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value.on('added', stream => {
       const item = JSON.parse(stream);
-      stateStore.add('queue', item);
-      toast.success(`Item queued successfully: ${stateStore.get('queue', item._id)?.title}`);
+      stateStore.add('queue', item._id, item);
+      notification('success', `Item queued successfully: ${ag(stateStore.get('queue', item._id, {}), 'title')}`);
     });
 
     socket.value.on('error', stream => {
       const [item, error] = JSON.parse(stream);
-      toast.error(`${item?.id}: Error: ${error}`);
+      notification('error', `${item?.id}: Error: ${error}`);
     });
 
     socket.value.on('completed', stream => {
@@ -54,7 +55,7 @@ export const useSocketStore = defineStore('socket', () => {
         return
       }
 
-      toast.info('Download canceled: ' + stateStore.get('queue', id)?.title);
+      notification('info', `Download canceled: ${ag(stateStore.get('queue', id, {}), 'title')}`);
 
       if (true === stateStore.has('queue', id)) {
         stateStore.remove('queue', id);

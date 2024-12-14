@@ -150,7 +150,7 @@ const addInProgress = ref(false)
 
 const addDownload = () => {
   addInProgress.value = true;
-  emits('addItem', {
+  socket.emit('add_url', {
     url: url.value,
     format: selectedFormat.value,
     quality: selectedQuality.value,
@@ -187,4 +187,23 @@ bus.on((event, data) => {
     addInProgress.value = false;
   }
 });
+
+const statusHandler = async data => {
+  const { status, msg } = JSON.parse(data)
+
+  addInProgress.value = false
+
+  console.log(data)
+
+  if ('error' === status) {
+    notification('error', 'Add error', msg, 5000)
+    return
+  }
+
+  notification('success', 'Add success', msg, 3000)
+  await navigateTo('/')
+}
+
+onMounted(() => socket.on('status', statusHandler))
+onUnmounted(() => socket.off('status', statusHandler))
 </script>
