@@ -159,7 +159,7 @@ class Main:
     async def connect(self, sid, _):
         data: dict = {
             **self.queue.get(),
-            "config": self.config,
+            "config": self.config.frontend(),
             "tasks": [],
             "presets": [],
         }

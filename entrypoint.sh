@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Setting umask to ${UMASK}"
+echo "Setting umask to ${UMASK}, to change it set the UMASK environment variable"
 umask ${UMASK}
 
 echo_err() { cat <<< "$@" 1>&2; }

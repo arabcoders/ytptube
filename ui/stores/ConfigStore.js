@@ -1,14 +1,12 @@
 const CONFIG_KEYS = {
-  isConnected: false,
   showForm: false,
-  showConsole: false,
-  showTasks: false,
-  tasks: [],
   app: {
-    host: '',
-    prefix: '',
+    download_path: '/downloads',
     keep_archive: false,
     output_template: '',
+    ytdlp_version: '',
+    url_host: '',
+    url_prefix: '',
   },
   presets: [
     {
@@ -17,6 +15,7 @@ const CONFIG_KEYS = {
     }
   ],
   directories: [],
+  tasks: [],
 };
 
 export const useConfigStore = defineStore('config', () => {

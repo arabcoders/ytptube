@@ -67,6 +67,10 @@ class Config:
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version', 'started')
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
+    _frontend_vars: tuple = (
+        'download_path', 'keep_archive', 'output_template',
+        'ytdlp_version', 'url_host', 'url_prefix',
+    )
 
     @staticmethod
     def get_instance():
@@ -195,3 +199,13 @@ class Config:
                 attrs[attribute] = value
 
         return attrs
+
+    def frontend(self) -> dict:
+        """
+        Returns configuration variables relevant to the frontend.
+
+        Returns:
+            dict: A dictionary with the frontend configuration
+        """
+
+        return {k: getattr(self, k) for k in self._frontend_vars}
