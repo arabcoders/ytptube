@@ -594,7 +594,7 @@ class Main:
             if not self.appLoader:
                 with open(os.path.join(
                     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-                    'frontend/dist/index.html'
+                    'ui/dist/index.html'
                 ), 'r') as f:
                     self.appLoader = f.read()
 
@@ -809,7 +809,7 @@ class Main:
                 'X-Via': 'memory' if not item.get('file', None) else 'disk',
             })
 
-        staticDir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'frontend/dist')
+        staticDir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'ui/dist')
         for root, _, files in os.walk(staticDir):
             for file in files:
                 if file.endswith('.map'):
@@ -838,7 +838,7 @@ class Main:
 
             self.app.on_response_prepare.append(on_prepare)
         except ValueError as e:
-            if 'frontend/dist' in str(e):
+            if 'ui/dist' in str(e):
                 raise RuntimeError('Could not find the frontend UI static assets.') from e
             raise e
 
