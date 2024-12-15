@@ -43,7 +43,7 @@ jobs:
       - name: Update Version File
         uses: ArabCoders/write-version-to-file@master
         with:
-          filename: "/app/version.py"
+          filename: "/app/library/version.py"
           placeholder: "dev-master"
 
       - name: Set up QEMU

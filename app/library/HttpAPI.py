@@ -109,7 +109,7 @@ class HttpAPI(common):
                 contentType = self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file))
 
                 self.staticHolder[urlPath] = {'content': content, 'content_type': contentType}
-                LOG.info(f'Preloading: [{urlPath}].')
+                LOG.debug(f'Preloading: [{urlPath}].')
                 app.router.add_get(urlPath, self.staticFile)
 
                 if urlPath.endswith('/index.html') and urlPath != '/index.html':
@@ -186,7 +186,7 @@ class HttpAPI(common):
 
     @route('GET', 'ping')
     async def ping(self, _) -> Response:
-        self.queue.test()
+        await self.queue.test()
         return web.Response(text='pong')
 
     @route('POST', 'add')
