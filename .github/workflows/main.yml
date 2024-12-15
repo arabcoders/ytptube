@@ -97,7 +97,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repo_name: arabcoders/ytptube
-          path: app/version.py
+          path: app/library/version.py
           variable: APP_VERSION
 
   dockerhub-sync-readme:
