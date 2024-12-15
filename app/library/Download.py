@@ -7,10 +7,11 @@ import re
 import shutil
 import yt_dlp
 import hashlib
-from AsyncPool import Terminator
-from Utils import Notifier, get_format, get_opts, jsonCookie, mergeConfig
-from ItemDTO import ItemDTO
-from Config import Config
+from .AsyncPool import Terminator
+from .Utils import get_format, get_opts, jsonCookie, mergeConfig
+from .ItemDTO import ItemDTO
+from .config import Config
+from .Emitter import Emitter
 from multiprocessing.managers import SyncManager
 LOG = logging.getLogger('download')
 
@@ -31,7 +32,7 @@ class Download:
     default_ytdl_opts: dict = None
     debug: bool = False
     tempPath: str = None
-    notifier: Notifier = None
+    emitter: Emitter = None
     manager: SyncManager = None
     canceled: bool = False
     is_live: bool = False
@@ -79,7 +80,7 @@ class Download:
         self.tmpfilename = None
         self.status_queue = None
         self.proc = None
-        self.notifier = None
+        self.emitter = None
         self.max_workers = int(config.max_workers)
         self.tempKeep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
@@ -183,9 +184,9 @@ class Download:
 
         LOG.info(f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
 
-    async def start(self, notifier: Notifier):
+    async def start(self, emitter: Emitter):
         self.manager = multiprocessing.Manager()
-        self.notifier = notifier
+        self.emitter = emitter
         self.status_queue = self.manager.Queue()
 
         # Create temp dir for each download.
@@ -201,7 +202,7 @@ class Download:
         self.proc.start()
         self.info.status = 'preparing'
 
-        asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-{self.id}")
+        asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-{self.id}")
         asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
         return await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
@@ -329,7 +330,7 @@ class Download:
                 LOG.debug(f'Status Update: {self.info._id=} {status=}')
 
             if isinstance(status, str):
-                asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-u-{self.id}")
+                asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
                 continue
 
             self.tmpfilename = status.get('tmpfilename')
@@ -350,8 +351,8 @@ class Download:
             if self.info.status == 'error' and 'error' in status:
                 self.info.error = status.get('error')
                 asyncio.create_task(
-                    self.notifier.error(dl=self.info, message=self.info.error),
-                    name=f"notifier-e-{self.id}")
+                    self.emitter.error(dl=self.info, message=self.info.error),
+                    name=f"emitter-e-{self.id}")
 
             if 'downloaded_bytes' in status:
                 total = status.get('total_bytes') or status.get('total_bytes_estimate')
@@ -370,4 +371,4 @@ class Download:
                     self.info.file_size = None
                     pass
 
-            asyncio.create_task(self.notifier.updated(dl=self.info), name=f"notifier-u-{self.id}")
+            asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")

@@ -1,14 +1,15 @@
 import asyncio
 import logging
 import os
-from ItemDTO import ItemDTO
+from .ItemDTO import ItemDTO
 import httpx
-from version import APP_VERSION
-LOG = logging.getLogger('Webhooks')
+from .version import APP_VERSION
 
+LOG = logging.getLogger('Webhooks')
 
 class Webhooks:
     targets: list[dict] = []
+    allowed_events: tuple = ('added', 'completed', 'error', 'not_live',)
 
     def __init__(self, file: str):
         if os.path.exists(file):
@@ -20,7 +21,7 @@ class Webhooks:
                 raise Exception(f'file is empty.')
 
             LOG.info(f'Loading webhooks from {file}')
-            from Utils import load_file
+            from .Utils import load_file
             (target, status, error) = load_file(file, list)
             if not status:
                 raise Exception(f'{error}')
@@ -49,7 +50,7 @@ class Webhooks:
         return await asyncio.gather(*tasks)
 
     async def __send(self, event: str, target: dict, item: ItemDTO) -> dict:
-        from Config import Config
+        from .config import Config
         req: dict = target.get('request')
         try:
             LOG.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
@@ -96,3 +97,9 @@ class Webhooks:
                 'status': 500,
                 'text': str(e)
             }
+
+    def emit(self, event, data, **kwargs):
+        if len(self.targets) < 1 or event not in self.allowed_events:
+            return False
+
+        return self.send(event, data)

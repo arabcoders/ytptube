@@ -1,9 +1,5 @@
-import asyncio
-import hashlib
 import logging
-import os
-import tempfile
-from Utils import calcDownloadPath
+from .Utils import calcDownloadPath
 import pathlib
 import pysubs2
 from pysubs2.time import ms_to_times

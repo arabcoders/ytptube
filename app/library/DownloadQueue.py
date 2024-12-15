@@ -6,12 +6,13 @@ import os
 import time
 import yt_dlp
 from sqlite3 import Connection
-from Config import Config
-from Download import Download
-from ItemDTO import ItemDTO
-from DataStore import DataStore
-from Utils import Notifier, ObjectSerializer, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
-from AsyncPool import AsyncPool
+from .config import Config
+from .Download import Download
+from .ItemDTO import ItemDTO
+from .DataStore import DataStore
+from .Utils import calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
+from .AsyncPool import AsyncPool
+from .Emitter import Emitter
 
 LOG = logging.getLogger('DownloadQueue')
 TYPE_DONE: str = 'done'
@@ -20,21 +21,25 @@ TYPE_QUEUE: str = 'queue'
 
 class DownloadQueue:
     config: Config = None
-    notifier: Notifier = None
-    serializer: ObjectSerializer = None
+    emitter: Emitter = None
     queue: DataStore = None
     done: DataStore = None
     event: asyncio.Event = None
     pool: AsyncPool = None
+    connection: Connection = None
 
-    def __init__(self, notifier: Notifier, connection: Connection, serializer: ObjectSerializer):
+    def __init__(self, emitter: Emitter, connection: Connection):
         self.config = Config.get_instance()
-        self.notifier = notifier
-        self.serializer = serializer
-        self.done = DataStore(type=TYPE_DONE, connection=connection)
-        self.queue = DataStore(type=TYPE_QUEUE, connection=connection)
+        self.emitter = emitter
+        self.connection = connection
+        self.done = DataStore(type=TYPE_DONE, connection=self.connection)
+        self.queue = DataStore(type=TYPE_QUEUE, connection=self.connection)
         self.done.load()
         self.queue.load()
+
+    async def test(self) -> bool:
+        self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
+        return True
 
     async def initialize(self):
         self.event = asyncio.Event()
@@ -174,7 +179,7 @@ class DownloadQueue:
                 self.event.set()
 
             asyncio.create_task(
-                self.notifier.emit(NotifyEvent, itemDownload.info),
+                self.emitter.emit(NotifyEvent, itemDownload.info),
                 name=f'notifier-{NotifyEvent}-{itemDownload.info.id}')
 
             return {
@@ -294,9 +299,9 @@ class DownloadQueue:
                 await item.close()
                 LOG.debug(f'Deleting from queue {itemMessage}')
                 self.queue.delete(id)
-                asyncio.create_task(self.notifier.canceled(id=id, dl=item), name=f'notifier-c-{id}')
+                asyncio.create_task(self.emitter.canceled(id=id, dl=item), name=f'notifier-c-{id}')
                 self.done.put(item)
-                asyncio.create_task(self.notifier.completed(dl=item), name=f'notifier-d-{id}')
+                asyncio.create_task(self.emitter.completed(dl=item), name=f'notifier-d-{id}')
                 LOG.info(f'Deleted from queue {itemMessage}')
 
             status[id] = 'ok'
@@ -318,7 +323,7 @@ class DownloadQueue:
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
             LOG.debug(f'Deleting completed download {itemMessage}')
             self.done.delete(id)
-            asyncio.create_task(self.notifier.cleared(id, dl=item), name=f'notifier-c-{id}')
+            asyncio.create_task(self.emitter.cleared(id, dl=item), name=f'notifier-c-{id}')
             LOG.info(f'Deleted completed download {itemMessage}')
             status[id] = 'ok'
 
@@ -398,7 +403,7 @@ class DownloadQueue:
         LOG.info(f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
 
         try:
-            await entry.start(self.notifier)
+            await entry.start(self.emitter)
 
             if entry.info.status != 'finished':
                 if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
@@ -417,12 +422,12 @@ class DownloadQueue:
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                asyncio.create_task(self.notifier.canceled(id, dl=entry.info), name=f'notifier-c-{id}')
+                asyncio.create_task(self.emitter.canceled(id, dl=entry.info), name=f'notifier-c-{id}')
                 entry.info.status = 'canceled'
                 entry.info.error = 'Canceled by user.'
 
             self.done.put(value=entry)
-            asyncio.create_task(self.notifier.completed(dl=entry.info), name=f'notifier-d-{id}')
+            asyncio.create_task(self.emitter.completed(dl=entry.info), name=f'notifier-d-{id}')
 
         self.event.set()
 

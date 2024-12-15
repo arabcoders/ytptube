@@ -1,4 +1,3 @@
-import asyncio
 import copy
 from datetime import datetime, timezone
 import json
@@ -8,8 +7,6 @@ import pathlib
 import re
 from typing import Any
 import yt_dlp
-from socketio import AsyncServer
-from Webhooks import Webhooks
 
 LOG = logging.getLogger('Utils')
 
@@ -285,77 +282,6 @@ def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
                 ])+"\n"
 
     return netscapeCookies if hasCookies else None
-
-
-class ObjectSerializer(json.JSONEncoder):
-    """
-    This class is used to serialize objects to JSON.
-    The only difference between this and the default JSONEncoder is that this one
-    will call the __dict__ method of an object if it exists.
-    """
-
-    def default(self, obj):
-        if isinstance(obj, object) and hasattr(obj, '__dict__'):
-            return obj.__dict__
-        return json.JSONEncoder.default(self, obj)
-
-
-class Notifier:
-    '''
-    This class is used to send events to the frontend.
-    '''
-
-    sio: AsyncServer = None
-    "SocketIO server instance"
-
-    serializer: ObjectSerializer = None
-    "Serializer used to serialize objects to JSON"
-
-    webhooks: Webhooks = None
-    "Send webhooks events."
-
-    webhooks_allowed_events: tuple = (
-        'added', 'completed', 'error', 'not_live'
-    )
-    "Events that are allowed to be sent to webhooks."
-
-    def __init__(self, sio: AsyncServer, serializer: ObjectSerializer, webhooks: Webhooks = None):
-        self.sio = sio
-        self.serializer = serializer
-        self.webhooks = webhooks
-
-    async def added(self, dl: dict):
-        await self.emit('added', dl)
-
-    async def updated(self, dl: dict):
-        await self.emit('updated', dl)
-
-    async def completed(self, dl: dict):
-        await self.emit('completed', dl)
-
-    async def canceled(self, id: str, dl: dict = None):
-        await self.emit('canceled', id)
-
-    async def cleared(self, id: str, dl: dict = None):
-        await self.emit('cleared', id)
-
-    async def error(self, dl: dict, message: str):
-        await self.emit('error', (dl, message))
-
-    async def warning(self, message: str):
-        await self.emit('error', message)
-
-    async def emit(self, event: str, data):
-        tasks = []
-        tasks.append(self.sio.emit(event, self.serializer.encode(data)))
-
-        if self.webhooks and event in self.webhooks_allowed_events:
-            tasks.append(self.webhooks.send(event, data))
-
-        try:
-            await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
-        except asyncio.TimeoutError:
-            LOG.error(f"Timed out sending event {event} to webhooks.")
 
 
 def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:

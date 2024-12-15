@@ -1,9 +1,8 @@
 import math
 import os
 from urllib.parse import quote
-from Utils import calcDownloadPath
+from .Utils import calcDownloadPath
 from .ffprobe import FFProbe
-
 
 class M3u8:
     ok_vcodecs: tuple = ('h264', 'x264', 'avc',)

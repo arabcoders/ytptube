@@ -3,8 +3,8 @@ import hashlib
 import logging
 import os
 import tempfile
-from Utils import calcDownloadPath
-from Config import Config
+from .Utils import calcDownloadPath
+from .config import Config
 
 LOG = logging.getLogger('player.segments')
 

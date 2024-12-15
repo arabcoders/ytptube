@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from email.utils import formatdate
 import json
 from sqlite3 import Connection
-from Config import Config
-from Download import Download
-from ItemDTO import ItemDTO
+from .config import Config
+from .Download import Download
+from .ItemDTO import ItemDTO
 
 
 class DataStore:

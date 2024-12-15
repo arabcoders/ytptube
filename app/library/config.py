@@ -4,17 +4,18 @@ import re
 import sys
 import time
 import coloredlogs
-from version import APP_VERSION
+from .version import APP_VERSION
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
-from Utils import load_file
+from .Utils import load_file
+from pathlib import Path
 
 
 class Config:
     __instance = None
     config_path: str = '.'
     download_path: str = '.'
-    temp_path: str = '{download_path}'
+    temp_path: str = '/tmp'
     temp_keep: bool = False
     db_file: str = '{config_path}/ytptube.db'
     manual_archive: str = '{config_path}/archive.manual.log'
@@ -64,9 +65,12 @@ class Config:
 
     ytdlp_version: str = YTDLP_VERSION
 
-    _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
+    _manual_vars: tuple = ('temp_path', 'config_path', 'download_path',)
     _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version', 'started')
+
+    _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
+
     _frontend_vars: tuple = (
         'download_path', 'keep_archive', 'output_template',
         'ytdlp_version', 'url_host', 'url_prefix',
@@ -80,11 +84,11 @@ class Config:
     def __init__(self):
         """ Virtually private constructor. """
         if Config.__instance is not None:
-            raise Exception("This class is a singleton!. Use Config.getInstance() instead.")
+            raise Exception("This class is a singleton. Use Config.get_instance() instead.")
         else:
             Config.__instance = self
 
-        baseDefaultPath: str = os.path.dirname(__file__)
+        baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
         self.temp_path = os.environ.get('YTP_TEMP_PATH', None) or os.path.join(baseDefaultPath, 'var', 'tmp')
         self.config_path = os.environ.get('YTP_CONFIG_PATH', None) or os.path.join(baseDefaultPath, 'var', 'config')
@@ -95,11 +99,11 @@ class Config:
         envFile: str = os.path.join(self.config_path, '.env')
 
         if os.path.exists(envFile):
-            logging.info(f'Loading environment variables from [{envFile}].')
+            logging.info(f"Loading environment variables from '{envFile}'.")
             load_dotenv(envFile)
 
         for k, v in self._getAttributes().items():
-            if k.startswith('_'):
+            if k.startswith('_') or k in self._manual_vars:
                 continue
 
             # If the variable declared as immutable, set it to the default value.
@@ -111,7 +115,7 @@ class Config:
             setattr(self, k, os.environ[lookUpKey] if lookUpKey in os.environ else v)
 
         for k, v in self.__dict__.items():
-            if k.startswith('_') or k in self._immutable:
+            if k.startswith('_') or k in self._immutable or k in self._manual_vars:
                 continue
 
             if isinstance(v, str) and '{' in v and '}' in v:
@@ -182,7 +186,7 @@ class Config:
         LOG.info(f'Keep temp: {self.temp_keep}')
 
         if self.auth_password and self.auth_username:
-            LOG.warn(f"Basic Auth enabled with username: '{self.auth_username}'.")
+            LOG.warn(f"Basic authentication enabled with username: '{self.auth_username}'.")
 
         self.started = time.time()
 

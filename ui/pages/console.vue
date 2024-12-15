@@ -135,12 +135,14 @@ const focusInput = () => {
   command_input.value.focus()
 }
 
-
 const writer = s => {
   if (!terminal.value) {
     return
   }
-  terminal.value.writeln(s.line)
+
+  const data = JSON.parse(s)
+
+  terminal.value.writeln(data.line)
 }
 
 const loader = () => isLoading.value = false
