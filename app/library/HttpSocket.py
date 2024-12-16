@@ -13,7 +13,7 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .common import common
 from .encoder import Encoder
-from .Utils import isDownloaded, load_file
+from .Utils import isDownloaded
 from .Emitter import Emitter
 
 LOG = logging.getLogger('socket')
@@ -65,7 +65,7 @@ class HttpSocket(common):
             return
 
         try:
-            LOG.info(f'Cli command from {sid=}: {data}')
+            LOG.info(f"Cli command from client '{sid}'. '{data}'")
 
             args = ['yt-dlp'] + shlex.split(data)
             _env = os.environ.copy()
@@ -93,7 +93,7 @@ class HttpSocket(common):
             try:
                 os.close(slave_fd)
             except Exception as e:
-                LOG.error(f'Error closing PTY: {str(e)}')
+                LOG.error(f"Error closing PTY. '{str(e)}'.")
 
             async def read_pty():
                 loop = asyncio.get_running_loop()
@@ -126,7 +126,7 @@ class HttpSocket(common):
                 try:
                     os.close(master_fd)
                 except Exception as e:
-                    LOG.error(f'Error closing PTY: {str(e)}')
+                    LOG.error(f"Error closing PTY. '{str(e)}'.")
 
             # Start reading output from PTY
             read_task = asyncio.create_task(read_pty())
@@ -139,7 +139,7 @@ class HttpSocket(common):
 
             await self.emitter.emit('cli_close', {'exitcode': returncode}, to=sid)
         except Exception as e:
-            LOG.error(f'CLI Error for {sid=}: {str(e)}')
+            LOG.error(f"CLI execute exception was thrown for client '{sid}'. {str(e)}")
             await self.emitter.emit('cli_out1put', {
                 'type': 'stderr',
                 'line': str(e),
@@ -152,7 +152,7 @@ class HttpSocket(common):
         quality: str = data.get('quality')
 
         if not url:
-            self.emitter.warning('No URL provided.')
+            self.emitter.warning('No URL provided.', to=sid)
             return
 
         format: str = data.get('format')
@@ -178,7 +178,7 @@ class HttpSocket(common):
     @ws_event
     async def item_cancel(self, sid: str, id: str):
         if not id:
-            await self.emitter.warning('Invalid request.')
+            await self.emitter.warning('Invalid request.', to=sid)
             return
 
         status: dict[str, str] = {}
@@ -190,7 +190,7 @@ class HttpSocket(common):
     @ws_event
     async def item_delete(self, sid: str, id: str):
         if not id:
-            await self.emitter.warning('Invalid request.')
+            await self.emitter.warning('Invalid request.', to=sid)
             return
 
         status: dict[str, str] = {}
@@ -230,30 +230,22 @@ class HttpSocket(common):
                 with open(manual_archive, 'a') as f:
                     f.write(f"{idDict['archive_id']} - at: {datetime.now().isoformat()}\n")
 
-        LOG.info(f'Archiving item: {data["url"]=}')
+        LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
 
     @ws_event
     async def connect(self, sid: str, _=None):
         data: dict = {
             **self.queue.get(),
             "config": self.config.frontend(),
-            "tasks": [],
+            "tasks": self.config.tasks,
             "presets": [],
+            "directories": [],
         }
-
-        if os.path.exists(os.path.join(self.config.config_path, 'tasks.json')):
-            try:
-                (tasks, status, error) = load_file(os.path.join(self.config.config_path, 'tasks.json'), list)
-                if status is False:
-                    LOG.error(f"Could not load tasks file. Error message '{error}'.")
-                else:
-                    data['tasks'] = tasks
-
-            except Exception as e:
-                pass
 
         # get directory listing
         dlDir: str = self.config.download_path
-        data['directories'] = [name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name))]
+        data['directories'] = [
+            name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name))
+        ]
 
         await self.emitter.emit('initial_data', data, to=sid)

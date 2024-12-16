@@ -45,14 +45,20 @@ class Emitter:
         tasks = []
 
         for emitter in self.emitters:
-            _ret = emitter(event, data, **kwargs)
-            if _ret:
-                if isinstance(_ret, list):
-                    tasks.extend(_ret)
-                else:
-                    tasks.append(_ret)
+            try:
+                _ret = emitter(event, data, **kwargs)
+                if _ret:
+                    if isinstance(_ret, list):
+                        tasks.extend(_ret)
+                    else:
+                        tasks.append(_ret)
+            except Exception as e:
+                LOG.error(f"Emitter '{emitter}' failed with error '{e}'.")
+
+        if len(tasks) < 1:
+            return
 
         try:
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
         except asyncio.TimeoutError:
-            LOG.error(f"Timed out sending event {event}.")
+            LOG.error(f"Timed out sending event '{event}'.")

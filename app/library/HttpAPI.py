@@ -109,7 +109,7 @@ class HttpAPI(common):
                 contentType = self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file))
 
                 self.staticHolder[urlPath] = {'content': content, 'content_type': contentType}
-                LOG.debug(f'Preloading: [{urlPath}].')
+                LOG.debug(f"Preloading '{urlPath}'.")
                 app.router.add_get(urlPath, self.staticFile)
 
                 if urlPath.endswith('/index.html') and urlPath != '/index.html':
@@ -148,7 +148,7 @@ class HttpAPI(common):
             self.routes.get(self.config.url_prefix[:-1])(lambda _: web.HTTPFound(self.config.url_prefix))
 
         # add static files.
-        self.routes.static(f'{self.config.url_prefix}download/', self.config.download_path)
+        self.routes.static(f"{self.config.url_prefix}download/", self.config.download_path)
         self.preloadStatic(app)
 
         try:
@@ -304,7 +304,7 @@ class HttpAPI(common):
 
             updated = True
             setattr(item.info, k, v)
-            LOG.info(f'Updated [{k}] to [{v}] for [{item.info.id}]')
+            LOG.info(f"Updated '{k}' to '{v}' for '{item.info.id}'")
 
         status = 200 if updated else 304
         if updated:
@@ -478,7 +478,7 @@ class HttpAPI(common):
             'X-Accel-Buffering': 'no',
             'Access-Control-Allow-Origin': '*',
             'Pragma': 'public',
-            'Cache-Control': f'public, max-age={time.time() + 31536000}',
+            'Cache-Control': f"public, max-age={time.time() + 31536000}",
             'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
             'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
         })
@@ -504,7 +504,7 @@ class HttpAPI(common):
             'X-Accel-Buffering': 'no',
             'Access-Control-Allow-Origin': '*',
             'Pragma': 'public',
-            'Cache-Control': f'public, max-age={time.time() + 31536000}',
+            'Cache-Control': f"public, max-age={time.time() + 31536000}",
             'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
             'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
         })

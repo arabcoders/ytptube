@@ -3,7 +3,6 @@
 import asyncio
 import os
 import random
-import socketio
 import logging
 import caribou
 import sqlite3
@@ -11,7 +10,6 @@ import magic
 from datetime import datetime
 from aiohttp import web
 from pathlib import Path
-from library.Utils import load_file
 from library.Emitter import Emitter
 from library.config import Config
 from library.encoder import Encoder
@@ -21,17 +19,13 @@ from library.HttpSocket import HttpSocket
 from library.HttpAPI import HttpAPI
 from aiocron import crontab
 
-LOG = logging.getLogger('app')
+LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
 
 class main:
     config: Config = None
     app: web.Application = None
-    sio: socketio.AsyncServer = None
-    routes: web.RouteTableDef = None
-    loop: asyncio.AbstractEventLoop = None
-    appLoader: str = None
     http: HttpAPI = None
     socket: HttpSocket = None
 
@@ -42,11 +36,11 @@ class main:
         self.encoder = Encoder()
 
         self.checkDirectories()
-        caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, 'migrations'))
+        caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, "migrations"))
 
         connection = sqlite3.connect(database=self.config.db_file, isolation_level=None)
         connection.row_factory = sqlite3.Row
-        connection.execute('PRAGMA journal_mode=wal')
+        connection.execute("PRAGMA journal_mode=wal")
 
         emitter = Emitter()
 
@@ -56,96 +50,91 @@ class main:
         self.http = HttpAPI(queue=queue, emitter=emitter, encoder=self.encoder)
         self.socket = HttpSocket(queue=queue, emitter=emitter, encoder=self.encoder)
 
-        WebhookFile = os.path.join(self.config.config_path, 'webhooks.json')
+        WebhookFile = os.path.join(self.config.config_path, "webhooks.json")
         if os.path.exists(WebhookFile):
             emitter.add_emitter(Webhooks(WebhookFile).emit)
 
     def checkDirectories(self) -> None:
         try:
-            LOG.debug(f'Checking download folder at [{self.config.download_path}]')
+            LOG.debug(f"Checking download folder at '{self.config.download_path}'.")
             if not os.path.exists(self.config.download_path):
-                LOG.info(f'Creating download folder at [{self.config.download_path}]')
+                LOG.info(f"Creating download folder at '{self.config.download_path}'.")
                 os.makedirs(self.config.download_path, exist_ok=True)
         except OSError as e:
-            LOG.error(f'Could not create download folder at [{self.config.download_path}]')
+            LOG.error(
+                f"Could not create download folder at '{self.config.download_path}'."
+            )
             raise e
 
         try:
-            LOG.debug(f'Checking temp folder at [{self.config.temp_path}]')
+            LOG.debug(f"Checking temp folder at '{self.config.temp_path}'.")
             if not os.path.exists(self.config.temp_path):
-                LOG.info(f'Creating temp folder at [{self.config.temp_path}]')
+                LOG.info(f"Creating temp folder at '{self.config.temp_path}'.")
                 os.makedirs(self.config.temp_path, exist_ok=True)
         except OSError as e:
-            LOG.error(f'Could not create temp folder at [{self.config.temp_path}]')
+            LOG.error(f"Could not create temp folder at '{self.config.temp_path}'.")
             raise e
 
         try:
-            LOG.debug(f'Checking config folder at [{self.config.config_path}]')
+            LOG.debug(f"Checking config folder at '{self.config.config_path}'.")
             if not os.path.exists(self.config.config_path):
-                LOG.info(f'Creating config folder at [{self.config.config_path}]')
+                LOG.info(f"Creating config folder at '{self.config.config_path}'.")
                 os.makedirs(self.config.config_path, exist_ok=True)
         except OSError as e:
-            LOG.error(f'Could not create config folder at [{self.config.config_path}]')
+            LOG.error(f"Could not create config folder at '{self.config.config_path}'.")
             raise e
 
         try:
-            LOG.debug(f'Checking database file at [{self.config.db_file}]')
+            LOG.debug(f"Checking database file at '{self.config.db_file}'.")
             if not os.path.exists(self.config.db_file):
-                LOG.info(f'Creating database file at [{self.config.db_file}]')
-                with open(self.config.db_file, 'w') as _:
+                LOG.info(f"Creating database file at '{self.config.db_file}'.")
+                with open(self.config.db_file, "w") as _:
                     pass
         except OSError as e:
-            LOG.error(f'Could not create database file at [{self.config.db_file}]')
+            LOG.error(f"Could not create database file at '{self.config.db_file}'.")
             raise e
 
-    def load_tasks(self):
-        tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
-        if not os.path.exists(tasks_file):
-            LOG.info(f'No tasks file found at {tasks_file}. Skipping Tasks.')
-            return
-
+    async def cron_runner(self, task: dict):
         try:
-            (tasks, status, error) = load_file(tasks_file, list)
-            if status is False:
-                raise Exception(error)
+            taskName = task.get("name", task.get("url"))
+            timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            LOG.info(f"Started 'Task: {taskName}' at '{timeNow}'.")
+            await self.socket.add(
+                url=task.get("url"),
+                quality=task.get("quality", "best"),
+                format=task.get("format", "any"),
+                folder=task.get("folder"),
+                ytdlp_cookies=task.get("ytdlp_cookies"),
+                ytdlp_config=task.get("ytdlp_config"),
+                output_template=task.get("output_template"),
+            )
+            timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            LOG.info(f"Completed 'Task: {taskName}' at '{timeNow}'.")
         except Exception as e:
-            LOG.error(f"Could not load tasks file '{tasks_file}'. Error message '{str(e)}'. Skipping Tasks.")
-            return
+            timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            LOG.error(
+                f"Failed 'Task: {taskName}' at '{timeNow}'. Error message '{str(e)}'."
+            )
 
-        for task in tasks:
-            if not task.get('url'):
-                LOG.warning(f'Invalid task {task}.')
+    def load_tasks(self):
+        for task in self.config.tasks:
+            if not task.get("url"):
+                LOG.warning(f"Invalid task '{task}'. No URL found.")
                 continue
 
-            cron_timer: str = task.get('timer', f'{random.randint(1,59)} */1 * * *')
-
-            async def cron_runner(task: dict):
-                taskName = task.get("name", task.get("url"))
-                timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                LOG.info(f'Started [Task: {taskName}] at [{timeNow}].')
-
-                await self.add(
-                    url=task.get('url'),
-                    quality=task.get('quality', 'best'),
-                    format=task.get('format', 'any'),
-                    folder=task.get('folder'),
-                    ytdlp_cookies=task.get('ytdlp_cookies'),
-                    ytdlp_config=task.get('ytdlp_config'),
-                    output_template=task.get('output_template')
-                )
-
-                timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                LOG.info(f'Completed [Task: {taskName}] at [{timeNow}].')
+            cron_timer: str = task.get("timer", f"{random.randint(1,59)} */1 * * *")
 
             crontab(
                 spec=cron_timer,
-                func=cron_runner,
+                func=self.cron_runner,
                 args=(task,),
                 start=True,
-                loop=self.loop
+                loop=asyncio.get_event_loop(),
             )
 
-            LOG.info(f'Added [Task: {task.get("name", task.get("url"))}] executed every [{cron_timer}].')
+            LOG.info(
+                f"Added 'Task: {task.get('name', task.get('url'))}' to be executed every '{cron_timer}'."
+            )
 
     def start(self):
         self.socket.attach(self.app)
@@ -153,7 +142,7 @@ class main:
 
         self.load_tasks()
 
-        start: str = f'YTPTube v{self.config.version} - listening on http://{self.config.host}:{self.config.port}'
+        start: str = f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}"
         web.run_app(
             self.app,
             host=self.config.host,
@@ -161,10 +150,10 @@ class main:
             reuse_port=True,
             loop=asyncio.get_event_loop(),
             access_log=None,
-            print=lambda _: LOG.info(start)
+            print=lambda _: LOG.info(start),
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     main().start()

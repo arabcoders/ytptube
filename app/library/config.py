@@ -64,9 +64,13 @@ class Config:
     auth_password: str = None
 
     ytdlp_version: str = YTDLP_VERSION
+    tasks: list = []
 
     _manual_vars: tuple = ('temp_path', 'config_path', 'download_path',)
-    _immutable: tuple = ('version', '__instance', 'ytdl_options', 'new_version_available', 'ytdlp_version', 'started')
+    _immutable: tuple = (
+        'version', '__instance', 'ytdl_options', 'tasks',
+        'new_version_available', 'ytdlp_version', 'started',
+    )
 
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
     _boolean_vars: tuple = ('keep_archive', 'ytdl_debug', 'debug', 'temp_keep', 'allow_manifestless',)
@@ -122,7 +126,7 @@ class Config:
                 for key in re.findall(r'\{.*?\}', v):
                     localKey: str = key[1:-1]
                     if localKey not in self.__dict__:
-                        logging.error(f'Config variable "{k}" had non existing config reference "{key}"')
+                        logging.error(f"Config variable '{k}' had non-existing config reference '{key}'.")
                         sys.exit(1)
 
                     v = v.replace(key, getattr(self, localKey))
@@ -131,7 +135,7 @@ class Config:
 
             if k in self._boolean_vars:
                 if str(v).lower() not in (True, False, 'true', 'false', 'on', 'off', '1', '0'):
-                    raise ValueError(f'Config variable "{k}" is set to a non-boolean value "{v}".')
+                    raise ValueError(f"Config variable '{k}' is set to a non-boolean value '{v}'.")
 
                 setattr(self, k, str(v).lower() in (True, 'true', 'on', '1'))
 
@@ -143,7 +147,7 @@ class Config:
 
         numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):
-            raise ValueError(f"Invalid log level: {self.log_level}")
+            raise ValueError(f"Invalid log level '{self.log_level}' specified.")
 
         coloredlogs.install(
             level=numeric_level,
@@ -157,36 +161,48 @@ class Config:
             try:
                 import debugpy
                 debugpy.listen(("0.0.0.0", self.debugpy_port))
-                LOG.info(f"starting debugpy server on [0.0.0.0:{self.debugpy_port}]")
+                LOG.info(f"starting debugpy server on '0.0.0.0:{self.debugpy_port}'.")
             except ImportError:
-                LOG.error("debugpy not found, please install it with 'pip install debugpy'")
+                LOG.error("debugpy package not found, please install it with 'pip install debugpy'.")
             except Exception as e:
-                LOG.error(f"Error starting debugpy server at [0.0.0.0:{self.debugpy_port}]: {e}")
+                LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
         if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
-            LOG.info(f'Loading yt-dlp custom options from "{optsFile}"')
+            LOG.info(f"Loading yt-dlp custom options from '{optsFile}'.")
 
             (opts, status, error) = load_file(optsFile, dict)
             if not status:
-                LOG.error(f'Error loading "{optsFile}": {error}')
+                LOG.error(f"Could not load yt-dlp custom options from '{optsFile}'. {error}")
                 sys.exit(1)
 
             self.ytdl_options.update(opts)
         else:
-            LOG.info(f'No custom yt-dlp options found in "{self.config_path}"')
+            LOG.info(f"No yt-dlp custom options found at '{optsFile}'.")
+
+        tasksFile = os.path.join(self.config_path, 'tasks.json')
+        if os.path.exists(tasksFile) and os.path.getsize(tasksFile) > 0:
+            LOG.info(f"Loading tasks from '{tasksFile}'.")
+            try:
+                (tasks, status, error) = load_file(tasksFile, list)
+                if not status:
+                    LOG.error(f"Could not load tasks file from '{tasksFile}'. '{error}'.")
+                    sys.exit(1)
+                self.tasks.extend(tasks)
+            except Exception as e:
+                pass
 
         self.ytdl_options['socket_timeout'] = self.socket_timeout
 
         if self.keep_archive:
-            LOG.info(f'keep archive: {self.keep_archive}')
-            self.ytdl_options['download_archive'] = os.path.join(
-                self.config_path, 'archive.log')
+            LOG.info(f"keep archive option is enabled.")
+            self.ytdl_options['download_archive'] = os.path.join(self.config_path, 'archive.log')
 
-        LOG.info(f'Keep temp: {self.temp_keep}')
+        if self.temp_keep:
+            LOG.info(f'Keep temp files option is enabled.')
 
         if self.auth_password and self.auth_username:
-            LOG.warn(f"Basic authentication enabled with username: '{self.auth_username}'.")
+            LOG.warning(f"Basic authentication enabled with username '{self.auth_username}'.")
 
         self.started = time.time()
 
