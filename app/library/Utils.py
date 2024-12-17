@@ -1,10 +1,13 @@
 import copy
 from datetime import datetime, timezone
+from functools import lru_cache
+import ipaddress
 import json
 import logging
 import os
 import pathlib
 import re
+import socket
 from typing import Any
 import uuid
 import yt_dlp
@@ -359,3 +362,47 @@ def ag(array: dict | list, path: list[str | int] | str | int, default: Any = Non
             return get_value(default)
 
     return current
+
+
+@lru_cache(maxsize=512)
+def is_private_address(hostname: str) -> bool:
+    try:
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        return (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local)
+    except socket.gaierror:
+        # Could not resolve - treat as invalid or restricted
+        return True
+
+
+def validate_url(url: str) -> bool:
+    """
+    Validate if the url is valid and allowed.
+
+    Args:
+        url (str): URL to validate.
+
+    Raises:
+        ValueError: If the URL is invalid or not allowed.
+
+    Returns:
+        bool: True if the URL is valid and allowed.
+    """
+    if not url:
+        raise ValueError("URL is required.")
+
+    try:
+        from yarl import URL
+        parsed_url = URL(url)
+    except ValueError:
+        raise ValueError("Invalid URL.")
+
+    # Check allowed schemes
+    if parsed_url.scheme not in ["http", "https"]:
+        raise ValueError("Invalid scheme usage. Only HTTP or HTTPS allowed.")
+
+    hostname = parsed_url.host
+    if not hostname or is_private_address(hostname):
+        raise ValueError("Access to internal urls or private networks is not allowed.")
+
+    return True

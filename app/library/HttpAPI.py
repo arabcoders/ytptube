@@ -4,7 +4,6 @@ import functools
 import json
 import os
 import time
-
 import httpx
 from .config import Config
 from .DownloadQueue import DownloadQueue
@@ -20,6 +19,7 @@ from .common import common
 from pathlib import Path
 from .encoder import Encoder
 from .Emitter import Emitter
+from .Utils import validate_url
 
 LOG = logging.getLogger('app')
 MIME = magic.Magic(mime=True)
@@ -528,6 +528,11 @@ class HttpAPI(common):
             return web.json_response({"error": "URL is required."}, status=400)
 
         try:
+            validate_url(url)
+        except Exception as e:
+            return web.json_response({"error": str(e)}, status=400)
+
+        try:
             opts = {
                 'proxy': self.config.ytdl_options.get('proxy', None),
                 'headers': {
@@ -539,13 +544,13 @@ class HttpAPI(common):
             async with httpx.AsyncClient(**opts) as client:
                 LOG.info(f"Fetching thumbnail from '{url}'.")
                 response = await client.request(method='GET', url=url)
-                return web.Response(body=response.content, headers={
-                    'Content-Type': response.headers.get('Content-Type'),
-                    'Pragma': 'public',
-                    'Access-Control-Allow-Origin': '*',
-                    'Cache-Control': f"public, max-age={time.time() + 31536000}",
-                    'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
-                })
+                return web.Response(body=response.content,
+                                    headers={'Content-Type': response.headers.get('Content-Type'),
+                                             'Pragma': 'public', 'Access-Control-Allow-Origin': '*',
+                                             'Cache-Control': f"public, max-age={time.time() + 31536000}",
+                                             'Expires': time.strftime(
+                                                 '%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
+                                                     time.time() + 31536000).timetuple()), })
         except Exception as e:
             LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'")
             return web.json_response({"error": str(e)}, status=500)
