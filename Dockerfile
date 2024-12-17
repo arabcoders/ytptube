@@ -44,7 +44,7 @@ COPY entrypoint.sh /
 RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 
 COPY --chown=app:app ./app /app/app
-COPY --chown=app:app --from=node_builder /app/exported /app/ui/dist
+COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /app/.venv /opt/python
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 

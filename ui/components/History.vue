@@ -98,8 +98,8 @@
             </div>
 
           </header>
-          <div v-if="item.thumbnail && false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1">
+          <div v-if="false === hideThumbnail" class="card-image">
+            <figure class="image is-3by1" v-if="item.thumbnail">
               <template v-if="item.status === 'finished'">
                 <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
                   @click.prevent="playVideo(item)">
@@ -112,6 +112,21 @@
                 <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
                   <img
                     :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                    :alt="item.title" />
+                </NuxtLink>
+              </template>
+            </figure>
+            <figure class="image is-3by1" v-else>
+              <template v-if="item.status === 'finished'">
+                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
+                  @click.prevent="playVideo(item)">
+                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
+                    :alt="item.title" />
+                </a>
+              </template>
+              <template v-else>
+                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
+                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
                     :alt="item.title" />
                 </NuxtLink>
               </template>

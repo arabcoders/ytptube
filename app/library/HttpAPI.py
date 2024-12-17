@@ -68,7 +68,7 @@ class HttpAPI(common):
 
     async def staticFile(self, req: Request) -> Response:
         """
-        Preload static files from the ui/dist folder.
+        Preload static files from the ui/exported folder.
         """
         path = req.path
         if req.path not in self.staticHolder:
@@ -85,9 +85,14 @@ class HttpAPI(common):
 
     def preloadStatic(self, app: web.Application):
         """
-        Preload static files from the ui/dist folder.
+        Preload static files from the ui/exported folder.
         """
-        staticDir = os.path.join(self.rootPath, 'ui', 'dist')
+        staticDir = os.path.join(self.rootPath, 'ui', 'exported')
+        if not os.path.exists(staticDir):
+            raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
+
+        preloaded = 0
+
         for root, _, files in os.walk(staticDir):
             for file in files:
                 if file.endswith('.map'):
@@ -102,6 +107,7 @@ class HttpAPI(common):
                 self.staticHolder[urlPath] = {'content': content, 'content_type': contentType}
                 LOG.debug(f"Preloading '{urlPath}'.")
                 app.router.add_get(urlPath, self.staticFile)
+                preloaded += 1
 
                 if urlPath.endswith('/index.html') and urlPath != '/index.html':
                     parentSlash = urlPath.replace('/index.html', '/')
@@ -110,6 +116,12 @@ class HttpAPI(common):
                     self.staticHolder[parentNoSlash] = {'content': content, 'content_type': contentType}
                     app.router.add_get(parentSlash, self.staticFile)
                     app.router.add_get(parentNoSlash, self.staticFile)
+                    preloaded += 2
+
+        if preloaded < 1:
+            raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
+
+        LOG.info(f"Preloaded {preloaded} static files.")
 
     def attach(self, app: web.Application):
         if self.config.auth_username and self.config.auth_password:
@@ -149,7 +161,7 @@ class HttpAPI(common):
             app.add_routes(self.routes)
             app.on_response_prepare.append(on_prepare)
         except ValueError as e:
-            if 'ui/dist' in str(e):
+            if 'ui/exported' in str(e):
                 raise RuntimeError(f"Could not find the frontend UI static assets. '{e}'.") from e
             raise e
 

@@ -42,18 +42,23 @@
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               {{ item.title }}
             </div>
-            <div class="card-header-icon" v-if="item.filename">
+            <div class="card-header-icon">
               <button @click="hideThumbnail = !hideThumbnail">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
               </button>
             </div>
           </header>
-          <div v-if="item.thumbnail && false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1">
+          <div v-if="false === hideThumbnail" class="card-image">
+            <figure class="image is-3by1" v-if="item.thumbnail">
               <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
                 <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
                   :alt="item.title" />
+              </NuxtLink>
+            </figure>
+            <figure class="image is-3by1" v-else>
+              <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
+                <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'" :alt="item.title" />
               </NuxtLink>
             </figure>
           </div>
