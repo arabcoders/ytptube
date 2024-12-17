@@ -84,10 +84,10 @@
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
 
-            <div class="card-header-icon" v-if="item.filename">
-
+            <div class="card-header-icon">
               <NuxtLink :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
-                class="has-text-primary" v-tooltip="'Download item.'" v-if="item.status === 'finished'">
+                class="has-text-primary" v-tooltip="'Download item.'"
+                v-if="item.filename && item.status === 'finished'">
                 <span class="icon"><i class="fa-solid fa-download" /></span>
               </NuxtLink>
 

@@ -146,14 +146,18 @@ const addInProgress = ref(false)
 
 const addDownload = () => {
   addInProgress.value = true;
-
-  socket.emit('add_url', {
-    url: url.value,
-    preset: selectedPreset.value,
-    folder: downloadPath.value,
-    ytdlp_config: ytdlpConfig.value,
-    ytdlp_cookies: ytdlpCookies.value,
-    output_template: output_template.value,
+  url.value.split(',').forEach(url => {
+    if (!url.trim()) {
+      return;
+    }
+    socket.emit('add_url', {
+      url: url,
+      preset: selectedPreset.value,
+      folder: downloadPath.value,
+      ytdlp_config: ytdlpConfig.value,
+      ytdlp_cookies: ytdlpCookies.value,
+      output_template: output_template.value,
+    });
   });
 }
 

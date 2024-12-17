@@ -16,6 +16,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 * Multi-downloads support.
+* Queue multiple URLs separated by comma.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
     
