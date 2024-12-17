@@ -31,11 +31,10 @@
         </div>
 
         <div class="navbar-item" v-if="config.tasks.length > 0">
-          <button v-tooltip.bottom="'Toggle Tasks'" class="button is-dark has-tooltip-bottom"
-            @click="config.showTasks = !config.showTasks">
+          <NuxtLink  class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span class="is-hidden-mobile">Tasks</span>
-          </button>
+          </NuxtLink>
         </div>
 
         <div class="navbar-item">
@@ -63,9 +62,9 @@
     <div class="columns mt-3 is-mobile">
       <div class="column is-8-mobile">
         <div class="has-text-left" v-if="config.app?.version">
-          © {{ Year }} - <a href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</a>
+          © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
           <span class="is-hidden-mobile">&nbsp;({{ config.app?.version || 'unknown' }})</span>
-          - <a href="https://github.com/yt-dlp/yt-dlp">yt-dlp</a>
+          - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
           <span class="is-hidden-mobile">&nbsp;({{ config?.app.ytdlp_version || 'unknown' }})</span>
         </div>
       </div>
@@ -78,13 +77,10 @@
         </div>
       </div>
     </div>
-
-    <NuxtNotifications position="top right" :speed="800" :ignoreDuplicates="true" :width="340" :pauseOnHover="true" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
 import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
@@ -93,7 +89,6 @@ import moment from "moment";
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
-const bus = useEventBus('show_form')
 const socket = useSocketStore()
 const config = useConfigStore()
 

@@ -1,11 +1,11 @@
-import asyncio
 import base64
 from datetime import datetime
 import functools
 import json
 import os
-import random
 import time
+
+import httpx
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from aiohttp import web
@@ -14,9 +14,7 @@ from .Playlist import Playlist
 from .M3u8 import M3u8
 from .Segments import Segments
 from .Subtitle import Subtitle
-import socketio
 import logging
-import sqlite3
 import magic
 from .common import common
 from pathlib import Path
@@ -30,16 +28,11 @@ MIME = magic.Magic(mime=True)
 class HttpAPI(common):
     config: Config = None
     encoder: Encoder = None
-    app: web.Application = None
-    sio: socketio.AsyncServer = None
     routes: web.RouteTableDef = None
-    connection: sqlite3.Connection = None
     queue: DownloadQueue = None
-    loop: asyncio.AbstractEventLoop = None
     rootPath: str = None
 
     staticHolder: dict = {}
-
     extToMime: dict = {
         '.html': 'text/html',
         '.css': 'text/css',
@@ -54,11 +47,9 @@ class HttpAPI(common):
         self.rootPath = str(Path(__file__).parent.parent.parent)
         self.config = Config.get_instance()
 
-        self.loop = asyncio.get_event_loop()
-        self.encoder = encoder
-
         self.routes = web.RouteTableDef()
 
+        self.encoder = encoder
         self.emitter = emitter
         self.queue = queue
 
@@ -138,10 +129,13 @@ class HttpAPI(common):
                 self.routes.route(method._http_method, self.config.url_prefix + http_path)(method)
 
         async def on_prepare(request: Request, response: Response):
+            if 'Server' in response.headers:
+                del response.headers['Server']
+
             if 'Origin' in request.headers:
                 response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
                 response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-                response.headers['Access-Control-Allow-Methods'] = 'PUT, POST, DELETE'
+                response.headers['Access-Control-Allow-Methods'] = 'PATCH, PUT, POST, DELETE'
 
         if self.config.url_prefix != '/':
             self.routes.route('GET', '/')(lambda _: web.HTTPFound(self.config.url_prefix))
@@ -194,12 +188,11 @@ class HttpAPI(common):
         post = await request.json()
 
         url: str = post.get('url')
-        quality: str = post.get('quality')
+        preset: str = post.get('preset', 'default')
 
         if not url:
             raise web.HTTPBadRequest()
 
-        format: str = post.get('format')
         folder: str = post.get('folder')
         ytdlp_cookies: str = post.get('ytdlp_cookies')
         ytdlp_config: dict = post.get('ytdlp_config')
@@ -209,8 +202,7 @@ class HttpAPI(common):
 
         status = await self.add(
             url=url,
-            quality=quality,
-            format=format,
+            preset=preset,
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,
@@ -251,8 +243,7 @@ class HttpAPI(common):
 
             status[item.get('url')] = await self.add(
                 url=item.get('url'),
-                quality=item.get('quality'),
-                format=item.get('format'),
+                preset=item.get('preset', 'default'),
                 folder=item.get('folder'),
                 ytdlp_cookies=item.get('ytdlp_cookies'),
                 ytdlp_config=item.get('ytdlp_config'),
@@ -519,9 +510,42 @@ class HttpAPI(common):
 
     @route('GET', '/')
     async def index(self, _) -> Response:
+        if '/index.html' not in self.staticHolder:
+            LOG.error("Static frontend files not found.")
+            return web.json_response({"error": "File not found.", "file": '/index.html'}, status=404)
+
         data = self.staticHolder['/index.html']
         return web.Response(
             body=data.get('content'),
             content_type=data.get('content_type'),
             charset='utf-8',
             status=web.HTTPOk.status_code)
+
+    @route('GET', '/thumbnail')
+    async def get_thumbnail(self, request: Request) -> dict:
+        url = request.query.get('url')
+        if not url:
+            return web.json_response({"error": "URL is required."}, status=400)
+
+        try:
+            opts = {
+                'proxy': self.config.ytdl_options.get('proxy', None),
+                'headers': {
+                    'User-Agent': self.config.ytdl_options.get(
+                        'user_agent',
+                        request.headers.get('User-Agent', f"YTPTube/{self.config.version}")),
+                },
+            }
+            async with httpx.AsyncClient(**opts) as client:
+                LOG.info(f"Fetching thumbnail from '{url}'.")
+                response = await client.request(method='GET', url=url)
+                return web.Response(body=response.content, headers={
+                    'Content-Type': response.headers.get('Content-Type'),
+                    'Pragma': 'public',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': f"public, max-age={time.time() + 31536000}",
+                    'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
+                })
+        except Exception as e:
+            LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'")
+            return web.json_response({"error": str(e)}, status=500)

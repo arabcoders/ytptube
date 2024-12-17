@@ -10,7 +10,7 @@ from .config import Config
 from .Download import Download
 from .ItemDTO import ItemDTO
 from .DataStore import DataStore
-from .Utils import calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
+from .Utils import ag, calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
 from .AsyncPool import AsyncPool
 from .Emitter import Emitter
 
@@ -26,19 +26,17 @@ class DownloadQueue:
     done: DataStore = None
     event: asyncio.Event = None
     pool: AsyncPool = None
-    connection: Connection = None
 
     def __init__(self, emitter: Emitter, connection: Connection):
         self.config = Config.get_instance()
         self.emitter = emitter
-        self.connection = connection
-        self.done = DataStore(type=TYPE_DONE, connection=self.connection)
-        self.queue = DataStore(type=TYPE_QUEUE, connection=self.connection)
+        self.done = DataStore(type=TYPE_DONE, connection=connection)
+        self.queue = DataStore(type=TYPE_QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
 
     async def test(self) -> bool:
-        self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
+        await self.done.test()
         return True
 
     async def initialize(self):
@@ -53,8 +51,7 @@ class DownloadQueue:
     async def __add_entry(
         self,
         entry: dict,
-        quality: str,
-        format: str,
+        preset: str,
         folder: str,
         ytdlp_config: dict = {},
         ytdlp_cookies: str = '',
@@ -74,9 +71,9 @@ class DownloadQueue:
             entries = entry['entries']
             playlist_index_digits = len(str(len(entries)))
             results = []
-            for index, etr in enumerate(entries, start=1):
+            for i, etr in enumerate(entries, start=1):
                 etr['playlist'] = entry.get('id')
-                etr['playlist_index'] = '{{0:0{0:d}d}}'.format(playlist_index_digits).format(index)
+                etr['playlist_index'] = '{{0:0{0:d}d}}'.format(playlist_index_digits).format(i)
                 for property in ('id', 'title', 'uploader', 'uploader_id'):
                     if property in entry:
                         etr[f'playlist_{property}'] = entry.get(property)
@@ -84,8 +81,7 @@ class DownloadQueue:
                 results.append(
                     await self.__add_entry(
                         entry=etr,
-                        quality=quality,
-                        format=format,
+                        preset=preset,
                         folder=folder,
                         ytdlp_config=ytdlp_config,
                         ytdlp_cookies=ytdlp_cookies,
@@ -108,19 +104,19 @@ class DownloadQueue:
             else:
                 error = entry.get('msg', None)
 
-            LOG.debug(f"entry: {entry.get('id', None)} - {entry.get('webpage_url', None)} - {entry.get('url', None)}")
+            LOG.debug(
+                f"Entry id '{entry.get('id', None)}' url '{entry.get('webpage_url', None)} - {entry.get('url', None)}'."
+            )
 
             if self.done.exists(key=entry['id'], url=entry.get('webpage_url') or entry.get('url')):
                 item = self.done.get(key=entry['id'], url=entry.get('webpage_url') or entry['url'])
-
-                LOG.debug(f'Item [{item.info.title}] already downloaded. Removing from history.')
-
+                LOG.warning(f"Item '{item.info.id}' - '{item.info.title}' already downloaded. Removing from history.")
                 await self.clear([item.info._id])
 
             try:
                 item = self.queue.get(key=entry.get('id'), url=entry.get('webpage_url') or entry.get('url'))
                 if item is not None:
-                    err_message = f'Item [{item.info.id}: {item.info.title}] already in download queue.'
+                    err_message = f"Item ID '{item.info.id}' - '{item.info.title}' already in download queue."
                     LOG.info(err_message)
                     return {'status': 'error', 'msg': err_message}
             except KeyError:
@@ -142,8 +138,8 @@ class DownloadQueue:
                 id=entry.get('id'),
                 title=entry.get('title'),
                 url=entry.get('webpage_url') or entry.get('url'),
-                quality=quality,
-                format=format,
+                preset=preset,
+                thumbnail=entry.get('thumbnail', None),
                 folder=folder,
                 download_dir=download_dir,
                 temp_dir=self.config.temp_path,
@@ -170,7 +166,7 @@ class DownloadQueue:
                 NotifyEvent = 'completed'
             elif self.config.allow_manifestless is False and is_manifestless is True:
                 dlInfo.info.status = 'error'
-                dlInfo.info.error = 'Video is in Post-Live Manifestless mode.'
+                dlInfo.info.error = 'Video is in post-live manifestless mode.'
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = 'completed'
             else:
@@ -188,8 +184,7 @@ class DownloadQueue:
         elif eventType.startswith('url'):
             return await self.add(
                 url=entry.get('url'),
-                quality=quality,
-                format=format,
+                preset=preset,
                 folder=folder,
                 ytdlp_config=ytdlp_config,
                 ytdlp_cookies=ytdlp_cookies,
@@ -205,8 +200,7 @@ class DownloadQueue:
     async def add(
         self,
         url: str,
-        quality: str,
-        format: str,
+        preset: str,
         folder: str,
         ytdlp_config: dict = {},
         ytdlp_cookies: str = '',
@@ -215,7 +209,8 @@ class DownloadQueue:
     ):
         ytdlp_config = ytdlp_config if ytdlp_config else {}
 
-        LOG.info(f'Adding {url=} {quality=} {format=} {folder=} {output_template=} {ytdlp_cookies=} {ytdlp_config=}')
+        LOG.info(f"Adding url '{url}' to folder '{folder}' with the following options 'Preset: {preset=}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'.")
+
         if isinstance(ytdlp_config, str):
             try:
                 ytdlp_config = json.loads(ytdlp_config)
@@ -226,7 +221,7 @@ class DownloadQueue:
         already = set() if already is None else already
 
         if url in already:
-            LOG.info('recursion detected, skipping.')
+            LOG.warning(f"Recursion detected with url '{url}' skipping.")
             return {'status': 'ok'}
 
         already.add(url)
@@ -234,7 +229,7 @@ class DownloadQueue:
         try:
             downloaded, id_dict = self.isDownloaded(url)
             if downloaded is True:
-                message = f"[ { id_dict.get('id') } ]: has been downloaded already."
+                message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
                 LOG.info(message)
                 return {'status': 'error', 'msg': message}
 
@@ -254,7 +249,8 @@ class DownloadQueue:
             if not entry:
                 return {'status': 'error', 'msg': 'Unable to extract info check logs.'}
 
-            LOG.debug(f'extract_info: for [{url=}] is done in {time.perf_counter() - started}. Length: {len(entry)}')
+            LOG.debug(
+                f"extract_info: for 'URL: {url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}'.")
         except yt_dlp.utils.ExistingVideoReached as exc:
             LOG.error(f'Video has been downloaded already and recorded in archive.log file. {str(exc)}')
             return {'status': 'error', 'msg': 'Video has been downloaded already and recorded in archive.log file.'}
@@ -267,8 +263,7 @@ class DownloadQueue:
 
         return await self.__add_entry(
             entry=entry,
-            quality=quality,
-            format=format,
+            preset=preset,
             folder=folder,
             ytdlp_config=ytdlp_config,
             ytdlp_cookies=ytdlp_cookies,
@@ -277,8 +272,8 @@ class DownloadQueue:
         )
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
-
         status: dict[str, str] = {"status": "ok"}
+
         for id in ids:
             try:
                 item = self.queue.get(key=id)
@@ -400,7 +395,8 @@ class DownloadQueue:
             await self.__downloadFile(id, entry)
 
     async def __downloadFile(self, id: str, entry: Download):
-        LOG.info(f'Queuing {id=} - {entry.info.title=} - {entry.info.url=} - {entry.info.folder=}.')
+        LOG.info(
+            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'folder: {entry.info.folder}'.")
 
         try:
             await entry.start(self.emitter)

@@ -29,13 +29,13 @@
             </div>
           </div>
           <div class="column is-5">
-            <div class="field has-addons" v-tooltip="'Download path relative to ' + config.app.download_path">
+            <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
               <div class="control">
-                <a href="#" class="button is-static">Download Path</a>
+                <a href="#" class="button is-static">Save in</a>
               </div>
               <div class="control is-expanded">
                 <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
-                  :disabled="!socket.isConnected" list="directories">
+                  :disabled="!socket.isConnected" list="folders">
               </div>
             </div>
           </div>
@@ -64,11 +64,11 @@
               </label>
               <div class="control">
                 <input type="text" class="input" v-model="output_template" id="output_format"
-                  placeholder="Uses default format if non is given.">
+                  placeholder="Uses default output format naming if empty.">
               </div>
-              <span class="subtitle is-6 has-text-info">
-                All format options can be found at <a class="has-text-danger" target="_blank"
-                  referrerpolicy="no-referrer" href="https://github.com/yt-dlp/yt-dlp#output-template">this page</a>.
+              <span class="subtitle is-6">
+                All output format naming options can be found at <NuxtLink target="_blank" class="has-text-danger"
+                  href="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
               </span>
             </div>
           </div>
@@ -82,11 +82,12 @@
                 <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig"
                   :disabled="!socket.isConnected"></textarea>
               </div>
-              <span class="subtitle is-6 has-text-info">
+              <span class="subtitle is-6">
                 Some config fields are ignored like cookiefile, path, and output_format etc.
-                Available option can be found at <a class="has-text-danger" target="_blank" referrerpolicy="no-referrer"
-                  href="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">this
-                  page</a>.
+                Available option can be found at <NuxtLink class="has-text-danger" target="_blank"
+                  href="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
+                  this page</NuxtLink>. Warning: Use with caution some of those options can break yt-dlp or the
+                frontend.
               </span>
             </div>
           </div>
@@ -99,9 +100,9 @@
                 <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
                   :disabled="!socket.isConnected"></textarea>
               </div>
-              <span class="subtitle is-6 has-text-info">
-                Use something like <a class="has-text-danger" href="https://github.com/jrie/flagCookies">flagCookies</a>
-                to extract cookies as JSON string.
+              <span class="subtitle is-6">
+                Use something like <NuxtLink target="_blank" class="has-text-danger"
+                  href="https://github.com/jrie/flagCookies">flagCookies</NuxtLink> to extract cookies as JSON string.
               </span>
             </div>
           </div>
@@ -121,8 +122,8 @@
         </div>
       </div>
     </div>
-    <datalist id="directories" v-if="config?.directories">
-      <option v-for="dir in config.directories" :key="dir" :value="dir" />
+    <datalist id="folders" v-if="config?.folders">
+      <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
   </main>
 </template>
@@ -134,20 +135,18 @@ const config = useConfigStore();
 const socket = useSocketStore();
 const toast = useToast();
 
-const selectedFormat = useStorage('selectedFormat', 'any')
 const selectedPreset = useStorage('selectedPreset', 'default')
-const selectedQuality = useStorage('selectedQuality', '')
 const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
 const output_template = useStorage('output_template', null)
 const downloadPath = useStorage('downloadPath', null)
 const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
-
 const addInProgress = ref(false)
 
 const addDownload = () => {
   addInProgress.value = true;
+
   socket.emit('add_url', {
     url: url.value,
     preset: selectedPreset.value,
@@ -159,15 +158,19 @@ const addDownload = () => {
 }
 
 const resetConfig = () => {
-  if (!confirm('Are you sure you want to reset the local configuration? this will NOT delete any downloads or server configuration.')) {
+  if (true !== confirm('Reset your local configuration?')) {
     return;
   }
+
   selectedPreset.value = 'default';
   ytdlpConfig.value = '';
   ytdlpCookies.value = '';
   output_template.value = null;
   url.value = '';
   downloadPath.value = '';
+  showAdvanced.value = false;
+
+  toast.success('Local configuration has been reset.');
 }
 
 const statusHandler = async data => {

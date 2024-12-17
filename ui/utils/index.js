@@ -1,7 +1,6 @@
-import { useNotification } from '@kyvg/vue3-notification'
 import { useStorage } from '@vueuse/core'
 
-const { notify } = useNotification()
+const toast = useToast()
 const AG_SEPARATOR = '.'
 
 /**
@@ -95,44 +94,6 @@ const awaitElement = (sel, callback) => {
 }
 
 /**
- * Display a notification
- *
- * @param {string} type The type of the notification.
- * @param {string} title The title of the notification.
- * @param {string} text The text of the notification.
- * @param {number} duration The duration of the notification.
- *
- * @returns {void}
- */
-const notification = (type, title, text, duration = 3000) => {
-  let classes = ''
-
-  const notificationType = type.toLowerCase()
-
-  switch (notificationType) {
-    case 'info':
-    default:
-      classes = 'has-background-info has-text-white'
-      break
-    case 'success':
-      classes = 'has-background-success has-text-white'
-      break
-    case 'warning':
-      classes = 'has-background-warning has-text-white'
-      break
-    case 'error':
-    case 'crit':
-      classes = 'has-background-danger has-text-white'
-      if (3000 === duration) {
-        duration = 10000
-      }
-      break
-  }
-
-  return notify({ title, text, type: classes, duration })
-}
-
-/**
  * Replace tags in text with values from context
  *
  * @param {string} text The text with tags
@@ -170,12 +131,12 @@ const copyText = (str, notify = true) => {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(str).then(() => {
       if (notify) {
-        notification('success', 'Success', 'Text copied to clipboard.')
+        toast.success('Text copied to clipboard.')
       }
     }).catch((error) => {
       console.error('Failed to copy.', error)
       if (notify) {
-        notification('error', 'Error', 'Failed to copy to clipboard.')
+        toast.error('Failed to copy to clipboard.')
       }
     })
     return
@@ -189,7 +150,7 @@ const copyText = (str, notify = true) => {
   document.body.removeChild(el)
 
   if (notify) {
-    notification('success', 'Success', 'Text copied to clipboard.')
+    toast.success('Text copied to clipboard.')
   }
 }
 
@@ -420,7 +381,6 @@ export {
   ag_set,
   ag,
   awaitElement,
-  notification,
   copyText,
   dEvent,
   makePagination,

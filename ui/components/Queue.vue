@@ -42,7 +42,21 @@
             <div class="card-header-title has-text-centered is-text-overflow is-block">
               {{ item.title }}
             </div>
+            <div class="card-header-icon" v-if="item.filename">
+              <button @click="hideThumbnail = !hideThumbnail">
+                <span class="icon"><i class="fa-solid"
+                    :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
+              </button>
+            </div>
           </header>
+          <div v-if="item.thumbnail && false === hideThumbnail" class="card-image">
+            <figure class="image is-3by1">
+              <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
+                <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                  :alt="item.title" />
+              </NuxtLink>
+            </figure>
+          </div>
           <div class="card-content">
             <div class="columns is-multiline is-mobile">
               <div class="column is-12">
@@ -51,7 +65,7 @@
                   <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
                 </div>
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span class="icon-text">
                   <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
                     <i class="fas" :class="setIcon(item)" />
@@ -60,13 +74,13 @@
                   <span v-else>{{ ucFirst(item.status) }}</span>
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span :data-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
@@ -135,6 +149,7 @@ const socket = useSocketStore();
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
+const hideThumbnail = useStorage('hideThumbnail', false)
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {

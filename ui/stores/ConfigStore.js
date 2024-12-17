@@ -5,16 +5,19 @@ const CONFIG_KEYS = {
     keep_archive: false,
     output_template: '',
     ytdlp_version: '',
+    version: '',
     url_host: '',
     url_prefix: '',
   },
   presets: [
     {
-      name: 'Default - Use Predefined yt-dlp Format',
-      format: 'default',
+      'name': 'Default - Use default yt-dlp format',
+      'format': 'default',
+      'postprocessors': [],
+      'args': {}
     }
   ],
-  directories: [],
+  folders: [],
   tasks: [],
 };
 

@@ -44,7 +44,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
-    'nuxt3-notifications',
   ],
 
   nitro: {

@@ -8,8 +8,8 @@ class Encoder(json.JSONEncoder):
     will call the __dict__ method of an object if it exists.
     """
 
-    def default(self, obj):
-        if isinstance(obj, object) and hasattr(obj, '__dict__'):
-            return obj.__dict__
+    def default(self, o):
+        if isinstance(o, object) and hasattr(o, '__dict__'):
+            return o.__dict__
 
-        return json.JSONEncoder.default(self, obj)
+        return json.JSONEncoder.default(self, o)

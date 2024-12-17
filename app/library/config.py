@@ -65,11 +65,50 @@ class Config:
 
     ytdlp_version: str = YTDLP_VERSION
     tasks: list = []
+    presets: list = [
+        {
+            'name': 'Default - Use default yt-dlp format',
+            'format': 'default',
+            'postprocessors': [],
+            'args': {}
+        },
+        # {
+        #     'name': 'Audio - Best audio [MP3]',
+        #     'format': 'bestaudio',
+        #     'postprocessors': [
+        #         {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': 'best'},
+        #         {"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"},
+        #         {'key': 'FFmpegMetadata'},
+        #         {'key': 'EmbedThumbnail'},
+        #     ],
+        #     'args': {
+        #         'writethumbnail': True
+        #     }
+        # },
+        {
+            'name': 'Video - 1080p h264/acc',
+            'format': 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
+            'args': {
+                'format_sort': [
+                    'vcodec:h264'
+                ],
+            },
+        },
+        {
+            'name': 'Video - 720p h264/acc',
+            'format': 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
+            'args': {
+                'format_sort': [
+                    'vcodec:h264'
+                ],
+            },
+        },
+    ]
 
     _manual_vars: tuple = ('temp_path', 'config_path', 'download_path',)
     _immutable: tuple = (
         'version', '__instance', 'ytdl_options', 'tasks',
-        'new_version_available', 'ytdlp_version', 'started',
+        'new_version_available', 'ytdlp_version', 'started', 'presets',
     )
 
     _int_vars: tuple = ('port', 'max_workers', 'socket_timeout', 'extract_info_timeout', 'debugpy_port',)
@@ -77,7 +116,7 @@ class Config:
 
     _frontend_vars: tuple = (
         'download_path', 'keep_archive', 'output_template',
-        'ytdlp_version', 'url_host', 'url_prefix',
+        'ytdlp_version', 'version', 'url_host', 'started', 'url_prefix',
     )
 
     @staticmethod
@@ -189,6 +228,34 @@ class Config:
                     LOG.error(f"Could not load tasks file from '{tasksFile}'. '{error}'.")
                     sys.exit(1)
                 self.tasks.extend(tasks)
+            except Exception as e:
+                pass
+
+        presetsFile = os.path.join(self.config_path, 'presets.json')
+        if os.path.exists(presetsFile) and os.path.getsize(presetsFile) > 0:
+            LOG.info(f"Loading extra presets from '{presetsFile}'.")
+            try:
+                (presets, status, error) = load_file(presetsFile, list)
+                if not status:
+                    LOG.error(f"Could not load presets file from '{presetsFile}'. '{error}'.")
+                    sys.exit(1)
+
+                for preset in presets:
+                    if 'name' not in preset:
+                        LOG.error(f"Missing 'name' key in preset '{preset}'.")
+                        continue
+
+                    if 'format' not in preset:
+                        LOG.error(f"Missing 'format' key in preset '{preset}'.")
+                        continue
+
+                    if 'args' not in preset:
+                        preset['args'] = {}
+
+                    if 'postprocessors' not in preset:
+                        preset['postprocessors'] = []
+
+                    self.presets.append(preset)
             except Exception as e:
                 pass
 

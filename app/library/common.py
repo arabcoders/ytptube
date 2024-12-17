@@ -17,16 +17,8 @@ class common():
         self.queue = queue
         self.encoder = encoder
 
-    async def add(
-        self,
-            url: str,
-            quality: str,
-            format: str,
-            folder: str,
-            ytdlp_cookies: str,
-            ytdlp_config: dict,
-            output_template: str
-    ) -> dict[str, str]:
+    async def add(self, url: str, preset: str, folder: str, ytdlp_cookies: str, ytdlp_config: dict,
+                  output_template: str) -> dict[str, str]:
         if ytdlp_config is None:
             ytdlp_config = {}
 
@@ -35,8 +27,7 @@ class common():
 
         status = await self.queue.add(
             url=url,
-            format=format if format else 'any',
-            quality=quality if quality else 'best',
+            preset=preset if preset else 'default',
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,

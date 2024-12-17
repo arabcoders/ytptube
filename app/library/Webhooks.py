@@ -7,6 +7,7 @@ from .version import APP_VERSION
 
 LOG = logging.getLogger('Webhooks')
 
+
 class Webhooks:
     targets: list[dict] = []
     allowed_events: tuple = ('added', 'completed', 'error', 'not_live',)
@@ -17,10 +18,10 @@ class Webhooks:
 
     def load(self, file: str):
         try:
-            if os.path.getsize(file) < 2:
+            if os.path.getsize(file) < 3:
                 raise Exception(f'file is empty.')
 
-            LOG.info(f'Loading webhooks from {file}')
+            LOG.info(f"Loading webhooks from '{file}'.")
             from .Utils import load_file
             (target, status, error) = load_file(file, list)
             if not status:
@@ -28,7 +29,7 @@ class Webhooks:
 
             self.targets = target
         except Exception as e:
-            LOG.error(f'Error loading webhooks from {file}: {e}')
+            LOG.error(f"Error loading webhooks from '{file}'. '{e}'")
             pass
 
     async def send(self, event: str, item: ItemDTO) -> list[dict]:
@@ -53,7 +54,7 @@ class Webhooks:
         from .config import Config
         req: dict = target.get('request')
         try:
-            LOG.info(f"Sending {event=} {item.id=} to [{target.get('name')}]")
+            LOG.info(f"Sending event '{event}' id '{item.id}' to '{target.get('name')}'.")
             async with httpx.AsyncClient() as client:
                 request_type = req.get('type', 'json')
 
@@ -84,14 +85,15 @@ class Webhooks:
                     'text': response.text
                 }
 
-                msg = f"[{target.get('name')}] Response to [{event=} {item.id=}] [status: {response.status_code}]."
+                msg = f"Webhook target '{target.get('name')}' Responded to event '{event}' id '{item.id}' with status '{response.status_code}'."
                 if Config.get_instance().debug and respData.get('text'):
-                    msg += f" [Body: {respData.get('text','??')}]"
+                    msg += f" body '{respData.get('text','??')}'."
 
                 LOG.info(msg)
 
                 return respData
         except Exception as e:
+            LOG.error(f"Error sending event '{event}' id '{item.id}' to '{target.get('name')}'. '{e}'")
             return {
                 'url': req.get('url'),
                 'status': 500,

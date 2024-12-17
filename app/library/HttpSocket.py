@@ -8,7 +8,6 @@ import shlex
 from aiohttp import web
 import socketio
 import logging
-import sqlite3
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .common import common
@@ -24,9 +23,7 @@ class HttpSocket(common):
     This class is used to handle WebSocket events.
     """
     config: Config = None
-    app: web.Application = None
     sio: socketio.AsyncServer = None
-    connection: sqlite3.Connection = None
 
     def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder):
         super().__init__(queue=queue, encoder=encoder)
@@ -149,13 +146,12 @@ class HttpSocket(common):
     @ws_event
     async def add_url(self, sid: str, data: dict):
         url: str = data.get('url')
-        quality: str = data.get('quality')
 
         if not url:
             self.emitter.warning('No URL provided.', to=sid)
             return
 
-        format: str = data.get('format')
+        preset: str = data.get('preset', 'default')
         folder: str = data.get('folder')
         ytdlp_cookies: str = data.get('ytdlp_cookies')
         ytdlp_config: dict = data.get('ytdlp_config')
@@ -165,8 +161,7 @@ class HttpSocket(common):
 
         status = await self.add(
             url=url,
-            quality=quality,
-            format=format,
+            preset=preset,
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,
@@ -234,18 +229,17 @@ class HttpSocket(common):
 
     @ws_event
     async def connect(self, sid: str, _=None):
-        data: dict = {
+        data = {
             **self.queue.get(),
             "config": self.config.frontend(),
             "tasks": self.config.tasks,
-            "presets": [],
-            "directories": [],
+            "presets": self.config.presets,
         }
 
-        # get directory listing
-        dlDir: str = self.config.download_path
-        data['directories'] = [
-            name for name in os.listdir(dlDir) if os.path.isdir(os.path.join(dlDir, name))
+        # get download folder listing
+        downloadPath: str = self.config.download_path
+        data['folders'] = [
+            name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))
         ]
 
         await self.emitter.emit('initial_data', data, to=sid)

@@ -13,8 +13,9 @@ class ItemDTO:
     id: str
     title: str
     url: str
-    quality: str
-    format: str
+    quality: str = None
+    format: str = None
+    thumbnail: str = None
     preset: str = "default"
     folder: str
     download_dir: str = None

@@ -8,7 +8,7 @@ import shutil
 import yt_dlp
 import hashlib
 from .AsyncPool import Terminator
-from .Utils import get_format, get_opts, jsonCookie, mergeConfig
+from .Utils import get_opts, jsonCookie, mergeConfig
 from .ItemDTO import ItemDTO
 from .config import Config
 from .Emitter import Emitter
@@ -26,7 +26,6 @@ class Download:
     temp_dir: str = None
     output_template: str = None
     output_template_chapter: str = None
-    format: str = None
     ytdl_opts: dict = None
     info: ItemDTO = None
     default_ytdl_opts: dict = None
@@ -61,7 +60,7 @@ class Download:
     "Fields to be extracted from yt-dlp progress hook."
 
     tempKeep: bool = False
-    "Keep temp directory after download."
+    "Keep temp folder after download."
 
     def __init__(self, info: ItemDTO, info_dict: dict = None, debug: bool = False):
         config = Config.get_instance()
@@ -70,8 +69,8 @@ class Download:
         self.temp_dir = info.temp_dir
         self.output_template_chapter = info.output_template_chapter
         self.output_template = info.output_template
-        self.format = config.ytdl_options.get('format', get_format(info.format, info.quality))
-        self.ytdl_opts = get_opts(info.format, info.quality, info.ytdlp_config if info.ytdlp_config else {})
+        self.preset = info.preset
+        self.ytdl_opts = get_opts(self.preset, info.ytdlp_config if info.ytdlp_config else {})
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
@@ -110,7 +109,6 @@ class Download:
         try:
             params: dict = {
                 'color': 'no_color',
-                'format': self.format,
                 'paths': {
                     'home': self.download_dir,
                     'temp': self.tempPath,
@@ -121,11 +119,13 @@ class Download:
                 },
                 'noprogress': True,
                 'break_on_existing': True,
-                'ignoreerrors': False,
                 'progress_hooks': [self._progress_hook],
                 'postprocessor_hooks': [self._postprocessor_hook],
                 **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),
             }
+
+            if 'format' not in params and self.default_ytdl_opts.get('format', None):
+                params['format'] = self.default_ytdl_opts['format']
 
             params['ignoreerrors'] = False
 
@@ -158,10 +158,10 @@ class Download:
 
                 if hasDeletedOptions:
                     LOG.warning(
-                        f'Live stream detected for [{self.info.title}], The following opts [{deletedOpts=}] have been deleted which are known to cause issues with live stream and post stream manifestless mode.')
+                        f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted which are known to cause issues with live stream and post stream manifestless mode.")
 
             LOG.info(
-                f'Downloading {os.getpid()=} id="{self.info.id}" title="{self.info.title}" format="{self.format}" fq="{self.info.format}/{self.info.quality}".')
+                f'Downloading pid: {os.getpid()} id="{self.info.id}" title="{self.info.title}" preset="{self.preset}".')
 
             cls = yt_dlp.YoutubeDL(params=params)
 
@@ -292,7 +292,7 @@ class Download:
 
         if self.info.status != 'finished' and self.is_live:
             LOG.warning(
-                f'Keeping live temp directory [{self.tempPath}], as the reported status is not finished [{self.info.status}].')
+                f'Keeping live temp folder [{self.tempPath}], as the reported status is not finished [{self.info.status}].')
             return
 
         if not os.path.exists(self.tempPath):
@@ -300,10 +300,10 @@ class Download:
 
         if self.tempPath == self.temp_dir:
             LOG.warning(
-                f'Attempted to delete video temp directory: {self.tempPath}, but it is the same as main temp directory.')
+                f'Attempted to delete video temp folder: {self.tempPath}, but it is the same as main temp folder.')
             return
 
-        LOG.info(f'Deleting Temp directory: {self.tempPath}')
+        LOG.info(f'Deleting Temp folder: {self.tempPath}')
         shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def progress_update(self):
@@ -341,10 +341,6 @@ class Download:
                 if os.path.exists(status.get('filename')):
                     self.info.file_size = os.path.getsize(status.get('filename'))
 
-                # Set correct file extension for thumbnails
-                if self.info.format == 'thumbnail':
-                    self.info.filename = re.sub(r'\.webm$', '.jpg', self.info.filename)
-
             self.info.status = status.get('status', self.info.status)
             self.info.msg = status.get('msg')
 
@@ -363,7 +359,7 @@ class Download:
             self.info.speed = status.get('speed')
             self.info.eta = status.get('eta')
 
-            if self.info.status == 'finished' and 'filename' in status and self.info.format != 'thumbnail':
+            if self.info.status == 'finished' and 'filename' in status:
                 try:
                     self.info.file_size = os.path.getsize(status.get('filename'))
                 except FileNotFoundError:

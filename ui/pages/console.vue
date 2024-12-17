@@ -1,8 +1,13 @@
 <template>
   <div class="mt-1 columns is-multiline">
     <div class="column is-12 is-clearfix">
-      <h1 class="title is-4">Terminal</h1>
-      <div class="subtitle is-6">
+      <h1 class="title is-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fa-solid fa-terminal" /></span>
+          <span>Terminal</span>
+        </span>
+      </h1>
+      <div class="subtitle is-6 is-unselectable">
         You can use this terminal window to execute non-interactive commands. The interface is jailed to the
         <code>yt-dlp</code>
       </div>

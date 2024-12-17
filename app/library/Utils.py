@@ -6,99 +6,56 @@ import os
 import pathlib
 import re
 from typing import Any
+import uuid
 import yt_dlp
 
 LOG = logging.getLogger('Utils')
 
-AUDIO_FORMATS: tuple[str] = ('m4a', 'mp3', 'opus', 'wav',)
 IGNORED_KEYS: tuple[str] = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
-
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 
 
-def get_format(format: str, quality: str) -> str:
+def get_opts(preset: str, ytdl_opts: dict) -> dict:
     """
-    Returns format for download
+    Returns ytdlp options download options
 
     Args:
-      format (str): format selected
-      quality (str): quality selected
-
-    Raises:
-      Exception: unknown quality, unknown format
-
-    Returns:
-      dl_format: Formatted download string
-    """
-    format = format or "any"
-
-    if format.startswith("custom:"):
-        return format[7:]
-
-    if format == "thumbnail":
-        # Quality is irrelevant in this case since we skip the download
-        return "bestaudio/best"
-
-    if format in AUDIO_FORMATS:
-        # Audio quality needs to be set post-download, set in opts
-        return "bestaudio/best"
-
-    if format in ('mp4', 'any'):
-        if quality == 'audio':
-            return "bestaudio/best"
-
-        videoFormat, audioFormat = ('[ext=mp4]', '[ext=m4a]') if format == "mp4" else ('', '')
-
-        videoResolution = f'[height<={quality}]' if quality != 'best' else ''
-
-        videoCombo = videoResolution + videoFormat
-
-        return f'bestvideo{videoCombo}+bestaudio{audioFormat}/best{videoCombo}'
-
-    raise Exception(f"Unknown format {format}")
-
-
-def get_opts(format: str, quality: str, ytdl_opts: dict) -> dict:
-    """
-    Returns extra download options
-    Mostly postprocessing options
-
-    Args:
-      format (str): format selected
-      quality (str): quality of format selected (needed for some formats)
+      preset (str): the name of the preset selected.
       ytdl_opts (dict): current options selected
 
     Returns:
-      ytdl_opts: Extra options
+      ytdl extra options
     """
     opts = copy.deepcopy(ytdl_opts)
-    if not opts:
-        opts: dict = {
-            "postprocessors": [],
-        }
 
-    postprocessors = []
+    if 'default' == preset:
+        return opts
 
-    if format in AUDIO_FORMATS:
-        postprocessors.append({
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": format,
-            "preferredquality": 0 if quality == "best" else quality,
-        })
+    from .config import Config
+    presets = Config.get_instance().presets
 
-        # Audio formats without thumbnail
-        if format not in ("wav") and "writethumbnail" not in opts:
-            opts["writethumbnail"] = True
-            postprocessors.append({"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
-            postprocessors.append({"key": "FFmpegMetadata"})
-            postprocessors.append({"key": "EmbedThumbnail"})
+    if preset not in presets:
+        LOG.error(f"Preset '{preset}' is not defined in the presets.")
+        return opts
 
-    if format == "thumbnail":
-        opts["skip_download"] = True
-        opts["writethumbnail"] = True
-        postprocessors.append({"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"})
+    preset_opts = presets[preset]
 
-    opts["postprocessors"] = postprocessors + (opts["postprocessors"] if "postprocessors" in opts else [])
+    opts['format'] = preset_opts.get('format')
+
+    if 'postprocessors' in preset_opts:
+        if 'postprocessors' not in opts:
+            opts['postprocessors'] = []
+
+        opts['postprocessors'].extend(preset_opts['postprocessors'])
+
+    if 'args' in preset_opts:
+        for ignored_key in IGNORED_KEYS:
+            for key, value in preset_opts['args'].items():
+                if key == ignored_key:
+                    continue
+
+                opts[key] = value
+
     return opts
 
 
@@ -116,10 +73,10 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None) -> (Any | dict[str, Any] | N
 
 
 def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True) -> str:
-    """Calculates download path and prevents directory traversal.
+    """Calculates download path and prevents folder traversal.
 
     Returns:
-        Download path with base directory factored in.
+        Download path with base folder factored in.
     """
     if not folder:
         return basePath
@@ -128,7 +85,7 @@ def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True)
     download_path = os.path.realpath(os.path.join(basePath, folder))
 
     if not download_path.startswith(realBasePath):
-        raise Exception(f'Folder "{folder}" must resolve inside the base download directory "{realBasePath}".')
+        raise Exception(f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".')
 
     if not os.path.isdir(download_path) and createPath:
         os.makedirs(download_path, exist_ok=True)
@@ -348,3 +305,57 @@ def checkId(basePath: str, file: pathlib.Path) -> bool | str:
         return f.absolute()
 
     return False
+
+
+def get_value(value):
+    return value() if callable(value) else value
+
+
+def ag(array: dict | list, path: list[str | int] | str | int, default: Any = None, separator: str = '.') -> Any:
+    """
+    dict/array getter: Retrieve a value from a nested dict or object using a path.
+
+    :param array_or_object: dict-like or object from which to retrieve values
+    :param path: string, list, or None. Represents the path to retrieve:
+                 - If None or empty string, returns the entire structure.
+                 - If list, tries each path and returns the first found.
+                 - If string, navigates through nested dict keys separated by `separator`.
+    :param default: Value (or callable) returned if nothing is found.
+    :param separator: Separator for nested paths in strings.
+    :return: The found value or the default if not found.
+    """
+
+    if path is None or path == '':
+        return array
+
+    if not isinstance(array, dict):
+        try:
+            array = vars(array)
+        except TypeError:
+            array = dict(array)
+
+    if isinstance(path, list):
+        randomValue = str(uuid.uuid4())
+        for key in path:
+            val = ag(array, key, randomValue, separator)
+            if val != randomValue:
+                return val
+
+        return get_value(default)
+
+    if path in array and array[path] is not None:
+        return array[path]
+
+    if separator not in path:
+        return array.get(path, get_value(default))
+
+    keys = path.split(separator)
+    current = array
+
+    for segment in keys:
+        if isinstance(current, dict) and segment in current:
+            current = current[segment]
+        else:
+            return get_value(default)
+
+    return current

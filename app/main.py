@@ -35,7 +35,7 @@ class main:
         self.app = web.Application()
         self.encoder = Encoder()
 
-        self.checkDirectories()
+        self.checkFolders()
         caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, "migrations"))
 
         connection = sqlite3.connect(database=self.config.db_file, isolation_level=None)
@@ -54,7 +54,7 @@ class main:
         if os.path.exists(WebhookFile):
             emitter.add_emitter(Webhooks(WebhookFile).emit)
 
-    def checkDirectories(self) -> None:
+    def checkFolders(self) -> None:
         try:
             LOG.debug(f"Checking download folder at '{self.config.download_path}'.")
             if not os.path.exists(self.config.download_path):
@@ -101,8 +101,7 @@ class main:
             LOG.info(f"Started 'Task: {taskName}' at '{timeNow}'.")
             await self.socket.add(
                 url=task.get("url"),
-                quality=task.get("quality", "best"),
-                format=task.get("format", "any"),
+                preset=task.get("preset", "default"),
                 folder=task.get("folder"),
                 ytdlp_cookies=task.get("ytdlp_cookies"),
                 ytdlp_config=task.get("ytdlp_config"),

@@ -22,7 +22,8 @@ export const useSocketStore = defineStore('socket', () => {
       config.setAll({
         app: initialData['config'],
         tasks: initialData['tasks'],
-        directories: initialData['directories'],
+        folders: initialData['folders'],
+        presets: initialData['presets'],
       })
 
       stateStore.addAll('queue', initialData['queue'] ?? {})

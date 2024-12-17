@@ -79,20 +79,44 @@
         <div class="card"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip">
+
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-              <a v-if="item.filename" referrerpolicy="no-referrer" :href="makeDownload(config, item, 'm3u8')"
-                @click.prevent="$emit('playItem', item)">
-                {{ item.title }}
-              </a>
-              <span v-else>{{ item.title }}</span>
+              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
+
             <div class="card-header-icon" v-if="item.filename">
-              <a :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
-                class="has-text-primary" v-tooltip="'Download item.'">
+
+              <NuxtLink :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
+                class="has-text-primary" v-tooltip="'Download item.'" v-if="item.status === 'finished'">
                 <span class="icon"><i class="fa-solid fa-download" /></span>
-              </a>
+              </NuxtLink>
+
+              <button @click="hideThumbnail = !hideThumbnail">
+                <span class="icon"><i class="fa-solid"
+                    :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
+              </button>
             </div>
+
           </header>
+          <div v-if="item.thumbnail && false === hideThumbnail" class="card-image">
+            <figure class="image is-3by1">
+              <template v-if="item.status === 'finished'">
+                <NuxtLink v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
+                  @click.prevent="playVideo(item)">
+                  <img
+                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                    :alt="item.title" />
+                </NuxtLink>
+              </template>
+              <template v-else>
+                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
+                  <img
+                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                    :alt="item.title" />
+                </NuxtLink>
+              </template>
+            </figure>
+          </div>
           <div class="card-content">
             <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.live_in">
@@ -106,7 +130,7 @@
               <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span v-if="!item.live_in && !item.is_live">
                   <span class="icon-text">
                     <span class="icon"
@@ -126,19 +150,20 @@
                   </span>
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span class="user-hint" :date-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered" v-if="item.live_in && item.status != 'finished'">
+              <div class="column is-half-mobile has-text-centered is-text-overflow"
+                v-if="item.live_in && item.status != 'finished'">
                 <span :date-datetime="item.datetime"
                   v-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered" v-if="item.file_size">
+              <div class="column is-half-mobile has-text-centered is-text-overflow" v-if="item.file_size">
                 {{ formatBytes(item.file_size) }}
               </div>
               <div class="column is-half-mobile has-text-centered">
@@ -176,14 +201,13 @@
                 </a>
               </div>
               <div class="column is-half-mobile">
-                <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
+                <button class="button is-link is-fullwidth" target="_blank" @click="copyText(item.url)"
+                  v-tooltip="'Copy url to clipboard.'">
                   <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-up-right-from-square" />
-                    </span>
-                    <span>Visit Link</span>
+                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                    <span>Copy</span>
                   </span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -209,6 +233,15 @@
         </span>
       </p>
     </div>
+
+    <div class="modal is-active" v-if="video_link">
+      <div class="modal-background"></div>
+      <div class="modal-content">
+        <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
+          :title="video_title" class="is-fullwidth" @closeModel="video_link = ''; video_title = ''" />
+      </div>
+      <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
+    </div>
   </div>
 </template>
 
@@ -225,7 +258,16 @@ const socket = useSocketStore()
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showCompleted = useStorage('showCompleted', true)
+const hideThumbnail = useStorage('hideThumbnail', false)
 const direction = useStorage('sortCompleted', 'desc')
+
+const video_link = ref('')
+const video_title = ref('')
+
+const playVideo = item => {
+  video_link.value = makeDownload(config, item, 'm3u8');
+  video_title.value = item.title;
+}
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.history) {
