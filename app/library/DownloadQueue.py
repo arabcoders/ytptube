@@ -209,7 +209,7 @@ class DownloadQueue:
     ):
         ytdlp_config = ytdlp_config if ytdlp_config else {}
 
-        LOG.info(f"Adding url '{url}' to folder '{folder}' with the following options 'Preset: {preset=}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'.")
+        LOG.info(f"Adding url '{url}' to folder '{folder}' with the following options 'Preset: {preset}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'.")
 
         if isinstance(ytdlp_config, str):
             try:

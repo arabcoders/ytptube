@@ -66,43 +66,50 @@ class Config:
     ytdlp_version: str = YTDLP_VERSION
     tasks: list = []
     presets: list = [
+        {'name': 'default', 'format': 'default', 'postprocessors': [],
+         'args': {}},
+        {'name': 'Video - 1080p h264/acc', 'format': 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
+         'args': {'format_sort': ['vcodec:h264'], }, },
+        {'name': 'Video - 720p h264/acc', 'format': 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
+         'args': {'format_sort': ['vcodec:h264'], }, },
         {
-            'name': 'Default - Use default yt-dlp format',
-            'format': 'default',
-            'postprocessors': [],
-            'args': {}
-        },
-        # {
-        #     'name': 'Audio - Best audio [MP3]',
-        #     'format': 'bestaudio',
-        #     'postprocessors': [
-        #         {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': 'best'},
-        #         {"key": "FFmpegThumbnailsConvertor", "format": "jpg", "when": "before_dl"},
-        #         {'key': 'FFmpegMetadata'},
-        #         {'key': 'EmbedThumbnail'},
-        #     ],
-        #     'args': {
-        #         'writethumbnail': True
-        #     }
-        # },
-        {
-            'name': 'Video - 1080p h264/acc',
-            'format': 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
+            'name': 'Audio - Best audio [MP3]',
+            'format': 'bestaudio/best',
+            'postprocessors': [
+                {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "5",
+                    "nopostoverwrites": False
+                },
+                {
+                    "key": "FFmpegMetadata",
+                    "add_chapters": True,
+                    "add_metadata": True,
+                    "add_infojson": "if_exists"
+                },
+                {
+                    "key": "EmbedThumbnail",
+                    "already_have_thumbnail": False
+                },
+                {
+                    "key": "FFmpegConcat",
+                    "only_multi_video": True,
+                    "when": "playlist"
+                }
+            ],
             'args': {
-                'format_sort': [
-                    'vcodec:h264'
-                ],
-            },
-        },
-        {
-            'name': 'Video - 720p h264/acc',
-            'format': 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]',
-            'args': {
-                'format_sort': [
-                    'vcodec:h264'
-                ],
-            },
-        },
+                "outtmpl": {
+                    "pl_thumbnail": ""
+                },
+                "ignoreerrors": "only_download",
+                "retries": 10,
+                "fragment_retries": 10,
+                "writethumbnail": True,
+                "extract_flat": "discard_in_playlist",
+                "final_ext": "mp3",
+            }
+        }
     ]
 
     _manual_vars: tuple = ('temp_path', 'config_path', 'download_path',)
@@ -119,7 +126,7 @@ class Config:
         'ytdlp_version', 'version', 'url_host', 'started', 'url_prefix',
     )
 
-    @staticmethod
+    @ staticmethod
     def get_instance():
         """ Static access method. """
         return Config() if not Config.__instance else Config.__instance
@@ -207,7 +214,7 @@ class Config:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         optsFile: str = os.path.join(self.config_path, 'ytdlp.json')
-        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 0:
+        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 4:
             LOG.info(f"Loading yt-dlp custom options from '{optsFile}'.")
 
             (opts, status, error) = load_file(optsFile, dict)

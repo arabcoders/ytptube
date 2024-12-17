@@ -111,7 +111,7 @@ class DataStore:
         return None
 
     async def test(self) -> bool:
-        await self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
+        self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
         return True
 
     def _updateStoreItem(self, type: str, item: ItemDTO) -> None:

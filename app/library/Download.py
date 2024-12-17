@@ -70,7 +70,7 @@ class Download:
         self.output_template_chapter = info.output_template_chapter
         self.output_template = info.output_template
         self.preset = info.preset
-        self.ytdl_opts = get_opts(self.preset, info.ytdlp_config if info.ytdlp_config else {})
+        self.ytdl_opts = info.ytdlp_config if info.ytdlp_config else {}
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
@@ -121,7 +121,7 @@ class Download:
                 'break_on_existing': True,
                 'progress_hooks': [self._progress_hook],
                 'postprocessor_hooks': [self._postprocessor_hook],
-                **mergeConfig(self.default_ytdl_opts, self.ytdl_opts),
+                **get_opts(self.preset, mergeConfig(self.default_ytdl_opts, self.ytdl_opts)),
             }
 
             if 'format' not in params and self.default_ytdl_opts.get('format', None):

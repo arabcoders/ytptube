@@ -101,12 +101,12 @@
           <div v-if="item.thumbnail && false === hideThumbnail" class="card-image">
             <figure class="image is-3by1">
               <template v-if="item.status === 'finished'">
-                <NuxtLink v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
+                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
                   @click.prevent="playVideo(item)">
                   <img
                     :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
                     :alt="item.title" />
-                </NuxtLink>
+                </a>
               </template>
               <template v-else>
                 <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
@@ -403,16 +403,7 @@ const requeueIncomplete = () => {
     if ('finished' === item.status) {
       continue;
     }
-
-    emits('deleteItem', 'completed', key);
-    emits('addItem', {
-      url: item.url,
-      format: item.preset,
-      folder: item.folder,
-      ytdlp_config: item.ytdlp_config,
-      ytdlp_cookies: item.ytdlp_cookies,
-      output_template: item.output_template,
-    });
+    reQueueItem(item)
   }
 }
 
@@ -428,8 +419,7 @@ const reQueueItem = item => {
   socket.emit('item_delete', item._id)
   socket.emit('add_url', {
     url: item.url,
-    format: item.format,
-    quality: item.quality,
+    preset: item.preset,
     folder: item.folder,
     ytdlp_config: item.ytdlp_config,
     ytdlp_cookies: item.ytdlp_cookies,

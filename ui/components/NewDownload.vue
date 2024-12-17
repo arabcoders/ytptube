@@ -20,7 +20,7 @@
               <div class="control is-expanded">
                 <div class="select is-fullwidth">
                   <select id="preset" class="is-fullwidth" :disabled="!socket.isConnected" v-model="selectedPreset">
-                    <option v-for="item in config.presets" :key="item.name" :value="item.format">
+                    <option v-for="item in config.presets" :key="item.name" :value="item.name">
                       {{ item.name }}
                     </option>
                   </select>
@@ -135,7 +135,7 @@ const config = useConfigStore();
 const socket = useSocketStore();
 const toast = useToast();
 
-const selectedPreset = useStorage('selectedPreset', 'default')
+const selectedPreset = useStorage('selectedPreset', '')
 const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
 const output_template = useStorage('output_template', null)
@@ -166,8 +166,8 @@ const resetConfig = () => {
   ytdlpConfig.value = '';
   ytdlpCookies.value = '';
   output_template.value = null;
-  url.value = '';
-  downloadPath.value = '';
+  url.value = null;
+  downloadPath.value = null;
   showAdvanced.value = false;
 
   toast.success('Local configuration has been reset.');
@@ -186,6 +186,11 @@ const statusHandler = async data => {
   url.value = '';
 }
 
-onMounted(() => socket.on('status', statusHandler))
+onMounted(() => {
+  socket.on('status', statusHandler)
+  if ('' === selectedPreset.value) {
+    selectedPreset.value = 'default'
+  }
+})
 onUnmounted(() => socket.off('status', statusHandler))
 </script>

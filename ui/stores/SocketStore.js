@@ -44,7 +44,6 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on('completed', stream => {
       const item = JSON.parse(stream);
 
-      console.log(item)
       if (true === stateStore.has('queue', item._id)) {
         stateStore.remove('queue', item._id);
       }
@@ -56,7 +55,6 @@ export const useSocketStore = defineStore('socket', () => {
       const id = JSON.parse(stream);
 
       if (true !== stateStore.has('queue', id)) {
-        console.log(stream)
         return
       }
 
@@ -71,7 +69,6 @@ export const useSocketStore = defineStore('socket', () => {
       const id = JSON.parse(stream);
 
       if (true !== stateStore.has('history', id)) {
-        console.log(stream)
         return
       }
 
