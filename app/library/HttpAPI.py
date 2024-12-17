@@ -196,7 +196,7 @@ class HttpAPI(common):
         return web.Response(text='pong')
 
     @route('POST', 'add')
-    async def add(self, request: Request) -> Response:
+    async def add_url(self, request: Request) -> Response:
         post = await request.json()
 
         url: str = post.get('url')
