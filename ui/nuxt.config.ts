@@ -14,7 +14,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       domain: '/',
-      wss: ':8081/',
+      wss: process.env.VUE_APP_BASE_URL ?? '',
       version: '2.0.0',
     }
   },
