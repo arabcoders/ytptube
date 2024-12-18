@@ -32,3 +32,4 @@ var/*
 # Misc - python stuff
 __pycache__
 .venv
+.idea
