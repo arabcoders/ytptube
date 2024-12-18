@@ -19,7 +19,8 @@
       "cwd": "${workspaceFolder}/ui",
       "env": {
         "NUXT_PUBLIC_WSS": ":8081/",
-      }
+      },
+      "console": "internalConsole"
     },
     {
       "name": "Python: main.py",
@@ -34,8 +35,8 @@
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "YTP_URL_HOST": "http://localhost:8081",
         "YTP_LOG_LEVEL": "DEBUG",
-        "YTP_DEBUG": "true",
-        "YTP_YTDL_DEBUG": "true",
+        "YTP_DEBUG": "false",
+        "YTP_YTDL_DEBUG": "false",
       }
     },
     {

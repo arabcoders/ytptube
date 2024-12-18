@@ -347,7 +347,7 @@ class Download:
             if self.info.status == 'error' and 'error' in status:
                 self.info.error = status.get('error')
                 asyncio.create_task(
-                    self.emitter.error(dl=self.info, message=self.info.error),
+                    self.emitter.error(message=self.info.error, data=self.info),
                     name=f"emitter-e-{self.id}")
 
             if 'downloaded_bytes' in status:

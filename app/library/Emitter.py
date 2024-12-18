@@ -35,8 +35,11 @@ class Emitter:
     async def cleared(self, id: str, dl: dict = None, **kwargs):
         await self.emit('cleared', id, **kwargs)
 
-    async def error(self, dl: dict, message: str, **kwargs):
-        await self.emit('error', (dl, message), **kwargs)
+    async def error(self, message: str, data: dict = {}, **kwargs):
+        msg = {'status': 'error', 'message': message, 'data': {}}
+        if data:
+            msg.update({'data': data})
+        await self.emit('error', msg, **kwargs)
 
     async def warning(self, message: str, **kwargs):
         await self.emit('error', message, **kwargs)

@@ -33,12 +33,12 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on('added', stream => {
       const item = JSON.parse(stream);
       stateStore.add('queue', item._id, item);
-      toast.success(`Item queued successfully: ${ag(stateStore.get('queue', item._id, {}), 'title')}`);
+      toast.success(`Item queued: ${ag(stateStore.get('queue', item._id, {}), 'title')}`);
     });
 
     socket.value.on('error', stream => {
-      const [item, error] = JSON.parse(stream);
-      toast.error(`${item?.id}: Error: ${error}`);
+      const json = JSON.parse(stream);
+      toast.error(`${json.data?.id ?? json?.status}: ${json?.message}`);
     });
 
     socket.value.on('completed', stream => {
