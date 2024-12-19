@@ -448,7 +448,7 @@ class HttpAPI(common):
             'Access-Control-Max-Age': "300",
         })
 
-    @route('GET', 'player/segments/{segment:d+}/{file:.*}.ts')
+    @route('GET', r'player/segments/{segment:\d+}/{file:.*}.ts')
     async def segments(self, request: Request) -> Response:
         file: str = request.match_info.get('file')
         segment: int = request.match_info.get('segment')
