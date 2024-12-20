@@ -9,7 +9,7 @@ class Encoder(json.JSONEncoder):
     """
 
     def default(self, o):
-        if isinstance(o, object) and hasattr(o, '__dict__'):
+        if isinstance(o, object) and hasattr(o, "__dict__"):
             return o.__dict__
 
         return json.JSONEncoder.default(self, o)

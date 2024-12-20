@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
 
 import asyncio
+import logging
 import os
 import random
-import logging
-import caribou
 import sqlite3
-import magic
 from datetime import datetime
-from aiohttp import web
 from pathlib import Path
-from library.Emitter import Emitter
-from library.config import Config
-from library.encoder import Encoder
-from library.DownloadQueue import DownloadQueue
-from library.Webhooks import Webhooks
-from library.HttpSocket import HttpSocket
-from library.HttpAPI import HttpAPI
+
+import caribou
+import magic
 from aiocron import crontab
+from aiohttp import web
+from library.config import Config
+from library.DownloadQueue import DownloadQueue
+from library.Emitter import Emitter
+from library.encoder import Encoder
+from library.HttpAPI import HttpAPI, LOG as http_logger
+from library.HttpSocket import HttpSocket
+from library.Webhooks import Webhooks
 
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
 
-class main:
-    config: Config = None
-    app: web.Application = None
-    http: HttpAPI = None
-    socket: HttpSocket = None
+class Main:
+    config: Config
+    app: web.Application
+    http: HttpAPI
+    socket: HttpSocket
 
     def __init__(self):
         self.config = Config.get_instance()
@@ -61,9 +62,7 @@ class main:
                 LOG.info(f"Creating download folder at '{self.config.download_path}'.")
                 os.makedirs(self.config.download_path, exist_ok=True)
         except OSError as e:
-            LOG.error(
-                f"Could not create download folder at '{self.config.download_path}'."
-            )
+            LOG.error(f"Could not create download folder at '{self.config.download_path}'.")
             raise e
 
         try:
@@ -111,9 +110,7 @@ class main:
             LOG.info(f"Completed 'Task: {taskName}' at '{timeNow}'.")
         except Exception as e:
             timeNow = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            LOG.error(
-                f"Failed 'Task: {taskName}' at '{timeNow}'. Error message '{str(e)}'."
-            )
+            LOG.error(f"Failed 'Task: {taskName}' at '{timeNow}'. Error message '{str(e)}'.")
 
     def load_tasks(self):
         for task in self.config.tasks:
@@ -131,9 +128,7 @@ class main:
                 loop=asyncio.get_event_loop(),
             )
 
-            LOG.info(
-                f"Added 'Task: {task.get('name', task.get('url'))}' to be executed every '{cron_timer}'."
-            )
+            LOG.info(f"Added 'Task: {task.get('name', task.get('url'))}' to be executed every '{cron_timer}'.")
 
     def start(self):
         self.socket.attach(self.app)
@@ -141,18 +136,22 @@ class main:
 
         self.load_tasks()
 
-        start: str = f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}"
+        def started(_):
+            LOG.info("=" * 40)
+            LOG.info(f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}")
+            LOG.info("=" * 40)
+
         web.run_app(
             self.app,
             host=self.config.host,
             port=self.config.port,
             reuse_port=True,
             loop=asyncio.get_event_loop(),
-            access_log=None,
-            print=lambda _: LOG.info(start),
+            access_log=http_logger if self.config.access_log else None,
+            print=started,
         )
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    main().start()
+    Main().start()

@@ -1,14 +1,16 @@
 import logging
+
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 
-LOG = logging.getLogger('common')
+LOG = logging.getLogger("common")
 
 
-class common():
+class common:
     """
     This class is used to share common methods between the socket and the API gateways.
     """
+
     queue: DownloadQueue = None
     encoder: Encoder = None
 
@@ -17,8 +19,9 @@ class common():
         self.queue = queue
         self.encoder = encoder
 
-    async def add(self, url: str, preset: str, folder: str, ytdlp_cookies: str, ytdlp_config: dict,
-                  output_template: str) -> dict[str, str]:
+    async def add(
+        self, url: str, preset: str, folder: str, ytdlp_cookies: str, ytdlp_config: dict, output_template: str
+    ) -> dict[str, str]:
         if ytdlp_config is None:
             ytdlp_config = {}
 
@@ -27,11 +30,11 @@ class common():
 
         status = await self.queue.add(
             url=url,
-            preset=preset if preset else 'default',
+            preset=preset if preset else "default",
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,
-            output_template=output_template
+            output_template=output_template,
         )
 
         return status

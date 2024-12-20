@@ -154,7 +154,7 @@ const socket = useSocketStore();
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
-const hideThumbnail = useStorage('hideThumbnail', false)
+const hideThumbnail = useStorage('hideThumbnailQueue', false)
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {

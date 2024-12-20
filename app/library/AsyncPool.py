@@ -1,6 +1,6 @@
 import asyncio
-from datetime import datetime, timezone
 import logging
+from datetime import datetime, timezone
 
 
 class Terminator:
@@ -8,13 +8,18 @@ class Terminator:
 
 
 class AsyncPool:
-    def __init__(self,
-                 num_workers: int, worker_co,
-                 name: str, logger: logging.Logger,
-                 loop: asyncio.AbstractEventLoop = None,
-                 load_factor: int = 1, max_task_time: int = None,
-                 return_futures: bool = False, raise_on_join: bool = False
-                 ):
+    def __init__(
+        self,
+        num_workers: int,
+        worker_co,
+        name: str,
+        logger: logging.Logger,
+        loop: asyncio.AbstractEventLoop = None,
+        load_factor: int = 1,
+        max_task_time: int = None,
+        return_futures: bool = False,
+        raise_on_join: bool = False,
+    ):
         """
         This class will create `num_workers` asyncio tasks to work against a queue of
         `num_workers * load_factor` items of back-pressure (IOW we will block after such
@@ -62,8 +67,8 @@ class AsyncPool:
                 future, args, kwargs = item
 
                 self._status[worker_id] = {
-                    'started': self._time().isoformat(),
-                    'data': kwargs.get('entry', {'info': {}}).info.__dict__,
+                    "started": self._time().isoformat(),
+                    "data": kwargs.get("entry", {"info": {}}).info.__dict__,
                 }
 
                 # the wait_for will cancel the task (task sees CancelledError) and raises a TimeoutError from here
@@ -87,7 +92,7 @@ class AsyncPool:
                     # don't log the failure when the client is receiving the future
                     future.set_exception(e)
                 else:
-                    self._logger.exception(f'Worker call failed. {str(e)}')
+                    self._logger.exception(f"Worker call failed. {str(e)}")
             finally:
                 self._status[worker_id] = None
 
@@ -140,7 +145,7 @@ class AsyncPool:
         return future
 
     def start(self):
-        """ Will start up worker pool and reset exception state """
+        """Will start up worker pool and reset exception state"""
         self._exceptions = False
 
         for worker_number in range(self._num_workers):
@@ -148,16 +153,16 @@ class AsyncPool:
             self._createWorker(worker_id)
 
     async def restart(self, worker_id: str, msg: str = None) -> bool:
-        """ Will restart the worker pool """
+        """Will restart the worker pool"""
         if worker_id not in self._workers:
-            self._logger.warning(f'Worker {worker_id} does not exist.')
+            self._logger.warning(f"Worker {worker_id} does not exist.")
             return False
 
         try:
             self._workers[worker_id].cancel(msg)
             await self._workers[worker_id]
         except asyncio.exceptions.CancelledError as e:
-            self._logger.warning(f'Worker {worker_id} restarted. {str(e)}')
+            self._logger.warning(f"Worker {worker_id} restarted. {str(e)}")
             if worker_id in self._status:
                 self._status.pop(worker_id)
 
@@ -169,16 +174,16 @@ class AsyncPool:
         return True
 
     async def stop(self, worker_id: str, msg: str = None) -> bool:
-        """ Will stop the worker """
+        """Will stop the worker"""
         if worker_id not in self._workers:
-            self._logger.warning(f'Worker {worker_id} does not exist.')
+            self._logger.warning(f"Worker {worker_id} does not exist.")
             return False
 
         if self._workers[worker_id].cancel(msg):
             try:
                 await self._workers[worker_id]
             except asyncio.exceptions.CancelledError as e:
-                self._logger.warning(f'Worker {worker_id} stopped. {str(e)}')
+                self._logger.warning(f"Worker {worker_id} stopped. {str(e)}")
                 if worker_id in self._status:
                     self._status.pop(worker_id)
 
@@ -192,7 +197,7 @@ class AsyncPool:
         if len(self._workers) < 1:
             return
 
-        self._logger.info(f'Joining {self._name}')
+        self._logger.info(f"Joining {self._name}")
 
         # The Terminators will kick each worker from being blocked against the _queue.get() and allow
         # each one to exit.
@@ -203,26 +208,25 @@ class AsyncPool:
             await asyncio.gather(*list(self._workers))
             self._workers = {}
         except:
-            self._logger.exception(f'Exception joining {self._name}')
+            self._logger.exception(f"Exception joining {self._name}")
             raise
         finally:
-            self._logger.info(f'Completed {self._name}')
+            self._logger.info(f"Completed {self._name}")
 
         if self._exceptions and self._raise_on_join:
             raise Exception(f"Exception occurred in {self._name} pool")
 
     def _createWorker(self, worker_id: str) -> asyncio.Future:
         if worker_id in self._workers:
-            self._logger.debug(f'Worker {worker_id} already exists.')
+            self._logger.debug(f"Worker {worker_id} already exists.")
             return self._workers[worker_id]
 
         self._status[worker_id] = None
         self._workers[worker_id] = asyncio.ensure_future(
-            coro_or_future=self._worker_loop(worker_id=worker_id),
-            loop=self._loop
+            coro_or_future=self._worker_loop(worker_id=worker_id), loop=self._loop
         )
 
-        self._logger.debug(f'Created {worker_id}')
+        self._logger.debug(f"Created {worker_id}")
 
         return self._workers[worker_id]
 

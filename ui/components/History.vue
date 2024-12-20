@@ -273,7 +273,7 @@ const socket = useSocketStore()
 const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showCompleted = useStorage('showCompleted', true)
-const hideThumbnail = useStorage('hideThumbnail', false)
+const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 
 const video_link = ref('')

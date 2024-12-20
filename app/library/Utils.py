@@ -1,6 +1,4 @@
 import copy
-from datetime import datetime, timezone
-from functools import lru_cache
 import ipaddress
 import json
 import logging
@@ -8,14 +6,29 @@ import os
 import pathlib
 import re
 import socket
-from typing import Any
 import uuid
+from datetime import datetime, timezone
+from functools import lru_cache
+from typing import Any
+
 import yt_dlp
 
-LOG = logging.getLogger('Utils')
+LOG = logging.getLogger("Utils")
 
-IGNORED_KEYS: tuple[str] = ('cookiefile', 'paths', 'outtmpl', 'progress_hooks', 'postprocessor_hooks',)
+IGNORED_KEYS: tuple[str] = (
+    "cookiefile",
+    "paths",
+    "outtmpl",
+    "progress_hooks",
+    "postprocessor_hooks",
+)
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
+
+
+class StreamingError(Exception):
+    """Raised when an error occurs during streaming."""
+
+    pass
 
 
 def get_opts(preset: str, ytdl_opts: dict) -> dict:
@@ -31,16 +44,17 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
     """
     opts = copy.deepcopy(ytdl_opts)
 
-    if 'default' == preset:
+    if "default" == preset:
         LOG.debug("Using default preset.")
         return opts
 
     from .config import Config
+
     presets = Config.get_instance().presets
 
     found = False
     for _preset in presets:
-        if _preset['name'] == preset:
+        if _preset["name"] == preset:
             found = True
             preset_opts = _preset
             break
@@ -49,24 +63,24 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
         LOG.error(f"Preset '{preset}' is not defined in the presets.")
         return opts
 
-    opts['format'] = preset_opts.get('format')
+    opts["format"] = preset_opts.get("format")
 
-    if 'postprocessors' in preset_opts:
-        opts['postprocessors'] = preset_opts['postprocessors']
+    if "postprocessors" in preset_opts:
+        opts["postprocessors"] = preset_opts["postprocessors"]
 
-    if 'args' in preset_opts:
-        for key, value in preset_opts['args'].items():
+    if "args" in preset_opts:
+        for key, value in preset_opts["args"].items():
             opts[key] = value
 
     LOG.debug(f"Using preset '{preset}', altered options: {opts}")
     return opts
 
 
-def getVideoInfo(url: str, ytdlp_opts: dict = None) -> (Any | dict[str, Any] | None):
+def getVideoInfo(url: str, ytdlp_opts: dict = None) -> Any | dict[str, Any] | None:
     params: dict = {
-        'quiet': True,
-        'color': 'no_color',
-        'extract_flat': True,
+        "quiet": True,
+        "color": "no_color",
+        "extract_flat": True,
     }
 
     if ytdlp_opts:
@@ -98,30 +112,35 @@ def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True)
 
 def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     params: dict = {
-        'color': 'no_color',
-        'extract_flat': True,
-        'skip_download': True,
-        'ignoreerrors': True,
-        'ignore_no_formats_error': True,
+        "color": "no_color",
+        "extract_flat": True,
+        "skip_download": True,
+        "ignoreerrors": True,
+        "ignore_no_formats_error": True,
         **config,
     }
 
     # Remove keys that are not needed for info extraction as those keys generate files when used with extract_info.
-    for key in ('writeinfojson', 'writethumbnail', 'writedescription', 'writeautomaticsub',):
+    for key in (
+        "writeinfojson",
+        "writethumbnail",
+        "writedescription",
+        "writeautomaticsub",
+    ):
         if key in params:
             params.pop(key)
 
     if debug:
-        params['verbose'] = True
-        params['logger'] = logging.getLogger('YTPTube-ytdl')
+        params["verbose"] = True
+        params["logger"] = logging.getLogger("YTPTube-ytdl")
     else:
-        params['quiet'] = True
+        params["quiet"] = True
 
     return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
 
 def mergeDict(source: dict, destination: dict) -> dict:
-    """ Merge data from source into destination """
+    """Merge data from source into destination"""
     destination_copy = copy.deepcopy(destination)
 
     for key, value in source.items():
@@ -137,15 +156,14 @@ def mergeDict(source: dict, destination: dict) -> dict:
 
 
 def mergeConfig(config: dict, new_config: dict) -> dict:
-    """ Merge user provided config into default config """
+    """Merge user provided config into default config"""
 
     ignored_keys: tuple = (
-        'cookiefile',
-        'download_archive'
-        'paths',
-        'outtmpl',
-        'progress_hooks',
-        'postprocessor_hooks',
+        "cookiefile",
+        "download_archive" "paths",
+        "outtmpl",
+        "progress_hooks",
+        "postprocessor_hooks",
     )
 
     for key in ignored_keys:
@@ -159,23 +177,28 @@ def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, st
     global YTDLP_INFO_CLS
 
     idDict = {
-        'id': None,
-        'ie_key': None,
-        'archive_id': None,
+        "id": None,
+        "ie_key": None,
+        "archive_id": None,
     }
 
     if not url or not archive_file or not os.path.exists(archive_file):
-        return False, idDict,
+        return (
+            False,
+            idDict,
+        )
 
     if not YTDLP_INFO_CLS:
-        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(params={
-            'color': 'no_color',
-            'extract_flat': True,
-            'skip_download': True,
-            'ignoreerrors': True,
-            'ignore_no_formats_error': True,
-            'quiet': True,
-        })
+        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(
+            params={
+                "color": "no_color",
+                "extract_flat": True,
+                "skip_download": True,
+                "ignoreerrors": True,
+                "ignore_no_formats_error": True,
+                "quiet": True,
+            }
+        )
 
     for key, ie in YTDLP_INFO_CLS._ies.items():
         if not ie.suitable(url):
@@ -188,26 +211,35 @@ def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, st
         if not temp_id:
             break
 
-        idDict['id'] = temp_id
-        idDict['ie_key'] = key
-        idDict['archive_id'] = YTDLP_INFO_CLS._make_archive_id(idDict)
+        idDict["id"] = temp_id
+        idDict["ie_key"] = key
+        idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
         break
 
-    if not idDict['archive_id']:
-        return False, idDict,
+    if not idDict["archive_id"]:
+        return (
+            False,
+            idDict,
+        )
 
-    with open(archive_file, 'r') as f:
+    with open(archive_file, "r") as f:
         for line in f.readlines():
-            if idDict['archive_id'] in line:
-                return True, idDict,
+            if idDict["archive_id"] in line:
+                return (
+                    True,
+                    idDict,
+                )
 
-    return False, idDict,
+    return (
+        False,
+        idDict,
+    )
 
 
 def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
     """Converts JSON cookies to Netscape cookies
 
-       Returns None if no cookies are found, otherwise returns a string of cookies in Netscape format.
+    Returns None if no cookies are found, otherwise returns a string of cookies in Netscape format.
     """
 
     netscapeCookies = "# Netscape HTTP Cookie File\n# https://curl.haxx.se/docs/http-cookies.html\n# This file was generated by libcurl! Edit at your own risk.\n\n"
@@ -227,19 +259,26 @@ def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
 
                 cookieDict = cookies[domain][subDomain][cookie]
 
-                if 0 == int(cookieDict['expirationDate']):
-                    cookieDict['expirationDate'] = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
+                if 0 == int(cookieDict["expirationDate"]):
+                    cookieDict["expirationDate"] = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
 
                 hasCookies = True
-                netscapeCookies += "\t".join([
-                    cookieDict['domain'] if str(cookieDict['domain']).startswith('.') else '.' + cookieDict['domain'],
-                    'TRUE',
-                    cookieDict['path'],
-                    'TRUE' if cookieDict['secure'] else 'FALSE',
-                    str(int(cookieDict['expirationDate'])),
-                    cookieDict['name'],
-                    cookieDict['value']
-                ])+"\n"
+                netscapeCookies += (
+                    "\t".join(
+                        [
+                            cookieDict["domain"]
+                            if str(cookieDict["domain"]).startswith(".")
+                            else "." + cookieDict["domain"],
+                            "TRUE",
+                            cookieDict["path"],
+                            "TRUE" if cookieDict["secure"] else "FALSE",
+                            str(int(cookieDict["expirationDate"])),
+                            cookieDict["name"],
+                            cookieDict["value"],
+                        ]
+                    )
+                    + "\n"
+                )
 
     return netscapeCookies if hasCookies else None
 
@@ -264,21 +303,38 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
         if check_type:
             assert isinstance(opts, check_type)
 
-        return (opts, True, '',)
+        return (
+            opts,
+            True,
+            "",
+        )
     except Exception:
         with open(file) as json_data:
             from pyjson5 import load as json5_load
+
             try:
                 opts = json5_load(json_data)
 
                 if check_type:
                     assert isinstance(opts, check_type)
 
-                return (opts, True, '',)
+                return (
+                    opts,
+                    True,
+                    "",
+                )
             except AssertionError:
-                return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.",)
+                return (
+                    {},
+                    False,
+                    f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.",
+                )
             except Exception as e:
-                return ({}, False, f'{e}',)
+                return (
+                    {},
+                    False,
+                    f"{e}",
+                )
 
 
 def checkId(basePath: str, file: pathlib.Path) -> bool | str:
@@ -292,17 +348,26 @@ def checkId(basePath: str, file: pathlib.Path) -> bool | str:
     :return: False if no id found, otherwise the id.
     """
 
-    match = re.search(r'(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])', file.stem, re.IGNORECASE)
+    match = re.search(r"(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])", file.stem, re.IGNORECASE)
     if not match:
         return False
 
-    id = match.groupdict().get('id')
+    id = match.groupdict().get("id")
 
     for f in file.parent.iterdir():
         if id not in f.stem:
             continue
 
-        if f.suffix not in ('.mp4', '.mkv', '.webm', '.m4v', '.m4a', '.mp3', '.aac', '.ogg',):
+        if f.suffix not in (
+            ".mp4",
+            ".mkv",
+            ".webm",
+            ".m4v",
+            ".m4a",
+            ".mp3",
+            ".aac",
+            ".ogg",
+        ):
             continue
 
         return f.absolute()
@@ -314,7 +379,7 @@ def get_value(value):
     return value() if callable(value) else value
 
 
-def ag(array: dict | list, path: list[str | int] | str | int, default: Any = None, separator: str = '.') -> Any:
+def ag(array: dict | list, path: list[str | int] | str | int, default: Any = None, separator: str = ".") -> Any:
     """
     dict/array getter: Retrieve a value from a nested dict or object using a path.
 
@@ -328,7 +393,7 @@ def ag(array: dict | list, path: list[str | int] | str | int, default: Any = Non
     :return: The found value or the default if not found.
     """
 
-    if path is None or path == '':
+    if path is None or path == "":
         return array
 
     if not isinstance(array, dict):
@@ -369,7 +434,7 @@ def is_private_address(hostname: str) -> bool:
     try:
         ip = socket.gethostbyname(hostname)
         ip_obj = ipaddress.ip_address(ip)
-        return (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local)
+        return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
     except socket.gaierror:
         # Could not resolve - treat as invalid or restricted
         return True
@@ -393,6 +458,7 @@ def validate_url(url: str) -> bool:
 
     try:
         from yarl import URL
+
         parsed_url = URL(url)
     except ValueError:
         raise ValueError("Invalid URL.")

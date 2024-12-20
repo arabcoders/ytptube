@@ -37,6 +37,7 @@
         "YTP_LOG_LEVEL": "DEBUG",
         "YTP_DEBUG": "false",
         "YTP_YTDL_DEBUG": "false",
+        "YTP_MAX_WORKERS": "2",
       }
     },
     {
