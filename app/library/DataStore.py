@@ -1,9 +1,10 @@
-from collections import OrderedDict
 import copy
+import json
+from collections import OrderedDict
 from datetime import datetime, timezone
 from email.utils import formatdate
-import json
 from sqlite3 import Connection
+
 from .config import Config
 from .Download import Download
 from .ItemDTO import ItemDTO
@@ -13,6 +14,7 @@ class DataStore:
     """
     Persistent queue.
     """
+
     type: str = None
     dict: OrderedDict[str, Download] = None
     config: Config = None
@@ -31,7 +33,7 @@ class DataStore:
 
     def exists(self, key: str = None, url: str = None) -> bool:
         if not key and not url:
-            raise KeyError('key or url must be provided.')
+            raise KeyError("key or url must be provided.")
 
         if key and key in self.dict:
             return True
@@ -44,13 +46,13 @@ class DataStore:
 
     def get(self, key: str, url: str = None) -> Download:
         if not key and not url:
-            raise KeyError('key or url must be provided.')
+            raise KeyError("key or url must be provided.")
 
         for i in self.dict:
             if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
                 return self.dict[i]
 
-        raise KeyError(f'{key=} or {url=} not found.')
+        raise KeyError(f"{key=} or {url=} not found.")
 
     def getById(self, id: str) -> Download | None:
         return self.dict[id] if id in self.dict else None
@@ -62,18 +64,17 @@ class DataStore:
         items: list[tuple[str, ItemDTO]] = []
 
         cursor = self.connection.execute(
-            f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
-            (self.type,)
+            'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC', (self.type,)
         )
 
         for row in cursor:
-            rowDate = datetime.strptime(row['created_at'], '%Y-%m-%d %H:%M:%S')
-            data: dict = json.loads(row['data'])
-            key: str = data.pop('_id')
+            rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")
+            data: dict = json.loads(row["data"])
+            key: str = data.pop("_id")
             item: ItemDTO = ItemDTO(**data)
             item._id = key
             item.datetime = formatdate(rowDate.replace(tzinfo=timezone.utc).timestamp())
-            items.append((row['id'], item))
+            items.append((row["id"], item))
 
         return items
 
@@ -123,22 +124,37 @@ class DataStore:
 
         stored = copy.deepcopy(item)
 
-        if hasattr(stored, 'datetime'):
+        if hasattr(stored, "datetime"):
             try:
-                delattr(stored, 'datetime')
+                delattr(stored, "datetime")
             except AttributeError:
                 pass
 
-        if hasattr(stored, 'live_in') and stored.status == 'finished':
+        if hasattr(stored, "live_in") and stored.status == "finished":
             try:
-                delattr(stored, 'live_in')
+                delattr(stored, "live_in")
             except AttributeError:
                 pass
 
-        self.connection.execute(sqlStatement.strip(), (
-            stored._id, type, stored.url, stored.json(), type, stored.url,
-            stored.json(), datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-        ))
+        self.connection.execute(
+            sqlStatement.strip(),
+            (
+                stored._id,
+                type,
+                stored.url,
+                stored.json(),
+                type,
+                stored.url,
+                stored.json(),
+                datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
 
     def _deleteStoreItem(self, key: str) -> None:
-        self.connection.execute('DELETE FROM "history" WHERE "type" = ? AND "id" = ?', (self.type, key,))
+        self.connection.execute(
+            'DELETE FROM "history" WHERE "type" = ? AND "id" = ?',
+            (
+                self.type,
+                key,
+            ),
+        )

@@ -1,48 +1,48 @@
-
 import asyncio
 import logging
 
-LOG = logging.getLogger('Emitter')
+LOG = logging.getLogger("Emitter")
 
 
 class Emitter:
     """
     This class is used to emit events to the registered emitters.
     """
+
     emitters: list[callable] = []
 
     def add_emitter(self, emitter: callable):
         """
-            Add an emitter to the list of emitters.
+        Add an emitter to the list of emitters.
 
-            Args:
-                emitter (function): The emitter function. The function must return a coroutine or None.
+        Args:
+            emitter (function): The emitter function. The function must return a coroutine or None.
         """
         self.emitters.append(emitter)
 
     async def added(self, dl: dict, **kwargs):
-        await self.emit('added', dl, **kwargs)
+        await self.emit("added", dl, **kwargs)
 
     async def updated(self, dl: dict, **kwargs):
-        await self.emit('updated', dl, **kwargs)
+        await self.emit("updated", dl, **kwargs)
 
     async def completed(self, dl: dict, **kwargs):
-        await self.emit('completed', dl, **kwargs)
+        await self.emit("completed", dl, **kwargs)
 
     async def canceled(self, id: str, dl: dict = None, **kwargs):
-        await self.emit('canceled', id, **kwargs)
+        await self.emit("canceled", id, **kwargs)
 
     async def cleared(self, id: str, dl: dict = None, **kwargs):
-        await self.emit('cleared', id, **kwargs)
+        await self.emit("cleared", id, **kwargs)
 
     async def error(self, message: str, data: dict = {}, **kwargs):
-        msg = {'status': 'error', 'message': message, 'data': {}}
+        msg = {"status": "error", "message": message, "data": {}}
         if data:
-            msg.update({'data': data})
-        await self.emit('error', msg, **kwargs)
+            msg.update({"data": data})
+        await self.emit("error", msg, **kwargs)
 
     async def warning(self, message: str, **kwargs):
-        await self.emit('error', message, **kwargs)
+        await self.emit("error", message, **kwargs)
 
     async def emit(self, event: str, data, **kwargs):
         tasks = []

@@ -1,44 +1,41 @@
 import base64
-from datetime import datetime
 import functools
+import hmac
 import json
+import logging
 import os
 import time
+from datetime import datetime
+from pathlib import Path
+
 import httpx
+import magic
+from aiohttp import web
+from aiohttp.web import Request, RequestHandler, Response
+
+from .common import common
 from .config import Config
 from .DownloadQueue import DownloadQueue
-from aiohttp import web
-from aiohttp.web import Request, Response, RequestHandler
-from .Playlist import Playlist
+from .Emitter import Emitter
+from .encoder import Encoder
 from .M3u8 import M3u8
+from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-import logging
-import magic
-from .common import common
-from pathlib import Path
-from .encoder import Encoder
-from .Emitter import Emitter
-from .Utils import validate_url
+from .Utils import validate_url, StreamingError
 
-LOG = logging.getLogger('app')
+LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
 
 
 class HttpAPI(common):
-    config: Config = None
-    encoder: Encoder = None
-    routes: web.RouteTableDef = None
-    queue: DownloadQueue = None
-    rootPath: str = None
-
     staticHolder: dict = {}
     extToMime: dict = {
-        '.html': 'text/html',
-        '.css': 'text/css',
-        '.js': 'application/javascript',
-        '.json': 'application/json',
-        '.ico': 'image/x-icon',
+        ".html": "text/html",
+        ".css": "text/css",
+        ".js": "application/javascript",
+        ".json": "application/json",
+        ".ico": "image/x-icon",
     }
 
     def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder):
@@ -57,13 +54,16 @@ class HttpAPI(common):
         """
         Decorator to mark a method as an HTTP route handler.
         """
+
         def decorator(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
                 return await func(*args, **kwargs)
+
             wrapper._http_method = method.upper()
             wrapper._http_path = path
             return wrapper
+
         return decorator
 
     async def staticFile(self, req: Request) -> Response:
@@ -72,22 +72,26 @@ class HttpAPI(common):
         """
         path = req.path
         if req.path not in self.staticHolder:
-            return web.json_response({"error": "File not found.", "file": path}, status=404)
+            return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
 
         item: dict = self.staticHolder[req.path]
 
-        return web.Response(body=item.get('content'), headers={
-            'Pragma': 'public',
-            'Cache-Control': 'public, max-age=31536000',
-            'Content-Type': item.get('content_type'),
-            'X-Via': 'memory' if not item.get('file', None) else 'disk',
-        })
+        return web.Response(
+            body=item.get("content"),
+            headers={
+                "Pragma": "public",
+                "Cache-Control": "public, max-age=31536000",
+                "Content-Type": item.get("content_type"),
+                "X-Via": "memory" if not item.get("file", None) else "disk",
+            },
+            status=web.HTTPOk.status_code,
+        )
 
     def preloadStatic(self, app: web.Application):
         """
         Preload static files from the ui/exported folder.
         """
-        staticDir = os.path.join(self.rootPath, 'ui', 'exported')
+        staticDir = os.path.join(self.rootPath, "ui", "exported")
         if not os.path.exists(staticDir):
             raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
 
@@ -95,25 +99,25 @@ class HttpAPI(common):
 
         for root, _, files in os.walk(staticDir):
             for file in files:
-                if file.endswith('.map'):
+                if file.endswith(".map"):
                     continue
 
                 file = os.path.join(root, file)
                 urlPath = f"{self.config.url_prefix}{file.replace(f'{staticDir}/', '')}"
 
-                content = open(file, 'rb').read()
+                content = open(file, "rb").read()
                 contentType = self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file))
 
-                self.staticHolder[urlPath] = {'content': content, 'content_type': contentType}
+                self.staticHolder[urlPath] = {"content": content, "content_type": contentType}
                 LOG.debug(f"Preloading '{urlPath}'.")
                 app.router.add_get(urlPath, self.staticFile)
                 preloaded += 1
 
-                if urlPath.endswith('/index.html') and urlPath != '/index.html':
-                    parentSlash = urlPath.replace('/index.html', '/')
-                    parentNoSlash = urlPath.replace('/index.html', '')
-                    self.staticHolder[parentSlash] = {'content': content, 'content_type': contentType}
-                    self.staticHolder[parentNoSlash] = {'content': content, 'content_type': contentType}
+                if urlPath.endswith("/index.html") and urlPath != "/index.html":
+                    parentSlash = urlPath.replace("/index.html", "/")
+                    parentNoSlash = urlPath.replace("/index.html", "")
+                    self.staticHolder[parentSlash] = {"content": content, "content_type": contentType}
+                    self.staticHolder[parentNoSlash] = {"content": content, "content_type": contentType}
                     app.router.add_get(parentSlash, self.staticFile)
                     app.router.add_get(parentNoSlash, self.staticFile)
                     preloaded += 2
@@ -121,39 +125,37 @@ class HttpAPI(common):
         if preloaded < 1:
             raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
 
-        LOG.info(f"Preloaded {preloaded} static files.")
+        LOG.info(f"Preloaded '{preloaded}' static files.")
 
     def attach(self, app: web.Application):
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
 
         self.add_routes(app)
-        pass
 
     def add_routes(self, app: web.Application):
         for attr_name in dir(self):
             method = getattr(self, attr_name)
-            if hasattr(method, '_http_method') and hasattr(method, '_http_path'):
+            if hasattr(method, "_http_method") and hasattr(method, "_http_path"):
                 http_path = method._http_path
-                if http_path.startswith('/') and self.config.url_prefix.endswith('/'):
+                if http_path.startswith("/") and self.config.url_prefix.endswith("/"):
                     http_path = method._http_path[1:]
 
                 self.routes.route(method._http_method, self.config.url_prefix + http_path)(method)
 
         async def on_prepare(request: Request, response: Response):
-            if 'Server' in response.headers:
-                del response.headers['Server']
+            if "Server" in response.headers:
+                del response.headers["Server"]
 
-            if 'Origin' in request.headers:
-                response.headers['Access-Control-Allow-Origin'] = request.headers['Origin']
-                response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-                response.headers['Access-Control-Allow-Methods'] = 'PATCH, PUT, POST, DELETE'
+            if "Origin" in request.headers:
+                response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+                response.headers["Access-Control-Allow-Methods"] = "PATCH, PUT, POST, DELETE"
 
-        if self.config.url_prefix != '/':
-            self.routes.route('GET', '/')(lambda _: web.HTTPFound(self.config.url_prefix))
+        if self.config.url_prefix != "/":
+            self.routes.route("GET", "/")(lambda _: web.HTTPFound(self.config.url_prefix))
             self.routes.get(self.config.url_prefix[:-1])(lambda _: web.HTTPFound(self.config.url_prefix))
 
-        # add static files.
         self.routes.static(f"{self.config.url_prefix}download/", self.config.download_path)
         self.preloadStatic(app)
 
@@ -161,54 +163,66 @@ class HttpAPI(common):
             app.add_routes(self.routes)
             app.on_response_prepare.append(on_prepare)
         except ValueError as e:
-            if 'ui/exported' in str(e):
+            if "ui/exported" in str(e):
                 raise RuntimeError(f"Could not find the frontend UI static assets. '{e}'.") from e
             raise e
 
     def basic_auth(username: str, password: str):
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
-            auth_header = request.headers.get('Authorization')
+            auth_header = request.headers.get("Authorization")
 
             if auth_header is None:
-                return web.Response(status=401, headers={
-                    'WWW-Authenticate': 'Basic realm="Authorization Required."',
-                }, text='Unauthorized.')
+                return web.json_response(
+                    status=web.HTTPUnauthorized.status_code,
+                    headers={
+                        "WWW-Authenticate": 'Basic realm="Authorization Required."',
+                    },
+                    data={"error": "Authorization Required."},
+                )
 
-            auth_type, encoded_credentials = auth_header.split(' ', 1)
+            auth_type, encoded_credentials = auth_header.split(" ", 1)
 
-            if 'basic' != auth_type.lower():
-                return web.Response(status=401, text="Unsupported authentication method.")
+            if "basic" != auth_type.lower():
+                return web.json_response(
+                    data={"error": "Unsupported authentication method.", "method": auth_type},
+                    status=web.HTTPUnauthorized.status_code,
+                )
 
-            decoded_credentials = base64.b64decode(encoded_credentials).decode('utf-8')
-            user_name, _, user_password = decoded_credentials.partition(':')
+            decoded_credentials = base64.b64decode(encoded_credentials).decode("utf-8")
+            user_name, _, user_password = decoded_credentials.partition(":")
 
-            if user_name != username or user_password != password:
-                return web.Response(status=401, text='Unauthorized (Invalid credentials).')
+            user_match = hmac.compare_digest(user_name, username)
+            pass_match = hmac.compare_digest(user_password, password)
+
+            if not (user_match and pass_match):
+                return web.json_response(
+                    data={"error": "Unauthorized (Invalid credentials)."}, status=web.HTTPUnauthorized.status_code
+                )
 
             return await handler(request)
 
         return middleware_handler
 
-    @route('GET', 'ping')
+    @route("GET", "ping")
     async def ping(self, _) -> Response:
         await self.queue.test()
-        return web.Response(text='pong')
+        return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
 
-    @route('POST', 'add')
+    @route("POST", "add")
     async def add_url(self, request: Request) -> Response:
         post = await request.json()
 
-        url: str = post.get('url')
-        preset: str = post.get('preset', 'default')
+        url: str = post.get("url")
+        preset: str = post.get("preset", "default")
 
         if not url:
-            raise web.HTTPBadRequest()
+            return web.json_response(data={"error": "url is required."}, status=web.HTTPBadRequest.status_code)
 
-        folder: str = post.get('folder')
-        ytdlp_cookies: str = post.get('ytdlp_cookies')
-        ytdlp_config: dict = post.get('ytdlp_config')
-        output_template: str = post.get('output_template')
+        folder: str = post.get("folder")
+        ytdlp_cookies: str = post.get("ytdlp_cookies")
+        ytdlp_config: dict | None = post.get("ytdlp_config")
+        output_template: str = post.get("output_template")
         if ytdlp_config is None:
             ytdlp_config = {}
 
@@ -218,83 +232,92 @@ class HttpAPI(common):
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
             ytdlp_config=ytdlp_config,
-            output_template=output_template
+            output_template=output_template,
         )
 
-        return web.Response(text=self.encoder.encode(status))
+        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route('GET', 'tasks')
+    @route("GET", "tasks")
     async def tasks(self, _: Request) -> Response:
-        tasks_file: str = os.path.join(self.config.config_path, 'tasks.json')
+        tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
 
         if not os.path.exists(tasks_file):
-            return web.json_response({"error": "No tasks defined."}, status=404)
+            return web.json_response({"error": "No tasks defined."}, status=web.HTTPNotFound.status_code)
 
         try:
-            with open(tasks_file, 'r') as f:
+            with open(tasks_file, "r") as f:
                 tasks = json.load(f)
         except Exception as e:
-            return web.json_response({"error": str(e)}, status=500)
+            LOG.exception(e)
+            return web.json_response({"error": "Failed to load tasks."}, status=web.HTTPInternalServerError.status_code)
 
-        return web.json_response(tasks)
+        return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route('POST', 'add_batch')
+    @route("POST", "add_batch")
     async def add_batch(self, request: Request) -> Response:
         status = {}
 
         post = await request.json()
         if not isinstance(post, list):
-            raise web.HTTPBadRequest(text='Invalid request body expecting list with dicts.')
+            return web.json_response(
+                data={"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
 
         for item in post:
             if not isinstance(item, dict):
-                raise web.HTTPBadRequest(text='Invalid request body expecting list with dicts.')
+                return web.json_response(
+                    data={"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
 
-            if not item.get('url'):
-                raise web.HTTPBadRequest(text='url is required.')
+            if not item.get("url"):
+                return web.json_response(
+                    data={"error": "url is required.", "data": post}, status=web.HTTPBadRequest.status_code
+                )
 
-            status[item.get('url')] = await self.add(
-                url=item.get('url'),
-                preset=item.get('preset', 'default'),
-                folder=item.get('folder'),
-                ytdlp_cookies=item.get('ytdlp_cookies'),
-                ytdlp_config=item.get('ytdlp_config'),
-                output_template=item.get('output_template')
+        for item in post:
+            status[item.get("url")] = await self.add(
+                url=item.get("url"),
+                preset=item.get("preset", "default"),
+                folder=item.get("folder"),
+                ytdlp_cookies=item.get("ytdlp_cookies"),
+                ytdlp_config=item.get("ytdlp_config"),
+                output_template=item.get("output_template"),
             )
 
-        return web.Response(text=self.encoder.encode(status))
+        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route('DELETE', 'delete')
+    @route("DELETE", "delete")
     async def delete(self, request: Request) -> Response:
         post = await request.json()
-        ids = post.get('ids')
-        where = post.get('where')
+        ids = post.get("ids")
+        where = post.get("where")
 
-        if not ids or where not in ['queue', 'done']:
-            raise web.HTTPBadRequest()
+        if not ids or where not in ["queue", "done"]:
+            return web.json_response(
+                data={"error": "ids and where are required."}, status=web.HTTPBadRequest.status_code
+            )
 
-        status: dict[str, str] = {}
+        return web.json_response(
+            data=await (self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids)),
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
 
-        status = await (self.queue.cancel(ids) if where == 'queue' else self.queue.clear(ids))
-
-        return web.Response(text=self.encoder.encode(status))
-
-    @route('POST', 'item/{id}')
+    @route("POST", "item/{id}")
     async def update_item(self, request: Request) -> Response:
-        id: str = request.match_info.get('id')
+        id: str = request.match_info.get("id")
         if not id:
-            raise web.HTTPBadRequest(text='id is required.')
+            return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
         item = self.queue.done.getById(id)
         if not item:
-            raise web.HTTPNotFound(text='Item not found.')
+            return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
 
-        try:
-            post = await request.json()
-            if not post:
-                raise web.HTTPBadRequest(text='no data provided.')
-        except Exception as e:
-            raise web.HTTPBadRequest(text=str(e))
+        post = await request.json()
+        if not post:
+            return web.json_response(data={"error": "no data provided."}, status=web.HTTPBadRequest.status_code)
 
         updated = False
 
@@ -307,30 +330,33 @@ class HttpAPI(common):
 
             updated = True
             setattr(item.info, k, v)
-            LOG.info(f"Updated '{k}' to '{v}' for '{item.info.id}'")
+            LOG.debug(f"Updated '{k}' to '{v}' for '{item.info.id}'")
 
-        status = 200 if updated else 304
         if updated:
             self.queue.done.put(item)
-            await self.notifier.emit('update', item.info)
+            await self.emitter.emit("update", item.info)
 
-        return web.Response(text=self.encoder.encode(item.info), status=status)
+        return web.json_response(
+            data=item.info,
+            status=web.HTTPOk.status_code if updated else web.HTTPNotModified.status_code,
+            dumps=self.encoder.encode,
+        )
 
-    @route('GET', 'history')
+    @route("GET", "history")
     async def history(self, _: Request) -> Response:
-        history = {'done': [], 'queue': []}
+        data: dict = {"queue": [], "history": []}
 
         for _, v in self.queue.queue.saved_items():
-            history['queue'].append(v)
+            data["queue"].append(v)
         for _, v in self.queue.done.saved_items():
-            history['done'].append(v)
+            data["history"].append(v)
 
-        return web.Response(text=self.encoder.encode(history))
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route('GET', 'workers')
+    @route("GET", "workers")
     async def workers(self, _) -> Response:
         if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=404)
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
         status = self.queue.pool.get_workers_status()
 
@@ -338,231 +364,271 @@ class HttpAPI(common):
 
         for worker in status:
             worker_status = status.get(worker)
+            data.append(
+                {
+                    "id": worker,
+                    "data": {"status": "Waiting for download."} if worker_status is None else worker_status,
+                }
+            )
 
-            data.append({
-                'id': worker,
-                'data': {"status": 'Waiting for download.'} if worker_status is None else worker_status,
-            })
+        return web.json_response(
+            data={
+                "open": self.queue.pool.has_open_workers(),
+                "count": self.queue.pool.get_available_workers(),
+                "workers": data,
+            },
+            status=web.HTTPOk.status_code,
+            dumps=lambda obj: json.dumps(obj, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"),
+        )
 
-        def safe_serialize(obj):
-            def default(o): return f"<<non-serializable: {type(o).__qualname__}>>"
-            return json.dumps(obj, default=default)
-
-        return web.Response(text=safe_serialize({
-            'open': self.queue.pool.has_open_workers(),
-            'count': self.queue.pool.get_available_workers(),
-            'workers': data,
-        }), headers={
-            'Content-Type': 'application/json',
-        })
-
-    @route('POST', 'workers')
+    @route("POST", "workers")
     async def restart_pool(self, _) -> Response:
         if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=404)
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
         self.queue.pool.start()
 
-        return web.Response()
+        return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
 
-    @route('PATCH', 'workers/{id}')
+    @route("PATCH", "workers/{id}")
     async def restart_worker(self, request: Request) -> Response:
-        id: str = request.match_info.get('id')
+        id: str = request.match_info.get("id")
         if not id:
-            raise web.HTTPBadRequest(text='worker id is required.')
+            return web.json_response({"error": "worker id is required."}, status=web.HTTPBadRequest.status_code)
 
         if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=404)
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
-        status = await self.queue.pool.restart(id, 'requested by user.')
+        status = await self.queue.pool.restart(id, "requested by user.")
 
-        return web.json_response({"status": "restarted" if status else "in_error_state"})
+        return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route('delete', 'workers/{id}')
+    @route("delete", "workers/{id}")
     async def stop_worker(self, request: Request) -> Response:
-        id: str = request.match_info.get('id')
+        id: str = request.match_info.get("id")
         if not id:
-            raise web.HTTPBadRequest(text='worker id is required.')
+            raise web.HTTPBadRequest(text="worker id is required.")
 
         if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=404)
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
-        status = await self.queue.pool.stop(id, 'requested by user.')
+        status = await self.queue.pool.stop(id, "requested by user.")
 
-        return web.json_response({"status": "stopped" if status else "in_error_state"})
+        return web.json_response({"status": "stopped" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route('GET', 'player/playlist/{file:.*}.m3u8')
+    @route("GET", "player/playlist/{file:.*}.m3u8")
     async def playlist(self, request: Request) -> Response:
-        file: str = request.match_info.get('file')
+        file: str = request.match_info.get("file")
 
         if not file:
-            raise web.HTTPBadRequest(text='file is required.')
+            raise web.HTTPBadRequest(text="file is required.")
 
         try:
             text = await Playlist(url=f"{self.config.url_host}{self.config.url_prefix}").make(
-                download_path=self.config.download_path,
-                file=file
+                download_path=self.config.download_path, file=file
             )
             if isinstance(text, Response):
                 return text
-        except Exception as e:
-            return web.HTTPNotFound(text=str(e))
+        except StreamingError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
 
-        return web.Response(text=text, headers={
-            'Content-Type': 'application/x-mpegURL',
-            'Cache-Control': 'no-cache',
-            'Access-Control-Max-Age': "300",
-        })
+        return web.Response(
+            text=text,
+            headers={
+                "Content-Type": "application/x-mpegURL",
+                "Cache-Control": "no-cache",
+                "Access-Control-Max-Age": "300",
+            },
+            status=web.HTTPOk.status_code,
+        )
 
-    @route('GET', 'player/m3u8/{mode}/{file:.*}.m3u8')
+    @route("GET", "player/m3u8/{mode}/{file:.*}.m3u8")
     async def m3u8(self, request: Request) -> Response:
-        file: str = request.match_info.get('file')
-        mode: str = request.match_info.get('mode')
+        file: str = request.match_info.get("file")
+        mode: str = request.match_info.get("mode")
 
-        if mode not in ['video', 'subtitle']:
-            raise web.HTTPBadRequest(text='Only video and subtitle modes are supported.')
+        if mode not in ["video", "subtitle"]:
+            return web.json_response(
+                data={"error": "Only video and subtitle modes are supported."}, status=web.HTTPBadRequest.status_code
+            )
 
         if not file:
-            raise web.HTTPBadRequest(text='file is required.')
+            return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
-        duration = request.query.get('duration', None)
+        duration = request.query.get("duration", None)
 
-        if 'subtitle' in mode:
+        if "subtitle" in mode:
             if not duration:
-                raise web.HTTPBadRequest(text='duration is required.')
+                return web.json_response(data={"error": "duration is required."}, status=web.HTTPBadRequest.status_code)
 
             duration = float(duration)
 
         try:
             cls = M3u8(f"{self.config.url_host}{self.config.url_prefix}")
-            if 'subtitle' in mode:
+            if "subtitle" in mode:
                 text = await cls.make_subtitle(self.config.download_path, file, duration)
             else:
                 text = await cls.make_stream(self.config.download_path, file)
-        except Exception as e:
-            return web.HTTPNotFound(text=str(e))
+        except StreamingError as e:
+            LOG.exception(e)
+            return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
 
-        return web.Response(text=text, headers={
-            'Content-Type': 'application/x-mpegURL',
-            'Cache-Control': 'no-cache',
-            'Access-Control-Max-Age': "300",
-        })
+        return web.Response(
+            text=text,
+            headers={
+                "Content-Type": "application/x-mpegURL",
+                "Cache-Control": "no-cache",
+                "Access-Control-Max-Age": "300",
+            },
+            status=web.HTTPOk.status_code,
+        )
 
-    @route('GET', r'player/segments/{segment:\d+}/{file:.*}.ts')
+    @route("GET", r"player/segments/{segment:\d+}/{file:.*}.ts")
     async def segments(self, request: Request) -> Response:
-        file: str = request.match_info.get('file')
-        segment: int = request.match_info.get('segment')
-        sd: int = request.query.get('sd')
-        vc: int = int(request.query.get('vc', 0))
-        ac: int = int(request.query.get('ac', 0))
+        file: str = request.match_info.get("file")
+        segment: int = request.match_info.get("segment")
+        sd: int = request.query.get("sd")
+        vc: int = int(request.query.get("vc", 0))
+        ac: int = int(request.query.get("ac", 0))
         file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
         if not file_path.startswith(self.config.download_path):
-            raise web.HTTPBadRequest(text='Invalid file path.')
+            return web.json_response(data={"error": "Invalid file path."}, status=web.HTTPBadRequest.status_code)
 
         if request.if_modified_since:
+            lastMod = time.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+            )
             if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
-                return web.Response(status=304)
+                return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
         if not file:
-            raise web.HTTPBadRequest(text='file is required')
+            return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
         if not segment:
-            raise web.HTTPBadRequest(text='segment is required')
+            return web.json_response(data={"error": "segment id is required."}, status=web.HTTPBadRequest.status_code)
 
         segmenter = Segments(
             index=int(segment),
-            duration=float('{:.6f}'.format(float(sd if sd else M3u8.duration))),
+            duration=float("{:.6f}".format(float(sd if sd else M3u8.duration))),
             vconvert=True if vc == 1 else False,
-            aconvert=True if ac == 1 else False
+            aconvert=True if ac == 1 else False,
         )
 
-        return web.Response(body=await segmenter.stream(path=self.config.download_path, file=file), headers={
-            'Content-Type': 'video/mpegts',
-            'X-Accel-Buffering': 'no',
-            'Access-Control-Allow-Origin': '*',
-            'Pragma': 'public',
-            'Cache-Control': f"public, max-age={time.time() + 31536000}",
-            'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
-            'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
-        })
+        return web.Response(
+            body=await segmenter.stream(path=self.config.download_path, file=file),
+            headers={
+                "Content-Type": "video/mpegts",
+                "X-Accel-Buffering": "no",
+                "Access-Control-Allow-Origin": "*",
+                "Pragma": "public",
+                "Cache-Control": f"public, max-age={time.time() + 31536000}",
+                "Last-Modified": time.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                ),
+                "Expires": time.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                ),
+            },
+            status=web.HTTPOk.status_code,
+        )
 
-    @route('GET', 'player/subtitle/{file:.*}.vtt')
+    @route("GET", "player/subtitle/{file:.*}.vtt")
     async def subtitles(self, request: Request) -> Response:
-        file: str = request.match_info.get('file')
+        file: str = request.match_info.get("file")
         file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
         if not file_path.startswith(self.config.download_path):
-            raise web.HTTPBadRequest(text='Invalid file path.')
+            return web.json_response(data={"error": "Invalid file path."}, status=web.HTTPBadRequest.status_code)
 
         if request.if_modified_since:
-            lastMod = time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
-                os.path.getmtime(file_path)).timetuple())
+            lastMod = time.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+            )
             if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
-                return web.Response(status=304, headers={'Last-Modified': lastMod})
+                return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
         if not file:
-            raise web.HTTPBadRequest(text='file is required')
+            return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
-        return web.Response(body=await Subtitle().make(path=self.config.download_path, file=file), headers={
-            'Content-Type': 'text/vtt; charset=UTF-8',
-            'X-Accel-Buffering': 'no',
-            'Access-Control-Allow-Origin': '*',
-            'Pragma': 'public',
-            'Cache-Control': f"public, max-age={time.time() + 31536000}",
-            'Last-Modified': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()),
-            'Expires': time.strftime('%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(time.time() + 31536000).timetuple()),
-        })
-
-    @route('OPTIONS', '/add')
-    async def add_cors(self, _: Request) -> Response:
-        return web.Response(text=self.encoder.encode({"status": "ok"}))
-
-    @route('OPTIONS', '/delete')
-    async def delete_cors(self, _: Request) -> Response:
-        return web.Response(text=self.encoder.encode({"status": "ok"}))
-
-    @route('GET', '/')
-    async def index(self, _) -> Response:
-        if '/index.html' not in self.staticHolder:
-            LOG.error("Static frontend files not found.")
-            return web.json_response({"error": "File not found.", "file": '/index.html'}, status=404)
-
-        data = self.staticHolder['/index.html']
         return web.Response(
-            body=data.get('content'),
-            content_type=data.get('content_type'),
-            charset='utf-8',
-            status=web.HTTPOk.status_code)
+            body=await Subtitle().make(path=self.config.download_path, file=file),
+            headers={
+                "Content-Type": "text/vtt; charset=UTF-8",
+                "X-Accel-Buffering": "no",
+                "Access-Control-Allow-Origin": "*",
+                "Pragma": "public",
+                "Cache-Control": f"public, max-age={time.time() + 31536000}",
+                "Last-Modified": time.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                ),
+                "Expires": time.strftime(
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                ),
+            },
+            status=web.HTTPOk.status_code,
+        )
 
-    @route('GET', '/thumbnail')
-    async def get_thumbnail(self, request: Request) -> dict:
-        url = request.query.get('url')
+    @route("OPTIONS", "/add")
+    async def add_cors(self, _: Request) -> Response:
+        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
+
+    @route("OPTIONS", "/delete")
+    async def delete_cors(self, _: Request) -> Response:
+        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
+
+    @route("GET", "/")
+    async def index(self, _) -> Response:
+        if "/index.html" not in self.staticHolder:
+            LOG.error("Static frontend files not found.")
+            return web.json_response(
+                data={"error": "File not found.", "file": "/index.html"}, status=web.HTTPNotFound.status_code
+            )
+
+        data = self.staticHolder["/index.html"]
+        return web.Response(
+            body=data.get("content"),
+            content_type=data.get("content_type"),
+            charset="utf-8",
+            status=web.HTTPOk.status_code,
+        )
+
+    @route("GET", "/thumbnail")
+    async def get_thumbnail(self, request: Request) -> Response:
+        url = request.query.get("url")
         if not url:
-            return web.json_response({"error": "URL is required."}, status=400)
+            return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
 
         try:
             validate_url(url)
-        except Exception as e:
-            return web.json_response({"error": str(e)}, status=400)
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
 
         try:
             opts = {
-                'proxy': self.config.ytdl_options.get('proxy', None),
-                'headers': {
-                    'User-Agent': self.config.ytdl_options.get(
-                        'user_agent',
-                        request.headers.get('User-Agent', f"YTPTube/{self.config.version}")),
+                "proxy": self.config.ytdl_options.get("proxy", None),
+                "headers": {
+                    "User-Agent": self.config.ytdl_options.get(
+                        "user_agent", request.headers.get("User-Agent", f"YTPTube/{self.config.version}")
+                    ),
                 },
             }
             async with httpx.AsyncClient(**opts) as client:
-                LOG.info(f"Fetching thumbnail from '{url}'.")
-                response = await client.request(method='GET', url=url)
-                return web.Response(body=response.content,
-                                    headers={'Content-Type': response.headers.get('Content-Type'),
-                                             'Pragma': 'public', 'Access-Control-Allow-Origin': '*',
-                                             'Cache-Control': f"public, max-age={time.time() + 31536000}",
-                                             'Expires': time.strftime(
-                                                 '%a, %d %b %Y %H:%M:%S GMT', datetime.fromtimestamp(
-                                                     time.time() + 31536000).timetuple()), })
+                LOG.debug(f"Fetching thumbnail from '{url}'.")
+                response = await client.request(method="GET", url=url)
+                return web.Response(
+                    body=response.content,
+                    headers={
+                        "Content-Type": response.headers.get("Content-Type"),
+                        "Pragma": "public",
+                        "Access-Control-Allow-Origin": "*",
+                        "Cache-Control": f"public, max-age={time.time() + 31536000}",
+                        "Expires": time.strftime(
+                            "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                        ),
+                    },
+                )
         except Exception as e:
-            LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'")
-            return web.json_response({"error": str(e)}, status=500)
+            LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'.")
+            LOG.exception(e)
+            return web.json_response(
+                data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
+            )

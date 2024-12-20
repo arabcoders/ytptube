@@ -16,7 +16,7 @@ from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Emitter import Emitter
 from library.encoder import Encoder
-from library.HttpAPI import HttpAPI
+from library.HttpAPI import HttpAPI, LOG as http_logger
 from library.HttpSocket import HttpSocket
 from library.Webhooks import Webhooks
 
@@ -136,15 +136,19 @@ class Main:
 
         self.load_tasks()
 
-        start: str = f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}"
+        def started(_):
+            LOG.info("=" * 40)
+            LOG.info(f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}")
+            LOG.info("=" * 40)
+
         web.run_app(
             self.app,
             host=self.config.host,
             port=self.config.port,
             reuse_port=True,
             loop=asyncio.get_event_loop(),
-            access_log=None,
-            print=lambda _: LOG.info(start),
+            access_log=http_logger if self.config.access_log else None,
+            print=started,
         )
 
 

@@ -1,18 +1,20 @@
 import asyncio
-from email.utils import formatdate
 import json
 import logging
 import os
 import time
-import yt_dlp
+from email.utils import formatdate
 from sqlite3 import Connection
-from .config import Config
-from .Download import Download
-from .ItemDTO import ItemDTO
-from .DataStore import DataStore
-from .Utils import calcDownloadPath, ExtractInfo, isDownloaded, mergeConfig
+
+import yt_dlp
+
 from .AsyncPool import AsyncPool
+from .config import Config
+from .DataStore import DataStore
+from .Download import Download
 from .Emitter import Emitter
+from .ItemDTO import ItemDTO
+from .Utils import ExtractInfo, calcDownloadPath, isDownloaded, mergeConfig
 
 LOG = logging.getLogger("DownloadQueue")
 TYPE_DONE: str = "done"
@@ -20,12 +22,8 @@ TYPE_QUEUE: str = "queue"
 
 
 class DownloadQueue:
-    config: Config = None
-    emitter: Emitter = None
-    queue: DataStore = None
-    done: DataStore = None
-    event: asyncio.Event = None
-    pool: AsyncPool = None
+    event: asyncio.Event | None = None
+    pool: AsyncPool | None = None
 
     def __init__(self, emitter: Emitter, connection: Connection):
         self.config = Config.get_instance()

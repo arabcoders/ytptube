@@ -3,12 +3,14 @@ import os
 import re
 import sys
 import time
+from pathlib import Path
+
 import coloredlogs
-from .version import APP_VERSION
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
+
 from .Utils import load_file
-from pathlib import Path
+from .version import APP_VERSION
 
 
 class Config:
@@ -38,6 +40,8 @@ class Config:
     base_path: str = ""
 
     log_level: str = "info"
+
+    access_log: bool = True
 
     allow_manifestless: bool = False
 
@@ -136,6 +140,7 @@ class Config:
         "debug",
         "temp_keep",
         "allow_manifestless",
+        "access_log",
     )
 
     _frontend_vars: tuple = (
