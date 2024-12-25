@@ -14,13 +14,10 @@ from .version import APP_VERSION
 
 
 class Config:
-    __instance = None
     config_path: str = "."
     download_path: str = "."
     temp_path: str = "/tmp"
     temp_keep: bool = False
-    db_file: str = "{config_path}/ytptube.db"
-    manual_archive: str = "{config_path}/archive.manual.log"
 
     url_host: str = ""
     url_prefix: str = ""
@@ -29,69 +26,72 @@ class Config:
     output_template: str = "%(title)s.%(ext)s"
     output_template_chapter: str = "%(title)s - %(section_number)s %(section_title)s.%(ext)s"
 
-    ytdl_options: dict | str = {}
+    keep_archive: bool = True
+
     ytdl_debug: bool = False
+    allow_manifestless: bool = False
 
     host: str = "0.0.0.0"
     port: int = 8081
 
-    keep_archive: bool = True
-
-    base_path: str = ""
-
     log_level: str = "info"
+    max_workers: int = 1
+
+    streamer_vcodec: str = "libx264"
+    streamer_acodec: str = "aac"
+
+    auth_username: str | None = None
+    auth_password: str | None = None
+
+    remove_files: bool = False
 
     access_log: bool = True
 
-    allow_manifestless: bool = False
-
-    max_workers: int = 1
-
-    version: str = APP_VERSION
-
     debug: bool = False
-
     debugpy_port: int = 5678
 
-    new_version_available: bool = False
-
+    socket_timeout: int = 30
     extract_info_timeout: int = 70
 
-    socket_timeout: int = 30
+    db_file: str = "{config_path}/ytptube.db"
+    manual_archive: str = "{config_path}/archive.manual.log"
 
-    started: int = 0
-
-    streamer_vcodec = "libx264"
-    streamer_acodec = "aac"
-
-    auth_username: str = None
-    auth_password: str = None
-
-    ytdlp_version: str = YTDLP_VERSION
+    # immutable config vars.
+    version: str = APP_VERSION
+    __instance = None
+    ytdl_options: dict | str = {}
     tasks: list = []
+    new_version_available: bool = False
+    ytdlp_version: str = YTDLP_VERSION
+    started: int = 0
     presets: list = [
         {"name": "default", "format": "default", "postprocessors": [], "args": {}},
         {
-            "name": "Video - 1080p h264/acc",
+            "name": "Best video and audio",
+            "format": "bv+ba/b",
+            "args": {},
+        },
+        {
+            "name": "1080p H264/m4a or best available",
             "format": "bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
             "args": {
                 "format_sort": ["vcodec:h264"],
             },
         },
         {
-            "name": "Video - 720p h264/acc",
+            "name": "720p h264/m4a or best available",
             "format": "bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
             "args": {
                 "format_sort": ["vcodec:h264"],
             },
         },
         {
-            "name": "Audio - Best audio [MP3]",
+            "name": "Audio only",
             "format": "bestaudio/best",
             "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
+                    "preferredcodec": "best",
                     "preferredquality": "5",
                     "nopostoverwrites": False,
                 },
@@ -106,7 +106,6 @@ class Config:
                 "fragment_retries": 10,
                 "writethumbnail": True,
                 "extract_flat": "discard_in_playlist",
-                "final_ext": "mp3",
             },
         },
     ]
@@ -116,6 +115,7 @@ class Config:
         "config_path",
         "download_path",
     )
+
     _immutable: tuple = (
         "version",
         "__instance",
@@ -141,6 +141,7 @@ class Config:
         "temp_keep",
         "allow_manifestless",
         "access_log",
+        "remove_files",
     )
 
     _frontend_vars: tuple = (
@@ -152,6 +153,7 @@ class Config:
         "url_host",
         "started",
         "url_prefix",
+        "remove_files",
     )
 
     @staticmethod

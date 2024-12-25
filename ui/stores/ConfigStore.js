@@ -3,6 +3,7 @@ const CONFIG_KEYS = {
   app: {
     download_path: '/downloads',
     keep_archive: false,
+    remove_files: false,
     output_template: '',
     ytdlp_version: '',
     version: '',

@@ -199,7 +199,7 @@
                 </a>
               </div>
               <div class="column is-half-mobile">
-                <a class="button is-danger is-fullwidth" @click="socket.emit('item_delete', item._id)">
+                <a class="button is-danger is-fullwidth" @click="removeItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                     <span>Remove</span>
@@ -350,40 +350,51 @@ const deleteSelectedItems = () => {
     return;
   }
 
-  if (false === confirm('Are you sure you want to delete selected items?')) {
+  let msg = `Are you sure you want to delete '${selectedElms.value.length}' items?`
+  if (true === config.app.remove_files) {
+    msg += '\nThis will delete the files from the server if they exist.';
+  }
+
+  if (false === confirm(msg)) {
     return;
   }
 
   for (const key in selectedElms.value) {
     const item = stateStore.history[selectedElms.value[key]];
-    if (item.status === 'finished') {
-      archiveItem(item);
+    if ('finished' === item.status) {
+      socket.emit('archive_item', item);
     }
-    socket.emit('item_delete', item._id);
+    socket.emit('item_delete', {
+      id: item._id,
+      remove_file: config.app.remove_files,
+    });
   }
 }
 
 const clearCompleted = () => {
-  const state = confirm('Are you sure you want to clear all completed downloads?');
-  if (false === state) {
+  let msg = 'Are you sure you want to clear all completed downloads?';
+  if (false === confirm(msg)) {
     return;
   }
 
   for (const key in stateStore.history) {
-    if (ag(stateStore.get('history', key, {}), 'status') === 'finished') {
-      socket.emit('item_delete', stateStore.history[key]._id);
+    if ('finished' === ag(stateStore.get('history', key, {}), 'status')) {
+      socket.emit('item_delete', { id: stateStore.history[key]._id, remove_file: false, });
     }
   }
 }
 
 const clearIncomplete = () => {
-  if (false === confirm('Are you sure you want to clear all incomplete downloads?')) {
+  if (false === confirm('Are you sure you want to clear all in-complete downloads?')) {
     return;
   }
 
   for (const key in stateStore.history) {
     if (stateStore.history[key].status !== 'finished') {
-      socket.emit('item_delete', stateStore.history[key]._id);
+      socket.emit('item_delete', {
+        id: stateStore.history[key]._id,
+        remove_file: false,
+      });
     }
   }
 }
@@ -427,11 +438,23 @@ const archiveItem = item => {
     return
   }
   socket.emit('archive_item', item);
-  socket.emit('item_delete', item._id);
+  socket.emit('item_delete', { id: item._id, remove_file: false });
+}
+
+const removeItem = item => {
+  const msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?\n this will delete the file from the server.`;
+  if (config.app.remove_files && !confirm(msg)) {
+    return false
+  }
+
+  socket.emit('item_delete', {
+    id: item._id,
+    remove_file: config.app.remove_files
+  });
 }
 
 const reQueueItem = item => {
-  socket.emit('item_delete', item._id)
+  socket.emit('item_delete', { id: item._id, remove_file: false })
   socket.emit('add_url', {
     url: item.url,
     preset: item.preset,
