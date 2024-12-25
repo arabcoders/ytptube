@@ -293,14 +293,17 @@ class HttpAPI(common):
         post = await request.json()
         ids = post.get("ids")
         where = post.get("where")
-
         if not ids or where not in ["queue", "done"]:
             return web.json_response(
                 data={"error": "ids and where are required."}, status=web.HTTPBadRequest.status_code
             )
 
+        remove_file: bool = bool(post.get("remove_file", True))
+
         return web.json_response(
-            data=await (self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids)),
+            data=await (
+                self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids, remove_file=remove_file)
+            ),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )

@@ -193,13 +193,18 @@ class HttpSocket(common):
         await self.emitter.emit("item_cancel", status)
 
     @ws_event
-    async def item_delete(self, sid: str, id: str):
+    async def item_delete(self, sid: str, data: dict):
+        if not data:
+            await self.emitter.warning("Invalid request.", to=sid)
+            return
+
+        id: str = data.get("id")
         if not id:
             await self.emitter.warning("Invalid request.", to=sid)
             return
 
         status: dict[str, str] = {}
-        status = await self.queue.clear([id])
+        status = await self.queue.clear([id], remove_file=bool(data.get("remove_file", False)))
         status.update({"identifier": id})
 
         await self.emitter.emit("item_delete", status)

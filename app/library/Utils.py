@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import pathlib
+import posixpath
 import re
 import socket
 import uuid
@@ -23,6 +24,7 @@ IGNORED_KEYS: tuple[str] = (
     "postprocessor_hooks",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
+OS_ALT_SEP: list[str] = list(sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/")
 
 
 class StreamingError(Exception):

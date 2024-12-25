@@ -71,6 +71,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_TEMP_KEEP__: Whether to keep the Individual video temp directory or remove it. Defaults to `false`.
 * __YTP_URL_PREFIX__: base path for the web server (for use when hosting behind a reverse proxy). Defaults to `/`.
 * __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
+* __YTP_OUTPUT_TEMPLATE_CHAPTER__: the template for the filenames of the downloaded videos, when split into chapters via postprocessors, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s - %(section_number)s %(section_title)s.%(ext)s.`
 * __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `true`.
 * __YTP_YTDL_DEBUG__: Whether to turn debug logging for the internal `yt-dlp` package. Defaults to `false`.
 * __YTP_ALLOW_MANIFESTLESS__: Allow `yt-dlp` to download live streams videos which are yet to be processed by YouTube. Defaults to `false`
@@ -82,6 +83,14 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_STREAMER_ACODEC__: The audio codec to use for in-browser streaming. Defaults to `aac`.
 * __YTP_AUTH_USERNAME__: Username for basic authentication. Defaults open for all
 * __YTP_AUTH_PASSWORD__: Password for basic authentication. Defaults open for all.
+* __YTP_REMOVE_FILES__: Whether to remove the actual downloaded file when clicking the remove button. Defaults to `false`.
+* __YTP_ACCESS_LOG__: Whether to log access to the web server. Defaults to `true`.
+* __YTP_DEBUG__: Whether to turn on debug mode. Defaults to `false`.
+* __YTP_DEBUGPY_PORT__: The port to use for the debugpy debugger. Defaults to `5678`.
+* __YTP_SOCKET_TIMEOUT__: The timeout for the yt-dlp socket connection variable. Defaults to `30`.
+* __YTP_EXTRACT_INFO_TIMEOUT__: The timeout for extracting video information. Defaults to `70`.
+* __YTP_DB_FILE__: The path to the SQLite database file. Defaults to `{config_path}/ytptube.db`.
+* __YTP_MANUAL_ARCHIVE__: The path to the manual archive file. Defaults to `{config_path}/manual_archive.log`.
 
 ## Running behind a reverse proxy
 

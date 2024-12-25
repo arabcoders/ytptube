@@ -112,7 +112,7 @@ class DownloadQueue:
             if self.done.exists(key=entry["id"], url=entry.get("webpage_url") or entry.get("url")):
                 item = self.done.get(key=entry["id"], url=entry.get("webpage_url") or entry["url"])
                 LOG.warning(f"Item '{item.info.id}' - '{item.info.title}' already downloaded. Removing from history.")
-                await self.clear([item.info._id])
+                await self.clear([item.info._id], remove_file=False)
 
             try:
                 item = self.queue.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
@@ -306,7 +306,7 @@ class DownloadQueue:
 
         return status
 
-    async def clear(self, ids: list[str]) -> dict[str, str]:
+    async def clear(self, ids: list[str], remove_file: bool = False) -> dict[str, str]:
         status: dict[str, str] = {"status": "ok"}
 
         for id in ids:
@@ -318,11 +318,36 @@ class DownloadQueue:
                 LOG.warning(f"Requested delete for non-existent download {id=}. {str(e)}")
                 continue
 
-            itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
-            LOG.debug(f"Deleting completed download {itemMessage}")
+            itemRef: str = f"{id=} {item.info.id=} {item.info.title=}"
+            fileDeleted: bool = False
+            filename: str = ""
+
+            if remove_file and self.config.remove_files and "finished" == item.info.status:
+                filename = item.info.filename
+                if item.info.folder:
+                    filename = f"{item.info.folder}/{item.info.filename}"
+
+                try:
+                    realFile: str = calcDownloadPath(
+                        basePath=self.config.download_path,
+                        folder=filename,
+                        createPath=False,
+                    )
+                    if realFile and os.path.exists(realFile):
+                        os.remove(realFile)
+                        fileDeleted = True
+                    else:
+                        LOG.warning(f"File '{filename}' does not exist.")
+                except Exception as e:
+                    LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {str(e)}")
+
             self.done.delete(id)
             asyncio.create_task(self.emitter.cleared(id, dl=item), name=f"notifier-c-{id}")
-            LOG.info(f"Deleted completed download {itemMessage}")
+            msg = f"Deleted completed download '{itemRef}'."
+            if fileDeleted and filename:
+                msg += f" and removed local file '{filename}'."
+
+            LOG.info(msg=msg)
             status[id] = "ok"
 
         return status
