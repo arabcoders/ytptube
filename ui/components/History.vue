@@ -85,11 +85,11 @@
             </div>
 
             <div class="card-header-icon">
-              <NuxtLink :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
+              <a :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
                 class="has-text-primary" v-tooltip="'Download item.'"
                 v-if="item.filename && item.status === 'finished'">
                 <span class="icon"><i class="fa-solid fa-download" /></span>
-              </NuxtLink>
+              </a>
 
               <button @click="hideThumbnail = !hideThumbnail">
                 <span class="icon"><i class="fa-solid"
