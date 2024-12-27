@@ -123,7 +123,12 @@ class HttpAPI(common):
                     preloaded += 2
 
         if preloaded < 1:
-            raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
+            message = f"Could not find the frontend UI static assets. '{staticDir}'."
+            if self.config.ignore_ui:
+                LOG.warning(message)
+                return
+
+            raise ValueError(message)
 
         LOG.info(f"Preloaded '{preloaded}' static files.")
 
@@ -301,9 +306,7 @@ class HttpAPI(common):
         remove_file: bool = bool(post.get("remove_file", True))
 
         return web.json_response(
-            data=await (
-                self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids, remove_file=remove_file)
-            ),
+            data=await (self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids, remove_file=remove_file)),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )

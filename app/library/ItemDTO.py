@@ -36,6 +36,7 @@ class ItemDTO:
     live_in: str | None = None
     file_size: int | None = None
     options: dict = field(default_factory=dict)
+    extras: dict = field(default_factory=dict)
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
@@ -48,5 +49,21 @@ class ItemDTO:
     speed: str | None = None
     eta: str | None = None
 
+    def serialize(self) -> dict:
+        deprecated: tuple = (
+            "thumbnail",
+            "quality",
+            "format",
+        )
+
+        if self.thumbnail and "thumbnail" not in self.extras:
+            self.extras["thumbnail"] = self.thumbnail
+
+        dump = self.__dict__.copy()
+        for f in deprecated:
+            dump.pop(f)
+
+        return dump
+
     def json(self) -> str:
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        return json.dumps(self.serialize(), default=lambda o: o.__dict__, sort_keys=True, indent=4)

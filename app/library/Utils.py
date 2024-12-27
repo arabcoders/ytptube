@@ -4,7 +4,6 @@ import json
 import logging
 import os
 import pathlib
-import posixpath
 import re
 import socket
 import uuid

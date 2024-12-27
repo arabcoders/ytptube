@@ -64,6 +64,7 @@ class Config:
     new_version_available: bool = False
     ytdlp_version: str = YTDLP_VERSION
     started: int = 0
+    ignore_ui: bool = False
     presets: list = [
         {"name": "default", "format": "default", "postprocessors": [], "args": {}},
         {
@@ -142,6 +143,7 @@ class Config:
         "allow_manifestless",
         "access_log",
         "remove_files",
+        "ignore_ui",
     )
 
     _frontend_vars: tuple = (
