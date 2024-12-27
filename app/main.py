@@ -141,6 +141,9 @@ class Main:
             LOG.info(f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}")
             LOG.info("=" * 40)
 
+        if self.config.access_log:
+            http_logger.addFilter(lambda record: "GET /ping" not in record.getMessage())
+
         web.run_app(
             self.app,
             host=self.config.host,
