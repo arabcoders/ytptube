@@ -213,3 +213,32 @@ hr {
   cursor: pointer;
   padding-top: 0.5em;
 }
+
+.play-overlay {
+  cursor: pointer;
+}
+
+.play-icon {
+  position: absolute;
+  z-index: 2;
+
+  width: 100px;
+  height: 100px;
+
+  background-image: url(/images/play-icon.png);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  cursor: pointer;
+  opacity: 0.4;
+}
+
+.play-icon:hover,
+.play-icon:focus,
+.play-active {
+  opacity: 1;
+}

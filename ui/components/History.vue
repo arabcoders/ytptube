@@ -96,40 +96,20 @@
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
               </button>
             </div>
-
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1" v-if="item.thumbnail">
-              <template v-if="item.status === 'finished'">
-                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
-                  @click.prevent="playVideo(item)">
-                  <img
-                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
-                    :alt="item.title" />
-                </a>
-              </template>
-              <template v-else>
-                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                  <img
-                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
-                    :alt="item.title" />
-                </NuxtLink>
-              </template>
-            </figure>
-            <figure class="image is-3by1" v-else>
-              <template v-if="item.status === 'finished'">
-                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
-                  @click.prevent="playVideo(item)">
-                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
-                    :alt="item.title" />
-                </a>
-              </template>
-              <template v-else>
-                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
-                    :alt="item.title" />
-                </NuxtLink>
-              </template>
+            <figure class="image is-3by1">
+              <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
+                <div class="play-icon"></div>
+                <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                  :alt="item.title" v-if="item.thumbnail" />
+                <img v-else src="/images/placeholder.png" :alt="item.title" />
+              </span>
+              <NuxtLink v-else target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
+                <img :alt="item.title" v-if="item.thumbnail"
+                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)" />
+                <img v-else src="/images/placeholder.png" :alt="item.title" />
+              </NuxtLink>
             </figure>
           </div>
           <div class="card-content">
