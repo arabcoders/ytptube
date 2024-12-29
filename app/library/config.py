@@ -55,6 +55,7 @@ class Config:
 
     db_file: str = "{config_path}/ytptube.db"
     manual_archive: str = "{config_path}/archive.manual.log"
+    ui_update_title: bool = True
 
     # immutable config vars.
     version: str = APP_VERSION
@@ -144,6 +145,7 @@ class Config:
         "access_log",
         "remove_files",
         "ignore_ui",
+        "ui_update_title",
     )
 
     _frontend_vars: tuple = (
@@ -156,6 +158,7 @@ class Config:
         "started",
         "url_prefix",
         "remove_files",
+        "ui_update_title",
     )
 
     @staticmethod

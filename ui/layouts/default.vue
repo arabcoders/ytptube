@@ -31,7 +31,7 @@
         </div>
 
         <div class="navbar-item" v-if="config.tasks.length > 0">
-          <NuxtLink  class="button is-dark has-tooltip-bottom" to="/tasks">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span class="is-hidden-mobile">Tasks</span>
           </NuxtLink>
@@ -135,6 +135,14 @@ const applyPreferredColorScheme = scheme => {
 
 onMounted(async () => {
   try {
+    if (config.app.ui_update_title) {
+      const s = useStateStore()
+      useHead({ title: `YTPTube: ( ${Object.keys(s.queue).length || 0} | ${Object.keys(s.history).length || 0} )` })
+      watch([s.queue, s.history], () => {
+        const title = `YTPTube: ( ${Object.keys(s.queue.length) || 0} | ${Object.keys(s.history.length) || 0} )`
+        useHead({ title })
+      })
+    }
     applyPreferredColorScheme(selectedTheme.value)
   } catch (e) {
   }
