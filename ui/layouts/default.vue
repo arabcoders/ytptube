@@ -135,14 +135,6 @@ const applyPreferredColorScheme = scheme => {
 
 onMounted(async () => {
   try {
-    if (config.app.ui_update_title) {
-      const s = useStateStore()
-      useHead({ title: `YTPTube: ( ${Object.keys(s.queue).length || 0} | ${Object.keys(s.history).length || 0} )` })
-      watch([s.queue, s.history], () => {
-        const title = `YTPTube: ( ${Object.keys(s.queue).length || 0} | ${Object.keys(s.history).length || 0} )`
-        useHead({ title })
-      }, { deep: true })
-    }
     applyPreferredColorScheme(selectedTheme.value)
   } catch (e) {
   }

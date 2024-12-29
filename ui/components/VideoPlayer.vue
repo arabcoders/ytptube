@@ -109,8 +109,6 @@ const prepareVideoPlayer = () => {
     mediaMetadata['artist'] = props.artist
   }
 
-  console.log(mediaMetadata)
-
   player = new Plyr(video.value, {
     debug: false,
     clickToPlay: true,
