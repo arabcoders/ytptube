@@ -135,6 +135,12 @@ class DownloadQueue:
                 LOG.exception(e)
                 return {"status": "error", "msg": str(e)}
 
+            extras: dict = {}
+            fields: tuple = ("uploader", "channel", "thumbnail")
+            for field in fields:
+                if entry.get(field, None):
+                    extras[field] = entry.get(field)
+
             dl = ItemDTO(
                 id=entry.get("id"),
                 title=entry.get("title"),
@@ -153,6 +159,7 @@ class DownloadQueue:
                 is_live=is_live,
                 live_in=live_in,
                 options=options,
+                extras=extras,
             )
 
             for property, value in entry.items():

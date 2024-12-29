@@ -4,6 +4,7 @@ const CONFIG_KEYS = {
     download_path: '/downloads',
     keep_archive: false,
     remove_files: false,
+    ui_update_title: true,
     output_template: '',
     ytdlp_version: '',
     version: '',

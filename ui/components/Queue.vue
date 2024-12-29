@@ -50,9 +50,9 @@
             </div>
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1" v-if="item.thumbnail">
+            <figure class="image is-3by1" v-if="item.extras?.thumbnail">
               <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
-                <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
+                <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   :alt="item.title" />
               </NuxtLink>
             </figure>

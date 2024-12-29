@@ -31,7 +31,7 @@
         </div>
 
         <div class="navbar-item" v-if="config.tasks.length > 0">
-          <NuxtLink  class="button is-dark has-tooltip-bottom" to="/tasks">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span class="is-hidden-mobile">Tasks</span>
           </NuxtLink>

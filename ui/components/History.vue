@@ -96,40 +96,21 @@
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
               </button>
             </div>
-
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1" v-if="item.thumbnail">
-              <template v-if="item.status === 'finished'">
-                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
-                  @click.prevent="playVideo(item)">
-                  <img
-                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
-                    :alt="item.title" />
-                </a>
-              </template>
-              <template v-else>
-                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                  <img
-                    :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.thumbnail)"
-                    :alt="item.title" />
-                </NuxtLink>
-              </template>
-            </figure>
-            <figure class="image is-3by1" v-else>
-              <template v-if="item.status === 'finished'">
-                <a v-tooltip="`Play: ${item.title}`" :href="makeDownload(config, item, 'm3u8')"
-                  @click.prevent="playVideo(item)">
-                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
-                    :alt="item.title" />
-                </a>
-              </template>
-              <template v-else>
-                <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                  <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'"
-                    :alt="item.title" />
-                </NuxtLink>
-              </template>
+            <figure class="image is-3by1">
+              <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
+                <div class="play-icon"></div>
+                <img
+                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  :alt="item.title" v-if="item.extras?.thumbnail" />
+                <img v-else src="/images/placeholder.png" :alt="item.title" />
+              </span>
+              <NuxtLink v-else target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
+                <img :alt="item.title" v-if="item.extras?.thumbnail"
+                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                <img v-else src="/images/placeholder.png" :alt="item.title" />
+              </NuxtLink>
             </figure>
           </div>
           <div class="card-content">
@@ -253,7 +234,8 @@
       <div class="modal-background"></div>
       <div class="modal-content">
         <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
-          :title="video_title" class="is-fullwidth" @closeModel="video_link = ''; video_title = ''" />
+          :title="video_title" :thumbnail="video_thumbnail" :artist="video_artist" class="is-fullwidth"
+          @closeModel="video_link = ''; video_title = ''; video_thumbnail = ''; video_artist = '';" />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
     </div>
@@ -270,38 +252,51 @@ const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
 
-const selectedElms = ref([]);
-const masterSelectAll = ref(false);
+const selectedElms = ref([])
+const masterSelectAll = ref(false)
 const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 
 const video_link = ref('')
 const video_title = ref('')
+const video_thumbnail = ref('')
+const video_artist = ref('')
 
 const playVideo = item => {
-  video_link.value = makeDownload(config, item, 'm3u8');
-  video_title.value = item.title;
+  video_thumbnail.value = '';
+  video_artist.value = '';
+  video_link.value = makeDownload(config, item, 'm3u8')
+  video_title.value = item.title
+  if (item.extras?.thumbnail) {
+    video_thumbnail.value = config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)
+  }
+  if (item.extras?.channel) {
+    video_artist.value = item.extras.channel
+  }
+  if (!video_artist.value && item.extras?.uploader) {
+    video_artist.value = item.extras.uploader
+  }
 }
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.history) {
-    const element = stateStore.history[key];
+    const element = stateStore.history[key]
     if (value) {
-      selectedElms.value.push(element._id);
+      selectedElms.value.push(element._id)
     } else {
-      selectedElms.value = [];
+      selectedElms.value = []
     }
   }
 })
 
 const sortCompleted = computed(() => {
-  const thisDirection = direction.value;
+  const thisDirection = direction.value
   return Object.values(stateStore.history).sort((a, b) => {
     if ('asc' === thisDirection) {
-      return new Date(a.datetime) - new Date(b.datetime);
+      return new Date(a.datetime) - new Date(b.datetime)
     }
-    return new Date(b.datetime) - new Date(a.datetime);
+    return new Date(b.datetime) - new Date(a.datetime)
   })
 })
 
@@ -313,80 +308,80 @@ const showMessage = (item) => {
     return false
   }
 
-  return item.msg.length > 0;
+  return item.msg.length > 0
 }
 
 const hasIncomplete = computed(() => {
   if (Object.keys(stateStore.history)?.length < 0) {
-    return false;
+    return false
   }
 
   for (const key in stateStore.history) {
-    const element = stateStore.history[key];
+    const element = stateStore.history[key]
     if (element.status !== 'finished') {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 })
 
 const hasCompleted = computed(() => {
   if (Object.keys(stateStore.history)?.length < 0) {
-    return false;
+    return false
   }
 
   for (const key in stateStore.history) {
-    const element = stateStore.history[key];
+    const element = stateStore.history[key]
     if (element.status === 'finished') {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 })
 
 const deleteSelectedItems = () => {
   if (selectedElms.value.length < 1) {
-    toast.error('No items selected.');
-    return;
+    toast.error('No items selected.')
+    return
   }
 
   let msg = `Are you sure you want to delete '${selectedElms.value.length}' items?`
   if (true === config.app.remove_files) {
-    msg += '\nThis will delete the files from the server if they exist.';
+    msg += '\nThis will delete the files from the server if they exist.'
   }
 
   if (false === confirm(msg)) {
-    return;
+    return
   }
 
   for (const key in selectedElms.value) {
-    const item = stateStore.history[selectedElms.value[key]];
+    const item = stateStore.history[selectedElms.value[key]]
     if ('finished' === item.status) {
-      socket.emit('archive_item', item);
+      socket.emit('archive_item', item)
     }
     socket.emit('item_delete', {
       id: item._id,
       remove_file: config.app.remove_files,
-    });
+    })
   }
 }
 
 const clearCompleted = () => {
-  let msg = 'Are you sure you want to clear all completed downloads?';
+  let msg = 'Are you sure you want to clear all completed downloads?'
   if (false === confirm(msg)) {
-    return;
+    return
   }
 
   for (const key in stateStore.history) {
     if ('finished' === ag(stateStore.get('history', key, {}), 'status')) {
-      socket.emit('item_delete', { id: stateStore.history[key]._id, remove_file: false, });
+      socket.emit('item_delete', { id: stateStore.history[key]._id, remove_file: false, })
     }
   }
 }
 
 const clearIncomplete = () => {
   if (false === confirm('Are you sure you want to clear all in-complete downloads?')) {
-    return;
+    return
   }
 
   for (const key in stateStore.history) {
@@ -394,40 +389,40 @@ const clearIncomplete = () => {
       socket.emit('item_delete', {
         id: stateStore.history[key]._id,
         remove_file: false,
-      });
+      })
     }
   }
 }
 
 const setIcon = item => {
   if (item.status === 'finished' && item.is_live) {
-    return 'fa-solid fa-globe';
+    return 'fa-solid fa-globe'
   }
 
   if (item.status === 'finished') {
-    return 'fa-solid fa-circle-check';
+    return 'fa-solid fa-circle-check'
   }
 
   if (item.status === 'error') {
-    return 'fa-solid fa-circle-xmark';
+    return 'fa-solid fa-circle-xmark'
   }
 
   if (item.status === 'canceled') {
-    return 'fa-solid fa-eject';
+    return 'fa-solid fa-eject'
   }
 
-  return 'fa-solid fa-circle';
+  return 'fa-solid fa-circle'
 }
 
 const requeueIncomplete = () => {
   if (false === confirm('Are you sure you want to re-queue all incomplete downloads?')) {
-    return false;
+    return false
   }
 
   for (const key in stateStore.history) {
-    const item = stateStore.get('history', key, {});
+    const item = stateStore.get('history', key, {})
     if ('finished' === item.status) {
-      continue;
+      continue
     }
     reQueueItem(item)
   }
@@ -437,12 +432,12 @@ const archiveItem = item => {
   if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
     return
   }
-  socket.emit('archive_item', item);
-  socket.emit('item_delete', { id: item._id, remove_file: false });
+  socket.emit('archive_item', item)
+  socket.emit('item_delete', { id: item._id, remove_file: false })
 }
 
 const removeItem = item => {
-  const msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?\n this will delete the file from the server.`;
+  const msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?\n this will delete the file from the server.`
   if (config.app.remove_files && !confirm(msg)) {
     return false
   }
@@ -450,7 +445,7 @@ const removeItem = item => {
   socket.emit('item_delete', {
     id: item._id,
     remove_file: config.app.remove_files
-  });
+  })
 }
 
 const reQueueItem = item => {
@@ -462,6 +457,6 @@ const reQueueItem = item => {
     ytdlp_config: item.ytdlp_config,
     ytdlp_cookies: item.ytdlp_cookies,
     output_template: item.output_template,
-  });
+  })
 }
 </script>

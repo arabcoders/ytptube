@@ -9,6 +9,9 @@ class Encoder(json.JSONEncoder):
     """
 
     def default(self, o):
+        if isinstance(o, object) and hasattr(o, "serialize"):
+            return o.serialize()
+
         if isinstance(o, object) and hasattr(o, "__dict__"):
             return o.__dict__
 

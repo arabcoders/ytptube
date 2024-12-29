@@ -43,6 +43,14 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  thumbnail: {
+    type: String,
+    default: ''
+  },
+  artist: {
+    type: String,
+    default: ''
+  },
   isControls: {
     type: Boolean,
     default: true
@@ -85,10 +93,22 @@ onUnmounted(() => {
   if (props.title) {
     window.document.title = 'YTPTube'
   }
-
 })
 
 const prepareVideoPlayer = () => {
+  let mediaMetadata = {
+    title: props.title,
+  };
+
+  if (props.thumbnail) {
+    mediaMetadata['artwork'] = [
+      { src: props.thumbnail, sizes: '1920x1080', type: 'image/jpeg' },
+    ]
+  }
+  if (props.artist) {
+    mediaMetadata['artist'] = props.artist
+  }
+
   player = new Plyr(video.value, {
     debug: false,
     clickToPlay: true,
@@ -106,9 +126,7 @@ const prepareVideoPlayer = () => {
       key: 'plyr'
     },
     title: props.title,
-    mediaMetadata: {
-      title: props.title
-    },
+    mediaMetadata: mediaMetadata,
     captions: {
       update: true,
     }

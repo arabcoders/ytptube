@@ -55,6 +55,7 @@ class Config:
 
     db_file: str = "{config_path}/ytptube.db"
     manual_archive: str = "{config_path}/archive.manual.log"
+    ui_update_title: bool = True
 
     # immutable config vars.
     version: str = APP_VERSION
@@ -64,6 +65,7 @@ class Config:
     new_version_available: bool = False
     ytdlp_version: str = YTDLP_VERSION
     started: int = 0
+    ignore_ui: bool = False
     presets: list = [
         {"name": "default", "format": "default", "postprocessors": [], "args": {}},
         {
@@ -142,6 +144,8 @@ class Config:
         "allow_manifestless",
         "access_log",
         "remove_files",
+        "ignore_ui",
+        "ui_update_title",
     )
 
     _frontend_vars: tuple = (
@@ -154,6 +158,7 @@ class Config:
         "started",
         "url_prefix",
         "remove_files",
+        "ui_update_title",
     )
 
     @staticmethod

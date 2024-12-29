@@ -91,6 +91,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_EXTRACT_INFO_TIMEOUT__: The timeout for extracting video information. Defaults to `70`.
 * __YTP_DB_FILE__: The path to the SQLite database file. Defaults to `{config_path}/ytptube.db`.
 * __YTP_MANUAL_ARCHIVE__: The path to the manual archive file. Defaults to `{config_path}/manual_archive.log`.
+* __YTP_UI_UPDATE_TITLE__: Whether to update the title of the page with the current stats. Defaults to `true`.
 
 ## Running behind a reverse proxy
 

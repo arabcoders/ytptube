@@ -54,7 +54,6 @@
 import moment from 'moment'
 import { parseExpression } from 'cron-parser'
 const config = useConfigStore()
-console.log(config.tasks)
 </script>
 
 <style scoped>
