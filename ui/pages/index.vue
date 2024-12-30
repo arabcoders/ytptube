@@ -17,12 +17,19 @@ onMounted(() => {
   useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0} | ${Object.keys(stateStore.history).length || 0} )` })
 })
 
-watch([stateStore.queue, stateStore.history], () => {
+watch(() => stateStore.history, () => {
   if (!config.app.ui_update_title) {
     return
   }
-  console.log('logging watch event')
   useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0} | ${Object.keys(stateStore.history).length || 0} )` })
 }, { deep: true })
+
+watch(() => stateStore.queue, () => {
+  if (!config.app.ui_update_title) {
+    return
+  }
+  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0} | ${Object.keys(stateStore.history).length || 0} )` })
+}, { deep: true })
+
 
 </script>
