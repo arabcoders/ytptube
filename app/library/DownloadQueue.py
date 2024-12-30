@@ -257,9 +257,6 @@ class DownloadQueue:
             started = time.perf_counter()
             LOG.debug(f"extract_info: checking {url=}")
 
-            if not isinstance(self.config.ytdl_options, dict):
-                self.config.ytdl_options = {}
-
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
@@ -477,13 +474,11 @@ class DownloadQueue:
             self.done.put(value=entry)
             asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")
 
-        self.event.set()
+        if self.event:
+            self.event.set()
 
     def isDownloaded(self, url: str) -> tuple[bool, dict | None]:
         if not url or not self.config.keep_archive:
             return False, None
-
-        if not isinstance(self.config.ytdl_options, dict):
-            self.config.ytdl_options = {}
 
         return isDownloaded(self.config.ytdl_options.get("download_archive", None), url)

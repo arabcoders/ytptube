@@ -60,7 +60,7 @@ class Config:
     # immutable config vars.
     version: str = APP_VERSION
     __instance = None
-    ytdl_options: dict | str = {}
+    ytdl_options: dict = {}
     tasks: list = []
     new_version_available: bool = False
     ytdlp_version: str = YTDLP_VERSION
