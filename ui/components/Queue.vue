@@ -52,7 +52,8 @@
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1" v-if="item.extras?.thumbnail">
               <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
-                <img :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                <img
+                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   :alt="item.title" />
               </NuxtLink>
             </figure>
@@ -171,12 +172,16 @@ const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
 
 const setIcon = item => {
-  if (item.status === 'downloading' && item.is_live) {
+  if ('downloading' === item.status && item.is_live) {
     return 'fa-solid fa-globe';
   }
 
-  if (item.status === 'downloading') {
+  if ('downloading' === item.status) {
     return 'fa-solid fa-circle-check';
+  }
+
+  if (null === item.status && true === config.paused) {
+    return 'fa-solid fa-pause-circle';
   }
 
   return 'fa-solid fa-spinner fa-spin';
@@ -219,7 +224,11 @@ const percentPipe = value => {
 const updateProgress = (item) => {
   let string = '';
 
-  if (item.status == 'preparing') {
+  if (null === item.status && true === config.paused) {
+    return 'Paused';
+  }
+
+  if ('preparing' === item.status) {
     return 'Preparing';
   }
 

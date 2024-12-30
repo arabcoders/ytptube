@@ -24,6 +24,7 @@ export const useSocketStore = defineStore('socket', () => {
         tasks: initialData['tasks'],
         folders: initialData['folders'],
         presets: initialData['presets'],
+        paused: Boolean(initialData['paused'])
       })
 
       stateStore.addAll('queue', initialData['queue'] ?? {})
@@ -89,6 +90,22 @@ export const useSocketStore = defineStore('socket', () => {
         return;
       }
     });
+
+    socket.value.on('paused', data => {
+      const json = JSON.parse(data);
+      const pausedState = Boolean(json.paused);
+      config.update('paused', pausedState);
+
+      if (false === pausedState) {
+        toast.success('Download queue resumed.');
+        return;
+      }
+
+      toast.warning('Download queue paused.', {
+        timeout: 10000,
+      });
+    });
+
   }
 
   const on = (event, callback) => socket.value.on(event, callback);

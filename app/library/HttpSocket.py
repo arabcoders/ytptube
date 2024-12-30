@@ -6,6 +6,7 @@ import os
 import pty
 import shlex
 from datetime import datetime
+import time
 
 import socketio
 from aiohttp import web
@@ -25,8 +26,8 @@ class HttpSocket(common):
     This class is used to handle WebSocket events.
     """
 
-    config: Config = None
-    sio: socketio.AsyncServer = None
+    config: Config
+    sio: socketio.AsyncServer
 
     def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder):
         super().__init__(queue=queue, encoder=encoder)
@@ -39,16 +40,16 @@ class HttpSocket(common):
         self.queue = queue
         self.emitter = emitter
 
-    def ws_event(func):
+    def ws_event(func):  # type: ignore
         """
         Decorator to mark a method as a socket event.
         """
 
-        @functools.wraps(func)
+        @functools.wraps(func)  # type: ignore
         async def wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)
+            return await func(*args, **kwargs)  # type: ignore
 
-        wrapper._ws_event = func.__name__
+        wrapper._ws_event = func.__name__  # type: ignore
         return wrapper
 
     def attach(self, app: web.Application):
@@ -56,11 +57,10 @@ class HttpSocket(common):
 
         for attr_name in dir(self):
             method = getattr(self, attr_name)
-            if hasattr(method, "_ws_event"):
-                event = method._ws_event
-                self.sio.on(event)(method)
+            if hasattr(method, "_ws_event") and self.sio:
+                self.sio.on(method._ws_event)(method)  # type: ignore
 
-    @ws_event
+    @ws_event  # type: ignore
     async def cli_post(self, sid: str, data):
         if not data:
             await self.emitter.emit("cli_close", {"exitcode": 0}, to=sid)
@@ -153,12 +153,12 @@ class HttpSocket(common):
             )
             await self.emitter.emit("cli_close", {"exitcode": -1}, to=sid)
 
-    @ws_event
+    @ws_event  # type: ignore
     async def add_url(self, sid: str, data: dict):
-        url: str = data.get("url")
+        url: str | None = data.get("url")
 
         if not url:
-            self.emitter.warning("No URL provided.", to=sid)
+            await self.emitter.warning("No URL provided.", to=sid)
             return
 
         preset: str = data.get("preset", "default")
@@ -180,7 +180,7 @@ class HttpSocket(common):
 
         await self.emitter.emit("status", status, to=sid)
 
-    @ws_event
+    @ws_event  # type: ignore
     async def item_cancel(self, sid: str, id: str):
         if not id:
             await self.emitter.warning("Invalid request.", to=sid)
@@ -192,13 +192,13 @@ class HttpSocket(common):
 
         await self.emitter.emit("item_cancel", status)
 
-    @ws_event
+    @ws_event  # type: ignore
     async def item_delete(self, sid: str, data: dict):
         if not data:
             await self.emitter.warning("Invalid request.", to=sid)
             return
 
-        id: str = data.get("id")
+        id: str | None = data.get("id")
         if not id:
             await self.emitter.warning("Invalid request.", to=sid)
             return
@@ -209,10 +209,13 @@ class HttpSocket(common):
 
         await self.emitter.emit("item_delete", status)
 
-    @ws_event
+    @ws_event  # type: ignore
     async def archive_item(self, sid: str, data: dict):
         if not isinstance(data, dict) or "url" not in data or not self.config.keep_archive:
             return
+
+        if not isinstance(self.config.ytdl_options, dict):
+            self.config.ytdl_options = {}
 
         file: str = self.config.ytdl_options.get("download_archive", None)
 
@@ -242,13 +245,14 @@ class HttpSocket(common):
 
         LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
 
-    @ws_event
+    @ws_event  # type: ignore
     async def connect(self, sid: str, _=None):
         data = {
             **self.queue.get(),
             "config": self.config.frontend(),
             "tasks": self.config.tasks,
             "presets": self.config.presets,
+            "paused": self.queue.isPaused(),
         }
 
         # get download folder listing
@@ -256,3 +260,13 @@ class HttpSocket(common):
         data["folders"] = [name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))]
 
         await self.emitter.emit("initial_data", data, to=sid)
+
+    @ws_event  # type: ignore
+    async def pause(self, sid: str, _=None):
+        self.queue.pause()
+        await self.emitter.emit("paused", {"paused": True, "at": time.time()})
+
+    @ws_event  # type: ignore
+    async def resume(self, sid: str, _=None):
+        self.queue.resume()
+        await self.emitter.emit("paused", {"paused": False, "at": time.time()})

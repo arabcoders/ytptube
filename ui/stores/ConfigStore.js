@@ -22,6 +22,7 @@ const CONFIG_KEYS = {
   ],
   folders: [],
   tasks: [],
+  paused: false,
 };
 
 export const useConfigStore = defineStore('config', () => {

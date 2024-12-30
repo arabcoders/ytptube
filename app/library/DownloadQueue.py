@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import json
 import logging
 import os
@@ -22,6 +23,7 @@ TYPE_QUEUE: str = "queue"
 
 
 class DownloadQueue:
+    paused: asyncio.Event
     event: asyncio.Event | None = None
     pool: AsyncPool | None = None
 
@@ -32,6 +34,8 @@ class DownloadQueue:
         self.queue = DataStore(type=TYPE_QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
+        self.paused = asyncio.Event()
+        self.paused.set()
 
     async def test(self) -> bool:
         await self.done.test()
@@ -39,12 +43,23 @@ class DownloadQueue:
 
     async def initialize(self):
         self.event = asyncio.Event()
-        LOG.info(f"Using {self.config.max_workers} workers for downloading.")
-
-        asyncio.create_task(
-            self.__download_pool() if self.config.max_workers > 1 else self.__download(),
-            name="download_pool" if self.config.max_workers > 1 else "download_worker",
+        LOG.info(
+            f"Using '{self.config.max_workers}' worker/s for downloading. Can be configured via `YTP_MAX_WORKERS` environment variable."
         )
+        asyncio.create_task(self.__download_pool(), name="download_pool")
+
+    def pause(self):
+        if self.paused.is_set():
+            self.paused.clear()
+            LOG.warning(f"Download paused at. {datetime.datetime.now().isoformat()}")
+
+    def resume(self):
+        if not self.paused.is_set():
+            self.paused.set()
+            LOG.warning(f"Downloading resumed at. {datetime.datetime.now().isoformat()}")
+
+    def isPaused(self) -> bool:
+        return False if self.paused.is_set() else True
 
     async def __add_entry(
         self,
@@ -61,8 +76,8 @@ class DownloadQueue:
 
         options: dict = {}
 
-        error: str = None
-        live_in: str = None
+        error: str | None = None
+        live_in: str | None = None
 
         eventType = entry.get("_type") or "video"
         if eventType == "playlist":
@@ -109,13 +124,13 @@ class DownloadQueue:
                 f"Entry id '{entry.get('id', None)}' url '{entry.get('webpage_url', None)} - {entry.get('url', None)}'."
             )
 
-            if self.done.exists(key=entry["id"], url=entry.get("webpage_url") or entry.get("url")):
+            if self.done.exists(key=entry["id"], url=str(entry.get("webpage_url") or entry.get("url"))):
                 item = self.done.get(key=entry["id"], url=entry.get("webpage_url") or entry["url"])
                 LOG.warning(f"Item '{item.info.id}' - '{item.info.title}' already downloaded. Removing from history.")
                 await self.clear([item.info._id], remove_file=False)
 
             try:
-                item = self.queue.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+                item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
                 if item is not None:
                     err_message = f"Item ID '{item.info.id}' - '{item.info.title}' already in download queue."
                     LOG.info(err_message)
@@ -127,7 +142,7 @@ class DownloadQueue:
             options.update({"is_manifestless": is_manifestless})
 
             live_status: list = ["is_live", "is_upcoming"]
-            is_live = entry.get("is_live", None) or live_in or entry.get("live_status", None) in live_status
+            is_live = bool(entry.get("is_live", None) or live_in or entry.get("live_status", None) in live_status)
 
             try:
                 download_dir = calcDownloadPath(basePath=self.config.download_path, folder=folder)
@@ -142,9 +157,9 @@ class DownloadQueue:
                     extras[field] = entry.get(field)
 
             dl = ItemDTO(
-                id=entry.get("id"),
-                title=entry.get("title"),
-                url=entry.get("webpage_url") or entry.get("url"),
+                id=str(entry.get("id")),
+                title=str(entry.get("title")),
+                url=str(entry.get("webpage_url") or entry.get("url")),
                 preset=preset,
                 thumbnail=entry.get("thumbnail", None),
                 folder=folder,
@@ -164,7 +179,7 @@ class DownloadQueue:
 
             for property, value in entry.items():
                 if property.startswith("playlist"):
-                    dl.output_template = dl.output_template.replace(f"%({property})s", str(value))
+                    dl.output_template = str(dl.output_template).replace(f"%({property})s", str(value))
 
             dlInfo: Download = Download(info=dl, info_dict=entry, debug=bool(self.config.ytdl_debug))
 
@@ -180,7 +195,8 @@ class DownloadQueue:
             else:
                 NotifyEvent = "added"
                 itemDownload = self.queue.put(dlInfo)
-                self.event.set()
+                if self.event:
+                    self.event.set()
 
             asyncio.create_task(
                 self.emitter.emit(NotifyEvent, itemDownload.info), name=f"notifier-{NotifyEvent}-{itemDownload.info.id}"
@@ -189,7 +205,7 @@ class DownloadQueue:
             return {"status": "ok"}
         elif eventType.startswith("url"):
             return await self.add(
-                url=entry.get("url"),
+                url=str(entry.get("url")),
                 preset=preset,
                 folder=folder,
                 ytdlp_config=ytdlp_config,
@@ -233,13 +249,16 @@ class DownloadQueue:
 
         try:
             downloaded, id_dict = self.isDownloaded(url)
-            if downloaded is True:
+            if downloaded is True and id_dict:
                 message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
                 LOG.info(message)
                 return {"status": "error", "msg": message}
 
             started = time.perf_counter()
             LOG.debug(f"extract_info: checking {url=}")
+
+            if not isinstance(self.config.ytdl_options, dict):
+                self.config.ytdl_options = {}
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
@@ -304,9 +323,11 @@ class DownloadQueue:
                 await item.close()
                 LOG.debug(f"Deleting from queue {itemMessage}")
                 self.queue.delete(id)
-                asyncio.create_task(self.emitter.canceled(id=id, dl=item), name=f"notifier-c-{id}")
+                asyncio.create_task(self.emitter.canceled(id=id, dl=item.info.serialize()), name=f"notifier-c-{id}")
+                item.info.status = "canceled"
+                item.info.error = "Canceled by user."
                 self.done.put(item)
-                asyncio.create_task(self.emitter.completed(dl=item), name=f"notifier-d-{id}")
+                asyncio.create_task(self.emitter.completed(dl=item.info.serialize()), name=f"notifier-d-{id}")
                 LOG.info(f"Deleted from queue {itemMessage}")
 
             status[id] = "ok"
@@ -330,7 +351,7 @@ class DownloadQueue:
             filename: str = ""
 
             if remove_file and self.config.remove_files and "finished" == item.info.status:
-                filename = item.info.filename
+                filename = str(item.info.filename)
                 if item.info.folder:
                     filename = f"{item.info.folder}/{item.info.filename}"
 
@@ -349,7 +370,7 @@ class DownloadQueue:
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {str(e)}")
 
             self.done.delete(id)
-            asyncio.create_task(self.emitter.cleared(id, dl=item), name=f"notifier-c-{id}")
+            asyncio.create_task(self.emitter.cleared(id, dl=item.info.serialize()), name=f"notifier-c-{id}")
             msg = f"Deleted completed download '{itemRef}'."
             if fileDeleted and filename:
                 msg += f" and removed local file '{filename}'."
@@ -395,16 +416,22 @@ class DownloadQueue:
             while True:
                 if self.pool.has_open_workers() is True:
                     break
-                if time.time() - lastLog > 120:
+                if self.config.max_workers > 1 and time.time() - lastLog > 120:
                     lastLog = time.time()
                     LOG.info(f"Waiting for worker to be free. {self.pool.get_workers_status()}")
                 await asyncio.sleep(1)
 
             while not self.queue.hasDownloads():
                 LOG.info(f"Waiting for item to download. '{self.pool.get_available_workers()}' free workers.")
-                await self.event.wait()
-                self.event.clear()
-                LOG.debug("Cleared wait event.")
+                if self.event:
+                    await self.event.wait()
+                    self.event.clear()
+                    LOG.debug("Cleared wait event.")
+
+            if self.paused and isinstance(self.paused, asyncio.Event):
+                LOG.info("Download pool is paused.")
+                await self.paused.wait()
+                LOG.info("Download pool resumed downloading.")
 
             entry = self.queue.getNextDownload()
             await asyncio.sleep(0.2)
@@ -418,16 +445,6 @@ class DownloadQueue:
                 await self.pool.push(id=entry.info._id, entry=entry)
                 LOG.debug(f"Pushed {entry=} to executor.")
                 await asyncio.sleep(1)
-
-    async def __download(self):
-        while True:
-            while self.queue.empty():
-                LOG.info("Waiting for item to download.")
-                await self.event.wait()
-                self.event.clear()
-
-            id, entry = self.queue.next()
-            await self.__downloadFile(id, entry)
 
     async def __downloadFile(self, id: str, entry: Download):
         LOG.info(
@@ -453,17 +470,20 @@ class DownloadQueue:
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                asyncio.create_task(self.emitter.canceled(id, dl=entry.info), name=f"notifier-c-{id}")
+                asyncio.create_task(self.emitter.canceled(id, dl=entry.info.serialize()), name=f"notifier-c-{id}")
                 entry.info.status = "canceled"
                 entry.info.error = "Canceled by user."
 
             self.done.put(value=entry)
-            asyncio.create_task(self.emitter.completed(dl=entry.info), name=f"notifier-d-{id}")
+            asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")
 
         self.event.set()
 
-    def isDownloaded(self, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+    def isDownloaded(self, url: str) -> tuple[bool, dict | None]:
         if not url or not self.config.keep_archive:
             return False, None
+
+        if not isinstance(self.config.ytdl_options, dict):
+            self.config.ytdl_options = {}
 
         return isDownloaded(self.config.ytdl_options.get("download_archive", None), url)
