@@ -7,19 +7,22 @@
 
 <script setup>
 const config = useConfigStore()
-useHead({ title: 'YTPTube' })
+const stateStore = useStateStore()
 
-watch(() => config.app.ui_update_title, value => {
-  if (true !== value) {
+onMounted(() => {
+  if (!config.app.ui_update_title) {
+    useHead({ title: 'YTPTube' })
     return
   }
+  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0} | ${Object.keys(stateStore.history).length || 0} )` })
+})
 
-  const s = useStateStore()
-  useHead({ title: `YTPTube: ( ${Object.keys(s.queue).length || 0} | ${Object.keys(s.history).length || 0} )` })
-  watch([s.queue, s.history], () => {
-    const title = `YTPTube: ( ${Object.keys(s.queue).length || 0} | ${Object.keys(s.history).length || 0} )`
-    useHead({ title })
-  })
+watch([stateStore.queue, stateStore.history], () => {
+  if (!config.app.ui_update_title) {
+    return
+  }
+  console.log('logging watch event')
+  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0} | ${Object.keys(stateStore.history).length || 0} )` })
+}, { deep: true })
 
-}, { immediate: true })
 </script>
