@@ -159,6 +159,7 @@ class Config:
         "url_prefix",
         "remove_files",
         "ui_update_title",
+        "max_workers",
     )
 
     @staticmethod
