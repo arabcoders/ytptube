@@ -11,8 +11,8 @@ class common:
     This class is used to share common methods between the socket and the API gateways.
     """
 
-    queue: DownloadQueue = None
-    encoder: Encoder = None
+    queue: DownloadQueue
+    encoder: Encoder
 
     def __init__(self, queue: DownloadQueue, encoder: Encoder):
         super().__init__()

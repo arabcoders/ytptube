@@ -14,7 +14,7 @@ class ItemDTO:
 
     _id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
 
-    error: str = None
+    error: str|None = None
     id: str
     title: str
     url: str

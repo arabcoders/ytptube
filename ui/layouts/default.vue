@@ -11,29 +11,33 @@
         </NuxtLink>
       </div>
       <div class="navbar-end is-flex">
+
+        <div class="navbar-item" v-if="socket.isConnected">
+          <button class="button is-dark" @click="socket.emit('pause', {})" v-if="false === config.paused"
+            v-tooltip="'Pause non-active downloads.'">
+            <span class="icon has-text-warning"><i class="fas fa-pause"></i></span>
+          </button>
+          <button class="button is-dark" @click="socket.emit('resume', {})" v-else v-tooltip="'Resume downloading.'">
+            <span class="icon has-text-success"><i class="fas fa-play"></i></span>
+          </button>
+        </div>
+
         <div class="navbar-item">
-          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
-            <span class="icon-text">
-              <span class="icon"><i class="fa-solid fa-terminal" /></span>
-              <span>Terminal</span>
-            </span>
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
+            <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>
         </div>
 
         <div class="navbar-item">
           <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
             @click="config.showForm = !config.showForm">
-            <span class="icon-text">
-              <span class="icon"><i class="fa-solid fa-plus" /></span>
-              <span>Add</span>
-            </span>
+            <span class="icon"><i class="fa-solid fa-plus" /></span>
           </button>
         </div>
 
-        <div class="navbar-item" v-if="config.tasks.length > 0">
+        <div class="navbar-item" v-if="config.tasks.length > 0" v-tooltip.bottom="'Tasks'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
-            <span class="is-hidden-mobile">Tasks</span>
           </NuxtLink>
         </div>
 

@@ -7,6 +7,7 @@ const CONFIG_KEYS = {
     ui_update_title: true,
     output_template: '',
     ytdlp_version: '',
+    max_workers: 1,
     version: '',
     url_host: '',
     url_prefix: '',
@@ -21,6 +22,7 @@ const CONFIG_KEYS = {
   ],
   folders: [],
   tasks: [],
+  paused: false,
 };
 
 export const useConfigStore = defineStore('config', () => {
