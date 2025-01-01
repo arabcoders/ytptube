@@ -12,6 +12,7 @@ from functools import lru_cache
 from typing import Any
 
 import yt_dlp
+from yt_dlp.networking.impersonate import ImpersonateTarget
 
 LOG = logging.getLogger("Utils")
 
@@ -157,7 +158,16 @@ def mergeDict(source: dict, destination: dict) -> dict:
 
 
 def mergeConfig(config: dict, new_config: dict) -> dict:
-    """Merge user provided config into default config"""
+    """
+    Merge user provided config into default config
+
+    Args:
+        config (dict): Default config
+        new_config (dict): User provided config
+
+    Returns:
+        dict: Merged config
+    """
 
     ignored_keys: tuple = (
         "cookiefile",
@@ -171,7 +181,12 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
         if key in new_config:
             del new_config[key]
 
-    return mergeDict(new_config, config)
+    conf = mergeDict(new_config, config)
+
+    if "impersonate" in conf:
+        conf["impersonate"] = ImpersonateTarget.from_str(conf["impersonate"])
+
+    return conf
 
 
 def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
