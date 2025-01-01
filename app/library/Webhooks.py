@@ -29,20 +29,24 @@ class Webhooks:
             LOG.info(f"Loading webhooks from '{file}'.")
             from .Utils import load_file
 
-            (target, status, error) = load_file(file, list)
+            (targets, status, error) = load_file(file, list)
             if not status:
                 raise Exception(f"{error}")
 
-            self.targets = target
+            for target in targets:
+                LOG.info(f"Will send '{target.get('on',['all'])}' events to '{target.get('name')}'.")
+
+            self.targets = targets
         except Exception as e:
             LOG.error(f"Error loading webhooks from '{file}'. '{e}'")
             pass
 
-    async def send(self, event: str, item: ItemDTO) -> list[dict]:
+    async def send(self, event: str, item: ItemDTO | dict) -> list[dict]:
         if len(self.targets) == 0:
             return []
 
-        if not isinstance(item, ItemDTO):
+        if not isinstance(item, ItemDTO) and not isinstance(item, dict):
+            LOG.debug(f"Received invalid item type '{type(item)}' with event '{event}'.")
             return []
 
         tasks = []
@@ -56,12 +60,13 @@ class Webhooks:
 
         return await asyncio.gather(*tasks)
 
-    async def __send(self, event: str, target: dict, item: ItemDTO) -> dict:
+    async def __send(self, event: str, target: dict, item: ItemDTO | dict) -> dict:
         from .config import Config
 
         req: dict = target.get("request")
+        itemId = item.get("id", item.get("_id", "??"))
         try:
-            LOG.info(f"Sending event '{event}' id '{item.id}' to '{target.get('name')}'.")
+            LOG.info(f"Sending event '{event}' id '{itemId}' to '{target.get('name')}'.")
             async with httpx.AsyncClient() as client:
                 request_type = req.get("type", "json")
 
@@ -76,17 +81,17 @@ class Webhooks:
 
                 match request_type:
                     case "json":
-                        reqBody["json"] = item.__dict__
+                        reqBody["json"] = item.__dict__ if isinstance(item, ItemDTO) else item
                         reqBody["headers"]["Content-Type"] = "application/json"
                     case _:
-                        reqBody["data"] = item.__dict__
+                        reqBody["data"] = item.__dict__ if isinstance(item, ItemDTO) else item
                         reqBody["headers"]["Content-Type"] = "application/x-www-form-urlencoded"
 
                 response = await client.request(**reqBody)
 
                 respData = {"url": req.get("url"), "status": response.status_code, "text": response.text}
 
-                msg = f"Webhook target '{target.get('name')}' Responded to event '{event}' id '{item.id}' with status '{response.status_code}'."
+                msg = f"Webhook target '{target.get('name')}' Responded to event '{event}' id '{itemId}' with status '{response.status_code}'."
                 if Config.get_instance().debug and respData.get("text"):
                     msg += f" body '{respData.get('text','??')}'."
 
@@ -94,7 +99,7 @@ class Webhooks:
 
                 return respData
         except Exception as e:
-            LOG.error(f"Error sending event '{event}' id '{item.id}' to '{target.get('name')}'. '{e}'")
+            LOG.error(f"Error sending event '{event}' id '{itemId}' to '{target.get('name')}'. '{e}'")
             return {"url": req.get("url"), "status": 500, "text": str(e)}
 
     def emit(self, event, data, **kwargs):
