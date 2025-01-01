@@ -13,7 +13,7 @@
       <div class="navbar-end is-flex">
 
         <div class="navbar-item" v-if="socket.isConnected">
-          <button class="button is-dark" @click="socket.emit('pause', {})" v-if="false === config.paused"
+          <button class="button is-dark" @click="pauseDownload" v-if="false === config.paused"
             v-tooltip="'Pause non-active downloads.'">
             <span class="icon has-text-warning"><i class="fas fa-pause"></i></span>
           </button>
@@ -152,4 +152,12 @@ watch(selectedTheme, value => {
 })
 
 const reloadPage = () => window.location.reload()
+
+const pauseDownload = () => {
+  if (false === confirm('Are you sure you want to pause all non-active downloads?')) {
+    return false
+  }
+
+  socket.emit('pause', {})
+}
 </script>

@@ -16,18 +16,18 @@
     "@vueuse/nuxt": "^10.9.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
+    "cron-parser": "^4.9.0",
     "cronstrue": "^2.49.0",
     "floating-vue": "^5.2.2",
+    "hls.js": "^1.4.12",
     "moment": "^2.30.1",
     "nuxt": "^3.11.2",
     "pinia": "^2.1.7",
     "plyr": "^3.7.8",
-    "hls.js": "^1.4.12",
     "socket.io-client": "^4.7.2",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0",
-    "vue-toastification": "^2.0.0-rc.5",
-    "cron-parser": "^4.9.0"
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {}
 }
