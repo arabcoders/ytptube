@@ -97,6 +97,9 @@ class Download:
         if data.get("postprocessor") != "MoveFiles" or data.get("status") != "finished":
             return
 
+        if self.debug:
+            LOG.debug(f"Postprocessor hook: {data}")
+
         if "__finaldir" in data["info_dict"]:
             filename = os.path.join(data["info_dict"]["__finaldir"], os.path.basename(data["info_dict"]["filepath"]))
         else:
