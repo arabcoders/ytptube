@@ -82,7 +82,13 @@ class FFStream:
         """
         Is the stream labelled as a video stream.
         """
-        return self.__dict__.get("codec_type", None) == "video"
+        if self.__dict__.get("codec_type", None) != "video":
+            return False
+
+        if self.__dict__.get("codec_name", None) in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]:
+            return False
+
+        return True
 
     def is_subtitle(self):
         """
