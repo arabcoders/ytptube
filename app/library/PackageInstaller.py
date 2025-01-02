@@ -52,6 +52,7 @@ class PackageInstaller:
         if not packages:
             return
 
+        LOG.info(f"Checking for user pip packages: {', '.join(packages)}")
         for package in packages:
             try:
                 self.action(package)
