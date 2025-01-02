@@ -19,6 +19,9 @@ curl_cffi = "*"
 pysubs2 = "*"
 regex = "*"
 yt-dlp = "*"
+mutagen = "*"
+brotli = "*"
+brotlicffi = "*"
 
 [dev-packages]
 

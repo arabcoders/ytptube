@@ -56,6 +56,8 @@ class Config:
     db_file: str = "{config_path}/ytptube.db"
     manual_archive: str = "{config_path}/archive.manual.log"
     ui_update_title: bool = True
+    pip_packages: str = ""
+    pip_ignore_updates: bool = False
 
     # immutable config vars.
     version: str = APP_VERSION
@@ -146,6 +148,7 @@ class Config:
         "remove_files",
         "ignore_ui",
         "ui_update_title",
+        "pip_ignore_updates",
     )
 
     _frontend_vars: tuple = (

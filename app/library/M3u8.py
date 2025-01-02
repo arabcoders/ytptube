@@ -2,7 +2,7 @@ import math
 import os
 from urllib.parse import quote
 from .Utils import calcDownloadPath, StreamingError
-from .ffprobe import FFProbe
+from .ffprobe import ffprobe
 
 
 class M3u8:
@@ -30,15 +30,14 @@ class M3u8:
             raise StreamingError(f"File '{realFile}' does not exist.")
 
         try:
-            ffprobe = FFProbe(realFile)
-            await ffprobe.run()
+            ff = await ffprobe(realFile)
         except UnicodeDecodeError:
             pass
 
-        if "duration" not in ffprobe.metadata:
+        if "duration" not in ff.metadata:
             raise StreamingError(f"Unable to get '{realFile}' play duration.")
 
-        duration: float = float(ffprobe.metadata.get("duration"))
+        duration: float = float(ff.metadata.get("duration"))
 
         m3u8 = []
 
@@ -53,7 +52,7 @@ class M3u8:
 
         segmentParams: dict = {}
 
-        for stream in ffprobe.streams:
+        for stream in ff.streams():
             if stream.is_video():
                 if stream.codec_name not in self.ok_vcodecs:
                     segmentParams["vc"] = 1

@@ -9,6 +9,29 @@ import operator
 import os
 
 
+# parameter-less decorator
+def async_lru_cache_decorator(async_function):
+    @functools.lru_cache
+    def cached_async_function(*args, **kwargs):
+        coroutine = async_function(*args, **kwargs)
+        return asyncio.ensure_future(coroutine)
+
+    return cached_async_function
+
+
+# decorator with options
+def async_lru_cache(*lru_cache_args, **lru_cache_kwargs):
+    def async_lru_cache_decorator(async_function):
+        @functools.lru_cache(*lru_cache_args, **lru_cache_kwargs)
+        def cached_async_function(*args, **kwargs):
+            coroutine = async_function(*args, **kwargs)
+            return asyncio.ensure_future(coroutine)
+
+        return cached_async_function
+
+    return async_lru_cache_decorator
+
+
 class FFProbeError(Exception):
     pass
 
@@ -163,78 +186,86 @@ class FFStream:
             raise FFProbeError("None integer bit_rate")
 
 
-class FFProbe:
-    """
-    FFProbe wraps the ffprobe command and pulls the data into an object form::
-        metadata=FFProbe('multimedia-file.mov')
-    """
+class FFProbeResult:
+    def __init__(self):
+        self.metadata: dict = {}
+        self.video: list[FFStream] = []
+        self.audio: list[FFStream] = []
+        self.subtitle: list[FFStream] = []
+        self.attachment: list[FFStream] = []
 
-    audio: list[FFStream] = []
-    attachment: list[FFStream] = []
-    streams: list[FFStream] = []
-    subtitle: list[FFStream] = []
-    video: list[FFStream] = []
-    metadata: dict = {}
-    path_to_video: str = ""
+    def get(self, key: str, default=None):
+        return getattr(self, key) if hasattr(self, key) else default
 
-    def __init__(self, path_to_video):
-        self.path_to_video = path_to_video
+    def streams(self) -> list[FFStream]:
+        "List of all streams."
+        return self.video + self.audio + self.subtitle + self.attachment
 
-    async def run(self):
-        try:
-            with open(os.devnull, "w") as tempf:
-                await asyncio.create_subprocess_exec("ffprobe", "-h", stdout=tempf, stderr=tempf)
-        except FileNotFoundError:
-            raise IOError("ffprobe not found.")
+    def has_video(self):
+        "Is there a video stream?"
+        return len(self.video) > 0
 
-        if not os.path.isfile(self.path_to_video):
-            raise IOError(f"No such media file '{self.path_to_video}'.")
+    def has_audio(self):
+        "Is there an audio stream?"
+        return len(self.audio) > 0
 
-        args = [
-            "-v",
-            "quiet",
-            "-of",
-            "json",
-            "-show_streams",
-            "-show_format",
-            self.path_to_video,
-        ]
-        p = await asyncio.create_subprocess_exec(
-            "ffprobe",
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-
-        exitCode = await p.wait()
-
-        data, err = await p.communicate()
-        if 0 == exitCode:
-            parsed: dict = json.loads(data.decode("utf-8"))
-        else:
-            raise FFProbeError(f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'")
-
-        stream = False
-        self.streams = []
-        self.video = []
-        self.audio = []
-        self.subtitle = []
-        self.attachment = []
-
-        for stream in parsed.get("streams", []):
-            self.streams.append(FFStream(stream))
-
-        self.metadata = parsed.get("format", {})
-
-        for stream in self.streams:
-            if stream.is_audio():
-                self.audio.append(stream)
-            elif stream.is_video():
-                self.video.append(stream)
-            elif stream.is_subtitle():
-                self.subtitle.append(stream)
-            elif stream.is_attachment():
-                self.attachment.append(stream)
+    def has_subtitle(self):
+        "Is there a subtitle stream?"
+        return len(self.subtitle) > 0
 
     def __repr__(self):
         return "<FFprobe: {metadata}, {video}, {audio}, {subtitle}, {attachment}>".format(**vars(self))
+
+
+@async_lru_cache(maxsize=512)
+async def ffprobe(file: str) -> FFProbeResult:
+    """
+    Run ffprobe on a file and return the parsed data as a dictionary.
+
+    Args:
+        file (str): The path to the media file.
+
+    Returns:
+        dict: A dictionary containing the parsed data.
+    """
+    try:
+        with open(os.devnull, "w") as tempf:
+            await asyncio.create_subprocess_exec("ffprobe", "-h", stdout=tempf, stderr=tempf)
+    except FileNotFoundError:
+        raise IOError("ffprobe not found.")
+
+    if not os.path.isfile(file):
+        raise IOError(f"No such media file '{file}'.")
+
+    args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", file]
+
+    p = await asyncio.create_subprocess_exec(
+        "ffprobe",
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    exitCode = await p.wait()
+
+    data, err = await p.communicate()
+    if 0 == exitCode:
+        parsed: dict = json.loads(data.decode("utf-8"))
+    else:
+        raise FFProbeError(f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'")
+
+    result = FFProbeResult()
+    result.metadata = parsed.get("format", {})
+
+    for stream in parsed.get("streams", []):
+        stream = FFStream(stream)
+        if stream.is_audio():
+            result.audio.append(stream)
+        elif stream.is_video():
+            result.video.append(stream)
+        elif stream.is_subtitle():
+            result.subtitle.append(stream)
+        elif stream.is_attachment():
+            result.attachment.append(stream)
+
+    return result

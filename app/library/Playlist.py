@@ -2,10 +2,8 @@ import glob
 import re
 from pathlib import Path
 from urllib.parse import quote
-
 from aiohttp.web import Response
-
-from .ffprobe import FFProbe
+from .ffprobe import ffprobe
 from .Subtitle import Subtitle
 from .Utils import calcDownloadPath, checkId, StreamingError
 
@@ -32,15 +30,14 @@ class Playlist:
             )
 
         try:
-            ffprobe = FFProbe(rFile)
-            await ffprobe.run()
+            ff = await ffprobe(rFile)
         except UnicodeDecodeError:
             pass
 
-        if "duration" not in ffprobe.metadata:
+        if "duration" not in ff.metadata:
             raise StreamingError(f"Unable to get '{rFile}' duration.")
 
-        duration: float = float(ffprobe.metadata.get("duration"))
+        duration: float = float(ff.metadata.get("duration"))
 
         playlist = []
         playlist.append("#EXTM3U")
