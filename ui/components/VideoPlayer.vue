@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <video ref="video" :poster="previewImageLink" :controls="isControls" :title="title" playsinline>
+    <video ref="video" :data-poster="thumbnail" :controls="isControls" :title="title" playsinline>
       <source :src="link" type="application/x-mpegURL" />
     </video>
   </div>
@@ -31,10 +31,6 @@ import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 
 const props = defineProps({
-  previewImageLink: {
-    type: String,
-    default: ''
-  },
   link: {
     type: String,
     default: ''
@@ -109,7 +105,7 @@ const prepareVideoPlayer = () => {
     mediaMetadata['artist'] = props.artist
   }
 
-  player = new Plyr(video.value, {
+  let opts = {
     debug: false,
     clickToPlay: true,
     keyboard: { focused: true, global: true },
@@ -125,12 +121,28 @@ const prepareVideoPlayer = () => {
       enabled: true,
       key: 'plyr'
     },
+    poster: props.thumbnail,
+    artist: props.artist,
     title: props.title,
     mediaMetadata: mediaMetadata,
     captions: {
       update: true,
     }
-  });
+  };
+
+  if (props.artist) {
+    opts.artist = props.artist
+  }
+
+  if (props.title) {
+    opts.title = props.title
+  }
+
+  if (props.thumbnail) {
+    opts.poster = props.thumbnail
+  }
+
+  player = new Plyr(video.value, opts);
 
   hls = new Hls({
     debug: false,

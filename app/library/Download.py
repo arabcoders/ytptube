@@ -164,6 +164,8 @@ class Download:
                 f'Downloading pid: {os.getpid()} id="{self.info.id}" title="{self.info.title}" preset="{self.preset}".'
             )
 
+            LOG.debug(f"Params before passing to yt-dlp: {params}")
+
             cls = yt_dlp.YoutubeDL(params=params)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
