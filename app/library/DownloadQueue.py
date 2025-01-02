@@ -91,6 +91,9 @@ class DownloadQueue:
                     if property in entry:
                         etr[f"playlist_{property}"] = entry.get(property)
 
+                if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
+                    etr["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
+
                 results.append(
                     await self.__add_entry(
                         entry=etr,
