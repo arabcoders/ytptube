@@ -92,6 +92,8 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_DB_FILE__: The path to the SQLite database file. Defaults to `{config_path}/ytptube.db`.
 * __YTP_MANUAL_ARCHIVE__: The path to the manual archive file. Defaults to `{config_path}/manual_archive.log`.
 * __YTP_UI_UPDATE_TITLE__: Whether to update the title of the page with the current stats. Defaults to `true`.
+* __YTP_PIP_PACKAGES__: a space separated list of pip packages to install. Defaults to `""`, you can also use `{config_path}/pip.txt` to install the packages.
+* __YTP_PIP_IGNORE_UPDATES__: Do not update the custom pip packages. Defaults to `false`.
 
 ## Running behind a reverse proxy
 

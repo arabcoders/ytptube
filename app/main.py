@@ -19,6 +19,7 @@ from library.encoder import Encoder
 from library.HttpAPI import HttpAPI, LOG as http_logger
 from library.HttpSocket import HttpSocket
 from library.Webhooks import Webhooks
+from library.PackageInstaller import PackageInstaller
 
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
@@ -37,6 +38,13 @@ class Main:
         self.encoder = Encoder()
 
         self.checkFolders()
+
+        try:
+            PackageInstaller(self.config).check()
+        except Exception as e:
+            LOG.error(f"Failed to check for packages. Error message '{str(e)}'.")
+            LOG.exception(e)
+
         caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, "migrations"))
 
         connection = sqlite3.connect(database=self.config.db_file, isolation_level=None)
