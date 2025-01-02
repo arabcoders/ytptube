@@ -15,7 +15,7 @@ from .DataStore import DataStore
 from .Download import Download
 from .Emitter import Emitter
 from .ItemDTO import ItemDTO
-from .Utils import ExtractInfo, calcDownloadPath, isDownloaded, mergeConfig
+from .Utils import ExtractInfo, get_opts, calcDownloadPath, isDownloaded, mergeConfig
 
 LOG = logging.getLogger("DownloadQueue")
 TYPE_DONE: str = "done"
@@ -264,7 +264,7 @@ class DownloadQueue:
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
                     ExtractInfo,
-                    mergeConfig(self.config.ytdl_options, ytdlp_config),
+                    get_opts(preset, mergeConfig(self.config.ytdl_options, ytdlp_config)),
                     url,
                     bool(self.config.ytdl_debug),
                 ),
