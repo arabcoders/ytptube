@@ -22,8 +22,7 @@
         </button>
       </div>
       <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
-          @click="$emit('deleteItem', 'queue', selectedElms); selectedElms = []">
+        <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected" @click="cancelSelected">
           <span class="icon-text is-block">
             <span class="icon">
               <i class="fa-solid fa-trash-can" />
@@ -250,6 +249,15 @@ const confirmCancel = item => {
     return false;
   }
   cancelItems(item._id);
+  return true;
+}
+
+const cancelSelected = () => {
+  if (true !== confirm('Are you sure you want to cancel selected items?')) {
+    return false;
+  }
+  cancelItems(selectedElms.value);
+  selectedElms.value = [];
   return true;
 }
 
