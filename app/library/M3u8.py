@@ -67,7 +67,7 @@ class M3u8:
 
             m3u8.append(f"#EXTINF:{segmentSize},")
 
-            url = f"{self.url}player/segments/{i}/{quote(file)}.ts"
+            url = f"{self.url}api/player/segments/{i}/{quote(file)}.ts"
             if len(segmentParams) > 0:
                 url += "?" + "&".join([f"{key}={value}" for key, value in segmentParams.items()])
 
@@ -91,7 +91,7 @@ class M3u8:
         m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
         m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
         m3u8.append(f"#EXTINF:{duration},")
-        m3u8.append(f"{self.url}player/subtitle/{quote(file)}.vtt")
+        m3u8.append(f"{self.url}api/player/subtitle/{quote(file)}.vtt")
         m3u8.append("#EXT-X-ENDLIST")
 
         return "\n".join(m3u8)

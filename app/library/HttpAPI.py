@@ -22,7 +22,8 @@ from .M3u8 import M3u8
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import validate_url, StreamingError
+from .Utils import validate_url, calcDownloadPath, StreamingError
+from .ffprobe import ffprobe
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -161,7 +162,7 @@ class HttpAPI(common):
             self.routes.route("GET", "/")(lambda _: web.HTTPFound(self.config.url_prefix))
             self.routes.get(self.config.url_prefix[:-1])(lambda _: web.HTTPFound(self.config.url_prefix))
 
-        self.routes.static(f"{self.config.url_prefix}download/", self.config.download_path)
+        self.routes.static(f"{self.config.url_prefix}api/download/", self.config.download_path)
         self.preloadStatic(app)
 
         try:
@@ -209,12 +210,12 @@ class HttpAPI(common):
 
         return middleware_handler
 
-    @route("GET", "ping")
+    @route("GET", "api/ping")
     async def ping(self, _) -> Response:
         await self.queue.test()
         return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
 
-    @route("POST", "add")
+    @route("POST", "api/add")
     async def add_url(self, request: Request) -> Response:
         post = await request.json()
 
@@ -242,7 +243,7 @@ class HttpAPI(common):
 
         return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "tasks")
+    @route("GET", "api/tasks")
     async def tasks(self, _: Request) -> Response:
         tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
 
@@ -258,7 +259,7 @@ class HttpAPI(common):
 
         return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("POST", "add_batch")
+    @route("POST", "api/add_batch")
     async def add_batch(self, request: Request) -> Response:
         status = {}
 
@@ -293,7 +294,7 @@ class HttpAPI(common):
 
         return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("DELETE", "delete")
+    @route("DELETE", "api/delete")
     async def delete(self, request: Request) -> Response:
         post = await request.json()
         ids = post.get("ids")
@@ -311,7 +312,7 @@ class HttpAPI(common):
             dumps=self.encoder.encode,
         )
 
-    @route("POST", "item/{id}")
+    @route("POST", "api/history/{id}")
     async def update_item(self, request: Request) -> Response:
         id: str = request.match_info.get("id")
         if not id:
@@ -348,7 +349,7 @@ class HttpAPI(common):
             dumps=self.encoder.encode,
         )
 
-    @route("GET", "history")
+    @route("GET", "api/history")
     async def history(self, _: Request) -> Response:
         data: dict = {"queue": [], "history": []}
 
@@ -359,7 +360,7 @@ class HttpAPI(common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "workers")
+    @route("GET", "api/workers")
     async def workers(self, _) -> Response:
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
@@ -387,7 +388,7 @@ class HttpAPI(common):
             dumps=lambda obj: json.dumps(obj, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"),
         )
 
-    @route("POST", "workers")
+    @route("POST", "api/workers")
     async def restart_pool(self, _) -> Response:
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
@@ -396,7 +397,7 @@ class HttpAPI(common):
 
         return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
 
-    @route("PATCH", "workers/{id}")
+    @route("PATCH", "api/workers/{id}")
     async def restart_worker(self, request: Request) -> Response:
         id: str = request.match_info.get("id")
         if not id:
@@ -409,7 +410,7 @@ class HttpAPI(common):
 
         return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route("delete", "workers/{id}")
+    @route("delete", "api/workers/{id}")
     async def stop_worker(self, request: Request) -> Response:
         id: str = request.match_info.get("id")
         if not id:
@@ -422,7 +423,7 @@ class HttpAPI(common):
 
         return web.json_response({"status": "stopped" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route("GET", "player/playlist/{file:.*}.m3u8")
+    @route("GET", "api/player/playlist/{file:.*}.m3u8")
     async def playlist(self, request: Request) -> Response:
         file: str = request.match_info.get("file")
 
@@ -448,7 +449,7 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", "player/m3u8/{mode}/{file:.*}.m3u8")
+    @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8")
     async def m3u8(self, request: Request) -> Response:
         file: str = request.match_info.get("file")
         mode: str = request.match_info.get("mode")
@@ -489,7 +490,7 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", r"player/segments/{segment:\d+}/{file:.*}.ts")
+    @route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts")
     async def segments(self, request: Request) -> Response:
         file: str = request.match_info.get("file")
         segment: int = request.match_info.get("segment")
@@ -538,7 +539,7 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", "player/subtitle/{file:.*}.vtt")
+    @route("GET", "api/player/subtitle/{file:.*}.vtt")
     async def subtitles(self, request: Request) -> Response:
         file: str = request.match_info.get("file")
         file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
@@ -573,11 +574,11 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("OPTIONS", "/add")
+    @route("OPTIONS", "api/add")
     async def add_cors(self, _: Request) -> Response:
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
-    @route("OPTIONS", "/delete")
+    @route("OPTIONS", "api/delete")
     async def delete_cors(self, _: Request) -> Response:
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
@@ -597,7 +598,7 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", "/thumbnail")
+    @route("GET", "api/thumbnail")
     async def get_thumbnail(self, request: Request) -> Response:
         url = request.query.get("url")
         if not url:
@@ -638,3 +639,19 @@ class HttpAPI(common):
             return web.json_response(
                 data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
             )
+
+    @route("GET", "api/ffprobe/{file:.*}")
+    async def get_ffprobe(self, request: Request) -> Response:
+        file: str = request.match_info.get("file")
+        try:
+            realFile: str = calcDownloadPath(basePath=self.config.download_path, folder=file, createPath=False)
+            if not os.path.exists(realFile):
+                return web.json_response(
+                    data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
+                )
+
+            return web.json_response(
+                data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=self.encoder.encode
+            )
+        except Exception as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)

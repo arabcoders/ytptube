@@ -1,3 +1,13 @@
+<style scoped>
+table.is-fixed {
+  table-layout: fixed;
+}
+
+div.table-container {
+  overflow: hidden;
+}
+</style>
+
 <template>
   <div class="mt-1 columns is-multiline">
     <div class="column is-12 is-clearfix">
@@ -55,13 +65,3 @@ import moment from 'moment'
 import { parseExpression } from 'cron-parser'
 const config = useConfigStore()
 </script>
-
-<style scoped>
-table.is-fixed {
-  table-layout: fixed;
-}
-
-div.table-container {
-  overflow: hidden;
-}
-</style>

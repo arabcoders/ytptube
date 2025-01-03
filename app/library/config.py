@@ -244,7 +244,7 @@ class Config:
             try:
                 import debugpy
 
-                debugpy.listen(("0.0.0.0", self.debugpy_port))
+                debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
                 LOG.info(f"starting debugpy server on '0.0.0.0:{self.debugpy_port}'.")
             except ImportError:
                 LOG.error("debugpy package not found, please install it with 'pip install debugpy'.")

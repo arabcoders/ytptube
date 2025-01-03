@@ -64,7 +64,12 @@ class Webhooks:
         from .config import Config
 
         req: dict = target.get("request")
-        itemId = item.get("id", item.get("_id", "??"))
+
+        try:
+            itemId = item.get("id", item.get("_id", "??"))
+        except Exception:
+            itemId = "??"
+
         try:
             LOG.info(f"Sending event '{event}' id '{itemId}' to '{target.get('name')}'.")
             async with httpx.AsyncClient() as client:

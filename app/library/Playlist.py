@@ -25,7 +25,7 @@ class Playlist:
             return Response(
                 status=302,
                 headers={
-                    "Location": f"{self.url}player/playlist/{quote(str(possibleFile).replace(download_path, '').strip('/'))}.m3u8"
+                    "Location": f"{self.url}api/player/playlist/{quote(str(possibleFile).replace(download_path, '').strip('/'))}.m3u8"
                 },
             )
 
@@ -57,16 +57,14 @@ class Playlist:
 
             subs = ',SUBTITLES="subs"'
 
-            url = (
-                f"{self.url}player/m3u8/subtitle/{quote(str(Path(file).with_name(item.name)))}.m3u8?duration={duration}"
-            )
+            url = f"{self.url}api/player/m3u8/subtitle/{quote(str(Path(file).with_name(item.name)))}.m3u8?duration={duration}"
             name = f"{item.suffix[1:].upper()} ({index}) - {lang}"
             playlist.append(
                 f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{name}",DEFAULT=NO,AUTOSELECT=NO,FORCED=NO,LANGUAGE="{lang}",URI="{url}"'
             )
 
         playlist.append(f"#EXT-X-STREAM-INF:PROGRAM-ID=1{subs}")
-        playlist.append(f"{self.url}player/m3u8/video/{quote(file)}.m3u8")
+        playlist.append(f"{self.url}api/player/m3u8/video/{quote(file)}.m3u8")
 
         return "\n".join(playlist)
 

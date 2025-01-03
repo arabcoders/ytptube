@@ -85,12 +85,9 @@
             </div>
 
             <div class="card-header-icon">
-              <a :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
-                class="has-text-primary" v-tooltip="'Download item.'"
-                v-if="item.filename && item.status === 'finished'">
-                <span class="icon"><i class="fa-solid fa-download" /></span>
+              <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
+                <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
-
               <button @click="hideThumbnail = !hideThumbnail">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
@@ -102,15 +99,15 @@
               <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
                 <img
-                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
-                  :alt="item.title" v-if="item.extras?.thumbnail" />
-                <img v-else src="/images/placeholder.png" :alt="item.title" />
+                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  v-if="item.extras?.thumbnail" />
+                <img v-else src="/images/placeholder.png" />
               </span>
-              <NuxtLink v-else target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                <img :alt="item.title" v-if="item.extras?.thumbnail"
-                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)" />
-                <img v-else src="/images/placeholder.png" :alt="item.title" />
-              </NuxtLink>
+              <template v-else>
+                <img v-if="item.extras?.thumbnail"
+                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                <img v-else src="/images/placeholder.png" />
+              </template>
             </figure>
           </div>
           <div class="card-content">
@@ -196,14 +193,14 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-half-mobile">
-                <button class="button is-link is-fullwidth" target="_blank" @click="copyText(item.url)"
-                  v-tooltip="'Copy url to clipboard.'">
+              <div class="column is-half-mobile" v-if="item.filename && item.status === 'finished'">
+                <a class="button is-link is-fullwidth" :href="makeDownload(config, item)"
+                  :download="item.filename?.split('/').reverse()[0]">
                   <span class="icon-text is-block">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
-                    <span>Copy</span>
+                    <span class="icon"><i class="fa-solid fa-download" /></span>
+                    <span>Download</span>
                   </span>
-                </button>
+                </a>
               </div>
             </div>
           </div>
@@ -231,13 +228,13 @@
     </div>
 
     <div class="modal is-active" v-if="video_link">
-      <div class="modal-background"></div>
+      <div class="modal-background" @click="closeVideo"></div>
       <div class="modal-content">
         <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
           :title="video_title" :thumbnail="video_thumbnail" :artist="video_artist" class="is-fullwidth"
-          @closeModel="video_link = ''; video_title = ''; video_thumbnail = ''; video_artist = '';" />
+          @closeModel="closeVideo" />
       </div>
-      <button class="modal-close is-large" aria-label="close" @click="video_link = ''"></button>
+      <button class="modal-close is-large" aria-label="close" @click="closeVideo"></button>
     </div>
   </div>
 </template>
@@ -269,7 +266,7 @@ const playVideo = item => {
   video_link.value = makeDownload(config, item, 'm3u8')
   video_title.value = item.title
   if (item.extras?.thumbnail) {
-    video_thumbnail.value = config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)
+    video_thumbnail.value = config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)
   }
   if (item.extras?.channel) {
     video_artist.value = item.extras.channel
@@ -277,6 +274,16 @@ const playVideo = item => {
   if (!video_artist.value && item.extras?.uploader) {
     video_artist.value = item.extras.uploader
   }
+  if (!item.extras?.is_video && item.extras?.is_audio) {
+    video_audio.value = true
+  }
+}
+
+const closeVideo = () => {
+  video_link.value = ''
+  video_title.value = ''
+  video_thumbnail.value = ''
+  video_artist.value = ''
 }
 
 watch(masterSelectAll, (value) => {

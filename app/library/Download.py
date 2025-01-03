@@ -14,6 +14,7 @@ from .config import Config
 from .Emitter import Emitter
 from .ItemDTO import ItemDTO
 from .Utils import get_opts, jsonCookie, mergeConfig
+from .ffprobe import ffprobe
 
 LOG = logging.getLogger("download")
 
@@ -161,10 +162,10 @@ class Download:
                     )
 
             LOG.info(
-                f'Downloading pid: {os.getpid()} id="{self.info.id}" title="{self.info.title}" preset="{self.preset}".'
+                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
             )
 
-            LOG.debug(f"Params before passing to yt-dlp: {params}")
+            LOG.debug("Params before passing to yt-dlp.", extra=params)
 
             cls = yt_dlp.YoutubeDL(params=params)
 
@@ -180,7 +181,7 @@ class Download:
         except Exception as exc:
             self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
 
-        LOG.info(f'Finished {os.getpid()=} id="{self.info.id}" title="{self.info.title}".')
+        LOG.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 
     async def start(self, emitter: Emitter):
         self.manager = multiprocessing.Manager()
@@ -363,5 +364,14 @@ class Download:
                     LOG.warning(f'File not found: {status.get("filename")}')
                     self.info.file_size = None
                     pass
+
+                try:
+                    ff = await ffprobe(status.get("filename"))
+                    self.info.extras['is_video'] = ff.has_video()
+                    self.info.extras['is_audio'] = ff.has_audio()
+                except Exception as e:
+                    self.info.extras['is_video'] = True
+                    self.info.extras['is_audio'] = True
+                    LOG.exception(f"Failed to ffprobe: {status.get('filename')}. {e}")
 
             asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
