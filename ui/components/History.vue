@@ -85,12 +85,9 @@
             </div>
 
             <div class="card-header-icon">
-              <a :href="makeDownload(config, item)" :download="item.filename?.split('/').reverse()[0]"
-                class="has-text-primary" v-tooltip="'Download item.'"
-                v-if="item.filename && item.status === 'finished'">
-                <span class="icon"><i class="fa-solid fa-download" /></span>
+              <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
+                <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
-
               <button @click="hideThumbnail = !hideThumbnail">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
@@ -173,14 +170,18 @@
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished'">
                 <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue item.'" @click="reQueueItem(item)">
-                  <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                  <span class="is-hidden-mobile">Re-queue</span>
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                    <span>Re-queue</span>
+                  </span>
                 </a>
               </div>
               <div class="column is-half-mobile">
                 <a class="button is-danger is-fullwidth" @click="removeItem(item)">
-                  <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-                  <span class="is-hidden-mobile">Remove</span>
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                    <span>Remove</span>
+                  </span>
                 </a>
               </div>
               <div class="column is-half-mobile" v-if="config.app?.keep_archive && item.status != 'finished'">
@@ -188,15 +189,17 @@
                   @click="archiveItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span class="is-hidden-mobile">Archive</span>
+                    <span>Archive</span>
                   </span>
                 </a>
               </div>
               <div class="column is-half-mobile" v-if="item.filename && item.status === 'finished'">
                 <a class="button is-link is-fullwidth" :href="makeDownload(config, item)"
                   :download="item.filename?.split('/').reverse()[0]">
-                  <span class="icon"><i class="fa-solid fa-download" /></span>
-                  <span class="is-hidden-mobile">Download</span>
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-download" /></span>
+                    <span>Download</span>
+                  </span>
                 </a>
               </div>
             </div>

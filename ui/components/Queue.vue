@@ -37,11 +37,14 @@
       <LateLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.queue"
         :key="item._id">
         <div class="card">
-          <header class="card-header has-tooltip" v-tooltip="item.title">
-            <div class="card-header-title has-text-centered is-text-overflow is-block">
-              {{ item.title }}
+          <header class="card-header">
+            <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
+              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
             <div class="card-header-icon">
+              <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
+                <span class="icon"><i class="fa-solid fa-copy" /></span>
+              </a>
               <button @click="hideThumbnail = !hideThumbnail">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
@@ -50,16 +53,11 @@
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1" v-if="item.extras?.thumbnail">
-              <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
-                <img
-                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
-                  :alt="item.title" />
-              </NuxtLink>
+              <img :alt="item.title"
+                :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
             </figure>
             <figure class="image is-3by1" v-else>
-              <NuxtLink target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'" :alt="item.title" />
-              </NuxtLink>
+              <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'" />
             </figure>
           </div>
           <div class="card-content">
@@ -103,16 +101,6 @@
                     <span>Cancel</span>
                   </span>
                 </button>
-              </div>
-              <div class="column is-half-mobile">
-                <a referrerpolicy="no-referrer" class="button is-link is-fullwidth" target="_blank" :href="item.url">
-                  <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-up-right-from-square" />
-                    </span>
-                    <span>Visit Link</span>
-                  </span>
-                </a>
               </div>
             </div>
           </div>
