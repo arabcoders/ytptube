@@ -100,14 +100,14 @@
                 <div class="play-icon"></div>
                 <img
                   :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
-                  :alt="item.title" v-if="item.extras?.thumbnail" />
-                <img v-else src="/images/placeholder.png" :alt="item.title" />
+                  v-if="item.extras?.thumbnail" />
+                <img v-else src="/images/placeholder.png" />
               </span>
-              <NuxtLink v-else target="_blank" :href="item.url" v-tooltip="`Open: ${item.title} link`">
-                <img :alt="item.title" v-if="item.extras?.thumbnail"
+              <template v-else>
+                <img v-if="item.extras?.thumbnail"
                   :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
-                <img v-else src="/images/placeholder.png" :alt="item.title" />
-              </NuxtLink>
+                <img v-else src="/images/placeholder.png" />
+              </template>
             </figure>
           </div>
           <div class="card-content">
