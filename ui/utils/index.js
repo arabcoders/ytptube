@@ -345,8 +345,8 @@ const getQueryParams = (url = window.location.search) => Object.fromEntries(new 
  *
  * @returns {string} The download URL
  */
-const makeDownload = (config, item, base = 'download') => {
-  let baseDir = 'download' === base ? `${base}/` : 'player/playlist/';
+const makeDownload = (config, item, base = 'api/download') => {
+  let baseDir = 'api/download' === base ? `${base}/` : 'api/player/playlist/';
 
   if (item.folder) {
     item.folder = item.folder.replace(/#/g, '%23');

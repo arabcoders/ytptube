@@ -200,6 +200,14 @@ class FFProbeResult:
         self.subtitle: list[FFStream] = []
         self.attachment: list[FFStream] = []
 
+    @property
+    def is_video(self):
+        return self.has_video()
+
+    @property
+    def is_audio(self):
+        return self.has_audio()
+
     def get(self, key: str, default=None):
         return getattr(self, key) if hasattr(self, key) else default
 
@@ -221,6 +229,24 @@ class FFProbeResult:
 
     def __repr__(self):
         return "<FFprobe: {metadata}, {video}, {audio}, {subtitle}, {attachment}>".format(**vars(self))
+
+    def unserialize(self, data: dict):
+        self.metadata = data.get("metadata", {})
+        self.video = [FFStream(v) for v in data.get("video", [])]
+        self.audio = [FFStream(a) for a in data.get("audio", [])]
+        self.subtitle = [FFStream(s) for s in data.get("subtitle", [])]
+        self.attachment = [FFStream(a) for a in data.get("attachment", [])]
+
+    def serialize(self) -> dict:
+        return {
+            "metadata": self.metadata,
+            "video": [v.__dict__ for v in self.video],
+            "audio": [a.__dict__ for a in self.audio],
+            "subtitle": [s.__dict__ for s in self.subtitle],
+            "attachment": [a.__dict__ for a in self.attachment],
+            "is_video": self.has_video(),
+            "is_audio": self.has_audio(),
+        }
 
 
 @async_lru_cache(maxsize=512)

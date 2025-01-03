@@ -52,7 +52,7 @@
             <figure class="image is-3by1" v-if="item.extras?.thumbnail">
               <NuxtLink v-tooltip="item.title" :href="item.url" target="_blank">
                 <img
-                  :src="config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   :alt="item.title" />
               </NuxtLink>
             </figure>
@@ -202,7 +202,7 @@ const ETAPipe = value => {
 }
 
 const speedPipe = value => {
-  if (value === null || 0 === value) {
+  if (null === value || 0 === value) {
     return '0KB/s';
   }
 
@@ -231,13 +231,13 @@ const updateProgress = (item) => {
     return 'Preparing';
   }
 
-  if (item.status != null) {
+  if (null != item.status) {
     string += item.percent && !item.is_live ? percentPipe(item.percent) + '%' : 'Live';
   }
 
   string += item.speed ? ' - ' + speedPipe(item.speed) : ' - Waiting..';
 
-  if (item.status != null && item.eta) {
+  if (null != item.status && item.eta) {
     string += ' - ' + ETAPipe(item.eta);
   }
 

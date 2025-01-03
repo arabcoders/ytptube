@@ -18,7 +18,7 @@
 
 <template>
   <div>
-    <video ref="video" :data-poster="thumbnail" :controls="isControls" :title="title" playsinline>
+    <video ref="video" :poster="thumbnail" :controls="isControls" :title="title" playsinline>
       <source :src="link" type="application/x-mpegURL" />
     </video>
   </div>
@@ -141,7 +141,6 @@ const prepareVideoPlayer = () => {
   if (props.thumbnail) {
     opts.poster = props.thumbnail
   }
-
   player = new Plyr(video.value, opts);
 
   hls = new Hls({
@@ -161,7 +160,5 @@ const prepareVideoPlayer = () => {
   if (props.title) {
     window.document.title = `YTPTube - Playing: ${props.title}`
   }
-
 }
-
 </script>

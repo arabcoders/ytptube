@@ -53,7 +53,7 @@ const defaultLoader = async () => {
       return
     }
 
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'thumbnail?url=' + encodePath(props.image), {
+    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(props.image), {
       signal: cancelRequest.signal
     })
 

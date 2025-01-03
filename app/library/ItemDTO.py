@@ -3,7 +3,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from email.utils import formatdate
-
+from typing import Any
 
 @dataclass(kw_only=True)
 class ItemDTO:
@@ -67,3 +67,6 @@ class ItemDTO:
 
     def json(self) -> str:
         return json.dumps(self.serialize(), default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.__dict__.get(key, default)

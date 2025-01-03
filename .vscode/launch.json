@@ -40,7 +40,7 @@
         "YTP_PIP_IGNORE_UPDATES": "true",
         "YTP_LOG_LEVEL": "DEBUG",
         "YTP_DEBUG": "true",
-        "YTP_YTDL_DEBUG": "true",
+        "YTP_YTDL_DEBUG": "false",
       }
     },
     {

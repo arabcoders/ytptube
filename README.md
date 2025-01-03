@@ -8,7 +8,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 
 # YTPTube Features.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
-* New `/add_batch` endpoint that allow multiple links to be sent.
+* New `/api/add_batch` endpoint that allow multiple links to be sent.
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
