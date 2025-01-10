@@ -303,7 +303,7 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
 
 ### presets.json File
 
-The `config/preset.json`, is a json file, which can be used to add custom presets for selection in WebUI.
+The `config/presets.json`, is a json file, which can be used to add custom presets for selection in WebUI.
 
 The file is supposed to be an array of objects, each object represent a preset, the schema for the object is as the following.
 ```json5
