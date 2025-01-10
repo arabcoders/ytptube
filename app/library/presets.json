@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Best video and audio",
+    "format": "bv+ba/b"
+  },
+  {
+    "name": "1080p H264/m4a or best available",
+    "format": "bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
+    "args": {
+      "format_sort": [
+        "vcodec:h264"
+      ]
+    }
+  },
+  {
+    "name": "720p h264/m4a or best available",
+    "format": "bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
+    "args": {
+      "format_sort": [
+        "vcodec:h264"
+      ]
+    }
+  },
+  {
+    "name": "Audio only",
+    "format": "bestaudio/best",
+    "args": {
+      "writethumbnail": true
+    },
+    "postprocessors": [
+      {
+        "key": "FFmpegExtractAudio",
+        "preferredcodec": "best",
+        "preferredquality": "5",
+        "nopostoverwrites": false
+      },
+      {
+        "key": "FFmpegMetadata",
+        "add_chapters": true,
+        "add_metadata": true,
+        "add_infojson": "if_exists"
+      },
+      {
+        "key": "EmbedThumbnail",
+        "already_have_thumbnail": false
+      },
+      {
+        "key": "FFmpegConcat",
+        "only_multi_video": true,
+        "when": "playlist"
+      }
+    ]
+  }
+]
