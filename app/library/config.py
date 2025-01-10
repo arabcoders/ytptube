@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -69,49 +70,7 @@ class Config:
     started: int = 0
     ignore_ui: bool = False
     presets: list = [
-        {"name": "default", "format": "default", "postprocessors": [], "args": {}},
-        {
-            "name": "Best video and audio",
-            "format": "bv+ba/b",
-            "args": {},
-        },
-        {
-            "name": "1080p H264/m4a or best available",
-            "format": "bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
-            "args": {
-                "format_sort": ["vcodec:h264"],
-            },
-        },
-        {
-            "name": "720p h264/m4a or best available",
-            "format": "bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
-            "args": {
-                "format_sort": ["vcodec:h264"],
-            },
-        },
-        {
-            "name": "Audio only",
-            "format": "bestaudio/best",
-            "postprocessors": [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "best",
-                    "preferredquality": "5",
-                    "nopostoverwrites": False,
-                },
-                {"key": "FFmpegMetadata", "add_chapters": True, "add_metadata": True, "add_infojson": "if_exists"},
-                {"key": "EmbedThumbnail", "already_have_thumbnail": False},
-                {"key": "FFmpegConcat", "only_multi_video": True, "when": "playlist"},
-            ],
-            "args": {
-                "outtmpl": {"pl_thumbnail": ""},
-                "ignoreerrors": "only_download",
-                "retries": 10,
-                "fragment_retries": 10,
-                "writethumbnail": True,
-                "extract_flat": "discard_in_playlist",
-            },
-        },
+        {"name": "default", "format": "default"},
     ]
 
     _manual_vars: tuple = (
@@ -276,13 +235,22 @@ class Config:
             except Exception:
                 pass
 
+        # Load default presets.
+        with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r") as f:
+            self.presets.extend(json.load(f))
+
+        # Load user defined presets.
         presetsFile = os.path.join(self.config_path, "presets.json")
         if os.path.exists(presetsFile) and os.path.getsize(presetsFile) > 0:
-            LOG.info(f"Loading extra presets from '{presetsFile}'.")
+            LOG.info(f"Loading user presets from '{presetsFile}'.")
             try:
                 (presets, status, error) = load_file(presetsFile, list)
                 if not status:
                     LOG.error(f"Could not load presets file from '{presetsFile}'. '{error}'.")
+                    sys.exit(1)
+
+                if not isinstance(presets, list):
+                    LOG.error(f"Invalid presets file '{presetsFile}'. It's expected to be a list of objects.")
                     sys.exit(1)
 
                 for preset in presets:
@@ -294,11 +262,13 @@ class Config:
                         LOG.error(f"Missing 'format' key in preset '{preset}'.")
                         continue
 
-                    if "args" not in preset:
-                        preset["args"] = {}
+                    if "args" in preset and not isinstance(preset["args"], dict):
+                        LOG.error(f"Invalid 'args' key in preset '{preset}' it's expected to be dict.")
+                        continue
 
-                    if "postprocessors" not in preset:
-                        preset["postprocessors"] = []
+                    if "postprocessors" in preset and not isinstance(preset["postprocessors"], list):
+                        LOG.error(f"Invalid 'postprocessors' key in preset '{preset}' it's expected to be list.")
+                        continue
 
                     self.presets.append(preset)
             except Exception:

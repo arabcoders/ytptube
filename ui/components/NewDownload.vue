@@ -60,14 +60,14 @@
             <div class="field">
               <label class="label is-inline" for="output_format"
                 v-tooltip="'Default Format: ' + config.app.output_template">
-                Output Format
+                Output Template
               </label>
               <div class="control">
                 <input type="text" class="input" v-model="output_template" id="output_format"
-                  placeholder="Uses default output format naming if empty.">
+                  placeholder="Uses default output template naming if empty.">
               </div>
               <span class="subtitle is-6">
-                All output format naming options can be found at <NuxtLink target="_blank" class="has-text-danger"
+                All output template naming options can be found at <NuxtLink target="_blank" class="has-text-danger"
                   href="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
               </span>
             </div>

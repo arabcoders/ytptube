@@ -301,6 +301,40 @@ The `config/webhooks.json`, is a json file, which can be used to add webhook end
 ]
 ```
 
+### presets.json File
+
+The `config/preset.json`, is a json file, which can be used to add custom presets for selection in WebUI.
+
+The file is supposed to be an array of objects, each object represent a preset, the schema for the object is as the following.
+```json5
+[
+  {
+    // (name: string) - REQUIRED - The preset name.
+    "name": "My super preset",
+    // (format: string) - REQUIRED - The required yt-dlp format. i.e. -f option in yt-dlp cli.
+    "format": "best",
+    // (postprocessors: array) - OPTIONAL - The postprocessors to run on the file. if it's preset or set to empty array, it will override the default postprocessors.
+    "postprocessors": [
+      // for example to embed thumbnail.
+      {
+        "key": "EmbedThumbnail",
+        "already_have_thumbnail": false
+      }
+    ],
+    // (args: dict) - OPTIONAL - Extra yt-dlp arguments to pass to yt-dlp.
+    "args": {
+      // (key: string) - REQUIRED - The yt-dlp argument key.
+      "writethumbnail": true
+    }
+  },
+  {
+    // another preset, etc...
+  }
+]
+```
+
+For more expanded example please take look at the default presets file found in [app/library/presets.json](app/library/presets.json).
+
 ## Authentication
 
 To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart the container.
