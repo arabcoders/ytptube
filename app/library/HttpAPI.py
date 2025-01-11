@@ -706,3 +706,55 @@ class HttpAPI(common):
             )
         except Exception as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+
+    @route("GET", "api/youtube/auth")
+    async def is_authenticated(self, request: Request) -> Response:
+        cookie_file = self.config.ytdl_options.get("cookiefile", None)
+        if not cookie_file:
+            return web.json_response(data={"message": "No cookie file provided."}, status=web.HTTPForbidden.status_code)
+
+        cookie_file = os.path.realpath(cookie_file)
+        if not os.path.exists(cookie_file):
+            return web.json_response(
+                data={"message": f"Cookie file '{cookie_file}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        try:
+            import http.cookiejar
+
+            cookies = http.cookiejar.MozillaCookieJar(cookie_file, None, None)
+            cookies.load()
+        except Exception as e:
+            LOG.error(f"failed to load cookies from '{cookie_file}'. '{e}'.")
+            LOG.exception(e)
+            return web.json_response(
+                data={"message": "Failed to load cookies"},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        url = "https://www.youtube.com/account"
+
+        try:
+            opts = {
+                "proxy": self.config.ytdl_options.get("proxy", None),
+                "headers": {
+                    "User-Agent": self.config.ytdl_options.get(
+                        "user_agent", request.headers.get("User-Agent", f"YTPTube/{self.config.version}")
+                    ),
+                },
+                "cookies": cookies,
+            }
+            async with httpx.AsyncClient(**opts) as client:
+                LOG.debug(f"Checking '{url}' redirection.")
+                response = await client.request(method="GET", url=url, follow_redirects=False)
+                return web.json_response(
+                    data={"message": "Authenticated." if response.status_code == 200 else "Not authenticated."},
+                    status=200 if response.status_code == 200 else 401,
+                )
+        except Exception as e:
+            LOG.error(f"Failed to request '{url}'. '{e}'.")
+            LOG.exception(e)
+            return web.json_response(
+                data={"message": f"Failed to request website. {str(e)}"},
+                status=web.HTTPInternalServerError.status_code,
+            )

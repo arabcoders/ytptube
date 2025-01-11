@@ -13,6 +13,7 @@ const CONFIG_KEYS = {
     version: '',
     url_host: '',
     url_prefix: '',
+    has_cookies: false,
   },
   presets: [
     {
