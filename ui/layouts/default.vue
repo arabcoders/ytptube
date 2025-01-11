@@ -12,6 +12,13 @@
       </div>
       <div class="navbar-end is-flex">
 
+        <div class="navbar-item" v-if="socket.isConnected && config.app.has_cookies">
+          <button class="button is-dark" @click="checkCookies" v-tooltip="'Check youtube cookies status.'"
+            :disabled="isChecking">
+            <span class="icon has-text-info"><i class="fas fa-cookie"></i></span>
+          </button>
+        </div>
+
         <div class="navbar-item" v-if="socket.isConnected">
           <button class="button is-dark" @click="pauseDownload" v-if="false === config.paused"
             v-tooltip="'Pause non-active downloads.'">
@@ -95,6 +102,8 @@ const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
 const socket = useSocketStore()
 const config = useConfigStore()
+const isChecking = ref(false)
+const toast = useToast()
 
 const applyPreferredColorScheme = scheme => {
   for (let s = 0; s < document.styleSheets.length; s++) {
@@ -134,6 +143,26 @@ const applyPreferredColorScheme = scheme => {
         console.debug(e)
       }
     }
+  }
+}
+
+const checkCookies = async () => {
+  if (true === isChecking.value) {
+    return
+  }
+  try {
+    isChecking.value = true
+    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/youtube/auth')
+    const data = await response.json()
+    if (response.ok) {
+      toast.success('Succuss. ' + data.message)
+    } else {
+      toast.error('Failed. ' + data.message)
+    }
+  } catch (e) {
+    toast.error('Failed to check cookies state. ' + e.message)
+  } finally {
+    isChecking.value = false
   }
 }
 

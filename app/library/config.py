@@ -310,4 +310,8 @@ class Config:
             dict: A dictionary with the frontend configuration
         """
 
-        return {k: getattr(self, k) for k in self._frontend_vars}
+        data = {k: getattr(self, k) for k in self._frontend_vars}
+        hasCookies = self.ytdl_options.get("cookiefile", None)
+        data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
+
+        return data
