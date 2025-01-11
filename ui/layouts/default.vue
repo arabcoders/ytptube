@@ -157,7 +157,7 @@ const checkCookies = async () => {
     if (response.ok) {
       toast.success('Succuss. ' + data.message)
     } else {
-      toast.error('Failed' + data.error)
+      toast.error('Failed. ' + data.message)
     }
   } catch (e) {
     toast.error('Failed to check cookies state. ' + e.message)
