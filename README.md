@@ -256,10 +256,8 @@ The `config/tasks.json`, is a json file, which can be used to queue URLs for dow
     "output_template": "",
     // (Folder: string) Optional field. Where to store the downloads relative to the main download path.
     "folder":"",
-    // (Format: string) Optional field. Format as specified in Web GUI. Defaults to "any".
-    "format": "",
-    // (Quality: string), Optional field. Quality as specified in Web GUI. Defaults to "best".
-    "quality": "", 
+    // (preset: string) Optional field. The default preset to use for the download. if omitted, it will use the default preset.
+    "preset": ""
   },
   {
    // (URL: string) **REQUIRED**, URL to the content.

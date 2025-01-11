@@ -13,17 +13,18 @@ import magic
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
 
+from .cache import Cache
 from .common import common
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
+from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import validate_url, calcDownloadPath, StreamingError
-from .ffprobe import ffprobe
+from .Utils import StreamingError, calcDownloadPath, getVideoInfo, validate_url
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -50,6 +51,7 @@ class HttpAPI(common):
         self.encoder = encoder
         self.emitter = emitter
         self.queue = queue
+        self.cache = Cache()
 
     def route(method: str, path: str):
         """
@@ -258,6 +260,55 @@ class HttpAPI(common):
             return web.json_response({"error": "Failed to load tasks."}, status=web.HTTPInternalServerError.status_code)
 
         return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("GET", "api/url/info")
+    async def get_info(self, request: Request) -> Response:
+        url = request.query.get("url")
+        if not url:
+            return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
+
+        try:
+            validate_url(url)
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
+
+        try:
+            key = self.cache.hash(url)
+
+            if self.cache.has(key):
+                data = self.cache.get(key)
+                data["_cached"] = {
+                    "key": key,
+                    "ttl": data.get("_cached", {}).get("ttl", 300),
+                    "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
+                    "expires": data.get("_cached", {}).get("expires", time.time() + 300),
+                }
+                return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+            opts = {
+                "proxy": self.config.ytdl_options.get("proxy", None),
+            }
+
+            data = getVideoInfo(url=url, ytdlp_opts=opts, no_archive=True)
+            self.cache.set(key=self.cache.hash(url), value=data, ttl=300)
+            data["_cached"] = {
+                "key": self.cache.hash(url),
+                "ttl": 300,
+                "ttl_left": 300,
+                "expires": time.time() + 300,
+            }
+
+            return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        except Exception as e:
+            LOG.error(f"Error encountered while grabbing video info '{url}'. '{e}'.")
+            LOG.exception(e)
+            return web.json_response(
+                data={
+                    "error": "failed to get video info.",
+                    "message": str(e),
+                },
+                status=web.HTTPInternalServerError.status_code,
+            )
 
     @route("POST", "api/add_batch")
     async def add_batch(self, request: Request) -> Response:
