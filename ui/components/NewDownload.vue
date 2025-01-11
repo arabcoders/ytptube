@@ -2,7 +2,7 @@
   <main class="columns mt-2">
     <div class="column">
       <div class="box">
-        <div class="columns is-multiline">
+        <div class="columns is-multiline is-mobile">
           <div class="column is-12">
             <div class="control has-icons-left">
               <input type="url" class="input" id="url" placeholder="Video or playlist link"
@@ -12,7 +12,7 @@
               </span>
             </div>
           </div>
-          <div class="column is-5">
+          <div class="column is-4-tablet is-12-mobile">
             <div class="field has-addons">
               <div class="control">
                 <a href="#" class="button is-static">Preset</a>
@@ -28,7 +28,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-5">
+          <div class="column is-6-tablet is-12-mobile">
             <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
               <div class="control">
                 <a href="#" class="button is-static">Save in</a>
@@ -49,13 +49,13 @@
           </div>
           <div class="column">
             <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
-              v-tooltip="'Show advanced options'" :class="{ 'is-loading': !socket.isConnected }"
-              :disabled="!socket.isConnected">
+              :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
               <span class="icon"><i class="fa-solid fa-cog" /></span>
+              <span>Opts</span>
             </button>
           </div>
         </div>
-        <div class="columns is-multiline" v-if="showAdvanced">
+        <div class="columns is-multiline is-mobile" v-if="showAdvanced">
           <div class="column is-12">
             <div class="field">
               <label class="label is-inline" for="output_format"
@@ -72,7 +72,7 @@
               </span>
             </div>
           </div>
-          <div class="column is-6">
+          <div class="column is-6-tablet is-12-mobile">
             <div class="field">
               <label class="label is-inline" for="ytdlpConfig"
                 v-tooltip="'Extends current global yt-dlp config. (JSON)'">
@@ -91,7 +91,7 @@
               </span>
             </div>
           </div>
-          <div class="column is-6">
+          <div class="column is-6-tablet is-12-mobile">
             <div class="field">
               <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
                 yt-dlp Cookies
@@ -106,7 +106,14 @@
               </span>
             </div>
           </div>
-          <div class="column is-12 has-text-right">
+          <div class="column is-6-tablet is-4-mobile has-text-left">
+            <button type="submit" class="button is-info" @click="getInfo" :class="{ 'is-loading': !socket.isConnected }"
+              :disabled="!socket.isConnected || addInProgress || !url">
+              <span class="icon"><i class="fa-solid fa-info" /></span>
+              <span>Info</span>
+            </button>
+          </div>
+          <div class="column is-6-tablet is-6-mobile has-text-right">
             <div class="field">
               <div class="control">
                 <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
@@ -125,6 +132,7 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
+    <GetInfo v-if="get_info && url" :link="url" @closeModel="get_info = false" />
   </main>
 </template>
 
@@ -143,6 +151,8 @@ const downloadPath = useStorage('downloadPath', null)
 const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
+const get_info = ref(false)
+const getInfo = () => get_info.value = true
 
 const addDownload = () => {
   addInProgress.value = true;

@@ -77,16 +77,32 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
     LOG.debug(f"Using preset '{preset}', altered options: {opts}")
     return opts
 
+def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
+    """
+    Extracts video information from the given URL.
 
-def getVideoInfo(url: str, ytdlp_opts: dict = None) -> Any | dict[str, Any] | None:
+    Args:
+        url (str): URL to extract information from.
+        ytdlp_opts (dict): Additional options to pass to yt-dlp.
+        no_archive (bool): Do not use download archive.
+
+    Returns:
+        dict: Video information.
+    """
     params: dict = {
         "quiet": True,
         "color": "no_color",
         "extract_flat": True,
+        "ignoreerrors": True,
+        "skip_download": True,
+        "ignore_no_formats_error": True,
     }
 
     if ytdlp_opts:
         params = {**params, **ytdlp_opts}
+
+    if no_archive and "download_archive" in params:
+        del params["download_archive"]
 
     return yt_dlp.YoutubeDL().extract_info(url, download=False)
 

@@ -1,5 +1,7 @@
+import { useStorage } from '@vueuse/core'
+
 const CONFIG_KEYS = {
-  showForm: false,
+  showForm: useStorage('showForm', false),
   app: {
     download_path: '/downloads',
     keep_archive: false,
@@ -14,10 +16,8 @@ const CONFIG_KEYS = {
   },
   presets: [
     {
-      'name': 'Default - Use default yt-dlp format',
-      'format': 'default',
-      'postprocessors': [],
-      'args': {}
+      'name': 'Default',
+      'format': 'default'
     }
   ],
   folders: [],
