@@ -1,11 +1,12 @@
 <template>
   <div>
-    <Queue />
-    <History />
+    <Queue @getInfo="url => emitter('getInfo', url)" />
+    <History @getInfo="url => emitter('getInfo', url)" />
   </div>
 </template>
 
 <script setup>
+const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 

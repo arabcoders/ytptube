@@ -5,7 +5,10 @@ import logging
 import multiprocessing
 import os
 import shutil
+import time
+
 from multiprocessing.managers import SyncManager
+from email.utils import formatdate
 
 import yt_dlp
 
@@ -369,6 +372,7 @@ class Download:
                     ff = await ffprobe(status.get("filename"))
                     self.info.extras['is_video'] = ff.has_video()
                     self.info.extras['is_audio'] = ff.has_audio()
+                    self.info.datetime = str(formatdate(time.time()))
                 except Exception as e:
                     self.info.extras['is_video'] = True
                     self.info.extras['is_audio'] = True

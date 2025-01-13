@@ -34,8 +34,8 @@
     </div>
 
     <div class="columns is-multiline">
-      <LateLoader :unrender="true" :min-height="265" class="column is-6" v-for="item in stateStore.queue"
-        :key="item._id">
+      <LateLoader :unrender="true" :min-height="hideThumbnail ? 265 : 475" class="column is-6"
+        v-for="item in stateStore.queue" :key="item._id">
         <div class="card">
           <header class="card-header">
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
@@ -102,6 +102,14 @@
                   </span>
                 </button>
               </div>
+              <div class="column is-half-mobile" v-if="item.url">
+                <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Information</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -134,7 +142,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { ucFirst } from '~/utils/index'
 
-const toast = useToast();
+const emitter = defineEmits(['getInfo'])
 const config = useConfigStore();
 const stateStore = useStateStore();
 const socket = useSocketStore();

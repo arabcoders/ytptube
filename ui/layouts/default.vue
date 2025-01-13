@@ -67,8 +67,9 @@
       </div>
     </nav>
 
-    <NewDownload v-if="config.showForm" />
-    <NuxtPage />
+    <NewDownload v-if="config.showForm" @getInfo="url => get_info = url" />
+    <NuxtPage @getInfo="url => get_info = url" />
+    <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
 
     <div class="columns mt-3 is-mobile">
       <div class="column is-8-mobile">
@@ -104,6 +105,7 @@ const socket = useSocketStore()
 const config = useConfigStore()
 const isChecking = ref(false)
 const toast = useToast()
+const get_info = ref('')
 
 const applyPreferredColorScheme = scheme => {
   for (let s = 0; s < document.styleSheets.length; s++) {
@@ -150,6 +152,11 @@ const checkCookies = async () => {
   if (true === isChecking.value) {
     return
   }
+
+  if (false === confirm(`Check for cookies status?`)) {
+    return
+  }
+
   try {
     isChecking.value = true
     const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/youtube/auth')
