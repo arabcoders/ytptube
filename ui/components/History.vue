@@ -75,7 +75,8 @@
     </div>
 
     <div class="columns is-multiline">
-      <LateLoader :unrender="true" :min-height="210" class="column is-6" v-for="item in sortCompleted" :key="item._id">
+      <LateLoader :unrender="true" :min-height="hideThumbnail ? 210 : 410" class="column is-6"
+        v-for="item in sortCompleted" :key="item._id">
         <div class="card"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip">
@@ -114,7 +115,7 @@
             <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.live_in">
                 <span class="has-text-info">
-                  LIVE stream is scheduled to start at {{ moment(item.live_in).format() }}
+                  Live stream is scheduled to start at {{ moment(item.live_in).format() }}
                 </span>
               </div>
               <div class="column is-12" v-if="item.error">
@@ -130,7 +131,7 @@
                       :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
                       <i :class="setIcon(item)" />
                     </span>
-                    <span v-if="item.status == 'finished' && item.is_live">Stream Ended</span>
+                    <span v-if="item.status == 'finished' && item.is_live">Live Ended</span>
                     <span v-else>{{ ucFirst(item.status) }}</span>
                   </span>
                 </span>
@@ -139,7 +140,7 @@
                     <span class="icon has-text-info">
                       <i class="fa-solid fa-calendar" />
                     </span>
-                    <span>Live Stream</span>
+                    <span>Live</span>
                   </span>
                 </span>
               </div>
@@ -151,8 +152,8 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow"
                 v-if="item.live_in && item.status != 'finished'">
-                <span :date-datetime="item.datetime"
-                  v-tooltip="'Will start at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                <span :date-datetime="item.live_in"
+                  v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
@@ -202,6 +203,14 @@
                   </span>
                 </a>
               </div>
+              <div class="column is-half-mobile" v-if="item.url">
+                <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Information</span>
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -245,6 +254,7 @@ import { useStorage } from '@vueuse/core'
 import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
 import toast from '~/plugins/toast'
 
+const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()

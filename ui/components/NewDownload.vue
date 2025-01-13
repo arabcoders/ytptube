@@ -107,10 +107,10 @@
             </div>
           </div>
           <div class="column is-6-tablet is-4-mobile has-text-left">
-            <button type="submit" class="button is-info" @click="getInfo" :class="{ 'is-loading': !socket.isConnected }"
-              :disabled="!socket.isConnected || addInProgress || !url">
+            <button type="submit" class="button is-info" @click="emitter('getInfo', url)"
+              :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected || addInProgress || !url">
               <span class="icon"><i class="fa-solid fa-info" /></span>
-              <span>Info</span>
+              <span>Information</span>
             </button>
           </div>
           <div class="column is-6-tablet is-6-mobile has-text-right">
@@ -132,13 +132,13 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
-    <GetInfo v-if="get_info && url" :link="url" @closeModel="get_info = false" />
   </main>
 </template>
 
 <script setup>
 import { useStorage } from '@vueuse/core'
 
+const emitter = defineEmits(['getInfo'])
 const config = useConfigStore();
 const socket = useSocketStore();
 const toast = useToast();
@@ -151,8 +151,6 @@ const downloadPath = useStorage('downloadPath', null)
 const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
-const get_info = ref(false)
-const getInfo = () => get_info.value = true
 
 const addDownload = () => {
   addInProgress.value = true;
