@@ -41,8 +41,6 @@
         "YTP_LOG_LEVEL": "DEBUG",
         "YTP_DEBUG": "true",
         "YTP_YTDL_DEBUG": "false",
-        "YTP_BASIC_MODE": "true",
-        "YTP_DEFAULT_PRESET": "Best video and audio",
       }
     },
     {
