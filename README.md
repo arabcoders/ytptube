@@ -351,7 +351,7 @@ What does the basic mode do? it hides the the following features from the WebUI.
 
 ### Header
 
-It disables the `Console`, `Tasks`, `Add` buttons.
+It disables the `Check cookies`, `Console`, `Tasks` and `Add` buttons.
 
 ### Add form 
 
