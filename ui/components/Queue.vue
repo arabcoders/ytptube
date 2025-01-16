@@ -102,7 +102,7 @@
                   </span>
                 </button>
               </div>
-              <div class="column is-half-mobile" v-if="item.url">
+              <div class="column is-half-mobile" v-if="item.url && !config.app.basic_mode">
                 <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-info" /></span>

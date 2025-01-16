@@ -14,10 +14,12 @@ const CONFIG_KEYS = {
     url_host: '',
     url_prefix: '',
     has_cookies: false,
+    basic_mode: true,
+    default_preset: 'default',
   },
   presets: [
     {
-      'name': 'Default',
+      'name': 'default',
       'format': 'default'
     }
   ],

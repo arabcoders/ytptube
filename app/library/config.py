@@ -69,9 +69,13 @@ class Config:
     ytdlp_version: str = YTDLP_VERSION
     started: int = 0
     ignore_ui: bool = False
+    basic_mode: bool = False
+
     presets: list = [
         {"name": "default", "format": "default"},
     ]
+
+    default_preset: str = "default"
 
     _manual_vars: tuple = (
         "temp_path",
@@ -108,6 +112,7 @@ class Config:
         "ignore_ui",
         "ui_update_title",
         "pip_ignore_updates",
+        "basic_mode",
     )
 
     _frontend_vars: tuple = (
@@ -122,6 +127,8 @@ class Config:
         "remove_files",
         "ui_update_title",
         "max_workers",
+        "basic_mode",
+        "default_preset",
     )
 
     @staticmethod
@@ -285,6 +292,9 @@ class Config:
 
         if self.auth_password and self.auth_username:
             LOG.warning(f"Basic authentication enabled with username '{self.auth_username}'.")
+
+        if self.basic_mode:
+            LOG.info("The frontend is running in basic mode.")
 
         self.started = time.time()
 
