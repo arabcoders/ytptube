@@ -344,6 +344,27 @@ As this is a simple basic authentication, if your browser doesn't show the promp
 
 `http://username:password@your_ytptube_url:port`
 
+
+## Basic mode
+
+What does the basic mode do? it hides the the following features from the WebUI.
+
+### Header
+
+It disables the `Console`, `Tasks`, `Add` buttons.
+
+### Add form 
+
+Disables everything except the `URL` and `Add` button. the default preset `YTP_DEFAULT_PRESET` will be used. The folder will be
+the root download path `YTP_DOWNLOAD_PATH`.
+
+The add form will always be visible and un-collapsible.
+
+### Queue & History
+
+Disables the `Information` button.
+
+
 # Social contact
 
 If you have short or quick questions, you are free to join my [discord server](https://discord.gg/G3GpVR8xpb) and ask
