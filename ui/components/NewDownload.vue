@@ -47,19 +47,6 @@
               <span>Add</span>
             </button>
           </div>
-          <div class="column has-text-right" v-if="config.app.basic_mode">
-            <div class="field">
-              <div class="control">
-                <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
-                  v-tooltip="'This configuration are stored locally in your browser.'">
-                  <span class="icon">
-                    <i class="fa-solid fa-trash" />
-                  </span>
-                  <span>Reset Local Config</span>
-                </button>
-              </div>
-            </div>
-          </div>
           <div class="column" v-if="!config.app.basic_mode">
             <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
               :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
@@ -174,10 +161,10 @@ const addDownload = () => {
     socket.emit('add_url', {
       url: url,
       preset: config.app.basic_mode ? config.app.default_preset : selectedPreset.value,
-      folder: downloadPath.value,
-      ytdlp_config: ytdlpConfig.value,
-      ytdlp_cookies: ytdlpCookies.value,
-      output_template: output_template.value,
+      folder: config.app.basic_mode ? null : downloadPath.value,
+      ytdlp_config: config.app.basic_mode ? '' : ytdlpConfig.value,
+      ytdlp_cookies: config.app.basic_mode ? '' : ytdlpCookies.value,
+      output_template: config.app.basic_mode ? null : output_template.value,
     })
   })
 }
