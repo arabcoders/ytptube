@@ -19,6 +19,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Queue multiple URLs separated by comma.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
+* Support for both advanced and basic mode for WebUI.
     
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
@@ -94,6 +95,8 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_UI_UPDATE_TITLE__: Whether to update the title of the page with the current stats. Defaults to `true`.
 * __YTP_PIP_PACKAGES__: a space separated list of pip packages to install. Defaults to `""`, you can also use `{config_path}/pip.txt` to install the packages.
 * __YTP_PIP_IGNORE_UPDATES__: Do not update the custom pip packages. Defaults to `false`.
+* __YTP_BASIC_MODE__: Whether to run WebUI in basic mode. Defaults to `false`. In basic mode, A minimal UI will be shown, the majority of the features will be disabled.
+* __YTP_DEFAULT_PRESET__: The default preset to use for the download. Defaults to `default`.
 
 ## Running behind a reverse proxy
 
@@ -340,6 +343,27 @@ This will prompt the user to enter the username and password before accessing th
 As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
 
 `http://username:password@your_ytptube_url:port`
+
+
+## Basic mode
+
+What does the basic mode do? it hides the the following features from the WebUI.
+
+### Header
+
+It disables the `Check cookies`, `Console`, `Tasks` and `Add` buttons.
+
+### Add form 
+
+Disables everything except the `URL` and `Add` button. the default preset `YTP_DEFAULT_PRESET` will be used. The folder will be
+the root download path `YTP_DOWNLOAD_PATH`.
+
+The add form will always be visible and un-collapsible.
+
+### Queue & History
+
+Disables the `Information` button.
+
 
 # Social contact
 

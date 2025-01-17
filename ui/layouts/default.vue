@@ -12,14 +12,14 @@
       </div>
       <div class="navbar-end is-flex">
 
-        <div class="navbar-item" v-if="socket.isConnected && config.app.has_cookies">
+        <div class="navbar-item" v-if="socket.isConnected && config.app.has_cookies && !config.app.basic_mode">
           <button class="button is-dark" @click="checkCookies" v-tooltip="'Check youtube cookies status.'"
             :disabled="isChecking">
             <span class="icon has-text-info"><i class="fas fa-cookie"></i></span>
           </button>
         </div>
 
-        <div class="navbar-item" v-if="socket.isConnected">
+        <div class="navbar-item" v-if="socket.isConnected && !config.app.basic_mode">
           <button class="button is-dark" @click="pauseDownload" v-if="false === config.paused"
             v-tooltip="'Pause non-active downloads.'">
             <span class="icon has-text-warning"><i class="fas fa-pause"></i></span>
@@ -29,20 +29,20 @@
           </button>
         </div>
 
-        <div class="navbar-item">
+        <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
             <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>
         </div>
 
-        <div class="navbar-item">
+        <div class="navbar-item" v-if="!config.app.basic_mode">
           <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
             @click="config.showForm = !config.showForm">
             <span class="icon"><i class="fa-solid fa-plus" /></span>
           </button>
         </div>
 
-        <div class="navbar-item" v-if="config.tasks.length > 0" v-tooltip.bottom="'Tasks'">
+        <div class="navbar-item" v-if="!config.app.basic_mode && config.tasks.length > 0" v-tooltip.bottom="'Tasks'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
           </NuxtLink>
@@ -67,7 +67,7 @@
       </div>
     </nav>
 
-    <NewDownload v-if="config.showForm" @getInfo="url => get_info = url" />
+    <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" />
     <NuxtPage @getInfo="url => get_info = url" />
     <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
 

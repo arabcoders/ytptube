@@ -12,7 +12,7 @@
               </span>
             </div>
           </div>
-          <div class="column is-4-tablet is-12-mobile">
+          <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
             <div class="field has-addons">
               <div class="control">
                 <a href="#" class="button is-static">Preset</a>
@@ -28,7 +28,7 @@
               </div>
             </div>
           </div>
-          <div class="column is-6-tablet is-12-mobile">
+          <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
             <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
               <div class="control">
                 <a href="#" class="button is-static">Save in</a>
@@ -47,7 +47,7 @@
               <span>Add</span>
             </button>
           </div>
-          <div class="column">
+          <div class="column" v-if="!config.app.basic_mode">
             <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
               :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
               <span class="icon"><i class="fa-solid fa-cog" /></span>
@@ -55,7 +55,7 @@
             </button>
           </div>
         </div>
-        <div class="columns is-multiline is-mobile" v-if="showAdvanced">
+        <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
           <div class="column is-12">
             <div class="field">
               <label class="label is-inline" for="output_format"
@@ -139,11 +139,11 @@
 import { useStorage } from '@vueuse/core'
 
 const emitter = defineEmits(['getInfo'])
-const config = useConfigStore();
-const socket = useSocketStore();
-const toast = useToast();
+const config = useConfigStore()
+const socket = useSocketStore()
+const toast = useToast()
 
-const selectedPreset = useStorage('selectedPreset', '')
+const selectedPreset = useStorage('selectedPreset', config.app.default_preset)
 const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
 const output_template = useStorage('output_template', null)
@@ -153,36 +153,36 @@ const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
 
 const addDownload = () => {
-  addInProgress.value = true;
+  addInProgress.value = true
   url.value.split(',').forEach(url => {
     if (!url.trim()) {
-      return;
+      return
     }
     socket.emit('add_url', {
       url: url,
-      preset: selectedPreset.value,
-      folder: downloadPath.value,
-      ytdlp_config: ytdlpConfig.value,
-      ytdlp_cookies: ytdlpCookies.value,
-      output_template: output_template.value,
-    });
-  });
+      preset: config.app.basic_mode ? config.app.default_preset : selectedPreset.value,
+      folder: config.app.basic_mode ? null : downloadPath.value,
+      ytdlp_config: config.app.basic_mode ? '' : ytdlpConfig.value,
+      ytdlp_cookies: config.app.basic_mode ? '' : ytdlpCookies.value,
+      output_template: config.app.basic_mode ? null : output_template.value,
+    })
+  })
 }
 
 const resetConfig = () => {
   if (true !== confirm('Reset your local configuration?')) {
-    return;
+    return
   }
 
-  selectedPreset.value = 'default';
-  ytdlpConfig.value = '';
-  ytdlpCookies.value = '';
-  output_template.value = null;
-  url.value = null;
-  downloadPath.value = null;
-  showAdvanced.value = false;
+  selectedPreset.value = config.app.default_preset.value
+  ytdlpConfig.value = ''
+  ytdlpCookies.value = ''
+  output_template.value = null
+  url.value = null
+  downloadPath.value = null
+  showAdvanced.value = false
 
-  toast.success('Local configuration has been reset.');
+  toast.success('Local configuration has been reset.')
 }
 
 const statusHandler = async data => {
@@ -195,13 +195,13 @@ const statusHandler = async data => {
     return
   }
 
-  url.value = '';
+  url.value = ''
 }
 
 onMounted(() => {
   socket.on('status', statusHandler)
   if ('' === selectedPreset.value) {
-    selectedPreset.value = 'default'
+    selectedPreset.value = config.app.default_preset.value
   }
 })
 onUnmounted(() => socket.off('status', statusHandler))

@@ -64,4 +64,11 @@ div.table-container {
 import moment from 'moment'
 import { parseExpression } from 'cron-parser'
 const config = useConfigStore()
+
+watch(() => config.app.basic_mode, async () => {
+  if (!config.app.basic_mode) {
+    return
+  }
+  await navigateTo('/')
+})
 </script>

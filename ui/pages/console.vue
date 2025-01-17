@@ -65,7 +65,7 @@ const command = ref('')
 const terminal_window = ref()
 const command_input = ref()
 const isLoading = ref(false)
-
+const config = useConfigStore()
 const socket = useSocketStore()
 
 watch(() => isLoading.value, async value => {
@@ -148,6 +148,13 @@ const writer = s => {
 }
 
 const loader = () => isLoading.value = false
+
+watch(() => config.app.basic_mode, async () => {
+  if (!config.app.basic_mode) {
+    return
+  }
+  await navigateTo('/')
+})
 
 onMounted(async () => {
   window.addEventListener('resize', reSizeTerminal);
