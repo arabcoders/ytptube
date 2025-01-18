@@ -28,7 +28,6 @@ class Download:
     """
 
     id: str = None
-    manager = None
     download_dir: str = None
     temp_dir: str = None
     output_template: str = None
@@ -319,6 +318,9 @@ class Download:
                 return
             try:
                 status = await self.update_task
+            except FileNotFoundError:
+                LOG.debug(f"Closing progress update for: {self.info._id=} {status=}.")
+                return
             except Exception as e:
                 LOG.error(f"Failed to get status update for: {self.info._id=}. {e}")
                 LOG.exception(e)

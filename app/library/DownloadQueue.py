@@ -468,6 +468,7 @@ class DownloadQueue:
             await entry.close()
 
         if self.queue.exists(key=id):
+            LOG.debug(f"Download '{id}' is done. Removing from queue.")
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
@@ -477,6 +478,8 @@ class DownloadQueue:
 
             self.done.put(value=entry)
             asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")
+        else:
+            LOG.warning(f"Download '{id}' not found in queue.")
 
         if self.event:
             self.event.set()
