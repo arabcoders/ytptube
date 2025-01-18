@@ -317,8 +317,11 @@ class Download:
             except asyncio.CancelledError:
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
                 return
-
-            status = await self.update_task
+            try:
+                status = await self.update_task
+            except Exception as e:
+                LOG.error(f"Failed to get status update for: {self.info._id=}. {e}")
+                pass
 
             if status is None or status.__class__ is Terminator:
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
