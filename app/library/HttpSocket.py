@@ -161,9 +161,9 @@ class HttpSocket(common):
             await self.emitter.warning("No URL provided.", to=sid)
             return
 
-        preset: str = data.get("preset", "default")
-        folder: str = data.get("folder")
-        ytdlp_cookies: str = data.get("ytdlp_cookies")
+        preset: str = str(data.get("preset", "default"))
+        folder: str = str(data.get("folder"))
+        ytdlp_cookies: str = str(data.get("ytdlp_cookies"))
         ytdlp_config: dict | None = data.get("ytdlp_config")
         output_template: str = data.get("output_template")
         if ytdlp_config is None:

@@ -28,7 +28,6 @@ class Download:
     """
 
     id: str = None
-    manager = None
     download_dir: str = None
     temp_dir: str = None
     output_template: str = None
@@ -95,6 +94,10 @@ class Download:
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+
+        if "finished" == data.get("status", None) and data.get("info_dict", {}).get("filename", False):
+            dataDict["filename"] = data["info_dict"]["filename"]
+
         self.status_queue.put({"id": self.id, **dataDict})
 
     def _postprocessor_hook(self, data: dict):
@@ -243,6 +246,9 @@ class Download:
             if self.proc.is_alive():
                 tasks.append(loop.run_in_executor(None, self.proc.join))
 
+            if self.status_queue:
+                self.status_queue.put(Terminator())
+
             if self.manager:
                 tasks.append(loop.run_in_executor(None, self.manager.shutdown))
 
@@ -314,14 +320,10 @@ class Download:
         while True:
             try:
                 self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
-            except asyncio.CancelledError:
+                status = await self.update_task
+            except (asyncio.CancelledError, OSError, FileNotFoundError):
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
                 return
-            try:
-                status = await self.update_task
-            except Exception as e:
-                LOG.error(f"Failed to get status update for: {self.info._id=}. {e}")
-                pass
 
             if status is None or status.__class__ is Terminator:
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
@@ -367,16 +369,26 @@ class Download:
             self.info.speed = status.get("speed")
             self.info.eta = status.get("eta")
 
-            if self.info.status == "finished" and "filename" in status and os.path.exists(status.get("filename")):
+            if (
+                "finished" == self.info.status
+                and "filename" in status
+                and os.path.isfile(status.get("filename"))
+                and os.path.exists(status.get("filename"))
+            ):
                 try:
                     self.info.file_size = os.path.getsize(status.get("filename"))
+                    self.info.datetime = str(formatdate(time.time()))
+                except FileNotFoundError:
+                    pass
+
+                try:
                     ff = await ffprobe(status.get("filename"))
                     self.info.extras["is_video"] = ff.has_video()
                     self.info.extras["is_audio"] = ff.has_audio()
-                    self.info.datetime = str(formatdate(time.time()))
-                except (FileNotFoundError, Exception) as e:
+                except Exception as e:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True
-                    LOG.exception(f"Failed to ffprobe: {status.get('filename')}. {e}")
+                    LOG.exception(f"Failed to ffprobe: {status.get}. {e}")
+                    LOG.exception(e)
 
             asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")

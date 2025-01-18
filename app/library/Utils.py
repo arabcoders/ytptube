@@ -17,7 +17,6 @@ from yt_dlp.networking.impersonate import ImpersonateTarget
 LOG = logging.getLogger("Utils")
 
 IGNORED_KEYS: tuple[str] = (
-    "cookiefile",
     "paths",
     "outtmpl",
     "progress_hooks",

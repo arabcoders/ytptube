@@ -429,7 +429,7 @@ class DownloadQueue:
                     self.event.clear()
                     LOG.debug("Cleared wait event.")
 
-            if self.paused and isinstance(self.paused, asyncio.Event):
+            if self.paused and isinstance(self.paused, asyncio.Event) and self.isPaused():
                 LOG.info("Download pool is paused.")
                 await self.paused.wait()
                 LOG.info("Download pool resumed downloading.")
@@ -449,7 +449,7 @@ class DownloadQueue:
 
     async def __downloadFile(self, id: str, entry: Download):
         LOG.info(
-            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'folder: {entry.info.folder}'."
+            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'Folder: {entry.info.folder}'."
         )
 
         try:
@@ -468,6 +468,7 @@ class DownloadQueue:
             await entry.close()
 
         if self.queue.exists(key=id):
+            LOG.debug(f"Download '{id}' is done. Removing from queue.")
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
@@ -477,6 +478,8 @@ class DownloadQueue:
 
             self.done.put(value=entry)
             asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")
+        else:
+            LOG.warning(f"Download '{id}' not found in queue.")
 
         if self.event:
             self.event.set()
