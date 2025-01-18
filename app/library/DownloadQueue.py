@@ -429,7 +429,7 @@ class DownloadQueue:
                     self.event.clear()
                     LOG.debug("Cleared wait event.")
 
-            if self.paused and isinstance(self.paused, asyncio.Event):
+            if self.paused and isinstance(self.paused, asyncio.Event) and self.isPaused():
                 LOG.info("Download pool is paused.")
                 await self.paused.wait()
                 LOG.info("Download pool resumed downloading.")
@@ -449,7 +449,7 @@ class DownloadQueue:
 
     async def __downloadFile(self, id: str, entry: Download):
         LOG.info(
-            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'folder: {entry.info.folder}'."
+            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'Folder: {entry.info.folder}'."
         )
 
         try:

@@ -78,6 +78,12 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value.on("updated", stream => {
       const data = JSON.parse(stream);
+
+      if (true === stateStore.has('history', item._id)) {
+        stateStore.update('history', item._id, item);
+        return;
+      }
+
       let dl = stateStore.get('queue', data._id, {});
       data.deleting = dl?.deleting;
       stateStore.update('queue', data._id, data);
