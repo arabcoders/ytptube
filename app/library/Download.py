@@ -317,8 +317,11 @@ class Download:
             except asyncio.CancelledError:
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
                 return
-
-            status = await self.update_task
+            try:
+                status = await self.update_task
+            except Exception as e:
+                LOG.error(f"Failed to get status update for: {self.info._id=}. {e}")
+                pass
 
             if status is None or status.__class__ is Terminator:
                 LOG.debug(f"Closing progress update for: {self.info._id=}.")
@@ -340,7 +343,11 @@ class Download:
                 self.info.filename = os.path.relpath(status.get("filename"), self.download_dir)
 
                 if os.path.exists(status.get("filename")):
-                    self.info.file_size = os.path.getsize(status.get("filename"))
+                    try:
+                        self.info.file_size = os.path.getsize(status.get("filename"))
+                    except FileNotFoundError:
+                        self.info.file_size = 0
+                        pass
 
             self.info.status = status.get("status", self.info.status)
             self.info.msg = status.get("msg")
@@ -360,22 +367,16 @@ class Download:
             self.info.speed = status.get("speed")
             self.info.eta = status.get("eta")
 
-            if self.info.status == "finished" and "filename" in status:
+            if self.info.status == "finished" and "filename" in status and os.path.exists(status.get("filename")):
                 try:
                     self.info.file_size = os.path.getsize(status.get("filename"))
-                except FileNotFoundError:
-                    LOG.warning(f'File not found: {status.get("filename")}')
-                    self.info.file_size = None
-                    pass
-
-                try:
                     ff = await ffprobe(status.get("filename"))
-                    self.info.extras['is_video'] = ff.has_video()
-                    self.info.extras['is_audio'] = ff.has_audio()
+                    self.info.extras["is_video"] = ff.has_video()
+                    self.info.extras["is_audio"] = ff.has_audio()
                     self.info.datetime = str(formatdate(time.time()))
-                except Exception as e:
-                    self.info.extras['is_video'] = True
-                    self.info.extras['is_audio'] = True
+                except (FileNotFoundError, Exception) as e:
+                    self.info.extras["is_video"] = True
+                    self.info.extras["is_audio"] = True
                     LOG.exception(f"Failed to ffprobe: {status.get('filename')}. {e}")
 
             asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")

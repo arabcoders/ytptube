@@ -10,7 +10,7 @@ import coloredlogs
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
 
-from .Utils import load_file
+from .Utils import load_file, mergeDict, IGNORED_KEYS
 from .version import APP_VERSION
 
 
@@ -218,15 +218,22 @@ class Config:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         optsFile: str = os.path.join(self.config_path, "ytdlp.json")
-        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 4:
+        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 5:
             LOG.info(f"Loading yt-dlp custom options from '{optsFile}'.")
 
             (opts, status, error) = load_file(optsFile, dict)
             if not status:
                 LOG.error(f"Could not load yt-dlp custom options from '{optsFile}'. {error}")
                 sys.exit(1)
+            if isinstance(opts, dict):
+                for key in IGNORED_KEYS:
+                    if key in opts:
+                        LOG.error(f"Key '{key}' is not allowed to be loaded via 'ytdlp.json' file.")
+                        del opts[key]
 
-            self.ytdl_options.update(opts)
+                self.ytdl_options = mergeDict(self.ytdl_options, opts)
+            else:
+                LOG.error(f"Invalid yt-dlp custom options file '{optsFile}'.")
         else:
             LOG.info(f"No yt-dlp custom options found at '{optsFile}'.")
 

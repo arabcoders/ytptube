@@ -150,7 +150,7 @@ class Main:
             LOG.info("=" * 40)
 
         if self.config.access_log:
-            http_logger.addFilter(lambda record: "GET /ping" not in record.getMessage())
+            http_logger.addFilter(lambda record: "GET /api/ping" not in record.getMessage())
 
         web.run_app(
             self.app,

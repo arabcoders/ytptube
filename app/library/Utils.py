@@ -22,6 +22,8 @@ IGNORED_KEYS: tuple[str] = (
     "outtmpl",
     "progress_hooks",
     "postprocessor_hooks",
+    "format",
+    "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 OS_ALT_SEP: list[str] = list(sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/")
@@ -76,6 +78,7 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
 
     LOG.debug(f"Using preset '{preset}', altered options: {opts}")
     return opts
+
 
 def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
     """
@@ -187,17 +190,9 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
     Returns:
         dict: Merged config
     """
-
-    ignored_keys: tuple = (
-        "cookiefile",
-        "download_archive" "paths",
-        "outtmpl",
-        "progress_hooks",
-        "postprocessor_hooks",
-    )
-
-    for key in ignored_keys:
+    for key in IGNORED_KEYS:
         if key in new_config:
+            LOG.error(f"Key '{key}' is not allowed to be manually set.")
             del new_config[key]
 
     conf = mergeDict(new_config, config)
