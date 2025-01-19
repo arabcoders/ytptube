@@ -79,8 +79,8 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on("updated", stream => {
       const data = JSON.parse(stream);
 
-      if (true === stateStore.has('history', item._id)) {
-        stateStore.update('history', item._id, item);
+      if (true === stateStore.has('history', data._id)) {
+        stateStore.update('history', data._id, data);
         return;
       }
 
