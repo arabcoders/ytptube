@@ -45,6 +45,7 @@ jobs:
         with:
           filename: "/app/library/version.py"
           placeholder: "dev-master"
+          with_branch: "true"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
