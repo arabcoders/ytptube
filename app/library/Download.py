@@ -6,8 +6,6 @@ import multiprocessing
 import os
 import shutil
 import time
-
-from multiprocessing.managers import SyncManager
 from email.utils import formatdate
 
 import yt_dlp
@@ -15,9 +13,9 @@ import yt_dlp
 from .AsyncPool import Terminator
 from .config import Config
 from .Emitter import Emitter
+from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .Utils import get_opts, jsonCookie, mergeConfig
-from .ffprobe import ffprobe
 
 LOG = logging.getLogger("download")
 
@@ -38,12 +36,13 @@ class Download:
     debug: bool = False
     tempPath: str = None
     emitter: Emitter = None
-    manager: SyncManager = None
     canceled: bool = False
     is_live: bool = False
     info_dict: dict = None
     "yt-dlp metadata dict."
     update_task = None
+
+    cancel_in_progress: bool = False
 
     bad_live_options: list = [
         "concurrent_fragment_downloads",
@@ -188,9 +187,8 @@ class Download:
         LOG.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 
     async def start(self, emitter: Emitter):
-        self.manager = multiprocessing.Manager()
         self.emitter = emitter
-        self.status_queue = self.manager.Queue()
+        self.status_queue = Config.get_manager().Queue()
 
         # Create temp dir for each download.
         self.tempPath = os.path.join(self.temp_dir, hashlib.shake_256(f"D-{self.info.id}".encode("utf-8")).hexdigest(5))
@@ -223,12 +221,15 @@ class Download:
         Close download process.
         This method MUST be called to clear resources.
         """
-        if not self.started():
+        if not self.started() or self.cancel_in_progress:
             return False
 
+        self.cancel_in_progress = True
         procId = self.proc.ident
+
+        LOG.info(f"Closing PID='{procId}' download process.")
+
         try:
-            LOG.info(f"Closing download process: '{procId}'.")
             try:
                 if "update_task" in self.__dict__ and self.update_task.done() is False:
                     self.update_task.cancel()
@@ -239,19 +240,16 @@ class Download:
             self.kill()
 
             loop = asyncio.get_running_loop()
-            tasks = []
 
             if self.proc.is_alive():
-                tasks.append(loop.run_in_executor(None, self.proc.join))
+                LOG.debug(f"Waiting for PID='{procId}' to close.")
+                await loop.run_in_executor(None, self.proc.join)
+                LOG.debug(f"PID='{procId}' closed.")
 
             if self.status_queue:
+                LOG.debug(f"Closing status queue for PID='{procId}'.")
                 self.status_queue.put(Terminator())
-
-            if self.manager:
-                tasks.append(loop.run_in_executor(None, self.manager.shutdown))
-
-            if len(tasks) > 0:
-                await asyncio.gather(*tasks)
+                LOG.debug(f"Closed status queue for PID='{procId}'.")
 
             if self.proc:
                 self.proc.close()
@@ -259,7 +257,7 @@ class Download:
 
             self.delete_temp()
 
-            LOG.debug(f"Closed download process: '{procId}'.")
+            LOG.debug(f"Closed PID='{procId}' download process.")
 
             return True
         except Exception as e:
@@ -293,7 +291,7 @@ class Download:
         if self.tempKeep is True or not self.tempPath:
             return
 
-        if self.info.status != "finished" and self.is_live:
+        if "finished" != self.info.status and self.is_live:
             LOG.warning(
                 f"Keeping live temp folder '{self.tempPath}', as the reported status is not finished '{self.info.status}'."
             )
@@ -320,11 +318,9 @@ class Download:
                 self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
                 status = await self.update_task
             except (asyncio.CancelledError, OSError, FileNotFoundError):
-                LOG.debug(f"Closing progress update for: {self.info._id=}.")
                 return
 
-            if status is None or status.__class__ is Terminator:
-                LOG.debug(f"Closing progress update for: {self.info._id=}.")
+            if status is None or isinstance(status, Terminator):
                 return
 
             if status.get("id") != self.id or len(status) < 2:
@@ -352,7 +348,7 @@ class Download:
             self.info.status = status.get("status", self.info.status)
             self.info.msg = status.get("msg")
 
-            if self.info.status == "error" and "error" in status:
+            if "error" == self.info.status and "error" in status:
                 self.info.error = status.get("error")
                 asyncio.create_task(
                     self.emitter.error(message=self.info.error, data=self.info), name=f"emitter-e-{self.id}"
@@ -361,7 +357,10 @@ class Download:
             if "downloaded_bytes" in status:
                 total = status.get("total_bytes") or status.get("total_bytes_estimate")
                 if total:
-                    self.info.percent = status["downloaded_bytes"] / total * 100
+                    try:
+                        self.info.percent = status["downloaded_bytes"] / total * 100
+                    except ZeroDivisionError:
+                        self.info.percent = 0
                     self.info.total_bytes = total
 
             self.info.speed = status.get("speed")
