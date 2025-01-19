@@ -95,13 +95,13 @@ class Download:
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
-        if "finished" == data.get("status", None) and data.get("info_dict", {}).get("filename", False):
+        if "finished" == data.get("status", None) and data.get("info_dict", {}).get("filename", None):
             dataDict["filename"] = data["info_dict"]["filename"]
 
         self.status_queue.put({"id": self.id, **dataDict})
 
     def _postprocessor_hook(self, data: dict):
-        if data.get("postprocessor") != "MoveFiles" or data.get("status") != "finished":
+        if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
             return
 
         if self.debug:
@@ -116,24 +116,22 @@ class Download:
 
     def _download(self):
         try:
-            params: dict = {
-                "color": "no_color",
-                "paths": {
-                    "home": self.download_dir,
-                    "temp": self.tempPath,
-                },
-                "outtmpl": {"default": self.output_template, "chapter": self.output_template_chapter},
-                "noprogress": True,
-                "break_on_existing": True,
-                "progress_hooks": [self._progress_hook],
-                "postprocessor_hooks": [self._postprocessor_hook],
-                **get_opts(self.preset, mergeConfig(self.default_ytdl_opts, self.ytdl_opts)),
-            }
+            params: dict = get_opts(self.preset, mergeConfig(self.default_ytdl_opts, self.ytdl_opts))
+            params.update(
+                {
+                    "color": "no_color",
+                    "paths": {"home": self.download_dir, "temp": self.tempPath},
+                    "outtmpl": {"default": self.output_template, "chapter": self.output_template_chapter},
+                    "noprogress": True,
+                    "break_on_existing": True,
+                    "progress_hooks": [self._progress_hook],
+                    "postprocessor_hooks": [self._postprocessor_hook],
+                    "ignoreerrors": False,
+                }
+            )
 
             if "format" not in params and self.default_ytdl_opts.get("format", None):
-                params["format"] = self.default_ytdl_opts["format"]
-
-            params["ignoreerrors"] = False
+                params["format"] = "best"
 
             if self.debug:
                 params["verbose"] = True
@@ -151,7 +149,7 @@ class Download:
 
                     params["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Invalid cookies: was provided for {self.info.title} - {str(e)}")
+                    LOG.error(f"Invalid cookies: was provided for '{self.info.title}'. '{str(e)}'.")
 
             if self.is_live or self.is_manifestless:
                 hasDeletedOptions = False
@@ -176,7 +174,7 @@ class Download:
             cls = yt_dlp.YoutubeDL(params=params)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
-                LOG.debug("Downloading using pre-info.")
+                LOG.debug(f"Downloading '{self.info.url}' using pre-info.")
                 cls.process_ie_result(self.info_dict, download=True)
                 ret = cls._download_retcode
             else:
@@ -297,7 +295,7 @@ class Download:
 
         if self.info.status != "finished" and self.is_live:
             LOG.warning(
-                f"Keeping live temp folder [{self.tempPath}], as the reported status is not finished [{self.info.status}]."
+                f"Keeping live temp folder '{self.tempPath}', as the reported status is not finished '{self.info.status}'."
             )
             return
 
@@ -310,7 +308,7 @@ class Download:
             )
             return
 
-        LOG.info(f"Deleting Temp folder: {self.tempPath}")
+        LOG.info(f"Deleting Temp folder '{self.tempPath}'.")
         shutil.rmtree(self.tempPath, ignore_errors=True)
 
     async def progress_update(self):

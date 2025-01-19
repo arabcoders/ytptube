@@ -109,7 +109,7 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> 
     return yt_dlp.YoutubeDL().extract_info(url, download=False)
 
 
-def calcDownloadPath(basePath: str, folder: str = None, createPath: bool = True) -> str:
+def calcDownloadPath(basePath: str, folder: str|None = None, createPath: bool = True) -> str:
     """Calculates download path and prevents folder traversal.
 
     Returns:

@@ -222,24 +222,32 @@ class HttpAPI(common):
         post = await request.json()
 
         url: str = post.get("url")
-        preset: str = post.get("preset", "default")
 
         if not url:
             return web.json_response(data={"error": "url is required."}, status=web.HTTPBadRequest.status_code)
 
-        folder: str = post.get("folder")
-        ytdlp_cookies: str = post.get("ytdlp_cookies")
-        ytdlp_config: dict | None = post.get("ytdlp_config")
-        output_template: str = post.get("output_template")
-        if ytdlp_config is None:
-            ytdlp_config = {}
+        preset: str = str(post.get("preset", self.config.default_preset))
+        folder: str = str(post.get("folder")) if post.get("folder") else ""
+        ytdlp_cookies: str = str(post.get("ytdlp_cookies")) if post.get("ytdlp_cookies") else ""
+        output_template: str = str(post.get("output_template")) if post.get("output_template") else ""
+
+        ytdlp_config = post.get("ytdlp_config")
+        if isinstance(ytdlp_config, str) and ytdlp_config:
+            try:
+                ytdlp_config = json.loads(ytdlp_config)
+            except Exception as e:
+                LOG.error(f"Failed to parse json yt-dlp config for '{url}'. {str(e)}")
+                return web.json_response(
+                    data={"error": f"Failed to parse json yt-dlp config. {str(e)}"},
+                    status=web.HTTPBadRequest.status_code,
+                )
 
         status = await self.add(
             url=url,
             preset=preset,
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
-            ytdlp_config=ytdlp_config,
+            ytdlp_config=ytdlp_config if isinstance(ytdlp_config, dict) else {},
             output_template=output_template,
         )
 
