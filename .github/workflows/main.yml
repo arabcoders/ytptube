@@ -45,6 +45,8 @@ jobs:
         with:
           filename: "/app/library/version.py"
           placeholder: "dev-master"
+          with_date: "true"
+          with_branch: "true"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -92,7 +94,7 @@ jobs:
           cache-to: type=gha, scope=${{ github.workflow }}
 
       - name: Version tag
-        if: github.event_name == 'disabled_now'
+        if: github.event_name == 'push'
         uses: arabcoders/action-python-autotagger@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -100,9 +102,10 @@ jobs:
           path: app/library/version.py
           variable: APP_VERSION
 
+
   dockerhub-sync-readme:
     needs: push-build
-    if: github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Sync README
@@ -120,12 +123,14 @@ jobs:
   create_release:
     needs: push-build
     runs-on: ubuntu-latest
+    # Only run on master push
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && success()
+
     steps:
-      - name: Checkout
+      - name: Check out code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # so we can git log the full history
+          fetch-depth: 0 # so we can do git log for the full history
 
       - name: Get commits between old and new
         id: commits
@@ -147,37 +152,24 @@ jobs:
           echo "$LOG" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
 
-      - name: Create local tag matching Docker's raw pattern
-        id: createtag
+      - name: Fetch the most recent tag
+        id: last_tag
         run: |
-          # We'll replicate raw format: branch + base_ref + date + short sha
-          # If base_ref is empty (normal push to master, no PR?), it won't appear.
-          BRANCH_NAME="${{ github.ref_name }}"
-          BASE_REF="${{ github.base_ref }}"
-          CURRENT_SHA="${{ github.event.after }}"
-          DATE=$(date +%Y%m%d)
-          SHORT_SHA=$(echo "$CURRENT_SHA" | cut -c1-7)
+          # Make sure we have all tags
+          git fetch --tags
 
-          TAG="${BRANCH_NAME}${BASE_REF}-${DATE}-${SHORT_SHA}"
+          # Get the latest tag by commit date (most recent)
+          # If there are no tags at all, set a fallback
+          LAST_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1) 2>/dev/null || echo "no-tags-found")
 
-          echo "Using tag: $TAG"
+          echo "Latest tag found: $LAST_TAG"
+          echo "LAST_TAG=$LAST_TAG" >> "$GITHUB_OUTPUT"
 
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          # Create a lightweight local tag
-          git tag "$TAG" "$CURRENT_SHA"
-
-          # Push the tag back to GitHub
-          git push origin "$TAG"
-
-          # Expose as an output
-          echo "TAG=$TAG" >> "$GITHUB_OUTPUT"
-      - name: Create GitHub Release
+      - name: Create or update GitHub Release using last tag
         uses: softprops/action-gh-release@master
         with:
-          tag_name: ${{ steps.createtag.outputs.TAG }}
-          name: "${{ steps.createtag.outputs.TAG }}"
+          tag_name: ${{ steps.last_tag.outputs.LAST_TAG }}
+          name: "${{ steps.last_tag.outputs.LAST_TAG }}"
           body: ${{ env.LOG }}
           draft: false
           prerelease: false

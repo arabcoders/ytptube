@@ -1,16 +1,18 @@
 import json
 import logging
+import multiprocessing
 import os
 import re
 import sys
 import time
+from multiprocessing.managers import SyncManager
 from pathlib import Path
 
 import coloredlogs
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
 
-from .Utils import load_file, mergeDict, IGNORED_KEYS
+from .Utils import IGNORED_KEYS, load_file, mergeDict
 from .version import APP_VERSION
 
 
@@ -131,10 +133,19 @@ class Config:
         "default_preset",
     )
 
+    _manager: SyncManager | None = None
+
     @staticmethod
     def get_instance():
         """Static access method."""
         return Config() if not Config.__instance else Config.__instance
+
+    @staticmethod
+    def get_manager() -> SyncManager:
+        if not Config._manager:
+            Config._manager = multiprocessing.Manager()
+
+        return Config._manager
 
     def __init__(self):
         """Virtually private constructor."""
