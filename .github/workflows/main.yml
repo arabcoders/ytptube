@@ -100,8 +100,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           repo_name: arabcoders/ytptube
           path: app/library/version.py
-          variable: APP_VERSION
-
+          regex: 'APP_VERSION\s=\s\"(.+)\"'
 
   dockerhub-sync-readme:
     needs: push-build
