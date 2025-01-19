@@ -31,8 +31,29 @@ env:
   PLATFORMS: linux/amd64
 
 jobs:
+  build-pr:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build commit to check.
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ env.PLATFORMS }}
+          push: false
+
   push-build:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     permissions:
       packages: write
       contents: write
@@ -94,7 +115,6 @@ jobs:
           cache-to: type=gha, scope=${{ github.workflow }}
 
       - name: Version tag
-        if: github.event_name == 'push'
         uses: arabcoders/action-python-autotagger@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -104,7 +124,7 @@ jobs:
 
   dockerhub-sync-readme:
     needs: push-build
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: endsWith(github.ref, github.event.repository.default_branch)
     runs-on: ubuntu-latest
     steps:
       - name: Sync README
@@ -122,9 +142,7 @@ jobs:
   create_release:
     needs: push-build
     runs-on: ubuntu-latest
-    # Only run on master push
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && success()
-
+    if: endsWith(github.ref, github.event.repository.default_branch) && success()
     steps:
       - name: Check out code
         uses: actions/checkout@v4
