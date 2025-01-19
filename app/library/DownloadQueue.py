@@ -80,8 +80,8 @@ class DownloadQueue:
         live_in: str | None = None
 
         eventType = entry.get("_type") or "video"
-        if eventType == "playlist":
-            entries = entry["entries"]
+        if "playlist" == eventType:
+            entries = entry.get("entries", [])
             playlist_index_digits = len(str(len(entries)))
             results = []
             for i, etr in enumerate(entries, start=1):
@@ -106,16 +106,16 @@ class DownloadQueue:
                     )
                 )
 
-            if any(res["status"] == "error" for res in results):
+            if any("error" == res["status"] for res in results):
                 return {
                     "status": "error",
                     "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
                 }
 
             return {"status": "ok"}
-        elif (eventType == "video" or eventType.startswith("url")) and "id" in entry and "title" in entry:
+        elif ("video" == eventType or eventType.startswith("url")) and "id" in entry and "title" in entry:
             # check if the video is live stream.
-            if "live_status" in entry and entry.get("live_status") == "is_upcoming":
+            if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
                 if "release_timestamp" in entry and entry.get("release_timestamp"):
                     live_in = formatdate(entry.get("release_timestamp"))
                 else:
@@ -230,10 +230,12 @@ class DownloadQueue:
         already=None,
     ):
         ytdlp_config = ytdlp_config if ytdlp_config else {}
-        folder = str(folder)
+        folder = str(folder) if folder else ""
+
+        filePath = calcDownloadPath(basePath=self.config.download_path, folder=folder)
 
         LOG.info(
-            f"Adding url '{url}' to folder '{folder}' with the following options 'Preset: {preset}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'."
         )
 
         if isinstance(ytdlp_config, str):
@@ -279,13 +281,13 @@ class DownloadQueue:
                 f"extract_info: for 'URL: {url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}'."
             )
         except yt_dlp.utils.ExistingVideoReached as exc:
-            LOG.error(f"Video has been downloaded already and recorded in archive.log file. {str(exc)}")
+            LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{str(exc)}'.")
             return {"status": "error", "msg": "Video has been downloaded already and recorded in archive.log file."}
         except yt_dlp.utils.YoutubeDLError as exc:
-            LOG.error(f"YoutubeDLError: Unable to extract info. {str(exc)}")
+            LOG.error(f"YoutubeDLError: Unable to extract info. '{str(exc)}'.")
             return {"status": "error", "msg": str(exc)}
         except asyncio.exceptions.TimeoutError as exc:
-            LOG.error(f"TimeoutError: Unable to extract info. {str(exc)}")
+            LOG.error(f"TimeoutError: Unable to extract info. '{str(exc)}'.")
             return {
                 "status": "error",
                 "msg": f"TimeoutError: {self.config.extract_info_timeout}s reached Unable to extract info.",
@@ -366,7 +368,7 @@ class DownloadQueue:
                         os.remove(realFile)
                         fileDeleted = True
                     else:
-                        LOG.warning(f"File '{filename}' does not exist.")
+                        LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
                 except Exception as e:
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {str(e)}")
 
@@ -448,8 +450,9 @@ class DownloadQueue:
                 await asyncio.sleep(1)
 
     async def __downloadFile(self, id: str, entry: Download):
+        filePath = calcDownloadPath(basePath=self.config.download_path, folder=entry.info.folder)
         LOG.info(
-            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'Folder: {entry.info.folder}'."
+            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'Folder: {filePath}'."
         )
 
         try:

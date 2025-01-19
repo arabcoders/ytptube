@@ -1,12 +1,13 @@
 import asyncio
 import errno
 import functools
+import json
 import logging
 import os
 import pty
 import shlex
-from datetime import datetime
 import time
+from datetime import datetime
 
 import socketio
 from aiohttp import web
@@ -161,20 +162,25 @@ class HttpSocket(common):
             await self.emitter.warning("No URL provided.", to=sid)
             return
 
-        preset: str = str(data.get("preset", "default"))
-        folder: str = str(data.get("folder"))
-        ytdlp_cookies: str = str(data.get("ytdlp_cookies"))
-        ytdlp_config: dict | None = data.get("ytdlp_config")
-        output_template: str = data.get("output_template")
-        if ytdlp_config is None:
-            ytdlp_config = {}
+        preset: str = str(data.get("preset", self.config.default_preset))
+        folder: str = str(data.get("folder")) if data.get("folder") else ""
+        ytdlp_cookies: str = str(data.get("ytdlp_cookies")) if data.get("ytdlp_cookies") else ""
+        output_template: str = str(data.get("output_template")) if data.get("output_template") else ""
+
+        ytdlp_config = data.get("ytdlp_config")
+        if isinstance(ytdlp_config, str) and ytdlp_config:
+            try:
+                ytdlp_config = json.loads(ytdlp_config)
+            except Exception as e:
+                await self.emitter.warning(f"Failed to parse json yt-dlp config. {str(e)}", to=sid)
+                return
 
         status = await self.add(
             url=url,
             preset=preset,
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
-            ytdlp_config=ytdlp_config,
+            ytdlp_config=ytdlp_config if isinstance(ytdlp_config, dict) else {},
             output_template=output_template,
         )
 

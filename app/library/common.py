@@ -22,9 +22,6 @@ class common:
     async def add(
         self, url: str, preset: str, folder: str, ytdlp_cookies: str, ytdlp_config: dict, output_template: str
     ) -> dict[str, str]:
-        if ytdlp_config is None:
-            ytdlp_config = {}
-
         if ytdlp_cookies and isinstance(ytdlp_cookies, dict):
             ytdlp_cookies = self.encoder.encode(ytdlp_cookies)
 
@@ -33,7 +30,7 @@ class common:
             preset=preset if preset else "default",
             folder=folder,
             ytdlp_cookies=ytdlp_cookies,
-            ytdlp_config=ytdlp_config,
+            ytdlp_config=ytdlp_config if isinstance(ytdlp_config, dict) else {},
             output_template=output_template,
         )
 
