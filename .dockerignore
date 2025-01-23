@@ -1,3 +1,13 @@
-.git
-.venv
-cd 
+**/.idea
+**/.git
+**/.venv
+.github/
+.vscode/
+.devcontainer/
+ui/.nuxt
+ui/.output
+ui/node_modules
+ui/dist
+**/.env
+./var/*
+!./var/.gitignore
