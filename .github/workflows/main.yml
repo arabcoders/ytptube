@@ -45,7 +45,7 @@ on:
 env:
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
-  PLATFORMS: linux/amd64,linux/arm64
+  PLATFORMS: linux/amd64
 
 jobs:
   build-pr:
@@ -117,6 +117,15 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Set Platforms Based on Branch
+        id: set_platforms
+        run: |
+          if [ "${GITHUB_REF}" == "refs/heads/${{ github.repository.default_branch }}" ]; then
+            echo "PLATFORMS=linux/amd64,linux/arm64" >> $GITHUB_ENV
+          else
+            echo "PLATFORMS=linux/amd64" >> $GITHUB_ENV
+          fi
 
       - name: Docker meta
         id: meta
