@@ -182,7 +182,7 @@ jobs:
           args: /opt/docker-readme-sync/sync
 
   create_release:
-    needs: publish_docker_images
+    needs: push-build
     runs-on: ubuntu-latest
     if: (endsWith(github.ref, github.event.repository.default_branch) && success()) || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     steps:
