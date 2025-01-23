@@ -12,9 +12,26 @@ on:
           - info
           - warning
           - debug
+      build:
+        description: "Build"
+        required: false
+        default: false
+        type: boolean
+      update_readme:
+        description: "Update Readme"
+        required: false
+        default: false
+        type: boolean
+      create_release:
+        description: "Create Release (requires build)"
+        required: false
+        default: false
+        type: boolean
+
   push:
     branches:
-      - "*"
+      - dev
+      - master
     paths-ignore:
       - "**.md"
       - ".github/**"
@@ -28,7 +45,7 @@ on:
 env:
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
-  PLATFORMS: linux/amd64
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   build-pr:
@@ -37,6 +54,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install frontend dependencies
+        uses: bahmutov/npm-install@v1
+        with:
+          working-directory: ui
+          install-command: yarn --production --prefer-offline --frozen-lockfile
+
+      - name: Build frontend
+        uses: bahmutov/npm-install@v1
+        with:
+          working-directory: ui
+          install-command: yarn run generate
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -48,18 +77,32 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ env.PLATFORMS }}
+          platforms: linux/amd64
           push: false
+          cache-from: type=gha, scope=pr_${{ github.workflow }}
+          cache-to: type=gha, scope=pr_${{ github.workflow }}
 
   push-build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.build == 'true')
     permissions:
       packages: write
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install frontend dependencies
+        uses: bahmutov/npm-install@v1
+        with:
+          working-directory: ui
+          install-command: yarn --production --prefer-offline --frozen-lockfile
+
+      - name: Build frontend
+        uses: bahmutov/npm-install@v1
+        with:
+          working-directory: ui
+          install-command: yarn run generate
 
       - name: Update Version File
         uses: ArabCoders/write-version-to-file@master
@@ -123,9 +166,8 @@ jobs:
           regex: 'APP_VERSION\s=\s\"(.+)\"'
 
   dockerhub-sync-readme:
-    needs: push-build
-    if: endsWith(github.ref, github.event.repository.default_branch)
     runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && endsWith(github.ref, github.event.repository.default_branch)) || (github.event_name == 'workflow_dispatch' && github.event.inputs.update_readme == 'true')
     steps:
       - name: Sync README
         uses: docker://lsiodev/readme-sync:latest
@@ -140,57 +182,80 @@ jobs:
           args: /opt/docker-readme-sync/sync
 
   create_release:
-    needs: push-build
+    needs: publish_docker_images
     runs-on: ubuntu-latest
-    if: endsWith(github.ref, github.event.repository.default_branch) && success()
+    if: (endsWith(github.ref, github.event.repository.default_branch) && success()) || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
     steps:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # so we can do git log for the full history
+          fetch-depth: 0 # so we can see all tags + full history
 
-      - name: Get commits between old and new
-        id: commits
+      - name: Determine current branch
+        id: branch
         run: |
-          PREVIOUS_SHA="${{ github.event.before }}"
-          CURRENT_SHA="${{ github.event.after }}"
+          # github.ref_name should be "master", "main", or your branch name
+          echo "BRANCH_NAME=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
 
-          echo "Previous SHA: $PREVIOUS_SHA"
-          echo "Current  SHA: $CURRENT_SHA"
+      - name: Fetch the two latest tags for this branch
+        id: last_two_tags
+        run: |
+          git fetch --tags
 
-          # If "before" is empty or all zeros, log all commits
-          if [ -z "$PREVIOUS_SHA" ] || [ "$PREVIOUS_SHA" = "0000000000000000000000000000000000000000" ]; then
-            LOG=$(git log --pretty=format:"- %h %s by %an")
-          else
-            LOG=$(git log "$PREVIOUS_SHA".."$CURRENT_SHA" --pretty=format:"- %h %s by %an")
+          BRANCH_NAME="${{ steps.branch.outputs.BRANCH_NAME }}"
+          echo "Current branch: $BRANCH_NAME"
+
+          # List tags matching "branchname-*" and sort by *creation date* descending
+          # Then pick the top 2
+          LATEST_TAGS=$(git tag --list "${BRANCH_NAME}-*" --sort=-creatordate | head -n 2)
+          TAG_COUNT=$(echo "$LATEST_TAGS" | wc -l)
+
+          echo "Found tags:"
+          echo "$LATEST_TAGS"
+
+          if [ "$TAG_COUNT" -lt 2 ]; then
+            echo "Not enough tags found (need at least 2) to compare commits."
+            echo "NOT_ENOUGH_TAGS=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          # The first line is the newest tag
+          TAG_NEWEST=$(echo "$LATEST_TAGS" | sed -n '1p')
+          # The second line is the previous newest
+          TAG_PREVIOUS=$(echo "$LATEST_TAGS" | sed -n '2p')
+
+          echo "Newest tag:   $TAG_NEWEST"
+          echo "Previous tag: $TAG_PREVIOUS"
+
+          # Expose them as outputs for next step
+          echo "NOT_ENOUGH_TAGS=false" >> "$GITHUB_OUTPUT"
+          echo "TAG_NEWEST=$TAG_NEWEST" >> "$GITHUB_OUTPUT"
+          echo "TAG_PREVIOUS=$TAG_PREVIOUS" >> "$GITHUB_OUTPUT"
+
+      - name: Generate commit log for newest tag
+        id: commits
+        if: steps.last_two_tags.outputs.NOT_ENOUGH_TAGS != 'true'
+        run: |
+          TAG_NEWEST="${{ steps.last_two_tags.outputs.TAG_NEWEST }}"
+          TAG_PREVIOUS="${{ steps.last_two_tags.outputs.TAG_PREVIOUS }}"
+
+          echo "Comparing commits between: $TAG_PREVIOUS..$TAG_NEWEST"
+          LOG=$(git log "$TAG_PREVIOUS".."$TAG_NEWEST" --pretty=format:"- %h %s by %an")
 
           echo "LOG<<EOF" >> "$GITHUB_ENV"
           echo "$LOG" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
 
-      - name: Fetch the most recent tag
-        id: last_tag
-        run: |
-          # Make sure we have all tags
-          git fetch --tags
-
-          # Get the latest tag by commit date (most recent)
-          # If there are no tags at all, set a fallback
-          LAST_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --max-count=1) 2>/dev/null || echo "no-tags-found")
-
-          echo "Latest tag found: $LAST_TAG"
-          echo "LAST_TAG=$LAST_TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Create or update GitHub Release using last tag
+      - name: Create / Update GitHub Release for the newest tag
+        if: steps.last_two_tags.outputs.NOT_ENOUGH_TAGS != 'true'
         uses: softprops/action-gh-release@master
         with:
-          tag_name: ${{ steps.last_tag.outputs.LAST_TAG }}
-          name: "${{ steps.last_tag.outputs.LAST_TAG }}"
+          tag_name: ${{ steps.last_two_tags.outputs.TAG_NEWEST }}
+          name: "${{ steps.last_two_tags.outputs.TAG_NEWEST }}"
           body: ${{ env.LOG }}
+          append_body: true
+          generate_release_notes: true
+          make_latest: true
           draft: false
           prerelease: false
-          generate_release_notes: true
-          append_body: true
-          make_latest: true
           token: ${{ secrets.GITHUB_TOKEN }}

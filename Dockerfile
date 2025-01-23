@@ -2,7 +2,7 @@ FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
-RUN yarn install --production --prefer-offline --frozen-lockfile && yarn run generate
+RUN if [ ! -d /app/exported ]; then yarn install --production --prefer-offline --frozen-lockfile && yarn run generate; else echo "Skipping UI build, already built."; fi
 
 FROM python:3.11-alpine AS python_builder
 
