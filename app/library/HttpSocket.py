@@ -17,7 +17,7 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
-from .Utils import isDownloaded
+from .Utils import isDownloaded, arg_converter
 
 LOG = logging.getLogger("socket_api")
 
@@ -276,3 +276,24 @@ class HttpSocket(common):
     async def resume(self, sid: str, _=None):
         self.queue.resume()
         await self.emitter.emit("paused", {"paused": False, "at": time.time()})
+
+    @ws_event
+    async def ytdlp_convert(self, sid: str, data: dict):
+        if not isinstance(data, dict) or "args" not in data:
+            await self.emitter.warning("Invalid request or no options were given.", to=sid)
+            return
+
+        args: str | None = data.get("args")
+
+        if not args:
+            await self.emitter.warning("no options were given.", to=sid)
+            return
+
+        try:
+            await self.emitter.emit("ytdlp_convert", arg_converter(args), to=sid)
+            return
+        except Exception as e:
+            err = str(e).strip()
+            err = err.split("\n")[-1] if "\n" in err else err
+            LOG.error(f"Failed to convert args. '{err}'.")
+            await self.emitter.error(f"Failed to convert options. '{e}'.", to=sid)

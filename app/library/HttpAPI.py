@@ -24,7 +24,7 @@ from .M3u8 import M3u8
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import StreamingError, calcDownloadPath, getVideoInfo, validate_url
+from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -216,6 +216,24 @@ class HttpAPI(common):
     async def ping(self, _) -> Response:
         await self.queue.test()
         return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
+
+    @route("POST", "api/yt-dlp/convert")
+    async def yt_dlp_convert(self, request: Request) -> Response:
+        post = await request.json()
+        args: str | None = post.get("args")
+
+        if not args:
+            return web.json_response(data={"error": "args is required."}, status=web.HTTPBadRequest.status_code)
+
+        try:
+            return web.json_response(data=arg_converter(args), status=web.HTTPOk.status_code)
+        except Exception as e:
+            err = str(e).strip()
+            err = err.split("\n")[-1] if "\n" in err else err
+            LOG.error(f"Failed to convert args. '{err}'.")
+            return web.json_response(
+                data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
+            )
 
     @route("POST", "api/add")
     async def add_url(self, request: Request) -> Response:
@@ -635,6 +653,10 @@ class HttpAPI(common):
 
     @route("OPTIONS", "api/add")
     async def add_cors(self, _: Request) -> Response:
+        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
+
+    @route("OPTIONS", "api/yt-dlp/convert")
+    async def cors_ytdlp_convert(self, _: Request) -> Response:
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("OPTIONS", "api/delete")

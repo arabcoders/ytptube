@@ -5,6 +5,7 @@ import logging
 import os
 import pathlib
 import re
+import shlex
 import socket
 import uuid
 from datetime import datetime, timezone
@@ -109,7 +110,7 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> 
     return yt_dlp.YoutubeDL().extract_info(url, download=False)
 
 
-def calcDownloadPath(basePath: str, folder: str|None = None, createPath: bool = True) -> str:
+def calcDownloadPath(basePath: str, folder: str | None = None, createPath: bool = True) -> str:
     """Calculates download path and prevents folder traversal.
 
     Returns:
@@ -501,3 +502,36 @@ def validate_url(url: str) -> bool:
         raise ValueError("Access to internal urls or private networks is not allowed.")
 
     return True
+
+
+def arg_converter(args: str) -> dict:
+    """
+    Convert yt-dlp options to a dictionary.
+
+    Args:
+        opts (str): yt-dlp options string.
+
+    Returns:
+        dict: yt-dlp options dictionary.
+    """
+    import yt_dlp.options
+
+    create_parser = yt_dlp.options.create_parser
+
+    def defaultOpts(args: str):
+        patched_parser = create_parser()
+        try:
+            yt_dlp.options.create_parser = lambda: patched_parser
+            return yt_dlp.parse_options(args)
+        finally:
+            yt_dlp.options.create_parser = create_parser
+
+    default_opts = defaultOpts([]).ydl_opts
+
+    opts = yt_dlp.parse_options(shlex.split(args)).ydl_opts
+
+    diff = {k: v for k, v in opts.items() if default_opts[k] != v}
+    if "postprocessors" in diff:
+        diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
+
+    return json.loads(json.dumps(diff))

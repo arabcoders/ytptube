@@ -12,7 +12,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
 * Handle live streams.
-* Support per link, `yt-dlp config` and `cookies`. and `output format`.
+* Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 * Multi-downloads support.

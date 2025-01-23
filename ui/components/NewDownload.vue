@@ -76,11 +76,11 @@
             <div class="field">
               <label class="label is-inline" for="ytdlpConfig"
                 v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                JSON yt-dlp config
+                JSON yt-dlp config or CLI options.
               </label>
               <div class="control">
-                <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig"
-                  :disabled="!socket.isConnected"></textarea>
+                <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig" :disabled="!socket.isConnected"
+                  placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
               </div>
               <span class="subtitle is-6">
                 Some config fields are ignored like cookiefile, path, and output_format etc.
@@ -152,7 +152,35 @@ const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
 
-const addDownload = () => {
+const addDownload = async () => {
+  // -- send request to convert cli options to JSON
+  if (ytdlpConfig.value && ytdlpConfig.value.length > 2 && !ytdlpConfig.value.trim().startsWith('{')) {
+    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/yt-dlp/convert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ args: ytdlpConfig.value }),
+    });
+
+    const data = await response.json()
+    if (200 !== response.status) {
+      toast.error(`Error: (${response.status}): ${data.error}`)
+      return
+    }
+
+    ytdlpConfig.value = JSON.stringify(data, null, 2)
+  }
+
+  if (ytdlpConfig.value && ytdlpConfig.value.length > 2) {
+    try {
+      JSON.parse(ytdlpConfig.value)
+    } catch (e) {
+      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
+      return
+    }
+  }
+
   addInProgress.value = true
   url.value.split(',').forEach(url => {
     if (!url.trim()) {
