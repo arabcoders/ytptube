@@ -7,16 +7,16 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since then it went under heavy changes, and it supports many new features.
 
 # YTPTube Features.
+* Multi-downloads support.
+* Handle live streams.
+* Schedule Channels or Playlists to be downloaded automatically at a specific time.
+* Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
+* Queue multiple URLs separated by comma.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
 * New `/api/add_batch` endpoint that allow multiple links to be sent.
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
-* Handle live streams.
-* Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
-* Tasks Runner. It allow you to queue channels for downloading using simple `json` file.
 * Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
-* Multi-downloads support.
-* Queue multiple URLs separated by comma.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
@@ -237,42 +237,6 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
   ]
 }
 ``` 
-
-### tasks.json File
-
-The `config/tasks.json`, is a json file, which can be used to queue URLs for downloading, it's mainly useful if you follow specific channels and you want it downloaded automatically, The schema for the file is as the following, Only the `URL` key is required.
-
-```json5
-[
-  {
-    // (URL: string) **REQUIRED**, URL to the content.
-    "url": "", 
-    // (Name: string) Optional field. Mainly used for logging. If omitted, random GUID will be shown.
-    "name": "My super secret channel", 
-    // (Timer: string) Optional field. Using regular cronjob timer, if the field is omitted, it will run every hour in random minute.
-    "timer": "1 */1 * * *", 
-    // (yt-dlp cookies: object) Optional field. A JSON cookies exported by flagCookies.
-    "ytdlp_cookies": {}, 
-    // (yt-dlp config: object) Optional field. A JSON yt-dlp config.
-    "ytdlp_config": {},
-    // (Output Template: string) Optional field. A File output format,
-    "output_template": "",
-    // (Folder: string) Optional field. Where to store the downloads relative to the main download path.
-    "folder":"",
-    // (preset: string) Optional field. The default preset to use for the download. if omitted, it will use the default preset.
-    "preset": ""
-  },
-  {
-   // (URL: string) **REQUIRED**, URL to the content.
-   "url": "https://..." // This is valid config, it will queue the channel for downloading every hour at random minute.
-  },
-  ...
-]
-```
-
-The task runner is doing what you are doing when you click the add button on the WebGUI, this just fancy way to automate that.
-
-**WARNING**: We strongly advice turning on `YTP_KEEP_ARCHIVE` option. Otherwise, you will keep re-downloading the items, and you will eventually get banned from the source or or you will waste space, bandwidth re-downloading content over and over.
 
 ### webhooks.json File
 

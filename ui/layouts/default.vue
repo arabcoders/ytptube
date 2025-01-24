@@ -42,7 +42,7 @@
           </button>
         </div>
 
-        <div class="navbar-item" v-if="!config.app.basic_mode && config.tasks.length > 0" v-tooltip.bottom="'Tasks'">
+        <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Tasks'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
           </NuxtLink>

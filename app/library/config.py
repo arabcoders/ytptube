@@ -18,72 +18,137 @@ from .version import APP_VERSION
 
 class Config:
     config_path: str = "."
+    """The path to the configuration directory."""
+
     download_path: str = "."
+    """The path to the download directory."""
+
     temp_path: str = "/tmp"
+    """The path to the temporary directory."""
+
     temp_keep: bool = False
+    """Keep temporary files after the download is complete."""
 
     url_host: str = ""
+    """The host to bind the server to."""
     url_prefix: str = ""
+    """The prefix to use for the server URL."""
     url_socketio: str = "{url_prefix}socket.io"
+    """The URL to use for the socket.io server."""
 
     output_template: str = "%(title)s.%(ext)s"
+    """The output template to use for the downloaded files."""
+
     output_template_chapter: str = "%(title)s - %(section_number)s %(section_title)s.%(ext)s"
+    """The output template to use for the downloaded files with chapters."""
 
     keep_archive: bool = True
+    """Keep the download archive file."""
 
     ytdl_debug: bool = False
+    """Enable yt-dlp debugging."""
+
     allow_manifestless: bool = False
+    """Allow downloading videos without manifest."""
 
     host: str = "0.0.0.0"
+    """The host to bind the server to."""
+
     port: int = 8081
+    """The port to bind the server to."""
 
     log_level: str = "info"
+    """The log level to use for the application."""
+
     max_workers: int = 1
+    """The maximum number of workers to use for downloading."""
 
     streamer_vcodec: str = "libx264"
+    """The video codec to use for streaming."""
     streamer_acodec: str = "aac"
+    """The audio codec to use for streaming."""
 
     auth_username: str | None = None
+    """The username to use for basic authentication."""
+
     auth_password: str | None = None
+    """The password to use for basic authentication."""
 
     remove_files: bool = False
+    """Remove downloaded files when removing the record."""
 
     access_log: bool = True
+    """Enable access logging."""
 
     debug: bool = False
+    """Enable debugging."""
+
     debugpy_port: int = 5678
+    """The port to use for the debugpy server."""
 
     socket_timeout: int = 30
+    """The socket timeout to use for yt-dlp."""
+
     extract_info_timeout: int = 70
+    """The timeout to use for extracting video information."""
 
     db_file: str = "{config_path}/ytptube.db"
+    """The path to the database file."""
+
     manual_archive: str = "{config_path}/archive.manual.log"
+    """The path to the manual archive file."""
+
     ui_update_title: bool = True
+    """Update the title of the browser tab with the current status."""
+
     pip_packages: str = ""
+    """The pip packages to install."""
+
     pip_ignore_updates: bool = False
+    """Ignore pip package updates."""
 
     # immutable config vars.
     version: str = APP_VERSION
+    "The version of the application."
+
     __instance = None
+    "The instance of the class."
+
     ytdl_options: dict = {}
+    "The options to use for yt-dlp."
+
     tasks: list = []
+    "The tasks to run."
+
     new_version_available: bool = False
+    "A new version of the application is available."
+
     ytdlp_version: str = YTDLP_VERSION
+    "The version of yt-dlp."
+
     started: int = 0
+    "The time the application was started."
+
     ignore_ui: bool = False
+    "Ignore the UI and run the application in the background."
+
     basic_mode: bool = False
+    "Run the frontend in basic mode."
 
     presets: list = [
         {"name": "default", "format": "default"},
     ]
+    "The presets to use for downloading."
 
     default_preset: str = "default"
+    "The default preset to use when no preset is specified."
 
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
         "download_path",
     )
+    "The variables that are set manually."
 
     _immutable: tuple = (
         "version",
@@ -95,6 +160,7 @@ class Config:
         "started",
         "presets",
     )
+    "The variables that are immutable."
 
     _int_vars: tuple = (
         "port",
@@ -103,6 +169,8 @@ class Config:
         "extract_info_timeout",
         "debugpy_port",
     )
+    "The variables that are integers."
+
     _boolean_vars: tuple = (
         "keep_archive",
         "ytdl_debug",
@@ -116,6 +184,7 @@ class Config:
         "pip_ignore_updates",
         "basic_mode",
     )
+    "The variables that are booleans."
 
     _frontend_vars: tuple = (
         "download_path",
@@ -132,8 +201,10 @@ class Config:
         "basic_mode",
         "default_preset",
     )
+    "The variables that are relevant to the frontend."
 
     _manager: SyncManager | None = None
+    "The manager instance."
 
     @staticmethod
     def get_instance():

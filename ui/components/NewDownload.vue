@@ -66,9 +66,9 @@
                 <input type="text" class="input" v-model="output_template" id="output_format"
                   placeholder="Uses default output template naming if empty.">
               </div>
-              <span class="subtitle is-6">
-                All output template naming options can be found at <NuxtLink target="_blank" class="has-text-danger"
-                  href="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
+              <span class="help">
+                All output template naming options can be found at <NuxtLink target="_blank"
+                  to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
               </span>
             </div>
           </div>
@@ -82,10 +82,10 @@
                 <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig" :disabled="!socket.isConnected"
                   placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
               </div>
-              <span class="subtitle is-6">
+              <span class="help">
                 Some config fields are ignored like cookiefile, path, and output_format etc.
-                Available option can be found at <NuxtLink class="has-text-danger" target="_blank"
-                  href="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
+                Available option can be found at <NuxtLink target="_blank"
+                  to="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
                   this page</NuxtLink>. Warning: Use with caution some of those options can break yt-dlp or the
                 frontend.
               </span>
@@ -100,9 +100,9 @@
                 <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
                   :disabled="!socket.isConnected"></textarea>
               </div>
-              <span class="subtitle is-6">
-                Use something like <NuxtLink target="_blank" class="has-text-danger"
-                  href="https://github.com/jrie/flagCookies">flagCookies</NuxtLink> to extract cookies as JSON string.
+              <span class="help">
+                Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
+                  flagCookies</NuxtLink> to extract cookies as JSON string.
               </span>
             </div>
           </div>
