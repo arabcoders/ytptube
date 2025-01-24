@@ -4,9 +4,11 @@ import hmac
 import json
 import logging
 import os
+import random
 import time
 from datetime import datetime
 from pathlib import Path
+import uuid
 
 import httpx
 import magic
@@ -40,7 +42,7 @@ class HttpAPI(common):
         ".ico": "image/x-icon",
     }
 
-    def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder):
+    def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder, load_tasks: callable):
         super().__init__(queue=queue, encoder=encoder)
 
         self.rootPath = str(Path(__file__).parent.parent.parent)
@@ -52,6 +54,7 @@ class HttpAPI(common):
         self.emitter = emitter
         self.queue = queue
         self.cache = Cache()
+        self.load_tasks = load_tasks
 
     def route(method: str, path: str):
         """
@@ -275,15 +278,68 @@ class HttpAPI(common):
     async def tasks(self, _: Request) -> Response:
         tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
 
-        if not os.path.exists(tasks_file):
-            return web.json_response({"error": "No tasks defined."}, status=web.HTTPNotFound.status_code)
+        if os.path.exists(tasks_file):
+            try:
+                with open(tasks_file, "r") as f:
+                    tasks = json.load(f)
+            except Exception as e:
+                LOG.exception(e)
+                return web.json_response(
+                    {"error": "Failed to load tasks."}, status=web.HTTPInternalServerError.status_code
+                )
+        else:
+            tasks = []
+
+        return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("PUT", "api/tasks")
+    async def add_tasks(self, request: Request) -> Response:
+        tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
+
+        post = await request.json()
+        if not isinstance(post, list):
+            return web.json_response(
+                {"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        tasks: list = []
+
+        for item in post:
+            if not isinstance(item, dict):
+                return web.json_response(
+                    {"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            if not item.get("url"):
+                return web.json_response(
+                    {"error": "url is required.", "data": post}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("id", None):
+                item["id"] = str(uuid.uuid4())
+
+            if not item.get("timer", None):
+                item["timer"] = f"{random.randint(1,59)} */1 * * *"
+
+            tasks.append(item)
 
         try:
-            with open(tasks_file, "r") as f:
-                tasks = json.load(f)
+            with open(tasks_file, "w") as f:
+                json.dump(tasks, f, indent=4)
         except Exception as e:
             LOG.exception(e)
-            return web.json_response({"error": "Failed to load tasks."}, status=web.HTTPInternalServerError.status_code)
+            return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
+
+        try:
+            self.load_tasks()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response(
+                {"error": "Failed to reload tasks.", "message": str(e)},
+                status=web.HTTPInternalServerError.status_code,
+            )
 
         return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
@@ -653,6 +709,10 @@ class HttpAPI(common):
 
     @route("OPTIONS", "api/add")
     async def add_cors(self, _: Request) -> Response:
+        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
+
+    @route("OPTIONS", "api/tasks")
+    async def cors_add_tasks(self, _: Request) -> Response:
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("OPTIONS", "api/yt-dlp/convert")

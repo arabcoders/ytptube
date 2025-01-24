@@ -9,9 +9,9 @@ class Emitter:
     This class is used to emit events to the registered emitters.
     """
 
-    emitters: list[callable] = [] # type: ignore
+    emitters: list[callable] = []  # type: ignore
 
-    def add_emitter(self, emitter: callable): # type: ignore
+    def add_emitter(self, emitter: callable):  # type: ignore
         """
         Add an emitter to the list of emitters.
 
@@ -43,6 +43,18 @@ class Emitter:
 
     async def warning(self, message: str, **kwargs):
         await self.emit("error", message, **kwargs)
+
+    async def info(self, message: str, data: dict = {}, **kwargs):
+        msg = {"type": "info", "message": message, "data": {}}
+        if data:
+            msg.update({"data": data})
+        await self.emit("log_info", msg, **kwargs)
+
+    async def success(self, message: str, data: dict = {}, **kwargs):
+        msg = {"type": "success", "message": message, "data": {}}
+        if data:
+            msg.update({"data": data})
+        await self.emit("log_success", msg, **kwargs)
 
     async def emit(self, event: str, data, **kwargs):
         tasks = []
