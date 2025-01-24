@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 import time
 from typing import TypedDict
+import uuid
 
 import caribou
 import magic
@@ -180,9 +181,10 @@ class Main:
         self.cron.clear()
 
         if not tasks or len(tasks) < 1:
-            LOG.warning(f"No tasks found in '{tasksFile}'.")
+            LOG.info(f"No tasks found in '{tasksFile}'.")
             return
 
+        modified = False
         loop = asyncio.get_event_loop()
         for task in tasks:
             if not task.get("url"):
@@ -190,12 +192,19 @@ class Main:
                 continue
 
             try:
-                cron_timer: str = task.get("timer", f"{random.randint(1,59)} */1 * * *")
+                if not task.get("timer", None):
+                    task["timer"] = f"{random.randint(1,59)} */1 * * *"
+                    modified = True
+
+                if not task.get("id", None):
+                    task["id"] = str(uuid.uuid4())
+                    modified = True
+
                 self.cron.append(
                     job_item(
                         name=task.get("name", "??"),
                         job=crontab(
-                            spec=cron_timer,
+                            spec=task.get("timer"),
                             func=self.cron_runner,
                             args=(task,),
                             start=True,
@@ -204,9 +213,17 @@ class Main:
                     )
                 )
 
-                LOG.info(f"Queued 'Task: {task.get('name','??')}' to be executed every '{cron_timer}'.")
+                LOG.info(f"Queued 'Task: {task.get('name','??')}' to be executed every '{task.get('timer')}'.")
             except Exception as e:
                 LOG.error(f"Failed to add 'Task: {task.get('name', '??')}'. Error message '{str(e)}'.")
+                LOG.exception(e)
+
+        if modified:
+            try:
+                with open(tasksFile, "w") as f:
+                    f.write(json.dumps(tasks, indent=4))
+            except Exception as e:
+                LOG.error(f"Failed to save tasks file '{tasksFile}'. Error message '{str(e)}'.")
                 LOG.exception(e)
 
         self.config.tasks = tasks
