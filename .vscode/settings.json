@@ -33,4 +33,7 @@
     "writedescription",
     "xerror"
   ],
+  "css.styleSheets": [
+    "ui/assets/css/*.css"
+  ],
 }
