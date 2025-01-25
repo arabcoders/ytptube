@@ -1,133 +1,135 @@
 <template>
   <main class="columns mt-2">
     <div class="column">
-      <div class="box">
-        <div class="columns is-multiline is-mobile">
-          <div class="column is-12">
-            <div class="control has-icons-left">
-              <input type="url" class="input" id="url" placeholder="Video or playlist link"
-                :disabled="!socket.isConnected || addInProgress" v-model="url">
-              <span class="icon is-small is-left">
-                <i class="fa-solid fa-link" />
-              </span>
+      <form @submit.prevent="addDownload">
+        <div class="box">
+          <div class="columns is-multiline is-mobile">
+            <div class="column is-12">
+              <div class="control has-icons-left">
+                <input type="text" class="input" id="url" placeholder="Video or playlist link"
+                  :disabled="!socket.isConnected || addInProgress" v-model="url">
+                <span class="icon is-small is-left">
+                  <i class="fa-solid fa-link" />
+                </span>
+              </div>
+            </div>
+            <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
+              <div class="field has-addons">
+                <div class="control">
+                  <a href="#" class="button is-static">Preset</a>
+                </div>
+                <div class="control is-expanded">
+                  <div class="select is-fullwidth">
+                    <select id="preset" class="is-fullwidth" :disabled="!socket.isConnected" v-model="selectedPreset">
+                      <option v-for="item in config.presets" :key="item.name" :value="item.name">
+                        {{ item.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
+              <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
+                <div class="control">
+                  <a href="#" class="button is-static">Save in</a>
+                </div>
+                <div class="control is-expanded">
+                  <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
+                    :disabled="!socket.isConnected" list="folders">
+                </div>
+              </div>
+            </div>
+            <div class="column">
+              <button type="submit" class="button is-primary"
+                :class="{ 'is-loading': !socket.isConnected || addInProgress }"
+                :disabled="!socket.isConnected || addInProgress || !url">
+                <span class="icon"><i class="fa-solid fa-plus" /></span>
+                <span>Add</span>
+              </button>
+            </div>
+            <div class="column" v-if="!config.app.basic_mode">
+              <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
+                :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
+                <span class="icon"><i class="fa-solid fa-cog" /></span>
+                <span>Opts</span>
+              </button>
             </div>
           </div>
-          <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
-            <div class="field has-addons">
-              <div class="control">
-                <a href="#" class="button is-static">Preset</a>
+          <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
+            <div class="column is-12">
+              <div class="field">
+                <label class="label is-inline" for="output_format"
+                  v-tooltip="'Default Format: ' + config.app.output_template">
+                  Output Template
+                </label>
+                <div class="control">
+                  <input type="text" class="input" v-model="output_template" id="output_format"
+                    placeholder="Uses default output template naming if empty.">
+                </div>
+                <span class="help">
+                  All output template naming options can be found at <NuxtLink target="_blank"
+                    to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
+                </span>
               </div>
-              <div class="control is-expanded">
-                <div class="select is-fullwidth">
-                  <select id="preset" class="is-fullwidth" :disabled="!socket.isConnected" v-model="selectedPreset">
-                    <option v-for="item in config.presets" :key="item.name" :value="item.name">
-                      {{ item.name }}
-                    </option>
-                  </select>
+            </div>
+            <div class="column is-6-tablet is-12-mobile">
+              <div class="field">
+                <label class="label is-inline" for="ytdlpConfig"
+                  v-tooltip="'Extends current global yt-dlp config. (JSON)'">
+                  JSON yt-dlp config or CLI options.
+                </label>
+                <div class="control">
+                  <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig" :disabled="!socket.isConnected"
+                    placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
+                </div>
+                <span class="help">
+                  Some config fields are ignored like cookiefile, path, and output_format etc.
+                  Available option can be found at <NuxtLink target="_blank"
+                    to="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
+                    this page</NuxtLink>. Warning: Use with caution some of those options can break yt-dlp or the
+                  frontend.
+                </span>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-12-mobile">
+              <div class="field">
+                <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
+                  yt-dlp Cookies
+                </label>
+                <div class="control">
+                  <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
+                    :disabled="!socket.isConnected"></textarea>
+                </div>
+                <span class="help">
+                  Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
+                    flagCookies</NuxtLink> to extract cookies as JSON string.
+                </span>
+              </div>
+            </div>
+            <div class="column is-6-tablet is-4-mobile has-text-left">
+              <button type="button" class="button is-info" @click="emitter('getInfo', url)"
+                :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected || addInProgress || !url">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span>Information</span>
+              </button>
+            </div>
+            <div class="column is-6-tablet is-6-mobile has-text-right">
+              <div class="field">
+                <div class="control">
+                  <button type="button" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
+                    v-tooltip="'This configuration are stored locally in your browser.'">
+                    <span class="icon">
+                      <i class="fa-solid fa-trash" />
+                    </span>
+                    <span>Reset Local Configuration</span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-          <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
-            <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
-              <div class="control">
-                <a href="#" class="button is-static">Save in</a>
-              </div>
-              <div class="control is-expanded">
-                <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
-                  :disabled="!socket.isConnected" list="folders">
-              </div>
-            </div>
-          </div>
-          <div class="column">
-            <button type="submit" class="button is-primary" @click="addDownload"
-              :class="{ 'is-loading': !socket.isConnected || addInProgress }"
-              :disabled="!socket.isConnected || addInProgress || !url">
-              <span class="icon"><i class="fa-solid fa-plus" /></span>
-              <span>Add</span>
-            </button>
-          </div>
-          <div class="column" v-if="!config.app.basic_mode">
-            <button type="submit" class="button is-info" @click="showAdvanced = !showAdvanced"
-              :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
-              <span class="icon"><i class="fa-solid fa-cog" /></span>
-              <span>Opts</span>
-            </button>
-          </div>
         </div>
-        <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-          <div class="column is-12">
-            <div class="field">
-              <label class="label is-inline" for="output_format"
-                v-tooltip="'Default Format: ' + config.app.output_template">
-                Output Template
-              </label>
-              <div class="control">
-                <input type="text" class="input" v-model="output_template" id="output_format"
-                  placeholder="Uses default output template naming if empty.">
-              </div>
-              <span class="help">
-                All output template naming options can be found at <NuxtLink target="_blank"
-                  to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
-              </span>
-            </div>
-          </div>
-          <div class="column is-6-tablet is-12-mobile">
-            <div class="field">
-              <label class="label is-inline" for="ytdlpConfig"
-                v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                JSON yt-dlp config or CLI options.
-              </label>
-              <div class="control">
-                <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig" :disabled="!socket.isConnected"
-                  placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
-              </div>
-              <span class="help">
-                Some config fields are ignored like cookiefile, path, and output_format etc.
-                Available option can be found at <NuxtLink target="_blank"
-                  to="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
-                  this page</NuxtLink>. Warning: Use with caution some of those options can break yt-dlp or the
-                frontend.
-              </span>
-            </div>
-          </div>
-          <div class="column is-6-tablet is-12-mobile">
-            <div class="field">
-              <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
-                yt-dlp Cookies
-              </label>
-              <div class="control">
-                <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
-                  :disabled="!socket.isConnected"></textarea>
-              </div>
-              <span class="help">
-                Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
-                  flagCookies</NuxtLink> to extract cookies as JSON string.
-              </span>
-            </div>
-          </div>
-          <div class="column is-6-tablet is-4-mobile has-text-left">
-            <button type="submit" class="button is-info" @click="emitter('getInfo', url)"
-              :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected || addInProgress || !url">
-              <span class="icon"><i class="fa-solid fa-info" /></span>
-              <span>Information</span>
-            </button>
-          </div>
-          <div class="column is-6-tablet is-6-mobile has-text-right">
-            <div class="field">
-              <div class="control">
-                <button type="submit" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
-                  v-tooltip="'This configuration are stored locally in your browser.'">
-                  <span class="icon">
-                    <i class="fa-solid fa-trash" />
-                  </span>
-                  <span>Reset Local Configuration</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </form>
     </div>
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
