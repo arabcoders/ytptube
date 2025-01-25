@@ -99,14 +99,11 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img
-                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
-                  v-if="item.extras?.thumbnail" />
+                <img :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
-                <img v-if="item.extras?.thumbnail"
-                  :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                <img v-if="item.extras?.thumbnail" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -276,7 +273,7 @@ const playVideo = item => {
   video_link.value = makeDownload(config, item, 'm3u8')
   video_title.value = item.title
   if (item.extras?.thumbnail) {
-    video_thumbnail.value = config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)
+    video_thumbnail.value = '/api/thumbnail?url=' + encodePath(item.extras.thumbnail)
   }
   if (item.extras?.channel) {
     video_artist.value = item.extras.channel

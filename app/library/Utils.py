@@ -535,3 +535,20 @@ def arg_converter(args: str) -> dict:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 
     return json.loads(json.dumps(diff))
+
+
+def validateUUID(uuid_str: str, version: int = 4) -> bool:
+    """
+    Validate if the UUID is valid.
+
+    Args:
+        uuid_str (str): UUID to validate.
+
+    Returns:
+        bool: True if the UUID is valid.
+    """
+    try:
+        uuid.UUID(uuid_str, version=version)
+        return True
+    except ValueError:
+        return False

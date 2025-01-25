@@ -4,14 +4,13 @@
       <div class="navbar-brand pl-5">
         <NuxtLink class="navbar-item  has-tooltip-bottom" to="/"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
-          <span class="icon-text">
-            <span class="icon"><i class="fas fa-home"></i></span>
+          <span>
+            <span class="icon"> <i class="fas fa-home" /></span>
             <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'"><b>YTPTube</b></span>
           </span>
         </NuxtLink>
       </div>
-      <div class="navbar-end is-flex">
-
+      <div class="navbar-end is-flex" style="flex-flow:wrap">
         <div class="navbar-item" v-if="socket.isConnected && config.app.has_cookies && !config.app.basic_mode">
           <button class="button is-dark" @click="checkCookies" v-tooltip="'Check youtube cookies status.'"
             :disabled="isChecking">
@@ -48,6 +47,12 @@
           </NuxtLink>
         </div>
 
+        <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Notifications'">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/notifications">
+            <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
+          </NuxtLink>
+        </div>
+
         <div class="navbar-item">
           <button class="button is-dark" @click="selectedTheme = 'light'" v-if="'dark' === selectedTheme"
             v-tooltip="'Switch to light theme'">
@@ -59,7 +64,7 @@
           </button>
         </div>
 
-        <div class="navbar-item">
+        <div class="navbar-item is-hidden-mobile">
           <button class="button is-dark" @click="reloadPage">
             <span class="icon"><i class="fas fa-refresh"></i></span>
           </button>
@@ -98,6 +103,7 @@ import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from "moment";
+import { request } from '~/utils/index'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
@@ -159,7 +165,7 @@ const checkCookies = async () => {
 
   try {
     isChecking.value = true
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/youtube/auth')
+    const response = await request('/api/youtube/auth')
     const data = await response.json()
     if (response.ok) {
       toast.success('Succuss. ' + data.message)

@@ -23,7 +23,7 @@ from library.Emitter import Emitter
 from library.encoder import Encoder
 from library.HttpAPI import HttpAPI, LOG as http_logger
 from library.HttpSocket import HttpSocket
-from library.Webhooks import Webhooks
+from library.Notifications import Notification
 from library.PackageInstaller import PackageInstaller
 
 LOG = logging.getLogger("app")
@@ -69,10 +69,8 @@ class Main:
 
         self.http = HttpAPI(queue=queue, emitter=self.emitter, encoder=self.encoder, load_tasks=self.load_tasks)
         self.socket = HttpSocket(queue=queue, emitter=self.emitter, encoder=self.encoder)
+        self.emitter.add_emitter(Notification().emit)
 
-        WebhookFile = os.path.join(self.config.config_path, "webhooks.json")
-        if os.path.exists(WebhookFile):
-            self.emitter.add_emitter(Webhooks(WebhookFile).emit)
 
     def checkFolders(self) -> None:
         try:

@@ -229,7 +229,7 @@ const encodePath = item => {
  * And prefix the URL with the API URL and path.
  *
  * @param {string} url - The URL to request
- * @param {object} options - The request options
+ * @param {RequestInit} options - The request options
  *
  * @returns {Promise<Response>} - The response from the API
  */
@@ -254,7 +254,11 @@ const request = (url, options = {}) => {
     options.headers['Accept'] = 'application/json'
   }
 
-  return fetch(url.startsWith('/') ? runtimeConfig.public.domain + url : url, options)
+  if (url.startsWith('/')) {
+    options.credentials = 'same-origin'
+  }
+
+  return fetch(url.startsWith('/') ? eTrim(runtimeConfig.public.domain, '/') + '/' + sTrim(url, '/') : url, options)
 }
 
 /**
@@ -353,7 +357,7 @@ const makeDownload = (config, item, base = 'api/download') => {
     baseDir += item.folder + '/';
   }
 
-  let url = config.app.url_host + encodePath(config.app.url_prefix + baseDir + item.filename);
+  let url = `/${sTrim(baseDir, '/')}${encodePath(item.filename)}`;
   return ('m3u8' === base) ? url + '.m3u8' : url;
 }
 

@@ -29,20 +29,17 @@ class Emitter:
     async def completed(self, dl: dict, **kwargs):
         await self.emit("completed", dl, **kwargs)
 
-    async def canceled(self, id: str, dl: dict | None = None, **kwargs):
-        await self.emit("canceled", id, **kwargs)
+    async def canceled(self, dl: dict, **kwargs):
+        await self.emit("canceled", dl, **kwargs)
 
-    async def cleared(self, id: str, dl: dict | None = None, **kwargs):
-        await self.emit("cleared", id, **kwargs)
+    async def cleared(self, dl: dict | None = None, **kwargs):
+        await self.emit("cleared", dl, **kwargs)
 
     async def error(self, message: str, data: dict = {}, **kwargs):
-        msg = {"status": "error", "message": message, "data": {}}
+        msg = {"type": "error", "message": message, "data": {}}
         if data:
             msg.update({"data": data})
         await self.emit("error", msg, **kwargs)
-
-    async def warning(self, message: str, **kwargs):
-        await self.emit("error", message, **kwargs)
 
     async def info(self, message: str, data: dict = {}, **kwargs):
         msg = {"type": "info", "message": message, "data": {}}

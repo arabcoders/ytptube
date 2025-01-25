@@ -18,20 +18,27 @@ div.is-centered {
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-tasks" /></span>
-            <span>Tasks</span>
+            <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
+            <span>Notifications</span>
           </span>
         </span>
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control">
-              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm">
+              <button class="button is-primary" @click="resetForm(false); toggleForm = true"
+                v-tooltip="'Add new notification target.'">
                 <span class="icon"><i class="fas fa-add"></i></span>
               </button>
             </p>
-            <p class="control">
+            <p class="control" v-if="notifications.length > 0">
+              <button class="button is-warning" @click="sendTest" v-tooltip="'Send test notification.'"
+                :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading">
+                <span class="icon"><i class="fas fa-paper-plane"></i></span>
+              </button>
+            </p>
+            <p class="control" v-if="notifications.length > 0">
               <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
-                :disabled="!socket.isConnected || isLoading">
+                :disabled="!socket.isConnected || isLoading || notifications.length < 1">
                 <span class="icon"><i class="fas fa-refresh"></i></span>
               </button>
             </p>
@@ -39,27 +46,28 @@ div.is-centered {
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            The task runner is simply queuing given urls at the specified time. It's basically doing what you are doing
-            when you click the add button on the WebGUI, this just fancy way to automate that.
+            Send notifications to your servers based on specified events.
           </span>
         </div>
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <TaskForm :reference="taskRef" :task="task" @cancel="resetForm(true);" @submit="updateItem" />
+        <NotificationForm :reference="targetRef" :item="target" @cancel="resetForm(true);" @submit="updateItem"
+          :allowedEvents="allowedEvents" />
       </div>
 
       <div class="column is-12" v-if="!toggleForm">
-        <div class="columns is-multiline" v-if="tasks && tasks.length > 0">
-          <div class="column is-6" v-for="item in tasks" :key="item.id">
+        <div class="columns is-multiline" v-if="notifications && notifications.length > 0">
+          <div class="column is-6" v-for="item in notifications" :key="item.id">
             <div class="card">
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block">
-                  <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
+                  {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
+                  <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
                   <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'"
-                    @click.prevent="copyText(item.url)">
+                    @click.prevent="copyText(item.request.url)">
                     <span class="icon"><i class="fa-solid fa-copy" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
@@ -71,22 +79,12 @@ div.is-centered {
               <div class="card-content">
                 <div class="content">
                   <p>
-                    <span class="icon"><i class="fa-solid fa-clock" /></span>
-                    <span>
-                      {{ moment(parseExpression(item.timer).next().toISOString()).fromNow() }} - {{ item.timer }}
-                    </span>
+                    <span class="icon"><i class="fa-solid fa-list-ul" /></span>
+                    <span>On: {{ join_events(item.on) }}</span>
                   </p>
-                  <p>
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    <span>{{ calcPath(item.folder) }}</span>
-                  </p>
-                  <p>
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.output_template ?? config.app.output_template }}</span>
-                  </p>
-                  <p>
-                    <span class="icon"><i class="fa-solid fa-tv" /></span>
-                    <span>{{ item.preset ?? config.app.default_preset }}</span>
+                  <p v-if="item.request?.headers && item.request.headers.length > 0">
+                    <span class="icon"><i class="fa-solid fa-heading" /></span>
+                    <span>{{ item.request.headers.map(h => h.key).join(', ') }}</span>
                   </p>
                 </div>
               </div>
@@ -112,25 +110,26 @@ div.is-centered {
             </div>
           </div>
         </div>
-        <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
-          icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
+        <Message title="No Endpoints" class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle"
+          v-if="!notifications || notifications.length < 1">
+          There are no notifications endpoints configured to receive web notifications.
+        </Message>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import moment from 'moment'
-import { parseExpression } from 'cron-parser'
 import { request } from '~/utils/index'
 
 const toast = useToast()
 const config = useConfigStore()
 const socket = useSocketStore()
 
-const tasks = ref([])
-const task = ref({})
-const taskRef = ref('')
+const allowedEvents = ref([])
+const notifications = ref([])
+const target = ref({})
+const targetRef = ref('')
 const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
@@ -152,97 +151,109 @@ watch(() => socket.isConnected, async () => {
 const reloadContent = async (fromMounted = false) => {
   try {
     isLoading.value = true
-    const response = await request('/api/tasks')
+    const response = await request('/api/notifications')
 
     if (fromMounted && !response.ok) {
       return
     }
+
+    notifications.value = []
 
     const data = await response.json()
     if (data.length < 1) {
       return
     }
 
-    tasks.value = data
+    allowedEvents.value = data.allowedTypes
+    notifications.value = data.notifications
   } catch (e) {
     if (fromMounted) {
       return
     }
     console.error(e)
-    toast.error('Failed to fetch tasks.')
+    toast.error('Failed to fetch notifications.')
   } finally {
     isLoading.value = false
   }
 }
 
 const resetForm = (closeForm = false) => {
-  task.value = {}
-  taskRef.value = null
+  target.value = {
+    name: '',
+    on: [],
+    request: {
+      method: 'POST',
+      url: '',
+      type: 'json',
+      headers: [],
+    },
+  }
+  targetRef.value = null
   if (closeForm) {
     toggleForm.value = false
   }
 }
 
-const updateTasks = async tasks => {
-  const response = await request('/api/tasks', {
+const updateData = async notifications => {
+  const response = await request('/api/notifications', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(tasks),
+    body: JSON.stringify(notifications),
   })
 
   const data = await response.json()
 
   if (200 !== response.status) {
-    toast.error(`Failed to update task. ${data.error}`);
+    toast.error(`Failed to update notifications. ${data.error}`);
     return false
   }
 
-  tasks.value = data
+  notifications.value = data.notifications
   return true
 }
 
 const deleteItem = async item => {
-  if (true !== confirm(`Are you sure you want to delete (${item.name})?`)) {
+  if (true !== confirm(`Are you sure you want to delete notification target (${item.name})?`)) {
     return
   }
 
-  const index = tasks.value.findIndex((t) => t?.id === item.id)
+  const index = notifications.value.findIndex(i => i?.id === item.id)
   if (index > -1) {
-    tasks.value.splice(index, 1)
+    notifications.value.splice(index, 1)
   } else {
-    toast.error('Task not found')
+    toast.error('Notification target not found.')
+    await reloadContent()
     return
   }
 
-  const status = await updateTasks(tasks.value)
+  const status = await updateData(notifications.value)
 
   if (!status) {
     return
   }
 
-  toast.success('Task deleted.')
+  toast.success('Notification target deleted.')
 }
 
-const updateItem = async ({ reference, task }) => {
+const updateItem = async ({ reference, item }) => {
   if (reference) {
-    // -- find the task index.
-    const index = tasks.value.findIndex((t) => t?.id === reference)
+    const index = notifications.value.findIndex(i => i?.id === reference)
     if (index > -1) {
-      tasks.value[index] = task
+      notifications.value[index] = item
     }
   } else {
-    tasks.value.push(task)
+    notifications.value.push(item)
   }
 
-  const status = await updateTasks(tasks.value)
+  const status = await updateData(notifications.value)
 
   if (!status) {
     return
   }
 
-  toast.success('Task updated')
+  toast.success(`Notification target ${reference ? 'updated' : 'added'}.`)
   resetForm(true)
 }
 
@@ -253,18 +264,37 @@ const filterItem = item => {
 }
 
 const editItem = item => {
-  task.value = item
-  taskRef.value = item.id
+  target.value = item
+  targetRef.value = item.id
   toggleForm.value = true
 }
 
-const calcPath = path => {
-  if (!path) {
-    return config.app.download_path
+const join_events = events => (!events || events.length < 1) ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
+
+const sendTest = async () => {
+  if (true !== confirm('Are you sure you want to send a test notification?')) {
+    return
   }
 
-  return config.app.download_path + '/' + sTrim(path, '/')
+  try {
+    isLoading.value = true
+    const response = await request('/api/notifications/test', { method: 'POST' })
+
+    if (200 !== response.status) {
+      const data = await response.json()
+      toast.error(`Failed to send test notification. ${data.error}`);
+      return
+    }
+
+    toast.success('Test notification sent.')
+  } catch (e) {
+    console.error(e)
+    toast.error(`Failed to send test notification. ${e.message}`);
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
+
 </script>

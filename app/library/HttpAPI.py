@@ -26,7 +26,8 @@ from .M3u8 import M3u8
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url
+from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url, validateUUID
+from .Notifications import Notification
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -109,7 +110,7 @@ class HttpAPI(common):
                     continue
 
                 file = os.path.join(root, file)
-                urlPath = f"{self.config.url_prefix}{file.replace(f'{staticDir}/', '')}"
+                urlPath = f"/{file.replace(f'{staticDir}/', '')}"
 
                 content = open(file, "rb").read()
                 contentType = self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file))
@@ -149,10 +150,10 @@ class HttpAPI(common):
             method = getattr(self, attr_name)
             if hasattr(method, "_http_method") and hasattr(method, "_http_path"):
                 http_path = method._http_path
-                if http_path.startswith("/") and self.config.url_prefix.endswith("/"):
+                if http_path.startswith("/"):
                     http_path = method._http_path[1:]
 
-                self.routes.route(method._http_method, self.config.url_prefix + http_path)(method)
+                self.routes.route(method._http_method, f"/{http_path}")(method)
 
         async def on_prepare(request: Request, response: Response):
             if "Server" in response.headers:
@@ -160,14 +161,10 @@ class HttpAPI(common):
 
             if "Origin" in request.headers:
                 response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-                response.headers["Access-Control-Allow-Methods"] = "PATCH, PUT, POST, DELETE"
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+                response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
 
-        if self.config.url_prefix != "/":
-            self.routes.route("GET", "/")(lambda _: web.HTTPFound(self.config.url_prefix))
-            self.routes.get(self.config.url_prefix[:-1])(lambda _: web.HTTPFound(self.config.url_prefix))
-
-        self.routes.static(f"{self.config.url_prefix}api/download/", self.config.download_path)
+        self.routes.static("/api/download/", self.config.download_path)
         self.preloadStatic(app)
 
         try:
@@ -214,6 +211,10 @@ class HttpAPI(common):
             return await handler(request)
 
         return middleware_handler
+
+    @route("OPTIONS", "/{path:.*}")
+    async def add_coors(self, _: Request) -> Response:
+        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("GET", "api/ping")
     async def ping(self, _) -> Response:
@@ -564,9 +565,7 @@ class HttpAPI(common):
             raise web.HTTPBadRequest(text="file is required.")
 
         try:
-            text = await Playlist(url=f"{self.config.url_host}{self.config.url_prefix}").make(
-                download_path=self.config.download_path, file=file
-            )
+            text = await Playlist(url="/").make(download_path=self.config.download_path, file=file)
             if isinstance(text, Response):
                 return text
         except StreamingError as e:
@@ -604,7 +603,7 @@ class HttpAPI(common):
             duration = float(duration)
 
         try:
-            cls = M3u8(f"{self.config.url_host}{self.config.url_prefix}")
+            cls = M3u8("/")
             if "subtitle" in mode:
                 text = await cls.make_subtitle(self.config.download_path, file, duration)
             else:
@@ -706,22 +705,6 @@ class HttpAPI(common):
             },
             status=web.HTTPOk.status_code,
         )
-
-    @route("OPTIONS", "api/add")
-    async def add_cors(self, _: Request) -> Response:
-        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
-
-    @route("OPTIONS", "api/tasks")
-    async def cors_add_tasks(self, _: Request) -> Response:
-        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
-
-    @route("OPTIONS", "api/yt-dlp/convert")
-    async def cors_ytdlp_convert(self, _: Request) -> Response:
-        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
-
-    @route("OPTIONS", "api/delete")
-    async def delete_cors(self, _: Request) -> Response:
-        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("GET", "/")
     async def index(self, _) -> Response:
@@ -848,3 +831,69 @@ class HttpAPI(common):
                 data={"message": f"Failed to request website. {str(e)}"},
                 status=web.HTTPInternalServerError.status_code,
             )
+
+    @route("GET", "api/notifications")
+    async def notifications(self, _: Request) -> Response:
+        data = {
+            "notifications": Notification.get_instance().getTargets(),
+            "allowedTypes": Notification.allowed_events,
+        }
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("POST", "api/notifications/test")
+    async def test_notifications(self, _: Request) -> Response:
+        data = {"type": "test", "message": "This is a test notification."}
+        await self.emitter.emit("test", data)
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("PUT", "api/notifications")
+    async def add_notifications(self, request: Request) -> Response:
+        post = await request.json()
+        if not isinstance(post, list):
+            return web.json_response(
+                {"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        targets: list = []
+
+        for item in post:
+            if not isinstance(item, dict):
+                return web.json_response(
+                    {"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            if not item.get("id", None) or validateUUID(item.get("id"), version=4):
+                item["id"] = str(uuid.uuid4())
+
+            try:
+                Notification.validate(item)
+            except ValueError as e:
+                return web.json_response(
+                    {"error": f"Invalid notification target settings. {str(e)}", "data": item},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            targets.append(item)
+
+        ins = Notification.get_instance()
+
+        try:
+            if len(targets) < 1:
+                ins.clearTargets()
+
+            ins.save(targets=targets)
+            ins.load()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
+
+        data = {
+            "notifications": targets,
+            "allowedTypes": Notification.allowed_events,
+        }
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)

@@ -24,7 +24,8 @@
 </template>
 
 <script setup>
-const config = useConfigStore()
+import { request } from '~/utils/index'
+
 const emitter = defineEmits(['closeModel'])
 const isLoading = ref(false)
 const data = ref({})
@@ -46,10 +47,10 @@ const eventFunc = e => {
 
 onMounted(async () => {
   window.addEventListener('keydown', eventFunc)
-  const url = config.app.url_host + config.app.url_prefix + 'api/url/info?url=' + encodePath(props.link)
+  const url = '/api/url/info?url=' + encodePath(props.link)
   try {
     isLoading.value = true
-    const response = await fetch(url);
+    const response = await request(url, { credentials: 'include' });
     data.value = await response.json();
   } catch (e) {
     console.log(e)

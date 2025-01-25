@@ -326,7 +326,7 @@ class DownloadQueue:
                 await item.close()
                 LOG.debug(f"Deleting from queue {itemMessage}")
                 self.queue.delete(id)
-                asyncio.create_task(self.emitter.canceled(id=id, dl=item.info.serialize()), name=f"notifier-c-{id}")
+                asyncio.create_task(self.emitter.canceled(dl=item.info.serialize()), name=f"notifier-c-{id}")
                 item.info.status = "canceled"
                 item.info.error = "Canceled by user."
                 self.done.put(item)
@@ -373,7 +373,7 @@ class DownloadQueue:
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {str(e)}")
 
             self.done.delete(id)
-            asyncio.create_task(self.emitter.cleared(id, dl=item.info.serialize()), name=f"notifier-c-{id}")
+            asyncio.create_task(self.emitter.cleared(dl=item.info.serialize()), name=f"notifier-c-{id}")
             msg = f"Deleted completed download '{itemRef}'."
             if fileDeleted and filename:
                 msg += f" and removed local file '{filename}'."
@@ -475,7 +475,7 @@ class DownloadQueue:
             self.queue.delete(key=id)
 
             if entry.is_canceled() is True:
-                asyncio.create_task(self.emitter.canceled(id, dl=entry.info.serialize()), name=f"notifier-c-{id}")
+                asyncio.create_task(self.emitter.canceled(dl=entry.info.serialize()), name=f"notifier-c-{id}")
                 entry.info.status = "canceled"
                 entry.info.error = "Canceled by user."
 

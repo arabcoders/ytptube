@@ -16,6 +16,8 @@
 </template>
 
 <script setup>
+import { request } from '~/utils/index'
+
 const props = defineProps({
   image: {
     type: String,
@@ -38,7 +40,6 @@ const props = defineProps({
 
 const cache = useSessionCache()
 const toast = useToast()
-const config = useConfigStore()
 const url = ref()
 const error = ref(false)
 const isPreloading = ref(false)
@@ -53,8 +54,8 @@ const defaultLoader = async () => {
       return
     }
 
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(props.image), {
-      signal: cancelRequest.signal
+    const response = await request('/api/thumbnail?url=' + encodePath(props.image), {
+      signal: cancelRequest.signal,
     })
 
     if (200 !== response.status) {

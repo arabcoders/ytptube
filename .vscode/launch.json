@@ -18,6 +18,7 @@
       "type": "node",
       "cwd": "${workspaceFolder}/ui",
       "env": {
+        "NUXT_API_URL": "http://localhost:8081/api/",
         "NUXT_PUBLIC_WSS": ":8081/",
       },
       "console": "internalConsole"
@@ -34,13 +35,13 @@
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "PYDEVD_DISABLE_FILE_VALIDATION": "1",
-        "YTP_URL_HOST": "http://localhost:8081",
         "YTP_MAX_WORKERS": "2",
         "YTP_IGNORE_UI": "true",
         "YTP_PIP_IGNORE_UPDATES": "true",
         "YTP_LOG_LEVEL": "DEBUG",
         "YTP_DEBUG": "true",
         "YTP_YTDL_DEBUG": "false",
+        "YTP_ACCESS_LOG": "true",
       }
     },
     {
@@ -54,7 +55,6 @@
         "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
-        "YTP_URL_HOST": "http://localhost:8081",
         "YTP_LOG_LEVEL": "DEBUG",
       }
     },

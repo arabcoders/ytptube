@@ -1,27 +1,12 @@
 import hashlib
-import time
 import threading
-from typing import Any, Optional, Dict, Tuple
+import time
+from typing import Any, Dict, Optional, Tuple
+
+from .Singleton import threadSafe
 
 
-class SingletonMeta(type):
-    """
-    A metaclass that creates a Singleton base class when called.
-    """
-
-    _instances: Dict[type, Any] = {}
-    _lock = threading.Lock()  # Ensures thread-safe singleton creation
-
-    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
-        # Thread-safe instance creation
-        with cls._lock:
-            if cls not in cls._instances:
-                instance = super().__call__(*args, **kwargs)
-                cls._instances[cls] = instance
-        return cls._instances[cls]
-
-
-class Cache(metaclass=SingletonMeta):
+class Cache(metaclass=threadSafe):
     def __init__(self) -> None:
         """
         Initialize the Cache.

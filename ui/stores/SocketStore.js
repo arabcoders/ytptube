@@ -11,7 +11,7 @@ export const useSocketStore = defineStore('socket', () => {
   const isConnected = ref(false);
 
   const connect = () => {
-    socket.value = io(runtimeConfig.public.wss)
+    socket.value = io(runtimeConfig.public.wss, { withCredentials: true })
 
     socket.value.on('connect', () => isConnected.value = true);
     socket.value.on('disconnect', () => isConnected.value = false);
@@ -39,7 +39,7 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value.on('error', stream => {
       const json = JSON.parse(stream);
-      toast.error(`${json.data?.id ?? json?.status}: ${json?.message}`);
+      toast.error(`${json.data?.id ?? json?.type}: ${json?.message}`);
     });
 
     socket.value.on('log_info', stream => {
@@ -63,13 +63,14 @@ export const useSocketStore = defineStore('socket', () => {
     });
 
     socket.value.on('canceled', stream => {
-      const id = JSON.parse(stream);
+      const item = JSON.parse(stream);
+      const id = item._id
 
       if (true !== stateStore.has('queue', id)) {
         return
       }
 
-      toast.info(`Download canceled: ${ag(stateStore.get('queue', id, {}), 'title')}`);
+      toast.info(`Download canceled: ${ag(stateStore.get('queue', id, {}), id)}`);
 
       if (true === stateStore.has('queue', id)) {
         stateStore.remove('queue', id);
@@ -77,7 +78,8 @@ export const useSocketStore = defineStore('socket', () => {
     });
 
     socket.value.on('cleared', stream => {
-      const id = JSON.parse(stream);
+      const item = JSON.parse(stream);
+      const id = item._id
 
       if (true !== stateStore.has('history', id)) {
         return
@@ -131,6 +133,8 @@ export const useSocketStore = defineStore('socket', () => {
   if (false === isConnected.value) {
     connect();
   }
+
+  window.ws = socket.value;
 
   return { connect, on, off, emit, socket, isConnected };
 });

@@ -54,7 +54,7 @@ class HttpSocket(common):
         return wrapper
 
     def attach(self, app: web.Application):
-        self.sio.attach(app, socketio_path=self.config.url_prefix + "socket.io")
+        self.sio.attach(app, socketio_path=self.config.url_socketio)
 
         for attr_name in dir(self):
             method = getattr(self, attr_name)
@@ -159,7 +159,7 @@ class HttpSocket(common):
         url: str | None = data.get("url")
 
         if not url:
-            await self.emitter.warning("No URL provided.", to=sid)
+            await self.emitter.error("No URL provided.", to=sid)
             return
 
         preset: str = str(data.get("preset", self.config.default_preset))
@@ -172,7 +172,7 @@ class HttpSocket(common):
             try:
                 ytdlp_config = json.loads(ytdlp_config)
             except Exception as e:
-                await self.emitter.warning(f"Failed to parse json yt-dlp config. {str(e)}", to=sid)
+                await self.emitter.error(f"Failed to parse json yt-dlp config. {str(e)}", to=sid)
                 return
 
         status = await self.add(
@@ -189,7 +189,7 @@ class HttpSocket(common):
     @ws_event  # type: ignore
     async def item_cancel(self, sid: str, id: str):
         if not id:
-            await self.emitter.warning("Invalid request.", to=sid)
+            await self.emitter.error("Invalid request.", to=sid)
             return
 
         status: dict[str, str] = {}
@@ -201,12 +201,12 @@ class HttpSocket(common):
     @ws_event  # type: ignore
     async def item_delete(self, sid: str, data: dict):
         if not data:
-            await self.emitter.warning("Invalid request.", to=sid)
+            await self.emitter.error("Invalid request.", to=sid)
             return
 
         id: str | None = data.get("id")
         if not id:
-            await self.emitter.warning("Invalid request.", to=sid)
+            await self.emitter.error("Invalid request.", to=sid)
             return
 
         status: dict[str, str] = {}
@@ -280,13 +280,13 @@ class HttpSocket(common):
     @ws_event
     async def ytdlp_convert(self, sid: str, data: dict):
         if not isinstance(data, dict) or "args" not in data:
-            await self.emitter.warning("Invalid request or no options were given.", to=sid)
+            await self.emitter.error("Invalid request or no options were given.", to=sid)
             return
 
         args: str | None = data.get("args")
 
         if not args:
-            await self.emitter.warning("no options were given.", to=sid)
+            await self.emitter.error("no options were given.", to=sid)
             return
 
         try:
@@ -296,4 +296,4 @@ class HttpSocket(common):
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
-            await self.emitter.error(f"Failed to convert options. '{e}'.", to=sid)
+            await self.emitter.error(f"Failed to convert options. '{err}'.", to=sid)
