@@ -190,6 +190,7 @@
 
 <script setup>
 import { parseExpression } from 'cron-parser'
+import { request } from '~/utils/index'
 
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
@@ -242,7 +243,7 @@ const checkInfo = async () => {
 
   // -- send request to convert cli options to JSON
   if (form.ytdlp_config && form.ytdlp_config.length > 2 && !form.ytdlp_config.trim().startsWith('{')) {
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/yt-dlp/convert', {
+    const response = await request('/api/yt-dlp/convert', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

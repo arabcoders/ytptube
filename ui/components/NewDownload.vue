@@ -137,6 +137,7 @@
 
 <script setup>
 import { useStorage } from '@vueuse/core'
+import { request } from '~/utils/index'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
@@ -155,7 +156,7 @@ const addInProgress = ref(false)
 const addDownload = async () => {
   // -- send request to convert cli options to JSON
   if (ytdlpConfig.value && ytdlpConfig.value.length > 2 && !ytdlpConfig.value.trim().startsWith('{')) {
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/yt-dlp/convert', {
+    const response = await request('/api/yt-dlp/convert', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

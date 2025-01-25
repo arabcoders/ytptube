@@ -11,8 +11,6 @@ const CONFIG_KEYS = {
     ytdlp_version: '',
     max_workers: 1,
     version: '',
-    url_host: '',
-    url_prefix: '',
     has_cookies: false,
     basic_mode: true,
     default_preset: 'default',

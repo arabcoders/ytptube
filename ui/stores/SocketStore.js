@@ -11,7 +11,7 @@ export const useSocketStore = defineStore('socket', () => {
   const isConnected = ref(false);
 
   const connect = () => {
-    socket.value = io(runtimeConfig.public.wss)
+    socket.value = io(runtimeConfig.public.wss, { withCredentials: true })
 
     socket.value.on('connect', () => isConnected.value = true);
     socket.value.on('disconnect', () => isConnected.value = false);

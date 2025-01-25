@@ -29,11 +29,7 @@ class Config:
     temp_keep: bool = False
     """Keep temporary files after the download is complete."""
 
-    url_host: str = ""
-    """The host to bind the server to."""
-    url_prefix: str = ""
-    """The prefix to use for the server URL."""
-    url_socketio: str = "{url_prefix}socket.io"
+    url_socketio: str = "/socket.io"
     """The URL to use for the socket.io server."""
 
     output_template: str = "%(title)s.%(ext)s"
@@ -192,9 +188,7 @@ class Config:
         "output_template",
         "ytdlp_version",
         "version",
-        "url_host",
         "started",
-        "url_prefix",
         "remove_files",
         "ui_update_title",
         "max_workers",
@@ -274,9 +268,6 @@ class Config:
 
             if k in self._int_vars:
                 setattr(self, k, int(v))
-
-        if not self.url_prefix.endswith("/"):
-            self.url_prefix += "/"
 
         numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):

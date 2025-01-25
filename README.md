@@ -70,7 +70,6 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_DOWNLOAD_PATH__: path to where the downloads will be saved. Defaults to `/downloads` in the docker image, and `./var/downloads` otherwise.
 * __YTP_TEMP_PATH__: path where intermediary download files will be saved. Defaults to `/tmp` in the docker image, and `./var/tmp` otherwise.
 * __YTP_TEMP_KEEP__: Whether to keep the Individual video temp directory or remove it. Defaults to `false`.
-* __YTP_URL_PREFIX__: base path for the web server (for use when hosting behind a reverse proxy). Defaults to `/`.
 * __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
 * __YTP_OUTPUT_TEMPLATE_CHAPTER__: the template for the filenames of the downloaded videos, when split into chapters via postprocessors, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s - %(section_number)s %(section_title)s.%(ext)s.`
 * __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `true`.
@@ -101,8 +100,6 @@ Certain values can be set via environment variables, using the `-e` parameter on
 ## Running behind a reverse proxy
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
-
-When running behind a reverse proxy which remaps the URL (i.e. serves YTPTube under a subdirectory and not under root), don't forget to set the `YTP_URL_PREFIX` environment variable to the correct value.
 
 ### NGINX
 

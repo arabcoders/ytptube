@@ -122,6 +122,7 @@ div.is-centered {
 <script setup>
 import moment from 'moment'
 import { parseExpression } from 'cron-parser'
+import { request } from '~/utils/index'
 
 const toast = useToast()
 const config = useConfigStore()
@@ -151,7 +152,8 @@ watch(() => socket.isConnected, async () => {
 const reloadContent = async (fromMounted = false) => {
   try {
     isLoading.value = true
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/tasks')
+    const response = await request('/api/tasks')
+
     if (fromMounted && !response.ok) {
       return
     }
@@ -182,7 +184,7 @@ const resetTask = (closeForm = false) => {
 }
 
 const updateTasks = async tasks => {
-  const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/tasks', {
+  const response = await request('/api/tasks', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

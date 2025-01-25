@@ -54,7 +54,7 @@ class HttpSocket(common):
         return wrapper
 
     def attach(self, app: web.Application):
-        self.sio.attach(app, socketio_path=self.config.url_prefix + "socket.io")
+        self.sio.attach(app, socketio_path=self.config.url_socketio)
 
         for attr_name in dir(self):
             method = getattr(self, attr_name)

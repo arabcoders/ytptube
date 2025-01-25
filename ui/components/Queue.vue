@@ -54,10 +54,10 @@
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1" v-if="item.extras?.thumbnail">
               <img :alt="item.title"
-                :src="config.app.url_host + config.app.url_prefix + 'api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
             </figure>
             <figure class="image is-3by1" v-else>
-              <img :src="config.app.url_host + config.app.url_prefix + 'images/placeholder.png'" />
+              <img :src="'/images/placeholder.png'" />
             </figure>
           </div>
           <div class="card-content">

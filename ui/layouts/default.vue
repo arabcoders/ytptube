@@ -98,6 +98,7 @@ import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from "moment";
+import { request } from '~/utils/index'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
@@ -159,7 +160,7 @@ const checkCookies = async () => {
 
   try {
     isChecking.value = true
-    const response = await fetch(config.app.url_host + config.app.url_prefix + 'api/youtube/auth')
+    const response = await request('/api/youtube/auth')
     const data = await response.json()
     if (response.ok) {
       toast.success('Succuss. ' + data.message)
