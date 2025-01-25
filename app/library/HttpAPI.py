@@ -26,7 +26,8 @@ from .M3u8 import M3u8
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url
+from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url, validateUUID
+from .Notifications import Notification
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -830,3 +831,69 @@ class HttpAPI(common):
                 data={"message": f"Failed to request website. {str(e)}"},
                 status=web.HTTPInternalServerError.status_code,
             )
+
+    @route("GET", "api/notifications")
+    async def notifications(self, _: Request) -> Response:
+        data = {
+            "notifications": Notification.get_instance().getTargets(),
+            "allowedTypes": Notification.allowed_events,
+        }
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("POST", "api/notifications/test")
+    async def test_notifications(self, _: Request) -> Response:
+        data = {"type": "test", "message": "This is a test notification."}
+        await self.emitter.emit("test", data)
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("PUT", "api/notifications")
+    async def add_notifications(self, request: Request) -> Response:
+        post = await request.json()
+        if not isinstance(post, list):
+            return web.json_response(
+                {"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        targets: list = []
+
+        for item in post:
+            if not isinstance(item, dict):
+                return web.json_response(
+                    {"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            if not item.get("id", None) or validateUUID(item.get("id"), version=4):
+                item["id"] = str(uuid.uuid4())
+
+            try:
+                Notification.validate(item)
+            except ValueError as e:
+                return web.json_response(
+                    {"error": f"Invalid notification target settings. {str(e)}", "data": item},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            targets.append(item)
+
+        ins = Notification.get_instance()
+
+        try:
+            if len(targets) < 1:
+                ins.clearTargets()
+
+            ins.save(targets=targets)
+            ins.load()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
+
+        data = {
+            "notifications": targets,
+            "allowedTypes": Notification.allowed_events,
+        }
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)

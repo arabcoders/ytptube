@@ -10,13 +10,13 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Multi-downloads support.
 * Handle live streams.
 * Schedule Channels or Playlists to be downloaded automatically at a specific time.
+* Send notification to targets based on specified events. 
 * Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Queue multiple URLs separated by comma.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
 * New `/api/add_batch` endpoint that allow multiple links to be sent.
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
-* Webhook sender. It allow you to add webhook endpoints that receive events related to downloads using simple `json` file.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
@@ -235,34 +235,6 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
 }
 ``` 
 
-### webhooks.json File
-
-The `config/webhooks.json`, is a json file, which can be used to add webhook endpoints that would receive events related to the downloads.
-
-```json5
-[
-  {
-    // (name: string) - REQUIRED - The webhook name.
-    "name": "my very smart webhook receiver",
-    // (on: array) - OPTIONAL - List of accepted events, if left empty it will send all events.
-    // Allowed events ["added", "completed", "error", "not_live" ] you can choose one or all of them.
-    "on": [ "added", "completed", "error", "not_live" ],
-    "request": {
-      // (url: string) - REQUIRED-  The webhook url
-      "url": "https://mysecert.webhook.com/endpoint", 
-      // (type: string) - OPTIONAL - The request type, it can be json or form.
-      "type": "json",
-      // (method: string) - OPTIONAL - The request method, it can be POST or PUT
-      "method": "POST",
-      // (headers: dictionary) - OPTIONAL - Extra headers to include.
-      "headers": {
-        "Authorization": "Bearer my_secret_token"
-      }
-  }
-  ...
-]
-```
-
 ### presets.json File
 
 The `config/presets.json`, is a json file, which can be used to add custom presets for selection in WebUI.
@@ -312,19 +284,19 @@ What does the basic mode do? it hides the the following features from the WebUI.
 
 ### Header
 
-It disables the `Check cookies`, `Console`, `Tasks` and `Add` buttons.
+It disables everything except the `theme switcher` and `reload` button.
 
 ### Add form 
 
-Disables everything except the `URL` and `Add` button. the default preset `YTP_DEFAULT_PRESET` will be used. The folder will be
-the root download path `YTP_DOWNLOAD_PATH`.
-
-The add form will always be visible and un-collapsible.
+* The form will always be visible and un-collapsible.
+* Everything except the `URL` and `Add` button will be disabled and hidden.
+* The preset will be the default preset, which can be specified via `YTP_DEFAULT_PRESET` environment variable.
+* The output template will be the default template which can be specified via `YTP_OUTPUT_TEMPLATE` environment variable.
+* The download path will be the default download path which can be specified via `YTP_DOWNLOAD_PATH` environment variable.
 
 ### Queue & History
 
 Disables the `Information` button.
-
 
 # Social contact
 

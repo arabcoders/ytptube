@@ -270,7 +270,7 @@ const checkInfo = async () => {
     }
   }
 
-  //addInProgress.value = true;
+  addInProgress.value = true;
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
 }
 </script>
