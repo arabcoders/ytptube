@@ -52,8 +52,8 @@ div.is-centered {
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <NotificationForm :reference="targetRef" :item="target" @cancel="resetForm(true);" @submit="updateItem"
-          :allowedEvents="allowedEvents" />
+        <NotificationForm :addInProgress="addInProgress" :reference="targetRef" :item="target"
+          @cancel="resetForm(true);" @submit="updateItem" :allowedEvents="allowedEvents" />
       </div>
 
       <div class="column is-12" v-if="!toggleForm">
@@ -133,6 +133,7 @@ const targetRef = ref('')
 const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
+const addInProgress = ref(false)
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -247,16 +248,19 @@ const updateItem = async ({ reference, item }) => {
     notifications.value.push(item)
   }
 
-  const status = await updateData(notifications.value)
+  try {
+    const status = await updateData(notifications.value)
 
-  if (!status) {
-    return
+    if (!status) {
+      return
+    }
+
+    toast.success(`Notification target ${reference ? 'updated' : 'added'}.`)
+    resetForm(true)
+  } finally {
+    addInProgress.value = false
   }
-
-  toast.success(`Notification target ${reference ? 'updated' : 'added'}.`)
-  resetForm(true)
 }
-
 
 const filterItem = item => {
   const { raw, ...rest } = item

@@ -421,7 +421,7 @@ const setIcon = item => {
     return 'fa-solid fa-circle-xmark'
   }
 
-  if (item.status === 'canceled') {
+  if (item.status === 'cancelled') {
     return 'fa-solid fa-eject'
   }
 

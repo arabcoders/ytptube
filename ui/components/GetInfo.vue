@@ -29,6 +29,7 @@ import { request } from '~/utils/index'
 const emitter = defineEmits(['closeModel'])
 const isLoading = ref(false)
 const data = ref({})
+const toast = useToast()
 
 const props = defineProps({
   link: {
@@ -47,15 +48,17 @@ const eventFunc = e => {
 
 onMounted(async () => {
   window.addEventListener('keydown', eventFunc)
-  const url = '/api/url/info?url=' + encodePath(props.link)
+
+  const url = '/api/yt-dlp/url/info?url=' + encodePath(props.link)
+
   try {
     isLoading.value = true
     const response = await request(url, { credentials: 'include' });
-    data.value = await response.json();
+    data.value = await response.json()
   } catch (e) {
-    console.log(e)
-  }
-  finally {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+  } finally {
     isLoading.value = false
   }
 })

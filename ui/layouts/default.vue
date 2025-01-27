@@ -10,37 +10,14 @@
           </span>
         </NuxtLink>
       </div>
-      <div class="navbar-end is-flex" style="flex-flow:wrap">
-        <div class="navbar-item" v-if="socket.isConnected && config.app.has_cookies && !config.app.basic_mode">
-          <button class="button is-dark" @click="checkCookies" v-tooltip="'Check youtube cookies status.'"
-            :disabled="isChecking">
-            <span class="icon has-text-info"><i class="fas fa-cookie"></i></span>
-          </button>
-        </div>
 
-        <div class="navbar-item" v-if="socket.isConnected && !config.app.basic_mode">
-          <button class="button is-dark" @click="pauseDownload" v-if="false === config.paused"
-            v-tooltip="'Pause non-active downloads.'">
-            <span class="icon has-text-warning"><i class="fas fa-pause"></i></span>
-          </button>
-          <button class="button is-dark" @click="socket.emit('resume', {})" v-else v-tooltip="'Resume downloading.'">
-            <span class="icon has-text-success"><i class="fas fa-play"></i></span>
-          </button>
-        </div>
+      <div class="navbar-end is-flex" style="flex-flow:wrap">
 
         <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
             <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>
         </div>
-
-        <div class="navbar-item" v-if="!config.app.basic_mode">
-          <button v-tooltip.bottom="'Toggle Add Form'" class="button is-dark has-tooltip-bottom"
-            @click="config.showForm = !config.showForm">
-            <span class="icon"><i class="fa-solid fa-plus" /></span>
-          </button>
-        </div>
-
         <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Tasks'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
@@ -64,7 +41,7 @@
           </button>
         </div>
 
-        <div class="navbar-item is-hidden-mobile">
+        <div class="navbar-item">
           <button class="button is-dark" @click="reloadPage">
             <span class="icon"><i class="fas fa-refresh"></i></span>
           </button>
@@ -72,9 +49,7 @@
       </div>
     </nav>
 
-    <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" />
-    <NuxtPage @getInfo="url => get_info = url" />
-    <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
+    <NuxtPage />
 
     <div class="columns mt-3 is-mobile">
       <div class="column is-8-mobile">
@@ -102,16 +77,12 @@ import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
-import moment from "moment";
-import { request } from '~/utils/index'
+import moment from 'moment'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
 const socket = useSocketStore()
 const config = useConfigStore()
-const isChecking = ref(false)
-const toast = useToast()
-const get_info = ref('')
 
 const applyPreferredColorScheme = scheme => {
   for (let s = 0; s < document.styleSheets.length; s++) {
@@ -154,38 +125,12 @@ const applyPreferredColorScheme = scheme => {
   }
 }
 
-const checkCookies = async () => {
-  if (true === isChecking.value) {
-    return
-  }
-
-  if (false === confirm(`Check for cookies status?`)) {
-    return
-  }
-
-  try {
-    isChecking.value = true
-    const response = await request('/api/youtube/auth')
-    const data = await response.json()
-    if (response.ok) {
-      toast.success('Succuss. ' + data.message)
-    } else {
-      toast.error('Failed. ' + data.message)
-    }
-  } catch (e) {
-    toast.error('Failed to check cookies state. ' + e.message)
-  } finally {
-    isChecking.value = false
-  }
-}
-
 onMounted(async () => {
   try {
     applyPreferredColorScheme(selectedTheme.value)
   } catch (e) {
   }
 })
-
 
 watch(selectedTheme, value => {
   try {
@@ -195,11 +140,4 @@ watch(selectedTheme, value => {
 
 const reloadPage = () => window.location.reload()
 
-const pauseDownload = () => {
-  if (false === confirm('Are you sure you want to pause all non-active downloads?')) {
-    return false
-  }
-
-  socket.emit('pause', {})
-}
 </script>

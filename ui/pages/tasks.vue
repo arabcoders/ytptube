@@ -31,7 +31,7 @@ div.is-centered {
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
-                :disabled="!socket.isConnected || isLoading">
+                :disabled="!socket.isConnected || isLoading" v-if="tasks && tasks.length > 0">
                 <span class="icon"><i class="fas fa-refresh"></i></span>
               </button>
             </p>
@@ -46,7 +46,8 @@ div.is-centered {
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <TaskForm :reference="taskRef" :task="task" @cancel="resetForm(true);" @submit="updateItem" />
+        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task" @cancel="resetForm(true);"
+          @submit="updateItem" />
       </div>
 
       <div class="column is-12" v-if="!toggleForm">
@@ -73,7 +74,7 @@ div.is-centered {
                   <p>
                     <span class="icon"><i class="fa-solid fa-clock" /></span>
                     <span>
-                      {{ moment(parseExpression(item.timer).next().toISOString()).fromNow() }} - {{ item.timer }}
+                      {{ tryParse(item.timer) }} - {{ item.timer }}
                     </span>
                   </p>
                   <p>
@@ -134,6 +135,7 @@ const taskRef = ref('')
 const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
+const addInProgress = ref(false)
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -178,29 +180,39 @@ const reloadContent = async (fromMounted = false) => {
 const resetForm = (closeForm = false) => {
   task.value = {}
   taskRef.value = null
+  addInProgress.value = false
   if (closeForm) {
     toggleForm.value = false
   }
 }
 
-const updateTasks = async tasks => {
-  const response = await request('/api/tasks', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(tasks),
-  })
+const updateTasks = async items => {
+  try {
+    addInProgress.value = true
 
-  const data = await response.json()
+    const response = await request('/api/tasks', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(items),
+    })
 
-  if (200 !== response.status) {
+    const data = await response.json()
+
+    if (200 !== response.status) {
+      toast.error(`Failed to update task. ${data.error}`);
+      return false
+    }
+
+    tasks.value = data
+    resetForm(true)
+    return true
+  } catch (e) {
     toast.error(`Failed to update task. ${data.error}`);
-    return false
+  } finally {
+    addInProgress.value = false
   }
-
-  tasks.value = data
-  return true
 }
 
 const deleteItem = async item => {
@@ -237,7 +249,6 @@ const updateItem = async ({ reference, task }) => {
   }
 
   const status = await updateTasks(tasks.value)
-
   if (!status) {
     return
   }
@@ -245,7 +256,6 @@ const updateItem = async ({ reference, task }) => {
   toast.success('Task updated')
   resetForm(true)
 }
-
 
 const filterItem = item => {
   const { raw, ...rest } = item
@@ -259,12 +269,22 @@ const editItem = item => {
 }
 
 const calcPath = path => {
-  if (!path) {
-    return config.app.download_path
+  let loc = config.app.download_path
+
+  if (path) {
+    let loc = loc + '/' + sTrim(path, '/')
   }
 
-  return config.app.download_path + '/' + sTrim(path, '/')
+  return loc
 }
 
 onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
+
+const tryParse = expression => {
+  try {
+    return moment(parseExpression(expression).next().toISOString()).fromNow()
+  } catch (e) {
+    return "Invalid"
+  }
+}
 </script>

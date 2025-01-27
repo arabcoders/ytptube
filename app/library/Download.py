@@ -36,7 +36,7 @@ class Download:
     debug: bool = False
     tempPath: str = None
     emitter: Emitter = None
-    canceled: bool = False
+    cancelled: bool = False
     is_live: bool = False
     info_dict: dict = None
     "yt-dlp metadata dict."
@@ -80,7 +80,7 @@ class Download:
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
         self.debug = debug
-        self.canceled = False
+        self.cancelled = False
         self.tmpfilename = None
         self.status_queue = None
         self.proc = None
@@ -212,7 +212,7 @@ class Download:
         if not self.started():
             return False
 
-        self.canceled = True
+        self.cancelled = True
 
         return True
 
@@ -271,8 +271,8 @@ class Download:
         except ValueError:
             return False
 
-    def is_canceled(self) -> bool:
-        return self.canceled
+    def is_cancelled(self) -> bool:
+        return self.cancelled
 
     def kill(self) -> bool:
         if not self.running():

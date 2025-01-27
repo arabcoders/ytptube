@@ -126,12 +126,11 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="ytdlp_config"
-                  v-tooltip="'Extends current global yt-dlp config. (JSON)'">
+                <label class="label is-inline" for="config" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
                   JSON yt-dlp config or CLI options.
                 </label>
                 <div class="control">
-                  <textarea class="textarea" id="ytdlp_config" v-model="form.ytdlp_config" :disabled="addInProgress"
+                  <textarea class="textarea" id="config" v-model="form.config" :disabled="addInProgress"
                     placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
                 </div>
                 <span class="help">
@@ -144,12 +143,11 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="ytdlp_cookies" v-tooltip="'JSON exported cookies for downloading.'">
-                  yt-dlp Cookies
+                <label class="label is-inline" for="cookies" v-tooltip="'JSON exported cookies for downloading.'">
+                  JSON Cookies
                 </label>
                 <div class="control">
-                  <textarea class="textarea" id="ytdlp_cookies" v-model="form.ytdlp_cookies"
-                    :disabled="addInProgress"></textarea>
+                  <textarea class="textarea" id="cookies" v-model="form.cookies" :disabled="addInProgress"></textarea>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -195,7 +193,7 @@ import { request } from '~/utils/index'
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
 const config = useConfigStore();
-const addInProgress = ref(false);
+
 const props = defineProps({
   reference: {
     type: String,
@@ -205,12 +203,22 @@ const props = defineProps({
   task: {
     type: Object,
     required: true,
-  }
+  },
+  addInProgress: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 })
 
 const form = reactive(props.task);
 
 onMounted(() => {
+
+  if (props.task?.config && (typeof props.task.config === 'object')) {
+    form.config = JSON.stringify(props.task.config, null, 4);
+  }
+
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset);
   }
@@ -242,13 +250,13 @@ const checkInfo = async () => {
   }
 
   // -- send request to convert cli options to JSON
-  if (form.ytdlp_config && form.ytdlp_config.length > 2 && !form.ytdlp_config.trim().startsWith('{')) {
+  if (form.config && form.config.length > 2 && !form.config.trim().startsWith('{')) {
     const response = await request('/api/yt-dlp/convert', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ args: form.ytdlp_config }),
+      body: JSON.stringify({ args: form.config }),
     });
 
     const data = await response.json()
@@ -257,20 +265,29 @@ const checkInfo = async () => {
       return
     }
 
-    form.ytdlp_config = JSON.stringify(data, null, 4)
+    form.config = JSON.stringify(data, null, 4)
+  }
+
+  // -- check config
+  if (form.config) {
+    try {
+      form.config = JSON.parse(form.config)
+    } catch (e) {
+      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
+      return;
+    }
   }
 
   // -- check cookies syntax
-  if (form.ytdlp_cookies) {
+  if (form.cookies) {
     try {
-      JSON.parse(form.ytdlp_cookies);
+      JSON.parse(form.cookies);
     } catch (e) {
       toast.error(`Invalid JSON yt-dlp cookies. ${e.message}`)
       return;
     }
   }
 
-  addInProgress.value = true;
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
 }
 </script>

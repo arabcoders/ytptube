@@ -160,6 +160,13 @@ hr {
   background-color: #00d1b2;
 }
 
+.button.is-purple {
+  background-color: #5f00d1;
+  border-color: transparent;
+  color: #fff;
+}
+
+
 @media (prefers-color-scheme: dark) {
   .footer {
     background-color: #121212;

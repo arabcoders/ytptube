@@ -62,7 +62,7 @@ export const useSocketStore = defineStore('socket', () => {
       stateStore.add('history', item._id, item);
     });
 
-    socket.value.on('canceled', stream => {
+    socket.value.on('cancelled', stream => {
       const item = JSON.parse(stream);
       const id = item._id
 
@@ -70,7 +70,7 @@ export const useSocketStore = defineStore('socket', () => {
         return
       }
 
-      toast.info(`Download canceled: ${ag(stateStore.get('queue', id, {}), id)}`);
+      toast.info(`Download cancelled: ${ag(stateStore.get('queue', id, {}), id)}`);
 
       if (true === stateStore.has('queue', id)) {
         stateStore.remove('queue', id);
