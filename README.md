@@ -14,12 +14,15 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Queue multiple URLs separated by comma.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
-* New `/api/add_batch` endpoint that allow multiple links to be sent.
+* New `POST /api/history` endpoint that allow one or multiple links to be sent at the same time.
+* New `GET /api/history/add?url=http://..` endpoint that allow to add single item via GET request.
 * Completely redesigned the frontend UI.
 * Switched out of binary file storage in favor of SQLite.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
+
+For more API endpoints, please refer to the [API documentation](API.md).
     
 ### Tips
 Your `yt-dlp` config should include the following options for optimal working conditions.
