@@ -438,7 +438,10 @@ class HttpAPI(common):
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(
-            data=await asyncio.wait_for(asyncio.gather(*[self.add(**self.format_item(item)) for item in data])),
+            data=await asyncio.wait_for(
+                fut=asyncio.gather(*[self.add(**self.format_item(item)) for item in data]),
+                timeout=None,
+            ),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )
