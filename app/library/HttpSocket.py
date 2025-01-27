@@ -180,27 +180,12 @@ class HttpSocket(common):
             await self.emitter.error("No URL provided.", data={"unlock": True}, to=sid)
             return
 
-        preset: str = str(data.get("preset", self.config.default_preset))
-        folder: str = str(data.get("folder")) if data.get("folder") else ""
-        cookies: str = str(data.get("cookies")) if data.get("cookies") else ""
-        template: str = str(data.get("template")) if data.get("template") else ""
+        try:
+            item = self.format_item(data)
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
-        config = data.get("config")
-        if isinstance(config, str) and config:
-            try:
-                config = json.loads(config)
-            except Exception as e:
-                await self.emitter.error(f"Failed to parse json yt-dlp config. {str(e)}", data={"unlock": True}, to=sid)
-                return
-
-        status = await self.add(
-            url=url,
-            preset=preset,
-            folder=folder,
-            ytdlp_cookies=cookies,
-            ytdlp_config=config if isinstance(config, dict) else {},
-            output_template=template,
-        )
+        status = await self.add(**item)
 
         await self.emitter.emit(event=Events.STATUS, data=status, to=sid)
 

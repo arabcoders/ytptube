@@ -408,7 +408,10 @@ class HttpAPI(common):
         if not url:
             return web.json_response(data={"error": "url param is required."}, status=web.HTTPBadRequest.status_code)
 
-        status = await self.add(**self._formatItem({"url": url}))
+        try:
+            status = await self.add(**self.format_item({"url": url}))
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
@@ -430,7 +433,7 @@ class HttpAPI(common):
 
         for item in data:
             try:
-                item = self._formatItem(item)
+                item = self.format_item(item)
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
@@ -1155,45 +1158,3 @@ class HttpAPI(common):
         await self.emitter.emit(Events.TEST, data)
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
-
-    def _formatItem(self, item: dict) -> dict:
-        """
-        Format the item to be added to the download queue.
-
-        Args:
-            item (dict): The item to be formatted.
-
-        Raises:
-            ValueError: If the url is not provided.
-            ValueError: If the yt-dlp config is not a valid json.
-
-        Returns:
-            dict: The formatted item
-        """
-        url: str = item.get("url")
-
-        if not url:
-            raise ValueError("url param is required.")
-
-        preset: str = str(item.get("preset", self.config.default_preset))
-        folder: str = str(item.get("folder")) if item.get("folder") else ""
-        cookies: str = str(item.get("cookies")) if item.get("cookies") else ""
-        template: str = str(item.get("template")) if item.get("template") else ""
-
-        config = item.get("config")
-        if isinstance(config, str) and config:
-            try:
-                config = json.loads(config)
-            except Exception as e:
-                raise ValueError(f"Failed to parse json yt-dlp config for '{url}'. {str(e)}")
-
-        item = {
-            "url": url,
-            "preset": preset,
-            "folder": folder,
-            "ytdlp_cookies": cookies,
-            "ytdlp_config": config if isinstance(config, dict) else {},
-            "output_template": template,
-        }
-
-        return item
