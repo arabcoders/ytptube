@@ -433,12 +433,12 @@ class HttpAPI(common):
 
         for item in data:
             try:
-                item = self.format_item(item)
+                self.format_item(item)
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(
-            data=await asyncio.wait_for(asyncio.gather(*[self.add(**item) for item in data])),
+            data=await asyncio.wait_for(asyncio.gather(*[self.add(**self.format_item(item)) for item in data])),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )
