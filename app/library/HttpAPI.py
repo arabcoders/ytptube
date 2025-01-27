@@ -430,7 +430,7 @@ class HttpAPI(common):
 
         for item in data:
             try:
-                self._formatItem(item)
+                item = self._formatItem(item)
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
