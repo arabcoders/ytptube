@@ -3,38 +3,65 @@ from datetime import datetime, timezone
 import json
 import logging
 import os
-from typing import List, TypedDict
-import uuid
+from typing import List, Any
 
+from dataclasses import dataclass, field
 import httpx
 
 from .config import Config
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
-from .Utils import ag, validateUUID
+from .Utils import validate_uuid, ag
 from .version import APP_VERSION
 from .encoder import Encoder
+from .EventsSubscriber import Events
 
 LOG = logging.getLogger("notifications")
 
 
-class targetRequestHeader(TypedDict):
+@dataclass(kw_only=True)
+class targetRequestHeader:
     """Request header details for a notification target."""
 
     key: str
     value: str
 
+    def serialize(self) -> dict:
+        return {"key": self.key, "value": self.value}
 
-class targetRequest(TypedDict):
+    def json(self) -> str:
+        return Encoder().encode(self.serialize())
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.serialize().get(key, default)
+
+
+@dataclass(kw_only=True)
+class targetRequest:
     """Request details for a notification target."""
 
     type: str
     method: str
     url: str
-    headers: list[targetRequestHeader] = []
+    headers: list[targetRequestHeader] = field(default_factory=list)
+
+    def serialize(self) -> dict:
+        return {
+            "type": self.type,
+            "method": self.method,
+            "url": self.url,
+            "headers": [h.serialize() for h in self.headers],
+        }
+
+    def json(self) -> str:
+        return Encoder().encode(self.serialize())
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return ag(self.serialize(), key, default)
 
 
-class Target(TypedDict):
+@dataclass(kw_only=True)
+class Target:
     """Notification target details."""
 
     id: str
@@ -42,37 +69,76 @@ class Target(TypedDict):
     on: List[str]
     request: targetRequest
 
+    def serialize(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "on": self.on,
+            "request": self.request.serialize(),
+        }
+
+    def json(self) -> str:
+        return Encoder().encode(self.serialize())
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.serialize().get(key, default)
+
+
+class NotificationEvents:
+    ADDED = Events.ADDED
+    COMPLETED = Events.COMPLETED
+    ERROR = Events.ERROR
+    CANCELLED = Events.CANCELLED
+    CLEARED = Events.CLEARED
+    LOG_INFO = Events.LOG_INFO
+    LOG_SUCCESS = Events.LOG_SUCCESS
+    TEST = Events.TEST
+
+    @staticmethod
+    def getEvents() -> dict[str, str]:
+        data: dict[str, str] = {}
+        for k, v in vars(NotificationEvents).items():
+            if not k.startswith("__") and not callable(v):
+                data[k] = v
+
+        return data
+
+    @staticmethod
+    def isValid(event: str) -> bool:
+        return event in NotificationEvents.getEvents().values()
+
 
 class Notification(metaclass=Singleton):
-    targets: list[Target] = []
+    _targets: list[Target] = []
     """Notification targets to send events to."""
 
-    allowed_events: tuple = (
-        "added",
-        "completed",
-        "error",
-        "not_live",
-        "canceled",
-        "cleared",
-        "log_info",
-        "log_success",
-    )
-    """Events that can be sent to the targets."""
-
     _instance = None
+    """The instance of the Notification class."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        file: str | None = None,
+        client: httpx.AsyncClient | None = None,
+        encoder: Encoder | None = None,
+        config: Config | None = None,
+    ):
         Notification._instance = self
-
-        config = Config.get_instance()
+        config: Config = config or Config.get_instance()
 
         self._debug = config.debug
-        self.file: str = os.path.join(config.config_path, "notifications.json")
-        self._client: httpx.AsyncClient = httpx.AsyncClient()
-        self._encoder: Encoder = Encoder()
+        self._file: str = file or os.path.join(config.config_path, "notifications.json")
+        self._client: httpx.AsyncClient = client or httpx.AsyncClient()
+        self._encoder: Encoder = encoder or Encoder()
 
-        if os.path.exists(self.file) and os.path.getsize(self.file) > 10:
-            self.load()
+        if os.path.exists(self._file):
+            try:
+                if "600" != oct(os.stat(self._file).st_mode)[-3:]:
+                    os.chmod(self._file, 0o600)
+            except Exception:
+                pass
+
+            if os.path.getsize(self._file) > 10:
+                self.load()
 
     @staticmethod
     def get_instance() -> "Notification":
@@ -83,14 +149,14 @@ class Notification(metaclass=Singleton):
 
     def getTargets(self) -> list[Target]:
         """Get the list of notification targets."""
-        return self.targets
+        return self._targets
 
-    def clearTargets(self) -> "Notification":
+    def clear(self) -> "Notification":
         """Clear the list of notification targets."""
-        self.targets.clear()
+        self._targets.clear()
         return self
 
-    def save(self, targets: list[Target] | None = None) -> "Notification":
+    def save(self, targets: list[Target]) -> "Notification":
         """
         Save notification targets to the file.
 
@@ -100,36 +166,36 @@ class Notification(metaclass=Singleton):
         Returns:
             Notification: The Notification instance.
         """
-        LOG.info(f"Saving notification targets to '{self.file}'.")
+
+        LOG.info(f"Saving notification targets to '{self._file}'.")
         try:
-            with open(self.file, "w") as f:
-                f.write(json.dumps(targets or self.targets, indent=4))
+            with open(self._file, "w") as f:
+                json.dump([t.serialize() for t in targets], fp=f, indent=4)
         except Exception as e:
-            LOG.error(f"Error saving notification targets to '{self.file}'. '{e}'")
+            LOG.exception(e)
+            LOG.error(f"Error saving notification targets to '{self._file}'. '{e}'")
             pass
 
         return self
 
-    def load(self):
+    def load(self) -> "Notification":
         """Load or reload notification targets from the file."""
-        if len(self.targets) > 0:
+        if len(self._targets) > 0:
             LOG.info("Clearing existing notification targets.")
-            self.targets.clear()
+            self.clear()
 
-        modified = False
+        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+            return self
 
         targets = []
 
-        if not os.path.exists(self.file) or os.path.getsize(self.file) < 10:
-            return
-
-        LOG.info(f"Loading notification targets from '{self.file}'.")
+        LOG.info(f"Loading notification targets from '{self._file}'.")
 
         try:
-            with open(self.file, "r") as f:
+            with open(self._file, "r") as f:
                 targets = json.load(f)
         except Exception as e:
-            LOG.error(f"Error loading notification targets from '{self.file}'. '{e}'")
+            LOG.error(f"Error loading notification targets from '{self._file}'. '{e}'")
             pass
 
         for target in targets:
@@ -140,48 +206,18 @@ class Notification(metaclass=Singleton):
                     LOG.error(f"Invalid notification target '{target}'. '{e}'")
                     continue
 
-                if "on" not in target:
-                    target["on"] = []
-                    modified = True
+                target = self.makeTarget(target)
 
-                if "type" not in target["request"]:
-                    target["request"]["type"] = "json"
-                    modified = True
-
-                if "method" not in target["request"]:
-                    target["request"]["method"] = "POST"
-                    modified = True
-
-                if "id" not in target or validateUUID(target["id"], version=4) is False:
-                    target["id"] = str(uuid.uuid4())
-                    modified = True
-
-                target = Target(
-                    id=target.get("id"),
-                    name=target.get("name"),
-                    on=target.get("on", []),
-                    request=targetRequest(
-                        type=target.get("request", {}).get("type", "json"),
-                        method=target.get("request", {}).get("method", "POST"),
-                        url=target.get("request", {}).get("url"),
-                        headers=[
-                            targetRequestHeader(key=h.get("key"), value=h.get("value"))
-                            for h in target.get("request", {}).get("headers", [])
-                        ],
-                    ),
-                )
-
-                self.targets.append(target)
+                self._targets.append(target)
 
                 LOG.info(
-                    f"Will send '{target['on'] if len(target['on']) > 0 else 'all'}' as {target['request']['type']} notification events to '{target['name']}'."
+                    f"Will send '{target.on if len(target.on) > 0 else 'all'}' as {target.request.type} notification events to '{target.name}'."
                 )
             except Exception as e:
                 LOG.error(f"Error loading notification target '{target}'. '{e}'")
                 pass
 
-        if modified:
-            self.save()
+        return self
 
     @staticmethod
     def validate(target: Target | dict) -> bool:
@@ -195,7 +231,10 @@ class Notification(metaclass=Singleton):
             bool: True if the target is valid, False otherwise.
         """
 
-        if "id" not in target or validateUUID(target["id"], version=4) is False:
+        if not isinstance(target, dict):
+            target = target.serialize()
+
+        if "id" not in target or validate_uuid(target["id"], version=4) is False:
             raise ValueError("Invalid notification target. No ID found.")
 
         if "name" not in target:
@@ -218,7 +257,7 @@ class Notification(metaclass=Singleton):
                 raise ValueError("Invalid notification target. Invalid 'on' event list found.")
 
             for e in target["on"]:
-                if e not in Notification.allowed_events:
+                if e not in NotificationEvents.getEvents().values():
                     raise ValueError(f"Invalid notification target. Invalid event '{e}' found.")
 
         if "headers" in target["request"]:
@@ -234,7 +273,7 @@ class Notification(metaclass=Singleton):
         return True
 
     async def send(self, event: str, item: ItemDTO | dict) -> list[dict]:
-        if len(self.targets) < 1:
+        if len(self._targets) < 1:
             return []
 
         if not isinstance(item, ItemDTO) and not isinstance(item, dict):
@@ -243,8 +282,8 @@ class Notification(metaclass=Singleton):
 
         tasks = []
 
-        for target in self.targets:
-            if len(target["on"]) > 0 and event not in target["on"] and "test" != event:
+        for target in self._targets:
+            if len(target.on) > 0 and event not in target.on and "test" != event:
                 continue
 
             tasks.append(self._send(event, target, item))
@@ -252,44 +291,42 @@ class Notification(metaclass=Singleton):
         return await asyncio.gather(*tasks)
 
     async def _send(self, event: str, target: Target, item: ItemDTO | dict) -> dict:
-        req: targetRequest = target["request"]
-
         try:
-            itemId = ag(item, ["id", "_id"], "??")
+            itemId = item.get("id", item.get("_id", "??"))
         except Exception:
             itemId = "??"
 
         try:
-            LOG.info(f"Sending Notification event '{event}' id '{itemId}' to '{target.get('name')}'.")
+            LOG.info(f"Sending Notification event '{event}' id '{itemId}' to '{target.name}'.")
             reqBody = {
-                "method": req["method"].upper(),
-                "url": req["url"],
+                "method": target.request.method.upper(),
+                "url": target.request.url,
                 "headers": {
                     "User-Agent": f"YTPTube/{APP_VERSION}",
                     "Content-Type": "application/json"
-                    if "json" == req["type"].lower()
+                    if "json" == target.request.type.lower()
                     else "application/x-www-form-urlencoded",
                 },
             }
 
-            if len(req["headers"]) > 0:
-                for h in req["headers"]:
-                    reqBody["headers"][h["key"]] = h["value"]
+            if len(target.request.headers) > 0:
+                for h in target.request.headers:
+                    reqBody["headers"][h.key] = h.value
 
-            reqBody["json" if "json" == req["type"].lower() else "data"] = {
+            reqBody["json" if "json" == target.request.type.lower() else "data"] = {
                 "event": event,
                 "created_at": datetime.now(tz=timezone.utc).isoformat(),
                 "payload": item.__dict__ if isinstance(item, ItemDTO) else item,
             }
 
-            if "form" == req["type"].lower():
+            if "form" == target.request.type.lower():
                 reqBody["data"]["payload"] = self._encoder.encode(reqBody["data"]["payload"])
 
             response = await self._client.request(**reqBody)
 
-            respData = {"url": req["url"], "status": response.status_code, "text": response.text}
+            respData = {"url": target.request.url, "status": response.status_code, "text": response.text}
 
-            msg = f"Notification target '{target['name']}' Responded to event '{event}' id '{itemId}' with status '{response.status_code}'."
+            msg = f"Notification target '{target.name}' Responded to event '{event}' id '{itemId}' with status '{response.status_code}'."
             if self._debug and respData.get("text"):
                 msg += f" body '{respData.get('text','??')}'."
 
@@ -297,14 +334,39 @@ class Notification(metaclass=Singleton):
 
             return respData
         except Exception as e:
-            LOG.error(f"Error sending Notification event '{event}' id '{itemId}' to '{target['name']}'. '{e}'.")
-            return {"url": req["url"], "status": 500, "text": str(e)}
+            LOG.error(f"Error sending Notification event '{event}' id '{itemId}' to '{target.name}'. '{e}'.")
+            return {"url": target.request.url, "status": 500, "text": str(e)}
+
+    def makeTarget(self, target: dict) -> Target:
+        """
+        Make a notification target from a dictionary.
+
+        Args:
+            target (dict): The target details.
+
+        Returns:
+            Target: The notification target.
+        """
+        return Target(
+            id=target.get("id"),
+            name=target.get("name"),
+            on=target.get("on", []),
+            request=targetRequest(
+                type=target.get("request", {}).get("type", "json"),
+                method=target.get("request", {}).get("method", "POST"),
+                url=target.get("request", {}).get("url"),
+                headers=[
+                    targetRequestHeader(key=h.get("key"), value=h.get("value"))
+                    for h in target.get("request", {}).get("headers", [])
+                ],
+            ),
+        )
 
     def emit(self, event, data, **kwargs):
-        if len(self.targets) < 1:
+        if len(self._targets) < 1:
             return False
 
-        if event not in self.allowed_events and "test" != event:
+        if not NotificationEvents.isValid(event):
             return False
 
         return self.send(event, data)

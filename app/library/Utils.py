@@ -537,7 +537,7 @@ def arg_converter(args: str) -> dict:
     return json.loads(json.dumps(diff))
 
 
-def validateUUID(uuid_str: str, version: int = 4) -> bool:
+def validate_uuid(uuid_str: str, version: int = 4) -> bool:
     """
     Validate if the UUID is valid.
 

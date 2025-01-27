@@ -15,50 +15,116 @@ from .DataStore import DataStore
 from .Download import Download
 from .Emitter import Emitter
 from .ItemDTO import ItemDTO
-from .Utils import ExtractInfo, get_opts, calcDownloadPath, isDownloaded, mergeConfig
+from .Singleton import Singleton
+from .EventsSubscriber import Events
+from .Utils import ExtractInfo, calcDownloadPath, get_opts, isDownloaded, mergeConfig
 
 LOG = logging.getLogger("DownloadQueue")
-TYPE_DONE: str = "done"
-TYPE_QUEUE: str = "queue"
 
 
-class DownloadQueue:
+class DownloadQueue(metaclass=Singleton):
+    """
+    DownloadQueue class is a singleton class that manages the download queue and the download history.
+    """
+
+    TYPE_DONE: str = "done"
+    """Queue type for completed downloads."""
+
+    TYPE_QUEUE: str = "queue"
+    """Queue type for pending downloads."""
+
     paused: asyncio.Event
-    event: asyncio.Event | None = None
-    pool: AsyncPool | None = None
+    """Event to pause the download queue."""
 
-    def __init__(self, emitter: Emitter, connection: Connection):
-        self.config = Config.get_instance()
-        self.emitter = emitter
-        self.done = DataStore(type=TYPE_DONE, connection=connection)
-        self.queue = DataStore(type=TYPE_QUEUE, connection=connection)
+    event: asyncio.Event
+    """Event to signal the download queue to start downloading."""
+
+    pool: AsyncPool | None = None
+    """Pool of workers to download the files."""
+
+    _instance = None
+    """Instance of the DownloadQueue."""
+
+    def __init__(self, connection: Connection, emitter: Emitter | None = None, config: Config | None = None):
+        DownloadQueue._instance = self
+
+        self.config = config or Config.get_instance()
+        self.emitter = emitter or Emitter.get_instance()
+        self.done = DataStore(type=DownloadQueue.TYPE_DONE, connection=connection)
+        self.queue = DataStore(type=DownloadQueue.TYPE_QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
         self.paused = asyncio.Event()
         self.paused.set()
+        self.event = asyncio.Event()
+
+    @staticmethod
+    def get_instance():
+        """
+        Get the instance of the DownloadQueue.
+
+        Returns:
+            DownloadQueue: The instance of the DownloadQueue
+        """
+        if not DownloadQueue._instance:
+            DownloadQueue._instance = DownloadQueue()
+
+        return DownloadQueue._instance
 
     async def test(self) -> bool:
+        """
+        Test the datastore connection to the database.
+
+        Returns:
+            bool: True if the test is successful, False otherwise.
+        """
         await self.done.test()
         return True
 
     async def initialize(self):
-        self.event = asyncio.Event()
+        """
+        Initialize the download queue.
+        """
         LOG.info(
             f"Using '{self.config.max_workers}' worker/s for downloading. Can be configured via `YTP_MAX_WORKERS` environment variable."
         )
         asyncio.create_task(self.__download_pool(), name="download_pool")
 
-    def pause(self):
+    def pause(self) -> bool:
+        """
+        Pause the download queue.
+
+        Returns:
+            bool: True if the download is paused, False otherwise
+        """
         if self.paused.is_set():
             self.paused.clear()
             LOG.warning(f"Download paused at. {datetime.datetime.now().isoformat()}")
+            return True
 
-    def resume(self):
+        return False
+
+    def resume(self) -> bool:
+        """
+        Resume the download queue.
+
+        Returns:
+            bool: True if the download is resumed, False otherwise
+        """
         if not self.paused.is_set():
             self.paused.set()
             LOG.warning(f"Downloading resumed at. {datetime.datetime.now().isoformat()}")
+            return True
+
+        return False
 
     def isPaused(self) -> bool:
+        """
+        Check if the download queue is paused.
+
+        Returns:
+            bool: True if the download queue is paused, False otherwise
+        """
         return False if self.paused.is_set() else True
 
     async def __add_entry(
@@ -66,11 +132,26 @@ class DownloadQueue:
         entry: dict,
         preset: str,
         folder: str,
-        ytdlp_config: dict = {},
-        ytdlp_cookies: str = "",
-        output_template: str = "",
+        config: dict = {},
+        cookies: str = "",
+        template: str = "",
         already=None,
     ):
+        """
+        Add an entry to the download queue.
+
+        Args:
+            entry (dict): The entry to add to the download queue.
+            preset (str): The preset to use for the download.
+            folder (str): The folder to save the download to.
+            config (dict): The yt-dlp configuration to use for the download.
+            cookies (str): The cookies to use for the download.
+            template (str): The output template to use for the download.
+            already (set): The set of already downloaded items.
+
+        Returns:
+            dict: The status of the operation.
+        """
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
 
@@ -99,9 +180,9 @@ class DownloadQueue:
                         entry=etr,
                         preset=preset,
                         folder=folder,
-                        ytdlp_config=ytdlp_config,
-                        ytdlp_cookies=ytdlp_cookies,
-                        output_template=output_template,
+                        config=config,
+                        cookies=cookies,
+                        template=template,
                         already=already,
                     )
                 )
@@ -168,10 +249,10 @@ class DownloadQueue:
                 folder=folder,
                 download_dir=download_dir,
                 temp_dir=self.config.temp_path,
-                ytdlp_cookies=ytdlp_cookies,
-                ytdlp_config=ytdlp_config,
-                output_template=output_template if output_template else self.config.output_template,
-                output_template_chapter=self.config.output_template_chapter,
+                cookies=cookies,
+                config=config,
+                template=template if template else self.config.output_template,
+                template_chapter=self.config.output_template_chapter,
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
@@ -182,24 +263,23 @@ class DownloadQueue:
 
             for property, value in entry.items():
                 if property.startswith("playlist"):
-                    dl.output_template = str(dl.output_template).replace(f"%({property})s", str(value))
+                    dl.template = str(dl.template).replace(f"%({property})s", str(value))
 
             dlInfo: Download = Download(info=dl, info_dict=entry, debug=bool(self.config.ytdl_debug))
 
             if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status", None):
                 dlInfo.info.status = "not_live"
                 itemDownload = self.done.put(dlInfo)
-                NotifyEvent = "completed"
+                NotifyEvent = Events.COMPLETED
             elif self.config.allow_manifestless is False and is_manifestless is True:
                 dlInfo.info.status = "error"
                 dlInfo.info.error = "Video is in post-live manifestless mode."
                 itemDownload = self.done.put(dlInfo)
-                NotifyEvent = "completed"
+                NotifyEvent = Events.COMPLETED
             else:
-                NotifyEvent = "added"
+                NotifyEvent = Events.ADDED
                 itemDownload = self.queue.put(dlInfo)
-                if self.event:
-                    self.event.set()
+                self.event.set()
 
             asyncio.create_task(
                 self.emitter.emit(NotifyEvent, itemDownload.info), name=f"notifier-{NotifyEvent}-{itemDownload.info.id}"
@@ -211,9 +291,9 @@ class DownloadQueue:
                 url=str(entry.get("url")),
                 preset=preset,
                 folder=folder,
-                ytdlp_config=ytdlp_config,
-                ytdlp_cookies=ytdlp_cookies,
-                output_template=output_template,
+                config=config,
+                cookies=cookies,
+                template=template,
                 already=already,
             )
 
@@ -224,25 +304,25 @@ class DownloadQueue:
         url: str,
         preset: str,
         folder: str,
-        ytdlp_config: dict = {},
-        ytdlp_cookies: str = "",
-        output_template: str = "",
+        config: dict = {},
+        cookies: str = "",
+        template: str = "",
         already=None,
     ):
-        ytdlp_config = ytdlp_config if ytdlp_config else {}
+        config = config if config else {}
         folder = str(folder) if folder else ""
 
         filePath = calcDownloadPath(basePath=self.config.download_path, folder=folder)
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {cookies}' 'YTConfig: {config}'."
         )
 
-        if isinstance(ytdlp_config, str):
+        if isinstance(config, str):
             try:
-                ytdlp_config = json.loads(ytdlp_config)
+                config = json.loads(config)
             except Exception as e:
-                LOG.error(f"Unable to load '{ytdlp_config=}'. {str(e)}")
+                LOG.error(f"Unable to load '{config=}'. {str(e)}")
                 return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {str(e)}"}
 
         already = set() if already is None else already
@@ -267,7 +347,7 @@ class DownloadQueue:
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
                     ExtractInfo,
-                    get_opts(preset, mergeConfig(self.config.ytdl_options, ytdlp_config)),
+                    get_opts(preset, mergeConfig(self.config.ytdl_options, config)),
                     url,
                     bool(self.config.ytdl_debug),
                 ),
@@ -297,9 +377,9 @@ class DownloadQueue:
             entry=entry,
             preset=preset,
             folder=folder,
-            ytdlp_config=ytdlp_config,
-            ytdlp_cookies=ytdlp_cookies,
-            output_template=output_template,
+            config=config,
+            cookies=cookies,
+            template=template,
             already=already,
         )
 
@@ -326,9 +406,9 @@ class DownloadQueue:
                 await item.close()
                 LOG.debug(f"Deleting from queue {itemMessage}")
                 self.queue.delete(id)
-                asyncio.create_task(self.emitter.canceled(dl=item.info.serialize()), name=f"notifier-c-{id}")
-                item.info.status = "canceled"
-                item.info.error = "Canceled by user."
+                asyncio.create_task(self.emitter.cancelled(dl=item.info.serialize()), name=f"notifier-c-{id}")
+                item.info.status = "cancelled"
+                item.info.error = "Cancelled by user."
                 self.done.put(item)
                 asyncio.create_task(self.emitter.completed(dl=item.info.serialize()), name=f"notifier-d-{id}")
                 LOG.info(f"Deleted from queue {itemMessage}")
@@ -384,6 +464,12 @@ class DownloadQueue:
         return status
 
     def get(self) -> dict[str, list[dict[str, ItemDTO]]]:
+        """
+        Get the download queue and the download history.
+
+        Returns:
+            dict: The download queue and the download history.
+        """
         items = {"queue": {}, "done": {}}
 
         for k, v in self.queue.saved_items():
@@ -444,7 +530,7 @@ class DownloadQueue:
 
             LOG.debug(f"Pushing {entry=} to executor.")
 
-            if entry.started() is False and entry.is_canceled() is False:
+            if entry.started() is False and entry.is_cancelled() is False:
                 await self.pool.push(id=entry.info._id, entry=entry)
                 LOG.debug(f"Pushed {entry=} to executor.")
                 await asyncio.sleep(1)
@@ -458,7 +544,7 @@ class DownloadQueue:
         try:
             await entry.start(self.emitter)
 
-            if entry.info.status != "finished":
+            if "finished" != entry.info.status:
                 if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
                     try:
                         os.remove(entry.tmpfilename)
@@ -474,10 +560,10 @@ class DownloadQueue:
             LOG.debug(f"Download '{id}' is done. Removing from queue.")
             self.queue.delete(key=id)
 
-            if entry.is_canceled() is True:
-                asyncio.create_task(self.emitter.canceled(dl=entry.info.serialize()), name=f"notifier-c-{id}")
-                entry.info.status = "canceled"
-                entry.info.error = "Canceled by user."
+            if entry.is_cancelled() is True:
+                asyncio.create_task(self.emitter.cancelled(dl=entry.info.serialize()), name=f"notifier-c-{id}")
+                entry.info.status = "cancelled"
+                entry.info.error = "Cancelled by user."
 
             self.done.put(value=entry)
             asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")

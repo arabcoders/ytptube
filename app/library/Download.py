@@ -28,15 +28,15 @@ class Download:
     id: str = None
     download_dir: str = None
     temp_dir: str = None
-    output_template: str = None
-    output_template_chapter: str = None
+    template: str = None
+    template_chapter: str = None
     ytdl_opts: dict = None
     info: ItemDTO = None
     default_ytdl_opts: dict = None
     debug: bool = False
     tempPath: str = None
     emitter: Emitter = None
-    canceled: bool = False
+    cancelled: bool = False
     is_live: bool = False
     info_dict: dict = None
     "yt-dlp metadata dict."
@@ -72,15 +72,15 @@ class Download:
 
         self.download_dir = info.download_dir
         self.temp_dir = info.temp_dir
-        self.output_template_chapter = info.output_template_chapter
-        self.output_template = info.output_template
+        self.template = info.template
+        self.template_chapter = info.template_chapter
         self.preset = info.preset
-        self.ytdl_opts = info.ytdlp_config if info.ytdlp_config else {}
+        self.ytdl_opts = info.config if info.config else {}
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
         self.debug = debug
-        self.canceled = False
+        self.cancelled = False
         self.tmpfilename = None
         self.status_queue = None
         self.proc = None
@@ -120,7 +120,7 @@ class Download:
                 {
                     "color": "no_color",
                     "paths": {"home": self.download_dir, "temp": self.tempPath},
-                    "outtmpl": {"default": self.output_template, "chapter": self.output_template_chapter},
+                    "outtmpl": {"default": self.template, "chapter": self.template_chapter},
                     "noprogress": True,
                     "break_on_existing": True,
                     "progress_hooks": [self._progress_hook],
@@ -136,9 +136,9 @@ class Download:
                 params["verbose"] = True
                 params["noprogress"] = False
 
-            if self.info.ytdlp_cookies:
+            if self.info.cookies:
                 try:
-                    data = jsonCookie(json.loads(self.info.ytdlp_cookies))
+                    data = jsonCookie(json.loads(self.info.cookies))
                     if not data:
                         LOG.warning(
                             f"The cookie string that was provided for {self.info.title} is empty or not in expected spec."
@@ -212,7 +212,7 @@ class Download:
         if not self.started():
             return False
 
-        self.canceled = True
+        self.cancelled = True
 
         return True
 
@@ -271,8 +271,8 @@ class Download:
         except ValueError:
             return False
 
-    def is_canceled(self) -> bool:
-        return self.canceled
+    def is_cancelled(self) -> bool:
+        return self.cancelled
 
     def kill(self) -> bool:
         if not self.running():

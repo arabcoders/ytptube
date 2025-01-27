@@ -33,4 +33,15 @@
     "writedescription",
     "xerror"
   ],
+  "css.styleSheets": [
+    "ui/assets/css/*.css"
+  ],
+  "spellright.language": [
+    "en-US-10-1."
+  ],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex",
+    "plaintext"
+  ],
 }

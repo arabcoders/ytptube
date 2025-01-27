@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import functools
 import hmac
@@ -6,9 +7,10 @@ import logging
 import os
 import random
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
-import uuid
+from typing import Awaitable
 
 import httpx
 import magic
@@ -21,13 +23,15 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
+from .EventsSubscriber import Events
 from .ffprobe import ffprobe
 from .M3u8 import M3u8
+from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
-from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url, validateUUID
-from .Notifications import Notification
+from .Tasks import Task, Tasks
+from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url, validate_uuid
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -43,23 +47,34 @@ class HttpAPI(common):
         ".ico": "image/x-icon",
     }
 
-    def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder, load_tasks: callable):
-        super().__init__(queue=queue, encoder=encoder)
+    def __init__(
+        self,
+        queue: DownloadQueue | None = None,
+        emitter: Emitter | None = None,
+        encoder: Encoder | None = None,
+        config: Config | None = None,
+    ):
+        self.queue = queue or DownloadQueue.get_instance()
+        self.emitter = emitter or Emitter.get_instance()
+        self.encoder = encoder or Encoder()
+        self.config = config or Config.get_instance()
 
         self.rootPath = str(Path(__file__).parent.parent.parent)
-        self.config = Config.get_instance()
-
         self.routes = web.RouteTableDef()
-
-        self.encoder = encoder
-        self.emitter = emitter
-        self.queue = queue
         self.cache = Cache()
-        self.load_tasks = load_tasks
 
-    def route(method: str, path: str):
+        super().__init__(queue=self.queue, encoder=self.encoder, config=self.config)
+
+    def route(method: str, path: str) -> Awaitable:
         """
         Decorator to mark a method as an HTTP route handler.
+
+        Args:
+            method (str): The HTTP method.
+            path (str): The path to the route.
+
+        Returns:
+            Awaitable: The decorated function.
         """
 
         def decorator(func):
@@ -73,11 +88,49 @@ class HttpAPI(common):
 
         return decorator
 
+    def attach(self, app: web.Application) -> "HttpAPI":
+        """
+        Attach the routes to the application.
+
+        Args:
+            app (web.Application): The application to attach the routes to.
+
+        Returns:
+            HttpAPI: The instance of the HttpAPI.
+        """
+        if self.config.auth_username and self.config.auth_password:
+            app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
+
+        self.add_routes(app)
+
+        async def on_prepare(request: Request, response: Response):
+            if "Server" in response.headers:
+                del response.headers["Server"]
+
+            if "Origin" in request.headers:
+                response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
+                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+                response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
+
+        try:
+            app.on_response_prepare.append(on_prepare)
+        except Exception as e:
+            LOG.exception(e)
+
+        return self
+
     async def staticFile(self, req: Request) -> Response:
         """
         Preload static files from the ui/exported folder.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response object.
         """
         path = req.path
+
         if req.path not in self.staticHolder:
             return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
 
@@ -94,10 +147,17 @@ class HttpAPI(common):
             status=web.HTTPOk.status_code,
         )
 
-    def preloadStatic(self, app: web.Application):
+    def preloadStatic(self, app: web.Application) -> "HttpAPI":
         """
         Preload static files from the ui/exported folder.
+
+        Args:
+            app (web.Application): The application to attach the routes to.
+
+        Returns:
+            HttpAPI: The instance of the HttpAPI.
         """
+
         staticDir = os.path.join(self.rootPath, "ui", "exported")
         if not os.path.exists(staticDir):
             raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
@@ -130,22 +190,28 @@ class HttpAPI(common):
                     preloaded += 2
 
         if preloaded < 1:
-            message = f"Could not find the frontend UI static assets. '{staticDir}'."
+            message = f"Failed to find any static files in '{staticDir}'."
             if self.config.ignore_ui:
                 LOG.warning(message)
-                return
+                return self
 
             raise ValueError(message)
 
         LOG.info(f"Preloaded '{preloaded}' static files.")
 
-    def attach(self, app: web.Application):
-        if self.config.auth_username and self.config.auth_password:
-            app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
+        return self
 
-        self.add_routes(app)
+    def add_routes(self, app: web.Application) -> "HttpAPI":
+        """
+        Add the routes to the application.
 
-    def add_routes(self, app: web.Application):
+        Args:
+            app (web.Application): The application to attach the routes to.
+
+        Returns:
+            HttpAPI: The instance of the HttpAPI.
+        """
+
         for attr_name in dir(self):
             method = getattr(self, attr_name)
             if hasattr(method, "_http_method") and hasattr(method, "_http_path"):
@@ -155,30 +221,33 @@ class HttpAPI(common):
 
                 self.routes.route(method._http_method, f"/{http_path}")(method)
 
-        async def on_prepare(request: Request, response: Response):
-            if "Server" in response.headers:
-                del response.headers["Server"]
-
-            if "Origin" in request.headers:
-                response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-                response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
-
         self.routes.static("/api/download/", self.config.download_path)
         self.preloadStatic(app)
 
         try:
             app.add_routes(self.routes)
-            app.on_response_prepare.append(on_prepare)
         except ValueError as e:
             if "ui/exported" in str(e):
                 raise RuntimeError(f"Could not find the frontend UI static assets. '{e}'.") from e
             raise e
 
-    def basic_auth(username: str, password: str):
+    def basic_auth(username: str, password: str) -> Awaitable:
+        """
+        Middleware to handle basic authentication.
+
+        Args:
+            username (str): The username.
+            password (str): The password.
+
+        Returns:
+            Awaitable: The middleware handler.
+        """
+
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
             auth_header = request.headers.get("Authorization")
+            if auth_header is None and request.query.get("apikey") is not None:
+                auth_header = f"Basic {request.query.get('apikey')}"
 
             if auth_header is None:
                 return web.json_response(
@@ -214,20 +283,47 @@ class HttpAPI(common):
 
     @route("OPTIONS", "/{path:.*}")
     async def add_coors(self, _: Request) -> Response:
+        """
+        Add CORS headers to the response.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("GET", "api/ping")
-    async def ping(self, _) -> Response:
+    async def ping(self, _: Request) -> Response:
+        """
+        Ping the server.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         await self.queue.test()
         return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
 
     @route("POST", "api/yt-dlp/convert")
     async def yt_dlp_convert(self, request: Request) -> Response:
+        """
+        Convert the yt-dlp args to a dict.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         post = await request.json()
         args: str | None = post.get("args")
 
         if not args:
-            return web.json_response(data={"error": "args is required."}, status=web.HTTPBadRequest.status_code)
+            return web.json_response(data={"error": "args param is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
             return web.json_response(data=arg_converter(args), status=web.HTTPOk.status_code)
@@ -239,121 +335,25 @@ class HttpAPI(common):
                 data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
             )
 
-    @route("POST", "api/add")
-    async def add_url(self, request: Request) -> Response:
-        post = await request.json()
-
-        url: str = post.get("url")
-
-        if not url:
-            return web.json_response(data={"error": "url is required."}, status=web.HTTPBadRequest.status_code)
-
-        preset: str = str(post.get("preset", self.config.default_preset))
-        folder: str = str(post.get("folder")) if post.get("folder") else ""
-        ytdlp_cookies: str = str(post.get("ytdlp_cookies")) if post.get("ytdlp_cookies") else ""
-        output_template: str = str(post.get("output_template")) if post.get("output_template") else ""
-
-        ytdlp_config = post.get("ytdlp_config")
-        if isinstance(ytdlp_config, str) and ytdlp_config:
-            try:
-                ytdlp_config = json.loads(ytdlp_config)
-            except Exception as e:
-                LOG.error(f"Failed to parse json yt-dlp config for '{url}'. {str(e)}")
-                return web.json_response(
-                    data={"error": f"Failed to parse json yt-dlp config. {str(e)}"},
-                    status=web.HTTPBadRequest.status_code,
-                )
-
-        status = await self.add(
-            url=url,
-            preset=preset,
-            folder=folder,
-            ytdlp_cookies=ytdlp_cookies,
-            ytdlp_config=ytdlp_config if isinstance(ytdlp_config, dict) else {},
-            output_template=output_template,
-        )
-
-        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
-
-    @route("GET", "api/tasks")
-    async def tasks(self, _: Request) -> Response:
-        tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
-
-        if os.path.exists(tasks_file):
-            try:
-                with open(tasks_file, "r") as f:
-                    tasks = json.load(f)
-            except Exception as e:
-                LOG.exception(e)
-                return web.json_response(
-                    {"error": "Failed to load tasks."}, status=web.HTTPInternalServerError.status_code
-                )
-        else:
-            tasks = []
-
-        return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
-
-    @route("PUT", "api/tasks")
-    async def add_tasks(self, request: Request) -> Response:
-        tasks_file: str = os.path.join(self.config.config_path, "tasks.json")
-
-        post = await request.json()
-        if not isinstance(post, list):
-            return web.json_response(
-                {"error": "Invalid request body expecting list with dicts."},
-                status=web.HTTPBadRequest.status_code,
-            )
-
-        tasks: list = []
-
-        for item in post:
-            if not isinstance(item, dict):
-                return web.json_response(
-                    {"error": "Invalid request body expecting list with dicts."},
-                    status=web.HTTPBadRequest.status_code,
-                )
-
-            if not item.get("url"):
-                return web.json_response(
-                    {"error": "url is required.", "data": post}, status=web.HTTPBadRequest.status_code
-                )
-
-            if not item.get("id", None):
-                item["id"] = str(uuid.uuid4())
-
-            if not item.get("timer", None):
-                item["timer"] = f"{random.randint(1,59)} */1 * * *"
-
-            tasks.append(item)
-
-        try:
-            with open(tasks_file, "w") as f:
-                json.dump(tasks, f, indent=4)
-        except Exception as e:
-            LOG.exception(e)
-            return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
-
-        try:
-            self.load_tasks()
-        except Exception as e:
-            LOG.exception(e)
-            return web.json_response(
-                {"error": "Failed to reload tasks.", "message": str(e)},
-                status=web.HTTPInternalServerError.status_code,
-            )
-
-        return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
-
-    @route("GET", "api/url/info")
+    @route("GET", "api/yt-dlp/url/info")
     async def get_info(self, request: Request) -> Response:
+        """
+        Get the video info.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+        """
         url = request.query.get("url")
         if not url:
-            return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
+            return web.json_response(data={"error": "URL is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
             validate_url(url)
         except ValueError as e:
-            return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
+            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
         try:
             key = self.cache.hash(url)
@@ -393,52 +393,165 @@ class HttpAPI(common):
                 status=web.HTTPInternalServerError.status_code,
             )
 
-    @route("POST", "api/add_batch")
-    async def add_batch(self, request: Request) -> Response:
-        status = {}
+    @route("GET", "api/history/add")
+    async def quick_add(self, request: Request) -> Response:
+        """
+        Add a URL to the download queue.
 
-        post = await request.json()
-        if not isinstance(post, list):
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+        """
+        url: str | None = request.query.get("url")
+        if not url:
+            return web.json_response(data={"error": "url param is required."}, status=web.HTTPBadRequest.status_code)
+
+        try:
+            status = await self.add(**self.format_item({"url": url}))
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+
+        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("POST", "api/history")
+    async def history_item_add(self, request: Request) -> Response:
+        """
+        Add a URL to the download queue.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
+        data = await request.json()
+
+        if isinstance(data, dict):
+            data = [data]
+
+        for item in data:
+            try:
+                self.format_item(item)
+            except ValueError as e:
+                return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
+
+        return web.json_response(
+            data=await asyncio.wait_for(
+                fut=asyncio.gather(*[self.add(**self.format_item(item)) for item in data]),
+                timeout=None,
+            ),
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
+
+    @route("GET", "api/tasks")
+    async def tasks(self, _: Request) -> Response:
+        """
+        Get the tasks.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
+        return web.json_response(
+            data=Tasks.get_instance().getTasks(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
+        )
+
+    @route("PUT", "api/tasks")
+    async def tasks_add(self, request: Request) -> Response:
+        """
+        Add tasks to the queue.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+        """
+        data = await request.json()
+
+        if not isinstance(data, list):
             return web.json_response(
-                data={"error": "Invalid request body expecting list with dicts."},
+                {"error": "Invalid request body expecting list with dicts."},
                 status=web.HTTPBadRequest.status_code,
             )
 
-        for item in post:
+        tasks: list = []
+
+        ins = Tasks.get_instance()
+
+        for item in data:
             if not isinstance(item, dict):
                 return web.json_response(
-                    data={"error": "Invalid request body expecting list with dicts."},
+                    {"error": "Invalid request body expecting list with dicts."},
                     status=web.HTTPBadRequest.status_code,
                 )
 
             if not item.get("url"):
                 return web.json_response(
-                    data={"error": "url is required.", "data": post}, status=web.HTTPBadRequest.status_code
+                    {"error": "url is required.", "data": item}, status=web.HTTPBadRequest.status_code
                 )
 
-        for item in post:
-            status[item.get("url")] = await self.add(
-                url=item.get("url"),
-                preset=item.get("preset", "default"),
-                folder=item.get("folder"),
-                ytdlp_cookies=item.get("ytdlp_cookies"),
-                ytdlp_config=item.get("ytdlp_config"),
-                output_template=item.get("output_template"),
+            if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
+                item["id"] = str(uuid.uuid4())
+
+            if not item.get("timer", None) or str(item.get("timer")).strip() == "":
+                item["timer"] = f"{random.randint(1,59)} */1 * * *"
+
+            if not item.get("cookies", None):
+                item["cookies"] = ""
+
+            if not item.get("config", None) or str(item.get("config")).strip() == "":
+                item["config"] = {}
+
+            if not item.get("template", None):
+                item["template"] = str()
+
+            try:
+                ins.validate(item)
+            except ValueError as e:
+                return web.json_response(
+                    {"error": f"Failed to validate task '{item.get('name')}'. '{str(e)}'"},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            tasks.append(Task(**item))
+
+        try:
+            tasks = ins.save(tasks=tasks).load().getTasks()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response(
+                {"error": "Failed to save tasks.", "message": str(e)},
+                status=web.HTTPInternalServerError.status_code,
             )
 
-        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("DELETE", "api/delete")
-    async def delete(self, request: Request) -> Response:
-        post = await request.json()
-        ids = post.get("ids")
-        where = post.get("where")
+    @route("DELETE", "api/history")
+    async def history_delete(self, request: Request) -> Response:
+        """
+        Delete an item from the queue.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
+        data = await request.json()
+        ids = data.get("ids")
+        where = data.get("where")
         if not ids or where not in ["queue", "done"]:
             return web.json_response(
                 data={"error": "ids and where are required."}, status=web.HTTPBadRequest.status_code
             )
 
-        remove_file: bool = bool(post.get("remove_file", True))
+        remove_file: bool = bool(data.get("remove_file", True))
 
         return web.json_response(
             data=await (self.queue.cancel(ids) if where == "queue" else self.queue.clear(ids, remove_file=remove_file)),
@@ -447,7 +560,16 @@ class HttpAPI(common):
         )
 
     @route("POST", "api/history/{id}")
-    async def update_item(self, request: Request) -> Response:
+    async def history_item_update(self, request: Request) -> Response:
+        """
+        Update an item in the history.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         id: str = request.match_info.get("id")
         if not id:
             return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
@@ -475,7 +597,7 @@ class HttpAPI(common):
 
         if updated:
             self.queue.done.put(item)
-            await self.emitter.emit("update", item.info)
+            await self.emitter.emit(Events.UPDATE, item.info)
 
         return web.json_response(
             data=item.info,
@@ -485,6 +607,15 @@ class HttpAPI(common):
 
     @route("GET", "api/history")
     async def history(self, _: Request) -> Response:
+        """
+        Get the history.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         data: dict = {"queue": [], "history": []}
 
         for _, v in self.queue.queue.saved_items():
@@ -495,7 +626,16 @@ class HttpAPI(common):
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("GET", "api/workers")
-    async def workers(self, _) -> Response:
+    async def pool_list(self, _) -> Response:
+        """
+        Get the workers status.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
@@ -523,7 +663,16 @@ class HttpAPI(common):
         )
 
     @route("POST", "api/workers")
-    async def restart_pool(self, _) -> Response:
+    async def pool_restart(self, _) -> Response:
+        """
+        Restart the workers pool.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
 
@@ -532,7 +681,16 @@ class HttpAPI(common):
         return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
 
     @route("PATCH", "api/workers/{id}")
-    async def restart_worker(self, request: Request) -> Response:
+    async def worker_restart(self, request: Request) -> Response:
+        """
+        Restart a worker.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+        """
         id: str = request.match_info.get("id")
         if not id:
             return web.json_response({"error": "worker id is required."}, status=web.HTTPBadRequest.status_code)
@@ -544,8 +702,17 @@ class HttpAPI(common):
 
         return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route("delete", "api/workers/{id}")
-    async def stop_worker(self, request: Request) -> Response:
+    @route("DELETE", "api/workers/{id}")
+    async def worker_stop(self, request: Request) -> Response:
+        """
+        Stop a worker.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         id: str = request.match_info.get("id")
         if not id:
             raise web.HTTPBadRequest(text="worker id is required.")
@@ -559,6 +726,15 @@ class HttpAPI(common):
 
     @route("GET", "api/player/playlist/{file:.*}.m3u8")
     async def playlist(self, request: Request) -> Response:
+        """
+        Get the playlist.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         file: str = request.match_info.get("file")
 
         if not file:
@@ -583,6 +759,15 @@ class HttpAPI(common):
 
     @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8")
     async def m3u8(self, request: Request) -> Response:
+        """
+        Get the m3u8 file.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         file: str = request.match_info.get("file")
         mode: str = request.match_info.get("mode")
 
@@ -624,6 +809,15 @@ class HttpAPI(common):
 
     @route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts")
     async def segments(self, request: Request) -> Response:
+        """
+        Get the segments.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         file: str = request.match_info.get("file")
         segment: int = request.match_info.get("segment")
         sd: int = request.query.get("sd")
@@ -673,6 +867,15 @@ class HttpAPI(common):
 
     @route("GET", "api/player/subtitle/{file:.*}.vtt")
     async def subtitles(self, request: Request) -> Response:
+        """
+        Get the subtitles.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         file: str = request.match_info.get("file")
         file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
         if not file_path.startswith(self.config.download_path):
@@ -707,7 +910,16 @@ class HttpAPI(common):
         )
 
     @route("GET", "/")
-    async def index(self, _) -> Response:
+    async def index(self, _: Request) -> Response:
+        """
+        Get the index file.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
         if "/index.html" not in self.staticHolder:
             LOG.error("Static frontend files not found.")
             return web.json_response(
@@ -724,6 +936,15 @@ class HttpAPI(common):
 
     @route("GET", "api/thumbnail")
     async def get_thumbnail(self, request: Request) -> Response:
+        """
+        Get the thumbnail.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         url = request.query.get("url")
         if not url:
             return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
@@ -759,13 +980,21 @@ class HttpAPI(common):
                 )
         except Exception as e:
             LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'.")
-            LOG.exception(e)
             return web.json_response(
                 data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
             )
 
-    @route("GET", "api/ffprobe/{file:.*}")
+    @route("GET", "api/file/ffprobe/{file:.*}")
     async def get_ffprobe(self, request: Request) -> Response:
+        """
+        Get the ffprobe data.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         file: str = request.match_info.get("file")
         try:
             realFile: str = calcDownloadPath(basePath=self.config.download_path, folder=file, createPath=False)
@@ -782,6 +1011,15 @@ class HttpAPI(common):
 
     @route("GET", "api/youtube/auth")
     async def is_authenticated(self, request: Request) -> Response:
+        """
+        Check if the user yt-dlp cookie is valid & authenticated.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+        """
         cookie_file = self.config.ytdl_options.get("cookiefile", None)
         if not cookie_file:
             return web.json_response(data={"message": "No cookie file provided."}, status=web.HTTPForbidden.status_code)
@@ -834,22 +1072,35 @@ class HttpAPI(common):
 
     @route("GET", "api/notifications")
     async def notifications(self, _: Request) -> Response:
-        data = {
-            "notifications": Notification.get_instance().getTargets(),
-            "allowedTypes": Notification.allowed_events,
-        }
+        """
+        Get the notification targets.
 
-        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        Args:
+            _: The request object.
 
-    @route("POST", "api/notifications/test")
-    async def test_notifications(self, _: Request) -> Response:
-        data = {"type": "test", "message": "This is a test notification."}
-        await self.emitter.emit("test", data)
-
-        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        Returns:
+            Response: The response object.
+        """
+        return web.json_response(
+            data={
+                "notifications": Notification.get_instance().getTargets(),
+                "allowedTypes": list(NotificationEvents.getEvents().values()),
+            },
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
 
     @route("PUT", "api/notifications")
-    async def add_notifications(self, request: Request) -> Response:
+    async def notification_add(self, request: Request) -> Response:
+        """
+        Add notification targets.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+        """
         post = await request.json()
         if not isinstance(post, list):
             return web.json_response(
@@ -859,6 +1110,7 @@ class HttpAPI(common):
 
         targets: list = []
 
+        ins = Notification.get_instance()
         for item in post:
             if not isinstance(item, dict):
                 return web.json_response(
@@ -866,7 +1118,7 @@ class HttpAPI(common):
                     status=web.HTTPBadRequest.status_code,
                 )
 
-            if not item.get("id", None) or validateUUID(item.get("id"), version=4):
+            if not item.get("id", None) or validate_uuid(item.get("id"), version=4):
                 item["id"] = str(uuid.uuid4())
 
             try:
@@ -877,13 +1129,11 @@ class HttpAPI(common):
                     status=web.HTTPBadRequest.status_code,
                 )
 
-            targets.append(item)
-
-        ins = Notification.get_instance()
+            targets.append(ins.makeTarget(item))
 
         try:
             if len(targets) < 1:
-                ins.clearTargets()
+                ins.clear()
 
             ins.save(targets=targets)
             ins.load()
@@ -891,9 +1141,22 @@ class HttpAPI(common):
             LOG.exception(e)
             return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
 
-        data = {
-            "notifications": targets,
-            "allowedTypes": Notification.allowed_events,
-        }
+        data = {"notifications": targets, "allowedTypes": list(NotificationEvents.getEvents().values())}
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("POST", "api/notifications/test")
+    async def notification_test(self, _: Request) -> Response:
+        """
+        Test the notification.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+        """
+        data = {"type": "test", "message": "This is a test notification."}
+        await self.emitter.emit(Events.TEST, data)
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)

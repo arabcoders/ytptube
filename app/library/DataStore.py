@@ -106,7 +106,7 @@ class DataStore:
 
     def getNextDownload(self) -> Download:
         for key in self.dict:
-            if self.dict[key].started() is False and self.dict[key].is_canceled() is False:
+            if self.dict[key].started() is False and self.dict[key].is_cancelled() is False:
                 return self.dict[key]
 
         return None

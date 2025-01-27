@@ -1,7 +1,6 @@
 import asyncio
 import errno
 import functools
-import json
 import logging
 import os
 import pty
@@ -11,6 +10,7 @@ from datetime import datetime
 
 import socketio
 from aiohttp import web
+from typing import Any
 
 from .common import common
 from .config import Config
@@ -18,6 +18,7 @@ from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
 from .Utils import isDownloaded, arg_converter
+from .EventsSubscriber import EventsSubscriber, Events, Event
 
 LOG = logging.getLogger("socket_api")
 
@@ -29,17 +30,29 @@ class HttpSocket(common):
 
     config: Config
     sio: socketio.AsyncServer
+    queue: DownloadQueue
+    emitter: Emitter
 
-    def __init__(self, queue: DownloadQueue, emitter: Emitter, encoder: Encoder):
-        super().__init__(queue=queue, encoder=encoder)
+    def __init__(
+        self,
+        queue: DownloadQueue | None = None,
+        emitter: Emitter | None = None,
+        encoder: Encoder | None = None,
+        config: Config | None = None,
+        sio: socketio.AsyncServer | None = None,
+    ):
+        self.config = config or Config.get_instance()
+        self.queue = queue or DownloadQueue.get_instance()
+        self.emitter = emitter or Emitter.get_instance()
+        self.sio = sio or socketio.AsyncServer(cors_allowed_origins="*")
+        encoder = encoder or Encoder()
 
-        self.sio = socketio.AsyncServer(cors_allowed_origins="*")
-        emitter.add_emitter(lambda event, data, **kwargs: self.sio.emit(event, encoder.encode(data), **kwargs))
+        def emit(event: str, data: Any, **kwargs):
+            return self.sio.emit(event=event, data=encoder.encode(data), **kwargs)
 
-        self.config = Config.get_instance()
+        self.emitter.add_emitter([emit], local=False)
 
-        self.queue = queue
-        self.emitter = emitter
+        super().__init__(queue=queue, encoder=encoder, config=config)
 
     def ws_event(func):  # type: ignore
         """
@@ -61,10 +74,18 @@ class HttpSocket(common):
             if hasattr(method, "_ws_event") and self.sio:
                 self.sio.on(method._ws_event)(method)  # type: ignore
 
+        # self.sio.on("*", es.emit)
+
+        async def handle_event(_: str, data: Event):
+            LOG.debug(f"Event received. '{data}'")
+            await self.add(**data.data)
+
+        EventsSubscriber.get_instance().subscribe(Events.ADD_URL, "socket_add_url", handle_event)
+
     @ws_event  # type: ignore
     async def cli_post(self, sid: str, data):
         if not data:
-            await self.emitter.emit("cli_close", {"exitcode": 0}, to=sid)
+            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": 0}, to=sid)
             return
 
         try:
@@ -100,7 +121,7 @@ class HttpSocket(common):
             except Exception as e:
                 LOG.error(f"Error closing PTY. '{str(e)}'.")
 
-            async def read_pty():
+            async def read_pty(sid: str):
                 loop = asyncio.get_running_loop()
                 buffer = b""
                 while True:
@@ -117,14 +138,18 @@ class HttpSocket(common):
                         if buffer:
                             # Emit any remaining partial line
                             await self.emitter.emit(
-                                "cli_output", {"type": "stdout", "line": buffer.decode("utf-8", errors="replace")}
+                                Events.CLI_OUTPUT,
+                                {"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
+                                to=sid,
                             )
                         break
                     buffer += chunk
                     *lines, buffer = buffer.split(b"\n")
                     for line in lines:
                         await self.emitter.emit(
-                            "cli_output", {"type": "stdout", "line": line.decode("utf-8", errors="replace")}
+                            Events.CLI_OUTPUT,
+                            {"type": "stdout", "line": line.decode("utf-8", errors="replace")},
+                            to=sid,
                         )
                 try:
                     os.close(master_fd)
@@ -132,7 +157,7 @@ class HttpSocket(common):
                     LOG.error(f"Error closing PTY. '{str(e)}'.")
 
             # Start reading output from PTY
-            read_task = asyncio.create_task(read_pty())
+            read_task = asyncio.create_task(read_pty(sid=sid))
 
             # Wait until process finishes
             returncode = await proc.wait()
@@ -140,51 +165,29 @@ class HttpSocket(common):
             # Ensure reading is done
             await read_task
 
-            await self.emitter.emit("cli_close", {"exitcode": returncode}, to=sid)
+            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": returncode}, to=sid)
         except Exception as e:
             LOG.error(f"CLI execute exception was thrown for client '{sid}'.")
             LOG.exception(e)
-            await self.emitter.emit(
-                "cli_out1put",
-                {
-                    "type": "stderr",
-                    "line": str(e),
-                },
-                to=sid,
-            )
-            await self.emitter.emit("cli_close", {"exitcode": -1}, to=sid)
+            await self.emitter.emit(Events.CLI_OUTPUT, {"type": "stderr", "line": str(e)}, to=sid)
+            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": -1}, to=sid)
 
     @ws_event  # type: ignore
     async def add_url(self, sid: str, data: dict):
         url: str | None = data.get("url")
 
         if not url:
-            await self.emitter.error("No URL provided.", to=sid)
+            await self.emitter.error("No URL provided.", data={"unlock": True}, to=sid)
             return
 
-        preset: str = str(data.get("preset", self.config.default_preset))
-        folder: str = str(data.get("folder")) if data.get("folder") else ""
-        ytdlp_cookies: str = str(data.get("ytdlp_cookies")) if data.get("ytdlp_cookies") else ""
-        output_template: str = str(data.get("output_template")) if data.get("output_template") else ""
+        try:
+            item = self.format_item(data)
+        except ValueError as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
-        ytdlp_config = data.get("ytdlp_config")
-        if isinstance(ytdlp_config, str) and ytdlp_config:
-            try:
-                ytdlp_config = json.loads(ytdlp_config)
-            except Exception as e:
-                await self.emitter.error(f"Failed to parse json yt-dlp config. {str(e)}", to=sid)
-                return
+        status = await self.add(**item)
 
-        status = await self.add(
-            url=url,
-            preset=preset,
-            folder=folder,
-            ytdlp_cookies=ytdlp_cookies,
-            ytdlp_config=ytdlp_config if isinstance(ytdlp_config, dict) else {},
-            output_template=output_template,
-        )
-
-        await self.emitter.emit("status", status, to=sid)
+        await self.emitter.emit(event=Events.STATUS, data=status, to=sid)
 
     @ws_event  # type: ignore
     async def item_cancel(self, sid: str, id: str):
@@ -196,7 +199,7 @@ class HttpSocket(common):
         status = await self.queue.cancel([id])
         status.update({"identifier": id})
 
-        await self.emitter.emit("item_cancel", status)
+        await self.emitter.emit(event=Events.ITEM_CANCEL, data=status)
 
     @ws_event  # type: ignore
     async def item_delete(self, sid: str, data: dict):
@@ -213,7 +216,7 @@ class HttpSocket(common):
         status = await self.queue.clear([id], remove_file=bool(data.get("remove_file", False)))
         status.update({"identifier": id})
 
-        await self.emitter.emit("item_delete", status)
+        await self.emitter.emit(event=Events.ITEM_DELETE, data=status)
 
     @ws_event  # type: ignore
     async def archive_item(self, sid: str, data: dict):
@@ -256,26 +259,25 @@ class HttpSocket(common):
         data = {
             **self.queue.get(),
             "config": self.config.frontend(),
-            "tasks": self.config.tasks,
             "presets": self.config.presets,
             "paused": self.queue.isPaused(),
         }
 
-        # get download folder listing
+        # get download folder listing.
         downloadPath: str = self.config.download_path
         data["folders"] = [name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))]
 
-        await self.emitter.emit("initial_data", data, to=sid)
+        await self.emitter.emit(event=Events.INITIAL_DATA, data=data, to=sid)
 
     @ws_event  # type: ignore
     async def pause(self, sid: str, _=None):
         self.queue.pause()
-        await self.emitter.emit("paused", {"paused": True, "at": time.time()})
+        await self.emitter.emit(event=Events.PAUSED, data={"paused": True, "at": time.time()})
 
     @ws_event  # type: ignore
     async def resume(self, sid: str, _=None):
         self.queue.resume()
-        await self.emitter.emit("paused", {"paused": False, "at": time.time()})
+        await self.emitter.emit(event=Events.PAUSED, data={"paused": False, "at": time.time()})
 
     @ws_event
     async def ytdlp_convert(self, sid: str, data: dict):
@@ -290,7 +292,7 @@ class HttpSocket(common):
             return
 
         try:
-            await self.emitter.emit("ytdlp_convert", arg_converter(args), to=sid)
+            await self.emitter.emit(event=Events.YTDLP_CONVERT, data=arg_converter(args), to=sid)
             return
         except Exception as e:
             err = str(e).strip()

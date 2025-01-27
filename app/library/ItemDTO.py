@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from email.utils import formatdate
 from typing import Any
 
+
 @dataclass(kw_only=True)
 class ItemDTO:
     """
@@ -14,22 +15,21 @@ class ItemDTO:
 
     _id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
 
-    error: str|None = None
+    error: str | None = None
     id: str
     title: str
     url: str
     quality: str | None = None
     format: str | None = None
-    thumbnail: str | None = None
     preset: str = "default"
     folder: str
     download_dir: str | None = None
     temp_dir: str | None = None
     status: str | None = None
-    ytdlp_cookies: str | None = None
-    ytdlp_config: dict = field(default_factory=dict)
-    output_template: str | None = None
-    output_template_chapter: str | None = None
+    cookies: str | None = None
+    config: dict = field(default_factory=dict)
+    template: str | None = None
+    template_chapter: str | None = None
     timestamp: float = time.time_ns()
     is_live: bool | None = None
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))
@@ -49,19 +49,41 @@ class ItemDTO:
     speed: str | None = None
     eta: str | None = None
 
+    # DEPRECATED: These fields are deprecated and will be removed in the future.
+    thumbnail: str | None = None
+    ytdlp_cookies: str | None = None
+    ytdlp_config: dict = field(default_factory=dict)
+    output_template: str | None = None
+    output_template_chapter: str | None = None
+
     def serialize(self) -> dict:
         deprecated: tuple = (
             "thumbnail",
             "quality",
             "format",
+            "ytdlp_cookies",
+            "ytdlp_config",
+            "output_template",
+            "output_template_chapter",
         )
 
         if self.thumbnail and "thumbnail" not in self.extras:
             self.extras["thumbnail"] = self.thumbnail
 
+        mapper: dict = {
+            "cookies": "ytdlp_cookies",
+            "config": "ytdlp_config",
+            "template": "output_template",
+            "template_chapter": "output_template_chapter",
+        }
+
+        for k, v in mapper.items():
+            if not self.get(k) and self.get(v):
+                self.__dict__[k] = self.get(v)
+
         dump = self.__dict__.copy()
         for f in deprecated:
-            dump.pop(f)
+            dump.pop(f, None)
 
         return dump
 

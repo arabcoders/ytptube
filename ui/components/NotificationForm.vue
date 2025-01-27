@@ -205,11 +205,8 @@
 </template>
 
 <script setup>
-import { request } from '~/utils/index'
-
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
-const addInProgress = ref(false);
 const props = defineProps({
   reference: {
     type: String,
@@ -223,7 +220,12 @@ const props = defineProps({
   item: {
     type: Object,
     required: true,
-  }
+  },
+  addInProgress: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 })
 
 const form = reactive(props.item);
@@ -252,16 +254,12 @@ const checkInfo = async () => {
     return;
   }
 
-  // -- validate headers
-
   for (const header of form.request.headers) {
     if (!header.key || !header.value) {
       form.request.headers.splice(form.request.headers.indexOf(header), 1);
-      return;
     }
   }
 
-  addInProgress.value = true;
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) });
 }
 
