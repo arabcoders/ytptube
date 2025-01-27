@@ -113,13 +113,13 @@
                 </label>
                 <div class="control has-icons-left">
                   <input type="text" class="input" id="output_template" placeholder="The output template to use"
-                    v-model="form.output_template" :disabled="addInProgress">
+                    v-model="form.template" :disabled="addInProgress">
                   <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>The output template to use, if not set, it will defaults to
-                    <code>{{ config.app.output_template }}</code></span>
+                    <code>{{ config.app.template }}</code></span>
                 </span>
               </div>
             </div>

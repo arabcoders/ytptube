@@ -112,7 +112,7 @@ class Main:
         """
         self.socket.attach(self.app)
         self.http.attach(self.app)
-        Tasks.get_instance().load()
+        Tasks.get_instance().attach(self.app)
 
         def started(_):
             LOG.info("=" * 40)

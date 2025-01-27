@@ -63,7 +63,7 @@ class HttpAPI(common):
         self.routes = web.RouteTableDef()
         self.cache = Cache()
 
-        super().__init__(queue=self.queue, encoder=self.encoder)
+        super().__init__(queue=self.queue, encoder=self.encoder, config=self.config)
 
     def route(method: str, path: str) -> Awaitable:
         """
@@ -980,7 +980,6 @@ class HttpAPI(common):
                 )
         except Exception as e:
             LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'.")
-            LOG.exception(e)
             return web.json_response(
                 data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
             )

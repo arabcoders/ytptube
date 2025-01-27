@@ -1,14 +1,15 @@
 import asyncio
-import datetime
+from datetime import datetime
 import json
 import logging
 import os
 import time
+from dataclasses import dataclass, field
 from typing import Any, List
 
 import httpx
 from aiocron import Cron, crontab
-from dataclasses import dataclass, field
+from aiohttp import web
 
 from .config import Config
 from .Emitter import Emitter
@@ -81,15 +82,11 @@ class Tasks(metaclass=Singleton):
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self._emitter: Emitter = emitter or Emitter.get_instance()
 
-        if os.path.exists(self._file):
+        if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
             try:
-                if "600" != oct(os.stat(self._file).st_mode)[-3:]:
-                    os.chmod(self._file, 0o600)
+                os.chmod(self._file, 0o600)
             except Exception:
                 pass
-
-            if os.path.getsize(self._file) > 10:
-                self.load()
 
         def handle_event(_, e: Event):
             self.save(**e.data)
@@ -108,6 +105,24 @@ class Tasks(metaclass=Singleton):
         if not Tasks._instance:
             Tasks._instance = Tasks()
         return Tasks._instance
+
+    def attach(self, _: web.Application):
+        """
+        Attach the tasks to the aiohttp application.
+
+        Args:
+            _ (web.Application): The aiohttp application.
+
+        Returns:
+            None
+        """
+        self.load()
+
+    def shutdown(self):
+        """
+        Shutdown the tasks service.
+        """
+        self.clear()
 
     def getTasks(self) -> List[Task]:
         """Return the tasks."""
@@ -266,7 +281,7 @@ class Tasks(metaclass=Singleton):
             None
         """
         try:
-            timeNow = datetime.datetime().isoformat()
+            timeNow = datetime.now().isoformat()
             started = time.time()
             if not task.url:
                 LOG.error(f"Failed to dispatch task '{task.id}: {task.name}'. No URL found.")
@@ -274,43 +289,48 @@ class Tasks(metaclass=Singleton):
 
             preset: str = str(task.preset or self._default_preset)
             folder: str = task.folder if task.folder else ""
-            ytdlp_cookies: str = str(task.cookies) if task.cookies else ""
-            output_template: str = task.template if task.template else ""
+            cookies: str = str(task.cookies) if task.cookies else ""
+            template: str = task.template if task.template else ""
 
-            ytdlp_config = task.config if task.config else {}
-            if isinstance(ytdlp_config, str) and ytdlp_config:
+            config = task.config if task.config else {}
+            if isinstance(config, str) and config:
                 try:
-                    ytdlp_config = json.loads(ytdlp_config)
+                    config = json.loads(config)
                 except Exception as e:
                     LOG.error(f"Failed to parse json yt-dlp config for '{task.name}'. {str(e)}")
                     return
 
-            await self.emitter.info(f"Task '{task.name}' dispatched at '{timeNow}'.")
             LOG.info(f"Task '{task.id}: {task.name}' dispatched at '{timeNow}'.")
 
-            await self._emitter.emit(
-                event=Events.ADD_URL,
-                data=Event(
-                    id=task.id,
-                    data={
-                        "url": task.url,
-                        "preset": preset,
-                        "folder": folder,
-                        "ytdlp_cookies": ytdlp_cookies,
-                        "ytdlp_config": ytdlp_config,
-                        "output_template": output_template,
-                    },
-                ),
-                local=True,
+            tasks = []
+            tasks.append(self._emitter.info(f"Task '{task.name}' dispatched at '{timeNow}'."))
+            tasks.append(
+                self._emitter.emit(
+                    event=Events.ADD_URL,
+                    data=Event(
+                        id=task.id,
+                        data={
+                            "url": task.url,
+                            "preset": preset,
+                            "folder": folder,
+                            "cookies": cookies,
+                            "config": config,
+                            "template": template,
+                        },
+                    ),
+                    local=True,
+                )
             )
 
-            timeNow = datetime.datetime().isoformat()
+            await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
+
+            timeNow = datetime.now().isoformat()
 
             ended = time.time()
             LOG.info(f"Task '{task.id}: {task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
-            await self.emitter.success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.")
+            await self._emitter.success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.")
         except Exception as e:
-            timeNow = datetime.datetime().isoformat()
+            timeNow = datetime.now().isoformat()
             LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{str(e)}'.")
-            await self.emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{str(e)}'.")
+            await self._emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{str(e)}'.")

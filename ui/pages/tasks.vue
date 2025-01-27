@@ -83,7 +83,7 @@ div.is-centered {
                   </p>
                   <p>
                     <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.output_template ?? config.app.output_template }}</span>
+                    <span>{{ item.template ?? config.app.output_template }}</span>
                   </p>
                   <p>
                     <span class="icon"><i class="fa-solid fa-tv" /></span>

@@ -40,6 +40,9 @@ class Events:
     TEST = "test"
 
     TASKS_ADD = "task_add"
+    TASK_DISPATCHED = "task_dispatched"
+    TASK_FINISHED = "task_finished"
+    TASK_ERROR = "task_error"
 
 
 @dataclass(kw_only=True)
@@ -169,10 +172,13 @@ class EventsSubscriber(metaclass=Singleton):
         tasks = []
         for id, callback in self._listeners[event].items():
             try:
-                if "data" not in kwargs or not isinstance(kwargs["data"], Event):
-                    data = Event(id=id, data={"args": args if args else [], **kwargs})
-                else:
+                if args and isinstance(args[0], Event):
+                    data = args[0]
+                elif "data" in kwargs and isinstance(kwargs["data"], Event):
                     data = kwargs["data"]
+                else:
+                    data = Event(id=id, data={"args": args if args else [], **kwargs})
+
                 tasks.append(asyncio.create_task(callback(event, data)))
             except Exception as e:
                 LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{str(e)}'.")

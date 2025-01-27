@@ -468,9 +468,9 @@ const reQueueItem = item => {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
-    ytdlp_config: item.ytdlp_config,
-    ytdlp_cookies: item.ytdlp_cookies,
-    output_template: item.output_template,
+    config: item.config,
+    cookies: item.cookies,
+    template: item.template,
   })
 }
 </script>

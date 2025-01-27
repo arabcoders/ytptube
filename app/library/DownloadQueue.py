@@ -132,9 +132,9 @@ class DownloadQueue(metaclass=Singleton):
         entry: dict,
         preset: str,
         folder: str,
-        ytdlp_config: dict = {},
-        ytdlp_cookies: str = "",
-        output_template: str = "",
+        config: dict = {},
+        cookies: str = "",
+        template: str = "",
         already=None,
     ):
         """
@@ -144,9 +144,9 @@ class DownloadQueue(metaclass=Singleton):
             entry (dict): The entry to add to the download queue.
             preset (str): The preset to use for the download.
             folder (str): The folder to save the download to.
-            ytdlp_config (dict): The yt-dlp configuration to use for the download.
-            ytdlp_cookies (str): The cookies to use for the download.
-            output_template (str): The output template to use for the download.
+            config (dict): The yt-dlp configuration to use for the download.
+            cookies (str): The cookies to use for the download.
+            template (str): The output template to use for the download.
             already (set): The set of already downloaded items.
 
         Returns:
@@ -180,9 +180,9 @@ class DownloadQueue(metaclass=Singleton):
                         entry=etr,
                         preset=preset,
                         folder=folder,
-                        ytdlp_config=ytdlp_config,
-                        ytdlp_cookies=ytdlp_cookies,
-                        output_template=output_template,
+                        config=config,
+                        cookies=cookies,
+                        template=template,
                         already=already,
                     )
                 )
@@ -249,10 +249,10 @@ class DownloadQueue(metaclass=Singleton):
                 folder=folder,
                 download_dir=download_dir,
                 temp_dir=self.config.temp_path,
-                ytdlp_cookies=ytdlp_cookies,
-                ytdlp_config=ytdlp_config,
-                output_template=output_template if output_template else self.config.output_template,
-                output_template_chapter=self.config.output_template_chapter,
+                cookies=cookies,
+                config=config,
+                template=template if template else self.config.output_template,
+                template_chapter=self.config.output_template_chapter,
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
@@ -263,7 +263,7 @@ class DownloadQueue(metaclass=Singleton):
 
             for property, value in entry.items():
                 if property.startswith("playlist"):
-                    dl.output_template = str(dl.output_template).replace(f"%({property})s", str(value))
+                    dl.template = str(dl.template).replace(f"%({property})s", str(value))
 
             dlInfo: Download = Download(info=dl, info_dict=entry, debug=bool(self.config.ytdl_debug))
 
@@ -291,9 +291,9 @@ class DownloadQueue(metaclass=Singleton):
                 url=str(entry.get("url")),
                 preset=preset,
                 folder=folder,
-                ytdlp_config=ytdlp_config,
-                ytdlp_cookies=ytdlp_cookies,
-                output_template=output_template,
+                config=config,
+                cookies=cookies,
+                template=template,
                 already=already,
             )
 
@@ -304,25 +304,25 @@ class DownloadQueue(metaclass=Singleton):
         url: str,
         preset: str,
         folder: str,
-        ytdlp_config: dict = {},
-        ytdlp_cookies: str = "",
-        output_template: str = "",
+        config: dict = {},
+        cookies: str = "",
+        template: str = "",
         already=None,
     ):
-        ytdlp_config = ytdlp_config if ytdlp_config else {}
+        config = config if config else {}
         folder = str(folder) if folder else ""
 
         filePath = calcDownloadPath(basePath=self.config.download_path, folder=folder)
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {output_template}', 'Cookies: {ytdlp_cookies}' 'YTConfig: {ytdlp_config}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {cookies}' 'YTConfig: {config}'."
         )
 
-        if isinstance(ytdlp_config, str):
+        if isinstance(config, str):
             try:
-                ytdlp_config = json.loads(ytdlp_config)
+                config = json.loads(config)
             except Exception as e:
-                LOG.error(f"Unable to load '{ytdlp_config=}'. {str(e)}")
+                LOG.error(f"Unable to load '{config=}'. {str(e)}")
                 return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {str(e)}"}
 
         already = set() if already is None else already
@@ -347,7 +347,7 @@ class DownloadQueue(metaclass=Singleton):
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
                     ExtractInfo,
-                    get_opts(preset, mergeConfig(self.config.ytdl_options, ytdlp_config)),
+                    get_opts(preset, mergeConfig(self.config.ytdl_options, config)),
                     url,
                     bool(self.config.ytdl_debug),
                 ),
@@ -377,9 +377,9 @@ class DownloadQueue(metaclass=Singleton):
             entry=entry,
             preset=preset,
             folder=folder,
-            ytdlp_config=ytdlp_config,
-            ytdlp_cookies=ytdlp_cookies,
-            output_template=output_template,
+            config=config,
+            cookies=cookies,
+            template=template,
             already=already,
         )
 

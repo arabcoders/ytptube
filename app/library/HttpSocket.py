@@ -52,7 +52,7 @@ class HttpSocket(common):
 
         self.emitter.add_emitter([emit], local=False)
 
-        super().__init__(queue=queue, encoder=encoder)
+        super().__init__(queue=queue, encoder=encoder, config=config)
 
     def ws_event(func):  # type: ignore
         """
@@ -77,6 +77,7 @@ class HttpSocket(common):
         # self.sio.on("*", es.emit)
 
         async def handle_event(_: str, data: Event):
+            LOG.debug(f"Event received. '{data}'")
             await self.add(**data.data)
 
         EventsSubscriber.get_instance().subscribe(Events.ADD_URL, "socket_add_url", handle_event)
