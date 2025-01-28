@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Awaitable
+from collections.abc import Awaitable
 
 from .EventsSubscriber import Events
 from .Singleton import Singleton
@@ -69,19 +69,19 @@ class Emitter(metaclass=Singleton):
     async def cleared(self, dl: dict | None = None, local: bool = False, **kwargs):
         await self.emit(Events.CLEARED, data=dl, local=local, **kwargs)
 
-    async def error(self, message: str, data: dict = {}, local: bool = False, **kwargs):
+    async def error(self, message: str, data: dict|None = None, local: bool = False, **kwargs):
         msg = {"type": "error", "message": message, "data": {}}
         if data:
             msg.update({"data": data})
         await self.emit(Events.ERROR, data=msg, local=local, **kwargs)
 
-    async def info(self, message: str, data: dict = {}, local: bool = False, **kwargs):
+    async def info(self, message: str, data: dict|None = None, local: bool = False, **kwargs):
         msg = {"type": "info", "message": message, "data": {}}
         if data:
             msg.update({"data": data})
         await self.emit(Events.LOG_INFO, data=msg, local=local, **kwargs)
 
-    async def success(self, message: str, data: dict = {}, local: bool = False, **kwargs):
+    async def success(self, message: str, data: dict|None = None, local: bool = False, **kwargs):
         msg = {"type": "success", "message": message, "data": {}}
         if data:
             msg.update({"data": data})

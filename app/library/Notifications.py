@@ -20,7 +20,7 @@ LOG = logging.getLogger("notifications")
 
 
 @dataclass(kw_only=True)
-class targetRequestHeader:
+class TargetRequestHeader:
     """Request header details for a notification target."""
 
     key: str
@@ -37,13 +37,13 @@ class targetRequestHeader:
 
 
 @dataclass(kw_only=True)
-class targetRequest:
+class TargetRequest:
     """Request details for a notification target."""
 
     type: str
     method: str
     url: str
-    headers: list[targetRequestHeader] = field(default_factory=list)
+    headers: list[TargetRequestHeader] = field(default_factory=list)
 
     def serialize(self) -> dict:
         return {
@@ -67,7 +67,7 @@ class Target:
     id: str
     name: str
     on: list[str]
-    request: targetRequest
+    request: TargetRequest
 
     def serialize(self) -> dict:
         return {
@@ -95,17 +95,12 @@ class NotificationEvents:
     TEST = Events.TEST
 
     @staticmethod
-    def getEvents() -> dict[str, str]:
-        data: dict[str, str] = {}
-        for k, v in vars(NotificationEvents).items():
-            if not k.startswith("__") and not callable(v):
-                data[k] = v
-
-        return data
+    def get_events() -> dict[str, str]:
+        return {k: v for k, v in vars(NotificationEvents).items() if not k.startswith("__") and not callable(v)}
 
     @staticmethod
-    def isValid(event: str) -> bool:
-        return event in NotificationEvents.getEvents().values()
+    def is_valid(event: str) -> bool:
+        return event in NotificationEvents.get_events().values()
 
 
 class Notification(metaclass=Singleton):
@@ -147,7 +142,7 @@ class Notification(metaclass=Singleton):
 
         return Notification._instance
 
-    def getTargets(self) -> list[Target]:
+    def get_targets(self) -> list[Target]:
         """Get the list of notification targets."""
         return self._targets
 
@@ -191,7 +186,7 @@ class Notification(metaclass=Singleton):
         LOG.info(f"Loading notification targets from '{self._file}'.")
 
         try:
-            with open(self._file, "r") as f:
+            with open(self._file) as f:
                 targets = json.load(f)
         except Exception as e:
             LOG.error(f"Error loading notification targets from '{self._file}'. '{e!s}'")
@@ -204,7 +199,7 @@ class Notification(metaclass=Singleton):
                     LOG.error(f"Invalid notification target '{target}'. '{e!s}'")
                     continue
 
-                target = self.makeTarget(target)
+                target = self.make_target(target)
 
                 self._targets.append(target)
 
@@ -261,7 +256,7 @@ class Notification(metaclass=Singleton):
                 raise ValueError(msg)
 
             for e in target["on"]:
-                if e not in NotificationEvents.getEvents().values():
+                if e not in NotificationEvents.get_events().values():
                     msg = f"Invalid notification target. Invalid event '{e}' found."
                     raise ValueError(msg)
 
@@ -345,7 +340,7 @@ class Notification(metaclass=Singleton):
             LOG.error(f"Error sending Notification event '{event}' id '{itemId}' to '{target.name}'. '{e}'.")
             return {"url": target.request.url, "status": 500, "text": str(e)}
 
-    def makeTarget(self, target: dict) -> Target:
+    def make_target(self, target: dict) -> Target:
         """
         Make a notification target from a dictionary.
 
@@ -360,12 +355,12 @@ class Notification(metaclass=Singleton):
             id=target.get("id"),
             name=target.get("name"),
             on=target.get("on", []),
-            request=targetRequest(
+            request=TargetRequest(
                 type=target.get("request", {}).get("type", "json"),
                 method=target.get("request", {}).get("method", "POST"),
                 url=target.get("request", {}).get("url"),
                 headers=[
-                    targetRequestHeader(key=h.get("key"), value=h.get("value"))
+                    TargetRequestHeader(key=h.get("key"), value=h.get("value"))
                     for h in target.get("request", {}).get("headers", [])
                 ],
             ),
@@ -375,7 +370,7 @@ class Notification(metaclass=Singleton):
         if len(self._targets) < 1:
             return False
 
-        if not NotificationEvents.isValid(event):
+        if not NotificationEvents.is_valid(event):
             return False
 
         return self.send(event, data)

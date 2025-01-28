@@ -1,7 +1,7 @@
 import copy
 import json
 from collections import OrderedDict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from email.utils import formatdate
 from sqlite3 import Connection
 
@@ -39,13 +39,9 @@ class DataStore:
         if key and key in self.dict:
             return True
 
-        for i in self.dict:
-            if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
-                return True
+        return any((key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url) for i in self.dict)
 
-        return False
-
-    def get(self, key: str, url: str|None = None) -> Download:
+    def get(self, key: str, url: str | None = None) -> Download:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
@@ -57,8 +53,8 @@ class DataStore:
         msg = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
-    def getById(self, id: str) -> Download | None:
-        return self.dict[id] if id in self.dict else None
+    def get_by_id(self, id: str) -> Download | None:
+        return self.dict.get(id, None)
 
     def items(self) -> list[tuple[str, Download]]:
         return self.dict.items()
@@ -71,25 +67,25 @@ class DataStore:
         )
 
         for row in cursor:
-            rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")
+            rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             data: dict = json.loads(row["data"])
             key: str = data.pop("_id")
             item: ItemDTO = ItemDTO(**data)
             item._id = key
-            item.datetime = formatdate(rowDate.replace(tzinfo=timezone.utc).timestamp())
+            item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
             items.append((row["id"], item))
 
         return items
 
     def put(self, value: Download) -> Download:
         self.dict.update({value.info._id: value})
-        self._updateStoreItem(self.type, value.info)
+        self._update_store_item(self.type, value.info)
 
         return self.dict[value.info._id]
 
     def delete(self, key: str) -> None:
         self.dict.pop(key, None)
-        self._deleteStoreItem(key)
+        self._delete_store_item(key)
 
     def next(self) -> tuple[str, Download]:
         return next(iter(self.dict.items()))
@@ -97,17 +93,13 @@ class DataStore:
     def empty(self):
         return not bool(self.dict)
 
-    def hasDownloads(self):
+    def has_downloads(self):
         if 0 == len(self.dict):
             return False
 
-        for key in self.dict:
-            if self.dict[key].started() is False:
-                return True
+        return any(self.dict[key].started() is False for key in self.dict)
 
-        return False
-
-    def getNextDownload(self) -> Download:
+    def get_next_download(self) -> Download:
         for key in self.dict:
             if self.dict[key].started() is False and self.dict[key].is_cancelled() is False:
                 return self.dict[key]
@@ -118,7 +110,7 @@ class DataStore:
         self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
         return True
 
-    def _updateStoreItem(self, type: str, item: ItemDTO) -> None:
+    def _update_store_item(self, type: str, item: ItemDTO) -> None:
         sqlStatement = """
         INSERT INTO "history" ("id", "type", "url", "data")
         VALUES (?, ?, ?, ?)
@@ -149,11 +141,11 @@ class DataStore:
                 type,
                 stored.url,
                 stored.json(),
-                datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
 
-    def _deleteStoreItem(self, key: str) -> None:
+    def _delete_store_item(self, key: str) -> None:
         self.connection.execute(
             'DELETE FROM "history" WHERE "type" = ? AND "id" = ?',
             (

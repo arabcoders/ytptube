@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -106,6 +106,18 @@ class Tasks(metaclass=Singleton):
             Tasks._instance = Tasks()
         return Tasks._instance
 
+    async def on_shutdown(self, _: web.Application):
+        """
+        Shutdown the socket server.
+
+        Args:
+            _: The aiohttp application.
+
+        """
+        LOG.debug("Shutting down tasks runner.")
+        self.clear(shutdown=True)
+        LOG.debug("Tasks runner has been shut down.")
+
     def attach(self, _: web.Application):
         """
         Attach the tasks to the aiohttp application.
@@ -119,13 +131,7 @@ class Tasks(metaclass=Singleton):
         """
         self.load()
 
-    def shutdown(self):
-        """
-        Shutdown the tasks service.
-        """
-        self.clear()
-
-    def getTasks(self) -> list[Task]:
+    def get_tasks(self) -> list[Task]:
         """Return the tasks."""
         return [job.task for job in self._jobs]
 
@@ -177,7 +183,7 @@ class Tasks(metaclass=Singleton):
 
         return self
 
-    def clear(self) -> "Tasks":
+    def clear(self, shutdown: bool = False) -> "Tasks":
         """
         Clear all tasks.
 
@@ -193,8 +199,9 @@ class Tasks(metaclass=Singleton):
                 LOG.info(f"Stopping job '{task.id}: {task.name}'.")
                 task.job.stop()
             except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to stop job '{task.id}: {task.name}'. '{e!s}'.")
+                if not shutdown:
+                    LOG.exception(e)
+                    LOG.error(f"Failed to stop job '{task.id}: {task.name}'. '{e!s}'.")
 
         self._jobs.clear()
 
@@ -292,7 +299,7 @@ class Tasks(metaclass=Singleton):
 
         """
         try:
-            timeNow = datetime.now().isoformat()
+            timeNow = datetime.now(UTC).isoformat()
             started = time.time()
             if not task.url:
                 LOG.error(f"Failed to dispatch task '{task.id}: {task.name}'. No URL found.")
@@ -335,13 +342,13 @@ class Tasks(metaclass=Singleton):
 
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
 
-            timeNow = datetime.now().isoformat()
+            timeNow = datetime.now(UTC).isoformat()
 
             ended = time.time()
             LOG.info(f"Task '{task.id}: {task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
             await self._emitter.success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.")
         except Exception as e:
-            timeNow = datetime.now().isoformat()
+            timeNow = datetime.now(UTC).isoformat()
             LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{e!s}'.")
             await self._emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{e!s}'.")

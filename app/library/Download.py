@@ -15,7 +15,7 @@ from .config import Config
 from .Emitter import Emitter
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import get_opts, jsonCookie, mergeConfig
+from .Utils import get_opts, json_cookie, merge_config
 
 LOG = logging.getLogger("download")
 
@@ -34,7 +34,7 @@ class Download:
     info: ItemDTO = None
     default_ytdl_opts: dict = None
     debug: bool = False
-    tempPath: str = None
+    temp_path: str = None
     emitter: Emitter = None
     cancelled: bool = False
     is_live: bool = False
@@ -64,7 +64,7 @@ class Download:
     )
     "Fields to be extracted from yt-dlp progress hook."
 
-    tempKeep: bool = False
+    temp_keep: bool = False
     "Keep temp folder after download."
 
     def __init__(self, info: ItemDTO, info_dict: dict = None, debug: bool = False):
@@ -86,7 +86,7 @@ class Download:
         self.proc = None
         self.emitter = None
         self.max_workers = int(config.max_workers)
-        self.tempKeep = bool(config.temp_keep)
+        self.temp_keep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.is_manifestless = "is_manifestless" in self.info.options and self.info.options["is_manifestless"] is True
         self.info_dict = info_dict
@@ -94,7 +94,7 @@ class Download:
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
-        if "finished" == data.get("status", None) and data.get("info_dict", {}).get("filename", None):
+        if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
             dataDict["filename"] = data["info_dict"]["filename"]
 
         self.status_queue.put({"id": self.id, **dataDict})
@@ -115,11 +115,11 @@ class Download:
 
     def _download(self):
         try:
-            params: dict = get_opts(self.preset, mergeConfig(self.default_ytdl_opts, self.ytdl_opts))
+            params: dict = get_opts(self.preset, merge_config(self.default_ytdl_opts, self.ytdl_opts))
             params.update(
                 {
                     "color": "no_color",
-                    "paths": {"home": self.download_dir, "temp": self.tempPath},
+                    "paths": {"home": self.download_dir, "temp": self.temp_path},
                     "outtmpl": {"default": self.template, "chapter": self.template_chapter},
                     "noprogress": True,
                     "break_on_existing": True,
@@ -138,17 +138,17 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    data = jsonCookie(json.loads(self.info.cookies))
+                    data = json_cookie(json.loads(self.info.cookies))
                     if not data:
                         LOG.warning(
                             f"The cookie string that was provided for {self.info.title} is empty or not in expected spec."
                         )
-                    with open(os.path.join(self.tempPath, f"cookie_{self.info._id}.txt"), "w") as f:
+                    with open(os.path.join(self.temp_path, f"cookie_{self.info._id}.txt"), "w") as f:
                         f.write(data)
 
                     params["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Invalid cookies: was provided for '{self.info.title}'. '{str(e)}'.")
+                    LOG.error(f"Invalid cookies: was provided for '{self.info.title}'. '{e!s}'.")
 
             if self.is_live or self.is_manifestless:
                 hasDeletedOptions = False
@@ -191,10 +191,10 @@ class Download:
         self.status_queue = Config.get_manager().Queue()
 
         # Create temp dir for each download.
-        self.tempPath = os.path.join(self.temp_dir, hashlib.shake_256(f"D-{self.info.id}".encode("utf-8")).hexdigest(5))
+        self.temp_path = os.path.join(self.temp_dir, hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5))
 
-        if not os.path.exists(self.tempPath):
-            os.makedirs(self.tempPath, exist_ok=True)
+        if not os.path.exists(self.temp_path):
+            os.makedirs(self.temp_path, exist_ok=True)
 
         self.proc = multiprocessing.Process(name=f"download-{self.id}", target=self._download)
         self.proc.start()
@@ -287,26 +287,26 @@ class Download:
         return False
 
     def delete_temp(self):
-        if self.tempKeep is True or not self.tempPath:
+        if self.temp_keep is True or not self.temp_path:
             return
 
         if "finished" != self.info.status and self.is_live:
             LOG.warning(
-                f"Keeping live temp folder '{self.tempPath}', as the reported status is not finished '{self.info.status}'."
+                f"Keeping live temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
             )
             return
 
-        if not os.path.exists(self.tempPath):
+        if not os.path.exists(self.temp_path):
             return
 
-        if self.tempPath == self.temp_dir:
+        if self.temp_path == self.temp_dir:
             LOG.warning(
-                f"Attempted to delete video temp folder: {self.tempPath}, but it is the same as main temp folder."
+                f"Attempted to delete video temp folder: {self.temp_path}, but it is the same as main temp folder."
             )
             return
 
-        LOG.info(f"Deleting Temp folder '{self.tempPath}'.")
-        shutil.rmtree(self.tempPath, ignore_errors=True)
+        LOG.info(f"Deleting Temp folder '{self.temp_path}'.")
+        shutil.rmtree(self.temp_path, ignore_errors=True)
 
     async def progress_update(self):
         """
@@ -342,7 +342,6 @@ class Download:
                         self.info.file_size = os.path.getsize(status.get("filename"))
                     except FileNotFoundError:
                         self.info.file_size = 0
-                        pass
 
             self.info.status = status.get("status", self.info.status)
             self.info.msg = status.get("msg")

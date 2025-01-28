@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
-from aiohttp.web import Response
+from aiohttp.web import HTTPFound, Response
 
 from .ffprobe import ffprobe
 from .Subtitle import Subtitle
-from .Utils import StreamingError, calcDownloadPath, checkId
+from .Utils import StreamingError, calc_download_path, check_id
 
 
 class Playlist:
@@ -17,16 +17,16 @@ class Playlist:
         self.url = url
 
     async def make(self, download_path: str, file: str) -> str | Response:
-        rFile = Path(calcDownloadPath(basePath=download_path, folder=file, createPath=False))
+        rFile = Path(calc_download_path(base_path=download_path, folder=file, create_path=False))
 
         if not rFile.exists():
-            possibleFile = checkId(download_path, rFile)
+            possibleFile = check_id(file=rFile)
             if not possibleFile:
                 msg = f"File '{rFile}' does not exist."
                 raise StreamingError(msg)
 
             return Response(
-                status=302,
+                status=HTTPFound.status_code,
                 headers={
                     "Location": f"{self.url}api/player/playlist/{quote(str(possibleFile).replace(download_path, '').strip('/'))}.m3u8"
                 },

@@ -22,6 +22,7 @@ mutagen = "*"
 brotli = "*"
 brotlicffi = "*"
 yt-dlp = "*"
+anyio = "*"
 
 [dev-packages]
 

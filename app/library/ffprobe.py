@@ -8,6 +8,8 @@ import json
 import operator
 import os
 
+import anyio
+
 
 # parameter-less decorator
 def async_lru_cache_decorator(async_function):
@@ -85,10 +87,7 @@ class FFStream:
         if self.__dict__.get("codec_type", None) != "video":
             return False
 
-        if self.__dict__.get("codec_name", None) in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]:
-            return False
-
-        return True
+        return self.__dict__.get("codec_name", None) not in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]
 
     def is_subtitle(self):
         """
@@ -266,7 +265,7 @@ async def ffprobe(file: str) -> FFProbeResult:
 
     """
     try:
-        with open(os.devnull, "w") as tempf:
+        async with await anyio.open_file(os.devnull, "w") as tempf:
             await asyncio.create_subprocess_exec("ffprobe", "-h", stdout=tempf, stderr=tempf)
     except FileNotFoundError as e:
         msg = "ffprobe not found."

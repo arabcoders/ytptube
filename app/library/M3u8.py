@@ -3,29 +3,21 @@ import os
 from urllib.parse import quote
 
 from .ffprobe import ffprobe
-from .Utils import StreamingError, calcDownloadPath
+from .Utils import StreamingError, calc_download_path
 
 
 class M3u8:
     duration: float = 6.000000
 
-    ok_vcodecs: tuple = (
-        "h264",
-        "x264",
-        "avc",
-    )
-    ok_acodecs: tuple = (
-        "aac",
-        "m4a",
-        "mp3",
-    )
+    ok_vcodecs: tuple = ("h264", "x264", "avc")
+    ok_acodecs: tuple = ("aac", "m4a", "mp3")
 
-    def __init__(self, url: str, segment_duration: float|None = None):
+    def __init__(self, url: str, segment_duration: float | None = None):
         self.url = url
         self.duration = float(segment_duration) if segment_duration is not None else self.duration
 
     async def make_stream(self, download_path: str, file: str) -> str:
-        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
+        realFile: str = calc_download_path(base_path=download_path, folder=file, create_path=False)
 
         if not os.path.exists(realFile):
             error = f"File '{realFile}' does not exist."
@@ -79,7 +71,7 @@ class M3u8:
         return "\n".join(m3u8)
 
     async def make_subtitle(self, download_path: str, file: str, duration: float) -> str:
-        realFile: str = calcDownloadPath(basePath=download_path, folder=file, createPath=False)
+        realFile: str = calc_download_path(base_path=download_path, folder=file, create_path=False)
 
         if not os.path.exists(realFile):
             error = f"File '{realFile}' does not exist."

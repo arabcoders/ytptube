@@ -1,11 +1,12 @@
 import logging
 import pathlib
 
+import anyio
 import pysubs2
 from pysubs2.formats.substation import SubstationFormat
 from pysubs2.time import ms_to_times
 
-from .Utils import calcDownloadPath
+from .Utils import calc_download_path
 
 LOG = logging.getLogger("player.subtitle")
 
@@ -28,7 +29,7 @@ class Subtitle:
     )
 
     async def make(self, path: str, file: str) -> str:
-        realFile: str = calcDownloadPath(basePath=path, folder=file, createPath=False)
+        realFile: str = calc_download_path(base_path=path, folder=file, create_path=False)
 
         rFile = pathlib.Path(realFile)
 
@@ -41,8 +42,8 @@ class Subtitle:
             raise Exception(msg)
 
         if rFile.suffix == ".vtt":
-            with open(realFile) as f:
-                return f.read()
+            async with await anyio.open_file(realFile) as f:
+                return await f.read()
 
         subs = pysubs2.load(path=str(rFile))
 

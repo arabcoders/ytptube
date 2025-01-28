@@ -6,7 +6,7 @@ import tempfile
 
 from .config import Config
 from .ffprobe import ffprobe
-from .Utils import StreamingError, calcDownloadPath
+from .Utils import StreamingError, calc_download_path
 
 LOG = logging.getLogger("player.segments")
 
@@ -25,7 +25,7 @@ class Segments:
         self.aconvert = True
 
     async def stream(self, path: str, file: str) -> bytes:
-        realFile: str = calcDownloadPath(basePath=path, folder=file, createPath=False)
+        realFile: str = calc_download_path(base_path=path, folder=file, create_path=False)
 
         if not os.path.exists(realFile):
             msg = f"File {realFile} does not exist."
@@ -37,7 +37,7 @@ class Segments:
             pass
 
         tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')  # noqa: S324
+        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.sha256(realFile.encode("utf-8")).hexdigest()}')
 
         if not os.path.exists(tmpFile):
             os.symlink(realFile, tmpFile)
@@ -108,8 +108,8 @@ class Segments:
         data, err = await proc.communicate()
 
         if 0 != proc.returncode:
-            LOG.error(f'Failed to stream {realFile} segment {self.index}. {err.decode("utf-8")}.')
-            msg = f"Failed to stream {realFile} segment {self.index}."
+            LOG.error(f"Failed to stream '{realFile}' segment '{self.index}'. {err.decode('utf-8')}.")
+            msg = f"Failed to stream '{realFile}' segment '{self.index}'."
             raise StreamingError(msg)
 
         return data

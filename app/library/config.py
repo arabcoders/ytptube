@@ -12,7 +12,7 @@ import coloredlogs
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
 
-from .Utils import IGNORED_KEYS, load_file, mergeDict
+from .Utils import IGNORED_KEYS, load_file, merge_dict
 from .version import APP_VERSION
 
 
@@ -254,7 +254,7 @@ class Config:
                         logging.error(f"Config variable '{k}' had non-existing config reference '{key}'.")
                         sys.exit(1)
 
-                    v = v.replace(key, getattr(self, localKey))  # noqa: PLW2901
+                    v = v.replace(key, getattr(self, localKey))
 
                 setattr(self, k, v)
 
@@ -304,7 +304,7 @@ class Config:
                         LOG.error(f"Key '{key}' is not allowed to be loaded via 'ytdlp.json' file.")
                         del opts[key]
 
-                self.ytdl_options = mergeDict(self.ytdl_options, opts)
+                self.ytdl_options = merge_dict(self.ytdl_options, opts)
             else:
                 LOG.error(f"Invalid yt-dlp custom options file '{optsFile}'.")
         else:

@@ -14,9 +14,9 @@ class AsyncPool:
         worker_co,
         name: str,
         logger: logging.Logger,
-        loop: asyncio.AbstractEventLoop|None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
         load_factor: int = 1,
-        max_task_time: int|None = None,
+        max_task_time: int | None = None,
         return_futures: bool = False,
         raise_on_join: bool = False,
     ):
@@ -54,6 +54,12 @@ class AsyncPool:
         self._status: dict[str, dict | None] = {}
 
     async def _worker_loop(self, worker_id: str):
+        """
+        This is the main loop for each worker. It will pull from the queue and call the worker_co
+        coroutine with the arguments passed to `push`.
+        :param worker_id: id of the worker
+        :return: None
+        """
         while True:
             got_obj = False
             future = None
@@ -84,7 +90,7 @@ class AsyncPool:
                 raise
             except BaseException as e:
                 if isinstance(e, asyncio.exceptions.CancelledError):
-                    raise e
+                    raise
 
                 self._exceptions = True
 
@@ -92,7 +98,7 @@ class AsyncPool:
                     # don't log the failure when the client is receiving the future
                     future.set_exception(e)
                 else:
-                    self._logger.exception(f"Worker call failed. {str(e)}")
+                    self._logger.exception(f"Worker call failed. {e!s}")
             finally:
                 self._status[worker_id] = None
 
@@ -153,7 +159,12 @@ class AsyncPool:
             self._create_worker(worker_id)
 
     async def restart(self, worker_id: str, msg: str = None) -> bool:
-        """Will restart the worker pool"""
+        """
+        Will restart the worker pool
+        :param worker_id: worker id to restart
+        :param msg: message to send to the worker
+        :return: True if worker was restarted
+        """
         if worker_id not in self._workers:
             self._logger.warning(f"Worker {worker_id} does not exist.")
             return False
@@ -162,7 +173,7 @@ class AsyncPool:
             self._workers[worker_id].cancel(msg)
             await self._workers[worker_id]
         except asyncio.exceptions.CancelledError as e:
-            self._logger.warning(f"Worker {worker_id} restarted. {str(e)}")
+            self._logger.warning(f"Worker {worker_id} restarted. {e!s}")
             if worker_id in self._status:
                 self._status.pop(worker_id)
 
@@ -173,8 +184,20 @@ class AsyncPool:
 
         return True
 
+    async def on_shutdown(self, _) -> None:
+        """Will shutdown the worker pool"""
+        try:
+            await asyncio.wait_for(asyncio.gather(*[self.stop(worker_id) for worker_id in self._workers]), timeout=10)
+        except Exception:
+            self._logger.error(f"Exception shutting down {self._name}")
+
     async def stop(self, worker_id: str, msg: str = None) -> bool:
-        """Will stop the worker"""
+        """
+        Will stop the worker
+        :param worker_id: worker id to stop
+        :param msg: message to send to the worker
+        :return: True if worker was stopped
+        """
         if worker_id not in self._workers:
             self._logger.warning(f"Worker {worker_id} does not exist.")
             return False
@@ -183,7 +206,7 @@ class AsyncPool:
             try:
                 await self._workers[worker_id]
             except asyncio.exceptions.CancelledError as e:
-                self._logger.warning(f"Worker {worker_id} stopped. {str(e)}")
+                self._logger.warning(f"Worker {worker_id} stopped. {e!s}")
                 if worker_id in self._status:
                     self._status.pop(worker_id)
 
@@ -214,7 +237,8 @@ class AsyncPool:
             self._logger.info(f"Completed {self._name}")
 
         if self._exceptions and self._raise_on_join:
-            raise Exception(f"Exception occurred in {self._name} pool")
+            msg = f"Exception occurred in {self._name} pool"
+            raise Exception(msg)
 
     def _create_worker(self, worker_id: str) -> asyncio.Future:
         if worker_id in self._workers:

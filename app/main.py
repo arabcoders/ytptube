@@ -13,7 +13,6 @@ from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Emitter import Emitter
 from library.EventsSubscriber import EventsSubscriber
-from library.HttpAPI import LOG as http_logger  # noqa: N811
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
@@ -25,110 +24,97 @@ MIME = magic.Magic(mime=True)
 
 
 class Main:
-    config: Config
-    app: web.Application
-    http: HttpAPI
-    socket: HttpSocket
-
     def __init__(self):
-        self.config = Config.get_instance()
+        self._config = Config.get_instance()
         self.rootPath = str(Path(__file__).parent.absolute())
-        self.app = web.Application()
+        self._app = web.Application()
 
         self._check_folders()
 
         try:
-            PackageInstaller(self.config).check()
+            PackageInstaller(self._config).check()
         except Exception as e:
             LOG.exception(e)
             LOG.error(f"Failed to check for packages. Error message '{e!s}'.")
 
-        caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, "migrations"))
+        caribou.upgrade(self._config.db_file, os.path.join(self.rootPath, "migrations"))
 
-        connection = sqlite3.connect(database=self.config.db_file, isolation_level=None)
+        connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA journal_mode=wal")
+
+        async def _close_connection(_):
+            LOG.debug("Closing database connection.")
+            connection.close()
+            LOG.debug("Database connection closed.")
+
         try:
-            if "600" != oct(os.stat(self.config.db_file).st_mode)[-3:]:
-                os.chmod(self.config.db_file, 0o600)
+            if "600" != oct(os.stat(self._config.db_file).st_mode)[-3:]:
+                os.chmod(self._config.db_file, 0o600)
         except Exception:
             pass
 
-        queue = DownloadQueue(connection=connection)
-
-        self.http = HttpAPI(queue=queue)
-        self.socket = HttpSocket(queue=queue)
+        self._queue = DownloadQueue(connection=connection)
+        self._http = HttpAPI(queue=self._queue)
+        self._socket = HttpSocket(queue=self._queue)
 
         Emitter.get_instance().add_emitter([Notification().emit], local=False).add_emitter(
             [EventsSubscriber().emit], local=True
         )
 
-        self.app.on_startup.append(lambda _: queue.initialize())
+        self._app.on_cleanup.append(_close_connection)
 
     def _check_folders(self):
-        """
-        Check if the required folders exist and create them if they do not.
-        """
-        try:
-            LOG.debug(f"Checking download folder at '{self.config.download_path}'.")
-            if not os.path.exists(self.config.download_path):
-                LOG.info(f"Creating download folder at '{self.config.download_path}'.")
-                os.makedirs(self.config.download_path, exist_ok=True)
-        except OSError:
-            LOG.error(f"Could not create download folder at '{self.config.download_path}'.")
-            raise
+        """Check if the required folders exist and create them if they do not."""
+        folders = (self._config.download_path, self._config.temp_path, self._config.config_path)
+
+        for folder in folders:
+            try:
+                LOG.debug(f"Checking folder at '{folder}'.")
+                if not os.path.exists(folder):
+                    LOG.info(f"Creating folder at '{folder}'.")
+                    os.makedirs(folder, exist_ok=True)
+            except OSError:
+                LOG.error(f"Could not create folder at '{folder}'.")
+                raise
 
         try:
-            LOG.debug(f"Checking temp folder at '{self.config.temp_path}'.")
-            if not os.path.exists(self.config.temp_path):
-                LOG.info(f"Creating temp folder at '{self.config.temp_path}'.")
-                os.makedirs(self.config.temp_path, exist_ok=True)
-        except OSError:
-            LOG.error(f"Could not create temp folder at '{self.config.temp_path}'.")
-            raise
-
-        try:
-            LOG.debug(f"Checking config folder at '{self.config.config_path}'.")
-            if not os.path.exists(self.config.config_path):
-                LOG.info(f"Creating config folder at '{self.config.config_path}'.")
-                os.makedirs(self.config.config_path, exist_ok=True)
-        except OSError:
-            LOG.error(f"Could not create config folder at '{self.config.config_path}'.")
-            raise
-
-        try:
-            LOG.debug(f"Checking database file at '{self.config.db_file}'.")
-            if not os.path.exists(self.config.db_file):
-                LOG.info(f"Creating database file at '{self.config.db_file}'.")
-                with open(self.config.db_file, "w") as _:
+            LOG.debug(f"Checking database file at '{self._config.db_file}'.")
+            if not os.path.exists(self._config.db_file):
+                LOG.info(f"Creating database file at '{self._config.db_file}'.")
+                with open(self._config.db_file, "w") as _:
                     pass
         except OSError:
-            LOG.error(f"Could not create database file at '{self.config.db_file}'.")
+            LOG.error(f"Could not create database file at '{self._config.db_file}'.")
             raise
 
     def start(self):
         """
         Start the application.
         """
-        self.socket.attach(self.app)
-        self.http.attach(self.app)
-        Tasks.get_instance().attach(self.app)
+        self._socket.attach(self._app)
+        self._http.attach(self._app)
+        self._queue.attach(self._app)
+        Tasks.get_instance().attach(self._app)
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube v{self.config.version} - started on http://{self.config.host}:{self.config.port}")
+            LOG.info(f"YTPTube v{self._config.version} - started on http://{self._config.host}:{self._config.port}")
             LOG.info("=" * 40)
 
-        if self.config.access_log:
-            http_logger.addFilter(lambda record: "GET /api/ping" not in record.getMessage())
+        HTTP_LOGGER = None
+        if self._config.access_log:
+            from library.HttpAPI import LOG as HTTP_LOGGER
+
+            HTTP_LOGGER.addFilter(lambda record: "GET /api/ping" not in record.getMessage())
 
         web.run_app(
-            self.app,
-            host=self.config.host,
-            port=self.config.port,
+            self._app,
+            host=self._config.host,
+            port=self._config.port,
             reuse_port=True,
             loop=asyncio.get_event_loop(),
-            access_log=http_logger if self.config.access_log else None,
+            access_log=HTTP_LOGGER,
             print=started,
         )
 

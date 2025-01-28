@@ -1,7 +1,7 @@
 import asyncio
 import logging
+from collections.abc import Awaitable
 from dataclasses import dataclass
-from typing import Awaitable
 
 from .Singleton import Singleton
 
@@ -180,7 +180,7 @@ class EventsSubscriber(metaclass=Singleton):
 
                 tasks.append(asyncio.create_task(callback(event, data)))
             except Exception as e:
-                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
                 LOG.exception(e)
+                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
 
         return asyncio.gather(*tasks)
