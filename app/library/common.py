@@ -1,14 +1,14 @@
 import json
 import logging
 
+from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
-from .config import Config
 
 LOG = logging.getLogger("common")
 
 
-class common:
+class Common:
     """
     This class is used to share common methods between the socket and the API gateways.
     """
@@ -43,6 +43,7 @@ class common:
         Returns:
             dict[str, str]: The status of the download.
             { "status": "text" }
+
         """
         if cookies and isinstance(cookies, dict):
             cookies = self.encoder.encode(cookies)
@@ -69,11 +70,13 @@ class common:
 
         Returns:
             dict: The formatted item
+
         """
         url: str = item.get("url")
 
         if not url:
-            raise ValueError("url param is required.")
+            msg = "url param is required."
+            raise ValueError(msg)
 
         preset: str = str(item.get("preset", self.config.default_preset))
         folder: str = str(item.get("folder")) if item.get("folder") else ""
@@ -85,9 +88,10 @@ class common:
             try:
                 config = json.loads(config)
             except Exception as e:
-                raise ValueError(f"Failed to parse json yt-dlp config for '{url}'. {str(e)}")
+                msg = f"Failed to parse json yt-dlp config for '{url}'. {e!s}"
+                raise ValueError(msg) from e
 
-        item = {
+        return {
             "url": url,
             "preset": preset,
             "folder": folder,
@@ -95,5 +99,3 @@ class common:
             "config": config if isinstance(config, dict) else {},
             "template": template,
         }
-
-        return item

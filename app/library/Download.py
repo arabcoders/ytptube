@@ -235,7 +235,6 @@ class Download:
                     self.update_task.cancel()
             except Exception as e:
                 LOG.error(f"Failed to close status queue: '{procId}'. {e}")
-                pass
 
             self.kill()
 
@@ -385,7 +384,7 @@ class Download:
                 except Exception as e:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True
-                    LOG.exception(f"Failed to ffprobe: {status.get}. {e}")
                     LOG.exception(e)
+                    LOG.error(f"Failed to ffprobe: {status.get}. {e}")
 
             asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")

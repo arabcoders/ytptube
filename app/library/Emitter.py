@@ -2,8 +2,8 @@ import asyncio
 import logging
 from typing import Awaitable
 
-from .Singleton import Singleton
 from .EventsSubscriber import Events
+from .Singleton import Singleton
 
 LOG = logging.getLogger("Emitter")
 
@@ -28,6 +28,7 @@ class Emitter(metaclass=Singleton):
 
         Returns:
             Emitter: The instance of the Emitter
+
         """
         if not Emitter._instance:
             Emitter._instance = Emitter()
@@ -43,6 +44,7 @@ class Emitter(metaclass=Singleton):
 
         Returns:
             Emitter: The instance of the Emitter
+
         """
         if not isinstance(emitter, list):
             emitter = [emitter]
@@ -97,6 +99,7 @@ class Emitter(metaclass=Singleton):
 
         Returns:
             None
+
         """
         tasks = []
 
@@ -122,8 +125,8 @@ class Emitter(metaclass=Singleton):
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=60)
         except asyncio.CancelledError:
             LOG.error(f"Cancelled sending event '{event}'.")
-        except asyncio.TimeoutError:
+        except TimeoutError:
             LOG.error(f"Timed out sending event '{event}'.")
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Failed to send event '{event}'. '{str(e)}'.")
+            LOG.error(f"Failed to send event '{event}'. '{e!s}'.")

@@ -13,7 +13,7 @@ from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Emitter import Emitter
 from library.EventsSubscriber import EventsSubscriber
-from library.HttpAPI import LOG as http_logger
+from library.HttpAPI import LOG as http_logger  # noqa: N811
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
@@ -35,13 +35,13 @@ class Main:
         self.rootPath = str(Path(__file__).parent.absolute())
         self.app = web.Application()
 
-        self.checkFolders()
+        self._check_folders()
 
         try:
             PackageInstaller(self.config).check()
         except Exception as e:
-            LOG.error(f"Failed to check for packages. Error message '{str(e)}'.")
             LOG.exception(e)
+            LOG.error(f"Failed to check for packages. Error message '{e!s}'.")
 
         caribou.upgrade(self.config.db_file, os.path.join(self.rootPath, "migrations"))
 
@@ -65,7 +65,7 @@ class Main:
 
         self.app.on_startup.append(lambda _: queue.initialize())
 
-    def checkFolders(self):
+    def _check_folders(self):
         """
         Check if the required folders exist and create them if they do not.
         """
@@ -74,27 +74,27 @@ class Main:
             if not os.path.exists(self.config.download_path):
                 LOG.info(f"Creating download folder at '{self.config.download_path}'.")
                 os.makedirs(self.config.download_path, exist_ok=True)
-        except OSError as e:
+        except OSError:
             LOG.error(f"Could not create download folder at '{self.config.download_path}'.")
-            raise e
+            raise
 
         try:
             LOG.debug(f"Checking temp folder at '{self.config.temp_path}'.")
             if not os.path.exists(self.config.temp_path):
                 LOG.info(f"Creating temp folder at '{self.config.temp_path}'.")
                 os.makedirs(self.config.temp_path, exist_ok=True)
-        except OSError as e:
+        except OSError:
             LOG.error(f"Could not create temp folder at '{self.config.temp_path}'.")
-            raise e
+            raise
 
         try:
             LOG.debug(f"Checking config folder at '{self.config.config_path}'.")
             if not os.path.exists(self.config.config_path):
                 LOG.info(f"Creating config folder at '{self.config.config_path}'.")
                 os.makedirs(self.config.config_path, exist_ok=True)
-        except OSError as e:
+        except OSError:
             LOG.error(f"Could not create config folder at '{self.config.config_path}'.")
-            raise e
+            raise
 
         try:
             LOG.debug(f"Checking database file at '{self.config.db_file}'.")
@@ -102,9 +102,9 @@ class Main:
                 LOG.info(f"Creating database file at '{self.config.db_file}'.")
                 with open(self.config.db_file, "w") as _:
                     pass
-        except OSError as e:
+        except OSError:
             LOG.error(f"Could not create database file at '{self.config.db_file}'.")
-            raise e
+            raise
 
     def start(self):
         """

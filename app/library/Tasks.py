@@ -1,11 +1,11 @@
 import asyncio
-from datetime import datetime
 import json
 import logging
 import os
 import time
 from dataclasses import dataclass, field
-from typing import Any, List
+from datetime import datetime
+from typing import Any
 
 import httpx
 from aiocron import Cron, crontab
@@ -55,7 +55,7 @@ class Tasks(metaclass=Singleton):
     This class is used to manage the tasks.
     """
 
-    _jobs: List[Job] = []
+    _jobs: list[Job] = []
     """The jobs for the tasks."""
 
     _instance = None
@@ -100,8 +100,8 @@ class Tasks(metaclass=Singleton):
 
         Returns:
             Tasks: The instance of the Tasks
-        """
 
+        """
         if not Tasks._instance:
             Tasks._instance = Tasks()
         return Tasks._instance
@@ -115,6 +115,7 @@ class Tasks(metaclass=Singleton):
 
         Returns:
             None
+
         """
         self.load()
 
@@ -124,7 +125,7 @@ class Tasks(metaclass=Singleton):
         """
         self.clear()
 
-    def getTasks(self) -> List[Task]:
+    def getTasks(self) -> list[Task]:
         """Return the tasks."""
         return [job.task for job in self._jobs]
 
@@ -134,6 +135,7 @@ class Tasks(metaclass=Singleton):
 
         Returns:
             Tasks: The current instance.
+
         """
         self.clear()
 
@@ -142,7 +144,7 @@ class Tasks(metaclass=Singleton):
 
         LOG.info(f"Loading tasks from '{self._file}'.")
         try:
-            with open(self._file, "r") as f:
+            with open(self._file) as f:
                 tasks = json.load(f)
         except Exception as e:
             LOG.error(f"Failed to parse tasks from '{self._file}'. '{e}'.")
@@ -156,7 +158,7 @@ class Tasks(metaclass=Singleton):
             try:
                 task = Task(**task)
             except Exception as e:
-                LOG.error(f"Failed to parse task at list position '{i}'. '{str(e)}'.")
+                LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
                 continue
 
             try:
@@ -171,7 +173,7 @@ class Tasks(metaclass=Singleton):
                 LOG.info(f"Task '{i}: {task.name}' queued to be executed every '{task.timer}'.")
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to queue task '{i}: {task['name']}'. '{str(e)}'.")
+                LOG.error(f"Failed to queue task '{i}: {task['name']}'. '{e!s}'.")
 
         return self
 
@@ -181,6 +183,7 @@ class Tasks(metaclass=Singleton):
 
         Returns:
             Tasks: The current instance.
+
         """
         if len(self._jobs) < 1:
             return self
@@ -191,7 +194,7 @@ class Tasks(metaclass=Singleton):
                 task.job.stop()
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to stop job '{task.id}: {task.name}'. '{str(e)}'.")
+                LOG.error(f"Failed to stop job '{task.id}: {task.name}'. '{e!s}'.")
 
         self._jobs.clear()
 
@@ -202,56 +205,63 @@ class Tasks(metaclass=Singleton):
         Validate the task.
 
         Args:
-            tasks (Task|dict): The task to validate.
+            task (Task|dict): The task to validate.
 
         Returns:
             bool: True if the task is valid, False otherwise.
-        """
 
+        """
         if not isinstance(task, dict):
             if not isinstance(task, Task):
-                raise ValueError("Invalid task type.")
+                msg = "Invalid task type."
+                raise ValueError(msg)  # noqa: TRY004
 
             task = task.serialize()
 
         if not task.get("name"):
-            raise ValueError("No name found.")
+            msg = "No name found."
+            raise ValueError(msg)
 
         if not task.get("timer"):
-            raise ValueError("No timer found.")
+            msg = "No timer found."
+            raise ValueError(msg)
 
         if not task.get("url"):
-            raise ValueError("No URL found.")
+            msg = "No URL found."
+            raise ValueError(msg)
 
         if not isinstance(task.get("cookies"), str):
-            raise ValueError("Invalid cookies type.")
+            msg = "Invalid cookies type."
+            raise ValueError(msg)  # noqa: TRY004
 
         if not isinstance(task.get("config"), dict):
-            raise ValueError("Invalid config type.")
+            msg = "Invalid config type."
+            raise ValueError(msg)  # noqa: TRY004
 
         if not isinstance(task.get("template"), str):
-            raise ValueError("Invalid template type.")
+            msg = "Invalid template type."
+            raise ValueError(msg)  # noqa: TRY004
 
         return True
 
-    def save(self, tasks: List[Task | dict]) -> "Tasks":
+    def save(self, tasks: list[Task | dict]) -> "Tasks":
         """
         Save the tasks.
 
         Args:
-            tasks (List[Task]): The tasks to save.
+            tasks (list[Task]): The tasks to save.
 
         Returns:
             Tasks: The current instance.
-        """
 
+        """
         for i, task in enumerate(tasks):
             try:
                 if not isinstance(task, Task):
                     task = Task(**task)
                     tasks[i] = task
             except Exception as e:
-                LOG.error(f"Failed to save task '{i}' unable to parse task. '{str(e)}'.")
+                LOG.error(f"Failed to save task '{i}' unable to parse task. '{e!s}'.")
                 continue
 
             try:
@@ -266,7 +276,7 @@ class Tasks(metaclass=Singleton):
 
             LOG.info(f"Tasks saved to '{self._file}'.")
         except Exception as e:
-            LOG.error(f"Failed to save tasks to '{self._file}'. '{str(e)}'.")
+            LOG.error(f"Failed to save tasks to '{self._file}'. '{e!s}'.")
 
         return self
 
@@ -279,6 +289,7 @@ class Tasks(metaclass=Singleton):
 
         Returns:
             None
+
         """
         try:
             timeNow = datetime.now().isoformat()
@@ -297,7 +308,7 @@ class Tasks(metaclass=Singleton):
                 try:
                     config = json.loads(config)
                 except Exception as e:
-                    LOG.error(f"Failed to parse json yt-dlp config for '{task.name}'. {str(e)}")
+                    LOG.error(f"Failed to parse json yt-dlp config for '{task.name}'. {e!s}")
                     return
 
             LOG.info(f"Task '{task.id}: {task.name}' dispatched at '{timeNow}'.")
@@ -332,5 +343,5 @@ class Tasks(metaclass=Singleton):
             await self._emitter.success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.")
         except Exception as e:
             timeNow = datetime.now().isoformat()
-            LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{str(e)}'.")
-            await self._emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{str(e)}'.")
+            LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{e!s}'.")
+            await self._emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{e!s}'.")

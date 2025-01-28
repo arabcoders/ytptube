@@ -4,9 +4,9 @@ import logging
 import os
 import tempfile
 
-from .ffprobe import ffprobe
 from .config import Config
-from .Utils import calcDownloadPath, StreamingError
+from .ffprobe import ffprobe
+from .Utils import StreamingError, calcDownloadPath
 
 LOG = logging.getLogger("player.segments")
 
@@ -28,7 +28,8 @@ class Segments:
         realFile: str = calcDownloadPath(basePath=path, folder=file, createPath=False)
 
         if not os.path.exists(realFile):
-            raise StreamingError(f"File {realFile} does not exist.")
+            msg = f"File {realFile} does not exist."
+            raise StreamingError(msg)
 
         try:
             ff = await ffprobe(realFile)
@@ -36,15 +37,15 @@ class Segments:
             pass
 
         tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')
+        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.md5(realFile.encode("utf-8")).hexdigest()}')  # noqa: S324
 
         if not os.path.exists(tmpFile):
             os.symlink(realFile, tmpFile)
 
         if self.index == 0:
-            startTime: float = "{:.6f}".format(0)
+            startTime: float = f"{0:.6f}"
         else:
-            startTime: float = "{:.6f}".format((self.duration * self.index))
+            startTime: float = f"{self.duration * self.index:.6f}"
 
         fargs = []
         fargs.append("-xerror")
@@ -55,7 +56,7 @@ class Segments:
         fargs.append("-ss")
         fargs.append(str(startTime if startTime else "0.00000"))
         fargs.append("-t")
-        fargs.append(str("{:.6f}".format(self.duration)))
+        fargs.append(str(f"{self.duration:.6f}"))
 
         fargs.append("-copyts")
 
@@ -108,6 +109,7 @@ class Segments:
 
         if 0 != proc.returncode:
             LOG.error(f'Failed to stream {realFile} segment {self.index}. {err.decode("utf-8")}.')
-            raise StreamingError(f"Failed to stream {realFile} segment {self.index}.")
+            msg = f"Failed to stream {realFile} segment {self.index}."
+            raise StreamingError(msg)
 
         return data

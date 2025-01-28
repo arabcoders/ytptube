@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 class Terminator:
@@ -14,9 +14,9 @@ class AsyncPool:
         worker_co,
         name: str,
         logger: logging.Logger,
-        loop: asyncio.AbstractEventLoop = None,
+        loop: asyncio.AbstractEventLoop|None = None,
         load_factor: int = 1,
-        max_task_time: int = None,
+        max_task_time: int|None = None,
         return_futures: bool = False,
         raise_on_join: bool = False,
     ):
@@ -150,7 +150,7 @@ class AsyncPool:
 
         for worker_number in range(self._num_workers):
             worker_id = f"worker_{worker_number+1}"
-            self._createWorker(worker_id)
+            self._create_worker(worker_id)
 
     async def restart(self, worker_id: str, msg: str = None) -> bool:
         """Will restart the worker pool"""
@@ -169,7 +169,7 @@ class AsyncPool:
             if worker_id in self._workers:
                 self._workers.pop(worker_id)
 
-            self._createWorker(worker_id)
+            self._create_worker(worker_id)
 
         return True
 
@@ -216,7 +216,7 @@ class AsyncPool:
         if self._exceptions and self._raise_on_join:
             raise Exception(f"Exception occurred in {self._name} pool")
 
-    def _createWorker(self, worker_id: str) -> asyncio.Future:
+    def _create_worker(self, worker_id: str) -> asyncio.Future:
         if worker_id in self._workers:
             self._logger.debug(f"Worker {worker_id} already exists.")
             return self._workers[worker_id]
@@ -231,4 +231,4 @@ class AsyncPool:
         return self._workers[worker_id]
 
     def _time(self) -> datetime:
-        return datetime.now(tz=timezone.utc)
+        return datetime.now(tz=UTC)

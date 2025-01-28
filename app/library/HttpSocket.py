@@ -7,23 +7,23 @@ import pty
 import shlex
 import time
 from datetime import datetime
+from typing import Any
 
 import socketio
 from aiohttp import web
-from typing import Any
 
-from .common import common
+from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
-from .Utils import isDownloaded, arg_converter
-from .EventsSubscriber import EventsSubscriber, Events, Event
+from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Utils import arg_converter, isDownloaded
 
 LOG = logging.getLogger("socket_api")
 
 
-class HttpSocket(common):
+class HttpSocket(Common):
     """
     This class is used to handle WebSocket events.
     """
@@ -54,6 +54,7 @@ class HttpSocket(common):
 
         super().__init__(queue=queue, encoder=encoder, config=config)
 
+    @staticmethod
     def ws_event(func):  # type: ignore
         """
         Decorator to mark a method as a socket event.
@@ -91,7 +92,7 @@ class HttpSocket(common):
         try:
             LOG.info(f"Cli command from client '{sid}'. '{data}'")
 
-            args = ["yt-dlp"] + shlex.split(data)
+            args = ["yt-dlp", *shlex.split(data)]
             _env = os.environ.copy()
             _env.update(
                 {
@@ -119,7 +120,7 @@ class HttpSocket(common):
             try:
                 os.close(slave_fd)
             except Exception as e:
-                LOG.error(f"Error closing PTY. '{str(e)}'.")
+                LOG.error(f"Error closing PTY. '{e!s}'.")
 
             async def read_pty(sid: str):
                 loop = asyncio.get_running_loop()
@@ -130,8 +131,7 @@ class HttpSocket(common):
                     except OSError as e:
                         if e.errno == errno.EIO:
                             break
-                        else:
-                            raise
+                        raise
 
                     if not chunk:
                         # No more output
@@ -154,7 +154,7 @@ class HttpSocket(common):
                 try:
                     os.close(master_fd)
                 except Exception as e:
-                    LOG.error(f"Error closing PTY. '{str(e)}'.")
+                    LOG.error(f"Error closing PTY. '{e!s}'.")
 
             # Start reading output from PTY
             read_task = asyncio.create_task(read_pty(sid=sid))
@@ -183,10 +183,10 @@ class HttpSocket(common):
         try:
             item = self.format_item(data)
         except ValueError as e:
-            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+            await self.emitter.error(str(e), to=sid)
+            return
 
         status = await self.add(**item)
-
         await self.emitter.emit(event=Events.STATUS, data=status, to=sid)
 
     @ws_event  # type: ignore
@@ -293,9 +293,10 @@ class HttpSocket(common):
 
         try:
             await self.emitter.emit(event=Events.YTDLP_CONVERT, data=arg_converter(args), to=sid)
-            return
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
             await self.emitter.error(f"Failed to convert options. '{err}'.", to=sid)
+
+        return

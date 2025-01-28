@@ -2,10 +2,12 @@ import glob
 import re
 from pathlib import Path
 from urllib.parse import quote
+
 from aiohttp.web import Response
+
 from .ffprobe import ffprobe
 from .Subtitle import Subtitle
-from .Utils import calcDownloadPath, checkId, StreamingError
+from .Utils import StreamingError, calcDownloadPath, checkId
 
 
 class Playlist:
@@ -20,7 +22,8 @@ class Playlist:
         if not rFile.exists():
             possibleFile = checkId(download_path, rFile)
             if not possibleFile:
-                raise StreamingError(f"File '{rFile}' does not exist.")
+                msg = f"File '{rFile}' does not exist."
+                raise StreamingError(msg)
 
             return Response(
                 status=302,
@@ -35,7 +38,8 @@ class Playlist:
             pass
 
         if "duration" not in ff.metadata:
-            raise StreamingError(f"Unable to get '{rFile}' duration.")
+            msg = f"Unable to get '{rFile}' duration."
+            raise StreamingError(msg)
 
         duration: float = float(ff.metadata.get("duration"))
 
@@ -45,8 +49,8 @@ class Playlist:
         subs = ""
 
         index = 0
-        for item in self.getSideCarFiles(rFile):
-            if item.suffix not in Subtitle.allowedExtensions:
+        for item in self.get_sidecar_files(rFile):
+            if item.suffix not in Subtitle.allowed_extensions:
                 continue
 
             index += 1
@@ -68,7 +72,7 @@ class Playlist:
 
         return "\n".join(playlist)
 
-    def getSideCarFiles(self, file: Path) -> list[Path]:
+    def get_sidecar_files(self, file: Path) -> list[Path]:
         """
         Get sidecar files for the given file.
 

@@ -31,9 +31,10 @@ class DataStore:
         for id, item in self.saved_items():
             self.dict.update({id: Download(info=item)})
 
-    def exists(self, key: str = None, url: str = None) -> bool:
+    def exists(self, key: str | None = None, url: str | None = None) -> bool:
         if not key and not url:
-            raise KeyError("key or url must be provided.")
+            msg = "key or url must be provided."
+            raise KeyError(msg)
 
         if key and key in self.dict:
             return True
@@ -44,15 +45,17 @@ class DataStore:
 
         return False
 
-    def get(self, key: str, url: str = None) -> Download:
+    def get(self, key: str, url: str|None = None) -> Download:
         if not key and not url:
-            raise KeyError("key or url must be provided.")
+            msg = "key or url must be provided."
+            raise KeyError(msg)
 
         for i in self.dict:
             if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
                 return self.dict[i]
 
-        raise KeyError(f"{key=} or {url=} not found.")
+        msg = f"{key=} or {url=} not found."
+        raise KeyError(msg)
 
     def getById(self, id: str) -> Download | None:
         return self.dict[id] if id in self.dict else None

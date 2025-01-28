@@ -1,20 +1,20 @@
 import asyncio
-from datetime import datetime, timezone
 import json
 import logging
 import os
-from typing import List, Any
-
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any
+
 import httpx
 
 from .config import Config
-from .ItemDTO import ItemDTO
-from .Singleton import Singleton
-from .Utils import validate_uuid, ag
-from .version import APP_VERSION
 from .encoder import Encoder
 from .EventsSubscriber import Events
+from .ItemDTO import ItemDTO
+from .Singleton import Singleton
+from .Utils import ag, validate_uuid
+from .version import APP_VERSION
 
 LOG = logging.getLogger("notifications")
 
@@ -66,7 +66,7 @@ class Target:
 
     id: str
     name: str
-    on: List[str]
+    on: list[str]
     request: targetRequest
 
     def serialize(self) -> dict:
@@ -165,16 +165,15 @@ class Notification(metaclass=Singleton):
 
         Returns:
             Notification: The Notification instance.
-        """
 
+        """
         LOG.info(f"Saving notification targets to '{self._file}'.")
         try:
             with open(self._file, "w") as f:
                 json.dump([t.serialize() for t in targets], fp=f, indent=4)
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Error saving notification targets to '{self._file}'. '{e}'")
-            pass
+            LOG.error(f"Error saving notification targets to '{self._file}'. '{e!s}'")
 
         return self
 
@@ -195,15 +194,14 @@ class Notification(metaclass=Singleton):
             with open(self._file, "r") as f:
                 targets = json.load(f)
         except Exception as e:
-            LOG.error(f"Error loading notification targets from '{self._file}'. '{e}'")
-            pass
+            LOG.error(f"Error loading notification targets from '{self._file}'. '{e!s}'")
 
         for target in targets:
             try:
                 try:
                     Notification.validate(target)
                 except ValueError as e:
-                    LOG.error(f"Invalid notification target '{target}'. '{e}'")
+                    LOG.error(f"Invalid notification target '{target}'. '{e!s}'")
                     continue
 
                 target = self.makeTarget(target)
@@ -214,8 +212,7 @@ class Notification(metaclass=Singleton):
                     f"Will send '{target.on if len(target.on) > 0 else 'all'}' as {target.request.type} notification events to '{target.name}'."
                 )
             except Exception as e:
-                LOG.error(f"Error loading notification target '{target}'. '{e}'")
-                pass
+                LOG.error(f"Error loading notification target '{target}'. '{e!s}'")
 
         return self
 
@@ -229,46 +226,57 @@ class Notification(metaclass=Singleton):
 
         Returns:
             bool: True if the target is valid, False otherwise.
-        """
 
+        """
         if not isinstance(target, dict):
             target = target.serialize()
 
         if "id" not in target or validate_uuid(target["id"], version=4) is False:
-            raise ValueError("Invalid notification target. No ID found.")
+            msg = "Invalid notification target. No ID found."
+            raise ValueError(msg)
 
         if "name" not in target:
-            raise ValueError("Invalid notification target. No name found.")
+            msg = "Invalid notification target. No name found."
+            raise ValueError(msg)
 
         if "request" not in target:
-            raise ValueError("Invalid notification target. No request details found.")
+            msg = "Invalid notification target. No request details found."
+            raise ValueError(msg)
 
         if "url" not in target["request"]:
-            raise ValueError("Invalid notification target. No URL found.")
+            msg = "Invalid notification target. No URL found."
+            raise ValueError(msg)
 
         if "method" in target["request"] and target["request"]["method"].upper() not in ["POST", "PUT"]:
-            raise ValueError("Invalid notification target. Invalid method found.")
+            msg = "Invalid notification target. Invalid method found."
+            raise ValueError(msg)
 
         if "type" in target["request"] and target["request"]["type"].lower() not in ["json", "form"]:
-            raise ValueError("Invalid notification target. Invalid type found.")
+            msg = "Invalid notification target. Invalid type found."
+            raise ValueError(msg)
 
         if "on" in target:
             if not isinstance(target["on"], list):
-                raise ValueError("Invalid notification target. Invalid 'on' event list found.")
+                msg = "Invalid notification target. Invalid 'on' event list found."
+                raise ValueError(msg)
 
             for e in target["on"]:
                 if e not in NotificationEvents.getEvents().values():
-                    raise ValueError(f"Invalid notification target. Invalid event '{e}' found.")
+                    msg = f"Invalid notification target. Invalid event '{e}' found."
+                    raise ValueError(msg)
 
         if "headers" in target["request"]:
             if not isinstance(target["request"]["headers"], list):
-                raise ValueError("Invalid notification target. Invalid headers list found.")
+                msg = "Invalid notification target. Invalid headers list found."
+                raise ValueError(msg)
 
             for h in target["request"]["headers"]:
                 if "key" not in h:
-                    raise ValueError("Invalid notification target. No header key found.")
+                    msg = "Invalid notification target. No header key found."
+                    raise ValueError(msg)
                 if "value" not in h:
-                    raise ValueError("Invalid notification target. No header value found.")
+                    msg = "Invalid notification target. No header value found."
+                    raise ValueError(msg)
 
         return True
 
@@ -315,7 +323,7 @@ class Notification(metaclass=Singleton):
 
             reqBody["json" if "json" == target.request.type.lower() else "data"] = {
                 "event": event,
-                "created_at": datetime.now(tz=timezone.utc).isoformat(),
+                "created_at": datetime.now(tz=UTC).isoformat(),
                 "payload": item.__dict__ if isinstance(item, ItemDTO) else item,
             }
 
@@ -346,6 +354,7 @@ class Notification(metaclass=Singleton):
 
         Returns:
             Target: The notification target.
+
         """
         return Target(
             id=target.get("id"),
@@ -362,7 +371,7 @@ class Notification(metaclass=Singleton):
             ),
         )
 
-    def emit(self, event, data, **kwargs):
+    def emit(self, event, data, **kwargs):  # noqa: ARG002
         if len(self._targets) < 1:
             return False
 

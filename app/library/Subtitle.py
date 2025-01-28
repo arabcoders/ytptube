@@ -1,9 +1,11 @@
 import logging
-from .Utils import calcDownloadPath
 import pathlib
+
 import pysubs2
-from pysubs2.time import ms_to_times
 from pysubs2.formats.substation import SubstationFormat
+from pysubs2.time import ms_to_times
+
+from .Utils import calcDownloadPath
 
 LOG = logging.getLogger("player.subtitle")
 
@@ -19,7 +21,7 @@ SubstationFormat.ms_to_timestamp = ms_to_timestamp
 
 
 class Subtitle:
-    allowedExtensions: tuple[str] = (
+    allowed_extensions: tuple[str] = (
         ".srt",
         ".vtt",
         ".ass",
@@ -31,22 +33,22 @@ class Subtitle:
         rFile = pathlib.Path(realFile)
 
         if not rFile.exists():
-            raise Exception(f"File '{file}' does not exist.")
+            msg = f"File '{file}' does not exist."
+            raise Exception(msg)
 
-        if rFile.suffix not in self.allowedExtensions:
-            raise Exception(f"File '{file}' subtitle type is not supported.")
+        if rFile.suffix not in self.allowed_extensions:
+            msg = f"File '{file}' subtitle type is not supported."
+            raise Exception(msg)
 
         if rFile.suffix == ".vtt":
-            subData = ""
-            with open(realFile, "r") as f:
-                subData = f.read()
-
-            return subData
+            with open(realFile) as f:
+                return f.read()
 
         subs = pysubs2.load(path=str(rFile))
 
         if len(subs.events) < 1:
-            raise Exception(f"No subtitle events were found in '{rFile}'.")
+            msg = f"No subtitle events were found in '{rFile}'."
+            raise Exception(msg)
 
         if len(subs.events) < 2:
             return subs.to_string("vtt")

@@ -14,9 +14,9 @@ from .config import Config
 from .DataStore import DataStore
 from .Download import Download
 from .Emitter import Emitter
+from .EventsSubscriber import Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
-from .EventsSubscriber import Events
 from .Utils import ExtractInfo, calcDownloadPath, get_opts, isDownloaded, mergeConfig
 
 LOG = logging.getLogger("DownloadQueue")
@@ -77,6 +77,7 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             bool: True if the test is successful, False otherwise.
+
         """
         await self.done.test()
         return True
@@ -96,6 +97,7 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             bool: True if the download is paused, False otherwise
+
         """
         if self.paused.is_set():
             self.paused.clear()
@@ -110,6 +112,7 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             bool: True if the download is resumed, False otherwise
+
         """
         if not self.paused.is_set():
             self.paused.set()
@@ -124,15 +127,16 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             bool: True if the download queue is paused, False otherwise
+
         """
-        return False if self.paused.is_set() else True
+        return not self.paused.is_set()
 
     async def __add_entry(
         self,
         entry: dict,
         preset: str,
         folder: str,
-        config: dict = {},
+        config: dict | None = None,
         cookies: str = "",
         template: str = "",
         already=None,
@@ -151,7 +155,11 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             dict: The status of the operation.
+
         """
+        if not config:
+            config = {}
+
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
 
@@ -304,7 +312,7 @@ class DownloadQueue(metaclass=Singleton):
         url: str,
         preset: str,
         folder: str,
-        config: dict = {},
+        config: dict|None = None,
         cookies: str = "",
         template: str = "",
         already=None,
@@ -322,8 +330,8 @@ class DownloadQueue(metaclass=Singleton):
             try:
                 config = json.loads(config)
             except Exception as e:
-                LOG.error(f"Unable to load '{config=}'. {str(e)}")
-                return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {str(e)}"}
+                LOG.error(f"Unable to load '{config=}'. {e!s}")
+                return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {e!s}"}
 
         already = set() if already is None else already
 
@@ -361,13 +369,13 @@ class DownloadQueue(metaclass=Singleton):
                 f"extract_info: for 'URL: {url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}'."
             )
         except yt_dlp.utils.ExistingVideoReached as exc:
-            LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{str(exc)}'.")
+            LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{exc!s}'.")
             return {"status": "error", "msg": "Video has been downloaded already and recorded in archive.log file."}
         except yt_dlp.utils.YoutubeDLError as exc:
-            LOG.error(f"YoutubeDLError: Unable to extract info. '{str(exc)}'.")
+            LOG.error(f"YoutubeDLError: Unable to extract info. '{exc!s}'.")
             return {"status": "error", "msg": str(exc)}
         except asyncio.exceptions.TimeoutError as exc:
-            LOG.error(f"TimeoutError: Unable to extract info. '{str(exc)}'.")
+            LOG.error(f"TimeoutError: Unable to extract info. '{exc!s}'.")
             return {
                 "status": "error",
                 "msg": f"TimeoutError: {self.config.extract_info_timeout}s reached Unable to extract info.",
@@ -392,7 +400,7 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
-                LOG.warning(f"Requested cancel for non-existent download {id=}. {str(e)}")
+                LOG.warning(f"Requested cancel for non-existent download {id=}. {e!s}")
                 continue
 
             itemMessage = f"{id=} {item.info.id=} {item.info.title=}"
@@ -426,7 +434,7 @@ class DownloadQueue(metaclass=Singleton):
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
-                LOG.warning(f"Requested delete for non-existent download {id=}. {str(e)}")
+                LOG.warning(f"Requested delete for non-existent download {id=}. {e!s}")
                 continue
 
             itemRef: str = f"{id=} {item.info.id=} {item.info.title=}"
@@ -450,7 +458,7 @@ class DownloadQueue(metaclass=Singleton):
                     else:
                         LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
                 except Exception as e:
-                    LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {str(e)}")
+                    LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
             self.done.delete(id)
             asyncio.create_task(self.emitter.cleared(dl=item.info.serialize()), name=f"notifier-c-{id}")
@@ -469,6 +477,7 @@ class DownloadQueue(metaclass=Singleton):
 
         Returns:
             dict: The download queue and the download history.
+
         """
         items = {"queue": {}, "done": {}}
 

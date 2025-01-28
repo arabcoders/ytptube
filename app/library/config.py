@@ -113,9 +113,6 @@ class Config:
     ytdl_options: dict = {}
     "The options to use for yt-dlp."
 
-    tasks: list = []
-    "The tasks to run."
-
     new_version_available: bool = False
     "A new version of the application is available."
 
@@ -215,9 +212,10 @@ class Config:
     def __init__(self):
         """Virtually private constructor."""
         if Config.__instance is not None:
-            raise Exception("This class is a singleton. Use Config.get_instance() instead.")
-        else:
-            Config.__instance = self
+            msg = "This class is a singleton. Use Config.get_instance() instead."
+            raise Exception(msg)
+
+        Config.__instance = self
 
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
@@ -233,7 +231,7 @@ class Config:
             logging.info(f"Loading environment variables from '{envFile}'.")
             load_dotenv(envFile)
 
-        for k, v in self._getAttributes().items():
+        for k, v in self._get_attributes().items():
             if k.startswith("_") or k in self._manual_vars:
                 continue
 
@@ -243,7 +241,7 @@ class Config:
                 continue
 
             lookUpKey: str = f"YTP_{k}".upper()
-            setattr(self, k, os.environ[lookUpKey] if lookUpKey in os.environ else v)
+            setattr(self, k, os.environ.get(lookUpKey, v))
 
         for k, v in self.__dict__.items():
             if k.startswith("_") or k in self._immutable or k in self._manual_vars:
@@ -256,13 +254,14 @@ class Config:
                         logging.error(f"Config variable '{k}' had non-existing config reference '{key}'.")
                         sys.exit(1)
 
-                    v = v.replace(key, getattr(self, localKey))
+                    v = v.replace(key, getattr(self, localKey))  # noqa: PLW2901
 
                 setattr(self, k, v)
 
             if k in self._boolean_vars:
                 if str(v).lower() not in (True, False, "true", "false", "on", "off", "1", "0"):
-                    raise ValueError(f"Config variable '{k}' is set to a non-boolean value '{v}'.")
+                    msg = f"Config variable '{k}' is set to a non-boolean value '{v}'."
+                    raise ValueError(msg)
 
                 setattr(self, k, str(v).lower() in (True, "true", "on", "1"))
 
@@ -271,7 +270,8 @@ class Config:
 
         numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):
-            raise ValueError(f"Invalid log level '{self.log_level}' specified.")
+            msg = f"Invalid log level '{self.log_level}' specified."
+            raise TypeError(msg)
 
         coloredlogs.install(
             level=numeric_level, fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s", datefmt="%H:%M:%S"
@@ -310,20 +310,8 @@ class Config:
         else:
             LOG.info(f"No yt-dlp custom options found at '{optsFile}'.")
 
-        tasksFile = os.path.join(self.config_path, "tasks.json")
-        if os.path.exists(tasksFile) and os.path.getsize(tasksFile) > 0:
-            LOG.info(f"Loading tasks from '{tasksFile}'.")
-            try:
-                (tasks, status, error) = load_file(tasksFile, list)
-                if not status:
-                    LOG.error(f"Could not load tasks file from '{tasksFile}'. '{error}'.")
-                    sys.exit(1)
-                self.tasks.extend(tasks)
-            except Exception:
-                pass
-
         # Load default presets.
-        with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r") as f:
+        with open(os.path.join(os.path.dirname(__file__), "presets.json")) as f:
             self.presets.extend(json.load(f))
 
         # Load user defined presets.
@@ -378,11 +366,11 @@ class Config:
 
         self.started = time.time()
 
-    def _getAttributes(self) -> dict:
+    def _get_attributes(self) -> dict:
         attrs: dict = {}
         vClass: str = self.__class__
 
-        for attribute in vClass.__dict__.keys():
+        for attribute in vClass.__dict__:
             if attribute.startswith("_"):
                 continue
 
@@ -398,8 +386,8 @@ class Config:
 
         Returns:
             dict: A dictionary with the frontend configuration
-        """
 
+        """
         data = {k: getattr(self, k) for k in self._frontend_vars}
         hasCookies = self.ytdl_options.get("cookiefile", None)
         data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
