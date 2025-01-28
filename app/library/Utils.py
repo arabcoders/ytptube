@@ -26,7 +26,6 @@ IGNORED_KEYS: tuple[str] = (
     "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
-OS_ALT_SEP: list[str] = list(sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/")
 
 
 class StreamingError(Exception):
@@ -118,6 +117,9 @@ def calcDownloadPath(basePath: str, folder: str | None = None, createPath: bool 
     """
     if not folder:
         return basePath
+
+    if folder.startswith("/"):
+        folder = folder[1:]
 
     realBasePath = os.path.realpath(basePath)
     download_path = os.path.realpath(os.path.join(basePath, folder))
