@@ -1,3 +1,18 @@
+<style>
+.navbar-dropdown {
+  display: none;
+}
+
+.navbar-item.is-active .navbar-dropdown,
+.navbar-item.is-hoverable:focus .navbar-dropdown,
+.navbar-item.is-hoverable:focus-within .navbar-dropdown,
+.navbar-item.is-hoverable:hover .navbar-dropdown {
+  display: block;
+}
+.navbar-item.has-dropdown{
+  padding: 0.5rem 0.75rem;
+}
+</style>
 <template>
   <div>
     <div class="mt-1 columns is-multiline">
@@ -48,9 +63,9 @@
     </div>
 
     <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" />
+    <Queue @getInfo="url => get_info = url" />
+    <History @getInfo="url => get_info = url" />
     <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
-    <Queue @getInfo="url => emitter('getInfo', url)" />
-    <History @getInfo="url => emitter('getInfo', url)" />
   </div>
 </template>
 

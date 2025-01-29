@@ -13,11 +13,40 @@
 
       <div class="navbar-end is-flex" style="flex-flow:wrap">
 
+        <div class="navbar-item">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/" v-tooltip.bottom="'Downloads'">
+            <span class="icon"><i class="fa-solid fa-download" /></span>
+          </NuxtLink>
+        </div>
+
+        <div class="navbar-item has-dropdown is-unselectable" :class="{ 'is-active': theme_open }"
+          @click.prevent="openCloseTheme" v-tooltip.bottom="'Change Theme'">
+          <a class="navbar-link is-arrowless">
+            <span class="icon"><i class="fas fa-repeat" /></span>
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" :class="{ 'is-selected': 'auto' === selectedTheme }" @click="selectTheme('auto')">
+              <span class="icon"><i class="fas fa-sync" /></span>
+              <span>Auto</span>
+            </a>
+            <hr class="navbar-divider">
+            <a class="navbar-item" :class="{ 'is-selected': 'light' === selectedTheme }" @click="selectTheme('light')">
+              <span class="icon"><i class="fas fa-sun" /></span>
+              <span>Light</span>
+            </a>
+            <a class="navbar-item" :class="{ 'is-selected': 'dark' === selectedTheme }" @click="selectTheme('dark')">
+              <span class="icon"><i class="fas fa-moon" /></span>
+              <span>Dark</span>
+            </a>
+          </div>
+        </div>
+
         <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
             <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>
         </div>
+
         <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Tasks'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
@@ -28,17 +57,6 @@
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/notifications">
             <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
           </NuxtLink>
-        </div>
-
-        <div class="navbar-item">
-          <button class="button is-dark" @click="selectedTheme = 'light'" v-if="'dark' === selectedTheme"
-            v-tooltip="'Switch to light theme'">
-            <span class="icon has-text-warning"><i class="fas fa-sun"></i></span>
-          </button>
-          <button class="button is-dark" @click="selectedTheme = 'dark'" v-if="'light' === selectedTheme"
-            v-tooltip="'Switch to dark theme'">
-            <span class="icon"><i class="fas fa-moon"></i></span>
-          </button>
         </div>
 
         <div class="navbar-item">
@@ -80,11 +98,17 @@ import { useStorage } from '@vueuse/core'
 import moment from 'moment'
 
 const Year = new Date().getFullYear()
-const selectedTheme = useStorage('theme', (() => window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')())
+const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
 const config = useConfigStore()
+const theme_open = ref(false)
+const theme_inner_click = ref(false)
 
 const applyPreferredColorScheme = scheme => {
+  if (!scheme || 'auto' === scheme) {
+    return
+  }
+
   for (let s = 0; s < document.styleSheets.length; s++) {
     for (let i = 0; i < document.styleSheets[s].cssRules.length; i++) {
       try {
@@ -140,4 +164,24 @@ watch(selectedTheme, value => {
 
 const reloadPage = () => window.location.reload()
 
+const selectTheme = theme => {
+  theme_inner_click.value = true
+  theme_open.value = false
+  console.log('selectedTheme', selectedTheme.value, theme_open.value)
+  if (theme === selectedTheme.value) {
+    return
+  }
+
+  selectedTheme.value = theme
+  if ('auto' === theme) {
+    return reloadPage()
+  }
+}
+const openCloseTheme = () => {
+  if (theme_inner_click.value) {
+    theme_inner_click.value = false
+    return
+  }
+  theme_open.value = !theme_open.value
+}
 </script>
