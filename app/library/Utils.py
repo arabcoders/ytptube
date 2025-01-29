@@ -8,7 +8,7 @@ import re
 import shlex
 import socket
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 
@@ -26,13 +26,10 @@ IGNORED_KEYS: tuple[str] = (
     "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
-OS_ALT_SEP: list[str] = list(sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/")
 
 
 class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
-
-    pass
 
 
 def get_opts(preset: str, ytdl_opts: dict) -> dict:
@@ -45,6 +42,7 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
 
     Returns:
       ytdl extra options
+
     """
     opts = copy.deepcopy(ytdl_opts)
 
@@ -80,7 +78,7 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
     return opts
 
 
-def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
+def get_video_info(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
     """
     Extracts video information from the given URL.
 
@@ -91,6 +89,7 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> 
 
     Returns:
         dict: Video information.
+
     """
     params: dict = {
         "quiet": True,
@@ -110,28 +109,34 @@ def getVideoInfo(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> 
     return yt_dlp.YoutubeDL().extract_info(url, download=False)
 
 
-def calcDownloadPath(basePath: str, folder: str | None = None, createPath: bool = True) -> str:
-    """Calculates download path and prevents folder traversal.
+def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
+    """
+    Calculates download path and prevents folder traversal.
 
     Returns:
         Download path with base folder factored in.
+
     """
     if not folder:
-        return basePath
+        return base_path
 
-    realBasePath = os.path.realpath(basePath)
-    download_path = os.path.realpath(os.path.join(basePath, folder))
+    if folder.startswith("/"):
+        folder = folder[1:]
+
+    realBasePath = os.path.realpath(base_path)
+    download_path = os.path.realpath(os.path.join(base_path, folder))
 
     if not download_path.startswith(realBasePath):
-        raise Exception(f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".')
+        msg = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
+        raise Exception(msg)
 
-    if not os.path.isdir(download_path) and createPath:
+    if not os.path.isdir(download_path) and create_path:
         os.makedirs(download_path, exist_ok=True)
 
     return download_path
 
 
-def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
+def extract_info(config: dict, url: str, debug: bool = False) -> dict:
     params: dict = {
         "color": "no_color",
         "extract_flat": True,
@@ -163,14 +168,14 @@ def ExtractInfo(config: dict, url: str, debug: bool = False) -> dict:
     return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
 
-def mergeDict(source: dict, destination: dict) -> dict:
+def merge_dict(source: dict, destination: dict) -> dict:
     """Merge data from source into destination"""
     destination_copy = copy.deepcopy(destination)
 
     for key, value in source.items():
         destination_key_value = destination_copy.get(key)
         if isinstance(value, dict) and isinstance(destination_key_value, dict):
-            destination_copy[key] = mergeDict(source=value, destination=destination_copy.setdefault(key, {}))
+            destination_copy[key] = merge_dict(source=value, destination=destination_copy.setdefault(key, {}))
         elif isinstance(value, list) and isinstance(destination_key_value, list):
             destination_copy[key] = destination_key_value + value
         else:
@@ -179,7 +184,7 @@ def mergeDict(source: dict, destination: dict) -> dict:
     return destination_copy
 
 
-def mergeConfig(config: dict, new_config: dict) -> dict:
+def merge_config(config: dict, new_config: dict) -> dict:
     """
     Merge user provided config into default config
 
@@ -189,13 +194,14 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
 
     Returns:
         dict: Merged config
+
     """
     for key in IGNORED_KEYS:
         if key in new_config:
             LOG.error(f"Key '{key}' is not allowed to be manually set.")
             del new_config[key]
 
-    conf = mergeDict(new_config, config)
+    conf = merge_dict(new_config, config)
 
     if "impersonate" in conf:
         conf["impersonate"] = ImpersonateTarget.from_str(conf["impersonate"])
@@ -203,8 +209,8 @@ def mergeConfig(config: dict, new_config: dict) -> dict:
     return conf
 
 
-def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
-    global YTDLP_INFO_CLS
+def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+    global YTDLP_INFO_CLS  # noqa: PLW0603
 
     idDict = {
         "id": None,
@@ -247,35 +253,26 @@ def isDownloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, st
         break
 
     if not idDict["archive_id"]:
-        return (
-            False,
-            idDict,
-        )
+        return (False, idDict)
 
-    with open(archive_file, "r") as f:
-        for line in f.readlines():
+    with open(archive_file) as f:
+        for line in f:
             if idDict["archive_id"] in line:
-                return (
-                    True,
-                    idDict,
-                )
+                return (True, idDict)
 
-    return (
-        False,
-        idDict,
-    )
+    return (False, idDict)
 
 
-def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
-    """Converts JSON cookies to Netscape cookies
+def json_cookie(cookies: dict[dict[str, any]]) -> str | None:
+    """
+    Converts JSON cookies to Netscape cookies
 
     Returns None if no cookies are found, otherwise returns a string of cookies in Netscape format.
     """
-
     netscapeCookies = "# Netscape HTTP Cookie File\n# https://curl.haxx.se/docs/http-cookies.html\n# This file was generated by libcurl! Edit at your own risk.\n\n"
     hasCookies: bool = False
 
-    for domain in cookies:
+    for domain in cookies:  # noqa: PLC0206
         if not isinstance(cookies[domain], dict):
             continue
 
@@ -290,7 +287,7 @@ def jsonCookie(cookies: dict[dict[str, any]]) -> str | None:
                 cookieDict = cookies[domain][subDomain][cookie]
 
                 if 0 == int(cookieDict["expirationDate"]):
-                    cookieDict["expirationDate"] = datetime.now(timezone.utc).timestamp() + (86400 * 1000)
+                    cookieDict["expirationDate"] = datetime.now(UTC).timestamp() + (86400 * 1000)
 
                 hasCookies = True
                 netscapeCookies += (
@@ -325,13 +322,14 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
         dict|list: Dictionary or list of the file contents. Empty dict if the file could not be loaded.
         bool: True if the file was loaded successfully.
         str: Error message if the file could not be loaded.
+
     """
     try:
         with open(file) as json_data:
             opts = json.load(json_data)
 
         if check_type:
-            assert isinstance(opts, check_type)
+            assert isinstance(opts, check_type)  # noqa: S101
 
         return (
             opts,
@@ -346,7 +344,7 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 opts = json5_load(json_data)
 
                 if check_type:
-                    assert isinstance(opts, check_type)
+                    assert isinstance(opts, check_type)  # noqa: S101
 
                 return (
                     opts,
@@ -367,7 +365,7 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 )
 
 
-def checkId(basePath: str, file: pathlib.Path) -> bool | str:
+def check_id(file: pathlib.Path) -> bool | str:
     """
     Check if we are able to get an id from the file name.
     if so check if any video file with the same id exists.
@@ -377,7 +375,6 @@ def checkId(basePath: str, file: pathlib.Path) -> bool | str:
 
     :return: False if no id found, otherwise the id.
     """
-
     match = re.search(r"(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])", file.stem, re.IGNORECASE)
     if not match:
         return False
@@ -388,16 +385,7 @@ def checkId(basePath: str, file: pathlib.Path) -> bool | str:
         if id not in f.stem:
             continue
 
-        if f.suffix not in (
-            ".mp4",
-            ".mkv",
-            ".webm",
-            ".m4v",
-            ".m4a",
-            ".mp3",
-            ".aac",
-            ".ogg",
-        ):
+        if f.suffix not in (".mp4", ".mkv", ".webm", ".m4v", ".m4a", ".mp3", ".aac", ".ogg"):
             continue
 
         return f.absolute()
@@ -422,7 +410,6 @@ def ag(array: dict | list, path: list[str | int] | str | int, default: Any = Non
     :param separator: Separator for nested paths in strings.
     :return: The found value or the default if not found.
     """
-
     if path is None or path == "":
         return array
 
@@ -482,24 +469,29 @@ def validate_url(url: str) -> bool:
 
     Returns:
         bool: True if the URL is valid and allowed.
+
     """
     if not url:
-        raise ValueError("URL is required.")
+        msg = "URL is required."
+        raise ValueError(msg)
 
     try:
         from yarl import URL
 
         parsed_url = URL(url)
     except ValueError:
-        raise ValueError("Invalid URL.")
+        msg = "Invalid URL."
+        raise ValueError(msg)  # noqa: B904
 
     # Check allowed schemes
     if parsed_url.scheme not in ["http", "https"]:
-        raise ValueError("Invalid scheme usage. Only HTTP or HTTPS allowed.")
+        msg = "Invalid scheme usage. Only HTTP or HTTPS allowed."
+        raise ValueError(msg)
 
     hostname = parsed_url.host
     if not hostname or is_private_address(hostname):
-        raise ValueError("Access to internal urls or private networks is not allowed.")
+        msg = "Access to internal urls or private networks is not allowed."
+        raise ValueError(msg)
 
     return True
 
@@ -509,16 +501,17 @@ def arg_converter(args: str) -> dict:
     Convert yt-dlp options to a dictionary.
 
     Args:
-        opts (str): yt-dlp options string.
+        args (str): yt-dlp options string.
 
     Returns:
         dict: yt-dlp options dictionary.
+
     """
     import yt_dlp.options
 
     create_parser = yt_dlp.options.create_parser
 
-    def defaultOpts(args: str):
+    def _default_opts(args: str):
         patched_parser = create_parser()
         try:
             yt_dlp.options.create_parser = lambda: patched_parser
@@ -526,7 +519,7 @@ def arg_converter(args: str) -> dict:
         finally:
             yt_dlp.options.create_parser = create_parser
 
-    default_opts = defaultOpts([]).ydl_opts
+    default_opts = _default_opts([]).ydl_opts
 
     opts = yt_dlp.parse_options(shlex.split(args)).ydl_opts
 
@@ -543,9 +536,11 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
 
     Args:
         uuid_str (str): UUID to validate.
+        version  (int): The UUID version
 
     Returns:
         bool: True if the UUID is valid.
+
     """
     try:
         uuid.UUID(uuid_str, version=version)

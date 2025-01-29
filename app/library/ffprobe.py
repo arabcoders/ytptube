@@ -8,6 +8,8 @@ import json
 import operator
 import os
 
+import anyio
+
 
 # parameter-less decorator
 def async_lru_cache_decorator(async_function):
@@ -85,10 +87,7 @@ class FFStream:
         if self.__dict__.get("codec_type", None) != "video":
             return False
 
-        if self.__dict__.get("codec_name", None) in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]:
-            return False
-
-        return True
+        return self.__dict__.get("codec_name", None) not in ["png", "mjpeg", "gif", "bmp", "tiff", "webp"]
 
     def is_subtitle(self):
         """
@@ -115,8 +114,9 @@ class FFStream:
             if width and height:
                 try:
                     size = (int(width), int(height))
-                except ValueError:
-                    raise FFProbeError("None integer size {}:{}".format(width, height))
+                except ValueError as e:
+                    msg = f"None integer size {width}:{height}"
+                    raise FFProbeError(msg) from e
         else:
             return None
 
@@ -136,8 +136,9 @@ class FFStream:
         if self.is_video() or self.is_audio():
             try:
                 frame_count = int(self.__dict__.get("nb_frames", ""))
-            except ValueError:
-                raise FFProbeError("None integer frame count")
+            except ValueError as e:
+                msg = "None integer frame count"
+                raise FFProbeError(msg) from e
         else:
             frame_count = 0
 
@@ -151,8 +152,9 @@ class FFStream:
         if self.is_video() or self.is_audio():
             try:
                 duration = float(self.__dict__.get("duration", ""))
-            except ValueError:
-                raise FFProbeError("None numeric duration")
+            except ValueError as e:
+                msg = "None numeric duration"
+                raise FFProbeError(msg) from e
         else:
             duration = 0.0
 
@@ -188,8 +190,9 @@ class FFStream:
         """
         try:
             return int(self.__dict__.get("bit_rate", ""))
-        except ValueError:
-            raise FFProbeError("None integer bit_rate")
+        except ValueError as e:
+            msg = "None integer bit_rate"
+            raise FFProbeError(msg) from e
 
 
 class FFProbeResult:
@@ -212,19 +215,19 @@ class FFProbeResult:
         return getattr(self, key) if hasattr(self, key) else default
 
     def streams(self) -> list[FFStream]:
-        "List of all streams."
+        """List of all streams."""
         return self.video + self.audio + self.subtitle + self.attachment
 
     def has_video(self):
-        "Is there a video stream?"
+        """Is there a video stream?"""
         return len(self.video) > 0
 
     def has_audio(self):
-        "Is there an audio stream?"
+        """Is there an audio stream?"""
         return len(self.audio) > 0
 
     def has_subtitle(self):
-        "Is there a subtitle stream?"
+        """Is there a subtitle stream?"""
         return len(self.subtitle) > 0
 
     def __repr__(self):
@@ -259,15 +262,18 @@ async def ffprobe(file: str) -> FFProbeResult:
 
     Returns:
         dict: A dictionary containing the parsed data.
+
     """
     try:
-        with open(os.devnull, "w") as tempf:
+        async with await anyio.open_file(os.devnull, "w") as tempf:
             await asyncio.create_subprocess_exec("ffprobe", "-h", stdout=tempf, stderr=tempf)
-    except FileNotFoundError:
-        raise IOError("ffprobe not found.")
+    except FileNotFoundError as e:
+        msg = "ffprobe not found."
+        raise OSError(msg) from e
 
     if not os.path.isfile(file):
-        raise IOError(f"No such media file '{file}'.")
+        msg = f"No such media file '{file}'."
+        raise OSError(msg)
 
     args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", file]
 
@@ -284,13 +290,14 @@ async def ffprobe(file: str) -> FFProbeResult:
     if 0 == exitCode:
         parsed: dict = json.loads(data.decode("utf-8"))
     else:
-        raise FFProbeError(f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'")
+        msg = f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'"
+        raise FFProbeError(msg)
 
     result = FFProbeResult()
     result.metadata = parsed.get("format", {})
 
-    for stream in parsed.get("streams", []):
-        stream = FFStream(stream)
+    for raw_stream in parsed.get("streams", []):
+        stream = FFStream(raw_stream)
         if stream.is_audio():
             result.audio.append(stream)
         elif stream.is_video():

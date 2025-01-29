@@ -1,8 +1,9 @@
+import importlib
 import logging
 import os
 import subprocess
 import sys
-import importlib
+
 from library.config import Config
 
 LOG = logging.getLogger("package_installer")
@@ -24,8 +25,8 @@ class PackageInstaller:
             return []
 
         if os.access(file_path, os.R_OK):
-            with open(file_path, "r") as f:
-                return [pkg.strip() for pkg in f.readlines() if pkg.strip()]
+            with open(file_path) as f:
+                return [pkg.strip() for pkg in f if pkg.strip()]
         else:
             LOG.error(f"Could not read pip packages from '{file_path}'.")
             return []
@@ -37,10 +38,10 @@ class PackageInstaller:
                 LOG.info(f"'{pkg}' is already installed. Skipping upgrades. as requested.")
                 return
             LOG.info(f"'{pkg}' is already installed. Checking for upgrades...")
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg], check=True)  # noqa: S603
         except ImportError:
             LOG.info(f"'{pkg}' is not installed. Installing...")
-            subprocess.run([sys.executable, "-m", "pip", "install", pkg], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", pkg], check=True)  # noqa: S603
 
     def check(self):
         """
@@ -57,5 +58,5 @@ class PackageInstaller:
             try:
                 self.action(package)
             except Exception as e:
-                LOG.error(f"Failed to install or upgrade package '{package}'. Error message: {str(e)}")
+                LOG.error(f"Failed to install or upgrade package '{package}'. Error message: {e!s}")
                 LOG.exception(e)

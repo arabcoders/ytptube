@@ -26,6 +26,7 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
+  ".venv",
 ]
 
 # Same as Black.
@@ -39,8 +40,75 @@ target-version = "py311"
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = ["E4", "E7", "E9", "F", "G", "W"]
-ignore = ["PTH", "G0", "G1", "G201"]
+#select = ["E4", "E7", "E9", "F", "G", "W"]
+#ignore = ["PTH", "G0", "G1", "G201"]
+select = [
+  "ALL", # include all the rules, including new ones
+]
+ignore = [
+  #### modules
+  "ANN", # flake8-annotations
+  "COM", # flake8-commas
+  "C90", # mccabe complexity
+  "DJ",  # django
+  "EXE", # flake8-executable
+  "T10", # debugger
+  "TID", # flake8-tidy-imports
+
+  #### specific rules
+  "D100",    # ignore missing docs
+  "D101",
+  "D102",
+  "D103",
+  "D104",
+  "D105",
+  "D106",
+  "D107",
+  "D200",
+  "D205",
+  "D212",
+  "D400",
+  "D401",
+  "D415",
+  "E402",    # false positives for local imports
+  "E501",    # line too long
+  "TRY003",  # external messages in exceptions are too verbose
+  "TD002",
+  "TD003",
+  "FIX002",  # too verbose descriptions of todos,
+  "N806",    # variable names should be snake_case
+  "PTH",     # prefer using absolute imports
+  "PGH003",
+  "D404",
+  "PLR0913",
+  "INP001",
+  "G004",
+  "SIM105",
+  "SIM300",
+  "BLE001",
+  "TRY400",
+  "S104",
+  "PLR2004",
+  "S110",
+  "N812",
+  "S108",
+  "RUF006",
+  "RUF012",
+  "RUF013",
+  "TRY002",
+  "TRY401",
+  "A001",
+  "A002",
+  "SLF001",
+  "FBT001",
+  "FBT002",
+  "TRY300",
+  "PLR0911",
+  "PLR0912",
+  "PLR0915",
+  "PLW2901",
+  "ERA001"
+]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

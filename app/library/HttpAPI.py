@@ -8,9 +8,9 @@ import os
 import random
 import time
 import uuid
-from datetime import datetime
+from collections.abc import Awaitable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Awaitable
 
 import httpx
 import magic
@@ -18,7 +18,7 @@ from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
 
 from .cache import Cache
-from .common import common
+from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
@@ -31,21 +31,24 @@ from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
-from .Utils import StreamingError, arg_converter, calcDownloadPath, getVideoInfo, validate_url, validate_uuid
+from .Utils import StreamingError, arg_converter, calc_download_path, get_video_info, validate_url, validate_uuid
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
 
 
-class HttpAPI(common):
-    staticHolder: dict = {}
-    extToMime: dict = {
+class HttpAPI(Common):
+    _static_holder: dict = {}
+    """Holds loaded static assets."""
+
+    _ext_to_mime: dict = {
         ".html": "text/html",
         ".css": "text/css",
         ".js": "application/javascript",
         ".json": "application/json",
         ".ico": "image/x-icon",
     }
+    """Map ext to mimetype"""
 
     def __init__(
         self,
@@ -65,6 +68,7 @@ class HttpAPI(common):
 
         super().__init__(queue=self.queue, encoder=self.encoder, config=self.config)
 
+    @staticmethod
     def route(method: str, path: str) -> Awaitable:
         """
         Decorator to mark a method as an HTTP route handler.
@@ -75,6 +79,7 @@ class HttpAPI(common):
 
         Returns:
             Awaitable: The decorated function.
+
         """
 
         def decorator(func):
@@ -88,6 +93,9 @@ class HttpAPI(common):
 
         return decorator
 
+    async def on_shutdown(self, _: web.Application):
+        LOG.debug("Shutting down http API server.")
+
     def attach(self, app: web.Application) -> "HttpAPI":
         """
         Attach the routes to the application.
@@ -97,6 +105,7 @@ class HttpAPI(common):
 
         Returns:
             HttpAPI: The instance of the HttpAPI.
+
         """
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
@@ -117,9 +126,10 @@ class HttpAPI(common):
         except Exception as e:
             LOG.exception(e)
 
+        app.on_shutdown.append(self.on_shutdown)
         return self
 
-    async def staticFile(self, req: Request) -> Response:
+    async def _static_file(self, req: Request) -> Response:
         """
         Preload static files from the ui/exported folder.
 
@@ -128,13 +138,14 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         path = req.path
 
-        if req.path not in self.staticHolder:
+        if req.path not in self._static_holder:
             return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
 
-        item: dict = self.staticHolder[req.path]
+        item: dict = self._static_holder[req.path]
 
         return web.Response(
             body=item.get("content"),
@@ -142,12 +153,12 @@ class HttpAPI(common):
                 "Pragma": "public",
                 "Cache-Control": "public, max-age=31536000",
                 "Content-Type": item.get("content_type"),
-                "X-Via": "memory" if not item.get("file", None) else "disk",
+                "X-Via": "memory" if not item.get("file") else "disk",
             },
             status=web.HTTPOk.status_code,
         )
 
-    def preloadStatic(self, app: web.Application) -> "HttpAPI":
+    def _preload_static(self, app: web.Application) -> "HttpAPI":
         """
         Preload static files from the ui/exported folder.
 
@@ -156,11 +167,12 @@ class HttpAPI(common):
 
         Returns:
             HttpAPI: The instance of the HttpAPI.
-        """
 
+        """
         staticDir = os.path.join(self.rootPath, "ui", "exported")
         if not os.path.exists(staticDir):
-            raise ValueError(f"Could not find the frontend UI static assets. '{staticDir}'.")
+            msg = f"Could not find the frontend UI static assets. '{staticDir}'."
+            raise ValueError(msg)
 
         preloaded = 0
 
@@ -172,21 +184,23 @@ class HttpAPI(common):
                 file = os.path.join(root, file)
                 urlPath = f"/{file.replace(f'{staticDir}/', '')}"
 
-                content = open(file, "rb").read()
-                contentType = self.extToMime.get(os.path.splitext(file)[1], MIME.from_file(file))
+                with open(file, "rb") as f:
+                    content = f.read()
 
-                self.staticHolder[urlPath] = {"content": content, "content_type": contentType}
+                contentType = self._ext_to_mime.get(os.path.splitext(file)[1], MIME.from_file(file))
+
+                self._static_holder[urlPath] = {"content": content, "content_type": contentType}
                 LOG.debug(f"Preloading '{urlPath}'.")
-                app.router.add_get(urlPath, self.staticFile)
+                app.router.add_get(urlPath, self._static_file)
                 preloaded += 1
 
                 if urlPath.endswith("/index.html") and urlPath != "/index.html":
                     parentSlash = urlPath.replace("/index.html", "/")
                     parentNoSlash = urlPath.replace("/index.html", "")
-                    self.staticHolder[parentSlash] = {"content": content, "content_type": contentType}
-                    self.staticHolder[parentNoSlash] = {"content": content, "content_type": contentType}
-                    app.router.add_get(parentSlash, self.staticFile)
-                    app.router.add_get(parentNoSlash, self.staticFile)
+                    self._static_holder[parentSlash] = {"content": content, "content_type": contentType}
+                    self._static_holder[parentNoSlash] = {"content": content, "content_type": contentType}
+                    app.router.add_get(parentSlash, self._static_file)
+                    app.router.add_get(parentNoSlash, self._static_file)
                     preloaded += 2
 
         if preloaded < 1:
@@ -210,8 +224,8 @@ class HttpAPI(common):
 
         Returns:
             HttpAPI: The instance of the HttpAPI.
-        """
 
+        """
         for attr_name in dir(self):
             method = getattr(self, attr_name)
             if hasattr(method, "_http_method") and hasattr(method, "_http_path"):
@@ -222,15 +236,17 @@ class HttpAPI(common):
                 self.routes.route(method._http_method, f"/{http_path}")(method)
 
         self.routes.static("/api/download/", self.config.download_path)
-        self.preloadStatic(app)
+        self._preload_static(app)
 
         try:
             app.add_routes(self.routes)
         except ValueError as e:
             if "ui/exported" in str(e):
-                raise RuntimeError(f"Could not find the frontend UI static assets. '{e}'.") from e
-            raise e
+                msg = f"Could not find the frontend UI static assets. '{e}'."
+                raise RuntimeError(msg) from e
+            raise
 
+    @staticmethod
     def basic_auth(username: str, password: str) -> Awaitable:
         """
         Middleware to handle basic authentication.
@@ -241,6 +257,7 @@ class HttpAPI(common):
 
         Returns:
             Awaitable: The middleware handler.
+
         """
 
         @web.middleware
@@ -291,6 +308,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
@@ -304,6 +322,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         await self.queue.test()
         return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
@@ -318,6 +337,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         post = await request.json()
         args: str | None = post.get("args")
@@ -345,6 +365,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object
+
         """
         url = request.query.get("url")
         if not url:
@@ -372,7 +393,7 @@ class HttpAPI(common):
                 "proxy": self.config.ytdl_options.get("proxy", None),
             }
 
-            data = getVideoInfo(url=url, ytdlp_opts=opts, no_archive=True)
+            data = get_video_info(url=url, ytdlp_opts=opts, no_archive=True)
             self.cache.set(key=self.cache.hash(url), value=data, ttl=300)
             data["_cached"] = {
                 "key": self.cache.hash(url),
@@ -403,6 +424,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object
+
         """
         url: str | None = request.query.get("url")
         if not url:
@@ -425,6 +447,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         data = await request.json()
 
@@ -456,9 +479,10 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         return web.json_response(
-            data=Tasks.get_instance().getTasks(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
+            data=Tasks.get_instance().get_tasks(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
     @route("PUT", "api/tasks")
@@ -471,6 +495,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object
+
         """
         data = await request.json()
 
@@ -500,7 +525,7 @@ class HttpAPI(common):
                 item["id"] = str(uuid.uuid4())
 
             if not item.get("timer", None) or str(item.get("timer")).strip() == "":
-                item["timer"] = f"{random.randint(1,59)} */1 * * *"
+                item["timer"] = f"{random.randint(1,59)} */1 * * *"  # noqa: S311
 
             if not item.get("cookies", None):
                 item["cookies"] = ""
@@ -509,20 +534,20 @@ class HttpAPI(common):
                 item["config"] = {}
 
             if not item.get("template", None):
-                item["template"] = str()
+                item["template"] = ""
 
             try:
                 ins.validate(item)
             except ValueError as e:
                 return web.json_response(
-                    {"error": f"Failed to validate task '{item.get('name')}'. '{str(e)}'"},
+                    {"error": f"Failed to validate task '{item.get('name')}'. '{e!s}'"},
                     status=web.HTTPBadRequest.status_code,
                 )
 
             tasks.append(Task(**item))
 
         try:
-            tasks = ins.save(tasks=tasks).load().getTasks()
+            tasks = ins.save(tasks=tasks).load().get_tasks()
         except Exception as e:
             LOG.exception(e)
             return web.json_response(
@@ -542,6 +567,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         data = await request.json()
         ids = data.get("ids")
@@ -569,12 +595,13 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         id: str = request.match_info.get("id")
         if not id:
             return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
-        item = self.queue.done.getById(id)
+        item = self.queue.done.get_by_id(id)
         if not item:
             return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
 
@@ -615,6 +642,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         data: dict = {"queue": [], "history": []}
 
@@ -635,6 +663,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
@@ -672,6 +701,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         if self.queue.pool is None:
             return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
@@ -690,6 +720,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object
+
         """
         id: str = request.match_info.get("id")
         if not id:
@@ -712,6 +743,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         id: str = request.match_info.get("id")
         if not id:
@@ -734,6 +766,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         file: str = request.match_info.get("file")
 
@@ -767,6 +800,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         file: str = request.match_info.get("file")
         mode: str = request.match_info.get("mode")
@@ -817,6 +851,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         file: str = request.match_info.get("file")
         segment: int = request.match_info.get("segment")
@@ -829,7 +864,7 @@ class HttpAPI(common):
 
         if request.if_modified_since:
             lastMod = time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
             )
             if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
                 return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
@@ -842,9 +877,9 @@ class HttpAPI(common):
 
         segmenter = Segments(
             index=int(segment),
-            duration=float("{:.6f}".format(float(sd if sd else M3u8.duration))),
-            vconvert=True if vc == 1 else False,
-            aconvert=True if ac == 1 else False,
+            duration=float(f"{float(sd if sd else M3u8.duration):.6f}"),
+            vconvert=vc == 1,
+            aconvert=ac == 1,
         )
 
         return web.Response(
@@ -856,10 +891,10 @@ class HttpAPI(common):
                 "Pragma": "public",
                 "Cache-Control": f"public, max-age={time.time() + 31536000}",
                 "Last-Modified": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
                 ),
                 "Expires": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
                 ),
             },
             status=web.HTTPOk.status_code,
@@ -875,6 +910,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         file: str = request.match_info.get("file")
         file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
@@ -883,7 +919,7 @@ class HttpAPI(common):
 
         if request.if_modified_since:
             lastMod = time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
             )
             if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
                 return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
@@ -900,10 +936,10 @@ class HttpAPI(common):
                 "Pragma": "public",
                 "Cache-Control": f"public, max-age={time.time() + 31536000}",
                 "Last-Modified": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path)).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
                 ),
                 "Expires": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
                 ),
             },
             status=web.HTTPOk.status_code,
@@ -919,14 +955,15 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
-        if "/index.html" not in self.staticHolder:
+        if "/index.html" not in self._static_holder:
             LOG.error("Static frontend files not found.")
             return web.json_response(
                 data={"error": "File not found.", "file": "/index.html"}, status=web.HTTPNotFound.status_code
             )
 
-        data = self.staticHolder["/index.html"]
+        data = self._static_holder["/index.html"]
         return web.Response(
             body=data.get("content"),
             content_type=data.get("content_type"),
@@ -944,6 +981,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         url = request.query.get("url")
         if not url:
@@ -974,7 +1012,8 @@ class HttpAPI(common):
                         "Access-Control-Allow-Origin": "*",
                         "Cache-Control": f"public, max-age={time.time() + 31536000}",
                         "Expires": time.strftime(
-                            "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000).timetuple()
+                            "%a, %d %b %Y %H:%M:%S GMT",
+                            datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple(),
                         ),
                     },
                 )
@@ -994,11 +1033,15 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         file: str = request.match_info.get("file")
+        if not file:
+            return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
+
         try:
-            realFile: str = calcDownloadPath(basePath=self.config.download_path, folder=file, createPath=False)
-            if not os.path.exists(realFile):
+            realFile: str = calc_download_path(base_path=self.config.download_path, folder=file, create_path=False)
+            if not os.path.exists(realFile) or not os.path.isfile(realFile):
                 return web.json_response(
                     data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
                 )
@@ -1019,6 +1062,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object
+
         """
         cookie_file = self.config.ytdl_options.get("cookiefile", None)
         if not cookie_file:
@@ -1066,7 +1110,7 @@ class HttpAPI(common):
             LOG.error(f"Failed to request '{url}'. '{e}'.")
             LOG.exception(e)
             return web.json_response(
-                data={"message": f"Failed to request website. {str(e)}"},
+                data={"message": f"Failed to request website. {e!s}"},
                 status=web.HTTPInternalServerError.status_code,
             )
 
@@ -1080,11 +1124,12 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         return web.json_response(
             data={
-                "notifications": Notification.get_instance().getTargets(),
-                "allowedTypes": list(NotificationEvents.getEvents().values()),
+                "notifications": Notification.get_instance().get_targets(),
+                "allowedTypes": list(NotificationEvents.get_events().values()),
             },
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
@@ -1100,6 +1145,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         post = await request.json()
         if not isinstance(post, list):
@@ -1125,11 +1171,11 @@ class HttpAPI(common):
                 Notification.validate(item)
             except ValueError as e:
                 return web.json_response(
-                    {"error": f"Invalid notification target settings. {str(e)}", "data": item},
+                    {"error": f"Invalid notification target settings. {e!s}", "data": item},
                     status=web.HTTPBadRequest.status_code,
                 )
 
-            targets.append(ins.makeTarget(item))
+            targets.append(ins.make_target(item))
 
         try:
             if len(targets) < 1:
@@ -1141,7 +1187,7 @@ class HttpAPI(common):
             LOG.exception(e)
             return web.json_response({"error": "Failed to save tasks."}, status=web.HTTPInternalServerError.status_code)
 
-        data = {"notifications": targets, "allowedTypes": list(NotificationEvents.getEvents().values())}
+        data = {"notifications": targets, "allowedTypes": list(NotificationEvents.get_events().values())}
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
@@ -1155,6 +1201,7 @@ class HttpAPI(common):
 
         Returns:
             Response: The response object.
+
         """
         data = {"type": "test", "message": "This is a test notification."}
         await self.emitter.emit(Events.TEST, data)

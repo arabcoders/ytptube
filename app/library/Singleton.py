@@ -1,5 +1,5 @@
-from typing import Any, Dict
 import threading
+from typing import Any
 
 
 class Singleton(type):
@@ -7,7 +7,7 @@ class Singleton(type):
     A metaclass that creates a Singleton base class when called.
     """
 
-    _instances: Dict[type, Any] = {}
+    _instances: dict[type, Any] = {}
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         if cls not in cls._instances:
@@ -16,12 +16,12 @@ class Singleton(type):
         return cls._instances[cls]
 
 
-class threadSafe(type):
+class ThreadSafe(type):
     """
     A metaclass that creates a Singleton base class when called.
     """
 
-    _instances: Dict[type, Any] = {}
+    _instances: dict[type, Any] = {}
     _lock = threading.Lock()
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:

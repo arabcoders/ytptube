@@ -6,24 +6,25 @@ import os
 import pty
 import shlex
 import time
-from datetime import datetime
-
-import socketio
-from aiohttp import web
+from datetime import UTC, datetime
 from typing import Any
 
-from .common import common
+import anyio
+import socketio
+from aiohttp import web
+
+from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
-from .Utils import isDownloaded, arg_converter
-from .EventsSubscriber import EventsSubscriber, Events, Event
+from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Utils import arg_converter, is_downloaded
 
 LOG = logging.getLogger("socket_api")
 
 
-class HttpSocket(common):
+class HttpSocket(Common):
     """
     This class is used to handle WebSocket events.
     """
@@ -54,6 +55,7 @@ class HttpSocket(common):
 
         super().__init__(queue=queue, encoder=encoder, config=config)
 
+    @staticmethod
     def ws_event(func):  # type: ignore
         """
         Decorator to mark a method as a socket event.
@@ -65,6 +67,9 @@ class HttpSocket(common):
 
         wrapper._ws_event = func.__name__  # type: ignore
         return wrapper
+
+    async def on_shutdown(self, _: web.Application):
+        LOG.debug("Shutting down socket server.")
 
     def attach(self, app: web.Application):
         self.sio.attach(app, socketio_path=self.config.url_socketio)
@@ -82,7 +87,10 @@ class HttpSocket(common):
 
         EventsSubscriber.get_instance().subscribe(Events.ADD_URL, "socket_add_url", handle_event)
 
-    @ws_event  # type: ignore
+        # register the shutdown event.
+        app.on_shutdown.append(self.on_shutdown)
+
+    @ws_event
     async def cli_post(self, sid: str, data):
         if not data:
             await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": 0}, to=sid)
@@ -91,7 +99,7 @@ class HttpSocket(common):
         try:
             LOG.info(f"Cli command from client '{sid}'. '{data}'")
 
-            args = ["yt-dlp"] + shlex.split(data)
+            args = ["yt-dlp", *shlex.split(data)]
             _env = os.environ.copy()
             _env.update(
                 {
@@ -119,7 +127,7 @@ class HttpSocket(common):
             try:
                 os.close(slave_fd)
             except Exception as e:
-                LOG.error(f"Error closing PTY. '{str(e)}'.")
+                LOG.error(f"Error closing PTY. '{e!s}'.")
 
             async def read_pty(sid: str):
                 loop = asyncio.get_running_loop()
@@ -130,8 +138,7 @@ class HttpSocket(common):
                     except OSError as e:
                         if e.errno == errno.EIO:
                             break
-                        else:
-                            raise
+                        raise
 
                     if not chunk:
                         # No more output
@@ -154,7 +161,7 @@ class HttpSocket(common):
                 try:
                     os.close(master_fd)
                 except Exception as e:
-                    LOG.error(f"Error closing PTY. '{str(e)}'.")
+                    LOG.error(f"Error closing PTY. '{e!s}'.")
 
             # Start reading output from PTY
             read_task = asyncio.create_task(read_pty(sid=sid))
@@ -172,7 +179,7 @@ class HttpSocket(common):
             await self.emitter.emit(Events.CLI_OUTPUT, {"type": "stderr", "line": str(e)}, to=sid)
             await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": -1}, to=sid)
 
-    @ws_event  # type: ignore
+    @ws_event
     async def add_url(self, sid: str, data: dict):
         url: str | None = data.get("url")
 
@@ -183,13 +190,13 @@ class HttpSocket(common):
         try:
             item = self.format_item(data)
         except ValueError as e:
-            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+            await self.emitter.error(str(e), to=sid)
+            return
 
         status = await self.add(**item)
-
         await self.emitter.emit(event=Events.STATUS, data=status, to=sid)
 
-    @ws_event  # type: ignore
+    @ws_event
     async def item_cancel(self, sid: str, id: str):
         if not id:
             await self.emitter.error("Invalid request.", to=sid)
@@ -201,7 +208,7 @@ class HttpSocket(common):
 
         await self.emitter.emit(event=Events.ITEM_CANCEL, data=status)
 
-    @ws_event  # type: ignore
+    @ws_event
     async def item_delete(self, sid: str, data: dict):
         if not data:
             await self.emitter.error("Invalid request.", to=sid)
@@ -218,8 +225,8 @@ class HttpSocket(common):
 
         await self.emitter.emit(event=Events.ITEM_DELETE, data=status)
 
-    @ws_event  # type: ignore
-    async def archive_item(self, sid: str, data: dict):
+    @ws_event
+    async def archive_item(self, _: str, data: dict):
         if not isinstance(data, dict) or "url" not in data or not self.config.keep_archive:
             return
 
@@ -231,36 +238,36 @@ class HttpSocket(common):
         if not file:
             return
 
-        exists, idDict = isDownloaded(file, data["url"])
+        exists, idDict = is_downloaded(file, data["url"])
         if exists or "archive_id" not in idDict or idDict["archive_id"] is None:
             return
 
-        with open(file, "a") as f:
-            f.write(f"{idDict['archive_id']}\n")
+        async with await anyio.open_file(file, "a") as f:
+            await f.write(f"{idDict['archive_id']}\n")
 
         manual_archive = self.config.manual_archive
         if manual_archive:
             previouslyArchived = False
             if os.path.exists(manual_archive):
-                with open(manual_archive, "r") as f:
-                    for line in f.readlines():
+                async with await anyio.open_file(manual_archive) as f:
+                    async for line in f:
                         if idDict["archive_id"] in line:
                             previouslyArchived = True
                             break
 
             if not previouslyArchived:
-                with open(manual_archive, "a") as f:
-                    f.write(f"{idDict['archive_id']} - at: {datetime.now().isoformat()}\n")
+                async with await anyio.open_file(manual_archive, "a") as f:
+                    await f.write(f"{idDict['archive_id']} - at: {datetime.now(UTC).isoformat()}\n")
 
         LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
 
-    @ws_event  # type: ignore
+    @ws_event
     async def connect(self, sid: str, _=None):
         data = {
             **self.queue.get(),
             "config": self.config.frontend(),
             "presets": self.config.presets,
-            "paused": self.queue.isPaused(),
+            "paused": self.queue.is_paused(),
         }
 
         # get download folder listing.
@@ -269,13 +276,13 @@ class HttpSocket(common):
 
         await self.emitter.emit(event=Events.INITIAL_DATA, data=data, to=sid)
 
-    @ws_event  # type: ignore
-    async def pause(self, sid: str, _=None):
+    @ws_event
+    async def pause(self, *_, **__):
         self.queue.pause()
         await self.emitter.emit(event=Events.PAUSED, data={"paused": True, "at": time.time()})
 
-    @ws_event  # type: ignore
-    async def resume(self, sid: str, _=None):
+    @ws_event
+    async def resume(self, *_, **__):
         self.queue.resume()
         await self.emitter.emit(event=Events.PAUSED, data={"paused": False, "at": time.time()})
 
@@ -293,9 +300,10 @@ class HttpSocket(common):
 
         try:
             await self.emitter.emit(event=Events.YTDLP_CONVERT, data=arg_converter(args), to=sid)
-            return
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
             await self.emitter.error(f"Failed to convert options. '{err}'.", to=sid)
+
+        return

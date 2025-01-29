@@ -2,7 +2,7 @@ FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
-RUN if [ ! -d /app/exported ]; then yarn install --production --prefer-offline --frozen-lockfile && yarn run generate; else echo "Skipping UI build, already built."; fi
+RUN if [ ! -f "/app/exported/index.html" ]; then yarn install --production --prefer-offline --frozen-lockfile && yarn run generate; else echo "Skipping UI build, already built."; fi
 
 FROM python:3.11-alpine AS python_builder
 
@@ -26,7 +26,7 @@ FROM python:3.11-alpine
 ARG TZ=UTC
 ARG USER_ID=1000
 ENV IN_CONTAINER=1
-ENV UMASK=022
+ENV UMASK=0002
 ENV YTP_CONFIG_PATH=/config
 ENV YTP_TEMP_PATH=/tmp
 ENV YTP_DOWNLOAD_PATH=/downloads

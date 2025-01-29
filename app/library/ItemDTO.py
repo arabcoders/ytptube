@@ -30,7 +30,7 @@ class ItemDTO:
     config: dict = field(default_factory=dict)
     template: str | None = None
     template_chapter: str | None = None
-    timestamp: float = time.time_ns()
+    timestamp: float = field(default_factory=lambda: time.time_ns())
     is_live: bool | None = None
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))
     live_in: str | None = None
@@ -92,3 +92,6 @@ class ItemDTO:
 
     def get(self, key: str, default: Any = None) -> Any:
         return self.__dict__.get(key, default)
+
+    def get_id(self) -> str:
+        return self._id

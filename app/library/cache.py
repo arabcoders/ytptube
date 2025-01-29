@@ -1,12 +1,12 @@
 import hashlib
 import threading
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
-from .Singleton import threadSafe
+from .Singleton import ThreadSafe
 
 
-class Cache(metaclass=threadSafe):
+class Cache(metaclass=ThreadSafe):
     def __init__(self) -> None:
         """
         Initialize the Cache.
@@ -14,11 +14,11 @@ class Cache(metaclass=threadSafe):
         # Prevent reinitialization in singleton context.
         if hasattr(self, "_initialized") and self._initialized:
             return
-        self._cache: Dict[str, Tuple[Any, Optional[float]]] = {}
+        self._cache: dict[str, tuple[Any, float | None]] = {}
         self._lock = threading.Lock()
         self._initialized = True
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """
         Synchronously set a value in the cache with an optional time-to-live.
         If ttl is None, the entry never expires.
@@ -27,7 +27,7 @@ class Cache(metaclass=threadSafe):
         with self._lock:
             self._cache[key] = (value, expire_at)
 
-    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    def get(self, key: str, default: Any | None = None) -> Any | None:
         """
         Synchronously retrieve a value from the cache if it exists and hasn't expired.
         """
@@ -81,13 +81,13 @@ class Cache(metaclass=threadSafe):
         return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
     # Asynchronous counterparts for non-blocking interfaces
-    async def aset(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    async def aset(self, key: str, value: Any, ttl: float | None = None) -> None:
         """
         Asynchronously set a value in the cache.
         """
         self.set(key, value, ttl)
 
-    async def aget(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+    async def aget(self, key: str, default: Any | None = None) -> Any | None:
         """
         Asynchronously retrieve a value from the cache.
         """

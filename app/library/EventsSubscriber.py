@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from typing import Awaitable
-
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 from .Singleton import Singleton
@@ -32,12 +31,10 @@ class Events:
     CLI_OUTPUT = "cli_output"
     UPDATE = "update"
     TEST = "test"
-    UPDATED = "updated"
     ADD_URL = "add_url"
 
     CLI_POST = "cli_post"
     PAUSED = "paused"
-    TEST = "test"
 
     TASKS_ADD = "task_add"
     TASK_DISPATCHED = "task_dispatched"
@@ -72,6 +69,7 @@ class EventsSubscriber(metaclass=Singleton):
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
+
         """
         if not EventsSubscriber._instance:
             EventsSubscriber._instance = EventsSubscriber()
@@ -88,6 +86,7 @@ class EventsSubscriber(metaclass=Singleton):
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
+
         """
         if isinstance(event, str):
             event = [event]
@@ -110,8 +109,8 @@ class EventsSubscriber(metaclass=Singleton):
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
-        """
 
+        """
         if isinstance(event, str):
             event = [event]
 
@@ -148,8 +147,8 @@ class EventsSubscriber(metaclass=Singleton):
 
                 results.append(asyncio.get_event_loop().run_until_complete(callback(event, data)))
             except Exception as e:
-                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{str(e)}'.")
                 LOG.exception(e)
+                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
 
         return results
 
@@ -164,10 +163,10 @@ class EventsSubscriber(metaclass=Singleton):
 
         Returns:
             Awaitable: The task that was created to run the event.
-        """
 
+        """
         if event not in self._listeners:
-            return
+            return None
 
         tasks = []
         for id, callback in self._listeners[event].items():
@@ -181,7 +180,7 @@ class EventsSubscriber(metaclass=Singleton):
 
                 tasks.append(asyncio.create_task(callback(event, data)))
             except Exception as e:
-                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{str(e)}'.")
                 LOG.exception(e)
+                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
 
         return asyncio.gather(*tasks)
