@@ -381,6 +381,28 @@ const formatBytes = (bytes, decimals = 2) => {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
+
+/**
+ * Convert options to JSON
+ *
+ * @param {string} opts
+ *
+ * @returns {Promise<string>}
+ */
+const convertCliOptions = async opts => {
+  const response = await request('/api/yt-dlp/convert', {
+    method: 'POST',
+    body: JSON.stringify({ args: opts }),
+  });
+
+  const data = await response.json()
+  if (200 !== response.status) {
+    throw new Error(`Error: (${response.status}): ${data.error}`)
+  }
+
+  return JSON.stringify(data, null, 2)
+}
+
 export {
   ag_set,
   ag,
@@ -402,4 +424,5 @@ export {
   getQueryParams,
   makeDownload,
   formatBytes,
+  convertCliOptions,
 }

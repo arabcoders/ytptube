@@ -43,13 +43,12 @@ Your `yt-dlp` config should include the following options for optimal working co
 ## Run using Docker
 
 ```bash
-docker run -d --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw ghcr.io/arabcoders/ytptube
+docker run -d --rm --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw ghcr.io/arabcoders/ytptube
 ```
 
-## Run using docker-compose
+## Run using compose file.
 
 ```yaml
-version: "3.9"
 services:
   ytptube:
     user: "1000:1000"
@@ -67,7 +66,7 @@ services:
 
 ## Configuration via environment variables
 
-Certain values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in docker-compose.
+Certain values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in `compose.yaml` file.
 
 * __YTP_CONFIG_PATH__: path to where the queue persistence files will be saved. Defaults to `/config` in the docker image, and `./var/config` otherwise.
 * __YTP_DOWNLOAD_PATH__: path to where the downloads will be saved. Defaults to `/downloads` in the docker image, and `./var/downloads` otherwise.
@@ -99,7 +98,8 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_PIP_IGNORE_UPDATES__: Do not update the custom pip packages. Defaults to `false`.
 * __YTP_BASIC_MODE__: Whether to run WebUI in basic mode. Defaults to `false`. In basic mode, A minimal UI will be shown, the majority of the features will be disabled.
 * __YTP_DEFAULT_PRESET__: The default preset to use for the download. Defaults to `default`.
-
+* __YTP_INSTANCE_TITLE__: The title of the instance. Defaults to empty string.
+  
 ## Running behind a reverse proxy
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
@@ -237,6 +237,11 @@ The `config/ytdlp.json`, is a json file which can be used to alter the default `
   ]
 }
 ``` 
+The options can be fount at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
+And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
+
+> [!NOTE]
+> You can use the `yt-dlp json config` box in the new Download page to convert your cli options to json format.
 
 ### presets.json File
 

@@ -1,44 +1,26 @@
 <template>
   <div id="main_container" class="container">
     <nav class="navbar is-mobile is-dark">
-      <div class="navbar-brand pl-5">
+      <div class="navbar-brand pl-5 is-hidden-mobile">
         <NuxtLink class="navbar-item  has-tooltip-bottom" to="/"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span>
             <span class="icon"> <i class="fas fa-home" /></span>
-            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'"><b>YTPTube</b></span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'">
+              <b>YTPTube</b>
+            </span>
+            <span v-if="config?.app?.instance_title">: {{ config.app.instance_title }}</span>
           </span>
         </NuxtLink>
       </div>
 
       <div class="navbar-end is-flex" style="flex-flow:wrap">
 
-        <div class="navbar-item">
+        <div class="navbar-item is-hidden-tablet">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/" v-tooltip.bottom="'Downloads'">
-            <span class="icon"><i class="fa-solid fa-download" /></span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'" class="icon"><i
+                class="fa-solid fa-home" /></span>
           </NuxtLink>
-        </div>
-
-        <div class="navbar-item has-dropdown is-unselectable" :class="{ 'is-active': theme_open }"
-          @click.prevent="openCloseTheme" v-tooltip.bottom="'Change Theme'">
-          <a class="navbar-link is-arrowless">
-            <span class="icon"><i class="fas fa-repeat" /></span>
-          </a>
-          <div class="navbar-dropdown">
-            <a class="navbar-item" :class="{ 'is-selected': 'auto' === selectedTheme }" @click="selectTheme('auto')">
-              <span class="icon"><i class="fas fa-sync" /></span>
-              <span>Auto</span>
-            </a>
-            <hr class="navbar-divider">
-            <a class="navbar-item" :class="{ 'is-selected': 'light' === selectedTheme }" @click="selectTheme('light')">
-              <span class="icon"><i class="fas fa-sun" /></span>
-              <span>Light</span>
-            </a>
-            <a class="navbar-item" :class="{ 'is-selected': 'dark' === selectedTheme }" @click="selectTheme('dark')">
-              <span class="icon"><i class="fas fa-moon" /></span>
-              <span>Dark</span>
-            </a>
-          </div>
         </div>
 
         <div class="navbar-item" v-if="!config.app.basic_mode">
@@ -57,6 +39,21 @@
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/notifications">
             <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
           </NuxtLink>
+        </div>
+
+        <div class="navbar-item">
+          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to Light theme'"
+            v-if="'auto' == selectedTheme" @click="selectTheme('light')">
+            <span class="icon has-text-warning"><i class="fas fa-sun" /></span>
+          </button>
+          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to Dark theme'"
+            v-if="'light' == selectedTheme" @click="selectTheme('dark')">
+            <span class="icon"><i class="fas fa-moon" /></span>
+          </button>
+          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to auto theme'"
+            v-if="'dark' == selectedTheme" @click="selectTheme('auto')">
+            <span class="icon"><i class="fas fa-microchip" /></span>
+          </button>
         </div>
 
         <div class="navbar-item">
@@ -101,8 +98,6 @@ const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
 const config = useConfigStore()
-const theme_open = ref(false)
-const theme_inner_click = ref(false)
 
 const applyPreferredColorScheme = scheme => {
   if (!scheme || 'auto' === scheme) {
@@ -165,23 +160,9 @@ watch(selectedTheme, value => {
 const reloadPage = () => window.location.reload()
 
 const selectTheme = theme => {
-  theme_inner_click.value = true
-  theme_open.value = false
-  console.log('selectedTheme', selectedTheme.value, theme_open.value)
-  if (theme === selectedTheme.value) {
-    return
-  }
-
   selectedTheme.value = theme
   if ('auto' === theme) {
     return reloadPage()
   }
-}
-const openCloseTheme = () => {
-  if (theme_inner_click.value) {
-    theme_inner_click.value = false
-    return
-  }
-  theme_open.value = !theme_open.value
 }
 </script>

@@ -9,7 +9,8 @@
 .navbar-item.is-hoverable:hover .navbar-dropdown {
   display: block;
 }
-.navbar-item.has-dropdown{
+
+.navbar-item.has-dropdown {
   padding: 0.5rem 0.75rem;
 }
 </style>
@@ -20,7 +21,10 @@
         <span class="title is-4">
           <span class="icon-text">
             <span class="icon"><i class="fa-solid fa-download" /></span>
-            <span>Downloads</span>
+            <span class="is-hidden-mobile">Downloads</span>
+            <span class="is-hidden-tablet">
+              {{ config?.app?.instance_title ? config.app.instance_title : 'Downloads' }}
+            </span>
           </span>
         </span>
 
