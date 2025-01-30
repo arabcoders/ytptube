@@ -1,21 +1,25 @@
 <template>
   <div id="main_container" class="container">
     <nav class="navbar is-mobile is-dark">
-      <div class="navbar-brand pl-5">
+      <div class="navbar-brand pl-5 is-hidden-mobile">
         <NuxtLink class="navbar-item  has-tooltip-bottom" to="/"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span>
             <span class="icon"> <i class="fas fa-home" /></span>
-            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'"><b>YTPTube</b></span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'">
+              <b>YTPTube</b>
+            </span>
+            <span v-if="config?.app?.instance_title">: {{ config.app.instance_title }}</span>
           </span>
         </NuxtLink>
       </div>
 
       <div class="navbar-end is-flex" style="flex-flow:wrap">
 
-        <div class="navbar-item">
+        <div class="navbar-item is-hidden-tablet">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/" v-tooltip.bottom="'Downloads'">
-            <span class="icon"><i class="fa-solid fa-download" /></span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'" class="icon"><i
+                class="fa-solid fa-home" /></span>
           </NuxtLink>
         </div>
 

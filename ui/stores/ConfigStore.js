@@ -14,6 +14,7 @@ const CONFIG_KEYS = {
     has_cookies: false,
     basic_mode: true,
     default_preset: 'default',
+    instance_title: null,
   },
   presets: [
     {

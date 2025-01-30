@@ -70,8 +70,9 @@
                     placeholder="Uses default output template naming if empty.">
                 </div>
                 <span class="help">
-                  All output template naming options can be found at <NuxtLink target="_blank"
-                    to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>All output template naming options can be found at <NuxtLink target="_blank"
+                      to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
                 </span>
               </div>
             </div>
@@ -80,33 +81,36 @@
                 <label class="label is-inline" for="ytdlpConfig"
                   v-tooltip="'Extends current global yt-dlp config. (JSON)'">
                   JSON yt-dlp config or CLI options.
+                  <NuxtLink v-if="ytdlpConfig && !ytdlpConfig.trim().startsWith('{')" @click="convertOptions()">
+                    Convert to JSON
+                  </NuxtLink>
                 </label>
                 <div class="control">
                   <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig"
-                    :disabled="!socket.isConnected || addInProgress"
+                    :disabled="!socket.isConnected || addInProgress || convertInProgress"
                     placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
                 </div>
                 <span class="help">
-                  Some config fields are ignored like <code>format</code> <code>cookiefile</code>, <code>paths</code>,
-                  and <code>outtmpl</code> etc. Available option can be found at <NuxtLink target="_blank"
-                    to="https://github.com/yt-dlp/yt-dlp/blob/a0b19d319a6ce8b7059318fa17a34b144fde1785/yt_dlp/YoutubeDL.py#L194">
-                    this page</NuxtLink>. Warning: Use with caution some of those options can break yt-dlp or the
-                  frontend.
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Extends current global yt-dlp config with given options. Some fields are ignored like
+                    <code>format</code> <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc.
+                    Warning: Use with caution some of those options can break yt-dlp or the frontend.</span>
                 </span>
               </div>
             </div>
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
-                  yt-dlp Cookies
+                  Cookies
                 </label>
                 <div class="control">
                   <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
                     :disabled="!socket.isConnected || addInProgress"></textarea>
                 </div>
                 <span class="help">
-                  Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
-                    flagCookies</NuxtLink> to extract cookies as JSON string.
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
+                      flagCookies</NuxtLink> to extract cookies as JSON string.</span>
                 </span>
               </div>
             </div>
@@ -157,25 +161,12 @@ const downloadPath = useStorage('downloadPath', null)
 const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
+const convertInProgress = ref(false)
 
 const addDownload = async () => {
   // -- send request to convert cli options to JSON
   if (ytdlpConfig.value && !ytdlpConfig.value.trim().startsWith('{')) {
-    const response = await request('/api/yt-dlp/convert', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ args: ytdlpConfig.value }),
-    });
-
-    const data = await response.json()
-    if (200 !== response.status) {
-      toast.error(`Error: (${response.status}): ${data.error}`)
-      return
-    }
-
-    ytdlpConfig.value = JSON.stringify(data, null, 2)
+    await convertOptions()
   }
 
   if (ytdlpConfig.value) {
@@ -239,6 +230,21 @@ const unlockDownload = async stream => {
   }
   if ("unlock" in json.data && json.data.unlock === true) {
     addInProgress.value = false
+  }
+}
+
+const convertOptions = async () => {
+  if (convertInProgress.value) {
+    return
+  }
+
+  try {
+    convertInProgress.value = true
+    ytdlpConfig.value = await convertCliOptions(ytdlpConfig.value)
+  } catch (e) {
+    toast.error(e.message)
+  } finally {
+    convertInProgress.value = false
   }
 }
 

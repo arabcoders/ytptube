@@ -136,6 +136,9 @@ class Config:
     default_preset: str = "default"
     "The default preset to use when no preset is specified."
 
+    instance_title: str | None = None
+    "The title of the instance."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -191,6 +194,7 @@ class Config:
         "max_workers",
         "basic_mode",
         "default_preset",
+        "instance_title",
     )
     "The variables that are relevant to the frontend."
 

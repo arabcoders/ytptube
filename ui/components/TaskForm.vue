@@ -127,7 +127,8 @@
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline" for="config" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                  JSON yt-dlp config or CLI options.
+                  JSON yt-dlp config or CLI options. <NuxtLink v-if="form.config && !form.config.trim().startsWith('{')"
+                    @click="convertOptions()">Convert to JSON</NuxtLink>
                 </label>
                 <div class="control">
                   <textarea class="textarea" id="config" v-model="form.config" :disabled="addInProgress"
@@ -135,8 +136,9 @@
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Extends current global yt-dlp config with given options. If CLI options are given, they will be
-                    converted pre-saving.</span>
+                  <span> Extends current global yt-dlp config with given options. Some fields are ignored like
+                    <code>format</code> <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc.
+                    Warning: Use with caution some of those options can break yt-dlp or the frontend.</span>
                 </span>
               </div>
             </div>
@@ -193,6 +195,7 @@ import { request } from '~/utils/index'
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
 const config = useConfigStore();
+const convertInProgress = ref(false);
 
 const props = defineProps({
   reference: {
@@ -249,26 +252,10 @@ const checkInfo = async () => {
     return;
   }
 
-  // -- send request to convert cli options to JSON
-  if (form.config && form.config.length > 2 && !form.config.trim().startsWith('{')) {
-    const response = await request('/api/yt-dlp/convert', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ args: form.config }),
-    });
-
-    const data = await response.json()
-    if (200 !== response.status) {
-      toast.error(`Error: (${response.status}): ${data.error}`)
-      return
-    }
-
-    form.config = JSON.stringify(data, null, 4)
+  if (form.config && !form.config.trim().startsWith('{')) {
+    await convertOptions();
   }
 
-  // -- check config
   if (form.config) {
     try {
       form.config = JSON.parse(form.config)
@@ -278,7 +265,6 @@ const checkInfo = async () => {
     }
   }
 
-  // -- check cookies syntax
   if (form.cookies) {
     try {
       JSON.parse(form.cookies);
@@ -290,4 +276,20 @@ const checkInfo = async () => {
 
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
 }
+
+const convertOptions = async () => {
+  if (convertInProgress.value) {
+    return
+  }
+
+  try {
+    convertInProgress.value = true
+    form.config = await convertCliOptions(form.config)
+  } catch (e) {
+    toast.error(e.message)
+  } finally {
+    convertInProgress.value = false
+  }
+}
+
 </script>
