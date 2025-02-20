@@ -21,8 +21,8 @@ regex = "*"
 mutagen = "*"
 brotli = "*"
 brotlicffi = "*"
-yt-dlp = "*"
 anyio = "*"
+yt-dlp = "*"
 
 [dev-packages]
 
