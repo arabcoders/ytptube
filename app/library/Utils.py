@@ -106,7 +106,7 @@ def get_video_info(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
-    return yt_dlp.YoutubeDL().extract_info(url, download=False)
+    return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
 
 def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
