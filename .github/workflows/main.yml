@@ -249,7 +249,7 @@ jobs:
           TAG_PREVIOUS="${{ steps.last_two_tags.outputs.TAG_PREVIOUS }}"
 
           echo "Comparing commits between: $TAG_PREVIOUS..$TAG_NEWEST"
-          LOG=$(git log "$TAG_PREVIOUS".."$TAG_NEWEST" --pretty=format:"- %h %s by %an")
+          LOG=$(git log "$TAG_PREVIOUS".."$TAG_NEWEST" --no-merges --pretty=format:"- %h %s by %an")
 
           echo "LOG<<EOF" >> "$GITHUB_ENV"
           echo "$LOG" >> "$GITHUB_ENV"

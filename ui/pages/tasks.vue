@@ -269,10 +269,10 @@ const editItem = item => {
 }
 
 const calcPath = path => {
-  let loc = config.app.download_path
+  const loc = config.app.download_path || '/downloads'
 
   if (path) {
-    let loc = loc + '/' + sTrim(path, '/')
+    return loc + '/' + sTrim(path, '/')
   }
 
   return loc

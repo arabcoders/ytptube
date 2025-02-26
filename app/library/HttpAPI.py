@@ -12,6 +12,7 @@ from collections.abc import Awaitable
 from datetime import UTC, datetime
 from pathlib import Path
 
+import anyio
 import httpx
 import magic
 from aiohttp import web
@@ -413,6 +414,89 @@ class HttpAPI(Common):
                 },
                 status=web.HTTPInternalServerError.status_code,
             )
+
+    @route("GET", "api/yt-dlp/archive/recheck")
+    async def archive_recheck(self, _) -> Response:
+        """
+        Recheck the manual archive entries.
+
+        Args:
+            _ (Request): The request object.
+
+        Returns:
+            Response: The response object
+
+        """
+        manual_archive = self.config.manual_archive
+        if not manual_archive:
+            return web.json_response(
+                data={"error": "Manual archive is not enabled."}, status=web.HTTPNotFound.status_code
+            )
+
+        if not os.path.exists(manual_archive):
+            return web.json_response(
+                data={"error": "Manual archive file not found.", "file": manual_archive},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        tasks = []
+        response = []
+
+        def get_video_info_wrapper(id: str, url: str) -> tuple[str, dict]:
+            try:
+                return (
+                    id,
+                    get_video_info(
+                        url=url,
+                        ytdlp_opts={
+                            "proxy": self.config.ytdl_options.get("proxy", None),
+                            "simulate": True,
+                            "dump_single_json": True,
+                        },
+                        no_archive=True,
+                    ),
+                )
+            except Exception as e:
+                return (id, {"error": str(e)})
+
+        async with await anyio.open_file(manual_archive) as f:
+            # line format is "youtube ID - at: ISO8601"
+            async for line in f:
+                line = line.strip()
+
+                if not line or not line.startswith("youtube"):
+                    continue
+
+                id = line.split(" ")[1].strip()
+
+                if not id:
+                    continue
+
+                url = f"https://www.youtube.com/watch?v={id}"
+                key = self.cache.hash(id)
+
+                if self.cache.has(key):
+                    data = self.cache.get(key)
+                    response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
+                    continue
+
+                tasks.append(
+                    asyncio.get_event_loop().run_in_executor(
+                        None, lambda id=id, url=url: get_video_info_wrapper(id=id, url=url)
+                    )
+                )
+
+        if len(tasks) > 0:
+            results = await asyncio.gather(*tasks)
+            for data in results:
+                if not data:
+                    continue
+
+                id, info = data
+                self.cache.set(key=self.cache.hash(id), value=info, ttl=3600 * 6)
+                response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
+
+        return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("GET", "api/history/add")
     async def quick_add(self, request: Request) -> Response:
