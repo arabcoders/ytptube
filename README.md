@@ -99,6 +99,7 @@ Certain values can be set via environment variables, using the `-e` parameter on
 * __YTP_BASIC_MODE__: Whether to run WebUI in basic mode. Defaults to `false`. In basic mode, A minimal UI will be shown, the majority of the features will be disabled.
 * __YTP_DEFAULT_PRESET__: The default preset to use for the download. Defaults to `default`.
 * __YTP_INSTANCE_TITLE__: The title of the instance. Defaults to empty string.
+* __YTP_FILE_LOGGING__: Whether to log to file. Defaults to `false`.
   
 ## Running behind a reverse proxy
 

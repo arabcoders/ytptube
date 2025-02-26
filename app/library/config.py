@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import time
+from logging.handlers import RotatingFileHandler
 from multiprocessing.managers import SyncManager
 from pathlib import Path
 
@@ -139,6 +140,9 @@ class Config:
     instance_title: str | None = None
     "The title of the instance."
 
+    file_logging: bool = False
+    "Enable file logging."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -179,6 +183,7 @@ class Config:
         "ui_update_title",
         "pip_ignore_updates",
         "basic_mode",
+        "file_logging",
     )
     "The variables that are booleans."
 
@@ -359,6 +364,12 @@ class Config:
             LOG.info("keep archive option is enabled.")
             self.ytdl_options["download_archive"] = os.path.join(self.config_path, "archive.log")
 
+        cookiesFile: str = os.path.join(self.config_path, "cookies.txt")
+
+        if os.path.exists(cookiesFile) and self.ytdl_options.get("cookiefile", None) is None:
+            LOG.info(f"Using cookies from '{cookiesFile}' as default.")
+            self.ytdl_options["cookiefile"] = cookiesFile
+
         if self.temp_keep:
             LOG.info("Keep temp files option is enabled.")
 
@@ -367,6 +378,15 @@ class Config:
 
         if self.basic_mode:
             LOG.info("The frontend is running in basic mode.")
+
+        if self.file_logging:
+            handler = RotatingFileHandler(
+                os.path.join(self.config_path, "app.log"), maxBytes=1 * 1024 * 1024, backupCount=3
+            )
+            handler.setLevel(logging.ERROR)
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            handler.setFormatter(formatter)
+            logging.getLogger().addHandler(handler)
 
         self.started = time.time()
 
