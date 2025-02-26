@@ -127,7 +127,8 @@
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline" for="config" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                  JSON yt-dlp config or CLI options. <NuxtLink v-if="form.config && !form.config.trim().startsWith('{')"
+                  JSON yt-dlp config or CLI options. <NuxtLink
+                    v-if="form.config && (typeof form.config === 'string') && !form.config.trim().startsWith('{')"
                     @click="convertOptions()">Convert to JSON</NuxtLink>
                 </label>
                 <div class="control">
@@ -145,17 +146,16 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="cookies" v-tooltip="'JSON exported cookies for downloading.'">
-                  JSON Cookies
-                </label>
+                <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">Cookies</label>
                 <div class="control">
                   <textarea class="textarea" id="cookies" v-model="form.cookies" :disabled="addInProgress"></textarea>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">flagCookies</NuxtLink> to
-                    extract cookies as JSON string.
-                  </span>
+                  <span>Use the <NuxtLink target="_blank"
+                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                      Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
+                    Cookie format.</span>
                 </span>
               </div>
             </div>
@@ -217,7 +217,6 @@ const props = defineProps({
 const form = reactive(props.task);
 
 onMounted(() => {
-
   if (props.task?.config && (typeof props.task.config === 'object')) {
     form.config = JSON.stringify(props.task.config, null, 4);
   }
@@ -252,7 +251,11 @@ const checkInfo = async () => {
     return;
   }
 
-  if (form.config && !form.config.trim().startsWith('{')) {
+  if (typeof form.config === 'object') {
+    form.config = JSON.stringify(form.config, null, 4);
+  }
+
+  if (form.config && form.config && !form.config.trim().startsWith('{')) {
     await convertOptions();
   }
 
@@ -261,15 +264,6 @@ const checkInfo = async () => {
       form.config = JSON.parse(form.config)
     } catch (e) {
       toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
-      return;
-    }
-  }
-
-  if (form.cookies) {
-    try {
-      JSON.parse(form.cookies);
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp cookies. ${e.message}`)
       return;
     }
   }

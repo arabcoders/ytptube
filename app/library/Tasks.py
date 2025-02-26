@@ -17,7 +17,7 @@ from .encoder import Encoder
 from .EventsSubscriber import Event, Events, EventsSubscriber
 from .Singleton import Singleton
 
-LOG = logging.getLogger("notifications")
+LOG = logging.getLogger("tasks")
 
 
 @dataclass(kw_only=True)

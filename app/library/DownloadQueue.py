@@ -3,10 +3,12 @@ import json
 import logging
 import os
 import time
+import uuid
 from datetime import UTC, datetime
 from email.utils import formatdate
 from sqlite3 import Connection
 
+import anyio
 import yt_dlp
 from aiohttp import web
 
@@ -354,9 +356,11 @@ class DownloadQueue(metaclass=Singleton):
         folder = str(folder) if folder else ""
 
         filePath = calc_download_path(base_path=self.config.download_path, folder=folder)
+        yt_conf = {}
+        cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {cookies}' 'YTConfig: {config}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'YTConfig: {config}'."
         )
 
         if isinstance(config, str):
@@ -384,19 +388,33 @@ class DownloadQueue(metaclass=Singleton):
             started = time.perf_counter()
             LOG.debug(f"extract_info: checking {url=}")
 
+            logs = []
+
+            yt_conf = {
+                "callback": {
+                    "func": lambda _, msg: logs.append(msg),
+                    "level": logging.WARNING,
+                },
+                **merge_config(self.config.ytdl_options, config),
+            }
+
+            if cookies:
+                try:
+                    async with await anyio.open_file(cookie_file, "w") as f:
+                        await f.write(cookies)
+                        yt_conf["cookiefile"] = f.name
+                except ValueError as e:
+                    LOG.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
+
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
-                    None,
-                    extract_info,
-                    get_opts(preset, merge_config(self.config.ytdl_options, config)),
-                    url,
-                    bool(self.config.ytdl_debug),
+                    None, extract_info, get_opts(preset, yt_conf), url, bool(self.config.ytdl_debug)
                 ),
                 timeout=self.config.extract_info_timeout,
             )
 
             if not entry:
-                return {"status": "error", "msg": "Unable to extract info check logs."}
+                return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
             LOG.debug(
                 f"extract_info: for 'URL: {url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}'."
@@ -413,6 +431,13 @@ class DownloadQueue(metaclass=Singleton):
                 "status": "error",
                 "msg": f"TimeoutError: {self.config.extract_info_timeout}s reached Unable to extract info.",
             }
+        finally:
+            if cookie_file and os.path.exists(cookie_file):
+                try:
+                    os.remove(yt_conf["cookiefile"])
+                    del yt_conf["cookiefile"]
+                except Exception as e:
+                    LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
         return await self.__add_entry(
             entry=entry,

@@ -1,6 +1,5 @@
 import asyncio
 import hashlib
-import json
 import logging
 import multiprocessing
 import os
@@ -15,7 +14,7 @@ from .config import Config
 from .Emitter import Emitter
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import get_opts, json_cookie, merge_config
+from .Utils import get_opts, merge_config
 
 LOG = logging.getLogger("download")
 
@@ -138,17 +137,11 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    data = json_cookie(json.loads(self.info.cookies))
-                    if not data:
-                        LOG.warning(
-                            f"The cookie string that was provided for {self.info.title} is empty or not in expected spec."
-                        )
                     with open(os.path.join(self.temp_path, f"cookie_{self.info._id}.txt"), "w") as f:
-                        f.write(data)
-
-                    params["cookiefile"] = f.name
+                        f.write(self.info.cookies)
+                        params["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Invalid cookies: was provided for '{self.info.title}'. '{e!s}'.")
+                    LOG.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
 
             if self.is_live or self.is_manifestless:
                 hasDeletedOptions = False

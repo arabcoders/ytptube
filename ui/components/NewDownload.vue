@@ -100,7 +100,7 @@
             </div>
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="ytdlpCookies" v-tooltip="'JSON exported cookies for downloading.'">
+                <label class="label is-inline" for="ytdlpCookies" v-tooltip="'Netscape HTTP Cookie format'">
                   Cookies
                 </label>
                 <div class="control">
@@ -109,8 +109,10 @@
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use <NuxtLink target="_blank" to="https://github.com/jrie/flagCookies">
-                      flagCookies</NuxtLink> to extract cookies as JSON string.</span>
+                  <span>Use the <NuxtLink target="_blank"
+                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                      Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
+                    Cookie format.</span>
                 </span>
               </div>
             </div>
