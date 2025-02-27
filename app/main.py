@@ -17,6 +17,7 @@ from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
 from library.PackageInstaller import PackageInstaller
+from library.Presets import Presets
 from library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
@@ -96,6 +97,7 @@ class Main:
         self._http.attach(self._app)
         self._queue.attach(self._app)
         Tasks.get_instance().attach(self._app)
+        Presets.get_instance().attach(self._app)
 
         def started(_):
             LOG.info("=" * 40)

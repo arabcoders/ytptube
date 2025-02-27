@@ -29,6 +29,7 @@ from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
+from .Presets import Presets
 from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
@@ -576,6 +577,22 @@ class HttpAPI(Common):
             ),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
+        )
+
+    @route("GET", "api/presets")
+    async def presets(self, _: Request) -> Response:
+        """
+        Get the presets.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        return web.json_response(
+            data=Presets.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
     @route("GET", "api/tasks")
