@@ -554,3 +554,53 @@ def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
         files.append({"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"})
 
     return files
+
+
+def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
+    """
+    Determine the correct MIME type for a video file based on ffprobe metadata.
+
+    Args:
+        metadata (dict): Parsed JSON output from ffprobe.
+        file_path (str): The path to the video file for fallback detection.
+
+    Returns:
+        str: MIME type compatible with HTML5 <video> tag.
+
+    """
+    # Extract format name from ffprobe
+    format_name = metadata.get("format_name", "")
+
+    # Define mappings for HTML5-compatible video types
+    format_to_mime = {
+        "matroska": "video/x-matroska",  # Default for MKV
+        "webm": "video/webm",  # MKV can also be WebM
+        "mp4": "video/mp4",
+        "mov": "video/quicktime",
+        "avi": "video/x-msvideo",
+        "flv": "video/x-flv",
+        "ogg": "video/ogg",
+        "mpegts": "video/mp2t",
+        "3gp": "video/3gpp",
+    }
+
+    # Check format_name against known formats
+    if format_name:
+        selected = None
+        for fmt in format_name.split(","):
+            fmt = fmt.strip().lower()
+            if fmt in format_to_mime:
+                selected = format_to_mime[fmt]
+
+        if selected:
+            return selected
+
+    # Fallback: Use Python's mimetypes module
+    import mimetypes
+
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if mime_type:
+        return mime_type
+
+    # Final fallback: Return generic binary type
+    return "application/octet-stream"

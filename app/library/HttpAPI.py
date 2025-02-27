@@ -38,6 +38,7 @@ from .Utils import (
     StreamingError,
     arg_converter,
     calc_download_path,
+    get_mime_type,
     get_sidecar_subtitles,
     get_video_info,
     validate_url,
@@ -1204,15 +1205,18 @@ class HttpAPI(Common):
 
             realFile = Path(realFile)
 
+            ff_info = await ffprobe(realFile)
+
             response = {
-                "ffprobe": await ffprobe(realFile),
+                "ffprobe": ff_info,
+                "mimetype": get_mime_type(ff_info.get("metadata", {}), realFile),
                 "sidecar": get_sidecar_subtitles(realFile),
             }
 
             for i, f in enumerate(response["sidecar"]):
-                response["sidecar"][i]["file"] = str(Path(realFile).with_name(f["file"].name)).replace(
-                    self.config.download_path, ""
-                ).strip("/")
+                response["sidecar"][i]["file"] = (
+                    str(Path(realFile).with_name(f["file"].name)).replace(self.config.download_path, "").strip("/")
+                )
 
             return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
         except Exception as e:

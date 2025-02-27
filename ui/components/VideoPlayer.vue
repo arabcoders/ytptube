@@ -19,7 +19,8 @@
 <template>
   <div>
     <video id="player" ref="video" :poster="thumbnail" :title="title" playsinline>
-      <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror" />
+      <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
+        :type="source.type" />
       <track v-for="track in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
         :src="track.file" default />
     </video>
@@ -70,6 +71,7 @@ onMounted(async () => {
 
   sources.value.push({
     src: makeDownload(config, props.item, 'api/download'),
+    type: response.mimetype,
     onerror: e => src_error(e),
   })
 
