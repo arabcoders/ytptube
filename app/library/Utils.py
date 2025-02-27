@@ -545,6 +545,9 @@ def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
         if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
             continue
 
+        if f.stat().st_size < 1:
+            continue
+
         lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
         lang = lg.groupdict().get("lang") if lg else "und"
 
