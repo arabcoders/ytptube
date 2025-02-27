@@ -12,6 +12,7 @@
   "web-types": "./web-types.json",
   "dependencies": {
     "@pinia/nuxt": "^0.5.1",
+    "@sentry/nuxt": "^9.2.0",
     "@vueuse/core": "^10.9.0",
     "@vueuse/nuxt": "^10.9.0",
     "@xterm/addon-fit": "^0.10.0",

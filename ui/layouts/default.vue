@@ -93,6 +93,7 @@ import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from 'moment'
+import * as Sentry from "@sentry/nuxt";
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -143,6 +144,8 @@ const applyPreferredColorScheme = scheme => {
     }
   }
 }
+
+watch(() => config.app.sentry_dsn, dsn => dsn ? Sentry.init({ dsn: dsn }) : null)
 
 onMounted(async () => {
   try {

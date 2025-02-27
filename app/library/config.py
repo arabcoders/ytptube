@@ -143,6 +143,9 @@ class Config:
     file_logging: bool = False
     "Enable file logging."
 
+    sentry_dsn: str | None = None
+    "The Sentry DSN to use for error reporting."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -200,6 +203,7 @@ class Config:
         "basic_mode",
         "default_preset",
         "instance_title",
+        "sentry_dsn",
     )
     "The variables that are relevant to the frontend."
 
