@@ -145,7 +145,13 @@ const applyPreferredColorScheme = scheme => {
   }
 }
 
-watch(() => config.app.sentry_dsn, dsn => dsn ? Sentry.init({ dsn: dsn }) : null)
+watch(() => config.app.sentry_dsn, dsn => {
+  if (!dsn) {
+    return
+  }
+  console.warn('Loading sentry module.')
+  Sentry.init({ dsn: dsn })
+})
 
 onMounted(async () => {
   try {

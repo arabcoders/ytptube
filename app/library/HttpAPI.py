@@ -119,6 +119,7 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
+        app.middlewares.append(HttpAPI.middle_wares())
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
 
@@ -307,6 +308,24 @@ class HttpAPI(Common):
                 )
 
             return await handler(request)
+
+        return middleware_handler
+
+    @staticmethod
+    def middle_wares() -> Awaitable:
+        @web.middleware
+        async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            response = await handler(request)
+
+            if isinstance(response, web.FileResponse):
+                try:
+                    ff_info = await ffprobe(response._path)
+                    mime_type = get_mime_type(ff_info.get("metadata", {}), response._path)
+                    response.content_type = mime_type
+                except Exception:
+                    pass
+
+            return response
 
         return middleware_handler
 
