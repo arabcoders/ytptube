@@ -10,7 +10,6 @@
       "runtimeArgs": [
         "run",
         "dev",
-        "--",
         "--port",
         "8082"
       ],
@@ -21,7 +20,8 @@
         "NUXT_API_URL": "http://localhost:8081/api/",
         "NUXT_PUBLIC_WSS": ":8081/",
       },
-      "console": "internalConsole"
+      "console": "internalConsole",
+      "outputCapture": "std",
     },
     {
       "name": "Python: main.py",

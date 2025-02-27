@@ -1,4 +1,5 @@
 import copy
+import glob
 import ipaddress
 import json
 import logging
@@ -23,10 +24,11 @@ IGNORED_KEYS: tuple[str] = (
     "outtmpl",
     "progress_hooks",
     "postprocessor_hooks",
-    "format",
     "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
+
+ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
 
 
 class StreamingError(Exception):
@@ -45,6 +47,11 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
       ytdl extra options
 
     """
+    if "format" in ytdl_opts and len(ytdl_opts["format"]) > 2:
+        format = ytdl_opts["format"]
+        LOG.info(f"Format '{format}' was given via yt-dlp options. Therefore, the preset will be ignored.")
+        return ytdl_opts
+
     opts = copy.deepcopy(ytdl_opts)
 
     if "default" == preset:
@@ -520,3 +527,75 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
         return True
     except ValueError:
         return False
+
+
+def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
+    """
+    Get sidecar files for the given file.
+
+    :param file: File to get sidecar files for.
+    :return: List of sidecar files.
+    """
+    files = []
+
+    for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
+        if f == file or f.is_file() is False or f.stem.startswith("."):
+            continue
+
+        if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
+            continue
+
+        if f.stat().st_size < 1:
+            continue
+
+        lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
+        lang = lg.groupdict().get("lang") if lg else "und"
+
+        files.append({"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"})
+
+    return files
+
+
+def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
+    """
+    Determine the correct MIME type for a video file based on ffprobe metadata.
+
+    Args:
+        metadata (dict): Parsed JSON output from ffprobe.
+        file_path (str): The path to the video file for fallback detection.
+
+    Returns:
+        str: MIME type compatible with HTML5 <video> tag.
+
+    """
+    # Extract format name from ffprobe
+    format_name = metadata.get("format_name", "")
+
+    # Define mappings for HTML5-compatible video types
+    format_to_mime = {
+        "matroska": "video/x-matroska",  # Default for MKV
+        "webm": "video/webm",  # MKV can also be WebM
+        "mp4": "video/mp4",
+        "mpegts": "video/mp2t",
+    }
+
+    # Check format_name against known formats
+    if format_name:
+        selected = None
+        for fmt in format_name.split(","):
+            fmt = fmt.strip().lower()
+            if fmt in format_to_mime:
+                selected = format_to_mime[fmt]
+
+        if selected:
+            return selected
+
+    # Fallback: Use Python's mimetypes module
+    import mimetypes
+
+    mime_type, _ = mimetypes.guess_type(str(file_path))
+    if mime_type:
+        return mime_type
+
+    # Final fallback: Return generic binary type
+    return "application/octet-stream"

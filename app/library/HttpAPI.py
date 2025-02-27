@@ -29,10 +29,21 @@ from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
+from .Presets import Presets
 from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
-from .Utils import StreamingError, arg_converter, calc_download_path, get_video_info, validate_url, validate_uuid
+from .Utils import (
+    IGNORED_KEYS,
+    StreamingError,
+    arg_converter,
+    calc_download_path,
+    get_mime_type,
+    get_sidecar_subtitles,
+    get_video_info,
+    validate_url,
+    validate_uuid,
+)
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -108,6 +119,7 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
+        app.middlewares.append(HttpAPI.middle_wares())
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
 
@@ -299,6 +311,24 @@ class HttpAPI(Common):
 
         return middleware_handler
 
+    @staticmethod
+    def middle_wares() -> Awaitable:
+        @web.middleware
+        async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            response = await handler(request)
+
+            if isinstance(response, web.FileResponse):
+                try:
+                    ff_info = await ffprobe(response._path)
+                    mime_type = get_mime_type(ff_info.get("metadata", {}), response._path)
+                    response.content_type = mime_type
+                except Exception:
+                    pass
+
+            return response
+
+        return middleware_handler
+
     @route("OPTIONS", "/{path:.*}")
     async def add_coors(self, _: Request) -> Response:
         """
@@ -347,11 +377,28 @@ class HttpAPI(Common):
             return web.json_response(data={"error": "args param is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
-            return web.json_response(data=arg_converter(args), status=web.HTTPOk.status_code)
+            response = {"opts": {}, "output_template": None, "download_path": None}
+
+            data = arg_converter(args)
+
+            if "outtmpl" in data and "default" in data["outtmpl"]:
+                response["output_template"] = data["outtmpl"]["default"]
+
+            if "paths" in data and "home" in data["paths"]:
+                response["download_path"] = data["paths"]["home"]
+
+            for key in data:
+                if key in IGNORED_KEYS:
+                    continue
+                if not key.startswith("_"):
+                    response["opts"][key] = data[key]
+
+            return web.json_response(data=response, status=web.HTTPOk.status_code)
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
+            LOG.exception(e)
             return web.json_response(
                 data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
             )
@@ -551,6 +598,22 @@ class HttpAPI(Common):
             ),
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
+        )
+
+    @route("GET", "api/presets")
+    async def presets(self, _: Request) -> Response:
+        """
+        Get the presets.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        return web.json_response(
+            data=Presets.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
     @route("GET", "api/tasks")
@@ -1134,6 +1197,49 @@ class HttpAPI(Common):
                 data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=self.encoder.encode
             )
         except Exception as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+
+    @route("GET", "api/file/info/{file:.*}")
+    async def get_file_info(self, request: Request) -> Response:
+        """
+        Get file info
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        file: str = request.match_info.get("file")
+        if not file:
+            return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
+
+        try:
+            realFile: str = calc_download_path(base_path=self.config.download_path, folder=file, create_path=False)
+            if not os.path.exists(realFile) or not os.path.isfile(realFile):
+                return web.json_response(
+                    data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
+                )
+
+            realFile = Path(realFile)
+
+            ff_info = await ffprobe(realFile)
+
+            response = {
+                "ffprobe": ff_info,
+                "mimetype": get_mime_type(ff_info.get("metadata", {}), realFile),
+                "sidecar": get_sidecar_subtitles(realFile),
+            }
+
+            for i, f in enumerate(response["sidecar"]):
+                response["sidecar"][i]["file"] = (
+                    str(Path(realFile).with_name(f["file"].name)).replace(self.config.download_path, "").strip("/")
+                )
+
+            return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        except Exception as e:
+            LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
     @route("GET", "api/youtube/auth")

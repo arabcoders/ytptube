@@ -41,6 +41,8 @@ class Events:
     TASK_FINISHED = "task_finished"
     TASK_ERROR = "task_error"
 
+    PRESETS_ADD = "preset_add"
+
 
 @dataclass(kw_only=True)
 class Event:

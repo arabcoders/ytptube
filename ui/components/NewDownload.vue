@@ -20,8 +20,9 @@
                 </div>
                 <div class="control is-expanded">
                   <div class="select is-fullwidth">
-                    <select id="preset" class="is-fullwidth" :disabled="!socket.isConnected || addInProgress"
-                      v-model="selectedPreset">
+                    <select id="preset" class="is-fullwidth"
+                      :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="selectedPreset"
+                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the config.' : ''">
                       <option v-for="item in config.presets" :key="item.name" :value="item.name">
                         {{ item.name }}
                       </option>
@@ -81,7 +82,7 @@
                 <label class="label is-inline" for="ytdlpConfig"
                   v-tooltip="'Extends current global yt-dlp config. (JSON)'">
                   JSON yt-dlp config or CLI options.
-                  <NuxtLink v-if="ytdlpConfig && !ytdlpConfig.trim().startsWith('{')" @click="convertOptions()">
+                  <NuxtLink v-if="ytdlpConfig && ytdlpConfig.trim() && !ytdlpConfig.trim().startsWith('{')" @click="convertOptions()">
                     Convert to JSON
                   </NuxtLink>
                 </label>
@@ -93,8 +94,10 @@
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>Extends current global yt-dlp config with given options. Some fields are ignored like
-                    <code>format</code> <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc.
-                    Warning: Use with caution some of those options can break yt-dlp or the frontend.</span>
+                    <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with caution
+                    some of those options can break yt-dlp or the frontend. If <code>Format</code> key is present
+                    in the config, <span class="has-text-danger">the preset and all it's options will be
+                      ignored</span>.</span>
                 </span>
               </div>
             </div>
@@ -242,7 +245,15 @@ const convertOptions = async () => {
 
   try {
     convertInProgress.value = true
-    ytdlpConfig.value = await convertCliOptions(ytdlpConfig.value)
+    const response = await convertCliOptions(ytdlpConfig.value)
+    ytdlpConfig.value = JSON.stringify(response.opts, null, 2)
+    if (response.output_template) {
+      output_template.value = response.output_template
+    }
+    if (response.download_path) {
+      downloadPath.value = response.download_path
+    }
+
   } catch (e) {
     toast.error(e.message)
   } finally {
@@ -261,5 +272,17 @@ onMounted(() => {
 onUnmounted(() => {
   socket.off('status', statusHandler)
   socket.off('error', unlockDownload)
+})
+
+const hasFormatInConfig = computed(() => {
+  if (!ytdlpConfig.value) {
+    return false
+  }
+  try {
+    const config = JSON.parse(ytdlpConfig.value)
+    return "format" in config
+  } catch (e) {
+    return false
+  }
 })
 </script>

@@ -53,8 +53,7 @@
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1" v-if="item.extras?.thumbnail">
-              <img :alt="item.title"
-                :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+              <img :alt="item.title" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
             </figure>
             <figure class="image is-3by1" v-else>
               <img :src="'/images/placeholder.png'" />
@@ -274,4 +273,6 @@ const cancelItems = item => {
 
   items.forEach(id => socket.emit('item_cancel', id));
 }
+
+const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
 </script>

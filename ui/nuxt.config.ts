@@ -33,6 +33,7 @@ export default defineNuxtConfig({
       domain: '/',
       wss: process.env.VUE_APP_BASE_URL ?? '',
       version: '2.0.0',
+      sentry: process.env.NUXT_PUBLIC_SENTRY_DSN ?? '',
     }
   },
   build: {
@@ -60,6 +61,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
+    '@sentry/nuxt/module',
   ],
 
   nitro: {

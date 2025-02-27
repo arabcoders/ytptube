@@ -350,7 +350,10 @@ const getQueryParams = (url = window.location.search) => Object.fromEntries(new 
  * @returns {string} The download URL
  */
 const makeDownload = (config, item, base = 'api/download') => {
-  let baseDir = 'api/download' === base ? `${base}/` : 'api/player/playlist/';
+  let baseDir = 'api/player/m3u8/video/';
+  if ('m3u8' !== base) {
+    baseDir = `${base}/`;
+  }
 
   if (item.folder) {
     item.folder = item.folder.replace(/#/g, '%23');
@@ -400,7 +403,7 @@ const convertCliOptions = async opts => {
     throw new Error(`Error: (${response.status}): ${data.error}`)
   }
 
-  return JSON.stringify(data, null, 2)
+  return data
 }
 
 export {
