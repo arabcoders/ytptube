@@ -32,7 +32,15 @@ from .Playlist import Playlist
 from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
-from .Utils import StreamingError, arg_converter, calc_download_path, get_video_info, validate_url, validate_uuid
+from .Utils import (
+    IGNORED_KEYS,
+    StreamingError,
+    arg_converter,
+    calc_download_path,
+    get_video_info,
+    validate_url,
+    validate_uuid,
+)
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -347,11 +355,28 @@ class HttpAPI(Common):
             return web.json_response(data={"error": "args param is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
-            return web.json_response(data=arg_converter(args), status=web.HTTPOk.status_code)
+            response = {"opts": {}, "output_template": None, "download_path": None}
+
+            data = arg_converter(args)
+
+            if "outtmpl" in data and "default" in data["outtmpl"]:
+                response["output_template"] = data["outtmpl"]["default"]
+
+            if "paths" in data and "home" in data["paths"]:
+                response["download_path"] = data["paths"]["home"]
+
+            for key in data:
+                if key in IGNORED_KEYS:
+                    continue
+                if not key.startswith("_"):
+                    response["opts"][key] = data[key]
+
+            return web.json_response(data=response, status=web.HTTPOk.status_code)
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
+            LOG.exception(e)
             return web.json_response(
                 data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
             )

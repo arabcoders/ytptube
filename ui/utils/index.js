@@ -400,7 +400,7 @@ const convertCliOptions = async opts => {
     throw new Error(`Error: (${response.status}): ${data.error}`)
   }
 
-  return JSON.stringify(data, null, 2)
+  return data
 }
 
 export {

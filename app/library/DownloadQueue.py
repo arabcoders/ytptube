@@ -395,7 +395,7 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **merge_config(self.config.ytdl_options, config),
+                **get_opts(preset, merge_config(self.config.ytdl_options, config)),
             }
 
             if cookies:
@@ -408,7 +408,7 @@ class DownloadQueue(metaclass=Singleton):
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
-                    None, extract_info, get_opts(preset, yt_conf), url, bool(self.config.ytdl_debug)
+                    None, extract_info, yt_conf, url, bool(self.config.ytdl_debug)
                 ),
                 timeout=self.config.extract_info_timeout,
             )

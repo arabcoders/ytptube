@@ -23,7 +23,6 @@ IGNORED_KEYS: tuple[str] = (
     "outtmpl",
     "progress_hooks",
     "postprocessor_hooks",
-    "format",
     "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
@@ -45,6 +44,11 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
       ytdl extra options
 
     """
+    if "format" in ytdl_opts and len(ytdl_opts["format"]) > 2:
+        format = ytdl_opts["format"]
+        LOG.info(f"Format '{format}' was given via yt-dlp options. Therefore, the preset will be ignored.")
+        return ytdl_opts
+
     opts = copy.deepcopy(ytdl_opts)
 
     if "default" == preset:

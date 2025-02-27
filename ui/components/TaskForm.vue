@@ -32,7 +32,7 @@
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline" for="url">
-                  Channel or Playlist URL
+                  URL
                 </label>
                 <div class="control has-icons-left">
                   <input type="url" class="input" id="url" v-model="form.url" :disabled="addInProgress">
@@ -40,7 +40,7 @@
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>The YouTube channel or playlist URL</span>
+                  <span>The channel or playlist URL.</span>
                 </span>
               </div>
             </div>
@@ -69,7 +69,9 @@
                 </label>
                 <div class="control has-icons-left">
                   <div class="select is-fullwidth">
-                    <select id="preset" class="is-fullwidth" v-model="form.preset" :disabled="addInProgress">
+                    <select id="preset" class="is-fullwidth" v-model="form.preset"
+                      :disabled="addInProgress || hasFormatInConfig"
+                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the config.' : ''">
                       <option v-for="item in config.presets" :key="item.name" :value="item.name">
                         {{ item.name }}
                       </option>
@@ -79,7 +81,8 @@
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Select the preset to use for this URL.</span>
+                  <span>Select the preset to use for this URL. The preset will be ignored if format key is present in
+                    config.</span>
                 </span>
               </div>
             </div>
@@ -138,8 +141,8 @@
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span> Extends current global yt-dlp config with given options. Some fields are ignored like
-                    <code>format</code> <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc.
-                    Warning: Use with caution some of those options can break yt-dlp or the frontend.</span>
+                    <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with caution
+                    some of those options can break yt-dlp or the frontend.</span>
                 </span>
               </div>
             </div>
@@ -278,7 +281,14 @@ const convertOptions = async () => {
 
   try {
     convertInProgress.value = true
-    form.config = await convertCliOptions(form.config)
+    const response = await convertCliOptions(form.config)
+    form.config = JSON.stringify(response.opts, null, 2)
+    if (response.output_template) {
+      form.template = response.output_template
+    }
+    if (response.download_path) {
+      form.folder = response.download_path
+    }
   } catch (e) {
     toast.error(e.message)
   } finally {
@@ -286,4 +296,15 @@ const convertOptions = async () => {
   }
 }
 
+const hasFormatInConfig = computed(() => {
+  if (!form.config) {
+    return false
+  }
+  try {
+    const config = JSON.parse(form.config)
+    return "format" in config
+  } catch (e) {
+    return false
+  }
+})
 </script>
