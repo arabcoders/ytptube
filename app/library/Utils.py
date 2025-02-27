@@ -1,4 +1,5 @@
 import copy
+import glob
 import ipaddress
 import json
 import logging
@@ -26,6 +27,8 @@ IGNORED_KEYS: tuple[str] = (
     "download_archive",
 )
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
+
+ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
 
 
 class StreamingError(Exception):
@@ -524,3 +527,27 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
         return True
     except ValueError:
         return False
+
+
+def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
+    """
+    Get sidecar files for the given file.
+
+    :param file: File to get sidecar files for.
+    :return: List of sidecar files.
+    """
+    files = []
+
+    for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
+        if f == file or f.is_file() is False or f.stem.startswith("."):
+            continue
+
+        if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
+            continue
+
+        lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
+        lang = lg.groupdict().get("lang") if lg else "und"
+
+        files.append({"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"})
+
+    return files

@@ -235,12 +235,11 @@
       </p>
     </div>
 
-    <div class="modal is-active" v-if="video_link">
+    <div class="modal is-active" v-if="video_item">
       <div class="modal-background" @click="closeVideo"></div>
       <div class="modal-content">
-        <VideoPlayer type="default" :link="video_link" :isMuted="false" autoplay="true" :isControls="true"
-          :title="video_title" :thumbnail="video_thumbnail" :artist="video_artist" class="is-fullwidth"
-          @closeModel="closeVideo" />
+        <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="video_item"
+          class="is-fullwidth" @closeModel="closeVideo" />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closeVideo"></button>
     </div>
@@ -264,36 +263,10 @@ const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 
-const video_link = ref('')
-const video_title = ref('')
-const video_thumbnail = ref('')
-const video_artist = ref('')
+const video_item = ref(null)
 
-const playVideo = item => {
-  video_thumbnail.value = '';
-  video_artist.value = '';
-  video_link.value = makeDownload(config, item, 'm3u8')
-  video_title.value = item.title
-  if (item.extras?.thumbnail) {
-    video_thumbnail.value = '/api/thumbnail?url=' + encodePath(item.extras.thumbnail)
-  }
-  if (item.extras?.channel) {
-    video_artist.value = item.extras.channel
-  }
-  if (!video_artist.value && item.extras?.uploader) {
-    video_artist.value = item.extras.uploader
-  }
-  if (!item.extras?.is_video && item.extras?.is_audio) {
-    video_audio.value = true
-  }
-}
-
-const closeVideo = () => {
-  video_link.value = ''
-  video_title.value = ''
-  video_thumbnail.value = ''
-  video_artist.value = ''
-}
+const playVideo = item => video_item.value = item
+const closeVideo = () => video_item.value = null
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.history) {

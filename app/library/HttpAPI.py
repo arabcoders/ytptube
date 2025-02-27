@@ -38,6 +38,7 @@ from .Utils import (
     StreamingError,
     arg_converter,
     calc_download_path,
+    get_sidecar_subtitles,
     get_video_info,
     validate_url,
     validate_uuid,
@@ -1176,6 +1177,46 @@ class HttpAPI(Common):
                 data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=self.encoder.encode
             )
         except Exception as e:
+            return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+
+    @route("GET", "api/file/info/{file:.*}")
+    async def get_file_info(self, request: Request) -> Response:
+        """
+        Get file info
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        file: str = request.match_info.get("file")
+        if not file:
+            return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
+
+        try:
+            realFile: str = calc_download_path(base_path=self.config.download_path, folder=file, create_path=False)
+            if not os.path.exists(realFile) or not os.path.isfile(realFile):
+                return web.json_response(
+                    data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
+                )
+
+            realFile = Path(realFile)
+
+            response = {
+                "ffprobe": await ffprobe(realFile),
+                "sidecar": get_sidecar_subtitles(realFile),
+            }
+
+            for i, f in enumerate(response["sidecar"]):
+                response["sidecar"][i]["file"] = str(Path(realFile).with_name(f["file"].name)).replace(
+                    self.config.download_path, ""
+                ).strip("/")
+
+            return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        except Exception as e:
+            LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
     @route("GET", "api/youtube/auth")

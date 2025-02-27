@@ -18,8 +18,10 @@
 
 <template>
   <div>
-    <video ref="video" :poster="thumbnail" :controls="isControls" :title="title" playsinline>
-      <source :src="link" type="application/x-mpegURL" />
+    <video id="player" ref="video" :poster="thumbnail" :title="title" playsinline>
+      <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror" />
+      <track v-for="track in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
+        :src="track.file" default />
     </video>
   </div>
 </template>
@@ -29,33 +31,27 @@ import { onMounted, onUpdated, ref, defineProps, defineEmits, onUnmounted } from
 import Hls from 'hls.js'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
+import { makeDownload } from '~/utils/index'
+const config = useConfigStore()
 
 const props = defineProps({
-  link: {
-    type: String,
-    default: ''
-  },
-  title: {
-    type: String,
-    default: ''
-  },
-  thumbnail: {
-    type: String,
-    default: ''
-  },
-  artist: {
-    type: String,
-    default: ''
-  },
-  isControls: {
-    type: Boolean,
-    default: true
+  item: {
+    type: Object,
+    default: () => ({})
   },
 })
 
 const emitter = defineEmits(['closeModel'])
 
 const video = ref(null)
+const tracks = ref([])
+const sources = ref([])
+
+const thumbnail = ref('')
+const artist = ref('')
+const title = ref('')
+const isAudio = ref(false)
+
 let player = null;
 let hls = null;
 
@@ -65,7 +61,43 @@ const eventFunc = e => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  const response = await (await request(makeDownload(config, props.item, 'api/file/info'))).json()
+
+  if (props.item.extras?.thumbnail) {
+    thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
+  }
+
+  sources.value.push({
+    src: makeDownload(config, props.item, 'api/download'),
+    onerror: e => src_error(e),
+  })
+
+  if (props.item.extras?.channel) {
+    artist.value = props.item.extras.channel
+  }
+
+  if (!artist.value && props.item.extras?.uploader) {
+    artist.value = props.item.extras.uploader
+  }
+
+  if (props.item?.title) {
+    title.value = props.item.title
+  }
+
+  if (!props.item.extras?.is_video && props.item.extras?.is_audio) {
+    isAudio.value = true
+  }
+
+  response.sidecar.forEach((cap, id) => {
+    tracks.value.push({
+      kind: "captions",
+      label: cap.name,
+      lang: cap.lang,
+      file: `${makeDownload(config, { filename: cap.file }, 'api/player/subtitle')}.vtt`
+    })
+  })
+
   if (/(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)) {
     document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
   }
@@ -86,23 +118,23 @@ onUnmounted(() => {
 
   window.removeEventListener('keydown', eventFunc)
 
-  if (props.title) {
+  if (title.value) {
     window.document.title = 'YTPTube'
   }
 })
 
 const prepareVideoPlayer = () => {
   let mediaMetadata = {
-    title: props.title,
+    title: title.value,
   };
 
-  if (props.thumbnail) {
+  if (thumbnail.value) {
     mediaMetadata['artwork'] = [
-      { src: props.thumbnail, sizes: '1920x1080', type: 'image/jpeg' },
+      { src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' },
     ]
   }
-  if (props.artist) {
-    mediaMetadata['artist'] = props.artist
+  if (artist.value) {
+    mediaMetadata['artist'] = artist.value
   }
 
   let opts = {
@@ -121,28 +153,47 @@ const prepareVideoPlayer = () => {
       enabled: true,
       key: 'plyr'
     },
-    poster: props.thumbnail,
-    artist: props.artist,
-    title: props.title,
+    artist: artist.value,
     mediaMetadata: mediaMetadata,
     captions: {
       update: true,
-    }
+    },
   };
 
-  if (props.artist) {
-    opts.artist = props.artist
+  if (artist.value) {
+    opts.artist = artist.value
   }
 
-  if (props.title) {
-    opts.title = props.title
+  if (title.value) {
+    opts.title = title.value
   }
 
-  if (props.thumbnail) {
-    opts.poster = props.thumbnail
+  if (thumbnail.value) {
+    opts.poster = thumbnail.value
   }
+
   player = new Plyr(video.value, opts);
 
+  player.source = {
+    type: isAudio.value ? 'audio' : 'video',
+    title: title.value,
+    poster: thumbnail.value,
+  };
+
+  if (title.value) {
+    window.document.title = `YTPTube - Playing: ${title.value}`
+  }
+}
+
+const src_error = () => {
+  if (hls) {
+    return
+  }
+  console.warn('Direct play failed, trying HLS.');
+  attach_hls(makeDownload(config, props.item, 'm3u8'));
+}
+
+const attach_hls = link => {
   hls = new Hls({
     debug: false,
     enableWorker: true,
@@ -151,14 +202,7 @@ const prepareVideoPlayer = () => {
     fragLoadingTimeOut: 200000,
   });
 
-  hls.loadSource(props.link)
-
-  if (video.value) {
-    hls.attachMedia(video.value)
-  }
-
-  if (props.title) {
-    window.document.title = `YTPTube - Playing: ${props.title}`
-  }
+  hls.loadSource(link)
+  hls.attachMedia(video.value)
 }
 </script>
