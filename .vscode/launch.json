@@ -10,7 +10,6 @@
       "runtimeArgs": [
         "run",
         "dev",
-        "--",
         "--port",
         "8082"
       ],

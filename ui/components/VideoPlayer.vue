@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { onMounted, onUpdated, ref, defineProps, defineEmits, onUnmounted } from 'vue'
+import { onMounted, onUpdated, ref, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
@@ -52,7 +52,6 @@ const thumbnail = ref('')
 const artist = ref('')
 const title = ref('')
 const isAudio = ref(false)
-const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 
 let player = null;
 let hls = null;
@@ -64,17 +63,29 @@ const eventFunc = e => {
 }
 
 onMounted(async () => {
+  const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
   const response = await (await request(makeDownload(config, props.item, 'api/file/info'))).json()
 
   if (props.item.extras?.thumbnail) {
     thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
   }
 
-  sources.value.push({
-    src: makeDownload(config, props.item, isApple ? 'm3u8' : 'api/download'),
-    type: isApple ? response.mimetype : 'application/x-mpegURL',
-    onerror: e => src_error(e),
-  })
+  // -- check if mimetype is video/mp4 and device is apple
+  // -- as always apple, apple like to be snowflakes.
+  if (isApple) {
+    const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4')
+    sources.value.push({
+      src: makeDownload(config, props.item, allowedCodec ? 'api/download' : 'm3u8'),
+      type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
+      onerror: e => src_error(e),
+    })
+  } else {
+    sources.value.push({
+      src: makeDownload(config, props.item, 'api/download'),
+      type: response.mimetype,
+      onerror: e => src_error(e),
+    })
+  }
 
   if (props.item.extras?.channel) {
     artist.value = props.item.extras.channel

@@ -576,12 +576,7 @@ def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
         "matroska": "video/x-matroska",  # Default for MKV
         "webm": "video/webm",  # MKV can also be WebM
         "mp4": "video/mp4",
-        "mov": "video/quicktime",
-        "avi": "video/x-msvideo",
-        "flv": "video/x-flv",
-        "ogg": "video/ogg",
         "mpegts": "video/mp2t",
-        "3gp": "video/3gpp",
     }
 
     # Check format_name against known formats
