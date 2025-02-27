@@ -52,6 +52,7 @@ const thumbnail = ref('')
 const artist = ref('')
 const title = ref('')
 const isAudio = ref(false)
+const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 
 let player = null;
 let hls = null;
@@ -70,8 +71,8 @@ onMounted(async () => {
   }
 
   sources.value.push({
-    src: makeDownload(config, props.item, 'api/download'),
-    type: response.mimetype,
+    src: makeDownload(config, props.item, isApple ? 'm3u8' : 'api/download'),
+    type: isApple ? response.mimetype : 'application/x-mpegURL',
     onerror: e => src_error(e),
   })
 
@@ -100,7 +101,7 @@ onMounted(async () => {
     })
   })
 
-  if (/(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)) {
+  if (isApple) {
     document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
   }
 
