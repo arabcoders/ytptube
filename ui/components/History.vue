@@ -99,11 +99,13 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" v-if="item.extras?.thumbnail" />
+                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
-                <img v-if="item.extras?.thumbnail" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
+                  :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -473,4 +475,6 @@ const reQueueItem = item => {
     template: item.template,
   })
 }
+
+const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
 </script>

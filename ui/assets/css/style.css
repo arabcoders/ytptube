@@ -249,3 +249,8 @@ hr {
 .play-active {
   opacity: 1;
 }
+
+.image-portrait {
+  object-fit: cover;
+  object-position: top;
+}
