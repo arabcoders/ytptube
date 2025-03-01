@@ -19,13 +19,7 @@ from .LogWrapper import LogWrapper
 
 LOG = logging.getLogger("Utils")
 
-IGNORED_KEYS: tuple[str] = (
-    "paths",
-    "outtmpl",
-    "progress_hooks",
-    "postprocessor_hooks",
-    "download_archive",
-)
+IGNORED_KEYS: tuple[str] = ("paths", "outtmpl", "progress_hooks", "postprocessor_hooks", "download_archive")
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 
 ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
@@ -365,7 +359,7 @@ def check_id(file: pathlib.Path) -> bool | str:
         if id not in f.stem:
             continue
 
-        if f.suffix not in (".mp4", ".mkv", ".webm", ".m4v", ".m4a", ".mp3", ".aac", ".ogg"):
+        if f.suffix != file.suffix:
             continue
 
         return f.absolute()
@@ -599,3 +593,31 @@ def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
 
     # Final fallback: Return generic binary type
     return "application/octet-stream"
+
+
+def get_file(download_path: str, file: str | pathlib.Path) -> tuple[pathlib.Path, int]:
+    """
+    Get the real file path.
+
+    Args:
+        download_path (str): Base download path.
+        file (str|pathlib.Path): File path.
+
+    Returns:
+        pathlib.Path: Real file path.
+        int: http status code.
+
+    """
+    file_path: str = os.path.normpath(os.path.join(download_path, str(file)))
+    if not file_path.startswith(download_path):
+        return (pathlib.Path(file_path), 404)
+
+    realFile: str = pathlib.Path(calc_download_path(base_path=str(download_path), folder=str(file), create_path=False))
+    if realFile.exists():
+        return (realFile, 200)
+
+    possibleFile = check_id(file=realFile)
+    if not possibleFile:
+        return (realFile, 404)
+
+    return (pathlib.Path(possibleFile), 302)

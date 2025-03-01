@@ -3,17 +3,19 @@ import hashlib
 import logging
 import os
 import tempfile
+from pathlib import Path
 
 from .config import Config
 from .ffprobe import ffprobe
-from .Utils import StreamingError, calc_download_path
+from .Utils import StreamingError
 
 LOG = logging.getLogger("player.segments")
 
 
 class Segments:
-    def __init__(self, index: int, duration: float, vconvert: bool, aconvert: bool):
+    def __init__(self, download_path: str, index: int, duration: float, vconvert: bool, aconvert: bool):
         config = Config.get_instance()
+        self.download_path = download_path
         self.index = int(index)
         self.duration = float(duration)
         self.vconvert = bool(vconvert)
@@ -24,23 +26,17 @@ class Segments:
         self.vconvert = True
         self.aconvert = True
 
-    async def stream(self, path: str, file: str) -> bytes:
-        realFile: str = calc_download_path(base_path=path, folder=file, create_path=False)
-
-        if not os.path.exists(realFile):
-            msg = f"File {realFile} does not exist."
-            raise StreamingError(msg)
-
+    async def stream(self, file: Path) -> bytes:
         try:
-            ff = await ffprobe(realFile)
+            ff = await ffprobe(file)
         except UnicodeDecodeError:
             pass
 
         tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.sha256(realFile.encode("utf-8")).hexdigest()}')
+        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.sha256(str(file).encode("utf-8")).hexdigest()}')
 
         if not os.path.exists(tmpFile):
-            os.symlink(realFile, tmpFile)
+            os.symlink(file, tmpFile)
 
         if self.index == 0:
             startTime: float = f"{0:.6f}"
@@ -95,7 +91,7 @@ class Segments:
         fargs.append("mpegts")
         fargs.append("pipe:1")
 
-        LOG.debug(f"Streaming '{realFile}' segment '{self.index}'. ffmpeg: {' '.join(fargs)}")
+        LOG.debug(f"Streaming '{file}' segment '{self.index}'. ffmpeg: {' '.join(fargs)}")
 
         proc = await asyncio.subprocess.create_subprocess_exec(
             "ffmpeg",
@@ -108,8 +104,8 @@ class Segments:
         data, err = await proc.communicate()
 
         if 0 != proc.returncode:
-            LOG.error(f"Failed to stream '{realFile}' segment '{self.index}'. {err.decode('utf-8')}.")
-            msg = f"Failed to stream '{realFile}' segment '{self.index}'."
+            LOG.error(f"Failed to stream '{file}' segment '{self.index}'. {err.decode('utf-8')}.")
+            msg = f"Failed to stream '{file}' segment '{self.index}'."
             raise StreamingError(msg)
 
         return data
