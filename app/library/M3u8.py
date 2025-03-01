@@ -1,9 +1,9 @@
 import math
-import os
+from pathlib import Path
 from urllib.parse import quote
 
 from .ffprobe import ffprobe
-from .Utils import StreamingError, calc_download_path
+from .Utils import StreamingError
 
 
 class M3u8:
@@ -12,24 +12,21 @@ class M3u8:
     ok_vcodecs: tuple = ("h264", "x264", "avc")
     ok_acodecs: tuple = ("aac", "m4a", "mp3")
 
-    def __init__(self, url: str, segment_duration: float | None = None):
+    def __init__(self, download_path: str, url: str, segment_duration: float | None = None):
         self.url = url
+        self.download_path = download_path
         self.duration = float(segment_duration) if segment_duration is not None else self.duration
 
-    async def make_stream(self, download_path: str, file: str) -> str:
-        realFile: str = calc_download_path(base_path=download_path, folder=file, create_path=False)
-
-        if not os.path.exists(realFile):
-            error = f"File '{realFile}' does not exist."
-            raise StreamingError(error)
-
+    async def make_stream(self, file: Path) -> str:
         try:
-            ff = await ffprobe(realFile)
+            ff = await ffprobe(file)
         except UnicodeDecodeError:
             pass
 
+        file = str(file).replace(self.download_path, "").strip("/")
+
         if "duration" not in ff.metadata:
-            error = f"Unable to get '{realFile}' play duration."
+            error = f"Unable to get '{file}' play duration."
             raise StreamingError(error)
 
         duration: float = float(ff.metadata.get("duration"))
@@ -70,13 +67,7 @@ class M3u8:
 
         return "\n".join(m3u8)
 
-    async def make_subtitle(self, download_path: str, file: str, duration: float) -> str:
-        realFile: str = calc_download_path(base_path=download_path, folder=file, create_path=False)
-
-        if not os.path.exists(realFile):
-            error = f"File '{realFile}' does not exist."
-            raise StreamingError(error)
-
+    async def make_subtitle(self, file: Path, duration: float) -> str:
         m3u8 = []
 
         m3u8.append("#EXTM3U")
@@ -85,7 +76,7 @@ class M3u8:
         m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
         m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
         m3u8.append(f"#EXTINF:{duration},")
-        m3u8.append(f"{self.url}api/player/subtitle/{quote(file)}.vtt")
+        m3u8.append(f"{self.url}api/player/subtitle/{quote(str(file).replace(self.download_path, '').strip('/'))}.vtt")
         m3u8.append("#EXT-X-ENDLIST")
 
         return "\n".join(m3u8)

@@ -1,12 +1,12 @@
 import logging
-import pathlib
+from pathlib import Path
 
 import anyio
 import pysubs2
 from pysubs2.formats.substation import SubstationFormat
 from pysubs2.time import ms_to_times
 
-from .Utils import calc_download_path
+from .Utils import ALLOWED_SUBS_EXTENSIONS
 
 LOG = logging.getLogger("player.subtitle")
 
@@ -22,33 +22,22 @@ SubstationFormat.ms_to_timestamp = ms_to_timestamp
 
 
 class Subtitle:
-    allowed_extensions: tuple[str] = (
-        ".srt",
-        ".vtt",
-        ".ass",
-    )
+    def __init__(self, download_path: str):
+        self.download_path = download_path
 
-    async def make(self, path: str, file: str) -> str:
-        realFile: str = calc_download_path(base_path=path, folder=file, create_path=False)
-
-        rFile = pathlib.Path(realFile)
-
-        if not rFile.exists():
-            msg = f"File '{file}' does not exist."
-            raise Exception(msg)
-
-        if rFile.suffix not in self.allowed_extensions:
+    async def make(self, file: Path) -> str:
+        if file.suffix not in ALLOWED_SUBS_EXTENSIONS:
             msg = f"File '{file}' subtitle type is not supported."
             raise Exception(msg)
 
-        if rFile.suffix == ".vtt":
-            async with await anyio.open_file(realFile) as f:
+        if file.suffix == ".vtt":
+            async with await anyio.open_file(file) as f:
                 return await f.read()
 
-        subs = pysubs2.load(path=str(rFile))
+        subs = pysubs2.load(path=str(file))
 
         if len(subs.events) < 1:
-            msg = f"No subtitle events were found in '{rFile}'."
+            msg = f"No subtitle events were found in '{file}'."
             raise Exception(msg)
 
         if len(subs.events) < 2:

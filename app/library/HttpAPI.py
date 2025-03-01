@@ -11,6 +11,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import anyio
 import httpx
@@ -37,7 +38,7 @@ from .Utils import (
     IGNORED_KEYS,
     StreamingError,
     arg_converter,
-    calc_download_path,
+    get_file,
     get_mime_type,
     get_sidecar_subtitles,
     get_video_info,
@@ -119,7 +120,7 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
-        app.middlewares.append(HttpAPI.middle_wares())
+        app.middlewares.append(HttpAPI.middle_wares(download_path=self.config.download_path))
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
 
@@ -312,9 +313,19 @@ class HttpAPI(Common):
         return middleware_handler
 
     @staticmethod
-    def middle_wares() -> Awaitable:
+    def middle_wares(download_path: str) -> Awaitable:
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            if request.path.startswith("/api/download"):
+                realFile, status = get_file(download_path=download_path, file=request.path.replace("/api/download/", ""))
+                if web.HTTPFound.status_code == status:
+                    return Response(
+                        status=status,
+                        headers={
+                            "Location": f"/api/download/{quote(str(realFile).replace(download_path, '').strip('/'))}"
+                        },
+                    )
+
             response = await handler(request)
 
             if isinstance(response, web.FileResponse):
@@ -918,24 +929,32 @@ class HttpAPI(Common):
         file: str = request.match_info.get("file")
 
         if not file:
-            raise web.HTTPBadRequest(text="file is required.")
+            return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
         try:
-            text = await Playlist(url="/").make(download_path=self.config.download_path, file=file)
-            if isinstance(text, Response):
-                return text
+            realFile, status = get_file(download_path=self.config.download_path, file=file)
+            if web.HTTPFound.status_code == status:
+                return Response(
+                    status=web.HTTPFound.status_code,
+                    headers={
+                        "Location": f"/api/player/playlist/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.m3u8"
+                    },
+                )
+
+            if web.HTTPNotFound.status_code == status:
+                return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+
+            return web.Response(
+                text=await Playlist(download_path=self.config.download_path, url="/").make(file=realFile),
+                headers={
+                    "Content-Type": "application/x-mpegURL",
+                    "Cache-Control": "no-cache",
+                    "Access-Control-Max-Age": "300",
+                },
+                status=web.HTTPOk.status_code,
+            )
         except StreamingError as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
-
-        return web.Response(
-            text=text,
-            headers={
-                "Content-Type": "application/x-mpegURL",
-                "Cache-Control": "no-cache",
-                "Access-Control-Max-Age": "300",
-            },
-            status=web.HTTPOk.status_code,
-        )
 
     @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8")
     async def m3u8(self, request: Request) -> Response:
@@ -969,11 +988,24 @@ class HttpAPI(Common):
             duration = float(duration)
 
         try:
-            cls = M3u8("/")
+            cls = M3u8(download_path=self.config.download_path, url="/")
+
+            realFile, status = get_file(download_path=self.config.download_path, file=file)
+            if web.HTTPFound.status_code == status:
+                return Response(
+                    status=status,
+                    headers={
+                        "Location": f"/api/player/m3u8/{mode}/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.m3u8"
+                    },
+                )
+
+            if web.HTTPNotFound.status_code == status:
+                return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+
             if "subtitle" in mode:
-                text = await cls.make_subtitle(self.config.download_path, file, duration)
+                text = await cls.make_subtitle(file=realFile, duration=duration)
             else:
-                text = await cls.make_stream(self.config.download_path, file)
+                text = await cls.make_stream(file=realFile)
         except StreamingError as e:
             LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
@@ -1005,16 +1037,6 @@ class HttpAPI(Common):
         sd: int = request.query.get("sd")
         vc: int = int(request.query.get("vc", 0))
         ac: int = int(request.query.get("ac", 0))
-        file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
-        if not file_path.startswith(self.config.download_path):
-            return web.json_response(data={"error": "Invalid file path."}, status=web.HTTPBadRequest.status_code)
-
-        if request.if_modified_since:
-            lastMod = time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
-            )
-            if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
-                return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
         if not file:
             return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
@@ -1022,7 +1044,26 @@ class HttpAPI(Common):
         if not segment:
             return web.json_response(data={"error": "segment id is required."}, status=web.HTTPBadRequest.status_code)
 
+        realFile, status = get_file(download_path=self.config.download_path, file=file)
+        if web.HTTPFound.status_code == status:
+            return Response(
+                status=status,
+                headers={
+                    "Location": f"/api/player/segments/{segment}/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.ts"
+                },
+            )
+
+        if web.HTTPNotFound.status_code == status:
+            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+
+        mtime = realFile.stat().st_mtime
+
+        if request.if_modified_since and request.if_modified_since.timestamp() == mtime:
+            lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
+            return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
+
         segmenter = Segments(
+            download_path=self.config.download_path,
             index=int(segment),
             duration=float(f"{float(sd if sd else M3u8.duration):.6f}"),
             vconvert=vc == 1,
@@ -1030,7 +1071,7 @@ class HttpAPI(Common):
         )
 
         return web.Response(
-            body=await segmenter.stream(path=self.config.download_path, file=file),
+            body=await segmenter.stream(file=realFile),
             headers={
                 "Content-Type": "video/mpegts",
                 "X-Accel-Buffering": "no",
@@ -1038,7 +1079,7 @@ class HttpAPI(Common):
                 "Pragma": "public",
                 "Cache-Control": f"public, max-age={time.time() + 31536000}",
                 "Last-Modified": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple()
                 ),
                 "Expires": time.strftime(
                     "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
@@ -1060,22 +1101,30 @@ class HttpAPI(Common):
 
         """
         file: str = request.match_info.get("file")
-        file_path: str = os.path.normpath(os.path.join(self.config.download_path, file))
-        if not file_path.startswith(self.config.download_path):
-            return web.json_response(data={"error": "Invalid file path."}, status=web.HTTPBadRequest.status_code)
-
-        if request.if_modified_since:
-            lastMod = time.strftime(
-                "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
-            )
-            if os.path.exists(file_path) and request.if_modified_since.timestamp() == os.path.getmtime(file_path):
-                return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
         if not file:
             return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
+        realFile, status = get_file(download_path=self.config.download_path, file=file)
+        if web.HTTPFound.status_code == status:
+            return Response(
+                status=status,
+                headers={
+                    "Location": f"/api/player/subtitle/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.vtt"
+                },
+            )
+
+        if web.HTTPNotFound.status_code == status:
+            return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
+
+        mtime = realFile.stat().st_mtime
+
+        if request.if_modified_since and request.if_modified_since.timestamp() == mtime:
+            lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
+            return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
+
         return web.Response(
-            body=await Subtitle().make(path=self.config.download_path, file=file),
+            body=await Subtitle(download_path=self.config.download_path).make(file=realFile),
             headers={
                 "Content-Type": "text/vtt; charset=UTF-8",
                 "X-Accel-Buffering": "no",
@@ -1083,7 +1132,7 @@ class HttpAPI(Common):
                 "Pragma": "public",
                 "Cache-Control": f"public, max-age={time.time() + 31536000}",
                 "Last-Modified": time.strftime(
-                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(os.path.getmtime(file_path), tz=UTC).timetuple()
+                    "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple()
                 ),
                 "Expires": time.strftime(
                     "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
@@ -1187,11 +1236,17 @@ class HttpAPI(Common):
             return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
-            realFile: str = calc_download_path(base_path=self.config.download_path, folder=file, create_path=False)
-            if not os.path.exists(realFile) or not os.path.isfile(realFile):
-                return web.json_response(
-                    data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
+            realFile, status = get_file(download_path=self.config.download_path, file=file)
+            if web.HTTPFound.status_code == status:
+                return Response(
+                    status=web.HTTPFound.status_code,
+                    headers={
+                        "Location": f"/api/file/ffprobe/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}"
+                    },
                 )
+
+            if web.HTTPNotFound.status_code == status:
+                return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
 
             return web.json_response(
                 data=await ffprobe(realFile), status=web.HTTPOk.status_code, dumps=self.encoder.encode
@@ -1216,13 +1271,17 @@ class HttpAPI(Common):
             return web.json_response(data={"error": "file is required."}, status=web.HTTPBadRequest.status_code)
 
         try:
-            realFile: str = calc_download_path(base_path=self.config.download_path, folder=file, create_path=False)
-            if not os.path.exists(realFile) or not os.path.isfile(realFile):
-                return web.json_response(
-                    data={"error": f"File '{file}' does not exist."}, status=web.HTTPNotFound.status_code
+            realFile, status = get_file(download_path=self.config.download_path, file=file)
+            if web.HTTPFound.status_code == status:
+                return Response(
+                    status=web.HTTPFound.status_code,
+                    headers={
+                        "Location": f"/api/file/info/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}"
+                    },
                 )
 
-            realFile = Path(realFile)
+            if web.HTTPNotFound.status_code == status:
+                return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
 
             ff_info = await ffprobe(realFile)
 
