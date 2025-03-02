@@ -640,7 +640,7 @@ class HttpAPI(Common):
 
         """
         return web.json_response(
-            data=Tasks.get_instance().get_tasks(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
+            data=Tasks.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
     @route("PUT", "api/tasks")
@@ -705,7 +705,7 @@ class HttpAPI(Common):
             tasks.append(Task(**item))
 
         try:
-            tasks = ins.save(tasks=tasks).load().get_tasks()
+            tasks = ins.save(tasks=tasks).load().get_all()
         except Exception as e:
             LOG.exception(e)
             return web.json_response(
