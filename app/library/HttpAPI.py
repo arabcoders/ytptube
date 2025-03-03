@@ -30,7 +30,7 @@ from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
-from .Presets import Presets
+from .Presets import Preset, Presets
 from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
@@ -317,7 +317,10 @@ class HttpAPI(Common):
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
             if request.path.startswith("/api/download"):
-                realFile, status = get_file(download_path=download_path, file=request.path.replace("/api/download/", ""))
+                realFile, status = get_file(
+                    download_path=download_path,
+                    file=request.path.replace("/api/download/", ""),
+                )
                 if web.HTTPFound.status_code == status:
                     return Response(
                         status=status,
@@ -627,6 +630,83 @@ class HttpAPI(Common):
             data=Presets.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
+    @route("PUT", "api/presets")
+    async def presets_add(self, request: Request) -> Response:
+        """
+        Add presets.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+
+        """
+        data = await request.json()
+
+        if not isinstance(data, list):
+            return web.json_response(
+                {"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        presets: list = []
+
+        cls = Presets.get_instance()
+
+        for item in data:
+            if not isinstance(item, dict):
+                return web.json_response(
+                    {"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            if not item.get("name"):
+                return web.json_response(
+                    {"error": "name is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("format"):
+                return web.json_response(
+                    {"error": "format is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
+                item["id"] = str(uuid.uuid4())
+
+            if not item.get("args", None) or str(item.get("args")).strip() == "":
+                item["config"] = {}
+
+            if item.get("args", None) and isinstance(item.get("args"), str):
+                item["args"] = json.loads(item.get("args"))
+
+            if not item.get("postprocessors", None) or str(item.get("postprocessors")).strip() == "":
+                item["postprocessors"] = []
+
+            if item.get("postprocessors", None) and isinstance(item.get("postprocessors"), str):
+                item["postprocessors"] = json.loads(item.get("postprocessors"))
+
+            try:
+                cls.validate(item)
+            except ValueError as e:
+                return web.json_response(
+                    {"error": f"Failed to validate preset '{item.get('name')}'. '{e!s}'"},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            presets.append(Preset(**item))
+        try:
+            presets = cls.save(presets=presets).load().get_all()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response(
+                {"error": "Failed to save presets.", "message": str(e)},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        await self.emitter.emit(Events.PRESETS_UPDATE, presets)
+        return web.json_response(data=presets, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
     @route("GET", "api/tasks")
     async def tasks(self, _: Request) -> Response:
         """
@@ -640,7 +720,7 @@ class HttpAPI(Common):
 
         """
         return web.json_response(
-            data=Tasks.get_instance().get_tasks(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
+            data=Tasks.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
     @route("PUT", "api/tasks")
@@ -705,7 +785,7 @@ class HttpAPI(Common):
             tasks.append(Task(**item))
 
         try:
-            tasks = ins.save(tasks=tasks).load().get_tasks()
+            tasks = ins.save(tasks=tasks).load().get_all()
         except Exception as e:
             LOG.exception(e)
             return web.json_response(

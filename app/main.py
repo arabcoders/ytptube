@@ -12,12 +12,13 @@ from aiohttp import web
 from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Emitter import Emitter
-from library.EventsSubscriber import EventsSubscriber
+from library.EventsSubscriber import Events, EventsSubscriber
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
 from library.PackageInstaller import PackageInstaller
 from library.Presets import Presets
+from library.Scheduler import Scheduler
 from library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
@@ -93,9 +94,12 @@ class Main:
         """
         Start the application.
         """
+        EventsSubscriber.get_instance().emit(Events.STARTUP, data={"app": self._app})
+
         self._socket.attach(self._app)
         self._http.attach(self._app)
         self._queue.attach(self._app)
+        Scheduler.get_instance().attach(self._app)
         Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
 

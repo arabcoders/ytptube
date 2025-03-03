@@ -221,7 +221,7 @@ hr {
   padding-top: 0.5em;
 }
 
-.play-overlay {
+.play-overlay, .is-pointer {
   cursor: pointer;
 }
 

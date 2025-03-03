@@ -1,7 +1,7 @@
-import asyncio
 import json
 import logging
 import os
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,6 +18,9 @@ LOG = logging.getLogger("presets")
 
 @dataclass(kw_only=True)
 class Preset:
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    """The id of the preset."""
+
     name: str
     """The name of the preset."""
 
@@ -29,6 +32,8 @@ class Preset:
 
     postprocessors: list | None = field(default_factory=list)
     """The postprocessors of the preset."""
+
+    default: bool = False
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -51,19 +56,14 @@ class Presets(metaclass=Singleton):
     _instance = None
     """The instance of the class."""
 
-    def __init__(
-        self,
-        file: str | None = None,
-        emitter: Emitter | None = None,
-        loop: asyncio.AbstractEventLoop | None = None,
-        config: Config | None = None,
-    ):
+    _default_presets: list[Preset] = []
+
+    def __init__(self, file: str | None = None, emitter: Emitter | None = None, config: Config | None = None):
         Presets._instance = self
 
         config = config or Config.get_instance()
 
         self._file: str = file or os.path.join(config.config_path, "presets.json")
-        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self._emitter: Emitter = emitter or Emitter.get_instance()
 
         if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
@@ -74,6 +74,9 @@ class Presets(metaclass=Singleton):
 
         def handle_event(_, e: Event):
             self.save(**e.data)
+
+        with open(os.path.join(os.path.dirname(__file__), "presets.json")) as f:
+            self._default_presets = [Preset(**preset) for preset in json.load(f)]
 
         EventsSubscriber.get_instance().subscribe(Events.PRESETS_ADD, f"{__class__}.save", handle_event)
 
@@ -109,7 +112,7 @@ class Presets(metaclass=Singleton):
 
     def get_all(self) -> list[Preset]:
         """Return the presets."""
-        return self._presets
+        return self._default_presets + self._presets
 
     def load(self) -> "Presets":
         """
@@ -136,13 +139,23 @@ class Presets(metaclass=Singleton):
             LOG.info(f"No presets were defined in '{self._file}'.")
             return self
 
+        needSaving = False
+
         for i, preset in enumerate(presets):
             try:
+                if "id" not in preset:
+                    preset["id"] = str(uuid.uuid4())
+                    needSaving = True
+
                 preset = Preset(**preset)
                 self._presets.append(preset)
             except Exception as e:
                 LOG.error(f"Failed to parse preset at list position '{i}'. '{e!s}'.")
                 continue
+
+        if needSaving:
+            LOG.info("Saving presets due to missing ids.")
+            self.save(self._presets)
 
         return self
 
@@ -178,6 +191,10 @@ class Presets(metaclass=Singleton):
                 raise ValueError(msg)  # noqa: TRY004
 
             preset = preset.serialize()
+
+        if not preset.get("id"):
+            msg = "No id found."
+            raise ValueError(msg)
 
         if not preset.get("name"):
             msg = "No name found."
@@ -232,3 +249,27 @@ class Presets(metaclass=Singleton):
             LOG.error(f"Failed to save presets to '{self._file}'. '{e!s}'.")
 
         return self
+
+    def get(self, id: str | None = None, name: str | None = None) -> Preset | None:
+        """
+        Get the preset by id or name.
+
+        Args:
+            id (str|None): The id of the preset.
+            name (str|None): The name of the preset.
+
+        Returns:
+            Preset|None: The preset if found, None otherwise.
+
+        """
+        if not id and not name:
+            return None
+
+        for preset in self.get_all():
+            if preset.id == id:
+                return preset
+
+            if preset.name == name:
+                return preset
+
+        return None

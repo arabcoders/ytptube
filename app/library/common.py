@@ -50,7 +50,7 @@ class Common:
 
         return await self.queue.add(
             url=url,
-            preset=preset if preset else "default",
+            preset=preset if preset else self.config.default_preset,
             folder=folder,
             cookies=cookies,
             config=config if isinstance(config, dict) else {},

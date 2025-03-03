@@ -13,6 +13,9 @@ class Events:
     The events that can be emitted.
     """
 
+    STARTUP = "startup"
+    SHUTDOWN = "shutdown"
+
     ADDED = "added"
     UPDATED = "updated"
     COMPLETED = "completed"
@@ -41,7 +44,9 @@ class Events:
     TASK_FINISHED = "task_finished"
     TASK_ERROR = "task_error"
 
-    PRESETS_ADD = "preset_add"
+    PRESETS_ADD = "presets_add"
+    PRESETS_UPDATE = "presets_update"
+    SCHEDULE_ADD = "schedule_add"
 
 
 @dataclass(kw_only=True)

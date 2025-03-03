@@ -8,13 +8,13 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from aiocron import Cron, crontab
 from aiohttp import web
 
 from .config import Config
 from .Emitter import Emitter
 from .encoder import Encoder
 from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Scheduler import Scheduler
 from .Singleton import Singleton
 
 LOG = logging.getLogger("tasks")
@@ -42,21 +42,13 @@ class Task:
         return self.serialize().get(key, default)
 
 
-@dataclass(kw_only=True)
-class Job:
-    id: str
-    name: str
-    task: Task
-    job: Cron
-
-
 class Tasks(metaclass=Singleton):
     """
     This class is used to manage the tasks.
     """
 
-    _jobs: list[Job] = []
-    """The jobs for the tasks."""
+    _tasks: list[Task] = []
+    """The tasks."""
 
     _instance = None
     """The instance of the Tasks."""
@@ -69,6 +61,7 @@ class Tasks(metaclass=Singleton):
         config: Config | None = None,
         encoder: Encoder | None = None,
         client: httpx.AsyncClient | None = None,
+        scheduler: Scheduler | None = None,
     ):
         Tasks._instance = self
 
@@ -76,11 +69,12 @@ class Tasks(metaclass=Singleton):
 
         self._debug = config.debug
         self._default_preset = config.default_preset
-        self._file: str = file or os.path.join(config.config_path, "tasks.json")
-        self._client: httpx.AsyncClient = client or httpx.AsyncClient()
-        self._encoder: Encoder = encoder or Encoder()
-        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
-        self._emitter: Emitter = emitter or Emitter.get_instance()
+        self._file = file or os.path.join(config.config_path, "tasks.json")
+        self._client = client or httpx.AsyncClient()
+        self._encoder = encoder or Encoder()
+        self._loop = loop or asyncio.get_event_loop()
+        self._emitter = emitter or Emitter.get_instance()
+        self._scheduler = scheduler or Scheduler.get_instance()
 
         if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
             try:
@@ -96,27 +90,19 @@ class Tasks(metaclass=Singleton):
     @staticmethod
     def get_instance() -> "Tasks":
         """
-        Get the instance of the Tasks.
+        Get the instance of the class.
 
         Returns:
-            Tasks: The instance of the Tasks
+            Tasks: The instance of the class.
 
         """
         if not Tasks._instance:
             Tasks._instance = Tasks()
+
         return Tasks._instance
 
     async def on_shutdown(self, _: web.Application):
-        """
-        Shutdown the socket server.
-
-        Args:
-            _: The aiohttp application.
-
-        """
-        LOG.debug("Shutting down tasks runner.")
-        self.clear(shutdown=True)
-        LOG.debug("Tasks runner has been shut down.")
+        pass
 
     def attach(self, _: web.Application):
         """
@@ -125,15 +111,12 @@ class Tasks(metaclass=Singleton):
         Args:
             _ (web.Application): The aiohttp application.
 
-        Returns:
-            None
-
         """
         self.load()
 
-    def get_tasks(self) -> list[Task]:
+    def get_all(self) -> list[Task]:
         """Return the tasks."""
-        return [job.task for job in self._jobs]
+        return self._tasks
 
     def load(self) -> "Tasks":
         """
@@ -168,18 +151,13 @@ class Tasks(metaclass=Singleton):
                 continue
 
             try:
-                self._jobs.append(
-                    Job(
-                        id=task.id,
-                        name=task.name,
-                        task=task,
-                        job=crontab(spec=task.timer, func=self._runner, args=(task,), start=True, loop=self._loop),
-                    )
-                )
+                self._scheduler.add(timer=task.timer, func=self._runner, args=(task,), id=task.id)
+                self._tasks.append(task)
+
                 LOG.info(f"Task '{i}: {task.name}' queued to be executed every '{task.timer}'.")
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to queue task '{i}: {task['name']}'. '{e!s}'.")
+                LOG.error(f"Failed to queue task '{i}: {task.name}'. '{e!s}'.")
 
         return self
 
@@ -191,19 +169,19 @@ class Tasks(metaclass=Singleton):
             Tasks: The current instance.
 
         """
-        if len(self._jobs) < 1:
+        if len(self._tasks) < 1:
             return self
 
-        for task in self._jobs:
+        for task in self._tasks:
             try:
-                LOG.info(f"Stopping job '{task.id}: {task.name}'.")
-                task.job.stop()
+                LOG.info(f"Stopping task '{task.id}: {task.name}'.")
+                self._scheduler.remove(task.id)
             except Exception as e:
                 if not shutdown:
                     LOG.exception(e)
-                    LOG.error(f"Failed to stop job '{task.id}: {task.name}'. '{e!s}'.")
+                    LOG.error(f"Failed to stop task '{task.id}: {task.name}'. '{e!s}'.")
 
-        self._jobs.clear()
+        self._tasks.clear()
 
         return self
 

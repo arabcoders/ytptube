@@ -129,11 +129,6 @@ class Config:
     basic_mode: bool = False
     "Run the frontend in basic mode."
 
-    presets: list = [
-        {"name": "default", "format": "default"},
-    ]
-    "The presets to use for downloading."
-
     default_preset: str = "default"
     "The default preset to use when no preset is specified."
 
@@ -161,7 +156,6 @@ class Config:
         "new_version_available",
         "ytdlp_version",
         "started",
-        "presets",
     )
     "The variables that are immutable."
 
@@ -322,45 +316,6 @@ class Config:
                 LOG.error(f"Invalid yt-dlp custom options file '{optsFile}'.")
         else:
             LOG.info(f"No yt-dlp custom options found at '{optsFile}'.")
-
-        # Load default presets.
-        with open(os.path.join(os.path.dirname(__file__), "presets.json")) as f:
-            self.presets.extend(json.load(f))
-
-        # Load user defined presets.
-        presetsFile = os.path.join(self.config_path, "presets.json")
-        if os.path.exists(presetsFile) and os.path.getsize(presetsFile) > 0:
-            LOG.info(f"Loading user presets from '{presetsFile}'.")
-            try:
-                (presets, status, error) = load_file(presetsFile, list)
-                if not status:
-                    LOG.error(f"Could not load presets file from '{presetsFile}'. '{error}'.")
-                    sys.exit(1)
-
-                if not isinstance(presets, list):
-                    LOG.error(f"Invalid presets file '{presetsFile}'. It's expected to be a list of objects.")
-                    sys.exit(1)
-
-                for preset in presets:
-                    if "name" not in preset:
-                        LOG.error(f"Missing 'name' key in preset '{preset}'.")
-                        continue
-
-                    if "format" not in preset:
-                        LOG.error(f"Missing 'format' key in preset '{preset}'.")
-                        continue
-
-                    if "args" in preset and not isinstance(preset["args"], dict):
-                        LOG.error(f"Invalid 'args' key in preset '{preset}' it's expected to be dict.")
-                        continue
-
-                    if "postprocessors" in preset and not isinstance(preset["postprocessors"], list):
-                        LOG.error(f"Invalid 'postprocessors' key in preset '{preset}' it's expected to be list.")
-                        continue
-
-                    self.presets.append(preset)
-            except Exception:
-                pass
 
         self.ytdl_options["socket_timeout"] = self.socket_timeout
 

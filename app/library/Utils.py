@@ -52,28 +52,22 @@ def get_opts(preset: str, ytdl_opts: dict) -> dict:
         LOG.debug("Using default preset.")
         return opts
 
-    from .config import Config
+    from .Presets import Presets
 
-    presets = Config.get_instance().presets
-
-    found = False
-    for _preset in presets:
-        if _preset["name"] == preset:
-            found = True
-            preset_opts = _preset
-            break
-
-    if not found:
-        LOG.error(f"Preset '{preset}' is not defined in the presets.")
+    p = Presets.get_instance().get(name=preset)
+    if not p:
+        LOG.error(f"Preset '{preset}' is not defined as preset.")
         return opts
 
-    opts["format"] = preset_opts.get("format")
+    opts["format"] = p.get("format")
 
-    if "postprocessors" in preset_opts:
-        opts["postprocessors"] = preset_opts["postprocessors"]
+    postprocessors = p.get("postprocessors", [])
+    if isinstance(postprocessors, list) and len(postprocessors) > 0:
+        opts["postprocessors"] = postprocessors
 
-    if "args" in preset_opts:
-        for key, value in preset_opts["args"].items():
+    args = p.get("args", {})
+    if isinstance(args, dict) and len(args) > 0:
+        for key, value in args.items():
             opts[key] = value
 
     LOG.debug(f"Using preset '{preset}', altered options: {opts}")
