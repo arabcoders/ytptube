@@ -124,6 +124,7 @@ export const useSocketStore = defineStore('socket', () => {
       });
     });
 
+    socket.value.on('presets_update', data => config.update('presets', JSON.parse(data)));
   }
 
   const on = (event, callback) => socket.value.on(event, callback);

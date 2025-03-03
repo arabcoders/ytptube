@@ -24,6 +24,12 @@
         </div>
 
         <div class="navbar-item" v-if="!config.app.basic_mode">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/presets" v-tooltip.bottom="'Presets'">
+            <span class="icon"><i class="fa-solid fa-sliders" /></span>
+          </NuxtLink>
+        </div>
+
+        <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
             <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>
@@ -56,7 +62,7 @@
           </button>
         </div>
 
-        <div class="navbar-item">
+        <div class="navbar-item is-hidden-mobile">
           <button class="button is-dark" @click="reloadPage">
             <span class="icon"><i class="fas fa-refresh"></i></span>
           </button>

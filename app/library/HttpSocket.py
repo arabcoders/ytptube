@@ -19,6 +19,7 @@ from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
 from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Presets import Presets
 from .Utils import arg_converter, is_downloaded
 
 LOG = logging.getLogger("socket_api")
@@ -266,7 +267,7 @@ class HttpSocket(Common):
         data = {
             **self.queue.get(),
             "config": self.config.frontend(),
-            "presets": self.config.presets,
+            "presets": Presets.get_instance().get_all(),
             "paused": self.queue.is_paused(),
         }
 
