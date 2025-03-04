@@ -29,11 +29,10 @@ Your `yt-dlp` config should include the following options for optimal working co
 
 ```json
 {
-    "windowsfilenames": true,
-    "live_from_start": true,
-    "format_sort": [
-        "codec:avc:m4a"
-    ]
+  "windowsfilenames": true,
+  "continue_dl": true,
+  "live_from_start": true,
+  "format_sort": [ "codec:avc:m4a" ],
 }
 ```
 * Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
@@ -144,7 +143,6 @@ Before asking a question or submitting an issue for YTPTube, please remember tha
 
 In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. 
 
-
 #### Via HTTP
 
 Simply go to `Console` button in your navbar and directly use the yt-dlp command.
@@ -186,97 +184,66 @@ A Docker image can be built locally (it will build the UI too):
 docker build . -t ytptube
 ```
 
-### ytdlp.json File
+## ytdlp.json file
 
-The `config/ytdlp.json`, is a json file which can be used to alter the default `yt-dlp` config settings. For example these are the options i personally use,
+The `config/ytdlp.json`, is a json file which can be used to alter the default `yt-dlp` config settings globally. 
+We recommend not use this file for options that aren't **truly global**, everything that can be done via the `ytdlp.json` file
+can be done via a preset, which only effects the download that uses it. For example, my personal preset that i use for all
+my jp video downloads is:
 
 ```json5
 {
-  // Make the final filename windows compatible.
-  "windowsfilenames": true,
-  // Write subtitles if the stream has them.
-  "writesubtitles": true,
-  // Write info.json file for each download. It can be used by many tools to generate info etc.
-  "writeinfojson": true,
-  // Write thumbnail if available.
-  "writethumbnail": true,
-  // Do not download automatically generated subtitles. 
-  "writeautomaticsub": false,
-  // MP4 is limited with the codecs we use, so "mkv" make sense.
-  "merge_output_format": "mkv",
-  // Record live stream from the start.
-  "live_from_start": true,
-  // For YouTube try to force H264 video codec & AAC audio.
-  "format_sort": [
-      "codec:avc:m4a"
-  ],
-  // Your choice of subtitle languages to download.
-  "subtitleslangs": [ "en", "ar" ],
-  // postprocessors to run on the file
+  "name": "jp_videos",
+  "format": "bv[ext=mp4]+(ba[ext=m4a][format_note*=original]/ba)/bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b",
+  "args": {
+    "writesubtitles": true,
+    "writeinfojson": true,
+    "writethumbnail": true,
+    "merge_output_format": "mkv",
+    "final_ext": "mkv",
+    "format_sort": [ "codec:avc:m4a" ],
+    "subtitleslangs": [ "en", "ar" ]
+  },
   "postprocessors": [
-      // this processor convert the downloaded thumbnail to jpg.
-      {
-          "key": "FFmpegThumbnailsConvertor",
-          "format": "jpg"
-      },
-      // This processor convert subtitles to srt format.
-      {
-          "key": "FFmpegSubtitlesConvertor",
-          "format": "srt"
-      },
-      // This processor embed metadata & info.json file into the final mkv file.
-      {
-          "key": "FFmpegMetadata",
-          "add_infojson": true,
-          "add_metadata": true
-      },
-      // This process embed subtitles into the final file if it doesn't have subtitles embedded.
-      {
-          "key": "FFmpegEmbedSubtitle",
-          "already_have_subtitle": false
-      }
+    {
+      "key": "FFmpegVideoRemuxer",
+      "preferedformat": "mkv"
+    },
+    {
+      "key": "FFmpegConcat",
+      "only_multi_video": true,
+      "when": "playlist"
+    },
+    {
+      "key": "FFmpegThumbnailsConvertor",
+      "format": "jpg"
+    },
+    {
+      "key": "FFmpegSubtitlesConvertor",
+      "format": "srt"
+    },
+    {
+      "key": "FFmpegMetadata",
+      "add_chapters": true,
+      "add_infojson": true,
+      "add_metadata": true
+    },
+    {
+      "key": "FFmpegEmbedSubtitle",
+      "already_have_subtitle": false
+    },
+    {
+      "key": "Exec",
+      "exec_cmd": "/usr/bin/mkvpropedit %(filepath)q --edit track:a1 --set language=jpn --set name=Japanese --add-track-statistics-tags",
+      "when": "after_move"
+    }
   ]
 }
-``` 
-The options can be fount at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
-And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
-
-> [!NOTE]
-> You can use the `yt-dlp json config` box in the new Download page to convert your cli options to json format.
-
-### presets.json File
-
-The `config/presets.json`, is a json file, which can be used to add custom presets for selection in WebUI.
-
-The file is supposed to be an array of objects, each object represent a preset, the schema for the object is as the following.
-```json5
-[
-  {
-    // (name: string) - REQUIRED - The preset name.
-    "name": "My super preset",
-    // (format: string) - REQUIRED - The required yt-dlp format. i.e. -f option in yt-dlp cli.
-    "format": "best",
-    // (postprocessors: array) - OPTIONAL - The postprocessors to run on the file. if it's preset or set to empty array, it will override the default postprocessors.
-    "postprocessors": [
-      // for example to embed thumbnail.
-      {
-        "key": "EmbedThumbnail",
-        "already_have_thumbnail": false
-      }
-    ],
-    // (args: dict) - OPTIONAL - Extra yt-dlp arguments to pass to yt-dlp.
-    "args": {
-      // (key: string) - REQUIRED - The yt-dlp argument key.
-      "writethumbnail": true
-    }
-  },
-  {
-    // another preset, etc...
-  }
-]
 ```
 
-For more expanded example please take look at the default presets file found in [app/library/presets.json](app/library/presets.json).
+You can convert your own yt-dlp command arguments into a preset using the box found in the presets add page. For reference, 
+The options can be fount at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
+And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
 
 ## Authentication
 

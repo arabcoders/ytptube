@@ -53,12 +53,9 @@ div.is-centered {
           <div class="column is-6" v-for="item in presetsNoDefault" :key="item.id">
             <div class="card">
               <header class="card-header">
-                <div class="card-header-title is-text-overflow is-block">
-                  <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
-                </div>
+                <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Copy preset.'"
-                    @click.prevent="copyText(JSON.stringify(item))">
+                  <a class="has-text-primary" v-tooltip="'Copy preset.'" @click.prevent="copyItem(item)">
                     <span class="icon"><i class="fa-solid fa-copy" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
@@ -83,7 +80,7 @@ div.is-centered {
               <div class="card-footer">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(item);">
-                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                    <span class="icon"><i class="fa-solid fa-cog" /></span>
                     <span>Edit</span>
                   </button>
                 </div>
@@ -252,4 +249,24 @@ const editItem = item => {
 }
 
 onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
+
+const copyItem = item => {
+  let data = JSON.parse(JSON.stringify(item))
+  const keys = ['id', 'default', 'raw']
+  keys.forEach(key => {
+    if (key in data) {
+      delete data[key]
+    }
+  })
+
+  if (data.args && (typeof data.args === 'string')) {
+    data.args = JSON.parse(data.args)
+  }
+
+  if (data.postprocessors && (typeof data.postprocessors === 'string')) {
+    data.postprocessors = JSON.parse(data.postprocessors)
+  }
+
+  return copyText(JSON.stringify(data))
+}
 </script>

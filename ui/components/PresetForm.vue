@@ -88,9 +88,7 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="name">
-                  Preset name
-                </label>
+                <label class="label is-inline" for="name" v-text="'Name'" />
                 <div class="control has-icons-left">
                   <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
                   <span class="icon is-small is-left"><i class="fa-solid fa-n" /></span>
@@ -104,9 +102,7 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="format">
-                  Format
-                </label>
+                <label class="label is-inline" for="format" v-text="'Format'" />
                 <div class="control has-icons-left">
                   <input type="text" class="input" id="format" v-model="form.format" :disabled="addInProgress">
                   <span class="icon is-small is-left"><i class="fa-solid fa-f" /></span>
@@ -208,21 +204,21 @@ const props = defineProps({
   },
 })
 
-const toast = useToast();
-const convertInProgress = ref(false);
-const form = reactive(props.preset);
-const opts = ref('');
-const json_preset = ref('');
-const importExpanded = ref(false);
-const convertExpanded = ref(false);
+const toast = useToast()
+const convertInProgress = ref(false)
+const form = reactive(JSON.parse(JSON.stringify(props.preset)))
+const opts = ref('')
+const json_preset = ref('')
+const importExpanded = ref(false)
+const convertExpanded = ref(false)
 
 onMounted(() => {
   if (props.preset?.args && (typeof props.preset.args === 'object')) {
-    form.args = JSON.stringify(props.preset.args, null, 2);
+    form.args = JSON.stringify(props.preset.args, null, 2)
   }
 
   if (props.preset?.postprocessors && (typeof props.preset.postprocessors === 'object')) {
-    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2);
+    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2)
   }
 })
 
@@ -231,7 +227,7 @@ const checkInfo = async () => {
   for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`);
-      return;
+      return
     }
   }
 

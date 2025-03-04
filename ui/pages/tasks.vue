@@ -79,11 +79,11 @@ div.is-centered {
                   </p>
                   <p>
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    <span>{{ calcPath(item.folder) }}</span>
+                    <span>{{ item.folder ? calcPath(item.folder) : config.app.download_path }}</span>
                   </p>
                   <p>
                     <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.template ?? config.app.output_template }}</span>
+                    <span>{{ item.template ? item.template : config.app.output_template }}</span>
                   </p>
                   <p>
                     <span class="icon"><i class="fa-solid fa-tv" /></span>
@@ -99,7 +99,7 @@ div.is-centered {
               <div class="card-footer">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(item);">
-                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                    <span class="icon"><i class="fa-solid fa-cog" /></span>
                     <span>Edit</span>
                   </button>
                 </div>
@@ -107,6 +107,12 @@ div.is-centered {
                   <button class="button is-danger is-fullwidth" @click="deleteItem(item)">
                     <span class="icon"><i class="fa-solid fa-trash" /></span>
                     <span>Delete</span>
+                  </button>
+                </div>
+                <div class="card-footer-item">
+                  <button class="button is-purple is-fullwidth" @click="runNow(item)">
+                    <span class="icon"><i class="fa-solid fa-microchip" /></span>
+                    <span>Run now</span>
                   </button>
                 </div>
               </div>
@@ -146,6 +152,7 @@ watch(() => config.app.basic_mode, async () => {
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
+    socket.on('status', statusHandler)
     await reloadContent(true)
     initialLoad.value = false
   }
@@ -278,13 +285,68 @@ const calcPath = path => {
   return loc
 }
 
-onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
+onMounted(async () => {
+  if (!socket.isConnected){
+    return;
+  }
+  socket.on('status', statusHandler)
+  await reloadContent(true)
+});
 
 const tryParse = expression => {
   try {
     return moment(parseExpression(expression).next().toISOString()).fromNow()
   } catch (e) {
     return "Invalid"
+  }
+}
+
+const runNow = item => {
+  if (true !== confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
+    return
+  }
+
+  let data = {
+    url: item.url,
+    preset: item.preset,
+  }
+
+  if (item.folder) {
+    data.folder = item.folder
+  }
+
+  if (item.template) {
+    data.template = item.template
+  }
+
+  if (item.cookies) {
+    data.cookies = item.cookies
+  }
+
+  if (item.config) {
+    if (typeof item.config === 'object') {
+      data.config = JSON.stringify(item.config)
+    }
+
+    try {
+      JSON.parse(data.config)
+    } catch (e) {
+      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
+      return
+    }
+  }
+
+  socket.emit('add_url', data)
+}
+
+onUnmounted(() => socket.off('status', statusHandler))
+
+const statusHandler = async stream => {
+  const { status, msg } = JSON.parse(stream)
+
+  if ('error' === status) {
+    toast.error(msg)
+    return
   }
 }
 </script>
