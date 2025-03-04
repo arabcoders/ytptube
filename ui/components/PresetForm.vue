@@ -208,21 +208,21 @@ const props = defineProps({
   },
 })
 
-const toast = useToast();
-const convertInProgress = ref(false);
-const form = reactive(props.preset);
-const opts = ref('');
-const json_preset = ref('');
-const importExpanded = ref(false);
-const convertExpanded = ref(false);
+const toast = useToast()
+const convertInProgress = ref(false)
+const form = reactive( JSON.parse(JSON.stringify(props.preset)))
+const opts = ref('')
+const json_preset = ref('')
+const importExpanded = ref(false)
+const convertExpanded = ref(false)
 
 onMounted(() => {
   if (props.preset?.args && (typeof props.preset.args === 'object')) {
-    form.args = JSON.stringify(props.preset.args, null, 2);
+    form.args = JSON.stringify(props.preset.args, null, 2)
   }
 
   if (props.preset?.postprocessors && (typeof props.preset.postprocessors === 'object')) {
-    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2);
+    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2)
   }
 })
 
@@ -231,7 +231,7 @@ const checkInfo = async () => {
   for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`);
-      return;
+      return
     }
   }
 
