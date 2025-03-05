@@ -1,24 +1,16 @@
-<style>
-:root {
-  --plyr-captions-background: rgba(0, 0, 0, 0.6);
-  --plyr-captions-text-color: #f3db4d;
-  --webkit-text-track-display: none;
-}
-
-.plyr__caption {
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-  font-size: 140%;
-  font-weight: bold;
-}
-
-.plyr--full-ui ::-webkit-media-text-track-container {
-  display: var(--webkit-text-track-display);
+<style scoped>
+.player {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
 }
 </style>
-
 <template>
   <div>
-    <video id="player" ref="video" :poster="thumbnail" :title="title" playsinline>
+    <video class="player" ref="video" :poster="thumbnail" :title="title" playsinline controls crossorigin="anonymous"
+      preload="auto">
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
       <track v-for="track in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
@@ -28,18 +20,17 @@
 </template>
 
 <script setup>
+import { useStorage } from '@vueuse/core'
 import { onMounted, onUpdated, ref, onUnmounted } from 'vue'
 import Hls from 'hls.js'
-import Plyr from 'plyr'
-import 'plyr/dist/plyr.css'
 import { makeDownload } from '~/utils/index'
 const config = useConfigStore()
 
 const props = defineProps({
   item: {
     type: Object,
-    default: () => ({})
-  },
+    default: () => ({}),
+  }
 })
 
 const emitter = defineEmits(['closeModel'])
@@ -48,12 +39,13 @@ const video = ref(null)
 const tracks = ref([])
 const sources = ref([])
 
-const thumbnail = ref('')
+const thumbnail = ref('/images/placeholder.png')
 const artist = ref('')
 const title = ref('')
 const isAudio = ref(false)
+const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
+const volume = useStorage('player_volume', 1)
 
-let player = null;
 let hls = null;
 
 const eventFunc = e => {
@@ -63,12 +55,19 @@ const eventFunc = e => {
 }
 
 onMounted(async () => {
-  const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
+
+  video.value.volume = volume.value
+
+  video.value.addEventListener('volumechange', () => {
+    volume.value = video.value.volume
+  })
+
   const response = await (await request(makeDownload(config, props.item, 'api/file/info'))).json()
 
   if (props.item.extras?.thumbnail) {
     thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
   }
+
 
   // -- check if mimetype is video/mp4 and device is apple
   // -- as always apple, apple like to be snowflakes.
@@ -123,9 +122,6 @@ onMounted(async () => {
 onUpdated(() => prepareVideoPlayer())
 
 onUnmounted(() => {
-  if (player) {
-    player.destroy()
-  }
   if (hls) {
     hls.destroy()
   }
@@ -138,62 +134,23 @@ onUnmounted(() => {
 })
 
 const prepareVideoPlayer = () => {
+  if (false === ("mediaSession" in navigator)) {
+    return
+  }
+
   let mediaMetadata = {
     title: title.value,
   };
 
   if (thumbnail.value) {
-    mediaMetadata['artwork'] = [
-      { src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' },
-    ]
+    mediaMetadata.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }]
   }
-  if (artist.value) {
-    mediaMetadata['artist'] = artist.value
-  }
-
-  let opts = {
-    debug: false,
-    clickToPlay: true,
-    keyboard: { focused: true, global: true },
-    controls: [
-      'play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
-    ],
-    fullscreen: {
-      enabled: true,
-      fallback: true,
-      iosNative: true,
-    },
-    storage: {
-      enabled: true,
-      key: 'plyr'
-    },
-    artist: artist.value,
-    mediaMetadata: mediaMetadata,
-    captions: {
-      update: true,
-    },
-  };
 
   if (artist.value) {
-    opts.artist = artist.value
+    mediaMetadata.artist = artist.value
   }
 
-  if (title.value) {
-    opts.title = title.value
-  }
-
-  if (thumbnail.value) {
-    opts.poster = thumbnail.value
-  }
-
-  player = new Plyr(video.value, opts);
-
-  player.source = {
-    type: isAudio.value ? 'audio' : 'video',
-    title: title.value,
-    poster: thumbnail.value,
-  };
-
+  navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
   if (title.value) {
     window.document.title = `YTPTube - Playing: ${title.value}`
   }
@@ -212,7 +169,7 @@ const attach_hls = link => {
     debug: false,
     enableWorker: true,
     lowLatencyMode: true,
-    backBufferLength: 90,
+    backBufferLength: 120,
     fragLoadingTimeOut: 200000,
   });
 
