@@ -10,7 +10,7 @@
 <template>
   <div>
     <video class="player" ref="video" :poster="thumbnail" :title="title" playsinline controls crossorigin="anonymous"
-      preload="auto">
+      preload="auto" autoplay>
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
       <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
