@@ -13,8 +13,8 @@
       preload="auto">
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
-      <track v-for="track in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
-        :src="track.file" />
+      <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
+        :src="track.file" :default="notFirefox && i === 0" />
     </video>
   </div>
 </template>
@@ -45,6 +45,7 @@ const title = ref('')
 const isAudio = ref(false)
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 const volume = useStorage('player_volume', 1)
+const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
 
 let hls = null;
 
