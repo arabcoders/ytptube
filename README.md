@@ -63,43 +63,44 @@ services:
       - /tmp
 ```
 
-## Configuration via environment variables
+## Environment variables
 
-Certain values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in `compose.yaml` file.
+Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in `compose.yaml` file.
 
-* __YTP_CONFIG_PATH__: path to where the queue persistence files will be saved. Defaults to `/config` in the docker image, and `./var/config` otherwise.
-* __YTP_DOWNLOAD_PATH__: path to where the downloads will be saved. Defaults to `/downloads` in the docker image, and `./var/downloads` otherwise.
-* __YTP_TEMP_PATH__: path where intermediary download files will be saved. Defaults to `/tmp` in the docker image, and `./var/tmp` otherwise.
-* __YTP_TEMP_KEEP__: Whether to keep the Individual video temp directory or remove it. Defaults to `false`.
-* __YTP_OUTPUT_TEMPLATE__: the template for the filenames of the downloaded videos, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s.%(ext)s`. This will be the default for all downloads unless the request include output template.
-* __YTP_OUTPUT_TEMPLATE_CHAPTER__: the template for the filenames of the downloaded videos, when split into chapters via postprocessors, formatted according to [this spec](https://github.com/yt-dlp/yt-dlp/blob/master/README.md#output-template). Defaults to `%(title)s - %(section_number)s %(section_title)s.%(ext)s.`
-* __YTP_KEEP_ARCHIVE__: Whether to keep history of downloaded videos to prevent downloading same file multiple times. Defaults to `true`.
-* __YTP_YTDL_DEBUG__: Whether to turn debug logging for the internal `yt-dlp` package. Defaults to `false`.
-* __YTP_ALLOW_MANIFESTLESS__: Allow `yt-dlp` to download live streams videos which are yet to be processed by YouTube. Defaults to `false`
-* __YTP_HOST__: Which IP address to bind to. Defaults to `0.0.0.0`.
-* __YTP_PORT__: Which port to bind to. Defaults to `8081`.
-* __YTP_LOG_LEVEL__: Log level. Defaults to `info`.
-* __YTP_MAX_WORKERS__: How many works to use for downloads. Defaults to `1`.
-* __YTP_STREAMER_VCODEC__: The video codec to use for in-browser streaming. Defaults to `libx264`.
-* __YTP_STREAMER_ACODEC__: The audio codec to use for in-browser streaming. Defaults to `aac`.
-* __YTP_AUTH_USERNAME__: Username for basic authentication. Defaults open for all
-* __YTP_AUTH_PASSWORD__: Password for basic authentication. Defaults open for all.
-* __YTP_REMOVE_FILES__: Whether to remove the actual downloaded file when clicking the remove button. Defaults to `false`.
-* __YTP_ACCESS_LOG__: Whether to log access to the web server. Defaults to `true`.
-* __YTP_DEBUG__: Whether to turn on debug mode. Defaults to `false`.
-* __YTP_DEBUGPY_PORT__: The port to use for the debugpy debugger. Defaults to `5678`.
-* __YTP_SOCKET_TIMEOUT__: The timeout for the yt-dlp socket connection variable. Defaults to `30`.
-* __YTP_EXTRACT_INFO_TIMEOUT__: The timeout for extracting video information. Defaults to `70`.
-* __YTP_DB_FILE__: The path to the SQLite database file. Defaults to `{config_path}/ytptube.db`.
-* __YTP_MANUAL_ARCHIVE__: The path to the manual archive file. Defaults to `{config_path}/manual_archive.log`.
-* __YTP_UI_UPDATE_TITLE__: Whether to update the title of the page with the current stats. Defaults to `true`.
-* __YTP_PIP_PACKAGES__: a space separated list of pip packages to install. Defaults to `""`, you can also use `{config_path}/pip.txt` to install the packages.
-* __YTP_PIP_IGNORE_UPDATES__: Do not update the custom pip packages. Defaults to `false`.
-* __YTP_BASIC_MODE__: Whether to run WebUI in basic mode. Defaults to `false`. In basic mode, A minimal UI will be shown, the majority of the features will be disabled.
-* __YTP_DEFAULT_PRESET__: The default preset to use for the download. Defaults to `default`.
-* __YTP_INSTANCE_TITLE__: The title of the instance. Defaults to empty string.
-* __YTP_FILE_LOGGING__: Whether to log to file. Defaults to `false`.
-  
+| Environment Variable     | Description                                                      | Default                            |
+| ------------------------ | ---------------------------------------------------------------- | ---------------------------------- |
+| YTP_OUTPUT_TEMPLATE      | The template for the filenames of the downloaded videos          | `%(title)s.%(ext)s`                |
+| YTP_DEFAULT_PRESET       | The default preset to use for the download                       | `default`                          |
+| YTP_INSTANCE_TITLE       | The title of the instance                                        | `empty string`                     |
+| YTP_FILE_LOGGING         | Whether to log to file                                           | `false`                            |
+| YTP_DOWNLOAD_PATH        | Path to where the downloads will be saved                        | `/downloads`                       |
+| YTP_MAX_WORKERS          | How many works to use for downloads                              | `1`                                |
+| YTP_AUTH_USERNAME        | Username for basic authentication                                | `empty string`                     |
+| YTP_AUTH_PASSWORD        | Password for basic authentication                                | `empty string`                     |
+| YTP_REMOVE_FILES         | Remove the actual file when clicking the remove button           | `false`                            |
+| YTP_CONFIG_PATH          | Path to where the queue persistence files will be saved          | `/config`                          |
+| YTP_TEMP_PATH            | Path where intermediary download files will be saved             | `/tmp`                             |
+| YTP_TEMP_KEEP            | Whether to keep the Individual video temp directory or remove it | `false`                            |
+| YTP_KEEP_ARCHIVE         | Keep history of downloaded videos                                | `true`                             |
+| YTP_YTDL_DEBUG           | Whether to turn debug logging for the internal `yt-dlp` package  | `false`                            |
+| YTP_ALLOW_MANIFESTLESS   | Allow `yt-dlp` to download unprocessed streams                   | `false`                            |
+| YTP_HOST                 | Which IP address to bind to                                      | `0.0.0.0`                          |
+| YTP_PORT                 | Which port to bind to                                            | `8081`                             |
+| YTP_LOG_LEVEL            | Log level                                                        | `info`                             |
+| YTP_STREAMER_VCODEC      | The video codec to use for in-browser streaming                  | `libx264`                          |
+| YTP_STREAMER_ACODEC      | The audio codec to use for in-browser streaming                  | `aac`                              |
+| YTP_ACCESS_LOG           | Whether to log access to the web server                          | `true`                             |
+| YTP_DEBUG                | Whether to turn on debug mode                                    | `false`                            |
+| YTP_DEBUGPY_PORT         | The port to use for the debugpy debugger                         | `5678`                             |
+| YTP_SOCKET_TIMEOUT       | The timeout for the yt-dlp socket connection variable            | `30`                               |
+| YTP_EXTRACT_INFO_TIMEOUT | The timeout for extracting video information                     | `70`                               |
+| YTP_DB_FILE              | The path to the SQLite database file                             | `{config_path}/ytptube.db`         |
+| YTP_MANUAL_ARCHIVE       | The path to the manual archive file                              | `{config_path}/manual_archive.log` |
+| YTP_UI_UPDATE_TITLE      | Whether to update the title of the page with the current stats   | `true`                             |
+| YTP_PIP_PACKAGES         | A space separated list of pip packages to install                | `empty string`                     |
+| YTP_PIP_IGNORE_UPDATES   | Do not update the custom pip packages                            | `false`                            |
+| YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
+
 ## Running behind a reverse proxy
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
@@ -242,7 +243,7 @@ my jp video downloads is:
 ```
 
 You can convert your own yt-dlp command arguments into a preset using the box found in the presets add page. For reference, 
-The options can be fount at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
+The options can be found at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
 And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
 
 ## Authentication
