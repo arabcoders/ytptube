@@ -208,14 +208,15 @@ class HttpAPI(Common):
                 app.router.add_get(urlPath, self._static_file)
                 preloaded += 1
 
-                if urlPath.endswith("/index.html") and urlPath != "/index.html":
-                    parentSlash = urlPath.replace("/index.html", "/")
-                    parentNoSlash = urlPath.replace("/index.html", "")
-                    self._static_holder[parentSlash] = {"content": content, "content_type": contentType}
-                    self._static_holder[parentNoSlash] = {"content": content, "content_type": contentType}
-                    app.router.add_get(parentSlash, self._static_file)
-                    app.router.add_get(parentNoSlash, self._static_file)
-                    preloaded += 2
+                if urlPath.endswith("/index.html"):
+                    paths_list = ["/console", "/presets", "/tasks", "/notifications"]
+                    for path in paths_list:
+                        self._static_holder[path] = {"content": content, "content_type": contentType}
+                        app.router.add_get(path, self._static_file)
+                        self._static_holder[path + "/"] = {"content": content, "content_type": contentType}
+                        app.router.add_get(path + "/", self._static_file)
+                        LOG.debug(f"Preloading '{path}'.")
+                        preloaded += 1
 
         if preloaded < 1:
             message = f"Failed to find any static files in '{staticDir}'."
