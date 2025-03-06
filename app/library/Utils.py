@@ -15,7 +15,6 @@ from typing import Any
 
 import yt_dlp
 from Crypto.Cipher import AES
-from yt_dlp.networking.impersonate import ImpersonateTarget
 
 from .LogWrapper import LogWrapper
 
