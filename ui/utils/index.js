@@ -235,14 +235,10 @@ const encodePath = item => {
  */
 const request = (url, options = {}) => {
   const runtimeConfig = useRuntimeConfig()
-  const token = useStorage('token', null)
   options = options || {}
   options.method = options.method || 'GET'
   options.headers = options.headers || {}
-
-  if (token && undefined === options.headers['Authorization']) {
-    options.headers['Authorization'] = 'Token ' + token.value
-  }
+  options.withCredentials = true
 
   if (undefined === options.headers['Content-Type']) {
     if (!(options?.body instanceof FormData)) {

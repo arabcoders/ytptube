@@ -1,3 +1,4 @@
+import base64
 import copy
 import glob
 import ipaddress
@@ -13,6 +14,7 @@ from functools import lru_cache
 from typing import Any
 
 import yt_dlp
+from Crypto.Cipher import AES
 from yt_dlp.networking.impersonate import ImpersonateTarget
 
 from .LogWrapper import LogWrapper
@@ -615,3 +617,44 @@ def get_file(download_path: str, file: str | pathlib.Path) -> tuple[pathlib.Path
         return (realFile, 404)
 
     return (pathlib.Path(possibleFile), 302)
+
+
+def encrypt_data(data: str, key: bytes) -> str:
+    """
+    Encrypts data using AES-GCM
+
+    Args:
+        data (str): The data to encrypt
+        key (bytes): The encryption key
+
+    Returns:
+        str: The encrypted data as a base64 encoded string
+
+    """
+    iv = os.urandom(12)  # AES-GCM requires a 12-byte IV
+    cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
+    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
+
+    return base64.urlsafe_b64encode(iv + ciphertext + tag).decode()
+
+
+def decrypt_data(data: str, key: bytes) -> str:
+    """
+    Decrypts AES-GCM encrypted data
+
+    Args:
+        data (str): The encrypted data as a base64 encoded string
+        key (bytes): The encryption key
+
+    Returns:
+        str: The decrypted data
+
+    """
+    try:
+        data = base64.urlsafe_b64decode(data)
+        iv, ciphertext, tag = data[:12], data[12:-16], data[-16:]
+        cipher = AES.new(key, AES.MODE_GCM, nonce=iv)
+        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+        return plaintext.decode()
+    except Exception:
+        return None

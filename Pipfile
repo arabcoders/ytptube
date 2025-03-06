@@ -23,6 +23,7 @@ brotli = "*"
 brotlicffi = "*"
 yt-dlp = "*"
 anyio = "*"
+pycryptodome = "*"
 
 [dev-packages]
 
