@@ -14,7 +14,7 @@ from .config import Config
 from .Emitter import Emitter
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import get_opts, merge_config
+from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("download")
 
@@ -114,22 +114,30 @@ class Download:
 
     def _download(self):
         try:
-            params: dict = get_opts(self.preset, merge_config(self.default_ytdl_opts, self.ytdl_opts))
-            params.update(
-                {
-                    "color": "no_color",
-                    "paths": {"home": self.download_dir, "temp": self.temp_path},
-                    "outtmpl": {"default": self.template, "chapter": self.template_chapter},
-                    "noprogress": True,
-                    "break_on_existing": True,
-                    "progress_hooks": [self._progress_hook],
-                    "postprocessor_hooks": [self._postprocessor_hook],
-                    "ignoreerrors": False,
-                }
+            params = (
+                YTDLPOpts.get_instance()
+                .preset(self.preset)
+                .add(self.ytdl_opts, from_user=True)
+                .add(
+                    {
+                        "color": "no_color",
+                        "paths": {"home": self.download_dir, "temp": self.temp_path},
+                        "outtmpl": {"default": self.template, "chapter": self.template_chapter},
+                        "noprogress": True,
+                        "break_on_existing": True,
+                        "ignoreerrors": False,
+                    },
+                    from_user=False,
+                )
+                .get_all()
             )
 
-            if "format" not in params and self.default_ytdl_opts.get("format", None):
-                params["format"] = "best"
+            params.update(
+                {
+                    "progress_hooks": [self._progress_hook],
+                    "postprocessor_hooks": [self._postprocessor_hook],
+                }
+            )
 
             if self.debug:
                 params["verbose"] = True
@@ -137,7 +145,9 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    with open(os.path.join(self.temp_path, f"cookie_{self.info._id}.txt"), "w") as f:
+                    cookie_file = os.path.join(self.temp_path, f"cookie_{self.info._id}.txt")
+                    LOG.debug(f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'.")
+                    with open(cookie_file, "w") as f:
                         f.write(self.info.cookies)
                         params["cookiefile"] = f.name
                 except ValueError as e:
@@ -175,6 +185,7 @@ class Download:
 
             self.status_queue.put({"id": self.id, "status": "finished" if ret == 0 else "error"})
         except Exception as exc:
+            LOG.exception(exc)
             self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
 
         LOG.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')

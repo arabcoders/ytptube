@@ -27,11 +27,20 @@ class Preset:
     format: str
     """The format of the preset."""
 
-    args: dict[str, list[str] | bool] | None = field(default_factory=dict)
+    args: dict[str, list[str] | bool] = field(default_factory=dict)
     """The arguments of the preset."""
 
-    postprocessors: list | None = field(default_factory=list)
+    postprocessors: list = field(default_factory=list)
     """The postprocessors of the preset."""
+
+    folder: str = ""
+    """The default download folder to use if non is given."""
+
+    template: str = ""
+    """The default template to use if non is given."""
+
+    cookies: str = ""
+    """The default cookies to use if non is given."""
 
     default: bool = False
 

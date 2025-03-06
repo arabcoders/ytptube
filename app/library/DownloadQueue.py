@@ -19,8 +19,10 @@ from .Download import Download
 from .Emitter import Emitter
 from .EventsSubscriber import Events
 from .ItemDTO import ItemDTO
+from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import calc_download_path, extract_info, get_opts, is_downloaded, merge_config
+from .Utils import calc_download_path, extract_info, is_downloaded
+from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
 
@@ -352,8 +354,20 @@ class DownloadQueue(metaclass=Singleton):
         template: str = "",
         already=None,
     ):
+        _preset = Presets.get_instance().get(name=preset)
+
         config = config if config else {}
         folder = str(folder) if folder else ""
+
+        if _preset:
+            if _preset.folder and not folder:
+                folder = _preset.folder
+
+            if _preset.template and not template:
+                template = _preset.template
+
+            if _preset.cookies and not cookies:
+                cookies = _preset.cookies
 
         filePath = calc_download_path(base_path=self.config.download_path, folder=folder)
         yt_conf = {}
@@ -395,7 +409,7 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **get_opts(preset, merge_config(self.config.ytdl_options, config)),
+                **YTDLPOpts.get_instance().preset(name=preset).add(config=config, from_user=True).get_all(),
             }
 
             if cookies:

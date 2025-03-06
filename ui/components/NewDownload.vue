@@ -107,8 +107,8 @@
                   Cookies
                 </label>
                 <div class="control">
-                  <textarea class="textarea" id="ytdlpCookies" v-model="ytdlpCookies"
-                    :disabled="!socket.isConnected || addInProgress"></textarea>
+                  <textarea class="textarea is-pre" id="ytdlpCookies" v-model="ytdlpCookies"
+                    :disabled="!socket.isConnected || addInProgress" />
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>

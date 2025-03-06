@@ -221,7 +221,8 @@ hr {
   padding-top: 0.5em;
 }
 
-.play-overlay, .is-pointer {
+.play-overlay,
+.is-pointer {
   cursor: pointer;
 }
 
@@ -253,4 +254,8 @@ hr {
 .image-portrait {
   object-fit: cover;
   object-position: top;
+}
+
+.is-pre {
+  white-space: pre;
 }

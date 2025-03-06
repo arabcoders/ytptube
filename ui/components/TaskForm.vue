@@ -149,7 +149,7 @@
             <div class="field">
               <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">Cookies</label>
               <div class="control">
-                <textarea class="textarea" id="cookies" v-model="form.cookies" :disabled="addInProgress"></textarea>
+                <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress" />
               </div>
               <span class="help">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
