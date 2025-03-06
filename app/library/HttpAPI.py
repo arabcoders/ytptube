@@ -9,7 +9,7 @@ import random
 import time
 import uuid
 from collections.abc import Awaitable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
@@ -38,6 +38,8 @@ from .Utils import (
     IGNORED_KEYS,
     StreamingError,
     arg_converter,
+    decrypt_data,
+    encrypt_data,
     get_file,
     get_mime_type,
     get_sidecar_subtitles,
@@ -208,14 +210,15 @@ class HttpAPI(Common):
                 app.router.add_get(urlPath, self._static_file)
                 preloaded += 1
 
-                if urlPath.endswith("/index.html") and urlPath != "/index.html":
-                    parentSlash = urlPath.replace("/index.html", "/")
-                    parentNoSlash = urlPath.replace("/index.html", "")
-                    self._static_holder[parentSlash] = {"content": content, "content_type": contentType}
-                    self._static_holder[parentNoSlash] = {"content": content, "content_type": contentType}
-                    app.router.add_get(parentSlash, self._static_file)
-                    app.router.add_get(parentNoSlash, self._static_file)
-                    preloaded += 2
+                if urlPath.endswith("/index.html"):
+                    paths_list = ["/console", "/presets", "/tasks", "/notifications"]
+                    for path in paths_list:
+                        self._static_holder[path] = {"content": content, "content_type": contentType}
+                        app.router.add_get(path, self._static_file)
+                        self._static_holder[path + "/"] = {"content": content, "content_type": contentType}
+                        app.router.add_get(path + "/", self._static_file)
+                        LOG.debug(f"Preloading '{path}'.")
+                        preloaded += 1
 
         if preloaded < 1:
             message = f"Failed to find any static files in '{staticDir}'."
@@ -281,6 +284,18 @@ class HttpAPI(Common):
                 auth_header = f"Basic {request.query.get('apikey')}"
 
             if auth_header is None:
+                auth_cookie = request.cookies.get("auth")
+                if auth_cookie is not None:
+                    try:
+                        data = decrypt_data(auth_cookie, key=Config.get_instance().secret_key)
+                        if data is not None:
+                            LOG.info(f"Decoded cookie data '{data}'.")
+                            data = base64.b64encode(data.encode()).decode()
+                            auth_header = f"Basic {data}"
+                    except Exception as e:
+                        LOG.exception(e)
+
+            if auth_header is None:
                 return web.json_response(
                     status=web.HTTPUnauthorized.status_code,
                     headers={
@@ -308,7 +323,26 @@ class HttpAPI(Common):
                     data={"error": "Unauthorized (Invalid credentials)."}, status=web.HTTPUnauthorized.status_code
                 )
 
-            return await handler(request)
+            response = await handler(request)
+            if request.path != "/":
+                return response
+
+            try:
+                response.set_cookie(
+                    "auth",
+                    encrypt_data(
+                        f"{user_name}:{user_password}",
+                        key=Config.get_instance().secret_key,
+                    ),
+                    max_age=60 * 60 * 24 * 7,
+                    expires=datetime.now(UTC) + timedelta(days=7),
+                    httponly=True,
+                    samesite="Strict",
+                )
+            except Exception as e:
+                LOG.exception(e)
+
+            return response
 
         return middleware_handler
 

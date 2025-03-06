@@ -1,4 +1,3 @@
-import json
 import logging
 import multiprocessing
 import os
@@ -140,6 +139,9 @@ class Config:
 
     sentry_dsn: str | None = None
     "The Sentry DSN to use for error reporting."
+
+    secret_key: str
+    "The secret key to use for the application."
 
     _manual_vars: tuple = (
         "temp_path",
@@ -346,6 +348,18 @@ class Config:
             formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
+
+        key_file: str = os.path.join(self.config_path, "secret.key")
+
+        # save key as bytes.
+        if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
+            with open(key_file,"rb") as f:
+                self.secret_key = f.read().strip()
+        else:
+            self.secret_key = os.urandom(32)
+            with open(key_file, "wb") as f:
+                f.write(self.secret_key)
+
 
         self.started = time.time()
 
