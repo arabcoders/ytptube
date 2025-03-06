@@ -289,7 +289,6 @@ class HttpAPI(Common):
                     try:
                         data = decrypt_data(auth_cookie, key=Config.get_instance().secret_key)
                         if data is not None:
-                            LOG.info(f"Decoded cookie data '{data}'.")
                             data = base64.b64encode(data.encode()).decode()
                             auth_header = f"Basic {data}"
                     except Exception as e:
