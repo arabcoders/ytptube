@@ -15,7 +15,6 @@ from typing import Any
 
 import yt_dlp
 from Crypto.Cipher import AES
-from yt_dlp.networking.impersonate import ImpersonateTarget
 
 from .LogWrapper import LogWrapper
 
@@ -31,52 +30,7 @@ class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
 
 
-def get_opts(preset: str, ytdl_opts: dict) -> dict:
-    """
-    Returns ytdlp options download options
-
-    Args:
-      preset (str): the name of the preset selected.
-      ytdl_opts (dict): current options selected
-
-    Returns:
-      ytdl extra options
-
-    """
-    if "format" in ytdl_opts and len(ytdl_opts["format"]) > 2:
-        format = ytdl_opts["format"]
-        LOG.info(f"Format '{format}' was given via yt-dlp options. Therefore, the preset will be ignored.")
-        return ytdl_opts
-
-    opts = copy.deepcopy(ytdl_opts)
-
-    if "default" == preset:
-        LOG.debug("Using default preset.")
-        return opts
-
-    from .Presets import Presets
-
-    p = Presets.get_instance().get(name=preset)
-    if not p:
-        LOG.error(f"Preset '{preset}' is not defined as preset.")
-        return opts
-
-    opts["format"] = p.get("format")
-
-    postprocessors = p.get("postprocessors", [])
-    if isinstance(postprocessors, list) and len(postprocessors) > 0:
-        opts["postprocessors"] = postprocessors
-
-    args = p.get("args", {})
-    if isinstance(args, dict) and len(args) > 0:
-        for key, value in args.items():
-            opts[key] = value
-
-    LOG.debug(f"Using preset '{preset}', altered options: {opts}")
-    return opts
-
-
-def get_video_info(url: str, ytdlp_opts: dict = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
+def get_video_info(url: str, ytdlp_opts: dict | None = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
     """
     Extracts video information from the given URL.
 
@@ -111,6 +65,11 @@ def calc_download_path(base_path: str, folder: str | None = None, create_path: b
     """
     Calculates download path and prevents folder traversal.
 
+    Args:
+        base_path (str): Base download path.
+        folder (str): Folder to add to the base path.
+        create_path (bool): Create the path if it does not exist.
+
     Returns:
         Download path with base folder factored in.
 
@@ -135,29 +94,33 @@ def calc_download_path(base_path: str, folder: str | None = None, create_path: b
 
 
 def extract_info(config: dict, url: str, debug: bool = False) -> dict:
+    """
+    Extracts video information from the given URL.
+
+    Args:
+        config (dict): Configuration options.
+        url (str): URL to extract information from.
+        debug (bool): Enable debug logging.
+
+    Returns:
+        dict: Video information.
+
+    """
     log_wrapper = LogWrapper()
 
     params: dict = {
+        **config,
         "color": "no_color",
         "extract_flat": True,
         "skip_download": True,
         "ignoreerrors": True,
         "ignore_no_formats_error": True,
-        **config,
     }
 
     # Remove keys that are not needed for info extraction.
-    keys: list = [
-        "writeinfojson",
-        "writethumbnail",
-        "writedescription",
-        "writeautomaticsub",
-        "postprocessors",
-    ]
-
-    for key in keys:
-        if key in params:
-            params.pop(key)
+    keys_to_remove = [key for key in params if str(key).startswith("write") or key in ["postprocessors"]]
+    for key in keys_to_remove:
+        params.pop(key, None)
 
     log_wrapper.add_target(target=logging.getLogger("yt-dlp"), level=logging.DEBUG if debug else logging.WARNING)
     if debug:
@@ -166,7 +129,6 @@ def extract_info(config: dict, url: str, debug: bool = False) -> dict:
         params["quiet"] = True
 
     if "callback" in params:
-        # callback can be a function or dict with {level: level, func: target}
         if isinstance(params["callback"], dict):
             log_wrapper.add_target(
                 target=params["callback"]["func"],
@@ -186,47 +148,56 @@ def extract_info(config: dict, url: str, debug: bool = False) -> dict:
 
 
 def merge_dict(source: dict, destination: dict) -> dict:
-    """Merge data from source into destination"""
+    """
+    Merge data from source into destination safely.
+
+    Args:
+        source (dict): Source data
+        destination (dict): Destination data
+
+    Returns:
+        dict: The merged dictionary
+
+    """
+    if not isinstance(source, dict) or not isinstance(destination, dict):
+        msg = "Both source and destination must be dictionaries."
+        raise TypeError(msg)
+
     destination_copy = copy.deepcopy(destination)
 
     for key, value in source.items():
-        destination_key_value = destination_copy.get(key)
-        if isinstance(value, dict) and isinstance(destination_key_value, dict):
-            destination_copy[key] = merge_dict(source=value, destination=destination_copy.setdefault(key, {}))
-        elif isinstance(value, list) and isinstance(destination_key_value, list):
-            destination_copy[key] = destination_key_value + value
+        if key in {"__class__", "__dict__", "__globals__", "__builtins__"}:
+            continue
+
+        destination_value = destination_copy.get(key)
+
+        # Recursively merge dictionaries
+        if isinstance(value, dict) and isinstance(destination_value, dict):
+            destination_copy[key] = merge_dict(value, destination_value)
+
+        # Safely extend lists without reference issues
+        elif isinstance(value, list) and isinstance(destination_value, list):
+            destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(value)
+
         else:
-            destination_copy[key] = value
+            destination_copy[key] = copy.deepcopy(value)
 
     return destination_copy
 
 
-def merge_config(config: dict, new_config: dict) -> dict:
+def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
     """
-    Merge user provided config into default config
+    Check if the video is already downloaded.
 
     Args:
-        config (dict): Default config
-        new_config (dict): User provided config
+        archive_file (str): Archive file path.
+        url (str): URL to check.
 
     Returns:
-        dict: Merged config
+        bool: True if the video is already downloaded.
+        dict: Video information.
 
     """
-    for key in IGNORED_KEYS:
-        if key in new_config:
-            LOG.error(f"Key '{key}' is not allowed to be manually set via config.")
-            del new_config[key]
-
-    conf = merge_dict(new_config, config)
-
-    if "impersonate" in conf:
-        conf["impersonate"] = ImpersonateTarget.from_str(conf["impersonate"])
-
-    return conf
-
-
-def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
     global YTDLP_INFO_CLS  # noqa: PLW0603
 
     idDict = {
@@ -301,11 +272,7 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
         if check_type:
             assert isinstance(opts, check_type)  # noqa: S101
 
-        return (
-            opts,
-            True,
-            "",
-        )
+        return (opts, True, "")
     except Exception:
         with open(file) as json_data:
             from pyjson5 import load as json5_load
@@ -316,23 +283,11 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 if check_type:
                     assert isinstance(opts, check_type)  # noqa: S101
 
-                return (
-                    opts,
-                    True,
-                    "",
-                )
+                return (opts, True, "")
             except AssertionError:
-                return (
-                    {},
-                    False,
-                    f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.",
-                )
+                return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.")
             except Exception as e:
-                return (
-                    {},
-                    False,
-                    f"{e}",
-                )
+                return ({}, False, f"{e}")
 
 
 def check_id(file: pathlib.Path) -> bool | str:
@@ -340,10 +295,12 @@ def check_id(file: pathlib.Path) -> bool | str:
     Check if we are able to get an id from the file name.
     if so check if any video file with the same id exists.
 
-    :param basePath: Base path to strip.
-    :param file: File to check.
+    Args:
+        file (pathlib.Path): File to check.
 
-    :return: False if no id found, otherwise the id.
+    Returns:
+        bool|str: False if no file found, else the file path.
+
     """
     match = re.search(r"(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])", file.stem, re.IGNORECASE)
     if not match:
@@ -371,14 +328,18 @@ def ag(array: dict | list, path: list[str | int] | str | int, default: Any = Non
     """
     dict/array getter: Retrieve a value from a nested dict or object using a path.
 
-    :param array_or_object: dict-like or object from which to retrieve values
-    :param path: string, list, or None. Represents the path to retrieve:
-                 - If None or empty string, returns the entire structure.
-                 - If list, tries each path and returns the first found.
-                 - If string, navigates through nested dict keys separated by `separator`.
-    :param default: Value (or callable) returned if nothing is found.
-    :param separator: Separator for nested paths in strings.
-    :return: The found value or the default if not found.
+    Args:
+        array (dict|list): dict-like or object from which to retrieve values.
+        path (list|str|int): Represents the path to retrieve:
+            - If None or empty string, returns the entire structure.
+            - If list, tries each path and returns the first found.
+            - If string, navigates through nested dict keys separated by `separator`.
+        default (Any): Value (or callable) returned if nothing is found.
+        separator (str): Separator for nested paths in strings.
+
+    Returns:
+        Any: The found value or the default if not found.
+
     """
     if path is None or path == "":
         return array
@@ -523,8 +484,12 @@ def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
     """
     Get sidecar files for the given file.
 
-    :param file: File to get sidecar files for.
-    :return: List of sidecar files.
+    Args:
+        file (pathlib.Path): The video file.
+
+    Returns:
+        list: List of sidecar files.
+
     """
     files = []
 

@@ -3,12 +3,18 @@
     "id": "3e163c6c-64eb-4448-924f-814b629b3810",
     "name": "default",
     "format": "default",
+    "folder": "",
+    "template": "",
+    "cookies": "",
     "default": true
   },
   {
     "id": "5bf9c42b-8852-468a-99f5-915622dfba25",
     "name": "Best video and audio",
     "format": "bv+ba/b",
+    "folder": "",
+    "template": "",
+    "cookies": "",
     "default": true
   },
   {
@@ -20,6 +26,9 @@
         "vcodec:h264"
       ]
     },
+    "folder": "",
+    "template": "",
+    "cookies": "",
     "default": true
   },
   {
@@ -31,6 +40,9 @@
         "vcodec:h264"
       ]
     },
+    "folder": "",
+    "template": "",
+    "cookies": "",
     "default": true
   },
   {
@@ -63,6 +75,9 @@
         "when": "playlist"
       }
     ],
+    "folder": "",
+    "template": "",
+    "cookies": "",
     "default": true
   }
 ]

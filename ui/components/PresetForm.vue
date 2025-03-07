@@ -75,100 +75,162 @@
 
     <div class="column is-12">
       <form id="presetForm" @submit.prevent="checkInfo()">
-        <div class="box">
-          <div class="columns is-multiline is-mobile">
-            <div class="column is-12">
-              <h1 class="title is-6" style="border-bottom: 1px solid #dbdbdb;">
-                <span class="icon-text">
-                  <span class="icon"><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'" /></span>
-                  <span>{{ reference ? 'Edit' : 'Add' }}</span>
-                </span>
-              </h1>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-title">
+              <span class="icon-text">
+                <span class="icon"><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'" /></span>
+                <span>{{ reference ? 'Edit' : 'Add' }}</span>
+              </span>
             </div>
-
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline" for="name" v-text="'Name'" />
-                <div class="control has-icons-left">
-                  <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
-                  <span class="icon is-small is-left"><i class="fa-solid fa-n" /></span>
-                </div>
-                <span class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>The name to refers to this custom settings.</span>
-                </span>
-              </div>
-            </div>
-
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline" for="format" v-text="'Format'" />
-                <div class="control has-icons-left">
-                  <input type="text" class="input" id="format" v-model="form.format" :disabled="addInProgress">
-                  <span class="icon is-small is-left"><i class="fa-solid fa-f" /></span>
-                </div>
-                <span class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
-                      href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
-                      url</NuxtLink> for more info.</span>
-                </span>
-              </div>
-            </div>
-
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline" for="args" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                  JSON yt-dlp config
-                </label>
-                <div class="control">
-                  <textarea class="textarea" id="args" v-model="form.args" :disabled="addInProgress" placeholder="{}" />
-                </div>
-                <span class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Extends current global yt-dlp config with given options. Some fields are ignored like
-                    <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with caution
-                    some of those options can break yt-dlp or the frontend.</span>
-                </span>
-              </div>
-            </div>
-
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline" for="postprocessors" v-tooltip="'Things to do after download is done.'">
-                  JSON yt-dlp Post-Processors
-                </label>
-                <div class="control">
-                  <textarea class="textarea" id="postprocessors" v-model="form.postprocessors"
-                    :disabled="addInProgress" />
-                </div>
-                <span class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>
-                    Post-processing operations, refer to <NuxtLink
-                      href="https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor" target="blank">this url
-                    </NuxtLink> for more info. It's easier for you to use the <b>Convert CLI options</b> to get what you
-                    want and it will auto-populate the fields if necessary.
+          </div>
+          <div class="card-content">
+            <div class="columns is-multiline is-mobile">
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="name" v-text="'Name'" />
+                  <div class="control has-icons-left">
+                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-n" /></span>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>The name to refers to this custom settings.</span>
                   </span>
-                </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="format" v-text="'Format'" />
+                  <div class="control has-icons-left">
+                    <input type="text" class="input" id="format" v-model="form.format" :disabled="addInProgress">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-f" /></span>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
+                        href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
+                        url</NuxtLink> for more info.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="folder">
+                    Default Download path
+                  </label>
+                  <div class="control has-icons-left">
+                    <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
+                      v-model="form.folder" :disabled="addInProgress" list="folders">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-folder" /></span>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use this folder if non is given with URL. Leave empty to use default download path. Default
+                      download path <code>{{ config.app.download_path }}</code>.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="output_template">
+                    Default Output template
+                  </label>
+                  <div class="control has-icons-left">
+                    <input type="text" class="input" id="output_template" :disabled="addInProgress"
+                      placeholder="Leave empty to use default template." v-model="form.template">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use this output template if non are given with URL. if not set, it will defaults to
+                      <code>{{ config.app.output_template }}</code>.
+                      For more information <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
+                        target="_blank">visit this url</NuxtLink>.
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="args" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
+                    JSON yt-dlp config
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="args" v-model="form.args" :disabled="addInProgress"
+                      placeholder="{}" />
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Extends current global yt-dlp config with given options. Some fields are ignored like
+                      <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with
+                      caution
+                      some of those options can break yt-dlp or the frontend.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="postprocessors"
+                    v-tooltip="'Things to do after download is done.'">
+                    JSON yt-dlp Post-Processors
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="postprocessors" v-model="form.postprocessors"
+                      :disabled="addInProgress" placeholder="[]" />
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>
+                      Post-processing operations, refer to <NuxtLink
+                        href="https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor" target="blank">this url
+                      </NuxtLink> for more info. It's easier for you to use the <b>Convert CLI options</b> to get what
+                      you
+                      want and it will auto-populate the fields if necessary.
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-12">
+                <div class="field">
+                  <label class="label is-inline" for="cookies"
+                    v-tooltip="'Netscape HTTP Cookie format.'">Cookies</label>
+                  <div class="control">
+                    <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress"
+                      placeholder="Leave empty to use default cookies" />
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use this cookies if non are given with the URL. Use the <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                        Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
+                      Cookie format.
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div class="column is-12">
-              <div class="field is-grouped is-grouped-right">
-                <p class="control">
-                  <button class="button is-primary" :disabled="addInProgress" type="submit"
-                    :class="{ 'is-loading': addInProgress }" form="presetForm">
-                    <span class="icon"><i class="fa-solid fa-save" /></span>
-                    <span>Save</span>
-                  </button>
-                </p>
-                <p class="control">
-                  <button class="button is-danger" @click="emitter('cancel')" :disabled="addInProgress" type="button">
-                    <span class="icon"><i class="fa-solid fa-times" /></span>
-                    <span>Cancel</span>
-                  </button>
-                </p>
+            <div class="card-footer">
+              <div class="card-footer-item">
+                <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
+                  :class="{ 'is-loading': addInProgress }" form="presetForm">
+                  <span class="icon"><i class="fa-solid fa-save" /></span>
+                  <span>Save</span>
+                </button>
+              </div>
+              <div class="card-footer-item">
+                <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
+                  type="button">
+                  <span class="icon"><i class="fa-solid fa-times" /></span>
+                  <span>Cancel</span>
+                </button>
               </div>
             </div>
 
@@ -176,6 +238,9 @@
         </div>
       </form>
     </div>
+    <datalist id="folders" v-if="config?.folders">
+      <option v-for="dir in config.folders" :key="dir" :value="dir" />
+    </datalist>
   </main>
 </template>
 
@@ -204,6 +269,7 @@ const props = defineProps({
   },
 })
 
+const config = useConfigStore()
 const toast = useToast()
 const convertInProgress = ref(false)
 const form = reactive(JSON.parse(JSON.stringify(props.preset)))
@@ -252,7 +318,7 @@ const checkInfo = async () => {
   }
 
   if (typeof copy.args === 'object') {
-    copy.config = JSON.stringify(copy.args, null, 2);
+    copy.args = JSON.stringify(copy.args, null, 2);
   }
 
   if (typeof copy.postprocessors === 'object') {
@@ -285,7 +351,7 @@ const convertOptions = async () => {
     return
   }
 
-  if (form.format || form.args || form.postprocessors) {
+  if (form.format || form.args || form.postprocessors || form.template || form.folder) {
     if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
       return
     }
@@ -303,6 +369,14 @@ const convertOptions = async () => {
     if (response.opts.format) {
       form.format = response.opts.format
       delete response.opts.format
+    }
+
+    if (response.output_template) {
+      form.template = response.output_template
+    }
+
+    if (response.download_path) {
+      form.folder = response.download_path
     }
 
     if (response.opts.postprocessors) {
@@ -347,6 +421,14 @@ const importPreset = async () => {
 
     if (preset.postprocessors) {
       form.postprocessors = JSON.stringify(preset.postprocessors, null, 2)
+    }
+
+    if (preset.output_template) {
+      form.template = response.output_template
+    }
+
+    if (preset.folder) {
+      form.folder = response.folder
     }
 
     json_preset.value = ''

@@ -708,7 +708,7 @@ class HttpAPI(Common):
                 item["id"] = str(uuid.uuid4())
 
             if not item.get("args", None) or str(item.get("args")).strip() == "":
-                item["config"] = {}
+                item["args"] = {}
 
             if item.get("args", None) and isinstance(item.get("args"), str):
                 item["args"] = json.loads(item.get("args"))

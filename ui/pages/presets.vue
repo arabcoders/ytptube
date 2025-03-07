@@ -252,7 +252,7 @@ onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
 
 const copyItem = item => {
   let data = JSON.parse(JSON.stringify(item))
-  const keys = ['id', 'default', 'raw']
+  const keys = ['id', 'default', 'raw', 'cookies']
   keys.forEach(key => {
     if (key in data) {
       delete data[key]
