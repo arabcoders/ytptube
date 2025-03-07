@@ -103,6 +103,12 @@
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
+              <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
+                <div class="play-icon"></div>
+                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  v-if="item.extras?.thumbnail" />
+                <img v-else src="/images/placeholder.png" />
+              </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
                   :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
@@ -243,6 +249,14 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closeVideo"></button>
     </div>
+
+    <div class="modal is-active" v-if="embed_url">
+      <div class="modal-background" @click="embed_url = ''"></div>
+      <div class="modal-content">
+        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+      </div>
+      <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
+    </div>
   </div>
 </template>
 
@@ -251,6 +265,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
 import toast from '~/plugins/toast'
+import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
@@ -263,6 +278,7 @@ const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 
+const embed_url = ref('')
 const video_item = ref(null)
 
 const playVideo = item => video_item.value = item
