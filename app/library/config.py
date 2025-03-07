@@ -186,6 +186,7 @@ class Config:
         "pip_ignore_updates",
         "basic_mode",
         "file_logging",
+        "console_enabled",
     )
     "The variables that are booleans."
 
