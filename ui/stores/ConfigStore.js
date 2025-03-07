@@ -16,6 +16,7 @@ const CONFIG_KEYS = {
     default_preset: 'default',
     instance_title: null,
     sentry_dsn: null,
+    console_enabled: false,
   },
   presets: [
     {

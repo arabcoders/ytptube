@@ -93,6 +93,10 @@ class HttpSocket(Common):
 
     @ws_event
     async def cli_post(self, sid: str, data):
+        if not self.config.console_enabled:
+            await self.emitter.error("Console is disabled.", to=sid)
+            return
+
         if not data:
             await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": 0}, to=sid)
             return

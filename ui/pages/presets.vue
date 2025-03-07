@@ -66,9 +66,21 @@ div.is-centered {
               </header>
               <div class="card-content">
                 <div class="content">
-                  <p>
+                  <p class="is-text-overflow">
                     <span class="icon"><i class="fa-solid fa-f" /></span>
                     <span v-text="item.format" />
+                  </p>
+                  <p class="is-text-overflow" v-if="item.folder">
+                    <span class="icon"><i class="fa-solid fa-folder" /></span>
+                    <span>{{ calcPath(item.folder) }}</span>
+                  </p>
+                  <p class="is-text-overflow" v-if="item.template">
+                    <span class="icon"><i class="fa-solid fa-file" /></span>
+                    <span>{{ item.template }}</span>
+                  </p>
+                  <p class="is-text-overflow" v-if="item.cookies">
+                    <span class="icon"><i class="fa-solid fa-cookie" /></span>
+                    <span>Has cookies</span>
                   </p>
                 </div>
               </div>
@@ -268,5 +280,15 @@ const copyItem = item => {
   }
 
   return copyText(JSON.stringify(data))
+}
+
+const calcPath = path => {
+  const loc = config.app.download_path || '/downloads'
+
+  if (path) {
+    return loc + '/' + sTrim(path, '/')
+  }
+
+  return loc
 }
 </script>

@@ -259,3 +259,7 @@ hr {
 .is-pre {
   white-space: pre;
 }
+
+.has-text-bold {
+  font-weight: bold;
+}
