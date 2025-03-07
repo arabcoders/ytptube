@@ -143,6 +143,9 @@ class Config:
     secret_key: str
     "The secret key to use for the application."
 
+    console_enabled: bool = False
+    "Enable direct access to yt-dlp console."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -183,6 +186,7 @@ class Config:
         "pip_ignore_updates",
         "basic_mode",
         "file_logging",
+        "console_enabled",
     )
     "The variables that are booleans."
 
@@ -200,6 +204,7 @@ class Config:
         "default_preset",
         "instance_title",
         "sentry_dsn",
+        "console_enabled",
     )
     "The variables that are relevant to the frontend."
 
@@ -353,13 +358,12 @@ class Config:
 
         # save key as bytes.
         if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
-            with open(key_file,"rb") as f:
+            with open(key_file, "rb") as f:
                 self.secret_key = f.read().strip()
         else:
             self.secret_key = os.urandom(32)
             with open(key_file, "wb") as f:
                 f.write(self.secret_key)
-
 
         self.started = time.time()
 

@@ -71,21 +71,19 @@ div.is-centered {
               </header>
               <div class="card-content">
                 <div class="content">
-                  <p>
+                  <p class="is-text-overflow">
                     <span class="icon"><i class="fa-solid fa-clock" /></span>
-                    <span>
-                      {{ tryParse(item.timer) }} - {{ item.timer }}
-                    </span>
+                    <span>{{ tryParse(item.timer) }} - {{ item.timer }}</span>
                   </p>
-                  <p>
+                  <p class="is-text-overflow" v-if="item.folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    <span>{{ item.folder ? calcPath(item.folder) : config.app.download_path }}</span>
+                    <span>{{ calcPath(item.folder) }}</span>
                   </p>
-                  <p>
+                  <p class="is-text-overflow" v-if="item.template">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.template ? item.template : config.app.output_template }}</span>
+                    <span>{{ item.template }}</span>
                   </p>
-                  <p>
+                  <p class="is-text-overflow">
                     <span class="icon"><i class="fa-solid fa-tv" /></span>
                     <span>{{ item.preset ?? config.app.default_preset }}</span>
                   </p>
@@ -286,7 +284,7 @@ const calcPath = path => {
 }
 
 onMounted(async () => {
-  if (!socket.isConnected){
+  if (!socket.isConnected) {
     return;
   }
   socket.on('status', statusHandler)

@@ -52,11 +52,18 @@
             </div>
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
-            <figure class="image is-3by1" v-if="item.extras?.thumbnail">
-              <img :alt="item.title" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
-            </figure>
-            <figure class="image is-3by1" v-else>
-              <img :src="'/images/placeholder.png'" />
+            <figure class="image is-3by1">
+              <span v-if="isEmbedable(item.url)" @click="() => embed_url = getEmbedable(item.url)" class="play-overlay">
+                <div class="play-icon"></div>
+                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                  v-if="item.extras?.thumbnail" />
+                <img v-else src="/images/placeholder.png" />
+              </span>
+              <template v-else>
+                <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
+                  :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                <img v-else src="/images/placeholder.png" />
+              </template>
             </figure>
           </div>
           <div class="card-content">
@@ -133,6 +140,14 @@
         </span>
       </p>
     </div>
+
+    <div class="modal is-active" v-if="embed_url">
+      <div class="modal-background" @click="embed_url = ''"></div>
+      <div class="modal-content">
+        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+      </div>
+      <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
+    </div>
   </div>
 </template>
 
@@ -140,6 +155,7 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { ucFirst } from '~/utils/index'
+import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore();
@@ -150,6 +166,7 @@ const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
+const embed_url = ref('')
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {

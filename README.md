@@ -77,6 +77,7 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_MAX_WORKERS          | How many works to use for downloads                              | `1`                                |
 | YTP_AUTH_USERNAME        | Username for basic authentication                                | `empty string`                     |
 | YTP_AUTH_PASSWORD        | Password for basic authentication                                | `empty string`                     |
+| YTP_CONSOLE_ENABLED      | Whether to enable the console                                    | `false`                            |
 | YTP_REMOVE_FILES         | Remove the actual file when clicking the remove button           | `false`                            |
 | YTP_CONFIG_PATH          | Path to where the queue persistence files will be saved          | `/config`                          |
 | YTP_TEMP_PATH            | Path where intermediary download files will be saved             | `/tmp`                             |

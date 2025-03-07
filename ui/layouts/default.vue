@@ -5,9 +5,9 @@
         <NuxtLink class="navbar-item  has-tooltip-bottom" to="/"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span>
-            <span class="icon"> <i class="fas fa-home" /></span>
-            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'">
-              <b>YTPTube</b>
+            <span class="icon"><i class="fas fa-home" /></span>
+            <span class="has-text-bold" :class="`has-text-${socket.isConnected ? 'success' : 'danger'}`">
+              YTPTube
             </span>
             <span v-if="config?.app?.instance_title">: {{ config.app.instance_title }}</span>
           </span>
@@ -18,8 +18,8 @@
 
         <div class="navbar-item is-hidden-tablet">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/" v-tooltip.bottom="'Downloads'">
-            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'" class="icon"><i
-                class="fa-solid fa-home" /></span>
+            <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'" class="icon">
+              <img src="/favicon.ico" /></span>
           </NuxtLink>
         </div>
 
@@ -29,7 +29,7 @@
           </NuxtLink>
         </div>
 
-        <div class="navbar-item" v-if="!config.app.basic_mode">
+        <div class="navbar-item" v-if="!config.app.basic_mode && config.app.console_enabled">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
             <span class="icon"><i class="fa-solid fa-terminal" /></span>
           </NuxtLink>

@@ -77,6 +77,20 @@ watch(() => isLoading.value, async value => {
   focusInput()
 }, { immediate: true })
 
+watch(() => config.app.basic_mode, async () => {
+  if (!config.app.basic_mode) {
+    return
+  }
+  await navigateTo('/')
+})
+
+watch(() => config.app.console_enabled, async () => {
+  if (config.app.console_enabled) {
+    return
+  }
+  await navigateTo('/')
+})
+
 const reSizeTerminal = () => {
   if (!terminal.value) {
     return

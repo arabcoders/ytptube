@@ -608,8 +608,21 @@ class HttpAPI(Common):
         if not url:
             return web.json_response(data={"error": "url param is required."}, status=web.HTTPBadRequest.status_code)
 
+        data = {
+            "url": url,
+        }
+
+        preset = request.query.get("preset")
+        if preset:
+            exists = Presets.get_instance().get(preset)
+            if not exists:
+                return web.json_response(
+                    data={"error": f"Preset '{preset}' does not exist."}, status=web.HTTPBadRequest.status_code
+                )
+            data["preset"] = preset
+
         try:
-            status = await self.add(**self.format_item({"url": url}))
+            status = await self.add(**self.format_item(data))
         except ValueError as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
