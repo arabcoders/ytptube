@@ -6,16 +6,22 @@
   height: 100%;
   width: 100%;
 }
+
 </style>
 <template>
-  <div>
+  <div v-if="infoLoaded">
     <video class="player" ref="video" :poster="thumbnail" :title="title" playsinline controls crossorigin="anonymous"
       preload="auto" autoplay>
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
-      <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label" :srclang="track.lang"
-        :src="track.file" :default="notFirefox && i === 0" />
+      <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
+        :srclang="track.lang" :src="track.file" :default="notFirefox && i === 0" />
     </video>
+  </div>
+  <div style="text-align: center;" v-else>
+    <div class="icon">
+      <i class="fa-solid fa-spinner fa-spin fa-4x" />
+    </div>
   </div>
 </template>
 
@@ -25,6 +31,7 @@ import { onMounted, onUpdated, ref, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import { makeDownload } from '~/utils/index'
 const config = useConfigStore()
+const toast = useToast()
 
 const props = defineProps({
   item: {
@@ -46,6 +53,7 @@ const isAudio = ref(false)
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 const volume = useStorage('player_volume', 1)
 const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
+const infoLoaded = ref(false)
 
 let hls = null;
 
@@ -56,6 +64,18 @@ const eventFunc = e => {
 }
 
 onMounted(async () => {
+  const req = await request(makeDownload(config, props.item, 'api/file/info'));
+
+  const response = await req.json()
+
+  if (!req.ok) {
+    toast.error(`Failed to fetch video info. ${response?.error}`)
+    emitter('closeModel')
+    return
+  }
+
+  infoLoaded.value = true
+  await nextTick()
 
   video.value.volume = volume.value
 
@@ -63,12 +83,9 @@ onMounted(async () => {
     volume.value = video.value.volume
   })
 
-  const response = await (await request(makeDownload(config, props.item, 'api/file/info'))).json()
-
   if (props.item.extras?.thumbnail) {
     thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
   }
-
 
   // -- check if mimetype is video/mp4 and device is apple
   // -- as always apple, apple like to be snowflakes.
@@ -135,6 +152,10 @@ onUnmounted(() => {
 })
 
 const prepareVideoPlayer = () => {
+  if (!infoLoaded.value) {
+    return
+  }
+
   if (false === ("mediaSession" in navigator)) {
     return
   }
