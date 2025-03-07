@@ -121,8 +121,14 @@ class Download:
                 .add(
                     {
                         "color": "no_color",
-                        "paths": {"home": self.download_dir, "temp": self.temp_path},
-                        "outtmpl": {"default": self.template, "chapter": self.template_chapter},
+                        "paths": {
+                            "home": self.download_dir,
+                            "temp": self.temp_path,
+                        },
+                        "outtmpl": {
+                            "default": self.template,
+                            "chapter": self.template_chapter,
+                        },
                         "noprogress": True,
                         "break_on_existing": True,
                         "ignoreerrors": False,
@@ -172,6 +178,11 @@ class Download:
             )
 
             LOG.debug("Params before passing to yt-dlp.", extra=params)
+
+            if "impersonate" in params:
+                from yt_dlp.networking.impersonate import ImpersonateTarget
+
+                params["impersonate"] = ImpersonateTarget.from_str(params["impersonate"])
 
             cls = yt_dlp.YoutubeDL(params=params)
 
