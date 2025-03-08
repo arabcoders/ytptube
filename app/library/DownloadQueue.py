@@ -640,7 +640,7 @@ class DownloadQueue(metaclass=Singleton):
             LOG.debug(f"Pushing {entry=} to executor.")
 
             if entry.started() is False and entry.is_cancelled() is False:
-                await self.pool.push(id=entry.info._id, entry=entry)
+                await self.pool.push(is_temp=entry.is_live, id=entry.info._id, entry=entry)
                 LOG.debug(f"Pushed {entry=} to executor.")
                 await asyncio.sleep(1)
 

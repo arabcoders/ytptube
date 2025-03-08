@@ -35,7 +35,6 @@
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "PYDEVD_DISABLE_FILE_VALIDATION": "1",
-        "YTP_MAX_WORKERS": "2",
         "YTP_IGNORE_UI": "true",
         "YTP_PIP_IGNORE_UPDATES": "true",
         "YTP_LOG_LEVEL": "DEBUG",
