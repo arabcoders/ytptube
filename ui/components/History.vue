@@ -104,7 +104,7 @@
                 <img v-else src="/images/placeholder.png" />
               </span>
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
-                <div class="play-icon"></div>
+                <div class="play-icon embed-icon"></div>
                 <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />

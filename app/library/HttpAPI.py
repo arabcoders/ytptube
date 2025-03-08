@@ -661,20 +661,25 @@ class HttpAPI(Common):
         )
 
     @route("GET", "api/presets")
-    async def presets(self, _: Request) -> Response:
+    async def presets(self, request: Request) -> Response:
         """
         Get the presets.
 
         Args:
-            _: The request object.
+            request (Request): The request object.
 
         Returns:
             Response: The response object.
 
         """
-        return web.json_response(
-            data=Presets.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
-        )
+        data = Presets.get_instance().get_all()
+        filter_fields = request.query.get("filter", None)
+
+        if filter_fields:
+            fields = [field.strip() for field in filter_fields.split(",")]
+            data = [{key: value for key, value in preset.__dict__.items() if key in fields} for preset in data]
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("PUT", "api/presets")
     async def presets_add(self, request: Request) -> Response:

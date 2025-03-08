@@ -614,9 +614,9 @@ class DownloadQueue(metaclass=Singleton):
             while True:
                 if self.pool.has_open_workers() is True:
                     break
-                if self.config.max_workers > 1 and time.time() - lastLog > 120:
+                if self.config.max_workers > 1 and time.time() - lastLog > 600:
                     lastLog = time.time()
-                    LOG.info(f"Waiting for worker to be free. {self.pool.get_workers_status()}")
+                    LOG.info("Waiting for worker to be free.", extra={"workers": self.pool.get_available_workers()})
                 await asyncio.sleep(1)
 
             while not self.queue.has_downloads():
@@ -640,7 +640,7 @@ class DownloadQueue(metaclass=Singleton):
             LOG.debug(f"Pushing {entry=} to executor.")
 
             if entry.started() is False and entry.is_cancelled() is False:
-                await self.pool.push(id=entry.info._id, entry=entry)
+                await self.pool.push(is_temp=entry.is_live, id=entry.info._id, entry=entry)
                 LOG.debug(f"Pushed {entry=} to executor.")
                 await asyncio.sleep(1)
 

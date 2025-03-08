@@ -102,6 +102,26 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PIP_IGNORE_UPDATES   | Do not update the custom pip packages                            | `false`                            |
 | YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
 
+## Bookmarklets and browser extensions
+
+### For simple bookmarklets
+
+```javascript
+javascript:(() => { const url = "https://ytptube.example.org"; const preset = "default"; const mUrl = new URL(url); mUrl.pathname = "/api/history"; fetch(mUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: document.location.href, preset: preset }) }).then(res => alert(res.ok ? "URL sent!" : "Failed to send URL.")); })()
+```
+
+Change the the variable `url` and `preset` variables to match your YTPTube instance and preset name.
+
+### Browser Extensions Store
+
+- For Firefox via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
+- For Chrome/Chromium Browsers via [Chrome Store](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
+
+### iOS Shortcuts
+
+not yet available.
+
+
 ## Running behind a reverse proxy
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
