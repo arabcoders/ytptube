@@ -114,8 +114,8 @@ Change the the variable `url` and `preset` variables to match your YTPTube insta
 
 ### Browser Extensions Store
 
-- For Firefox [Firefox](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
-- For [Chrome/Chromium Browsers](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
+- For Firefox via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
+- For Chrome/Chromium Browsers via [Chrome Store](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 
 ### iOS Shortcuts
 
