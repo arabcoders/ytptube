@@ -86,6 +86,10 @@
             </div>
 
             <div class="card-header-icon">
+              <a v-if="hideThumbnail && 'finished' === item.status" href="#" @click.prevent="playVideo(item)"
+                v-tooltip="'Play video.'">
+                <span class="icon"><i class="fa-solid fa-play" /></span>
+              </a>
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
@@ -118,11 +122,6 @@
           </div>
           <div class="card-content">
             <div class="columns is-mobile is-multiline">
-              <div class="column is-12" v-if="item.live_in">
-                <span class="has-text-info">
-                  Live stream is scheduled to start at {{ moment(item.live_in).format() }}
-                </span>
-              </div>
               <div class="column is-12" v-if="item.error">
                 <span class="has-text-danger">{{ item.error }}</span>
               </div>
@@ -130,36 +129,22 @@
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow">
-                <span v-if="!item.live_in && !item.is_live">
-                  <span class="icon-text">
-                    <span class="icon"
-                      :class="{ 'has-text-success': item.status === 'finished', 'has-text-danger': item.status !== 'finished' }">
-                      <i :class="setIcon(item)" />
-                    </span>
-                    <span v-if="item.status == 'finished' && item.is_live">Live Ended</span>
-                    <span v-else>{{ ucFirst(item.status) }}</span>
-                  </span>
+                <span class="icon-text">
+                  <span class="icon" :class="setIconColor(item)"><i :class="setIcon(item)" /></span>
+                  <span>{{ setStatus(item) }}</span>
                 </span>
-                <span v-else>
-                  <span class="icon-text">
-                    <span class="icon has-text-info">
-                      <i class="fa-solid fa-calendar" />
-                    </span>
-                    <span>Live</span>
-                  </span>
+              </div>
+              <div class="column is-half-mobile has-text-centered is-text-overflow"
+                v-if="item.live_in && 'not_live' === item.status">
+                <span :date-datetime="item.live_in" class="user-hint"
+                  v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                  {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span class="user-hint" :date-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
-                </span>
-              </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow"
-                v-if="item.live_in && item.status != 'finished'">
-                <span :date-datetime="item.live_in"
-                  v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
-                  {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow" v-if="item.file_size">
@@ -400,23 +385,59 @@ const clearIncomplete = () => {
 }
 
 const setIcon = item => {
-  if (item.status === 'finished' && item.is_live) {
-    return 'fa-solid fa-globe'
+  if ('finished' === item.status) {
+    return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
 
-  if (item.status === 'finished') {
-    return 'fa-solid fa-circle-check'
-  }
-
-  if (item.status === 'error') {
+  if ('error' === item.status) {
     return 'fa-solid fa-circle-xmark'
   }
 
-  if (item.status === 'cancelled') {
+  if ('cancelled' === item.status) {
     return 'fa-solid fa-eject'
   }
 
+  if ('not_live' === item.status) {
+    return 'fa-solid fa-hourglass-half fa-spin'
+  }
+
   return 'fa-solid fa-circle'
+}
+
+const setIconColor = item => {
+  if (item.status === 'finished') {
+    return 'has-text-success'
+  }
+
+  if ('not_live' === item.status) {
+    return 'has-text-info'
+  }
+
+  if ('cancelled' === item.status) {
+    return 'has-text-warning'
+  }
+
+  return 'has-text-danger'
+}
+
+const setStatus = item => {
+  if ('finished' === item.status) {
+    return item.is_live ? 'Live Ended' : 'Completed'
+  }
+
+  if ('error' === item.status) {
+    return 'Error'
+  }
+
+  if ('cancelled' === item.status) {
+    return 'User Cancelled'
+  }
+
+  if ('not_live' === item.status) {
+    return 'Live Stream'
+  }
+
+  return item.status
 }
 
 const requeueIncomplete = () => {

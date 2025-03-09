@@ -614,19 +614,24 @@ class HttpAPI(Common):
 
         preset = request.query.get("preset")
         if preset:
-            exists = Presets.get_instance().get(preset)
+            exists = Presets.get_instance().get(name=preset)
             if not exists:
                 return web.json_response(
-                    data={"error": f"Preset '{preset}' does not exist."}, status=web.HTTPBadRequest.status_code
+                    data={"status": False, "message": f"Preset '{preset}' does not exist."},
+                    status=web.HTTPBadRequest.status_code,
                 )
             data["preset"] = preset
 
         try:
             status = await self.add(**self.format_item(data))
         except ValueError as e:
-            return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+            return web.json_response(data={"status": False, "message": str(e)}, status=web.HTTPBadRequest.status_code)
 
-        return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+        return web.json_response(
+            data={"status": status.get("status") == "ok", "message": status.get("msg", "URL added")},
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
 
     @route("POST", "api/history")
     async def history_item_add(self, request: Request) -> Response:

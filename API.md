@@ -171,21 +171,19 @@ or an error:
 **Purpose**: **(Quick Add)** Add a single URL to the download queue via GET.  
 
 **Query Parameters**:
-- `?url=<video-url>`
+- `url=<video-url>`
+- `preset=<preset-name>`
 
 **Response**:
 ```json
 {
-  "status": "(ok|error)",
+  "status": true|false, # true if added to the queue. false otherwise.
+  "message": "..." # the response message.
 }
 ```
-or an error:
-```json
-{
-  "error": "text"
-}
-```
+
 - If `url` is missing, returns `400 Bad Request`.
+- If `preset` is set and not found, returns `404 Not Found`.
 
 ---
 
