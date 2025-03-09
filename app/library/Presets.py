@@ -251,7 +251,7 @@ class Presets(metaclass=Singleton):
 
         try:
             with open(self._file, "w") as f:
-                json.dump(obj=[preset.serialize() for preset in presets], fp=f, indent=4)
+                json.dump(obj=[preset.serialize() for preset in presets if preset.default is False], fp=f, indent=4)
 
             LOG.info(f"Presets saved to '{self._file}'.")
         except Exception as e:
