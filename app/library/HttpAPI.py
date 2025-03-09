@@ -628,7 +628,7 @@ class HttpAPI(Common):
             return web.json_response(data={"status": False, "message": str(e)}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(
-            data={"status": True, "message": "URL added", "item": status},
+            data={"status": status.get("status") == "ok", "message": status.get("msg", "URL added")},
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )
