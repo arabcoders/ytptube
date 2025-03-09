@@ -119,8 +119,15 @@ Change the the variable `url` and `preset` variables to match your YTPTube insta
 
 ### iOS Shortcuts
 
-not yet available.
+You can download [Add To YTPTube](https://www.icloud.com/shortcuts/18b8f70666a04a06aed09424f97ce951) shortcut and use it to send links to your YTPTube instance.
+You have to edit the shortcut and replace the following:
 
+- `https://ytp.example.org` with your YTPTube instance.
+- `username:password` replace this with your own username & password or leave it empty if you don't have authentication enabled.
+
+This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
+Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
+and use that preset to download directly from your iOS device.
 
 ## Running behind a reverse proxy
 
