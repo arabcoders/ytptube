@@ -18,6 +18,7 @@ import httpx
 import magic
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+from yt_dlp.cookies import LenientSimpleCookie
 
 from .cache import Cache
 from .common import Common
@@ -44,7 +45,6 @@ from .Utils import (
     get_file,
     get_mime_type,
     get_sidecar_subtitles,
-    parse_cookies,
     validate_url,
     validate_uuid,
 )
@@ -496,15 +496,17 @@ class HttpAPI(Common):
                     "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
                     "expires": data.get("_cached", {}).get("expires", time.time() + 300),
                 }
-                return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+                return web.Response(body=json.dumps(data, indent=4), status=web.HTTPOk.status_code)
 
             opts = {}
 
             if self.config.ytdl_options.get("proxy", None):
                 opts["proxy"] = self.config.ytdl_options.get("proxy", None)
 
+            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
+
             data = extract_info(
-                config=YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all(),
+                config=ytdlp_opts,
                 url=url,
                 debug=False,
                 no_archive=True,
@@ -513,14 +515,11 @@ class HttpAPI(Common):
 
             if "formats" in data:
                 for index, item in enumerate(data["formats"]):
-                    if "cookies" in item:
-                        cookies = parse_cookies(item["cookies"])
+                    if "cookies" in item and len(item["cookies"]) > 0:
+                        cookies = [f"{c.key}={c.value}" for c in LenientSimpleCookie(item["cookies"]).values()]
                         if len(cookies) > 0:
-                            data["formats"][index]["h_cookies"] = "; ".join(
-                                f"{key}={value}" for key, value in cookies.items()
-                            )
-
-            self.cache.set(key=key, value=data, ttl=300)
+                            data["formats"][index]["h_cookies"] = "; ".join(cookies)
+                            data["formats"][index]["h_cookies"] = data["formats"][index]["h_cookies"].strip()
 
             data["_cached"] = {
                 "status": "miss",
@@ -530,7 +529,9 @@ class HttpAPI(Common):
                 "expires": time.time() + 300,
             }
 
-            return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+            self.cache.set(key=key, value=data, ttl=300)
+
+            return web.Response(body=json.dumps(data, indent=4), status=web.HTTPOk.status_code)
         except Exception as e:
             LOG.error(f"Error encountered while grabbing video info '{url}'. '{e}'.")
             LOG.exception(e)
