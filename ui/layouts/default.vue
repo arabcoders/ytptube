@@ -17,33 +17,45 @@
       <div class="navbar-end is-flex" style="flex-flow:wrap">
 
         <div class="navbar-item is-hidden-tablet">
-          <NuxtLink class="button is-dark has-tooltip-bottom" to="/" v-tooltip.bottom="'Downloads'">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/">
             <span :class="socket.isConnected ? 'has-text-success' : 'has-text-danger'" class="icon">
               <img src="/favicon.ico" /></span>
           </NuxtLink>
         </div>
 
         <div class="navbar-item" v-if="!config.app.basic_mode">
-          <NuxtLink class="button is-dark has-tooltip-bottom" to="/presets" v-tooltip.bottom="'Presets'">
-            <span class="icon"><i class="fa-solid fa-sliders" /></span>
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/presets">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-sliders" /></span>
+              <span class="is-hidden-mobile">Presets</span>
+            </span>
           </NuxtLink>
         </div>
 
         <div class="navbar-item" v-if="!config.app.basic_mode && config.app.console_enabled">
-          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console" v-tooltip.bottom="'Terminal'">
-            <span class="icon"><i class="fa-solid fa-terminal" /></span>
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-terminal" /></span>
+              <span class="is-hidden-mobile">Terminal</span>
+            </span>
           </NuxtLink>
         </div>
 
-        <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Tasks'">
+        <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
-            <span class="icon"><i class="fa-solid fa-tasks" /></span>
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-tasks" /></span>
+              <span class="is-hidden-mobile">Tasks</span>
+            </span>
           </NuxtLink>
         </div>
 
         <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Notifications'">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/notifications">
-            <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
+              <span class="is-hidden-mobile">Notifications</span>
+            </span>
           </NuxtLink>
         </div>
 
