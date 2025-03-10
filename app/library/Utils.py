@@ -30,37 +30,6 @@ class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
 
 
-def get_video_info(url: str, ytdlp_opts: dict | None = None, no_archive: bool = True) -> Any | dict[str, Any] | None:
-    """
-    Extracts video information from the given URL.
-
-    Args:
-        url (str): URL to extract information from.
-        ytdlp_opts (dict): Additional options to pass to yt-dlp.
-        no_archive (bool): Do not use download archive.
-
-    Returns:
-        dict: Video information.
-
-    """
-    params: dict = {
-        "quiet": True,
-        "color": "no_color",
-        "extract_flat": True,
-        "ignoreerrors": True,
-        "skip_download": True,
-        "ignore_no_formats_error": True,
-    }
-
-    if ytdlp_opts:
-        params = {**params, **ytdlp_opts}
-
-    if no_archive and "download_archive" in params:
-        del params["download_archive"]
-
-    return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
-
-
 def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
     """
     Calculates download path and prevents folder traversal.
@@ -93,7 +62,13 @@ def calc_download_path(base_path: str, folder: str | None = None, create_path: b
     return download_path
 
 
-def extract_info(config: dict, url: str, debug: bool = False) -> dict:
+def extract_info(
+    config: dict,
+    url: str,
+    debug: bool = False,
+    no_archive: bool = False,
+    follow_redirect: bool = False,
+) -> dict:
     """
     Extracts video information from the given URL.
 
@@ -101,6 +76,8 @@ def extract_info(config: dict, url: str, debug: bool = False) -> dict:
         config (dict): Configuration options.
         url (str): URL to extract information from.
         debug (bool): Enable debug logging.
+        no_archive (bool): Disable download archive.
+        follow_redirect (bool): Follow URL redirects.
 
     Returns:
         dict: Video information.
@@ -144,7 +121,15 @@ def extract_info(config: dict, url: str, debug: bool = False) -> dict:
 
         params["logger"] = log_wrapper
 
-    return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
+    if no_archive and "download_archive" in params:
+        del params["download_archive"]
+
+    data = yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
+
+    if follow_redirect and "_type" in data and "url" == data["_type"]:
+        return extract_info(config, data["url"], debug=debug, no_archive=no_archive, follow_redirect=follow_redirect)
+
+    return data
 
 
 def merge_dict(source: dict, destination: dict) -> dict:

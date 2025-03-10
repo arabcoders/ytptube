@@ -18,6 +18,7 @@ import httpx
 import magic
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+from yt_dlp.cookies import LenientSimpleCookie
 
 from .cache import Cache
 from .common import Common
@@ -40,13 +41,14 @@ from .Utils import (
     arg_converter,
     decrypt_data,
     encrypt_data,
+    extract_info,
     get_file,
     get_mime_type,
     get_sidecar_subtitles,
-    get_video_info,
     validate_url,
     validate_uuid,
 )
+from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -471,33 +473,65 @@ class HttpAPI(Common):
         except ValueError as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
-        try:
-            key = self.cache.hash(url)
+        preset = request.query.get("preset")
+        if preset:
+            exists = Presets.get_instance().get(name=preset)
+            if not exists:
+                return web.json_response(
+                    data={"status": False, "message": f"Preset '{preset}' does not exist."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+        else:
+            preset = self.config.default_preset
 
-            if self.cache.has(key):
+        try:
+            key = self.cache.hash(url + str(preset))
+
+            if self.cache.has(key) and not request.query.get("force", False):
                 data = self.cache.get(key)
                 data["_cached"] = {
+                    "status": "hit",
                     "key": key,
                     "ttl": data.get("_cached", {}).get("ttl", 300),
                     "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
                     "expires": data.get("_cached", {}).get("expires", time.time() + 300),
                 }
-                return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+                return web.Response(body=json.dumps(data, indent=4), status=web.HTTPOk.status_code)
 
-            opts = {
-                "proxy": self.config.ytdl_options.get("proxy", None),
-            }
+            opts = {}
 
-            data = get_video_info(url=url, ytdlp_opts=opts, no_archive=True)
-            self.cache.set(key=self.cache.hash(url), value=data, ttl=300)
+            if self.config.ytdl_options.get("proxy", None):
+                opts["proxy"] = self.config.ytdl_options.get("proxy", None)
+
+            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
+
+            data = extract_info(
+                config=ytdlp_opts,
+                url=url,
+                debug=False,
+                no_archive=True,
+                follow_redirect=True,
+            )
+
+            if "formats" in data:
+                for index, item in enumerate(data["formats"]):
+                    if "cookies" in item and len(item["cookies"]) > 0:
+                        cookies = [f"{c.key}={c.value}" for c in LenientSimpleCookie(item["cookies"]).values()]
+                        if len(cookies) > 0:
+                            data["formats"][index]["h_cookies"] = "; ".join(cookies)
+                            data["formats"][index]["h_cookies"] = data["formats"][index]["h_cookies"].strip()
+
             data["_cached"] = {
-                "key": self.cache.hash(url),
+                "status": "miss",
+                "key": key,
                 "ttl": 300,
                 "ttl_left": 300,
                 "expires": time.time() + 300,
             }
 
-            return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+            self.cache.set(key=key, value=data, ttl=300)
+
+            return web.Response(body=json.dumps(data, indent=4), status=web.HTTPOk.status_code)
         except Exception as e:
             LOG.error(f"Error encountered while grabbing video info '{url}'. '{e}'.")
             LOG.exception(e)
@@ -505,6 +539,7 @@ class HttpAPI(Common):
                 data={
                     "error": "failed to get video info.",
                     "message": str(e),
+                    "formats": [],
                 },
                 status=web.HTTPInternalServerError.status_code,
             )
@@ -536,17 +571,17 @@ class HttpAPI(Common):
         tasks = []
         response = []
 
-        def get_video_info_wrapper(id: str, url: str) -> tuple[str, dict]:
+        def info_wrapper(id: str, url: str) -> tuple[str, dict]:
             try:
                 return (
                     id,
-                    get_video_info(
-                        url=url,
-                        ytdlp_opts={
+                    extract_info(
+                        config={
                             "proxy": self.config.ytdl_options.get("proxy", None),
                             "simulate": True,
                             "dump_single_json": True,
                         },
+                        url=url,
                         no_archive=True,
                     ),
                 )
@@ -575,9 +610,7 @@ class HttpAPI(Common):
                     continue
 
                 tasks.append(
-                    asyncio.get_event_loop().run_in_executor(
-                        None, lambda id=id, url=url: get_video_info_wrapper(id=id, url=url)
-                    )
+                    asyncio.get_event_loop().run_in_executor(None, lambda id=id, url=url: info_wrapper(id=id, url=url))
                 )
 
         if len(tasks) > 0:
