@@ -40,10 +40,10 @@ from .Utils import (
     arg_converter,
     decrypt_data,
     encrypt_data,
+    extract_info,
     get_file,
     get_mime_type,
     get_sidecar_subtitles,
-    get_video_info,
     validate_url,
     validate_uuid,
 )
@@ -484,11 +484,12 @@ class HttpAPI(Common):
             preset = self.config.default_preset
 
         try:
-            key = self.cache.hash(url+str(preset))
+            key = self.cache.hash(url + str(preset))
 
-            if self.cache.has(key) and not request.query.get("force"):
+            if self.cache.has(key) and not request.query.get("force", False):
                 data = self.cache.get(key)
                 data["_cached"] = {
+                    "status": "hit",
                     "key": key,
                     "ttl": data.get("_cached", {}).get("ttl", 300),
                     "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
@@ -501,16 +502,19 @@ class HttpAPI(Common):
             if self.config.ytdl_options.get("proxy", None):
                 opts["proxy"] = self.config.ytdl_options.get("proxy", None)
 
-            data = get_video_info(
+            data = extract_info(
+                config=YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all(),
                 url=url,
-                ytdlp_opts=YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all(),
+                debug=False,
                 no_archive=True,
+                follow_redirect=True,
             )
 
-            self.cache.set(key=self.cache.hash(url), value=data, ttl=300)
+            self.cache.set(key=key, value=data, ttl=300)
 
             data["_cached"] = {
-                "key": self.cache.hash(url),
+                "status": "miss",
+                "key": key,
                 "ttl": 300,
                 "ttl_left": 300,
                 "expires": time.time() + 300,
@@ -524,6 +528,7 @@ class HttpAPI(Common):
                 data={
                     "error": "failed to get video info.",
                     "message": str(e),
+                    "formats": [],
                 },
                 status=web.HTTPInternalServerError.status_code,
             )
@@ -555,17 +560,17 @@ class HttpAPI(Common):
         tasks = []
         response = []
 
-        def get_video_info_wrapper(id: str, url: str) -> tuple[str, dict]:
+        def info_wrapper(id: str, url: str) -> tuple[str, dict]:
             try:
                 return (
                     id,
-                    get_video_info(
-                        url=url,
-                        ytdlp_opts={
+                    extract_info(
+                        config={
                             "proxy": self.config.ytdl_options.get("proxy", None),
                             "simulate": True,
                             "dump_single_json": True,
                         },
+                        url=url,
                         no_archive=True,
                     ),
                 )
@@ -594,9 +599,7 @@ class HttpAPI(Common):
                     continue
 
                 tasks.append(
-                    asyncio.get_event_loop().run_in_executor(
-                        None, lambda id=id, url=url: get_video_info_wrapper(id=id, url=url)
-                    )
+                    asyncio.get_event_loop().run_in_executor(None, lambda id=id, url=url: info_wrapper(id=id, url=url))
                 )
 
         if len(tasks) > 0:
