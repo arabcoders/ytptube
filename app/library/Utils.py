@@ -58,6 +58,11 @@ def get_video_info(url: str, ytdlp_opts: dict | None = None, no_archive: bool = 
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
+    # Remove keys that are not needed for info extraction.
+    keys_to_remove = [key for key in params if str(key).startswith("write") or key in ["postprocessors"]]
+    for key in keys_to_remove:
+        params.pop(key, None)
+
     return yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
 

@@ -47,6 +47,7 @@ from .Utils import (
     validate_url,
     validate_uuid,
 )
+from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("http_api")
 MIME = magic.Magic(mime=True)
@@ -471,10 +472,21 @@ class HttpAPI(Common):
         except ValueError as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
-        try:
-            key = self.cache.hash(url)
+        preset = request.query.get("preset")
+        if preset:
+            exists = Presets.get_instance().get(name=preset)
+            if not exists:
+                return web.json_response(
+                    data={"status": False, "message": f"Preset '{preset}' does not exist."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+        else:
+            preset = self.config.default_preset
 
-            if self.cache.has(key):
+        try:
+            key = self.cache.hash(url+str(preset))
+
+            if self.cache.has(key) and not request.query.get("force"):
                 data = self.cache.get(key)
                 data["_cached"] = {
                     "key": key,
@@ -484,12 +496,19 @@ class HttpAPI(Common):
                 }
                 return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-            opts = {
-                "proxy": self.config.ytdl_options.get("proxy", None),
-            }
+            opts = {}
 
-            data = get_video_info(url=url, ytdlp_opts=opts, no_archive=True)
+            if self.config.ytdl_options.get("proxy", None):
+                opts["proxy"] = self.config.ytdl_options.get("proxy", None)
+
+            data = get_video_info(
+                url=url,
+                ytdlp_opts=YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all(),
+                no_archive=True,
+            )
+
             self.cache.set(key=self.cache.hash(url), value=data, ttl=300)
+
             data["_cached"] = {
                 "key": self.cache.hash(url),
                 "ttl": 300,
