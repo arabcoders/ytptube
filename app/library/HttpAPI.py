@@ -44,6 +44,7 @@ from .Utils import (
     get_file,
     get_mime_type,
     get_sidecar_subtitles,
+    parse_cookies,
     validate_url,
     validate_uuid,
 )
@@ -509,6 +510,15 @@ class HttpAPI(Common):
                 no_archive=True,
                 follow_redirect=True,
             )
+
+            if "formats" in data:
+                for index, item in enumerate(data["formats"]):
+                    if "cookies" in item:
+                        cookies = parse_cookies(item["cookies"])
+                        if len(cookies) > 0:
+                            data["formats"][index]["h_cookies"] = "; ".join(
+                                f"{key}={value}" for key, value in cookies.items()
+                            )
 
             self.cache.set(key=key, value=data, ttl=300)
 

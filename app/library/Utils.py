@@ -606,3 +606,29 @@ def decrypt_data(data: str, key: bytes) -> str:
         return plaintext.decode()
     except Exception:
         return None
+
+
+def parse_cookies(cookie_str: str) -> dict:
+    """
+    Parse a cookie string into a dictionary."
+
+    Args:
+        cookie_str (str): The cookie string.
+
+    Returns:
+        dict: The parsed cookies.
+
+    """
+    cookie_attributes = {"domain", "path", "expires", "secure", "httponly", "samesite"}
+
+    tokens = cookie_str.split("; ")
+
+    cookies = {}
+
+    for token in tokens:
+        if "=" in token:
+            key, value = token.split("=", 1)
+            if str(key).lower() not in cookie_attributes:
+                cookies[key] = value
+
+    return cookies
