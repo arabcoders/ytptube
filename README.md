@@ -129,6 +129,13 @@ This shortcut is powerful, as it's allow you to select your preset on the fly pu
 Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
 and use that preset to download directly from your iOS device.
 
+#### Advanced iOS Shortcut
+
+This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/6e3db0bd532843e3aec70e6ce211be08) is more advanced, as it's parses
+the `yt-dlp` output and attempt to download the media directly to your iOS device. It doesn't always work, but it's a good
+starting point for those who want to download media directly to their iOS device. We provide no support for this use case
+other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
+
 ## Running behind a reverse proxy
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
