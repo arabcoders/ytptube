@@ -86,10 +86,16 @@
             </div>
 
             <div class="card-header-icon">
-              <a v-if="hideThumbnail && 'finished' === item.status" href="#" @click.prevent="playVideo(item)"
-                v-tooltip="'Play video.'">
-                <span class="icon"><i class="fa-solid fa-play" /></span>
-              </a>
+              <span v-if="hideThumbnail">
+                <a v-if="'finished' === item.status" href="#" @click.prevent="playVideo(item)"
+                  v-tooltip="'Play video.'">
+                  <span class="icon"><i class="fa-solid fa-play" /></span>
+                </a>
+                <a v-else-if="isEmbedable(item.url)" href="#" @click.prevent="embed_url = getEmbedable(item.url)"
+                  v-tooltip="'Play video.'">
+                  <span class="icon"><i class="fa-solid fa-play" /></span>
+                </a>
+              </span>
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
