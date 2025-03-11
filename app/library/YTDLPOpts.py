@@ -82,8 +82,7 @@ class YTDLPOpts(metaclass=Singleton):
 
             self._preset_opts["cookiefile"] = str(file)
 
-        if preset.format:
-            self._preset_opts["format"] = preset.format
+        self._preset_opts["format"] = preset.format
 
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
@@ -128,5 +127,8 @@ class YTDLPOpts(metaclass=Singleton):
         if not keep:
             self.presets_opts = {}
             self._item_opts = {}
+
+        if "format" in data and "not_set" == data["format"]:
+            data["format"] = None
 
         return data
