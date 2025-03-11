@@ -111,7 +111,8 @@
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
                         href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
-                        url</NuxtLink> for more info.</span>
+                        url</NuxtLink> for more info.</span>. Note, as this key is required, you can set the value to <code>not_set</code>
+                        to use the default yt-dlp format.
                   </span>
                 </div>
               </div>
