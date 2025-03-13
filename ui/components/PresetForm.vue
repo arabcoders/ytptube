@@ -4,21 +4,21 @@
       <h1 class="is-pointer is-unselectable title is-5" @click="importExpanded = !importExpanded">
         <span class="icon-text">
           <span class="icon"><i class="fa-solid" :class="importExpanded ? 'fa-arrow-up' : 'fa-arrow-down'" /></span>
-          <span>Import preset from JSON string.</span>
+          <span>Import preset.</span>
         </span>
       </h1>
 
       <form id="importForm" @submit.prevent="importPreset()" v-if="importExpanded">
         <div class="box">
           <label class="label" for="json_preset">
-            JSON encoded preset.
+            Base64 encoded JSON string.
           </label>
 
           <div class="field has-addons">
 
             <div class="control has-icons-left is-expanded">
-              <input type="text" class="input" id="json_preset" v-model="json_preset">
-              <span class="icon is-small is-left"><i class="fa-solid fa-j" /></span>
+              <input type="text" class="input" id="json_preset" v-model="json_preset" autocomplete="off">
+              <span class="icon is-small is-left"><i class="fa-solid fa-t" /></span>
             </div>
 
             <div class="control">
@@ -41,7 +41,7 @@
         </span>
       </h1>
 
-      <form id="convertOpts" @submit.prevent="convertOptions()" v-if="convertExpanded">
+      <form autocomplete="off" id="convertOpts" @submit.prevent="convertOptions()" v-if="convertExpanded">
         <div class="box">
 
           <label class="label" for="opts">
@@ -111,8 +111,9 @@
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
                         href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
-                        url</NuxtLink> for more info.</span>. Note, as this key is required, you can set the value to <code>not_set</code>
-                        to use the default yt-dlp format.
+                        url</NuxtLink> for more info.</span>. Note, as this key is required, you can set the value to
+                    <code>not_set</code>
+                    to use the default yt-dlp format.
                   </span>
                 </div>
               </div>
@@ -395,18 +396,29 @@ const convertOptions = async () => {
 }
 
 const importPreset = async () => {
-  if (!json_preset) {
+  let val = json_preset.value.trim()
+  if (!val) {
+    toast.error('The preset import string is required.')
     return
   }
 
-  if (form.format || form.args || form.postprocessors) {
-    if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+  if (false === val.startsWith('{')) {
+    try {
+      val = base64UrlDecode(val)
+    } catch (e) {
+      toast.error('Invalid base64 string.', e)
       return
     }
   }
 
   try {
-    const preset = JSON.parse(json_preset.value)
+    const preset = JSON.parse(val)
+
+    if (form.format || form.args || form.postprocessors) {
+      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+        return
+      }
+    }
 
     if (preset.name) {
       form.name = preset.name
@@ -425,16 +437,17 @@ const importPreset = async () => {
     }
 
     if (preset.output_template) {
-      form.template = response.output_template
+      form.template = preset.output_template
     }
 
     if (preset.folder) {
-      form.folder = response.folder
+      form.folder = preset.folder
     }
 
     json_preset.value = ''
-
+    importExpanded.value = false
   } catch (e) {
+    console.error(e)
     toast.error(`Failed to import preset. ${e.message}`)
   }
 }

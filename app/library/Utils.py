@@ -608,3 +608,83 @@ def decrypt_data(data: str, key: bytes) -> str:
         return plaintext.decode()
     except Exception:
         return None
+
+
+def get(
+    data: dict | list,
+    path: str | list | None = None,
+    default: any = None,
+    separator=".",
+):
+    """
+    Access data in a nested dictionary or list using a path string or list of keys.
+
+    Args:
+        data (dict | list): The data to traverse.
+        path (str | list, optional): The path to the desired data. Defaults to None.
+        default (any, optional): The default value to return if the path is not found. Defaults to None.
+        separator (str, optional): The separator used to split the path string. Defaults to ".".
+
+    Returns:
+        any: The value at the specified path, or the default value if not found.
+
+    """
+    # If path is empty, return the entire data.
+    if not path:
+        return data
+
+    # If data is not a dict or list, attempt to convert it (similar to PHP's get_object_vars).
+    if not isinstance(data, dict | list):
+        try:
+            data = vars(data)
+        except Exception:
+            pass
+
+    # If path is a list, try each key in order.
+    if isinstance(path, list):
+        for key in path:
+            val = get(data, key, "__not_set", separator)
+            if val != "__not_set":
+                return val
+
+        return default() if callable(default) else default
+
+    # For non-list path, attempt a direct lookup.
+    if isinstance(data, dict):
+        if path in data and data[path] is not None:
+            return data[path]
+    elif isinstance(data, list):
+        # If path is an integer index.
+        if isinstance(path, int):
+            if 0 <= path < len(data) and data[path] is not None:
+                return data[path]
+        # If path is a numeric string, convert it.
+        elif isinstance(path, str) and path.isdigit():
+            idx = int(path)
+            if 0 <= idx < len(data) and data[idx] is not None:
+                return data[idx]
+
+    # If path doesn't contain the separator, return the default.
+    if not (isinstance(path, str) and separator in path):
+        return default() if callable(default) else default
+
+    # Split the path by the separator and traverse the data structure.
+    segments = path.split(separator)
+    for segment in segments:
+        if isinstance(data, dict):
+            if segment in data:
+                data = data[segment]
+            else:
+                return default() if callable(default) else default
+        elif isinstance(data, list):
+            try:
+                idx = int(segment)
+            except ValueError:
+                return default() if callable(default) else default
+            if 0 <= idx < len(data):
+                data = data[idx]
+            else:
+                return default() if callable(default) else default
+        else:
+            return default() if callable(default) else default
+    return data

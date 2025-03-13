@@ -1,7 +1,7 @@
 <template>
   <main class="columns mt-2">
     <div class="column">
-      <form @submit.prevent="addDownload">
+      <form autocomplete="off" @submit.prevent="addDownload">
         <div class="box">
           <div class="columns is-multiline is-mobile">
             <div class="column is-12">
@@ -82,7 +82,8 @@
                 <label class="label is-inline" for="ytdlpConfig"
                   v-tooltip="'Extends current global yt-dlp config. (JSON)'">
                   JSON yt-dlp config or CLI options.
-                  <NuxtLink v-if="ytdlpConfig && ytdlpConfig.trim() && !ytdlpConfig.trim().startsWith('{')" @click="convertOptions()">
+                  <NuxtLink v-if="ytdlpConfig && ytdlpConfig.trim() && !ytdlpConfig.trim().startsWith('{')"
+                    @click="convertOptions()">
                     Convert to JSON
                   </NuxtLink>
                 </label>
