@@ -402,6 +402,32 @@ const convertCliOptions = async opts => {
   return data
 }
 
+/**
+ * URL Safe Base64 Encode.
+ *
+ * @param {String} data The data to encode
+ *
+ * @returns {String} The encoded data
+ */
+const base64UrlEncode = data => btoa(data).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+/**
+ * URL Safe Base64 Decode.
+ *
+ * @param {String} input The input string to decode
+ *
+ * @returns {String} The decoded data
+ */
+const base64UrlDecode = input => {
+  let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = base64.length % 4;
+  if (pad) {
+    base64 += '='.repeat(4 - pad);
+  }
+
+  return atob(base64);
+}
+
 export {
   ag_set,
   ag,
@@ -424,4 +450,6 @@ export {
   makeDownload,
   formatBytes,
   convertCliOptions,
+  base64UrlEncode,
+  base64UrlDecode,
 }
