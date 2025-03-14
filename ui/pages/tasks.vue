@@ -387,7 +387,7 @@ const exportItem = async item => {
     }
   }
   const defaults = ['default', 'not_set']
-  if (preset.format && !defaults.includes(info.format)) {
+  if (preset.format && !defaults.includes(preset.format)) {
     args.format = preset.format
   }
 
