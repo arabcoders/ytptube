@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import logging
 import os
@@ -422,7 +423,15 @@ class DownloadQueue(metaclass=Singleton):
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
-                    None, extract_info, yt_conf, url, bool(self.config.ytdl_debug)
+                    None,
+                    functools.partial(
+                        extract_info,
+                        config=yt_conf,
+                        url=url,
+                        debug=bool(self.config.ytdl_debug),
+                        no_archive=False,
+                        follow_redirect=True,
+                    ),
                 ),
                 timeout=self.config.extract_info_timeout,
             )

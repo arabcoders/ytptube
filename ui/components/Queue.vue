@@ -191,6 +191,10 @@ const setIcon = item => {
     return 'fa-solid fa-circle-check';
   }
 
+  if ('postprocessing' === item.status) {
+    return 'fa-solid fa-cog fa-spin';
+  }
+
   if (null === item.status && true === config.paused) {
     return 'fa-solid fa-pause-circle';
   }
@@ -237,6 +241,10 @@ const updateProgress = (item) => {
 
   if (null === item.status && true === config.paused) {
     return 'Paused';
+  }
+
+  if ('postprocessing' === item.status) {
+    return 'Post-processors are running.';
   }
 
   if ('preparing' === item.status) {

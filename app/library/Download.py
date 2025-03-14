@@ -100,6 +100,8 @@ class Download:
 
     def _postprocessor_hook(self, data: dict):
         if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
+            dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+            self.status_queue.put({"id": self.id, **dataDict, "status": "postprocessing"})
             return
 
         if self.debug:
@@ -117,6 +119,7 @@ class Download:
             params = (
                 YTDLPOpts.get_instance()
                 .preset(self.preset)
+                .add({"break_on_existing": True})
                 .add(self.ytdl_opts, from_user=True)
                 .add(
                     {
@@ -130,7 +133,6 @@ class Download:
                             "chapter": self.template_chapter,
                         },
                         "noprogress": True,
-                        "break_on_existing": True,
                         "ignoreerrors": False,
                     },
                     from_user=False,
