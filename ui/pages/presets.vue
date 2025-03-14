@@ -58,8 +58,8 @@ div.is-centered {
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Export preset.'" @click.prevent="copyItem(item)">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                  <a class="has-text-primary" v-tooltip="'Export preset.'" @click.prevent="exportItem(item)">
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid" :class="{
@@ -116,12 +116,11 @@ div.is-centered {
           v-if="!presets || presets.length < 1" />
       </div>
     </div>
-    <div class="column is-12">
+    <div class="column is-12" v-if="presets && presets.length > 0 && !toggleForm">
       <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
         <ul>
           <li>
-            When you export the preset, it doesn't include <code>Cookies</code> field for security reasons. The exported
-            string is URL safe base64 encoded JSON string.
+            When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
           </li>
         </ul>
       </Message>
@@ -285,10 +284,10 @@ const editItem = (item) => {
 
 onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""));
 
-const copyItem = (item) => {
+const exportItem = item => {
   let data = JSON.parse(JSON.stringify(item));
   const keys = ["id", "default", "raw", "cookies"];
-  keys.forEach((key) => {
+  keys.forEach(key => {
     if (key in data) {
       delete data[key];
     }
@@ -310,6 +309,9 @@ const copyItem = (item) => {
     }
     userData[key] = data[key];
   }
+
+  userData['_type'] = 'preset';
+  userData['_version'] = '1.0'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)));
 };

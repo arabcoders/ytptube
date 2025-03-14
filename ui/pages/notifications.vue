@@ -66,9 +66,8 @@ div.is-centered {
                   <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
-                  <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'"
-                    @click.prevent="copyText(item.request.url)">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                  <a class="has-text-primary" v-tooltip="'Export target.'" @click.prevent="exportItem(item)">
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid"
@@ -84,7 +83,7 @@ div.is-centered {
                   </p>
                   <p v-if="item.request?.headers && item.request.headers.length > 0">
                     <span class="icon"><i class="fa-solid fa-heading" /></span>
-                    <span>{{ item.request.headers.map(h => h.key).join(', ') }}</span>
+                    <span>{{item.request.headers.map(h => h.key).join(', ')}}</span>
                   </p>
                 </div>
               </div>
@@ -116,6 +115,19 @@ div.is-centered {
         </Message>
       </div>
     </div>
+
+    <div class="column is-12" v-if="notifications && notifications.length > 0 && !toggleForm">
+      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
+        <ul>
+          <li>
+            When you export notification target, We remove <code>Authorization</code> header key by default,
+            However this might not be enough to remove credentials from the exported data. it's your responsibility
+            to ensure that the exported data does not contain any sensitive information for sharing.
+          </li>
+        </ul>
+      </Message>
+    </div>
+
   </div>
 </template>
 
@@ -301,4 +313,23 @@ const sendTest = async () => {
 
 onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
 
+const exportItem = async item => {
+  let data = JSON.parse(JSON.stringify(item))
+  const keys = ['id', 'raw']
+  keys.forEach(k => {
+    if (data.hasOwnProperty(k)) {
+      delete data[k]
+    }
+  })
+
+  // -- Remove authorization headers
+  if (data.request?.headers && data.request.headers.length > 0) {
+    data.request.headers = data.request.headers.filter(h => h.key.toLowerCase() !== 'authorization')
+  }
+
+  data['_type'] = 'notification'
+  data['_version'] = '1.0'
+
+  return copyText(base64UrlEncode(JSON.stringify(data)));
+}
 </script>

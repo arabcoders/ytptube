@@ -39,8 +39,8 @@ div.is-centered {
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            The task runner is simply queuing given urls at the specified time. It's basically doing what you are doing
-            when you click the add button on the WebGUI, this just fancy way to automate that.
+            The task runner is simple queue system that allows you to schedule downloads. The tasks are run at the
+            scheduled time.
           </span>
         </div>
       </div>
@@ -59,9 +59,8 @@ div.is-centered {
                   <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
-                  <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'"
-                    @click.prevent="copyText(item.url)">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                  <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid"
@@ -121,12 +120,23 @@ div.is-centered {
           icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
       </div>
     </div>
+    <div class="column is-12" v-if="tasks && tasks.length > 0 && !toggleForm">
+      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
+        <ul>
+          <li>
+            When you export task, the preset settings is automatically merged into the task and the preset set to
+            <code>default</code> to be more portable. The exporter doesn't include <code>Cookies</code> field for
+            security reasons.
+          </li>
+        </ul>
+      </Message>
+    </div>
   </div>
 </template>
 
 <script setup>
 import moment from 'moment'
-import { parseExpression } from 'cron-parser'
+import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
 
 const toast = useToast()
@@ -293,7 +303,7 @@ onMounted(async () => {
 
 const tryParse = expression => {
   try {
-    return moment(parseExpression(expression).next().toISOString()).fromNow()
+    return moment(CronExpressionParser.parse(expression).next().toISOString()).fromNow()
   } catch (e) {
     return "Invalid"
   }
@@ -346,5 +356,73 @@ const statusHandler = async stream => {
     toast.error(msg)
     return
   }
+}
+
+const exportItem = async item => {
+  let preset = config.presets.find(p => p.name === item.preset)
+  if (!preset) {
+    toast.error('Preset not found.')
+    return
+  }
+
+  const info = JSON.parse(JSON.stringify(item))
+  preset = JSON.parse(JSON.stringify(preset))
+
+  let data = {
+    name: info.name,
+    url: info.url,
+    preset: 'default',
+    timer: info.timer,
+    folder: info.folder,
+    template: info.template,
+    config: info.config,
+  }
+
+  // -- merge preset options with task args.
+  let args = {}
+
+  if (preset.args && Object.keys(preset.args).length > 0) {
+    for (const key of Object.keys(preset.args)) {
+      args[key] = preset.args[key]
+    }
+  }
+  const defaults = ['default', 'not_set']
+  if (preset.format && !defaults.includes(preset.format)) {
+    args.format = preset.format
+  }
+
+  if (preset.postprocessors && preset.postprocessors.length > 0) {
+    args.postprocessors = preset.postprocessors
+  }
+
+  if (preset.folder && !info.folder) {
+    data.folder = preset.folder
+  }
+
+  if (preset.template && !info.template) {
+    data.template = preset.template
+  }
+
+  if (!data.config || Object.keys(data.config).length < 1) {
+    data.config = {}
+  }
+
+  for (const key of Object.keys(args)) {
+    if (key in data.config && Array.isArray(args[key]) && Array.isArray(data.config[key])) {
+      data.config[key] = data.config[key].concat(args[key])
+      continue
+    }
+
+    if (data?.config[key]) {
+      continue
+    }
+
+    data.config[key] = args[key]
+  }
+
+  data['_type'] = 'task'
+  data['_version'] = '1.1'
+
+  return copyText(base64UrlEncode(JSON.stringify(data)));
 }
 </script>

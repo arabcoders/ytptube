@@ -129,7 +129,7 @@ class YTDLPOpts(metaclass=Singleton):
             self.presets_opts = {}
             self._item_opts = {}
 
-        if "format" in data and "not_set" == data["format"]:
+        if "format" in data and data["format"] in ["not_set", "default"]:
             data["format"] = None
 
         return data
