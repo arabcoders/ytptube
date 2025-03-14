@@ -119,6 +119,7 @@ class Download:
             params = (
                 YTDLPOpts.get_instance()
                 .preset(self.preset)
+                .add({"break_on_existing": True})
                 .add(self.ytdl_opts, from_user=True)
                 .add(
                     {
@@ -132,7 +133,6 @@ class Download:
                             "chapter": self.template_chapter,
                         },
                         "noprogress": True,
-                        "break_on_existing": True,
                         "ignoreerrors": False,
                     },
                     from_user=False,
