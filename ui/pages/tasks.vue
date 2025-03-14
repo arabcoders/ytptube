@@ -39,8 +39,8 @@ div.is-centered {
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            The task runner is simply queuing given urls at the specified time. It's basically doing what you are doing
-            when you click the add button on the WebGUI, this just fancy way to automate that.
+            The task runner is simple queue system that allows you to schedule downloads. The tasks are run at the
+            scheduled time.
           </span>
         </div>
       </div>
@@ -59,8 +59,7 @@ div.is-centered {
                   <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
-                  <a :href="item.url" class="has-text-primary" v-tooltip="'Export task.'"
-                    @click.prevent="exportTask(item)">
+                  <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
@@ -121,7 +120,7 @@ div.is-centered {
           icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
       </div>
     </div>
-    <div class="column is-12">
+    <div class="column is-12" v-if="tasks && tasks.length > 0 && !toggleForm">
       <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
         <ul>
           <li>
@@ -137,7 +136,7 @@ div.is-centered {
 
 <script setup>
 import moment from 'moment'
-import { parseExpression } from 'cron-parser'
+import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
 
 const toast = useToast()
@@ -304,7 +303,7 @@ onMounted(async () => {
 
 const tryParse = expression => {
   try {
-    return moment(parseExpression(expression).next().toISOString()).fromNow()
+    return moment(CronExpressionParser.parse(expression).next().toISOString()).fromNow()
   } catch (e) {
     return "Invalid"
   }
@@ -359,14 +358,14 @@ const statusHandler = async stream => {
   }
 }
 
-const exportTask = async task => {
-  let preset = config.presets.find(p => p.name === task.preset)
+const exportItem = async item => {
+  let preset = config.presets.find(p => p.name === item.preset)
   if (!preset) {
     toast.error('Preset not found.')
     return
   }
 
-  const info = JSON.parse(JSON.stringify(task))
+  const info = JSON.parse(JSON.stringify(item))
   preset = JSON.parse(JSON.stringify(preset))
 
   let data = {
@@ -420,6 +419,9 @@ const exportTask = async task => {
 
     data.config[key] = args[key]
   }
+
+  data['_type'] = 'task'
+  data['_version'] = '1.0'
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }

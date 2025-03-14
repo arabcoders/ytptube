@@ -360,7 +360,10 @@ class Notification(metaclass=Singleton):
                 method=target.get("request", {}).get("method", "POST"),
                 url=target.get("request", {}).get("url"),
                 headers=[
-                    TargetRequestHeader(key=h.get("key"), value=h.get("value"))
+                    TargetRequestHeader(
+                        key=str(h.get("key", "")).strip(),
+                        value=str(h.get("value", "")).strip(),
+                    )
                     for h in target.get("request", {}).get("headers", [])
                 ],
             ),
