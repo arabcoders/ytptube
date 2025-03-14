@@ -100,6 +100,8 @@ class Download:
 
     def _postprocessor_hook(self, data: dict):
         if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
+            dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+            self.status_queue.put({"id": self.id, **dataDict, "status": "postprocessing"})
             return
 
         if self.debug:
