@@ -1,7 +1,41 @@
 <template>
-  <main class="columns mt-2">
-    <div class="column">
-      <form id="taskForm" @submit.prevent="checkInfo()" class="box">
+  <main class="columns mt-2 is-multiline">
+
+    <div class="column is-12">
+      <h1 class="is-pointer is-unselectable title is-5" @click="importExpanded = !importExpanded">
+        <span class="icon-text">
+          <span class="icon"><i class="fa-solid" :class="importExpanded ? 'fa-arrow-up' : 'fa-arrow-down'" /></span>
+          <span>Import task.</span>
+        </span>
+      </h1>
+
+      <form id="importForm" @submit.prevent="importTask()" v-if="importExpanded">
+        <div class="box">
+          <label class="label" for="import_string">
+            Base64 encoded JSON string.
+          </label>
+
+          <div class="field has-addons">
+
+            <div class="control has-icons-left is-expanded">
+              <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
+              <span class="icon is-small is-left"><i class="fa-solid fa-t" /></span>
+            </div>
+
+            <div class="control">
+              <button form="importForm" class="button is-primary" :disabled="!import_string" type="submit">
+                <span class="icon"><i class="fa-solid fa-add" /></span>
+                <span>Import</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="column is-12">
+      <form autocomplete="off" id="taskForm" @submit.prevent="checkInfo()" class="box">
         <div class="columns is-multiline is-mobile">
           <div class="column is-12">
             <h1 class="title is-6" style="border-bottom: 1px solid #dbdbdb;">
@@ -36,23 +70,6 @@
               <span class="help">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
                 <span>The channel or playlist URL.</span>
-              </span>
-            </div>
-          </div>
-
-          <div class="column is-6-tablet is-12-mobile">
-            <div class="field">
-              <label class="label is-inline" for="folder">
-                Download path
-              </label>
-              <div class="control has-icons-left">
-                <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
-                  v-model="form.folder" :disabled="addInProgress" list="folders">
-                <span class="icon is-small is-left"><i class="fa-solid fa-folder" /></span>
-              </div>
-              <span class="help">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Downloads are relative to download path, defaults to root path if not set.</span>
               </span>
             </div>
           </div>
@@ -100,6 +117,23 @@
                   minute. For more information on CRON expressions, see <NuxtLink to="https://crontab.guru/"
                     target="_blank">crontab.guru</NuxtLink>.
                 </span>
+              </span>
+            </div>
+          </div>
+
+          <div class="column is-6-tablet is-12-mobile" v-if="showAdvanced">
+            <div class="field">
+              <label class="label is-inline" for="folder">
+                Download path
+              </label>
+              <div class="control has-icons-left">
+                <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
+                  v-model="form.folder" :disabled="addInProgress" list="folders">
+                <span class="icon is-small is-left"><i class="fa-solid fa-folder" /></span>
+              </div>
+              <span class="help">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span>Downloads are relative to download path, defaults to root path if not set.</span>
               </span>
             </div>
           </div>
@@ -179,7 +213,7 @@
               <p class="control">
                 <button class="button is-info" type="button" @click="showAdvanced = !showAdvanced">
                   <span class="icon"><i class="fa-solid fa-cog" /></span>
-                  <span>Opts</span>
+                  <span>Advanced</span>
                 </button>
               </p>
             </div>
@@ -196,13 +230,14 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import { parseExpression } from 'cron-parser'
-import { request } from '~/utils/index'
 
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
 const config = useConfigStore();
 const convertInProgress = ref(false);
 const showAdvanced = useStorage('task.showAdvanced', false);
+const importExpanded = ref(false);
+const import_string = ref('');
 
 const props = defineProps({
   reference: {
@@ -311,4 +346,66 @@ const hasFormatInConfig = computed(() => {
     return false
   }
 })
+
+const importTask = async () => {
+  let val = import_string.value.trim()
+  if (!val) {
+    toast.error('The preset import string is required.')
+    return
+  }
+
+  if (false === val.startsWith('{')) {
+    try {
+      val = base64UrlDecode(val)
+    } catch (e) {
+      console.error(e)
+      toast.error('Invalid base64 string.')
+      return
+    }
+  }
+
+  try {
+    const task = JSON.parse(val)
+
+    if (form.config || form.url || form.timer) {
+      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+        return
+      }
+    }
+
+    if (task.name) {
+      form.name = task.name
+    }
+
+    if (task.url) {
+      form.url = task.url
+    }
+
+    if (task.preset) {
+      form.preset = task.preset
+    }
+
+    if (task.timer) {
+      form.timer = task.timer
+    }
+
+    if (task.folder) {
+      form.folder = task.folder
+    }
+
+    if (task.template) {
+      form.template = task.template
+    }
+
+    if (task.config) {
+      form.config = JSON.stringify(task.config, null, 2)
+    }
+
+    import_string.value = ''
+    importExpanded.value = false
+  } catch (e) {
+    console.error(e)
+    toast.error(`Failed to import task. ${e.message}`)
+  }
+}
 </script>

@@ -59,9 +59,9 @@ div.is-centered {
                   <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
-                  <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'"
-                    @click.prevent="copyText(item.url)">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                  <a :href="item.url" class="has-text-primary" v-tooltip="'Export task.'"
+                    @click.prevent="exportTask(item)">
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid"
@@ -120,6 +120,17 @@ div.is-centered {
         <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
           icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
       </div>
+    </div>
+    <div class="column is-12">
+      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
+        <ul>
+          <li>
+            When you export task, the preset settings is automatically merged into the task and the preset set to
+            <code>default</code> to be more portable. The exporter doesn't include <code>Cookies</code> field for
+            security reasons.
+          </li>
+        </ul>
+      </Message>
     </div>
   </div>
 </template>
@@ -346,5 +357,70 @@ const statusHandler = async stream => {
     toast.error(msg)
     return
   }
+}
+
+const exportTask = async task => {
+  let preset = config.presets.find(p => p.name === task.preset)
+  if (!preset) {
+    toast.error('Preset not found.')
+    return
+  }
+
+  const info = JSON.parse(JSON.stringify(task))
+  preset = JSON.parse(JSON.stringify(preset))
+
+  let data = {
+    name: info.name,
+    url: info.url,
+    preset: 'default',
+    timer: info.timer,
+    folder: info.folder,
+    template: info.template,
+    config: info.config,
+  }
+
+  // -- merge preset options with task args.
+  let args = {}
+
+  if (preset.args && Object.keys(preset.args).length > 0) {
+    for (const key of Object.keys(preset.args)) {
+      args[key] = preset.args[key]
+    }
+  }
+
+  if (preset.format !== 'not_set' && preset.format) {
+    args.format = preset.format
+  }
+
+  if (preset.postprocessors && preset.postprocessors.length > 0) {
+    args.postprocessors = preset.postprocessors
+  }
+
+  if (preset.folder && !info.folder) {
+    data.folder = preset.folder
+  }
+
+  if (preset.template && !info.template) {
+    data.template = preset.template
+  }
+
+  if (!data.config || Object.keys(data.config).length < 1) {
+    data.config = {}
+  }
+
+  for (const key of Object.keys(args)) {
+    if (key in data.config && Array.isArray(args[key]) && Array.isArray(data.config[key])) {
+      data.config[key] = data.config[key].concat(args[key])
+      continue
+    }
+
+    if (data?.config[key]) {
+      continue
+    }
+
+    data.config[key] = args[key]
+  }
+
+  return copyText(base64UrlEncode(JSON.stringify(data)));
 }
 </script>

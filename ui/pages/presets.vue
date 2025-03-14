@@ -59,7 +59,7 @@ div.is-centered {
                 <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
                   <a class="has-text-primary" v-tooltip="'Export preset.'" @click.prevent="copyItem(item)">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid" :class="{
@@ -120,8 +120,7 @@ div.is-centered {
       <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
         <ul>
           <li>
-            When you export the preset, it doesn't include <code>Cookies</code> field for security reasons. The exported
-            string is URL safe base64 encoded JSON string.
+            When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
           </li>
         </ul>
       </Message>

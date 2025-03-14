@@ -44,6 +44,19 @@
       }
     },
     {
+      "name": "Node: Generate UI",
+      "request": "launch",
+      "runtimeArgs": [
+        "run",
+        "generate"
+      ],
+      "runtimeExecutable": "yarn",
+      "type": "node",
+      "cwd": "${workspaceFolder}/ui",
+      "console": "internalConsole",
+      "outputCapture": "std",
+    },
+    {
       "name": "Python: main.py (Deep)",
       "type": "debugpy",
       "request": "launch",
