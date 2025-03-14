@@ -386,8 +386,8 @@ const exportItem = async item => {
       args[key] = preset.args[key]
     }
   }
-
-  if (preset.format !== 'not_set' && preset.format) {
+  const defaults = ['default', 'not_set']
+  if (preset.format && !defaults.includes(info.format)) {
     args.format = preset.format
   }
 
@@ -421,7 +421,7 @@ const exportItem = async item => {
   }
 
   data['_type'] = 'task'
-  data['_version'] = '1.0'
+  data['_version'] = '1.1'
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }

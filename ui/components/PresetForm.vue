@@ -113,8 +113,7 @@
                     <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
                         href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
                         url</NuxtLink> for more info.</span>. Note, as this key is required, you can set the value to
-                    <code>not_set</code>
-                    to use the default yt-dlp format.
+                    <code>default</code> to let <code>yt-dlp</code> choose the best format.
                   </span>
                 </div>
               </div>
@@ -223,19 +222,19 @@
 
           <div class="card-footer">
             <div class="card-footer-item">
-                <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                  :class="{ 'is-loading': addInProgress }" form="presetForm">
-                  <span class="icon"><i class="fa-solid fa-save" /></span>
-                  <span>Save</span>
-                </button>
-              </div>
-              <div class="card-footer-item">
-                <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
-                  type="button">
-                  <span class="icon"><i class="fa-solid fa-times" /></span>
-                  <span>Cancel</span>
-                </button>
-              </div>
+              <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
+                :class="{ 'is-loading': addInProgress }" form="presetForm">
+                <span class="icon"><i class="fa-solid fa-save" /></span>
+                <span>Save</span>
+              </button>
+            </div>
+            <div class="card-footer-item">
+              <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
+                type="button">
+                <span class="icon"><i class="fa-solid fa-times" /></span>
+                <span>Cancel</span>
+              </button>
+            </div>
           </div>
         </div>
       </form>
