@@ -20,6 +20,7 @@
     "dotenv",
     "finaldir",
     "getpid",
+    "gpac",
     "httpx",
     "levelno",
     "libcurl",
