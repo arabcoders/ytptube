@@ -17,22 +17,24 @@ from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .YTDLPOpts import YTDLPOpts
 
+LOG = logging.getLogger("Download")
 
-class DebugPreProcessor(logging.Filter):
-    def filter(self, record: logging.LogRecord):
-        if record.levelno != logging.DEBUG:
-            return True
 
-        if record.__dict__.get("processed", None):
-            return True
+class NestedLogger:
+    debug_messages = ["[debug] ", "[download] "]
 
-        logging.getLogger(record.name).log(
-            level=logging.DEBUG if record.msg.startswith("") else logging.INFO,
-            msg=re.sub(r"^\[.*\] ", "", record.msg),
-            extra={"processed": True},
-        )
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
 
-        return False
+    def debug(self, msg: str):
+        levelno = logging.DEBUG if any(msg.startswith(x) for x in self.debug_messages) else logging.INFO
+        self.logger.log(level=levelno, msg=re.sub(r"^\[(debug|info)\] ", "", msg, flags=re.IGNORECASE))
+
+    def error(self, msg):
+        self.logger.error(msg)
+
+    def warning(self, msg):
+        self.logger.warning(msg)
 
 
 class Download:
@@ -82,7 +84,7 @@ class Download:
     temp_keep: bool = False
     "Keep temp folder after download."
 
-    def __init__(self, info: ItemDTO, info_dict: dict = None, debug: bool = False):
+    def __init__(self, info: ItemDTO, info_dict: dict = None):
         config = Config.get_instance()
 
         self.download_dir = info.download_dir
@@ -94,7 +96,8 @@ class Download:
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
-        self.debug = debug
+        self.debug = bool(config.debug)
+        self.debug_ytdl = bool(config.ytdl_debug)
         self.cancelled = False
         self.tmpfilename = None
         self.status_queue = None
@@ -106,8 +109,6 @@ class Download:
         self.is_manifestless = "is_manifestless" in self.info.options and self.info.options["is_manifestless"] is True
         self.info_dict = info_dict
         self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
-        self.ytdlp_logger = logging.getLogger(f"ytdlp.{info.id if info.id else info._id}")
-        self.ytdlp_logger.addFilter(DebugPreProcessor())
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -118,13 +119,13 @@ class Download:
         self.status_queue.put({"id": self.id, **dataDict})
 
     def _postprocessor_hook(self, data: dict):
+        if self.debug:
+            self.logger.debug(f"Postprocessor hook: {data}")
+
         if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
             dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
             self.status_queue.put({"id": self.id, **dataDict, "status": "postprocessing"})
             return
-
-        if self.debug:
-            self.logger.debug(f"Postprocessor hook: {data}")
 
         if "__finaldir" in data["info_dict"]:
             filename = os.path.join(data["info_dict"]["__finaldir"], os.path.basename(data["info_dict"]["filepath"]))
@@ -166,7 +167,7 @@ class Download:
                 }
             )
 
-            if self.debug:
+            if self.debug_ytdl:
                 params["verbose"] = True
                 params["noprogress"] = False
 
@@ -207,7 +208,7 @@ class Download:
 
                 params["impersonate"] = ImpersonateTarget.from_str(params["impersonate"])
 
-            params["logger"] = self.ytdlp_logger
+            params["logger"] = NestedLogger(self.logger)
 
             cls = yt_dlp.YoutubeDL(params=params)
 

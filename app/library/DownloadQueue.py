@@ -310,7 +310,7 @@ class DownloadQueue(metaclass=Singleton):
                 if property.startswith("playlist"):
                     dl.template = str(dl.template).replace(f"%({property})s", str(value))
 
-            dlInfo: Download = Download(info=dl, info_dict=entry, debug=bool(self.config.ytdl_debug))
+            dlInfo: Download = Download(info=dl, info_dict=entry)
 
             if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
                 dlInfo.info.status = "not_live"
