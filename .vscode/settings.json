@@ -21,6 +21,7 @@
     "finaldir",
     "getpid",
     "httpx",
+    "levelno",
     "libcurl",
     "libx",
     "matroska",
