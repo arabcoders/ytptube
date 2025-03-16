@@ -21,6 +21,7 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
+* Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
 
 For more API endpoints, please refer to the [API documentation](API.md).
     
