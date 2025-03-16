@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250316-8ce19b5",
-        "date": "2025-03-16T20:18:49+00:00",
+        "tag": "dev-20250317-6f71c5c",
+        "date": "2025-03-16T21:37:09+00:00",
+        "commits": [
+            {
+                "sha": "6f71c5c",
+                "message": "added /changelogs to static path",
+                "author": "ArabCoders",
+                "date": "2025-03-16T21:37:09+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250316-0ed8aa5",
+        "date": "2025-03-16T21:12:13+00:00",
         "commits": [
             {
                 "sha": "8ce19b5",
