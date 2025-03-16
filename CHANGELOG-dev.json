@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250316-ca00aff",
-        "date": "2025-03-16T18:24:00+00:00",
+        "tag": "dev-20250316-8ce19b5",
+        "date": "2025-03-16T20:18:49+00:00",
+        "commits": [
+            {
+                "sha": "8ce19b5",
+                "message": "Add changeslog page to WebUI",
+                "author": "ArabCoders",
+                "date": "2025-03-16T20:18:49+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250316-3161fc0",
+        "date": "2025-03-16T18:32:25+00:00",
         "commits": [
             {
                 "sha": "ca00aff",

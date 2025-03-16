@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250316-0ed8aa5",
+        "date": "2025-03-16T21:12:13+00:00",
+        "commits": [
+            {
+                "sha": "8ce19b5",
+                "message": "Add changeslog page to WebUI",
+                "author": "ArabCoders",
+                "date": "2025-03-16T20:18:49+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250316-3161fc0",
         "date": "2025-03-16T18:32:25+00:00",
         "commits": [
