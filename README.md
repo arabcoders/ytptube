@@ -9,8 +9,8 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 # YTPTube Features.
 * Multi-downloads support.
 * Handle live streams.
-* Schedule Channels or Playlists to be downloaded automatically at a specific time.
-* Send notification to targets based on specified events. 
+* Schedule channels or playlists to be downloaded automatically at a specified time.
+* Send notification to targets based on selected events. 
 * Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Queue multiple URLs separated by comma.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.

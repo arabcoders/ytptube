@@ -203,11 +203,6 @@ class Download:
 
             self.logger.debug("Params before passing to yt-dlp.", extra=params)
 
-            if "impersonate" in params:
-                from yt_dlp.networking.impersonate import ImpersonateTarget
-
-                params["impersonate"] = ImpersonateTarget.from_str(params["impersonate"])
-
             params["logger"] = NestedLogger(self.logger)
 
             cls = yt_dlp.YoutubeDL(params=params)

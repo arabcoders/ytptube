@@ -2,6 +2,7 @@ import json
 from datetime import date
 from pathlib import Path
 
+from yt_dlp.networking.impersonate import ImpersonateTarget
 from yt_dlp.utils import DateRange
 
 
@@ -20,6 +21,9 @@ class Encoder(json.JSONEncoder):
             return {"start": str(o.start).replace("-", ""), "end": str(o.end).replace("-", "")}
 
         if isinstance(o, date):
+            return str(o)
+
+        if isinstance(o, ImpersonateTarget):
             return str(o)
 
         if isinstance(o, object):
