@@ -13,13 +13,20 @@ ENV PYTHONFAULTHANDLER=1
 
 # Use sed to strip carriage-return characters from the entrypoint script (in case building on Windows)
 # Install dependencies
-RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev && pip install pipenv
+RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev curl make && pip install pipenv
 
 WORKDIR /app
 
 ARG PIPENV_FLAGS="--deploy"
 COPY ./Pipfile* .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
+
+# Bundle mp4box into the image
+WORKDIR /tmp
+RUN mkdir /gpac-master && curl -k -L https://github.com/gpac/gpac/archive/refs/tags/v2.4.0.zip -o /tmp/gpac.zip && \
+    unzip /tmp/gpac.zip && mv /tmp/gpac-*/* /gpac-master
+WORKDIR /gpac-master
+RUN ./configure --static-mp4box --use-zlib=no && make -j4
 
 FROM python:3.11-alpine
 
@@ -46,13 +53,15 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /app/.venv /opt/python
+COPY --chown=app:app --from=python_builder /gpac-master/bin/gcc/MP4Box /usr/bin/mp4box
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/python/bin:$PATH"
 
 RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck && \
   sed -i 's$#!\/app\/\.venv\/bin\/python$#!/opt/python/bin/python$' /opt/python/bin/* && \
-  sed -i "s%'\/app\/\.venv'%'/opt/python'%" /opt/python/bin/activate*
+  sed -i "s%'\/app\/\.venv'%'/opt/python'%" /opt/python/bin/activate* && \
+  chmod +x /usr/bin/mp4box
 
 VOLUME /config
 VOLUME /downloads

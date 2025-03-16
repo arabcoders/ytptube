@@ -3,6 +3,7 @@ import hashlib
 import logging
 import multiprocessing
 import os
+import re
 import shutil
 import time
 from email.utils import formatdate
@@ -16,7 +17,24 @@ from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .YTDLPOpts import YTDLPOpts
 
-LOG = logging.getLogger("download")
+LOG = logging.getLogger("Download")
+
+
+class NestedLogger:
+    debug_messages = ["[debug] ", "[download] "]
+
+    def __init__(self, logger: logging.Logger):
+        self.logger = logger
+
+    def debug(self, msg: str):
+        levelno = logging.DEBUG if any(msg.startswith(x) for x in self.debug_messages) else logging.INFO
+        self.logger.log(level=levelno, msg=re.sub(r"^\[(debug|info)\] ", "", msg, flags=re.IGNORECASE))
+
+    def error(self, msg):
+        self.logger.error(msg)
+
+    def warning(self, msg):
+        self.logger.warning(msg)
 
 
 class Download:
@@ -66,7 +84,7 @@ class Download:
     temp_keep: bool = False
     "Keep temp folder after download."
 
-    def __init__(self, info: ItemDTO, info_dict: dict = None, debug: bool = False):
+    def __init__(self, info: ItemDTO, info_dict: dict = None):
         config = Config.get_instance()
 
         self.download_dir = info.download_dir
@@ -78,7 +96,8 @@ class Download:
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
-        self.debug = debug
+        self.debug = bool(config.debug)
+        self.debug_ytdl = bool(config.ytdl_debug)
         self.cancelled = False
         self.tmpfilename = None
         self.status_queue = None
@@ -89,6 +108,7 @@ class Download:
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.is_manifestless = "is_manifestless" in self.info.options and self.info.options["is_manifestless"] is True
         self.info_dict = info_dict
+        self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -99,13 +119,13 @@ class Download:
         self.status_queue.put({"id": self.id, **dataDict})
 
     def _postprocessor_hook(self, data: dict):
+        if self.debug:
+            self.logger.debug(f"Postprocessor hook: {data}")
+
         if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
             dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
             self.status_queue.put({"id": self.id, **dataDict, "status": "postprocessing"})
             return
-
-        if self.debug:
-            LOG.debug(f"Postprocessor hook: {data}")
 
         if "__finaldir" in data["info_dict"]:
             filename = os.path.join(data["info_dict"]["__finaldir"], os.path.basename(data["info_dict"]["filepath"]))
@@ -147,19 +167,21 @@ class Download:
                 }
             )
 
-            if self.debug:
+            if self.debug_ytdl:
                 params["verbose"] = True
                 params["noprogress"] = False
 
             if self.info.cookies:
                 try:
                     cookie_file = os.path.join(self.temp_path, f"cookie_{self.info._id}.txt")
-                    LOG.debug(f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'.")
+                    self.logger.debug(
+                        f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
+                    )
                     with open(cookie_file, "w") as f:
                         f.write(self.info.cookies)
                         params["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
+                    self.logger.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
 
             if self.is_live or self.is_manifestless:
                 hasDeletedOptions = False
@@ -171,37 +193,39 @@ class Download:
                         deletedOpts.append(opt)
 
                 if hasDeletedOptions:
-                    LOG.warning(
+                    self.logger.warning(
                         f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted which are known to cause issues with live stream and post stream manifestless mode."
                     )
 
-            LOG.info(
+            self.logger.info(
                 f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
             )
 
-            LOG.debug("Params before passing to yt-dlp.", extra=params)
+            self.logger.debug("Params before passing to yt-dlp.", extra=params)
 
             if "impersonate" in params:
                 from yt_dlp.networking.impersonate import ImpersonateTarget
 
                 params["impersonate"] = ImpersonateTarget.from_str(params["impersonate"])
 
+            params["logger"] = NestedLogger(self.logger)
+
             cls = yt_dlp.YoutubeDL(params=params)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
-                LOG.debug(f"Downloading '{self.info.url}' using pre-info.")
+                self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
                 cls.process_ie_result(self.info_dict, download=True)
                 ret = cls._download_retcode
             else:
-                LOG.debug(f"Downloading using url: {self.info.url}")
+                self.logger.debug(f"Downloading using url: {self.info.url}")
                 ret = cls.download([self.info.url])
 
             self.status_queue.put({"id": self.id, "status": "finished" if ret == 0 else "error"})
         except Exception as exc:
-            LOG.exception(exc)
+            self.logger.exception(exc)
             self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
 
-        LOG.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
+        self.logger.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 
     async def start(self, emitter: Emitter):
         self.emitter = emitter
@@ -244,28 +268,28 @@ class Download:
         self.cancel_in_progress = True
         procId = self.proc.ident
 
-        LOG.info(f"Closing PID='{procId}' download process.")
+        self.logger.info(f"Closing PID='{procId}' download process.")
 
         try:
             try:
                 if "update_task" in self.__dict__ and self.update_task.done() is False:
                     self.update_task.cancel()
             except Exception as e:
-                LOG.error(f"Failed to close status queue: '{procId}'. {e}")
+                self.logger.error(f"Failed to close status queue: '{procId}'. {e}")
 
             self.kill()
 
             loop = asyncio.get_running_loop()
 
             if self.proc.is_alive():
-                LOG.debug(f"Waiting for PID='{procId}' to close.")
+                self.logger.debug(f"Waiting for PID='{procId}' to close.")
                 await loop.run_in_executor(None, self.proc.join)
-                LOG.debug(f"PID='{procId}' closed.")
+                self.logger.debug(f"PID='{procId}' closed.")
 
             if self.status_queue:
-                LOG.debug(f"Closing status queue for PID='{procId}'.")
+                self.logger.debug(f"Closing status queue for PID='{procId}'.")
                 self.status_queue.put(Terminator())
-                LOG.debug(f"Closed status queue for PID='{procId}'.")
+                self.logger.debug(f"Closed status queue for PID='{procId}'.")
 
             if self.proc:
                 self.proc.close()
@@ -273,11 +297,11 @@ class Download:
 
             self.delete_temp()
 
-            LOG.debug(f"Closed PID='{procId}' download process.")
+            self.logger.debug(f"Closed PID='{procId}' download process.")
 
             return True
         except Exception as e:
-            LOG.error(f"Failed to close process: '{procId}'. {e}")
+            self.logger.error(f"Failed to close process: '{procId}'. {e}")
 
         return False
 
@@ -295,11 +319,11 @@ class Download:
             return False
 
         try:
-            LOG.info(f"Killing download process: '{self.proc.ident}'.")
+            self.logger.info(f"Killing download process: '{self.proc.ident}'.")
             self.proc.kill()
             return True
         except Exception as e:
-            LOG.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
+            self.logger.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
 
         return False
 
@@ -308,7 +332,7 @@ class Download:
             return
 
         if "finished" != self.info.status and self.is_live:
-            LOG.warning(
+            self.logger.warning(
                 f"Keeping live temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
             )
             return
@@ -317,12 +341,12 @@ class Download:
             return
 
         if self.temp_path == self.temp_dir:
-            LOG.warning(
+            self.logger.warning(
                 f"Attempted to delete video temp folder: {self.temp_path}, but it is the same as main temp folder."
             )
             return
 
-        LOG.info(f"Deleting Temp folder '{self.temp_path}'.")
+        self.logger.info(f"Deleting Temp folder '{self.temp_path}'.")
         shutil.rmtree(self.temp_path, ignore_errors=True)
 
     async def progress_update(self):
@@ -343,7 +367,7 @@ class Download:
                 continue
 
             if self.debug:
-                LOG.debug(f"Status Update: {self.info._id=} {status=}")
+                self.logger.debug(f"Status Update: {self.info._id=} {status=}")
 
             if isinstance(status, str):
                 asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
@@ -400,7 +424,7 @@ class Download:
                 except Exception as e:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True
-                    LOG.exception(e)
-                    LOG.error(f"Failed to ffprobe: {status.get}. {e}")
+                    self.logger.exception(e)
+                    self.logger.error(f"Failed to ffprobe: {status.get}. {e}")
 
             asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
