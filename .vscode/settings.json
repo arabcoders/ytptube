@@ -16,6 +16,7 @@
     "ahash",
     "aiocron",
     "arrowless",
+    "changeslog",
     "copyts",
     "daterange",
     "dotenv",

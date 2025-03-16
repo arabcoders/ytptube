@@ -91,6 +91,7 @@
           <span class="is-hidden-mobile">&nbsp;({{ config?.app?.version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
           <span class="is-hidden-mobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
+          - <NuxtLink :to="`/changeslog?version=${config?.app?.version || 'unknown'}`">CHANGELOG</NuxtLink>
         </div>
       </div>
       <div class="column is-4-mobile" v-if="config.app?.started">
