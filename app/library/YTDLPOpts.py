@@ -132,4 +132,9 @@ class YTDLPOpts(metaclass=Singleton):
         if "format" in data and data["format"] in ["not_set", "default"]:
             data["format"] = None
 
+        if "daterange" in data and isinstance(data["daterange"], dict):
+            from yt_dlp.utils import DateRange
+
+            data["daterange"] = DateRange(data["daterange"]["start"], data["daterange"]["end"])
+
         return data

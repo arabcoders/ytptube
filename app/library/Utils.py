@@ -424,6 +424,7 @@ def arg_converter(args: str) -> dict:
 
     """
     import yt_dlp.options
+    from yt_dlp.utils import DateRange
 
     create_parser = yt_dlp.options.create_parser
 
@@ -443,7 +444,9 @@ def arg_converter(args: str) -> dict:
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 
-    return json.loads(json.dumps(diff))
+    from .encoder import Encoder
+
+    return json.loads(json.dumps(diff, cls=Encoder))
 
 
 def validate_uuid(uuid_str: str, version: int = 4) -> bool:

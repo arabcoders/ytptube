@@ -17,6 +17,7 @@
     "aiocron",
     "arrowless",
     "copyts",
+    "daterange",
     "dotenv",
     "finaldir",
     "getpid",
