@@ -424,7 +424,6 @@ def arg_converter(args: str) -> dict:
 
     """
     import yt_dlp.options
-    from yt_dlp.utils import DateRange
 
     create_parser = yt_dlp.options.create_parser
 

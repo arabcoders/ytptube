@@ -137,4 +137,9 @@ class YTDLPOpts(metaclass=Singleton):
 
             data["daterange"] = DateRange(data["daterange"]["start"], data["daterange"]["end"])
 
+        if "impersonate" in data and isinstance(data["impersonate"], str):
+            from yt_dlp.networking.impersonate import ImpersonateTarget
+
+            data["impersonate"] = ImpersonateTarget.from_str(data["impersonate"])
+
         return data
