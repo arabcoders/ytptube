@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250318-fee4440",
-        "date": "2025-03-17T21:10:20+00:00",
+        "tag": "dev-20250318-44fa844",
+        "date": "2025-03-17T22:34:43+00:00",
+        "commits": [
+            {
+                "sha": "44fa844",
+                "message": "pull mp4box from external source to reduce build time",
+                "author": "ArabCoders",
+                "date": "2025-03-17T22:34:43+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250317-87e93a5",
+        "date": "2025-03-17T21:24:48+00:00",
         "commits": [
             {
                 "sha": "fee4440",
