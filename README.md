@@ -7,6 +7,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since then it went under heavy changes, and it supports many new features.
 
 # YTPTube Features.
+
 * Multi-downloads support.
 * Handle live streams.
 * Schedule channels or playlists to be downloaded automatically at a specified time.
@@ -23,10 +24,11 @@ YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
 
-For more API endpoints, please refer to the [API documentation](API.md).
+[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
     
-### Tips
-Your `yt-dlp` config should include the following options for optimal working conditions.
+# Recommended basic `ytdlp.json` file settings
+
+Your `ytdlp.json` config should include the following basic options for optimal working conditions.
 
 ```json
 {
@@ -36,23 +38,25 @@ Your `yt-dlp` config should include the following options for optimal working co
   "format_sort": [ "codec:avc:m4a" ],
 }
 ```
-* Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
 
-[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
+> [!NOTE]
+> Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
 
-## Run using Docker
+# Run using docker command
 
 ```bash
-docker run -d --rm --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw ghcr.io/arabcoders/ytptube
+docker run -d --rm --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw ghcr.io/arabcoders/ytptube:latest
 ```
 
-## Run using compose file.
+# Using compose file
+
+The following is an example of a `compose.yaml` file that can be used to run YTPTube.
 
 ```yaml
 services:
   ytptube:
-    user: "1000:1000"
-    image: ghcr.io/arabcoders/ytptube
+    user: "1000:1000" # change this to your user id and group id
+    image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
     ports:
@@ -64,7 +68,13 @@ services:
       - /tmp
 ```
 
-## Environment variables
+```bash
+$ mkdir {config,downloads} && docker-compose -f compose.yaml up -d
+```
+
+Then you can access the WebUI at `http://localhost:8081`.
+
+# Environment variables
 
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, or the `environment:` section in `compose.yaml` file.
 
@@ -103,9 +113,9 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PIP_IGNORE_UPDATES   | Do not update the custom pip packages                            | `false`                            |
 | YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
 
-## Bookmarklets and browser extensions
+# Browser extensions & bookmarklets
 
-### For simple bookmarklets
+## Simple bookmarklet
 
 ```javascript
 javascript:(() => { const url = "https://ytptube.example.org"; const preset = "default"; const mUrl = new URL(url); mUrl.pathname = "/api/history"; fetch(mUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: document.location.href, preset: preset }) }).then(res => alert(res.ok ? "URL sent!" : "Failed to send URL.")); })()
@@ -113,12 +123,12 @@ javascript:(() => { const url = "https://ytptube.example.org"; const preset = "d
 
 Change the the variable `url` and `preset` variables to match your YTPTube instance and preset name.
 
-### Browser Extensions Store
+## Browser stores
 
 - For Firefox via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
 - For Chrome/Chromium Browsers via [Chrome Store](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
 
-### iOS Shortcuts
+## iOS Shortcuts
 
 You can download [Add To YTPTube](https://www.icloud.com/shortcuts/18b8f70666a04a06aed09424f97ce951) shortcut and use it to send links to your YTPTube instance.
 You have to edit the shortcut and replace the following:
@@ -130,18 +140,18 @@ This shortcut is powerful, as it's allow you to select your preset on the fly pu
 Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
 and use that preset to download directly from your iOS device.
 
-#### Advanced iOS Shortcut
+### Advanced iOS Shortcut
 
 This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/6e3db0bd532843e3aec70e6ce211be08) is more advanced, as it's parses
 the `yt-dlp` output and attempt to download the media directly to your iOS device. It doesn't always work, but it's a good
 starting point for those who want to download media directly to their iOS device. We provide no support for this use case
 other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
 
-## Running behind a reverse proxy
+# Run behind reverse proxy.
 
 It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
 
-### NGINX
+### Nginx http server
 
 ```nginx
 location /ytptube/ {
@@ -153,9 +163,10 @@ location /ytptube/ {
 }
 ```
 
-Note: the extra `proxy_set_header` directives are there to make web socket connection work.
+> [!NOTE]
+> The extra `proxy_set_header` directives are there to make web socket connection work.
 
-### Caddy
+### Caddy http server
 
 The following example Caddyfile gets a reverse proxy going behind [caddy](https://caddyserver.com).
 
@@ -168,25 +179,27 @@ example.com {
 }
 ```
 
-## Updating yt-dlp
+# Updating yt-dlp
 
 The engine which powers the actual video downloads in YTPTube is [yt-dlp](https://github.com/yt-dlp/yt-dlp). Since video sites regularly change their layouts, frequent updates of yt-dlp are required to keep up.
 
-There's an automatic nightly build of YTPTube which looks for a new version of yt-dlp, and if one exists, the build pulls it and publishes an updated docker image. Therefore, in order to keep up with the changes, it's recommended that you update your YTPTube container regularly with the latest image.
+There's an automatic nightly task YTPTube which looks for a new version of yt-dlp, and if one exists, it will be open PR on the repository. The PR will be reviewed and merged by the maintainer.
 
-## Troubleshooting and submitting issues
+# Troubleshooting and submitting issues
 
-Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a UI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, and once that is working, importing the options that worked for you into `yt-dlp options` file.
+Before asking a question or submitting an issue for YTPTube, Please remember that YTPTube is only a UI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, and once that is working, importing the options that worked for you into `yt-dlp options` file.
 
 In order to test with the yt-dlp command directly, you can either download it and run it locally, or for a better simulation of its actual conditions, you can run it within the YTPTube container itself. 
 
-#### Via HTTP
+## Via HTTP
 
-Simply go to `Console` button in your navbar and directly use the yt-dlp command.
+If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Terminal` button in 
+your navbar and directly use the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access the
+anything else.
 
-#### Via CLI 
+## Via CLI 
 
-Assuming your YTPTube container is called `ytptube`, run the following on your Docker host to get a shell inside the container:
+Assuming your YTPTube container is called `ytptube`, run the following on your docker host to get a shell inside the container:
 
 ```bash
 docker exec -ti ytptube bash
@@ -196,17 +209,21 @@ yt-dlp ....
 
 Once there, you can use the yt-dlp command freely.
 
-## Building and running locally
+# Building and running locally
 
-Make sure you have `nodejs` and `Python 3.11+` installed.
+> [!IMPORTANT]
+> Make sure you have `nodejs` and `Python 3.11+` installed.
+
+Follow these steps to build and run YTPTube locally:
 
 ```bash
-cd ytptube/frontend
+cd ytptube/ui
 # install Vue and build the UI
 npm install
 npm run build
 # install python dependencies
 cd ..
+# you might not have venv module installed, if so, install it via `pip3 install venv` or your package manager.
 python -m venv .venv
 source .venv/bin/activate
 pip3 install pipenv
@@ -221,68 +238,27 @@ A Docker image can be built locally (it will build the UI too):
 docker build . -t ytptube
 ```
 
-## ytdlp.json file
+# ytdlp.json file
 
 The `config/ytdlp.json`, is a json file which can be used to alter the default `yt-dlp` config settings globally. 
-We recommend not use this file for options that aren't **truly global**, everything that can be done via the `ytdlp.json` file
-can be done via a preset, which only effects the download that uses it. For example, my personal preset that i use for all
-my jp video downloads is:
 
-```json5
+We recommend not use this file for options that aren't **truly global**, everything that can be done via the `ytdlp.json` file
+can be done via a preset, which only effects the download that uses it. Example of good basic `ytdlp.json` file.
+
+```json
 {
-  "name": "jp_videos",
-  "format": "bv[ext=mp4]+(ba[ext=m4a][format_note*=original]/ba)/bv[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b",
-  "args": {
-    "writesubtitles": true,
-    "writeinfojson": true,
-    "writethumbnail": true,
-    "merge_output_format": "mkv",
-    "final_ext": "mkv",
-    "format_sort": [ "codec:avc:m4a" ],
-    "subtitleslangs": [ "en", "ar" ]
-  },
-  "postprocessors": [
-    {
-      "key": "FFmpegVideoRemuxer",
-      "preferedformat": "mkv"
-    },
-    {
-      "key": "FFmpegConcat",
-      "only_multi_video": true,
-      "when": "playlist"
-    },
-    {
-      "key": "FFmpegThumbnailsConvertor",
-      "format": "jpg"
-    },
-    {
-      "key": "FFmpegSubtitlesConvertor",
-      "format": "srt"
-    },
-    {
-      "key": "FFmpegMetadata",
-      "add_chapters": true,
-      "add_infojson": true,
-      "add_metadata": true
-    },
-    {
-      "key": "FFmpegEmbedSubtitle",
-      "already_have_subtitle": false
-    },
-    {
-      "key": "Exec",
-      "exec_cmd": "/usr/bin/mkvpropedit %(filepath)q --edit track:a1 --set language=jpn --set name=Japanese --add-track-statistics-tags",
-      "when": "after_move"
-    }
-  ]
+  "windowsfilenames": true,
+  "continue_dl": true,
+  "live_from_start": true,
+  "format_sort": [ "codec:avc:m4a" ],
 }
 ```
 
-You can convert your own yt-dlp command arguments into a preset using the box found in the presets add page. For reference, 
-The options can be found at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file.
-And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
+Everything else can be done via the presets, and it's more flexible and easier to manage. You can convert your 
+own yt-dlp command arguments into a preset using the box found in the presets add page. For reference, The options can be found
+at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file. And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
 
-## Authentication
+# Authentication
 
 To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart the container.
 This will prompt the user to enter the username and password before accessing the web interface/API.
@@ -291,7 +267,7 @@ As this is a simple basic authentication, if your browser doesn't show the promp
 `http://username:password@your_ytptube_url:port`
 
 
-## Basic mode
+# Basic mode
 
 What does the basic mode do? it hides the the following features from the WebUI.
 
@@ -311,6 +287,10 @@ It disables everything except the `theme switcher` and `reload` button.
 
 Disables the `Information` button.
 
+# API Documentation
+
+For API endpoints, please refer to the [API documentation](API.md). it's somewhat outdated, but it's a good starting point.
+
 # Social contact
 
 If you have short or quick questions, you are free to join my [discord server](https://discord.gg/G3GpVR8xpb) and ask
@@ -319,4 +299,4 @@ the question. keep in mind it's solo project, as such it might take me a bit of 
 # Donation 
 
 If you feel like donating and appreciate my work, you can do so by donating to children charity. For example [Make-A-Wish](https://worldwish.org). 
-I Personally don't need the money, but I do appreciate the gesture. Making a child happy is more worthwhile.
+
