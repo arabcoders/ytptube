@@ -126,7 +126,7 @@ def extract_info(
 
     data = yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
-    if follow_redirect and "_type" in data and "url" == data["_type"]:
+    if data and follow_redirect and "_type" in data and "url" == data["_type"]:
         return extract_info(config, data["url"], debug=debug, no_archive=no_archive, follow_redirect=follow_redirect)
 
     return data
