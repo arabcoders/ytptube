@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250317-87e93a5",
+        "date": "2025-03-17T21:24:48+00:00",
+        "commits": [
+            {
+                "sha": "fee4440",
+                "message": "Update README.md",
+                "author": "ArabCoders",
+                "date": "2025-03-17T21:10:20+00:00"
+            },
+            {
+                "sha": "b6fd560",
+                "message": "update external packages",
+                "author": "ArabCoders",
+                "date": "2025-03-17T20:55:05+00:00"
+            },
+            {
+                "sha": "c287c55",
+                "message": "potential fix for #217",
+                "author": "ArabCoders",
+                "date": "2025-03-17T20:35:18+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250317-9445e3e",
         "date": "2025-03-17T16:52:45+00:00",
         "commits": [
