@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250318-44fa844",
-        "date": "2025-03-17T22:34:43+00:00",
+        "tag": "dev-20250320-b7ded32",
+        "date": "2025-03-19T21:40:24+00:00",
         "commits": [
+            {
+                "sha": "b7ded32",
+                "message": "bump curl_cffi=0.7.1",
+                "author": "ArabCoders",
+                "date": "2025-03-19T21:40:24+00:00"
+            },
+            {
+                "sha": "5b9f085",
+                "message": "hard lock curl_cffi to 0.5.10 for yt-dlp support",
+                "author": "ArabCoders",
+                "date": "2025-03-19T19:01:44+00:00"
+            },
             {
                 "sha": "44fa844",
                 "message": "pull mp4box from external source to reduce build time",
