@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9fd5fe76e070040f587d879d9190d2bda03ef0a45a8ac970f408cb57bd578349"
+            "sha256": "ac7a3bdf0586fa2a9f24c29f59e729c22fe0d57996b0f804ca6b40fa8309970b"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -436,20 +436,16 @@
         },
         "curl-cffi": {
             "hashes": [
-                "sha256:04b1d23f0f54f94b8298ed417e6bece85a635d674723cde2b155da686efbf78f",
-                "sha256:15053d01c6a3e3c4c5331ce9e07e1dc31ca5aa063babca05d18b1b5aad369fac",
-                "sha256:1e60b8ecc80bfb0da4ff73ac9d194e80482b50ecbb8aefec1b0edaf45fafd80e",
-                "sha256:3969e4260ad4dab638fb6dbe349623f9f5f022435c7fd21daf760231380367fa",
-                "sha256:3e37b35268ca58492f54ed020ae4b50c33ee0debad4145db9f746f04ed466eb0",
-                "sha256:458f53c41bd76d90d8974d60c3a8a0dd902a1af1f9056215cf24f454bcedc6fd",
-                "sha256:59389773a1556e087120e91eac1e33f84f1599d853e1bc168b153e4cdf360002",
-                "sha256:cfc74f09e44d2d8d61b8e8fda3a7004b5bc0217a703fbbe9e16ef8caa1f3d4e4",
-                "sha256:f03f4b17dc679c82bd3c946feb1ad38749b2ad731d7c26daefaac857d1c72fd9",
-                "sha256:f1b0c7b7b81afca15a0e56c593d3c2bdcd4fd4c9ca49b9ded5b9d8076ba78ff9"
+                "sha256:1b2bc8822d23415f6533c8b750475e9bbc76764025fe1dcb5866dc033607fd7b",
+                "sha256:55bac4b73e2d80ceeaabea33270fc8ca6ace594128a46710242f2e688b4f8bfc",
+                "sha256:892603dab5e56fb72bfff7ae969136138971f63f63defe98232e1ec55cb0f1c6",
+                "sha256:9937b8e13b1a6963c63e155b6621ec74649965105efedb919bc226fe731861cc",
+                "sha256:b537595b9610a4dd0927c09823925b4e32b1ce0fd04385bfc5bb72ab830720e6",
+                "sha256:f9a1874b860c4e8db49bdfd9b9d4dc39999a1397d271ec78624c35c838e9e92a"
             ],
             "index": "pypi",
-            "markers": "python_version >= '3.9'",
-            "version": "==0.10.0"
+            "markers": "python_version >= '3.7'",
+            "version": "==0.5.10"
         },
         "debugpy": {
             "hashes": [
