@@ -21,13 +21,6 @@ ARG PIPENV_FLAGS="--deploy"
 COPY ./Pipfile* .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
 
-# Bundle mp4box into the image
-WORKDIR /tmp
-RUN mkdir /gpac-master && curl -k -L https://github.com/gpac/gpac/archive/refs/tags/v2.4.0.zip -o /tmp/gpac.zip && \
-    unzip /tmp/gpac.zip && mv /tmp/gpac-*/* /gpac-master
-WORKDIR /gpac-master
-RUN ./configure --static-mp4box --use-zlib=no && make -j4
-
 FROM python:3.11-alpine
 
 ARG TZ=UTC
@@ -53,7 +46,7 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /app/.venv /opt/python
-COPY --chown=app:app --from=python_builder /gpac-master/bin/gcc/MP4Box /usr/bin/mp4box
+COPY --chown=app:app --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/python/bin:$PATH"
