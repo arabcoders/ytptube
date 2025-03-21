@@ -11,9 +11,8 @@ import httpx
 from aiohttp import web
 
 from .config import Config
-from .Emitter import Emitter
 from .encoder import Encoder
-from .Events import Event, EventBus, Events
+from .Events import EventBus, Events, error, info, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 
@@ -56,7 +55,6 @@ class Tasks(metaclass=Singleton):
     def __init__(
         self,
         file: str | None = None,
-        emitter: Emitter | None = None,
         loop: asyncio.AbstractEventLoop | None = None,
         config: Config | None = None,
         encoder: Encoder | None = None,
@@ -73,8 +71,8 @@ class Tasks(metaclass=Singleton):
         self._client = client or httpx.AsyncClient()
         self._encoder = encoder or Encoder()
         self._loop = loop or asyncio.get_event_loop()
-        self._emitter = emitter or Emitter.get_instance()
         self._scheduler = scheduler or Scheduler.get_instance()
+        self._notify = EventBus.get_instance()
 
         if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
             try:
@@ -82,7 +80,7 @@ class Tasks(metaclass=Singleton):
             except Exception:
                 pass
 
-        EventBus.get_instance().subscribe(Events.TASKS_ADD, lambda data, _: self.add(**data.data), f"{__class__}.save")
+        self._notify.subscribe(Events.TASKS_ADD, lambda data, _: self.add(**data.data), f"{__class__.__name__}.save")
 
     @staticmethod
     def get_instance() -> "Tasks":
@@ -296,23 +294,22 @@ class Tasks(metaclass=Singleton):
             LOG.info(f"Task '{task.id}: {task.name}' dispatched at '{timeNow}'.")
 
             tasks = []
-            tasks.append(self._emitter.info(f"Task '{task.name}' dispatched at '{timeNow}'."))
             tasks.append(
-                self._emitter.emit(
-                    event=Events.ADD_URL,
-                    data=Event(
-                        id=task.id,
-                        data={
-                            "url": task.url,
-                            "preset": preset,
-                            "folder": folder,
-                            "cookies": cookies,
-                            "config": config,
-                            "template": template,
-                        },
-                    ),
-                    local=True,
-                )
+                self._notify.emit(Events.LOG_INFO, data=info(f"Task '{task.name}' dispatched at '{timeNow}'."))
+            )
+            tasks.append(
+                self._notify.emit(
+                    Events.ADD_URL,
+                    data={
+                        "url": task.url,
+                        "preset": preset,
+                        "folder": folder,
+                        "cookies": cookies,
+                        "config": config,
+                        "template": template,
+                    },
+                    id=task.id,
+                ),
             )
 
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
@@ -322,8 +319,13 @@ class Tasks(metaclass=Singleton):
             ended = time.time()
             LOG.info(f"Task '{task.id}: {task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
-            await self._emitter.success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.")
+            await self._notify.emit(
+                Events.LOG_SUCCESS,
+                data=success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds."),
+            )
         except Exception as e:
             timeNow = datetime.now(UTC).isoformat()
             LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{e!s}'.")
-            await self._emitter.error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{e!s}'.")
+            await self._notify.emit(
+                Events.ERROR, data=error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{e!s}'.")
+            )

@@ -8,7 +8,6 @@ from typing import Any
 from aiohttp import web
 
 from .config import Config
-from .Emitter import Emitter
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
@@ -67,13 +66,12 @@ class Presets(metaclass=Singleton):
 
     _default_presets: list[Preset] = []
 
-    def __init__(self, file: str | None = None, emitter: Emitter | None = None, config: Config | None = None):
+    def __init__(self, file: str | None = None, config: Config | None = None):
         Presets._instance = self
 
         config = config or Config.get_instance()
 
         self._file: str = file or os.path.join(config.config_path, "presets.json")
-        self._emitter: Emitter = emitter or Emitter.get_instance()
 
         if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
             try:
@@ -85,7 +83,7 @@ class Presets(metaclass=Singleton):
             self._default_presets = [Preset(**preset) for preset in json.load(f)]
 
         EventBus.get_instance().subscribe(
-            Events.PRESETS_ADD, lambda data, _: self.add(**data.data), f"{__class__}.save"
+            Events.PRESETS_ADD, lambda data, _: self.add(**data.data), f"{__class__.__name__}.save"
         )
 
     @staticmethod

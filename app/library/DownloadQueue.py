@@ -17,8 +17,7 @@ from .AsyncPool import AsyncPool
 from .config import Config
 from .DataStore import DataStore
 from .Download import Download
-from .Emitter import Emitter
-from .Events import Events
+from .Events import EventBus, Events
 from .ItemDTO import ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
@@ -53,11 +52,11 @@ class DownloadQueue(metaclass=Singleton):
     _instance = None
     """Instance of the DownloadQueue."""
 
-    def __init__(self, connection: Connection, emitter: Emitter | None = None, config: Config | None = None):
+    def __init__(self, connection: Connection, config: Config | None = None):
         DownloadQueue._instance = self
 
         self.config = config or Config.get_instance()
-        self.emitter = emitter or Emitter.get_instance()
+        self._notify = EventBus.get_instance()
         self.done = DataStore(type=DownloadQueue.TYPE_DONE, connection=connection)
         self.queue = DataStore(type=DownloadQueue.TYPE_QUEUE, connection=connection)
         self.done.load()
@@ -326,9 +325,7 @@ class DownloadQueue(metaclass=Singleton):
                 itemDownload = self.queue.put(dlInfo)
                 self.event.set()
 
-            asyncio.create_task(
-                self.emitter.emit(NotifyEvent, itemDownload.info), name=f"notifier-{NotifyEvent}-{itemDownload.info.id}"
-            )
+            await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
 
             return {"status": "ok"}
 
@@ -505,11 +502,11 @@ class DownloadQueue(metaclass=Singleton):
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")
                 self.queue.delete(id)
-                asyncio.create_task(self.emitter.cancelled(dl=item.info.serialize()), name=f"notifier-c-{id}")
+                await self._notify.emit(Events.CANCELLED, info=item.info.serialize())
                 item.info.status = "cancelled"
                 item.info.error = "Cancelled by user."
                 self.done.put(item)
-                asyncio.create_task(self.emitter.completed(dl=item.info.serialize()), name=f"notifier-d-{id}")
+                await self._notify.emit(Events.COMPLETED, data=item.info.serialize())
                 LOG.info(f"Deleted from queue {item_ref}")
 
             status[id] = "ok"
@@ -563,7 +560,8 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
             self.done.delete(id)
-            asyncio.create_task(self.emitter.cleared(dl=item.info.serialize()), name=f"notifier-c-{id}")
+            await self._notify.emit(Events.CLEARED, data=item.info.serialize())
+
             msg = f"Deleted completed download '{itemRef}'."
             if fileDeleted and filename:
                 msg += f" and removed local file '{filename}'."
@@ -672,7 +670,7 @@ class DownloadQueue(metaclass=Singleton):
 
         try:
             self._active_downloads[entry.info._id] = entry
-            await entry.start(self.emitter)
+            await entry.start()
 
             if "finished" != entry.info.status:
                 if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
@@ -694,12 +692,12 @@ class DownloadQueue(metaclass=Singleton):
             self.queue.delete(key=id)
 
             if entry.is_cancelled() is True:
-                asyncio.create_task(self.emitter.cancelled(dl=entry.info.serialize()), name=f"notifier-c-{id}")
+                await self._notify.emit(Events.CANCELLED, data=entry.info.serialize())
                 entry.info.status = "cancelled"
                 entry.info.error = "Cancelled by user."
 
             self.done.put(value=entry)
-            asyncio.create_task(self.emitter.completed(dl=entry.info.serialize()), name=f"notifier-d-{id}")
+            await self._notify.emit(Events.COMPLETED, data=entry.info.serialize())
         else:
             LOG.warning(f"Download '{id}' not found in queue.")
 

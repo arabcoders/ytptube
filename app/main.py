@@ -11,7 +11,6 @@ import magic
 from aiohttp import web
 from library.config import Config
 from library.DownloadQueue import DownloadQueue
-from library.Emitter import Emitter
 from library.Events import EventBus, Events
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
@@ -60,10 +59,6 @@ class Main:
         self._http = HttpAPI(queue=self._queue)
         self._socket = HttpSocket(queue=self._queue)
 
-        Emitter.get_instance().add_emitter([Notification().emit], local=False).add_emitter(
-            [EventBus().emit], local=True
-        )
-
         self._app.on_cleanup.append(_close_connection)
 
     def _check_folders(self):
@@ -94,7 +89,7 @@ class Main:
         """
         Start the application.
         """
-        EventBus.get_instance().emit(Events.STARTUP, data={"app": self._app})
+        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
 
         self._socket.attach(self._app)
         self._http.attach(self._app)
@@ -102,6 +97,9 @@ class Main:
         Scheduler.get_instance().attach(self._app)
         Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
+        Notification.get_instance().attach(self._app)
+
+        EventBus.get_instance().sync_emit(Events.LOADED, data={"app": self._app})
 
         def started(_):
             LOG.info("=" * 40)

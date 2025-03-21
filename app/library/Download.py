@@ -12,7 +12,7 @@ import yt_dlp
 
 from .AsyncPool import Terminator
 from .config import Config
-from .Emitter import Emitter
+from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .YTDLPOpts import YTDLPOpts
@@ -52,7 +52,6 @@ class Download:
     default_ytdl_opts: dict = None
     debug: bool = False
     temp_path: str = None
-    emitter: Emitter = None
     cancelled: bool = False
     is_live: bool = False
     info_dict: dict = None
@@ -102,7 +101,7 @@ class Download:
         self.tmpfilename = None
         self.status_queue = None
         self.proc = None
-        self.emitter = None
+        self._notify = EventBus.get_instance()
         self.max_workers = int(config.max_workers)
         self.temp_keep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
@@ -222,8 +221,7 @@ class Download:
 
         self.logger.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 
-    async def start(self, emitter: Emitter):
-        self.emitter = emitter
+    async def start(self):
         self.status_queue = Config.get_manager().Queue()
 
         # Create temp dir for each download.
@@ -236,7 +234,7 @@ class Download:
         self.proc.start()
         self.info.status = "preparing"
 
-        asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-{self.id}")
+        await self._notify.emit(Events.UPDATED, data=self.info)
         asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
         return await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
@@ -365,7 +363,7 @@ class Download:
                 self.logger.debug(f"Status Update: {self.info._id=} {status=}")
 
             if isinstance(status, str):
-                asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
+                await self._notify.emit(Events.UPDATED, data=self.info)
                 continue
 
             self.tmpfilename = status.get("tmpfilename")
@@ -384,9 +382,7 @@ class Download:
 
             if "error" == self.info.status and "error" in status:
                 self.info.error = status.get("error")
-                asyncio.create_task(
-                    self.emitter.error(message=self.info.error, data=self.info), name=f"emitter-e-{self.id}"
-                )
+                await self._notify.emit(Events.ERROR, data={"message": self.info.error, "data": self.info})
 
             if "downloaded_bytes" in status:
                 total = status.get("total_bytes") or status.get("total_bytes_estimate")
@@ -422,4 +418,4 @@ class Download:
                     self.logger.exception(e)
                     self.logger.error(f"Failed to ffprobe: {status.get}. {e}")
 
-            asyncio.create_task(self.emitter.updated(dl=self.info), name=f"emitter-u-{self.id}")
+            await self._notify.emit(Events.UPDATED, data=self.info)

@@ -7,10 +7,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+from aiohttp import web
 
 from .config import Config
 from .encoder import Encoder
-from .Events import Events
+from .Events import EventBus, Event, Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
 from .Utils import ag, validate_uuid
@@ -98,6 +99,13 @@ class NotificationEvents:
     def get_events() -> dict[str, str]:
         return {k: v for k, v in vars(NotificationEvents).items() if not k.startswith("__") and not callable(v)}
 
+    def events() -> list:
+        return [
+            getattr(NotificationEvents, ev)
+            for ev in dir(NotificationEvents)
+            if not ev.startswith("_") and not callable(getattr(NotificationEvents, ev))
+        ]
+
     @staticmethod
     def is_valid(event: str) -> bool:
         return event in NotificationEvents.get_events().values()
@@ -141,6 +149,17 @@ class Notification(metaclass=Singleton):
             Notification._instance = Notification()
 
         return Notification._instance
+
+    def attach(self, _: web.Application):
+        """
+        Attach the class to the application.
+
+        Args:
+            _ (web.Application): The aiohttp application.
+
+        """
+        self.load()
+        EventBus.get_instance().subscribe(NotificationEvents.events(), self.emit, f"{__class__.__name__}.emit")
 
     def get_targets(self) -> list[Target]:
         """Get the list of notification targets."""
@@ -210,6 +229,35 @@ class Notification(metaclass=Singleton):
                 LOG.error(f"Error loading notification target '{target}'. '{e!s}'")
 
         return self
+
+    def make_target(self, target: dict) -> Target:
+        """
+        Make a notification target from a dictionary.
+
+        Args:
+            target (dict): The target details.
+
+        Returns:
+            Target: The notification target.
+
+        """
+        return Target(
+            id=target.get("id"),
+            name=target.get("name"),
+            on=target.get("on", []),
+            request=TargetRequest(
+                type=target.get("request", {}).get("type", "json"),
+                method=target.get("request", {}).get("method", "POST"),
+                url=target.get("request", {}).get("url"),
+                headers=[
+                    TargetRequestHeader(
+                        key=str(h.get("key", "")).strip(),
+                        value=str(h.get("value", "")).strip(),
+                    )
+                    for h in target.get("request", {}).get("headers", [])
+                ],
+            ),
+        )
 
     @staticmethod
     def validate(target: Target | dict) -> bool:
@@ -340,40 +388,11 @@ class Notification(metaclass=Singleton):
             LOG.error(f"Error sending Notification event '{event}' id '{itemId}' to '{target.name}'. '{e}'.")
             return {"url": target.request.url, "status": 500, "text": str(e)}
 
-    def make_target(self, target: dict) -> Target:
-        """
-        Make a notification target from a dictionary.
-
-        Args:
-            target (dict): The target details.
-
-        Returns:
-            Target: The notification target.
-
-        """
-        return Target(
-            id=target.get("id"),
-            name=target.get("name"),
-            on=target.get("on", []),
-            request=TargetRequest(
-                type=target.get("request", {}).get("type", "json"),
-                method=target.get("request", {}).get("method", "POST"),
-                url=target.get("request", {}).get("url"),
-                headers=[
-                    TargetRequestHeader(
-                        key=str(h.get("key", "")).strip(),
-                        value=str(h.get("value", "")).strip(),
-                    )
-                    for h in target.get("request", {}).get("headers", [])
-                ],
-            ),
-        )
-
-    def emit(self, event, data, **kwargs):  # noqa: ARG002
+    def emit(self, e: Event, _, **kwargs):  # noqa: ARG002
         if len(self._targets) < 1:
             return False
 
-        if not NotificationEvents.is_valid(event):
+        if not NotificationEvents.is_valid(e.event):
             return False
 
-        return self.send(event, data)
+        return self.send(e.event, e.data)

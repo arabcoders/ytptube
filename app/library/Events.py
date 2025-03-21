@@ -10,12 +10,74 @@ from .Singleton import Singleton
 LOG = logging.getLogger("EventsSubscriber")
 
 
+def error(msg: str, data: dict | None = None) -> dict:
+    """
+    Create an error message.
+
+    Args:
+        msg (str): The message.
+        data (dict|None): The data to include in the message.
+
+    Returns:
+        dict : The message wrapped in a dictionary.
+
+    """
+    return message("error", msg, data)
+
+
+def info(msg: str, data: dict | None = None) -> dict:
+    """
+    Create an info message.
+
+    Args:
+        msg (str): The message.
+        data (dict|None): The data to include in the message.
+
+    Returns:
+        dict : The message wrapped in a dictionary.
+
+    """
+    return message("info", msg, data)
+
+
+def success(msg: str, data: dict | None = None) -> dict:
+    """
+    Create a success message.
+
+    Args:
+        msg (str): The message.
+        data (dict|None): The data to include in the message.
+
+    Returns:
+        dict : The message wrapped in a dictionary.
+
+    """
+    return message("success", msg, data)
+
+
+def message(type: str, message: str, data: dict | None = None) -> dict:
+    """
+    Create a message.
+
+    Args:
+        type (str): The type of the message.
+        message (str): The message.
+        data (dict|None): The data to include in the message.
+
+    Returns:
+        dict : The message wrapped in a dictionary.
+
+    """
+    return {"type": type, "message": message, "data": data if data else {}}
+
+
 class Events:
     """
     The events that can be emitted.
     """
 
     STARTUP = "startup"
+    LOADED = "loaded"
     SHUTDOWN = "shutdown"
 
     ADDED = "added"
@@ -50,6 +112,46 @@ class Events:
     PRESETS_UPDATE = "presets_update"
     SCHEDULE_ADD = "schedule_add"
 
+    def get_all() -> list:
+        """
+        Get all the events.
+
+        Returns:
+            list: The list of events.
+
+        """
+        return [
+            getattr(Events, ev) for ev in dir(Events) if not ev.startswith("_") and not callable(getattr(Events, ev))
+        ]
+
+    def frontend() -> list:
+        """
+        Get the frontend events.
+
+        Returns:
+            list: The list of frontend events.
+
+        """
+        return [
+            Events.ADDED,
+            Events.UPDATED,
+            Events.COMPLETED,
+            Events.CANCELLED,
+            Events.CLEARED,
+            Events.ERROR,
+            Events.LOG_INFO,
+            Events.LOG_SUCCESS,
+            Events.INITIAL_DATA,
+            Events.YTDLP_CONVERT,
+            Events.ITEM_DELETE,
+            Events.ITEM_CANCEL,
+            Events.STATUS,
+            Events.CLI_CLOSE,
+            Events.CLI_OUTPUT,
+            Events.UPDATE,
+            Events.PAUSED,
+        ]
+
 
 @dataclass(kw_only=True)
 class Event:
@@ -60,7 +162,7 @@ class Event:
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
     """The id of the event."""
 
-    created: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.UTC).isoformat()))
+    created: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.utc).isoformat()))
     """The time the event was created."""
 
     event: str
@@ -96,6 +198,23 @@ class Event:
         return f"Event(id={self.id}, created={self.created}, event={self.event})"
 
 
+class EventListener:
+    name: str
+    is_coroutine: bool = False
+    call_back: callable
+
+    def __init__(self, name: str, callback: callable):
+        self.name = name
+        self.call_back = callback
+        self.is_coroutine = asyncio.iscoroutinefunction(callback)
+
+    async def handle(self, event: Event, **kwargs):
+        if self.is_coroutine:
+            return self.call_back(event, self.name, **kwargs)
+        else:
+            return asyncio.create_task(self.call_back(event, self.name, **kwargs))
+
+
 class EventBus(metaclass=Singleton):
     """
     This class is used to subscribe to and emit events to the registered listeners.
@@ -104,7 +223,7 @@ class EventBus(metaclass=Singleton):
     _instance = None
     """the instance of the EventsSubscriber"""
 
-    _listeners: dict[str, list[str, Awaitable]] = {}
+    _listeners: dict[str, list[str, EventListener]] = {}
     """The listeners for the events."""
 
     def __init__(self):
@@ -137,17 +256,32 @@ class EventBus(metaclass=Singleton):
             EventsSubscriber: The instance of the EventsSubscriber
 
         """
+        all_events = Events.get_all()
+
         if isinstance(event, str):
-            event = [event]
+            if "*" == event:
+                event = all_events
+            elif "frontend" == event:
+                event = Events.frontend()
+            else:
+                if event not in all_events:
+                    LOG.error(f"'{name}' attempted to listen on '{event}' which does not exist.")
+                    return self
+
+                event = [event]
 
         if not name:
             name = str(uuid.uuid4())
 
         for e in event:
+            if e not in all_events:
+                LOG.error(f"'{name}' attempted to listen on '{e}' which does not exist.")
+                continue
+
             if e not in self._listeners:
                 self._listeners[e] = {}
 
-            self._listeners[e][name] = callback
+            self._listeners[e][name] = EventListener(name, callback)
 
         return self
 
@@ -172,7 +306,7 @@ class EventBus(metaclass=Singleton):
 
         return self
 
-    def emit_sync(self, event: str, data: any, **kwargs) -> list:
+    def sync_emit(self, event: str, data: any, **kwargs) -> list:
         """
         Emit an event synchronously.
 
@@ -190,19 +324,19 @@ class EventBus(metaclass=Singleton):
             return []
 
         ev = Event(event=event, data=data)
-        LOG.debug(f"Emitting event '{ev}'.")
+        LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
         results = []
-        for name, callback in self._listeners[event].items():
+        for handler in self._listeners[event].items():
             try:
-                results.append(asyncio.get_event_loop().run_until_complete(callback(ev, name, **kwargs)))
+                results.append(asyncio.get_event_loop().run_until_complete(handler.handle(ev, **kwargs)))
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to emit event '{event}' to '{name}'. Error message '{e!s}'.")
+                LOG.error(f"Failed to emit event '{event}' to '{handler.name}'. Error message '{e!s}'.")
 
         return results
 
-    def emit(self, event: str, data: any, **kwargs) -> Awaitable:
+    async def emit(self, event: str, data: any, **kwargs) -> Awaitable:
         """
         Emit an event.
 
@@ -216,18 +350,17 @@ class EventBus(metaclass=Singleton):
 
         """
         if event not in self._listeners:
-            return None
+            return []
 
         ev = Event(event=event, data=data)
-
-        LOG.debug(f"Emitting event '{ev}'.")
+        LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
         tasks = []
-        for name, callback in self._listeners[event].items():
+        for handler in self._listeners[event].values():
             try:
-                tasks.append(asyncio.create_task(callback(ev, name, **kwargs)))
+                tasks.append(handler.handle(ev, **kwargs))
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to emit event '{event}' to '{name}'. Error message '{e!s}'.")
+                LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
 
         return asyncio.gather(*tasks)
