@@ -26,7 +26,7 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
-from .EventsSubscriber import Events
+from .Events import Events
 from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents

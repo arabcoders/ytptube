@@ -18,7 +18,7 @@ from .config import Config
 from .DataStore import DataStore
 from .Download import Download
 from .Emitter import Emitter
-from .EventsSubscriber import Events
+from .Events import Events
 from .ItemDTO import ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton

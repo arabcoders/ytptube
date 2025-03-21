@@ -18,7 +18,7 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .Emitter import Emitter
 from .encoder import Encoder
-from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Events import EventBus, Events
 from .Presets import Presets
 from .Utils import arg_converter, is_downloaded
 
@@ -80,13 +80,9 @@ class HttpSocket(Common):
             if hasattr(method, "_ws_event") and self.sio:
                 self.sio.on(method._ws_event)(method)  # type: ignore
 
-        # self.sio.on("*", es.emit)
-
-        async def handle_event(_: str, data: Event):
-            LOG.debug(f"Event received. '{data}'")
-            await self.add(**data.data)
-
-        EventsSubscriber.get_instance().subscribe(Events.ADD_URL, "socket_add_url", handle_event)
+        EventBus.get_instance().subscribe(
+            Events.ADD_URL, lambda data, _: self.add(**data.data), "socket_add_url"
+        )
 
         # register the shutdown event.
         app.on_shutdown.append(self.on_shutdown)

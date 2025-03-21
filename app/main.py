@@ -12,7 +12,7 @@ from aiohttp import web
 from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Emitter import Emitter
-from library.EventsSubscriber import Events, EventsSubscriber
+from library.Events import EventBus, Events
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
@@ -61,7 +61,7 @@ class Main:
         self._socket = HttpSocket(queue=self._queue)
 
         Emitter.get_instance().add_emitter([Notification().emit], local=False).add_emitter(
-            [EventsSubscriber().emit], local=True
+            [EventBus().emit], local=True
         )
 
         self._app.on_cleanup.append(_close_connection)
@@ -94,7 +94,7 @@ class Main:
         """
         Start the application.
         """
-        EventsSubscriber.get_instance().emit(Events.STARTUP, data={"app": self._app})
+        EventBus.get_instance().emit(Events.STARTUP, data={"app": self._app})
 
         self._socket.attach(self._app)
         self._http.attach(self._app)

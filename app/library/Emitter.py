@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable
 
-from .EventsSubscriber import Events
+from .Events import Events
 from .Singleton import Singleton
 
 LOG = logging.getLogger("Emitter")

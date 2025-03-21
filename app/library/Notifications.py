@@ -10,7 +10,7 @@ import httpx
 
 from .config import Config
 from .encoder import Encoder
-from .EventsSubscriber import Events
+from .Events import Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
 from .Utils import ag, validate_uuid

@@ -13,7 +13,7 @@ from aiohttp import web
 from .config import Config
 from .Emitter import Emitter
 from .encoder import Encoder
-from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Events import Event, EventBus, Events
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 
@@ -82,10 +82,7 @@ class Tasks(metaclass=Singleton):
             except Exception:
                 pass
 
-        def handle_event(_, e: Event):
-            self.save(**e.data)
-
-        EventsSubscriber.get_instance().subscribe(Events.TASKS_ADD, f"{__class__}.save", handle_event)
+        EventBus.get_instance().subscribe(Events.TASKS_ADD, lambda data, _: self.add(**data.data), f"{__class__}.save")
 
     @staticmethod
     def get_instance() -> "Tasks":

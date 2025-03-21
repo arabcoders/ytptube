@@ -1,7 +1,9 @@
 import asyncio
+import datetime
 import logging
+import uuid
 from collections.abc import Awaitable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .Singleton import Singleton
 
@@ -51,11 +53,50 @@ class Events:
 
 @dataclass(kw_only=True)
 class Event:
-    id: str
-    data: dict
+    """
+    Event is a data transfer object that represents an event that was emitted.
+    """
+
+    id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
+    """The id of the event."""
+
+    created: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.UTC).isoformat()))
+    """The time the event was created."""
+
+    event: str
+    """The event that was emitted."""
+
+    data: any
+    """The data that was passed to the event."""
+
+    def serialize(self) -> dict:
+        """
+        Serialize the event.
+
+        Returns:
+            dict: The serialized event.
+
+        """
+        return {"id": self.id, "created": self.created, "event": self.event, "data": self.data}
+
+    def __repr__(self):
+        return f"Event(id={self.id}, created={self.created}, event={self.event}, data={self.data})"
+
+    def datatype(self) -> str:
+        """
+        Get the datatype of the data.
+
+        Returns:
+            str: The datatype of the data.
+
+        """
+        return type(self.data).__name__
+
+    def __str__(self):
+        return f"Event(id={self.id}, created={self.created}, event={self.event})"
 
 
-class EventsSubscriber(metaclass=Singleton):
+class EventBus(metaclass=Singleton):
     """
     This class is used to subscribe to and emit events to the registered listeners.
     """
@@ -67,10 +108,10 @@ class EventsSubscriber(metaclass=Singleton):
     """The listeners for the events."""
 
     def __init__(self):
-        EventsSubscriber._instance = self
+        EventBus._instance = self
 
     @staticmethod
-    def get_instance() -> "EventsSubscriber":
+    def get_instance() -> "EventBus":
         """
         Get the instance of the EventsSubscriber.
 
@@ -78,18 +119,19 @@ class EventsSubscriber(metaclass=Singleton):
             EventsSubscriber: The instance of the EventsSubscriber
 
         """
-        if not EventsSubscriber._instance:
-            EventsSubscriber._instance = EventsSubscriber()
-        return EventsSubscriber._instance
+        if not EventBus._instance:
+            EventBus._instance = EventBus()
 
-    def subscribe(self, event: str | list | tuple, id: str, callback: Awaitable) -> "EventsSubscriber":
+        return EventBus._instance
+
+    def subscribe(self, event: str | list | tuple, callback: Awaitable, name: str | None = None) -> "EventBus":
         """
         Subscribe to an event.
 
         Args:
             event (str): The event to subscribe to.
-            id (str|None): The id of the subscriber, if None a random uuid will be generated.
-            callback (Awaitable): The function to call. Must be a coroutine.
+            name (str|None): The name of the subscriber, if None a random uuid will be generated.
+            callback(Event) (Awaitable): The function to call. Must be a coroutine.
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
@@ -97,22 +139,25 @@ class EventsSubscriber(metaclass=Singleton):
         """
         if isinstance(event, str):
             event = [event]
+
+        if not name:
+            name = str(uuid.uuid4())
 
         for e in event:
             if e not in self._listeners:
                 self._listeners[e] = {}
 
-            self._listeners[e][id] = callback
+            self._listeners[e][name] = callback
 
         return self
 
-    def unsubscribe(self, event: str | list | tuple, id: str) -> "EventsSubscriber":
+    def unsubscribe(self, event: str | list | tuple, name: str) -> "EventBus":
         """
         Unsubscribe from an event.
 
         Args:
             event (str): The event to unsubscribe from.
-            id (str): The id of the subscriber.
+            name (str): The name of the subscriber.
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
@@ -122,18 +167,18 @@ class EventsSubscriber(metaclass=Singleton):
             event = [event]
 
         for e in event:
-            if e in self._listeners and id in self._listeners[e]:
-                del self._listeners[e][id]
+            if e in self._listeners and name in self._listeners[e]:
+                del self._listeners[e][name]
 
         return self
 
-    def emit_sync(self, event: str, *args, **kwargs):
+    def emit_sync(self, event: str, data: any, **kwargs) -> list:
         """
         Emit an event synchronously.
 
         Args:
             event (str): The event to emit.
-            *args: The arguments to pass to the event.
+            data (any): The data to pass to the event.
             **kwargs: The keyword arguments to pass to the event.
 
         Returns:
@@ -144,28 +189,26 @@ class EventsSubscriber(metaclass=Singleton):
         if event not in self._listeners:
             return []
 
-        results = []
-        for id, callback in self._listeners[event].items():
-            try:
-                if "data" not in kwargs or not isinstance(kwargs["data"], Event):
-                    data = Event(id=id, data={"args": args if args else [], **kwargs})
-                else:
-                    data = kwargs["data"]
+        ev = Event(event=event, data=data)
+        LOG.debug(f"Emitting event '{ev}'.")
 
-                results.append(asyncio.get_event_loop().run_until_complete(callback(event, data)))
+        results = []
+        for name, callback in self._listeners[event].items():
+            try:
+                results.append(asyncio.get_event_loop().run_until_complete(callback(ev, name, **kwargs)))
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
+                LOG.error(f"Failed to emit event '{event}' to '{name}'. Error message '{e!s}'.")
 
         return results
 
-    def emit(self, event: str, *args, **kwargs):
+    def emit(self, event: str, data: any, **kwargs) -> Awaitable:
         """
         Emit an event.
 
         Args:
             event (str): The event to emit.
-            *args: The arguments to pass to the event.
+            data (any): The data to pass to the event.
             **kwargs: The keyword arguments to pass to the event.
 
         Returns:
@@ -175,19 +218,16 @@ class EventsSubscriber(metaclass=Singleton):
         if event not in self._listeners:
             return None
 
-        tasks = []
-        for id, callback in self._listeners[event].items():
-            try:
-                if args and isinstance(args[0], Event):
-                    data = args[0]
-                elif "data" in kwargs and isinstance(kwargs["data"], Event):
-                    data = kwargs["data"]
-                else:
-                    data = Event(id=id, data={"args": args if args else [], **kwargs})
+        ev = Event(event=event, data=data)
 
-                tasks.append(asyncio.create_task(callback(event, data)))
+        LOG.debug(f"Emitting event '{ev}'.")
+
+        tasks = []
+        for name, callback in self._listeners[event].items():
+            try:
+                tasks.append(asyncio.create_task(callback(ev, name, **kwargs)))
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to emit event '{event}' to '{id}'. Error message '{e!s}'.")
+                LOG.error(f"Failed to emit event '{event}' to '{name}'. Error message '{e!s}'.")
 
         return asyncio.gather(*tasks)

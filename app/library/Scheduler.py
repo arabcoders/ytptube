@@ -4,7 +4,7 @@ import logging
 from aiocron import Cron
 from aiohttp import web
 
-from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Events import EventBus, Events
 from .Singleton import Singleton
 
 LOG = logging.getLogger("scheduler")
@@ -26,10 +26,9 @@ class Scheduler(metaclass=Singleton):
 
         self._loop = loop or asyncio.get_event_loop()
 
-        def handle_event(_, e: Event):
-            self.add(**e.data)
-
-        EventsSubscriber.get_instance().subscribe(Events.SCHEDULE_ADD, f"{__class__}.add", handle_event)
+        EventBus.get_instance().subscribe(
+            Events.SCHEDULE_ADD, lambda data, _: self.add(**data.data), f"{__class__}.add"
+        )
 
     @staticmethod
     def get_instance() -> "Scheduler":
@@ -76,8 +75,9 @@ class Scheduler(metaclass=Singleton):
         """Return the job by id."""
         return self._jobs.get(id)
 
-    def add(self, timer: str, func: callable, args: tuple = (),
-            kwargs: dict | None = None, id: str | None = None) -> str:
+    def add(
+        self, timer: str, func: callable, args: tuple = (), kwargs: dict | None = None, id: str | None = None
+    ) -> str:
         """
         Add a job to the schedule.
 
