@@ -83,7 +83,9 @@ class Presets(metaclass=Singleton):
             self._default_presets = [Preset(**preset) for preset in json.load(f)]
 
         EventBus.get_instance().subscribe(
-            Events.PRESETS_ADD, lambda data, _: self.add(**data.data), f"{__class__.__name__}.save"
+            Events.PRESETS_ADD,
+            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            f"{__class__.__name__}.save",
         )
 
     @staticmethod

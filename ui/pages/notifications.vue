@@ -124,6 +124,12 @@ div.is-centered {
             However this might not be enough to remove credentials from the exported data. it's your responsibility
             to ensure that the exported data does not contain any sensitive information for sharing.
           </li>
+          <li>
+            When you set the request type as <code>Form</code>, the event data will be JSON encoded and sent as the
+            and sent as <code>...&data=json_string</code>, only the <code>data</code> field will be JSON encoded. The
+            other keys <code>id</code>, <code>event</code> and <code>created_at</code> will be sent as they are.
+          </li>
+          <li>We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the request.</li>
         </ul>
       </Message>
     </div>

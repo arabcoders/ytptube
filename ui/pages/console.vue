@@ -103,6 +103,14 @@ const runCommand = async () => {
     return
   }
 
+  if (command.value.startsWith('yt-dlp')) {
+    command.value = command.value.replace(/^yt-dlp/, '').trim()
+    await nextTick()
+    if ('' === command.value) {
+      return
+    }
+  }
+
   if (!terminal.value) {
     terminal.value = new Terminal({
       fontSize: 14,

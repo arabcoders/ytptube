@@ -411,7 +411,7 @@ const setIcon = item => {
 }
 
 const setIconColor = item => {
-  if (item.status === 'finished') {
+  if ('finished' === item.status) {
     return 'has-text-success'
   }
 

@@ -223,7 +223,7 @@ class Notification(metaclass=Singleton):
                 self._targets.append(target)
 
                 LOG.info(
-                    f"Will send '{target.on if len(target.on) > 0 else 'all'}' as {target.request.type} notification events to '{target.name}'."
+                    f"Will send {target.request.type} request on '{', '.join(target.on) if len(target.on) > 0 else 'all events'}' to '{target.name}'."
                 )
             except Exception as e:
                 LOG.error(f"Error loading notification target '{target}'. '{e!s}'")
@@ -323,37 +323,35 @@ class Notification(metaclass=Singleton):
 
         return True
 
-    async def send(self, event: str, item: ItemDTO | dict) -> list[dict]:
+    async def send(self, ev: Event) -> list[dict]:
         if len(self._targets) < 1:
             return []
 
-        if not isinstance(item, ItemDTO) and not isinstance(item, dict):
-            LOG.debug(f"Received invalid item type '{type(item)}' with event '{event}'.")
+        if not isinstance(ev.data, ItemDTO) and not isinstance(ev.data, dict):
+            LOG.debug(f"Received invalid item type '{type(ev.data)}' with event '{ev.event}'.")
             return []
 
         tasks = []
 
         for target in self._targets:
-            if len(target.on) > 0 and event not in target.on and "test" != event:
+            if len(target.on) > 0 and ev.event not in target.on and "test" != ev.event:
                 continue
 
-            tasks.append(self._send(event, target, item))
+            tasks.append(self._send(target, ev))
 
         return await asyncio.gather(*tasks)
 
-    async def _send(self, event: str, target: Target, item: ItemDTO | dict) -> dict:
+    async def _send(self, target: Target, ev: Event) -> dict:
         try:
-            itemId = item.get("id", item.get("_id", "??"))
-        except Exception:
-            itemId = "??"
+            LOG.info(f"Sending Notification event '{ev.event}: {ev.id}' to '{target.name}'.")
 
-        try:
-            LOG.info(f"Sending Notification event '{event}' id '{itemId}' to '{target.name}'.")
             reqBody = {
                 "method": target.request.method.upper(),
                 "url": target.request.url,
                 "headers": {
                     "User-Agent": f"YTPTube/{APP_VERSION}",
+                    "X-Event-Id": ev.id,
+                    "X-Event": ev.event,
                     "Content-Type": "application/json"
                     if "json" == target.request.type.lower()
                     else "application/x-www-form-urlencoded",
@@ -364,20 +362,16 @@ class Notification(metaclass=Singleton):
                 for h in target.request.headers:
                     reqBody["headers"][h.key] = h.value
 
-            reqBody["json" if "json" == target.request.type.lower() else "data"] = {
-                "event": event,
-                "created_at": datetime.now(tz=UTC).isoformat(),
-                "payload": item.__dict__ if isinstance(item, ItemDTO) else item,
-            }
+            reqBody["json" if "json" == target.request.type.lower() else "data"] = self._deep_unpack(ev.serialize())
 
             if "form" == target.request.type.lower():
-                reqBody["data"]["payload"] = self._encoder.encode(reqBody["data"]["payload"])
+                reqBody["data"]["data"] = self._encoder.encode(reqBody["data"]["data"])
 
             response = await self._client.request(**reqBody)
 
             respData = {"url": target.request.url, "status": response.status_code, "text": response.text}
 
-            msg = f"Notification target '{target.name}' Responded to event '{event}' id '{itemId}' with status '{response.status_code}'."
+            msg = f"Notification target '{target.name}' Responded to event '{ev.event}: {ev.id}' with status '{response.status_code}'."
             if self._debug and respData.get("text"):
                 msg += f" body '{respData.get('text','??')}'."
 
@@ -385,14 +379,28 @@ class Notification(metaclass=Singleton):
 
             return respData
         except Exception as e:
-            LOG.error(f"Error sending Notification event '{event}' id '{itemId}' to '{target.name}'. '{e}'.")
-            return {"url": target.request.url, "status": 500, "text": str(e)}
+            LOG.exception(e)
+            LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{e!s}'.")
+            return {"url": target.request.url, "status": 500, "text": str(ev)}
 
     def emit(self, e: Event, _, **kwargs):  # noqa: ARG002
         if len(self._targets) < 1:
-            return False
+            return []
 
         if not NotificationEvents.is_valid(e.event):
-            return False
+            return []
 
-        return self.send(e.event, e.data)
+        return self.send(e)
+
+    def _deep_unpack(self, data: dict) -> dict:
+        for k, v in data.items():
+            if isinstance(v, dict):
+                data[k] = self._deep_unpack(v)
+            if isinstance(v, list):
+                data[k] = [self._deep_unpack(i) for i in v]
+            if isinstance(v, datetime):
+                data[k] = v.isoformat()
+            if isinstance(v, ItemDTO):
+                data[k] = v.serialize()
+
+        return data

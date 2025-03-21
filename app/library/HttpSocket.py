@@ -78,7 +78,9 @@ class HttpSocket(Common):
                 self.sio.on(method._ws_event)(method)  # type: ignore
 
         self._notify.subscribe(
-            Events.ADD_URL, lambda data, _: self.add(**data.data), f"{__class__.__name__}.socket_add_url"
+            Events.ADD_URL,
+            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            f"{__class__.__name__}.socket_add_url",
         )
 
         # register the shutdown event.

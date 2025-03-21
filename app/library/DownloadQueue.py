@@ -502,7 +502,7 @@ class DownloadQueue(metaclass=Singleton):
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")
                 self.queue.delete(id)
-                await self._notify.emit(Events.CANCELLED, info=item.info.serialize())
+                await self._notify.emit(Events.CANCELLED, data=item.info.serialize())
                 item.info.status = "cancelled"
                 item.info.error = "Cancelled by user."
                 self.done.put(item)

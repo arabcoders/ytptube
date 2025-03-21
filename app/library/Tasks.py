@@ -80,8 +80,6 @@ class Tasks(metaclass=Singleton):
             except Exception:
                 pass
 
-        self._notify.subscribe(Events.TASKS_ADD, lambda data, _: self.add(**data.data), f"{__class__.__name__}.save")
-
     @staticmethod
     def get_instance() -> "Tasks":
         """
@@ -108,6 +106,11 @@ class Tasks(metaclass=Singleton):
 
         """
         self.load()
+        self._notify.subscribe(
+            Events.TASKS_ADD,
+            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            f"{__class__.__name__}.save",
+        )
 
     def get_all(self) -> list[Task]:
         """Return the tasks."""

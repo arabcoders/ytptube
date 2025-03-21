@@ -133,23 +133,21 @@ class Events:
 
         """
         return [
+            Events.INITIAL_DATA,
             Events.ADDED,
-            Events.UPDATED,
-            Events.COMPLETED,
-            Events.CANCELLED,
-            Events.CLEARED,
             Events.ERROR,
             Events.LOG_INFO,
             Events.LOG_SUCCESS,
-            Events.INITIAL_DATA,
-            Events.YTDLP_CONVERT,
-            Events.ITEM_DELETE,
-            Events.ITEM_CANCEL,
+            Events.COMPLETED,
+            Events.CANCELLED,
+            Events.CLEARED,
+            Events.UPDATED,
+            Events.UPDATE,
+            Events.PAUSED,
+            Events.PRESETS_UPDATE,
             Events.STATUS,
             Events.CLI_CLOSE,
             Events.CLI_OUTPUT,
-            Events.UPDATE,
-            Events.PAUSED,
         ]
 
 
@@ -162,7 +160,7 @@ class Event:
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
     """The id of the event."""
 
-    created: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.utc).isoformat()))
+    created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.utc).isoformat()))
     """The time the event was created."""
 
     event: str
@@ -179,10 +177,10 @@ class Event:
             dict: The serialized event.
 
         """
-        return {"id": self.id, "created": self.created, "event": self.event, "data": self.data}
+        return {"id": self.id, "created_at": self.created_at, "event": self.event, "data": self.data}
 
     def __repr__(self):
-        return f"Event(id={self.id}, created={self.created}, event={self.event}, data={self.data})"
+        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, data={self.data})"
 
     def datatype(self) -> str:
         """
@@ -195,7 +193,7 @@ class Event:
         return type(self.data).__name__
 
     def __str__(self):
-        return f"Event(id={self.id}, created={self.created}, event={self.event})"
+        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event})"
 
 
 class EventListener:
@@ -250,7 +248,7 @@ class EventBus(metaclass=Singleton):
         Args:
             event (str): The event to subscribe to.
             name (str|None): The name of the subscriber, if None a random uuid will be generated.
-            callback(Event) (Awaitable): The function to call. Must be a coroutine.
+            callback(Event, name, **kwargs) (Awaitable): The function to call. Must be a coroutine.
 
         Returns:
             EventsSubscriber: The instance of the EventsSubscriber
