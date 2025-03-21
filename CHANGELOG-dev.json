@@ -1,7 +1,31 @@
 [
     {
-        "tag": "dev-20250320-b7ded32",
-        "date": "2025-03-19T21:40:24+00:00",
+        "tag": "dev-20250322-4ed7c26",
+        "date": "2025-03-21T23:05:52+00:00",
+        "commits": [
+            {
+                "sha": "4ed7c26",
+                "message": "migrated all our emitter usage to EventBus",
+                "author": "ArabCoders",
+                "date": "2025-03-21T23:05:52+00:00"
+            },
+            {
+                "sha": "07fc865",
+                "message": "updated the app to use EventBus",
+                "author": "ArabCoders",
+                "date": "2025-03-21T20:56:02+00:00"
+            },
+            {
+                "sha": "a973ce8",
+                "message": "Finalize EventBus design",
+                "author": "ArabCoders",
+                "date": "2025-03-21T18:54:28+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250319-25da932",
+        "date": "2025-03-19T22:04:48+00:00",
         "commits": [
             {
                 "sha": "b7ded32",
