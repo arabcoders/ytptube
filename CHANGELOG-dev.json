@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250322-4ed7c26",
-        "date": "2025-03-21T23:05:52+00:00",
+        "tag": "dev-20250322-450ca3e",
+        "date": "2025-03-22T15:35:37+00:00",
         "commits": [
+            {
+                "sha": "450ca3e",
+                "message": "Updated yt-dlp to 2025.3.21",
+                "author": "ArabCoders",
+                "date": "2025-03-22T15:35:37+00:00"
+            },
             {
                 "sha": "4ed7c26",
                 "message": "migrated all our emitter usage to EventBus",
