@@ -389,11 +389,8 @@ class Notification(metaclass=Singleton):
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 
     def emit(self, e: Event, _, **kwargs):  # noqa: ARG002
-        if len(self._targets) < 1:
-            return []
-
-        if not NotificationEvents.is_valid(e.event):
-            return []
+        if len(self._targets) < 1 or not NotificationEvents.is_valid(e.event):
+            return asyncio.sleep(0)
 
         return self.send(e)
 
