@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250322-450ca3e",
-        "date": "2025-03-22T15:35:37+00:00",
+        "tag": "dev-20250323-c46aa1c",
+        "date": "2025-03-22T21:22:33+00:00",
+        "commits": [
+            {
+                "sha": "c46aa1c",
+                "message": "minor fix to EventBus, and trim all preset form fields.",
+                "author": "ArabCoders",
+                "date": "2025-03-22T21:22:33+00:00"
+            },
+            {
+                "sha": "706dba9",
+                "message": "README update",
+                "author": "ArabCoders",
+                "date": "2025-03-22T19:48:01+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250322-00f3f27",
+        "date": "2025-03-22T17:43:51+00:00",
         "commits": [
             {
                 "sha": "450ca3e",
