@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250323-c46aa1c",
-        "date": "2025-03-22T21:22:33+00:00",
+        "tag": "dev-20250323-37ef931",
+        "date": "2025-03-22T21:46:24+00:00",
         "commits": [
+            {
+                "sha": "37ef931",
+                "message": "fix notification.emit return to return coro incase we don't have any targets.",
+                "author": "ArabCoders",
+                "date": "2025-03-22T21:46:24+00:00"
+            },
             {
                 "sha": "c46aa1c",
                 "message": "minor fix to EventBus, and trim all preset form fields.",
