@@ -2,8 +2,9 @@ import asyncio
 import json
 import logging
 import os
+from collections.abc import Awaitable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -11,7 +12,7 @@ from aiohttp import web
 
 from .config import Config
 from .encoder import Encoder
-from .Events import EventBus, Event, Events
+from .Events import Event, EventBus, Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
 from .Utils import ag, validate_uuid
@@ -323,7 +324,7 @@ class Notification(metaclass=Singleton):
 
         return True
 
-    async def send(self, ev: Event) -> list[dict]:
+    async def send(self, ev: Event, wait: bool = True) -> list[dict] | Awaitable[list[dict]]:
         if len(self._targets) < 1:
             return []
 
@@ -339,7 +340,10 @@ class Notification(metaclass=Singleton):
 
             tasks.append(self._send(target, ev))
 
-        return await asyncio.gather(*tasks)
+        if wait:
+            return await asyncio.gather(*tasks)
+
+        return tasks
 
     async def _send(self, target: Target, ev: Event) -> dict:
         try:
@@ -367,6 +371,7 @@ class Notification(metaclass=Singleton):
             if "form" == target.request.type.lower():
                 reqBody["data"]["data"] = self._encoder.encode(reqBody["data"]["data"])
 
+            logging.getLogger("httpx").setLevel(logging.WARNING)
             response = await self._client.request(**reqBody)
 
             respData = {"url": target.request.url, "status": response.status_code, "text": response.text}
