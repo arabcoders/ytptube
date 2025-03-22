@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250322-28d902b",
+        "date": "2025-03-22T21:55:16+00:00",
+        "commits": [
+            {
+                "sha": "37ef931",
+                "message": "fix notification.emit return to return coro incase we don't have any targets.",
+                "author": "ArabCoders",
+                "date": "2025-03-22T21:46:24+00:00"
+            },
+            {
+                "sha": "c46aa1c",
+                "message": "minor fix to EventBus, and trim all preset form fields.",
+                "author": "ArabCoders",
+                "date": "2025-03-22T21:22:33+00:00"
+            },
+            {
+                "sha": "706dba9",
+                "message": "README update",
+                "author": "ArabCoders",
+                "date": "2025-03-22T19:48:01+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250322-00f3f27",
         "date": "2025-03-22T17:43:51+00:00",
         "commits": [
