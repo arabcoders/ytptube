@@ -1,5 +1,35 @@
 [
     {
+        "tag": "master-20250322-00f3f27",
+        "date": "2025-03-22T17:43:51+00:00",
+        "commits": [
+            {
+                "sha": "450ca3e",
+                "message": "Updated yt-dlp to 2025.3.21",
+                "author": "ArabCoders",
+                "date": "2025-03-22T15:35:37+00:00"
+            },
+            {
+                "sha": "4ed7c26",
+                "message": "migrated all our emitter usage to EventBus",
+                "author": "ArabCoders",
+                "date": "2025-03-21T23:05:52+00:00"
+            },
+            {
+                "sha": "07fc865",
+                "message": "updated the app to use EventBus",
+                "author": "ArabCoders",
+                "date": "2025-03-21T20:56:02+00:00"
+            },
+            {
+                "sha": "a973ce8",
+                "message": "Finalize EventBus design",
+                "author": "ArabCoders",
+                "date": "2025-03-21T18:54:28+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250319-25da932",
         "date": "2025-03-19T22:04:48+00:00",
         "commits": [
