@@ -345,6 +345,13 @@ const checkInfo = async () => {
     }
   }
 
+  // trim all fields in copy only if they are strings
+  for (const key in copy) {
+    if (typeof copy[key] === 'string') {
+      copy[key] = copy[key].trim()
+    }
+  }
+
   emitter('submit', { reference: toRaw(props.reference), preset: toRaw(copy) });
 }
 

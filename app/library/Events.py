@@ -160,7 +160,7 @@ class Event:
     id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
     """The id of the event."""
 
-    created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.timezone.utc).isoformat()))
+    created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.UTC).isoformat()))
     """The time the event was created."""
 
     event: str
@@ -209,8 +209,8 @@ class EventListener:
     async def handle(self, event: Event, **kwargs):
         if self.is_coroutine:
             return self.call_back(event, self.name, **kwargs)
-        else:
-            return asyncio.create_task(self.call_back(event, self.name, **kwargs))
+
+        return asyncio.create_task(self.call_back(event, self.name, **kwargs))
 
 
 class EventBus(metaclass=Singleton):

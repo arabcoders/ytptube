@@ -4,31 +4,30 @@
 
 Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel support.
 
-YTPTube started as a fork of [meTube](https://github.com/alexta69/metube), Since then it went under heavy changes, and it supports many new features.
+[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
 
 # YTPTube Features.
 
 * Multi-downloads support.
-* Handle live streams.
-* Schedule channels or playlists to be downloaded automatically at a specified time.
+* Can Handle live streams.
+* Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
 * Send notification to targets based on selected events. 
 * Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Queue multiple URLs separated by comma.
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
 * New `POST /api/history` endpoint that allow one or multiple links to be sent at the same time.
 * New `GET /api/history/add?url=http://..` endpoint that allow to add single item via GET request.
-* Completely redesigned the frontend UI.
-* Switched out of binary file storage in favor of SQLite.
+* Modern frontend UI.
+* SQLite as database backend.
 * Basic Authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
 
-[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
     
 # Recommended basic `ytdlp.json` file settings
 
-Your `ytdlp.json` config should include the following basic options for optimal working conditions.
+Your `/config/ytdlp.json` config should include the following basic options for optimal working conditions.
 
 ```json
 {
@@ -290,6 +289,20 @@ Disables the `Information` button.
 # API Documentation
 
 For API endpoints, please refer to the [API documentation](API.md). it's somewhat outdated, but it's a good starting point.
+
+# How to autoload yt-dlp plugins?
+
+Loading yt-dlp plugin in YTPTube is is quite simple, we already have everything setup for you. simply, create a folder 
+inside the `/config` directory named `yt-dlp` so, the path will be `/config/yt-dlp`. then follow 
+[yt-dlp plugins docs](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#plugins) to know how to install the plugins.
+
+Once you have installed the plugins, restart the container and the plugins will be auto-loaded on demand.
+
+# The origin of the project.
+
+The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
+rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
+project and what i wanted to achieve with it.
 
 # Social contact
 
