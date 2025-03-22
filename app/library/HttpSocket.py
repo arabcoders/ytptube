@@ -7,7 +7,6 @@ import pty
 import shlex
 import time
 from datetime import UTC, datetime
-from typing import Any
 
 import anyio
 import socketio
@@ -16,9 +15,8 @@ from aiohttp import web
 from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
-from .Emitter import Emitter
 from .encoder import Encoder
-from .EventsSubscriber import Event, Events, EventsSubscriber
+from .Events import Event, EventBus, Events, error
 from .Presets import Presets
 from .Utils import arg_converter, is_downloaded
 
@@ -33,26 +31,25 @@ class HttpSocket(Common):
     config: Config
     sio: socketio.AsyncServer
     queue: DownloadQueue
-    emitter: Emitter
 
     def __init__(
         self,
         queue: DownloadQueue | None = None,
-        emitter: Emitter | None = None,
         encoder: Encoder | None = None,
         config: Config | None = None,
         sio: socketio.AsyncServer | None = None,
     ):
         self.config = config or Config.get_instance()
         self.queue = queue or DownloadQueue.get_instance()
-        self.emitter = emitter or Emitter.get_instance()
+        self._notify = EventBus.get_instance()
+
         self.sio = sio or socketio.AsyncServer(cors_allowed_origins="*")
         encoder = encoder or Encoder()
 
-        def emit(event: str, data: Any, **kwargs):
-            return self.sio.emit(event=event, data=encoder.encode(data), **kwargs)
+        def emit(e: Event, _, **kwargs):
+            return self.sio.emit(event=e.event, data=encoder.encode(e.data), **kwargs)
 
-        self.emitter.add_emitter([emit], local=False)
+        self._notify.subscribe("frontend", emit, f"{__class__.__name__}.socket_api")
 
         super().__init__(queue=queue, encoder=encoder, config=config)
 
@@ -80,13 +77,11 @@ class HttpSocket(Common):
             if hasattr(method, "_ws_event") and self.sio:
                 self.sio.on(method._ws_event)(method)  # type: ignore
 
-        # self.sio.on("*", es.emit)
-
-        async def handle_event(_: str, data: Event):
-            LOG.debug(f"Event received. '{data}'")
-            await self.add(**data.data)
-
-        EventsSubscriber.get_instance().subscribe(Events.ADD_URL, "socket_add_url", handle_event)
+        self._notify.subscribe(
+            Events.ADD_URL,
+            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            f"{__class__.__name__}.socket_add_url",
+        )
 
         # register the shutdown event.
         app.on_shutdown.append(self.on_shutdown)
@@ -94,11 +89,11 @@ class HttpSocket(Common):
     @ws_event
     async def cli_post(self, sid: str, data):
         if not self.config.console_enabled:
-            await self.emitter.error("Console is disabled.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("Console is disabled."), to=sid)
             return
 
         if not data:
-            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": 0}, to=sid)
+            await self._notify.emit(Events.CLI_CLOSE, data={"exitcode": 0}, to=sid)
             return
 
         try:
@@ -149,18 +144,18 @@ class HttpSocket(Common):
                         # No more output
                         if buffer:
                             # Emit any remaining partial line
-                            await self.emitter.emit(
+                            await self._notify.emit(
                                 Events.CLI_OUTPUT,
-                                {"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
+                                data={"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
                                 to=sid,
                             )
                         break
                     buffer += chunk
                     *lines, buffer = buffer.split(b"\n")
                     for line in lines:
-                        await self.emitter.emit(
+                        await self._notify.emit(
                             Events.CLI_OUTPUT,
-                            {"type": "stdout", "line": line.decode("utf-8", errors="replace")},
+                            data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
                             to=sid,
                         )
                 try:
@@ -177,58 +172,58 @@ class HttpSocket(Common):
             # Ensure reading is done
             await read_task
 
-            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": returncode}, to=sid)
+            await self._notify.emit(Events.CLI_CLOSE, data={"exitcode": returncode}, to=sid)
         except Exception as e:
             LOG.error(f"CLI execute exception was thrown for client '{sid}'.")
             LOG.exception(e)
-            await self.emitter.emit(Events.CLI_OUTPUT, {"type": "stderr", "line": str(e)}, to=sid)
-            await self.emitter.emit(Events.CLI_CLOSE, {"exitcode": -1}, to=sid)
+            await self._notify.emit(Events.CLI_OUTPUT, data={"type": "stderr", "line": str(e)}, to=sid)
+            await self._notify.emit(Events.CLI_CLOSE, data={"exitcode": -1}, to=sid)
 
     @ws_event
     async def add_url(self, sid: str, data: dict):
         url: str | None = data.get("url")
 
         if not url:
-            await self.emitter.error("No URL provided.", data={"unlock": True}, to=sid)
+            await self._notify.emit(Events.ERROR, data=error("No URL provided.", data={"unlock": True}), to=sid)
             return
 
         try:
             item = self.format_item(data)
         except ValueError as e:
-            await self.emitter.error(str(e), to=sid)
+            await self._notify.emit(Events.ERROR, data=error(str(e)), to=sid)
             return
 
         status = await self.add(**item)
-        await self.emitter.emit(event=Events.STATUS, data=status, to=sid)
+        await self._notify.emit(Events.STATUS, data=status, to=sid)
 
     @ws_event
     async def item_cancel(self, sid: str, id: str):
         if not id:
-            await self.emitter.error("Invalid request.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
             return
 
         status: dict[str, str] = {}
         status = await self.queue.cancel([id])
         status.update({"identifier": id})
 
-        await self.emitter.emit(event=Events.ITEM_CANCEL, data=status)
+        await self._notify.emit(Events.ITEM_CANCEL, data=status)
 
     @ws_event
     async def item_delete(self, sid: str, data: dict):
         if not data:
-            await self.emitter.error("Invalid request.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
             return
 
         id: str | None = data.get("id")
         if not id:
-            await self.emitter.error("Invalid request.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
             return
 
         status: dict[str, str] = {}
         status = await self.queue.clear([id], remove_file=bool(data.get("remove_file", False)))
         status.update({"identifier": id})
 
-        await self.emitter.emit(event=Events.ITEM_DELETE, data=status)
+        await self._notify.emit(Events.ITEM_DELETE, data=status)
 
     @ws_event
     async def archive_item(self, _: str, data: dict):
@@ -279,36 +274,36 @@ class HttpSocket(Common):
         downloadPath: str = self.config.download_path
         data["folders"] = [name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))]
 
-        await self.emitter.emit(event=Events.INITIAL_DATA, data=data, to=sid)
+        await self._notify.emit(Events.INITIAL_DATA, data=data, to=sid)
 
     @ws_event
     async def pause(self, *_, **__):
         self.queue.pause()
-        await self.emitter.emit(event=Events.PAUSED, data={"paused": True, "at": time.time()})
+        await self._notify.emit(Events.PAUSED, data={"paused": True, "at": time.time()})
 
     @ws_event
     async def resume(self, *_, **__):
         self.queue.resume()
-        await self.emitter.emit(event=Events.PAUSED, data={"paused": False, "at": time.time()})
+        await self._notify.emit(Events.PAUSED, data={"paused": False, "at": time.time()})
 
     @ws_event
     async def ytdlp_convert(self, sid: str, data: dict):
         if not isinstance(data, dict) or "args" not in data:
-            await self.emitter.error("Invalid request or no options were given.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("Invalid request or no options were given."), to=sid)
             return
 
         args: str | None = data.get("args")
 
         if not args:
-            await self.emitter.error("no options were given.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error("no options were given."), to=sid)
             return
 
         try:
-            await self.emitter.emit(event=Events.YTDLP_CONVERT, data=arg_converter(args), to=sid)
+            await self._notify.emit(Events.YTDLP_CONVERT, data=arg_converter(args), to=sid)
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
             LOG.error(f"Failed to convert args. '{err}'.")
-            await self.emitter.error(f"Failed to convert options. '{err}'.", to=sid)
+            await self._notify.emit(Events.ERROR, data=error(f"Failed to convert options. '{err}'."), to=sid)
 
         return

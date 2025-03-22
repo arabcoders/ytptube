@@ -70,7 +70,7 @@ export const useSocketStore = defineStore('socket', () => {
         return
       }
 
-      toast.info(`Download cancelled: ${ag(stateStore.get('queue', id, {}), id)}`);
+      toast.warning(`Download cancelled: ${ag(stateStore.get('queue', id, {}), 'title')}`);
 
       if (true === stateStore.has('queue', id)) {
         stateStore.remove('queue', id);

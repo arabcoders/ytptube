@@ -24,9 +24,8 @@ from .cache import Cache
 from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
-from .Emitter import Emitter
 from .encoder import Encoder
-from .EventsSubscriber import Events
+from .Events import EventBus, Events, message
 from .ffprobe import ffprobe
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
@@ -70,14 +69,13 @@ class HttpAPI(Common):
     def __init__(
         self,
         queue: DownloadQueue | None = None,
-        emitter: Emitter | None = None,
         encoder: Encoder | None = None,
         config: Config | None = None,
     ):
         self.queue = queue or DownloadQueue.get_instance()
-        self.emitter = emitter or Emitter.get_instance()
         self.encoder = encoder or Encoder()
         self.config = config or Config.get_instance()
+        self._notify = EventBus.get_instance()
 
         self.rootPath = str(Path(__file__).parent.parent.parent)
         self.routes = web.RouteTableDef()
@@ -793,7 +791,7 @@ class HttpAPI(Common):
                 status=web.HTTPInternalServerError.status_code,
             )
 
-        await self.emitter.emit(Events.PRESETS_UPDATE, presets)
+        await self._notify.emit(Events.PRESETS_UPDATE, data=presets)
         return web.json_response(data=presets, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("GET", "api/tasks")
@@ -951,7 +949,7 @@ class HttpAPI(Common):
 
         if updated:
             self.queue.done.put(item)
-            await self.emitter.emit(Events.UPDATE, item.info)
+            await self._notify.emit(Events.UPDATE, data=item.info)
 
         return web.json_response(
             data=item.info,
@@ -1621,7 +1619,8 @@ class HttpAPI(Common):
             Response: The response object.
 
         """
-        data = {"type": "test", "message": "This is a test notification."}
-        await self.emitter.emit(Events.TEST, data)
+        data = message("test", "This is a test notification.")
+
+        await self._notify.emit(Events.TEST, data=data)
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)

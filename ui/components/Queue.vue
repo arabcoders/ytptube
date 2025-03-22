@@ -76,11 +76,10 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow">
                 <span class="icon-text">
-                  <span class="icon" :class="{ 'has-text-success': item.status == 'downloading' }">
-                    <i class="fas" :class="setIcon(item)" />
+                  <span class="icon" :class="setIconColor(item)">
+                    <i class="fas fa-solid" :class="setIcon(item)" />
                   </span>
-                  <span v-if="item.status == 'downloading' && item.is_live">Live Streaming</span>
-                  <span v-else>{{ ucFirst(item.status) }}</span>
+                  <span v-text="setStatus(item)" />
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow">
@@ -153,7 +152,7 @@
 
 <script setup>
 import moment from 'moment'
-import { useStorage } from '@vueuse/core'
+import { set, useStorage } from '@vueuse/core'
 import { ucFirst } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
@@ -184,23 +183,61 @@ const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
 
 const setIcon = item => {
   if ('downloading' === item.status && item.is_live) {
-    return 'fa-solid fa-globe';
+    return 'fa-globe fa-spin';
   }
 
   if ('downloading' === item.status) {
-    return 'fa-solid fa-circle-check';
+    return 'fa-download';
   }
 
   if ('postprocessing' === item.status) {
-    return 'fa-solid fa-cog fa-spin';
+    return 'fa-cog fa-spin';
   }
 
   if (null === item.status && true === config.paused) {
-    return 'fa-solid fa-pause-circle';
+    return 'fa-pause-circle';
   }
 
-  return 'fa-solid fa-spinner fa-spin';
+  if (!item.status) {
+    return 'fa-question';
+  }
+
+  return 'fa-spinner fa-spin';
 }
+
+const setStatus = item => {
+  if (null === item.status && true === config.paused) {
+    return 'Paused';
+  }
+
+  if ('downloading' === item.status && item.is_live) {
+    return 'Live Streaming';
+  }
+
+  if (!item.status) {
+    return 'Unknown..';
+  }
+
+  return ucFirst(item.status)
+}
+
+const setIconColor = item => {
+  if (item.status === 'downloading') {
+    return 'has-text-success'
+  }
+
+  if ('postprocessing' === item.status) {
+    return 'has-text-info'
+  }
+
+  if (null === item.status && true === config.paused) {
+    return 'has-text-warning'
+  }
+
+  return ''
+}
+
+
 
 const ETAPipe = value => {
   if (value === null || 0 === value) {
