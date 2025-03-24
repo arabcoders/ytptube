@@ -9,6 +9,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 # YTPTube Features.
 
 * Multi-downloads support.
+* Random beautiful background. `can be disabled`.
 * Can Handle live streams.
 * Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
 * Send notification to targets based on selected events. 
