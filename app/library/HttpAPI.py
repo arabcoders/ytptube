@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import anyio
 import httpx
@@ -1364,6 +1364,8 @@ class HttpAPI(Common):
                     ),
                 },
             }
+
+            logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 LOG.debug(f"Fetching thumbnail from '{url}'.")
                 response = await client.request(method="GET", url=url)
@@ -1384,6 +1386,87 @@ class HttpAPI(Common):
             LOG.error(f"Error fetching thumbnail from '{url}'. '{e}'.")
             return web.json_response(
                 data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
+            )
+
+    @route("GET", "api/random/background")
+    async def get_background(self, request: Request) -> Response:
+        """
+        Get random background.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        backends: list[str] = [
+            "https://unsplash.it/1920/1080?random",
+            "https://picsum.photos/1920/1080",
+            "https://spaceholder.cc/i/1920x1080",
+            "https://imageipsum.com/1920x1080",
+            "https://placedog.net/1920/1080",
+        ]
+
+        try:
+            CACHE_KEY = "random_background"
+
+            if self.cache.has(CACHE_KEY) and not request.query.get("force", False):
+                data = await self.cache.aget(CACHE_KEY)
+                return web.Response(
+                    body=data.get("content"),
+                    headers={
+                        "X-Cache": "HIT",
+                        "X-Cache-TTL": str(await self.cache.attl(CACHE_KEY)),
+                        "X-Image-Via": data.get("backend"),
+                        **data.get("headers"),
+                    },
+                )
+
+            opts = {
+                "proxy": self.config.ytdl_options.get("proxy", None),
+                "headers": {
+                    "User-Agent": self.config.ytdl_options.get("user_agent", f"YTPTube/{self.config.version}"),
+                },
+            }
+
+            backend = random.choice(backends)  # noqa: S311
+            logging.getLogger("httpx").setLevel(logging.WARNING)
+            async with httpx.AsyncClient(**opts) as client:
+                response = await client.request(method="GET", url=backend, follow_redirects=True)
+
+                if response.status_code != web.HTTPOk.status_code:
+                    return web.json_response(
+                        data={"error": "failed to retrieve the random background image."},
+                        status=web.HTTPInternalServerError.status_code,
+                    )
+
+                data = {
+                    "content": response.content,
+                    "backend": urlparse(backend).netloc,
+                    "headers": {
+                        "Content-Type": response.headers.get("Content-Type", "image/jpeg"),
+                        "Content-Length": str(len(response.content)),
+                    },
+                }
+
+                await self.cache.aset(key=CACHE_KEY, value=data, ttl=3600)
+
+                return web.Response(
+                    body=data.get("content"),
+                    headers={
+                        "X-Cache": "MISS",
+                        "X-Cache-TTL": "3600",
+                        "X-Image-Via": data.get("backend"),
+                        **data.get("headers"),
+                    },
+                )
+        except Exception as e:
+            LOG.exception(e)
+            LOG.error(f"Failed to request random background image.'. '{e!s}'.")
+            return web.json_response(
+                data={"error": "failed to retrieve the random background image."},
+                status=web.HTTPInternalServerError.status_code,
             )
 
     @route("GET", "api/file/ffprobe/{file:.*}")
@@ -1515,6 +1598,8 @@ class HttpAPI(Common):
                 },
                 "cookies": cookies,
             }
+
+            logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 LOG.debug(f"Checking '{url}' redirection.")
                 response = await client.request(method="GET", url=url, follow_redirects=False)

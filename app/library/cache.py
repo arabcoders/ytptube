@@ -42,6 +42,20 @@ class Cache(metaclass=ThreadSafe):
                 return default
             return value
 
+    def ttl(self, key: str) -> float | None:
+        """
+        Synchronously retrieve the time-to-live of a key in the cache.
+        """
+        with self._lock:
+            entry = self._cache.get(key)
+            if entry is None:
+                return None
+
+            _, expire_at = entry
+            if expire_at is None:
+                return None
+            return expire_at - time.time()
+
     def has(self, key: str) -> bool:
         """
         Synchronously check if a key exists in the cache and hasn't expired.
@@ -92,6 +106,12 @@ class Cache(metaclass=ThreadSafe):
         Asynchronously retrieve a value from the cache.
         """
         return self.get(key, default)
+
+    async def attl(self, key: str) -> float | None:
+        """
+        Asynchronously retrieve the time-to-live of a key in the cache.
+        """
+        return self.ttl(key)
 
     async def ahas(self, key: str) -> bool:
         """
