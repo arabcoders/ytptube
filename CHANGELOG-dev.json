@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250323-37ef931",
-        "date": "2025-03-22T21:46:24+00:00",
+        "tag": "dev-20250325-c81f50a",
+        "date": "2025-03-24T22:38:59+00:00",
+        "commits": [
+            {
+                "sha": "c81f50a",
+                "message": "minor change to add random background to the WebUI.",
+                "author": "arabcoders",
+                "date": "2025-03-24T22:38:59+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250322-28d902b",
+        "date": "2025-03-22T21:55:16+00:00",
         "commits": [
             {
                 "sha": "37ef931",
