@@ -167,6 +167,9 @@ const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const embed_url = ref('')
 
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
+
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {
     const element = stateStore.queue[key];
@@ -337,4 +340,11 @@ const cancelItems = item => {
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+watch(embed_url, v => {
+  if (!bg_enable.value) {
+    return
+  }
+  document.querySelector('body').setAttribute("style", `opacity: ${ v ? 1 : bg_opacity.value}`)
+})
+
 </script>
