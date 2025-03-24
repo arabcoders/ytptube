@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250325-55b3c34",
-        "date": "2025-03-24T22:47:49+00:00",
+        "tag": "dev-20250325-fad709b",
+        "date": "2025-03-24T23:03:44+00:00",
+        "commits": [
+            {
+                "sha": "fad709b",
+                "message": "restore opacity if the video is playing.",
+                "author": "arabcoders",
+                "date": "2025-03-24T23:03:44+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250324-68473a1",
+        "date": "2025-03-24T22:56:18+00:00",
         "commits": [
             {
                 "sha": "55b3c34",
