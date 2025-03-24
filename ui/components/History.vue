@@ -275,6 +275,9 @@ const video_item = ref(null)
 const playVideo = item => video_item.value = item
 const closeVideo = () => video_item.value = null
 
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
+
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.history) {
     const element = stateStore.history[key]
@@ -493,4 +496,11 @@ const reQueueItem = item => {
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+watch(video_item, v => {
+  if (!bg_enable.value) {
+    return
+  }
+
+  document.querySelector('body').setAttribute("style", `opacity: ${ v ? 1 : bg_opacity.value}`)
+})
 </script>
