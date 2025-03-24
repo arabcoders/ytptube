@@ -79,10 +79,21 @@
             <span class="icon"><i class="fas fa-refresh"></i></span>
           </button>
         </div>
+
+        <div class="navbar-item">
+          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'WebUI Settings'"
+            @click="show_settings = !show_settings">
+            <span class="icon"><i class="fas fa-cog" /></span>
+          </button>
+        </div>
+
       </div>
     </nav>
 
-    <NuxtPage />
+    <div>
+      <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+      <NuxtPage />
+    </div>
 
     <div class="columns mt-3 is-mobile">
       <div class="column is-8-mobile">
@@ -118,6 +129,11 @@ const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
 const config = useConfigStore()
+const loadedImage = ref()
+const show_settings = ref(false)
+const loadingImage = ref(false)
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 const applyPreferredColorScheme = scheme => {
   if (!scheme || 'auto' === scheme) {
@@ -174,6 +190,7 @@ watch(() => config.app.sentry_dsn, dsn => {
 
 onMounted(async () => {
   try {
+    await handleImage(bg_enable.value)
     applyPreferredColorScheme(selectedTheme.value)
   } catch (e) {
   }
@@ -193,4 +210,86 @@ const selectTheme = theme => {
     return reloadPage()
   }
 }
+
+watch(bg_enable, async v => await handleImage(v))
+watch(bg_opacity, v => {
+  if (false === bg_enable.value) {
+    return
+  }
+  document.querySelector('body').setAttribute("style", `opacity: ${v}`)
+})
+
+watch(loadedImage, v => {
+  if (false === bg_enable.value) {
+    return
+  }
+
+  const html = document.documentElement;
+  const body = document.querySelector('body');
+
+  const style = {
+    "background-color": "unset",
+    "display": 'block',
+    "min-height": '100%',
+    "min-width": '100%',
+    "background-image": `url(${loadedImage.value})`,
+  }
+
+  html.setAttribute("style", Object.keys(style).map(k => `${k}: ${style[k]}`).join('; ').trim())
+  html.classList.add('bg-fanart')
+  body.setAttribute("style", `opacity: ${bg_opacity.value}`);
+})
+
+const handleImage = async enabled => {
+  if (false === enabled) {
+    if (!loadedImage.value) {
+      return
+    }
+
+    const html = document.documentElement;
+    const body = document.querySelector('body');
+
+    if (html.getAttribute("style")) {
+      html.removeAttribute("style");
+    }
+    if (body.getAttribute("style")) {
+      body.removeAttribute("style");
+    }
+    loadedImage.value = ''
+    return
+  }
+
+  if (loadedImage.value) {
+    return
+  }
+
+  await loadImage()
+}
+
+const loadImage = async (force = false) => {
+  if (loadingImage.value) {
+    return
+  }
+
+  try {
+    loadingImage.value = true
+
+    let url = '/api/random/background'
+    if (force) {
+      url += '?force=true'
+    }
+
+    const imgRequest = await request(url)
+    if (200 !== imgRequest.status) {
+      return
+    }
+
+    loadedImage.value = URL.createObjectURL(await imgRequest.blob())
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingImage.value = false
+  }
+}
+
 </script>

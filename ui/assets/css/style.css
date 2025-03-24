@@ -22,8 +22,7 @@
   border: 1px solid #3e8ed0;
 }
 
-html,
-body {
+html {
   background-color: #eaeaea;
 }
 
@@ -81,8 +80,7 @@ hr {
     background-color: #fff;
   }
 
-  html,
-  body {
+  html {
     background-color: #000000;
   }
 
@@ -267,4 +265,16 @@ hr {
 
 .has-text-bold {
   font-weight: bold;
+}
+
+.transparent-bg {
+  opacity: 0.90;
+}
+
+.bg-fanart {
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-blend-mode: darken;
 }

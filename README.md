@@ -23,7 +23,6 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
-
     
 # Recommended basic `ytdlp.json` file settings
 
@@ -303,6 +302,22 @@ Once you have installed the plugins, restart the container and the plugins will 
 The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
 rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
 project and what i wanted to achieve with it.
+
+# Disclaimer
+
+This project is not affiliated with YouTube, yt-dlp, or any other service. It's a personal project that was created to
+make downloading videos from the internet easier. It's not intended to be used for piracy or any other illegal activities.
+
+# Project plan
+
+Let me start by saying, i am primarily PHP developer, and i am not familiar with the best practices of python or frontend design.
+
+There are no project plan, or design document for this project. I started this project as a hobby project, and i am learning
+as i go. What you see is the result of me learning while creating this tool. It might not be the best but i like it.
+
+While i value your feedback, remember this project is a hobby project, and i may not have the time to implement all the
+features you might want. I am open to PRs, and i will do my best to review them and merge them if they fit my vision for the
+project.
 
 # Social contact
 
