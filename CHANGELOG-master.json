@@ -1,5 +1,35 @@
 [
     {
+        "tag": "master-20250325-df699dd",
+        "date": "2025-03-25T22:04:58+00:00",
+        "commits": [
+            {
+                "sha": "aa35389",
+                "message": "Maintain playlist keys. Fixes #227",
+                "author": "arabcoders",
+                "date": "2025-03-25T21:54:46+00:00"
+            },
+            {
+                "sha": "7542a9a",
+                "message": "Restore opacity on get_info",
+                "author": "arabcoders",
+                "date": "2025-03-25T17:51:50+00:00"
+            },
+            {
+                "sha": "2b66651",
+                "message": "add sanitize_info for get url info",
+                "author": "arabcoders",
+                "date": "2025-03-25T17:42:09+00:00"
+            },
+            {
+                "sha": "b0ff4f4",
+                "message": "update dependencies",
+                "author": "arabcoders",
+                "date": "2025-03-25T17:41:32+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250325-fd93472",
         "date": "2025-03-25T01:03:22+00:00",
         "commits": [
