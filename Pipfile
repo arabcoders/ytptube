@@ -21,9 +21,9 @@ regex = "*"
 mutagen = "*"
 brotli = "*"
 brotlicffi = "*"
-yt-dlp = "*"
 anyio = "*"
 pycryptodome = "*"
+yt-dlp = "*"
 
 [dev-packages]
 
