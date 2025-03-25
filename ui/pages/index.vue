@@ -75,6 +75,7 @@
 
 <script setup>
 import { request } from '~/utils/index'
+import { useStorage } from '@vueuse/core'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
@@ -83,6 +84,8 @@ const socket = useSocketStore()
 const toast = useToast()
 const isChecking = ref(false)
 const get_info = ref('')
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 onMounted(() => {
   if (!config.app.ui_update_title) {
@@ -138,4 +141,12 @@ const pauseDownload = () => {
 
   socket.emit('pause', {})
 }
+
+watch(get_info, v => {
+  if (!bg_enable.value) {
+    return
+  }
+
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+})
 </script>

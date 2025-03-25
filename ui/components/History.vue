@@ -485,6 +485,17 @@ const removeItem = item => {
 
 const reQueueItem = item => {
   socket.emit('item_delete', { id: item._id, remove_file: false })
+
+  let extras = {}
+
+  if (item.extras) {
+    Object.keys(item.extras).forEach(k => {
+      if (k && true === k.startsWith('playlist')) {
+        extras[k] = item.extras[k]
+      }
+    })
+  }
+
   socket.emit('add_url', {
     url: item.url,
     preset: item.preset,
@@ -492,6 +503,7 @@ const reQueueItem = item => {
     config: item.config,
     cookies: item.cookies,
     template: item.template,
+    extras: extras
   })
 }
 
@@ -501,6 +513,6 @@ watch(video_item, v => {
     return
   }
 
-  document.querySelector('body').setAttribute("style", `opacity: ${ v ? 1 : bg_opacity.value}`)
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 </script>

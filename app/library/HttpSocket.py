@@ -79,7 +79,7 @@ class HttpSocket(Common):
 
         self._notify.subscribe(
             Events.ADD_URL,
-            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            lambda data, _, **kwargs: self.add(**self.format_item(data.data)),  # noqa: ARG005
             f"{__class__.__name__}.socket_add_url",
         )
 
