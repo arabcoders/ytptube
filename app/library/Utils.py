@@ -68,6 +68,7 @@ def extract_info(
     debug: bool = False,
     no_archive: bool = False,
     follow_redirect: bool = False,
+    sanitize_info: bool = False,
 ) -> dict:
     """
     Extracts video information from the given URL.
@@ -78,6 +79,7 @@ def extract_info(
         debug (bool): Enable debug logging.
         no_archive (bool): Disable download archive.
         follow_redirect (bool): Follow URL redirects.
+        sanitize_info (bool): Sanitize the extracted information
 
     Returns:
         dict: Video information.
@@ -127,9 +129,16 @@ def extract_info(
     data = yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
 
     if data and follow_redirect and "_type" in data and "url" == data["_type"]:
-        return extract_info(config, data["url"], debug=debug, no_archive=no_archive, follow_redirect=follow_redirect)
+        return extract_info(
+            config,
+            data["url"],
+            debug=debug,
+            no_archive=no_archive,
+            follow_redirect=follow_redirect,
+            sanitize_info=sanitize_info,
+        )
 
-    return data
+    return yt_dlp.YoutubeDL.sanitize_info(data) if sanitize_info else data
 
 
 def merge_dict(source: dict, destination: dict) -> dict:

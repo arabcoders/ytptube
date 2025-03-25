@@ -509,6 +509,7 @@ class HttpAPI(Common):
                 debug=False,
                 no_archive=True,
                 follow_redirect=True,
+                sanitize_info=True,
             )
 
             if "formats" in data:
@@ -531,8 +532,8 @@ class HttpAPI(Common):
 
             return web.Response(body=json.dumps(data, indent=4), status=web.HTTPOk.status_code)
         except Exception as e:
-            LOG.error(f"Error encountered while grabbing video info '{url}'. '{e}'.")
             LOG.exception(e)
+            LOG.error(f"Error encountered while getting video info for '{url}'. '{e!s}'.")
             return web.json_response(
                 data={
                     "error": "failed to get video info.",
