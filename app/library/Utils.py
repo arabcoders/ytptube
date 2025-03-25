@@ -138,6 +138,9 @@ def extract_info(
             sanitize_info=sanitize_info,
         )
 
+    if not data:
+        return data
+
     return yt_dlp.YoutubeDL.sanitize_info(data) if sanitize_info else data
 
 

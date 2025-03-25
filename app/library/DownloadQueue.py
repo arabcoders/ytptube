@@ -176,6 +176,7 @@ class DownloadQueue(metaclass=Singleton):
         config: dict | None = None,
         cookies: str = "",
         template: str = "",
+        extras: dict | None = None,
         already=None,
     ):
         """
@@ -188,7 +189,9 @@ class DownloadQueue(metaclass=Singleton):
             config (dict): The yt-dlp configuration to use for the download.
             cookies (str): The cookies to use for the download.
             template (str): The output template to use for the download.
+            extras (dict): The extra information to add to the download.
             already (set): The set of already downloaded items.
+
 
         Returns:
             dict: The status of the operation.
@@ -196,6 +199,13 @@ class DownloadQueue(metaclass=Singleton):
         """
         if not config:
             config = {}
+
+        if not extras:
+            extras = {}
+        else:
+            for key in extras.copy():
+                if not str(key).startswith("playlist"):
+                    extras.pop(key, None)
 
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
@@ -208,12 +218,16 @@ class DownloadQueue(metaclass=Singleton):
         eventType = entry.get("_type") or "video"
 
         if "playlist" == eventType:
+            LOG.info("Processing playlist")
             entries = entry.get("entries", [])
-            playlist_index_digits = len(str(len(entries)))
+            playlistCount = int(entry.get("playlist_count", len(entries)))
             results = []
+
             for i, etr in enumerate(entries, start=1):
                 etr["playlist"] = entry.get("id")
-                etr["playlist_index"] = f"{{0:0{playlist_index_digits:d}d}}".format(i)
+                etr["playlist_index"] = f"{{0:0{len(str(playlistCount)):d}d}}".format(i)
+                etr["playlist_autonumber"] = i
+
                 for property in ("id", "title", "uploader", "uploader_id"):
                     if property in entry:
                         etr[f"playlist_{property}"] = entry.get(property)
@@ -229,6 +243,7 @@ class DownloadQueue(metaclass=Singleton):
                         config=config,
                         cookies=cookies,
                         template=template,
+                        extras=extras,
                         already=already,
                     )
                 )
@@ -279,11 +294,14 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.exception(e)
                 return {"status": "error", "msg": str(e)}
 
-            extras: dict = {}
             fields: tuple = ("uploader", "channel", "thumbnail")
             for field in fields:
                 if entry.get(field):
                     extras[field] = entry.get(field)
+
+            for key in entry:
+                if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
+                    extras[key] = entry.get(key)
 
             dl = ItemDTO(
                 id=str(entry.get("id")),
@@ -304,10 +322,6 @@ class DownloadQueue(metaclass=Singleton):
                 options=options,
                 extras=extras,
             )
-
-            for property, value in entry.items():
-                if property.startswith("playlist"):
-                    dl.template = str(dl.template).replace(f"%({property})s", str(value))
 
             dlInfo: Download = Download(info=dl, info_dict=entry)
 
@@ -337,6 +351,7 @@ class DownloadQueue(metaclass=Singleton):
                 config=config,
                 cookies=cookies,
                 template=template,
+                extras=extras,
                 already=already,
             )
 
@@ -350,12 +365,15 @@ class DownloadQueue(metaclass=Singleton):
         config: dict | None = None,
         cookies: str = "",
         template: str = "",
+        extras: dict | None = None,
         already=None,
     ):
         _preset = Presets.get_instance().get(name=preset)
 
         config = config if config else {}
         folder = str(folder) if folder else ""
+        if not extras:
+            extras = {}
 
         if _preset:
             if _preset.folder and not folder:
@@ -372,7 +390,7 @@ class DownloadQueue(metaclass=Singleton):
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'YTConfig: {config}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'YTConfig: {config}' 'Extras: {extras}'."
         )
 
         if isinstance(config, str):
@@ -467,6 +485,7 @@ class DownloadQueue(metaclass=Singleton):
             cookies=cookies,
             template=template,
             already=already,
+            extras=extras,
         )
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:

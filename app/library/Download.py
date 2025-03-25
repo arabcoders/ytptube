@@ -15,6 +15,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
+from .Utils import extract_info
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("Download")
@@ -96,6 +97,7 @@ class Download:
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
         self.debug = bool(config.debug)
+        self.archive = bool(config.keep_archive)
         self.debug_ytdl = bool(config.ytdl_debug)
         self.cancelled = False
         self.tmpfilename = None
@@ -159,6 +161,19 @@ class Download:
                 .get_all()
             )
 
+            if not self.info_dict:
+                self.logger.info(f"Extracting info for '{self.info.url}'.")
+                info = extract_info(
+                    config=params,
+                    url=self.info.url,
+                    debug=self.debug,
+                    no_archive=not self.archive,
+                    follow_redirect=True,
+                )
+
+                if info:
+                    self.info_dict = info
+
             params.update(
                 {
                     "progress_hooks": [self._progress_hook],
@@ -208,11 +223,15 @@ class Download:
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
-                cls.process_ie_result(self.info_dict, download=True)
+                cls.process_ie_result(
+                    ie_result=self.info_dict,
+                    download=True,
+                    extra_info={k: v for k, v in self.info.extras.items() if k.startswith("playlist")},
+                )
                 ret = cls._download_retcode
             else:
                 self.logger.debug(f"Downloading using url: {self.info.url}")
-                ret = cls.download([self.info.url])
+                ret = cls.download(url_list=[self.info.url])
 
             self.status_queue.put({"id": self.id, "status": "finished" if ret == 0 else "error"})
         except Exception as exc:

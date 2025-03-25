@@ -1408,6 +1408,7 @@ class HttpAPI(Common):
             "https://imageipsum.com/1920x1080",
             "https://placedog.net/1920/1080",
         ]
+        backend = random.choice(backends)  # noqa: S311
 
         try:
             CACHE_KEY = "random_background"
@@ -1431,7 +1432,6 @@ class HttpAPI(Common):
                 },
             }
 
-            backend = random.choice(backends)  # noqa: S311
             logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 response = await client.request(method="GET", url=backend, follow_redirects=True)
@@ -1464,7 +1464,7 @@ class HttpAPI(Common):
                 )
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Failed to request random background image.'. '{e!s}'.")
+            LOG.error(f"Failed to request random background image from '{backend!s}'.'. '{e!s}'.")
             return web.json_response(
                 data={"error": "failed to retrieve the random background image."},
                 status=web.HTTPInternalServerError.status_code,
@@ -1580,8 +1580,8 @@ class HttpAPI(Common):
             cookies = http.cookiejar.MozillaCookieJar(cookie_file, None, None)
             cookies.load()
         except Exception as e:
-            LOG.error(f"failed to load cookies from '{cookie_file}'. '{e}'.")
             LOG.exception(e)
+            LOG.error(f"failed to load cookies from '{cookie_file}'. '{e!s}'.")
             return web.json_response(
                 data={"message": "Failed to load cookies"},
                 status=web.HTTPInternalServerError.status_code,

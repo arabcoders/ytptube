@@ -27,7 +27,7 @@ class Common:
         self.default_preset = config.default_preset
 
     async def add(
-        self, url: str, preset: str, folder: str, cookies: str, config: dict, template: str
+        self, url: str, preset: str, folder: str, cookies: str, config: dict, template: str, extras: dict | None = None
     ) -> dict[str, str]:
         """
         Add an item to the download queue.
@@ -39,6 +39,7 @@ class Common:
             cookies (str): The cookies to be used for the download.
             config (dict): The yt-dlp config to be used for the download.
             template (str): The template to be used for the download.
+            extras (dict): Extra data to be added to the download
 
         Returns:
             dict[str, str]: The status of the download.
@@ -55,6 +56,7 @@ class Common:
             cookies=cookies,
             config=config if isinstance(config, dict) else {},
             template=template,
+            extras=extras,
         )
 
     def format_item(self, item: dict) -> dict:
@@ -82,6 +84,7 @@ class Common:
         folder: str = str(item.get("folder")) if item.get("folder") else ""
         cookies: str = str(item.get("cookies")) if item.get("cookies") else ""
         template: str = str(item.get("template")) if item.get("template") else ""
+        extras = item.get("extras", {})
 
         config = item.get("config")
         if isinstance(config, str) and config:
@@ -98,4 +101,5 @@ class Common:
             "cookies": cookies,
             "config": config if isinstance(config, dict) else {},
             "template": template,
+            "extras": extras if isinstance(extras, dict) else {},
         }
