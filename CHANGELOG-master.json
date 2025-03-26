@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250326-15e4232",
+        "date": "2025-03-26T21:55:40+00:00",
+        "commits": [
+            {
+                "sha": "581442d",
+                "message": "minor update to list view, and added download selected items.",
+                "author": "arabcoders",
+                "date": "2025-03-26T21:48:26+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250326-6d77de7",
         "date": "2025-03-26T19:12:28+00:00",
         "commits": [
