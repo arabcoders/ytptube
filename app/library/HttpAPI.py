@@ -1401,16 +1401,10 @@ class HttpAPI(Common):
             Response: The response object.
 
         """
-        backends: list[str] = [
-            "https://unsplash.it/1920/1080?random",
-            "https://picsum.photos/1920/1080",
-            "https://spaceholder.cc/i/1920x1080",
-            "https://imageipsum.com/1920x1080",
-            "https://placedog.net/1920/1080",
-        ]
-        backend = random.choice(backends)  # noqa: S311
+        backend = None
 
         try:
+            backend = random.choice(self.config.pictures_backends)  # noqa: S311
             CACHE_KEY = "random_background"
 
             if self.cache.has(CACHE_KEY) and not request.query.get("force", False):
