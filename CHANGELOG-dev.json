@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250326-edcecc6",
-        "date": "2025-03-26T18:52:44+00:00",
+        "tag": "dev-20250326-3d9d0e2",
+        "date": "2025-03-26T19:07:52+00:00",
         "commits": [
+            {
+                "sha": "3d9d0e2",
+                "message": "Only show list when there are items.",
+                "author": "arabcoders",
+                "date": "2025-03-26T19:07:52+00:00"
+            },
             {
                 "sha": "edcecc6",
                 "message": "Added list disable for downloads.",

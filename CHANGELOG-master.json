@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250326-6d77de7",
+        "date": "2025-03-26T19:12:28+00:00",
+        "commits": [
+            {
+                "sha": "3d9d0e2",
+                "message": "Only show list when there are items.",
+                "author": "arabcoders",
+                "date": "2025-03-26T19:07:52+00:00"
+            },
+            {
+                "sha": "edcecc6",
+                "message": "Added list disable for downloads.",
+                "author": "arabcoders",
+                "date": "2025-03-26T18:52:44+00:00"
+            },
+            {
+                "sha": "ed1ec6f",
+                "message": "Merge theme selector into the settings page.",
+                "author": "arabcoders",
+                "date": "2025-03-26T16:17:04+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250326-5f7bbb5",
         "date": "2025-03-26T01:00:50+00:00",
         "commits": [
