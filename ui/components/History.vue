@@ -75,7 +75,7 @@
     </div>
 
     <div class="columns is-multiline" v-if="'list' === display_style">
-      <div class="column is-12">
+      <div class="column is-12" v-if="hasItems">
         <div class="table-container">
           <table class="table is-striped is-hoverable is-fullwidth is-bordered" style="table-layout: fixed;">
             <thead>
