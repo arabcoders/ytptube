@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250327-581442d",
-        "date": "2025-03-26T21:48:26+00:00",
+        "tag": "dev-20250327-fa73e81",
+        "date": "2025-03-26T22:13:52+00:00",
+        "commits": [
+            {
+                "sha": "fa73e81",
+                "message": "Make it possible to override the pictures backends urls.",
+                "author": "arabcoders",
+                "date": "2025-03-26T22:13:52+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250326-15e4232",
+        "date": "2025-03-26T21:55:40+00:00",
         "commits": [
             {
                 "sha": "581442d",
