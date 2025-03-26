@@ -59,21 +59,6 @@
           </NuxtLink>
         </div>
 
-        <div class="navbar-item">
-          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to Light theme'"
-            v-if="'auto' == selectedTheme" @click="selectTheme('light')">
-            <span class="icon has-text-warning"><i class="fas fa-sun" /></span>
-          </button>
-          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to Dark theme'"
-            v-if="'light' == selectedTheme" @click="selectTheme('dark')">
-            <span class="icon"><i class="fas fa-moon" /></span>
-          </button>
-          <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'Switch to auto theme'"
-            v-if="'dark' == selectedTheme" @click="selectTheme('auto')">
-            <span class="icon"><i class="fas fa-microchip" /></span>
-          </button>
-        </div>
-
         <div class="navbar-item is-hidden-mobile">
           <button class="button is-dark" @click="reloadPage">
             <span class="icon"><i class="fas fa-refresh"></i></span>
@@ -191,6 +176,10 @@ watch(() => config.app.sentry_dsn, dsn => {
 onMounted(async () => {
   try {
     await handleImage(bg_enable.value)
+  } catch (e) {
+  }
+
+  try {
     applyPreferredColorScheme(selectedTheme.value)
   } catch (e) {
   }
@@ -203,13 +192,6 @@ watch(selectedTheme, value => {
 })
 
 const reloadPage = () => window.location.reload()
-
-const selectTheme = theme => {
-  selectedTheme.value = theme
-  if ('auto' === theme) {
-    return reloadPage()
-  }
-}
 
 watch(bg_enable, async v => await handleImage(v))
 watch(bg_opacity, v => {
