@@ -35,11 +35,12 @@
 
     <div class="columns is-multiline" v-if="'list' === display_style">
       <div class="column is-12" v-if="hasQueuedItems">
-        <div class="table-container">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered" style="table-layout: fixed;">
+        <div class="table-container is-responsive">
+          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+            style="min-width: 1300px; table-layout: fixed;">
             <thead>
               <tr class="has-text-centered is-unselectable">
-                <th width="5%">
+                <th width="5%" v-tooltip="masterSelectAll ? 'Unselect all' : 'Select all'">
                   <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
                     <span class="icon-text is-block">
                       <span class="icon">
@@ -157,21 +158,21 @@
                   <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
                 </div>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow">
-                <span class="icon-text is-unselectable">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+                <span class="icon-text">
                   <span class="icon" :class="setIconColor(item)">
                     <i class="fas fa-solid" :class="setIcon(item)" />
                   </span>
                   <span v-text="setStatus(item)" />
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span :data-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
