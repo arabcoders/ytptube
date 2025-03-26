@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250326-3d9d0e2",
-        "date": "2025-03-26T19:07:52+00:00",
+        "tag": "dev-20250327-581442d",
+        "date": "2025-03-26T21:48:26+00:00",
+        "commits": [
+            {
+                "sha": "581442d",
+                "message": "minor update to list view, and added download selected items.",
+                "author": "arabcoders",
+                "date": "2025-03-26T21:48:26+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250326-6d77de7",
+        "date": "2025-03-26T19:12:28+00:00",
         "commits": [
             {
                 "sha": "3d9d0e2",
