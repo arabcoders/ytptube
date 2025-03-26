@@ -10,7 +10,7 @@
 
   <div v-if="showCompleted">
     <div class="columns is-multiline is-mobile has-text-centered" v-if="hasItems">
-      <div class="column is-half-mobile">
+      <div class="column is-half-mobile" v-if="display_style === 'cards'">
         <button type="button" class="button is-fullwidth is-ghost is-inverted"
           @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
@@ -74,7 +74,122 @@
       </div>
     </div>
 
-    <div class="columns is-multiline">
+    <div class="columns is-multiline" v-if="'list' === display_style">
+      <div class="column is-12">
+        <div class="table-container">
+          <table class="table is-striped is-hoverable is-fullwidth is-bordered" style="table-layout: fixed;">
+            <thead>
+              <tr class="has-text-centered is-unselectable">
+                <th width="5%">
+                  <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
+                    <span class="icon-text is-block">
+                      <span class="icon">
+                        <i class="fa-regular"
+                          :class="{ 'fa-square-check': !masterSelectAll, 'fa-square': masterSelectAll }" />
+                      </span>
+                    </span>
+                  </a>
+                </th>
+                <th width="40%">Video Title</th>
+                <th width="15%">Status</th>
+                <th width="15%">Created</th>
+                <th width="10%">Size/Starts</th>
+                <th width="20%">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in sortCompleted" :key="item._id">
+                <td class="is-vcentered has-text-centered">
+                  <label class="checkbox is-block">
+                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
+                      :id="'checkbox-' + item._id" :value="item._id">
+                  </label>
+                </td>
+                <td class="is-vcentered">
+                  <div class="is-text-overflow" v-tooltip="item.title">
+                    <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                  </div>
+                  <div v-if="item.error">
+                    <span class="has-text-danger">{{ item.error }}</span>
+                  </div>
+                  <div v-if="showMessage(item)">
+                    <span class="has-text-danger">{{ item.msg }}</span>
+                  </div>
+                </td>
+                <td class="is-vcentered has-text-centered is-unselectable">
+                  <span class="icon-text">
+                    <span class="icon" :class="setIconColor(item)"><i :class="setIcon(item)" /></span>
+                    <span>{{ setStatus(item) }}</span>
+                  </span>
+                </td>
+                <td class="is-vcentered has-text-centered is-unselectable">
+                  <span class="user-hint" :date-datetime="item.datetime"
+                    v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                    {{ moment(item.datetime).fromNow() }}
+                  </span>
+                </td>
+                <td class="is-vcentered has-text-centered is-unselectable"
+                  v-if="item.live_in && 'not_live' === item.status">
+                  <span :date-datetime="item.live_in" class="user-hint"
+                    v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                    {{ moment(item.live_in).fromNow() }}
+                  </span>
+                </td>
+                <td class="is-vcentered has-text-centered is-unselectable" v-else>
+                  {{ item.file_size ? formatBytes(item.file_size) : '-' }}
+                </td>
+                <td class="is-vcentered is-items-center">
+                  <div class="field is-grouped is-grouped-centered">
+                    <div class="control" v-if="'finished' === item.status || isEmbedable(item.url)">
+                      <button v-if="'finished' === item.status" @click="playVideo(item)" v-tooltip="'Play video'"
+                        class="button is-danger is-light is-small">
+                        <span class="icon"><i class="fa-solid fa-play" /></span>
+                      </button>
+                      <button v-else @click="embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
+                        class="button is-danger is-light is-small">
+                        <span class="icon"><i class="fa-solid fa-play" /></span>
+                      </button>
+                    </div>
+                    <div class="control" v-if="item.status != 'finished'">
+                      <button class="button is-warning is-fullwidth is-small" v-tooltip="'Re-queue video'"
+                        @click="reQueueItem(item)">
+                        <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                      </button>
+                    </div>
+                    <div class="control" v-if="config.app?.keep_archive && item.status != 'finished'">
+                      <button class="button is-danger is-light is-fullwidth is-small" v-tooltip="'Add link to archive'"
+                        @click="archiveItem(item)">
+                        <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                      </button>
+                    </div>
+                    <div class="control" v-if="item.filename && item.status === 'finished'">
+                      <a class="button is-link is-fullwidth is-small" :href="makeDownload(config, item)"
+                        v-tooltip="'Download video'" :download="item.filename?.split('/').reverse()[0]">
+                        <span class="icon"><i class="fa-solid fa-download" /></span>
+                      </a>
+                    </div>
+                    <div class="control" v-if="item.url && !config.app.basic_mode">
+                      <button class="button is-info is-fullwidth is-small" @click="emitter('getInfo', item.url)"
+                        v-tooltip="'Show video information'">
+                        <span class="icon"><i class="fa-solid fa-info" /></span>
+                      </button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-danger is-fullwidth is-small" @click="removeItem(item)"
+                        v-tooltip="'Remove video'">
+                        <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="hideThumbnail ? 210 : 410" class="column is-6"
         v-for="item in sortCompleted" :key="item._id">
         <div class="card"
@@ -166,7 +281,7 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished'">
-                <a class="button is-warning is-fullwidth" v-tooltip="'Re-queue item.'" @click="reQueueItem(item)">
+                <a class="button is-warning is-fullwidth" @click="reQueueItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     <span>Re-queue</span>
@@ -182,8 +297,7 @@
                 </a>
               </div>
               <div class="column is-half-mobile" v-if="config.app?.keep_archive && item.status != 'finished'">
-                <a class="button is-danger is-light is-fullwidth" v-tooltip="'Add link to archive.'"
-                  @click="archiveItem(item)">
+                <a class="button is-danger is-light is-fullwidth" @click="archiveItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                     <span>Archive</span>
@@ -268,6 +382,7 @@ const masterSelectAll = ref(false)
 const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
+const display_style = useStorage('display_style', 'cards')
 
 const embed_url = ref('')
 const video_item = ref(null)
@@ -439,11 +554,11 @@ const setStatus = item => {
   }
 
   if ('cancelled' === item.status) {
-    return 'User Cancelled'
+    return display_style.value === 'cards' ? 'User Cancelled' : 'Cancelled'
   }
 
   if ('not_live' === item.status) {
-    return 'Live Stream'
+    return display_style.value === 'cards' ? 'Live Stream' : 'Live'
   }
 
   return item.status

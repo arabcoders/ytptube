@@ -10,7 +10,7 @@
 
   <div v-if="showQueue">
     <div class="columns is-multiline is-mobile has-text-centered" v-if="hasQueuedItems">
-      <div class="column is-half-mobile">
+      <div class="column is-half-mobile" v-if="'cards' === display_style">
         <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
             <span class="icon">
@@ -21,7 +21,7 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile">
+      <div class="column is-half-mobile" v-if="('cards' === display_style || hasSelected)">
         <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected" @click="cancelSelected">
           <span class="icon-text is-block">
             <span class="icon">
@@ -33,7 +33,90 @@
       </div>
     </div>
 
-    <div class="columns is-multiline">
+    <div class="columns is-multiline" v-if="'list' === display_style">
+      <div class="column is-12">
+        <div class="table-container">
+          <table class="table is-striped is-hoverable is-fullwidth is-bordered" style="table-layout: fixed;">
+            <thead>
+              <tr class="has-text-centered is-unselectable">
+                <th width="5%">
+                  <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
+                    <span class="icon-text is-block">
+                      <span class="icon">
+                        <i class="fa-regular"
+                          :class="{ 'fa-square-check': !masterSelectAll, 'fa-square': masterSelectAll }" />
+                      </span>
+                    </span>
+                  </a>
+                </th>
+                <th width="40%">Video Title</th>
+                <th width="15%">Status</th>
+                <th width="20%">Progress</th>
+                <th width="15%">Created</th>
+                <th width="10%">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in stateStore.queue" :key="item._id">
+                <td class="has-text-centered is-vcentered">
+                  <label class="checkbox is-block">
+                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
+                      :id="'checkbox-' + item._id" :value="item._id">
+                  </label>
+                </td>
+                <td class="is-text-overflow is-vcentered" v-tooltip="item.title">
+                  <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                </td>
+                <td class="has-text-centered is-text-overflow is-unselectable">
+                  <span class="icon-text">
+                    <span class="icon" :class="setIconColor(item)">
+                      <i class="fas fa-solid" :class="setIcon(item)" />
+                    </span>
+                    <span v-text="setStatus(item)" />
+                  </span>
+                </td>
+                <td>
+                  <div class="progress-bar is-unselectable">
+                    <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                    <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
+                  </div>
+                </td>
+                <td class="has-text-centered is-text-overflow is-unselectable">
+                  <span :data-datetime="item.datetime"
+                    v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
+                    {{ moment(item.datetime).fromNow() }}
+                  </span>
+                </td>
+                <td class="is-vcentered is-items-center">
+                  <div class="field is-grouped is-grouped-centered">
+                    <div class="control" v-if="isEmbedable(item.url)">
+                      <button @click="() => embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
+                        class="button is-danger is-light is-small">
+                        <span class="icon"><i class="fa-solid fa-play" /></span>
+                      </button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-warning is-small" @click="confirmCancel(item);"
+                        v-tooltip="'Cancel download'">
+                        <span class="icon"><i class="fa-solid fa-eject" /></span>
+                      </button>
+                    </div>
+                    <div class="control" v-if="item.url && !config.app.basic_mode">
+                      <button class="button is-info is-small" @click="emitter('getInfo', item.url)"
+                        v-tooltip="'Show video information'">
+                        <span class="icon"><i class="fa-solid fa-info" /></span>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="hideThumbnail ? 265 : 475" class="column is-6"
         v-for="item in stateStore.queue" :key="item._id">
         <div class="card">
@@ -69,13 +152,13 @@
           <div class="card-content">
             <div class="columns is-multiline is-mobile">
               <div class="column is-12">
-                <div class="progress-bar is-round">
+                <div class="progress-bar is-unselectable">
                   <div class="progress-percentage">{{ updateProgress(item) }}</div>
                   <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
                 </div>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow">
-                <span class="icon-text">
+                <span class="icon-text is-unselectable">
                   <span class="icon" :class="setIconColor(item)">
                     <i class="fas fa-solid" :class="setIcon(item)" />
                   </span>
@@ -98,11 +181,9 @@
             </div>
             <div class="columns is-multiline is-mobile">
               <div class="column is-half-mobile">
-                <button class="button is-danger is-fullwidth" @click="confirmCancel(item);">
+                <button class="button is-warning is-fullwidth" @click="confirmCancel(item);">
                   <span class="icon-text is-block">
-                    <span class="icon">
-                      <i class="fa-solid fa-trash-can" />
-                    </span>
+                    <span class="icon"><i class="fa-solid fa-eject" /></span>
                     <span>Cancel</span>
                   </span>
                 </button>
@@ -152,7 +233,7 @@
 
 <script setup>
 import moment from 'moment'
-import { set, useStorage } from '@vueuse/core'
+import { useStorage } from '@vueuse/core'
 import { ucFirst } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
@@ -165,6 +246,8 @@ const selectedElms = ref([]);
 const masterSelectAll = ref(false);
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
+const display_style = useStorage('display_style', 'cards')
+
 const embed_url = ref('')
 
 const bg_enable = useStorage('random_bg', true)
@@ -344,7 +427,7 @@ watch(embed_url, v => {
   if (!bg_enable.value) {
     return
   }
-  document.querySelector('body').setAttribute("style", `opacity: ${ v ? 1 : bg_opacity.value}`)
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
 </script>
