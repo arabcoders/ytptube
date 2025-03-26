@@ -30,7 +30,6 @@
 
         <div class="is-pulled-right" v-if="socket.isConnected && false === config.app.basic_mode">
           <div class="field is-grouped">
-
             <p class="control" v-if="config.app.has_cookies">
               <button class="button is-purple" @click="checkCookies" v-tooltip.bottom="'Check youtube cookies status.'"
                 :disabled="isChecking">
@@ -53,6 +52,14 @@
               <button v-tooltip.bottom="'Toggle Add Form'" class="button is-primary has-tooltip-bottom"
                 @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
+              </button>
+            </p>
+
+            <p class="control">
+              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
+                @click="() => changeDisplay()">
+                <span class="icon"><i class="fa-solid"
+                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
               </button>
             </p>
 
@@ -86,6 +93,7 @@ const isChecking = ref(false)
 const get_info = ref('')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const display_style = useStorage('display_style', 'cards')
 
 onMounted(() => {
   if (!config.app.ui_update_title) {
@@ -149,4 +157,6 @@ watch(get_info, v => {
 
   document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
+
+const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
 </script>

@@ -130,7 +130,6 @@ hr {
 }
 
 .progress-bar {
-  border-radius: 15px;
   position: relative;
   width: 100%;
   height: 30px;
@@ -164,6 +163,10 @@ hr {
   color: #fff;
 }
 
+.progress,
+.progress-percentage {
+  border-radius: unset !important;
+}
 
 @media (prefers-color-scheme: dark) {
   .footer {

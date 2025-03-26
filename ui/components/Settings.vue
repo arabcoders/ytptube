@@ -10,12 +10,31 @@
         </header>
         <div class="card-content">
           <div class="field">
+            <label class="label" for="random_bg">Color scheme</label>
+            <div class="control">
+              <label for="auto" class="radio">
+                <input id="auto" type="radio" v-model="selectedTheme" value="auto">
+                System Default
+              </label>
+              <label for="light" class="radio">
+                <input id="light" type="radio" v-model="selectedTheme" value="light">
+                Light
+              </label>
+              <label for="dark" class="radio">
+                <input id="dark" type="radio" v-model="selectedTheme" value="dark">
+                Dark
+              </label>
+            </div>
+            <p class="help">Select the color scheme for the WebUI.</p>
+          </div>
+
+          <div class="field">
             <label class="label" for="random_bg">Backgrounds</label>
             <div class="control">
               <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
               <label for="random_bg" class="is-unselectable">&nbsp;Enable</label>
-              <p class="help">Use random background image from your media backends.</p>
             </div>
+            <p class="help">Use random background image from your media backends.</p>
           </div>
 
           <div class="field">
@@ -25,8 +44,8 @@
             <div class="control">
               <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50" max="1.00"
                 step="0.05">
-              <p class="help">How visible the background image should be.</p>
             </div>
+            <p class="help">How visible the background image should be.</p>
           </div>
 
           <div class="field" v-if="bg_enable">
@@ -41,10 +60,9 @@
                   <span>Reload</span>
                 </span>
               </button>
-              <p class="help">Change the displayed picture.</p>
             </div>
+            <p class="help">Change the displayed picture.</p>
           </div>
-
         </div>
       </div>
     </div>
@@ -65,5 +83,6 @@ defineProps({
 
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const selectedTheme = useStorage('theme', 'auto')
 
 </script>
