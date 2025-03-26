@@ -23,22 +23,26 @@
         </button>
       </div>
       <div class="column is-half-mobile">
+        <button type="button" class="button is-fullwidth is-link" :disabled="!hasSelected" @click="downloadSelected">
+          <span class="icon-text is-block">
+            <span class="icon"><i class="fa-solid fa-download" /></span>
+            <span>Download</span>
+          </span>
+        </button>
+      </div>
+      <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
           @click="deleteSelectedItems">
           <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fa-solid fa-trash-can" />
-            </span>
-            <span>Remove Selected</span>
+            <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+            <span>Remove</span>
           </span>
         </button>
       </div>
       <div class="column is-half-mobile" v-if="hasCompleted">
         <button type="button" class="button is-fullwidth is-primary is-inverted" @click="clearCompleted">
           <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fa-solid fa-circle-check" />
-            </span>
+            <span class="icon"><i class="fa-solid fa-circle-check" /></span>
             <span>Clear Completed</span>
           </span>
         </button>
@@ -46,9 +50,7 @@
       <div class="column is-half-mobile" v-if="hasIncomplete">
         <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearIncomplete">
           <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fa-solid fa-circle-xmark" />
-            </span>
+            <span class="icon"><i class="fa-solid fa-circle-xmark" /></span>
             <span>Clear Incomplete</span>
           </span>
         </button>
@@ -56,9 +58,7 @@
       <div class="column is-half-mobile" v-if="hasIncomplete">
         <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueIncomplete">
           <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fa-solid fa-rotate-right" />
-            </span>
+            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
             <span>Re-queue Incomplete</span>
           </span>
         </button>
@@ -77,10 +77,11 @@
     <div class="columns is-multiline" v-if="'list' === display_style">
       <div class="column is-12" v-if="hasItems">
         <div class="table-container">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered" style="table-layout: fixed;">
+          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+            style="min-width: 1300px; table-layout: fixed;">
             <thead>
               <tr class="has-text-centered is-unselectable">
-                <th width="5%">
+                <th width="5%" v-tooltip="masterSelectAll ? 'Unselect all' : 'Select all'">
                   <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
                     <span class="icon-text is-block">
                       <span class="icon">
@@ -249,29 +250,30 @@
               <div class="column is-12" v-if="showMessage(item)">
                 <span class="has-text-danger">{{ item.msg }}</span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon-text">
                   <span class="icon" :class="setIconColor(item)"><i :class="setIcon(item)" /></span>
                   <span>{{ setStatus(item) }}</span>
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow"
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.live_in && 'not_live' === item.status">
                 <span :date-datetime="item.live_in" class="user-hint"
                   v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="user-hint" :date-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.datetime).fromNow() }}
                 </span>
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow" v-if="item.file_size">
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
+                v-if="item.file_size">
                 {{ formatBytes(item.file_size) }}
               </div>
-              <div class="column is-half-mobile has-text-centered">
+              <div class="column is-half-mobile has-text-centered is-unselectable">
                 <label class="checkbox is-block">
                   <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
                     :value="item._id">
@@ -623,6 +625,7 @@ const reQueueItem = item => {
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+
 watch(video_item, v => {
   if (!bg_enable.value) {
     return
@@ -630,4 +633,34 @@ watch(video_item, v => {
 
   document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
+
+const downloadSelected = () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No items selected.')
+    return
+  }
+
+  const body = document.querySelector('body')
+
+  for (const key in selectedElms.value) {
+    const item = stateStore.history[selectedElms.value[key]]
+    if ('finished' !== item.status) {
+      continue;
+    }
+
+    const link = document.createElement('a');
+    link.href = makeDownload(config, item);
+
+    let name = item?.filename
+
+    if (name) {
+      link.setAttribute('download', name.split('/').reverse()[0]);
+    }
+
+    link.setAttribute('target', '_self');
+    body.appendChild(link);
+    link.click();
+    body.removeChild(link);
+  }
+}
 </script>
