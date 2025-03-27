@@ -23,6 +23,15 @@
           </NuxtLink>
         </div>
 
+        <div class="navbar-item" v-if="!config.app.basic_mode && config.app.browser_enabled">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/browser">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
+              <span class="is-hidden-mobile">Browser</span>
+            </span>
+          </NuxtLink>
+        </div>
+
         <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/presets">
             <span class="icon-text">
@@ -108,7 +117,7 @@ import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from 'moment'
-import * as Sentry from "@sentry/nuxt";
+import * as Sentry from '@sentry/nuxt'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -206,8 +215,8 @@ watch(loadedImage, v => {
     return
   }
 
-  const html = document.documentElement;
-  const body = document.querySelector('body');
+  const html = document.documentElement
+  const body = document.querySelector('body')
 
   const style = {
     "background-color": "unset",
@@ -219,7 +228,7 @@ watch(loadedImage, v => {
 
   html.setAttribute("style", Object.keys(style).map(k => `${k}: ${style[k]}`).join('; ').trim())
   html.classList.add('bg-fanart')
-  body.setAttribute("style", `opacity: ${bg_opacity.value}`);
+  body.setAttribute("style", `opacity: ${bg_opacity.value}`)
 })
 
 const handleImage = async enabled => {
@@ -228,14 +237,14 @@ const handleImage = async enabled => {
       return
     }
 
-    const html = document.documentElement;
-    const body = document.querySelector('body');
+    const html = document.documentElement
+    const body = document.querySelector('body')
 
     if (html.getAttribute("style")) {
-      html.removeAttribute("style");
+      html.removeAttribute("style")
     }
     if (body.getAttribute("style")) {
-      body.removeAttribute("style");
+      body.removeAttribute("style")
     }
     loadedImage.value = ''
     return

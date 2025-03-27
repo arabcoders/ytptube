@@ -146,6 +146,18 @@ class Config:
     console_enabled: bool = False
     "Enable direct access to yt-dlp console."
 
+    browser_enabled: bool = False
+    "Enable file browser access."
+
+    pictures_backends: list[str] = [
+        "https://unsplash.it/1920/1080?random",
+        "https://picsum.photos/1920/1080",
+        "https://spaceholder.cc/i/1920x1080",
+        "https://imageipsum.com/1920x1080",
+        "https://placedog.net/1920/1080",
+    ]
+    "The list of picture backends to use for the background."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -187,6 +199,7 @@ class Config:
         "basic_mode",
         "file_logging",
         "console_enabled",
+        "browser_enabled",
     )
     "The variables that are booleans."
 
@@ -205,6 +218,7 @@ class Config:
         "instance_title",
         "sentry_dsn",
         "console_enabled",
+        "browser_enabled"
     )
     "The variables that are relevant to the frontend."
 
@@ -281,6 +295,9 @@ class Config:
 
             if k in self._int_vars:
                 setattr(self, k, int(v))
+
+        if isinstance(self.pictures_backends, str) and self.pictures_backends:
+            self.pictures_backends = self.pictures_backends.split(",")
 
         numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):

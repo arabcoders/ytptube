@@ -1,5 +1,6 @@
 import base64
 import copy
+import datetime
 import glob
 import ipaddress
 import json
@@ -702,3 +703,53 @@ def get(
         else:
             return default() if callable(default) else default
     return data
+
+
+def get_files(base_path: str, dir: str | None = None):
+    """
+    Get directory contents.
+
+    Args:
+        base_path (str): Base download path.
+        dir (str): Directory to check.
+
+    Returns:
+        list: List of files and directories.
+
+    Raises:
+        OSError: If the directory is invalid or not a directory.
+
+    """
+    if dir and dir != "/":
+        path = os.path.normpath(os.path.join(base_path, str(dir)))
+        if not path.startswith(base_path):
+            msg = f"Invalid path: '{dir}' - '{path}' - must be inside '{base_path}'."
+            raise OSError(msg)
+        dir_path = os.path.realpath(path)
+    else:
+        dir_path = base_path
+
+    if not os.path.isdir(dir_path):
+        msg = f"Invalid path: '{dir_path}' - must be a directory."
+        raise OSError(msg)
+
+    contents: list = []
+    for file in pathlib.Path(dir_path).iterdir():
+        if file.name.startswith(".") or file.name.startswith("_"):
+            continue
+
+        stat = file.stat()
+        contents.append(
+            {
+                "type": "file" if file.is_file() else "dir",
+                "name": file.name,
+                "path": str(file).replace(base_path, "").strip("/"),
+                "size": stat.st_size,
+                "mtime": datetime.datetime.fromtimestamp(stat.st_mtime, tz=datetime.UTC).isoformat(),
+                "ctime": datetime.datetime.fromtimestamp(stat.st_ctime, tz=datetime.UTC).isoformat(),
+                "is_dir": file.is_dir(),
+                "is_file": file.is_file(),
+            }
+        )
+
+    return contents

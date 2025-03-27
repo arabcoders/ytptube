@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, unquote_plus, urlparse
 
 import anyio
 import httpx
@@ -42,6 +42,7 @@ from .Utils import (
     encrypt_data,
     extract_info,
     get_file,
+    get_files,
     get_mime_type,
     get_sidecar_subtitles,
     validate_url,
@@ -211,7 +212,7 @@ class HttpAPI(Common):
                 preloaded += 1
 
                 if urlPath.endswith("/index.html"):
-                    paths_list = ["/console", "/presets", "/tasks", "/notifications", "/changeslog"]
+                    paths_list = ["/console", "/presets", "/tasks", "/notifications", "/changeslog", "/browser"]
                     for path in paths_list:
                         self._static_holder[path] = {"content": content, "content_type": contentType}
                         app.router.add_get(path, self._static_file)
@@ -1401,16 +1402,10 @@ class HttpAPI(Common):
             Response: The response object.
 
         """
-        backends: list[str] = [
-            "https://unsplash.it/1920/1080?random",
-            "https://picsum.photos/1920/1080",
-            "https://spaceholder.cc/i/1920x1080",
-            "https://imageipsum.com/1920x1080",
-            "https://placedog.net/1920/1080",
-        ]
-        backend = random.choice(backends)  # noqa: S311
+        backend = None
 
         try:
+            backend = random.choice(self.config.pictures_backends)  # noqa: S311
             CACHE_KEY = "random_background"
 
             if self.cache.has(CACHE_KEY) and not request.query.get("force", False):
@@ -1710,3 +1705,40 @@ class HttpAPI(Common):
         await self._notify.emit(Events.TEST, data=data)
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("GET", "api/file/browser/{path:.*}")
+    async def file_browser(self, request: Request) -> Response:
+        """
+        Get the file browser.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.browser_enabled:
+            return web.json_response(data={"error": "File browser is disabled."}, status=web.HTTPForbidden.status_code)
+
+        path = request.match_info.get("path")
+        path = "/" if not path else unquote_plus(path)
+
+        test = os.path.realpath(os.path.join(self.config.download_path, path))
+        if not os.path.exists(test):
+            return web.json_response(
+                data={"error": f"path '{path}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        try:
+            return web.json_response(
+                data={
+                    "path": path,
+                    "contents": get_files(base_path=self.config.download_path, dir=path),
+                },
+                status=web.HTTPOk.status_code,
+                dumps=self.encoder.encode,
+            )
+        except OSError as e:
+            LOG.exception(e)
+            return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
