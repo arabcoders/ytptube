@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, unquote_plus, urlparse
 
 import anyio
 import httpx
@@ -42,6 +42,7 @@ from .Utils import (
     encrypt_data,
     extract_info,
     get_file,
+    get_files,
     get_mime_type,
     get_sidecar_subtitles,
     validate_url,
@@ -1704,3 +1705,40 @@ class HttpAPI(Common):
         await self._notify.emit(Events.TEST, data=data)
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
+
+    @route("GET", "api/file/browser/{path:.*}")
+    async def file_browser(self, request: Request) -> Response:
+        """
+        Get the file browser.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.browser_enabled:
+            return web.json_response(data={"error": "File browser is disabled."}, status=web.HTTPForbidden.status_code)
+
+        path = request.match_info.get("path")
+        path = "/" if not path else unquote_plus(path)
+
+        test = os.path.realpath(os.path.join(self.config.download_path, path))
+        if not os.path.exists(test):
+            return web.json_response(
+                data={"error": f"path '{path}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        try:
+            return web.json_response(
+                data={
+                    "path": path,
+                    "contents": get_files(base_path=self.config.download_path, dir=path),
+                },
+                status=web.HTTPOk.status_code,
+                dumps=self.encoder.encode,
+            )
+        except OSError as e:
+            LOG.exception(e)
+            return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)

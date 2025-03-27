@@ -146,6 +146,9 @@ class Config:
     console_enabled: bool = False
     "Enable direct access to yt-dlp console."
 
+    browser_enabled: bool = False
+    "Enable file browser access."
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -196,6 +199,7 @@ class Config:
         "basic_mode",
         "file_logging",
         "console_enabled",
+        "browser_enabled",
     )
     "The variables that are booleans."
 
@@ -214,6 +218,7 @@ class Config:
         "instance_title",
         "sentry_dsn",
         "console_enabled",
+        "browser_enabled"
     )
     "The variables that are relevant to the frontend."
 

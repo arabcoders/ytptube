@@ -15,6 +15,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Send notification to targets based on selected events. 
 * Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
 * Queue multiple URLs separated by comma.
+* Simple file browser. `Disabled by default`
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
 * New `POST /api/history` endpoint that allow one or multiple links to be sent at the same time.
 * New `GET /api/history/add?url=http://..` endpoint that allow to add single item via GET request.
@@ -112,6 +113,7 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PIP_IGNORE_UPDATES   | Do not update the custom pip packages                            | `false`                            |
 | YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
 | YTP_PICTURES_BACKENDS    | A comma separated list of pictures urls to use.                  | `empty string`                     |
+| YTP_BROWSER_ENABLED      | Whether to enable the file browser                               | `false`                            |
 
 # Browser extensions & bookmarklets
 

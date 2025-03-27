@@ -129,200 +129,200 @@ div.is-centered {
 </template>
 
 <script setup>
-import { request } from "~/utils/index";
+import { request } from '~/utils/index'
 
-const toast = useToast();
-const config = useConfigStore();
-const socket = useSocketStore();
+const toast = useToast()
+const config = useConfigStore()
+const socket = useSocketStore()
 
-const presets = ref([]);
-const preset = ref({});
-const presetRef = ref("");
-const toggleForm = ref(false);
-const isLoading = ref(false);
-const initialLoad = ref(true);
-const addInProgress = ref(false);
+const presets = ref([])
+const preset = ref({})
+const presetRef = ref("")
+const toggleForm = ref(false)
+const isLoading = ref(false)
+const initialLoad = ref(true)
+const addInProgress = ref(false)
 
 const presetsNoDefault = computed(() =>
   presets.value.filter((t) => !t.default),
-);
+)
 
 watch(
   () => config.app.basic_mode,
   async () => {
     if (!config.app.basic_mode) {
-      return;
+      return
     }
-    await navigateTo("/");
+    await navigateTo("/")
   },
-);
+)
 
 watch(
   () => socket.isConnected,
   async () => {
     if (socket.isConnected && initialLoad.value) {
-      await reloadContent(true);
-      initialLoad.value = false;
+      await reloadContent(true)
+      initialLoad.value = false
     }
   },
-);
+)
 
 const reloadContent = async (fromMounted = false) => {
   try {
-    isLoading.value = true;
-    const response = await request("/api/presets");
+    isLoading.value = true
+    const response = await request("/api/presets")
 
     if (fromMounted && !response.ok) {
-      return;
+      return
     }
 
-    const data = await response.json();
+    const data = await response.json()
     if (data.length < 1) {
-      return;
+      return
     }
 
-    presets.value = data;
+    presets.value = data
   } catch (e) {
     if (fromMounted) {
-      return;
+      return
     }
-    console.error(e);
-    toast.error("Failed to fetch tasks.");
+    console.error(e)
+    toast.error("Failed to fetch tasks.")
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 
 const resetForm = (closeForm = false) => {
-  preset.value = {};
-  presetRef.value = null;
-  addInProgress.value = false;
+  preset.value = {}
+  presetRef.value = null
+  addInProgress.value = false
   if (closeForm) {
-    toggleForm.value = false;
+    toggleForm.value = false
   }
-};
+}
 
 const updatePresets = async (items) => {
-  let data;
+  let data
   try {
-    addInProgress.value = true;
+    addInProgress.value = true
 
     const response = await request("/api/presets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(items.filter((t) => !t.default)),
-    });
+    })
 
-    data = await response.json();
+    data = await response.json()
 
     if (200 !== response.status) {
-      toast.error(`Failed to update presets. ${data.error}`);
-      return false;
+      toast.error(`Failed to update presets. ${data.error}`)
+      return false
     }
 
-    presets.value = data;
-    resetForm(true);
-    return true;
+    presets.value = data
+    resetForm(true)
+    return true
   } catch (e) {
-    toast.error(`Failed to update presets. ${data?.error}. ${e.message}`);
+    toast.error(`Failed to update presets. ${data?.error}. ${e.message}`)
   } finally {
-    addInProgress.value = false;
+    addInProgress.value = false
   }
-};
+}
 
 const deleteItem = async (item) => {
   if (true !== confirm(`Delete preset '${item.name}'?`)) {
-    return;
+    return
   }
 
-  const index = presets.value.findIndex((t) => t?.id === item.id);
+  const index = presets.value.findIndex((t) => t?.id === item.id)
   if (index > -1) {
-    presets.value.splice(index, 1);
+    presets.value.splice(index, 1)
   } else {
-    toast.error("Preset not found.");
-    return;
+    toast.error("Preset not found.")
+    return
   }
 
-  const status = await updatePresets(presets.value);
+  const status = await updatePresets(presets.value)
 
   if (!status) {
-    return;
+    return
   }
 
-  toast.success("Preset deleted.");
-};
+  toast.success("Preset deleted.")
+}
 
 const updateItem = async ({ reference, preset }) => {
   if (reference) {
-    const index = presets.value.findIndex((t) => t?.id === reference);
+    const index = presets.value.findIndex((t) => t?.id === reference)
     if (index > -1) {
-      presets.value[index] = preset;
+      presets.value[index] = preset
     }
   } else {
-    presets.value.push(preset);
+    presets.value.push(preset)
   }
 
-  const status = await updatePresets(presets.value);
+  const status = await updatePresets(presets.value)
   if (!status) {
-    return;
+    return
   }
 
-  toast.success(`Preset ${reference ? "updated" : "added"}.`);
-  resetForm(true);
-};
+  toast.success(`Preset ${reference ? "updated" : "added"}.`)
+  resetForm(true)
+}
 
 const filterItem = (item) => {
-  const { raw, ...rest } = item;
-  return JSON.stringify(rest, null, 2);
-};
+  const { raw, ...rest } = item
+  return JSON.stringify(rest, null, 2)
+}
 
 const editItem = (item) => {
-  preset.value = item;
-  presetRef.value = item.id;
-  toggleForm.value = true;
-};
+  preset.value = item
+  presetRef.value = item.id
+  toggleForm.value = true
+}
 
-onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""));
+onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""))
 
 const exportItem = item => {
-  let data = JSON.parse(JSON.stringify(item));
-  const keys = ["id", "default", "raw", "cookies"];
+  let data = JSON.parse(JSON.stringify(item))
+  const keys = ["id", "default", "raw", "cookies"]
   keys.forEach(key => {
     if (key in data) {
-      delete data[key];
+      delete data[key]
     }
-  });
+  })
 
   if (data.args && typeof data.args === "string") {
-    data.args = JSON.parse(data.args);
+    data.args = JSON.parse(data.args)
   }
 
   if (data.postprocessors && typeof data.postprocessors === "string") {
-    data.postprocessors = JSON.parse(data.postprocessors);
+    data.postprocessors = JSON.parse(data.postprocessors)
   }
 
-  let userData = {};
+  let userData = {}
 
   for (const key of Object.keys(data)) {
     if (!data[key]) {
-      continue;
+      continue
     }
-    userData[key] = data[key];
+    userData[key] = data[key]
   }
 
-  userData['_type'] = 'preset';
+  userData['_type'] = 'preset'
   userData['_version'] = '1.0'
 
-  return copyText(base64UrlEncode(JSON.stringify(userData)));
-};
+  return copyText(base64UrlEncode(JSON.stringify(userData)))
+}
 
 const calcPath = (path) => {
-  const loc = config.app.download_path || "/downloads";
+  const loc = config.app.download_path || "/downloads"
 
   if (path) {
-    return loc + "/" + sTrim(path, "/");
+    return loc + "/" + sTrim(path, "/")
   }
 
-  return loc;
-};
+  return loc
+}
 </script>

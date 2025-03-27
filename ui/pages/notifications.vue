@@ -225,7 +225,7 @@ const updateData = async notifications => {
   const data = await response.json()
 
   if (200 !== response.status) {
-    toast.error(`Failed to update notifications. ${data.error}`);
+    toast.error(`Failed to update notifications. ${data.error}`)
     return false
   }
 
@@ -304,14 +304,14 @@ const sendTest = async () => {
 
     if (200 !== response.status) {
       const data = await response.json()
-      toast.error(`Failed to send test notification. ${data.error}`);
+      toast.error(`Failed to send test notification. ${data.error}`)
       return
     }
 
     toast.success('Test notification sent.')
   } catch (e) {
     console.error(e)
-    toast.error(`Failed to send test notification. ${e.message}`);
+    toast.error(`Failed to send test notification. ${e.message}`)
   } finally {
     isLoading.value = false
   }
@@ -336,6 +336,6 @@ const exportItem = async item => {
   data['_type'] = 'notification'
   data['_version'] = '1.0'
 
-  return copyText(base64UrlEncode(JSON.stringify(data)));
+  return copyText(base64UrlEncode(JSON.stringify(data)))
 }
 </script>
