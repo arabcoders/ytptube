@@ -212,7 +212,7 @@ class HttpAPI(Common):
                 preloaded += 1
 
                 if urlPath.endswith("/index.html"):
-                    paths_list = ["/console", "/presets", "/tasks", "/notifications", "/changeslog"]
+                    paths_list = ["/console", "/presets", "/tasks", "/notifications", "/changeslog", "/browser"]
                     for path in paths_list:
                         self._static_holder[path] = {"content": content, "content_type": contentType}
                         app.router.add_get(path, self._static_file)
