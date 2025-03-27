@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250328-daad775",
+        "date": "2025-03-27T23:12:41+00:00",
+        "commits": [
+            {
+                "sha": "bdaf07d",
+                "message": "added browser to static paths",
+                "author": "arabcoders",
+                "date": "2025-03-27T23:07:55+00:00"
+            },
+            {
+                "sha": "21e5dea",
+                "message": "Added simple file browser",
+                "author": "arabcoders",
+                "date": "2025-03-27T22:58:22+00:00"
+            },
+            {
+                "sha": "fa73e81",
+                "message": "Make it possible to override the pictures backends urls.",
+                "author": "arabcoders",
+                "date": "2025-03-26T22:13:52+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250326-15e4232",
         "date": "2025-03-26T21:55:40+00:00",
         "commits": [

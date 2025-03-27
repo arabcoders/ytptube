@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250328-21e5dea",
-        "date": "2025-03-27T22:58:22+00:00",
+        "tag": "dev-20250328-bdaf07d",
+        "date": "2025-03-27T23:07:55+00:00",
         "commits": [
+            {
+                "sha": "bdaf07d",
+                "message": "added browser to static paths",
+                "author": "arabcoders",
+                "date": "2025-03-27T23:07:55+00:00"
+            },
             {
                 "sha": "21e5dea",
                 "message": "Added simple file browser",
