@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250327-fa73e81",
-        "date": "2025-03-26T22:13:52+00:00",
+        "tag": "dev-20250328-21e5dea",
+        "date": "2025-03-27T22:58:22+00:00",
         "commits": [
+            {
+                "sha": "21e5dea",
+                "message": "Added simple file browser",
+                "author": "arabcoders",
+                "date": "2025-03-27T22:58:22+00:00"
+            },
             {
                 "sha": "fa73e81",
                 "message": "Make it possible to override the pictures backends urls.",
