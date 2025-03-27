@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250328-bdaf07d",
-        "date": "2025-03-27T23:07:55+00:00",
+        "tag": "dev-20250328-729f8a1",
+        "date": "2025-03-27T23:22:38+00:00",
+        "commits": [
+            {
+                "sha": "729f8a1",
+                "message": "Nested browser frontend page was not loading correctly.",
+                "author": "arabcoders",
+                "date": "2025-03-27T23:22:38+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250327-daad775",
+        "date": "2025-03-27T23:12:41+00:00",
         "commits": [
             {
                 "sha": "bdaf07d",

@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250328-5bac7b8",
+        "date": "2025-03-27T23:27:31+00:00",
+        "commits": [
+            {
+                "sha": "729f8a1",
+                "message": "Nested browser frontend page was not loading correctly.",
+                "author": "arabcoders",
+                "date": "2025-03-27T23:22:38+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250327-daad775",
         "date": "2025-03-27T23:12:41+00:00",
         "commits": [
