@@ -67,6 +67,17 @@ class HttpAPI(Common):
     }
     """Map ext to mimetype"""
 
+    _frontend_routes = [
+        "/console",
+        "/presets",
+        "/tasks",
+        "/notifications",
+        "/changeslog",
+        "/browser",
+        "/browser/{path:.*}",
+    ]
+    """Frontend routes to be preloaded"""
+
     def __init__(
         self,
         queue: DownloadQueue | None = None,
@@ -159,10 +170,17 @@ class HttpAPI(Common):
         """
         path = req.path
 
-        if req.path not in self._static_holder:
-            return web.json_response({"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code)
+        if path not in self._static_holder:
+            for k in self._static_holder:
+                if path.startswith(k):
+                    path = k
+                    break
+            else:
+                return web.json_response(
+                    {"error": "File not found.", "file": path}, status=web.HTTPNotFound.status_code
+                )
 
-        item: dict = self._static_holder[req.path]
+        item: dict = self._static_holder[path]
 
         return web.Response(
             body=item.get("content"),
@@ -212,12 +230,12 @@ class HttpAPI(Common):
                 preloaded += 1
 
                 if urlPath.endswith("/index.html"):
-                    paths_list = ["/console", "/presets", "/tasks", "/notifications", "/changeslog", "/browser"]
-                    for path in paths_list:
+                    for path in self._frontend_routes:
                         self._static_holder[path] = {"content": content, "content_type": contentType}
                         app.router.add_get(path, self._static_file)
-                        self._static_holder[path + "/"] = {"content": content, "content_type": contentType}
-                        app.router.add_get(path + "/", self._static_file)
+                        if "{" not in path:
+                            self._static_holder[path + "/"] = {"content": content, "content_type": contentType}
+                            app.router.add_get(path + "/", self._static_file)
                         LOG.debug(f"Preloading '{path}'.")
                         preloaded += 1
 
