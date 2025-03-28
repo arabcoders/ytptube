@@ -129,6 +129,7 @@
 <script setup>
 import { request } from '~/utils/index'
 import moment from 'moment'
+import { useStorage } from '@vueuse/core'
 
 const route = useRoute()
 const toast = useToast()
@@ -139,6 +140,9 @@ const isLoading = ref(false)
 const initialLoad = ref(true)
 const items = ref([])
 const path = ref(`/${route.params.slug?.length > 0 ? route.params.slug?.join('/') : ''}`)
+
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 const model_item = ref()
 const closeModel = () => model_item.value = null
@@ -305,4 +309,12 @@ const makeBreadCrumb = path => {
   return links
 }
 
+
+watch(model_item, v => {
+  if (!bg_enable.value) {
+    return
+  }
+
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+})
 </script>

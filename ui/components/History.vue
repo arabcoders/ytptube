@@ -370,7 +370,7 @@
 <script setup>
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
+import { makeDownload, formatBytes } from '~/utils/index'
 import toast from '~/plugins/toast'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
