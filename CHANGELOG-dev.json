@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250328-3b9c9ac",
-        "date": "2025-03-28T19:44:05+00:00",
+        "tag": "dev-20250328-43f4e85",
+        "date": "2025-03-28T20:23:43+00:00",
         "commits": [
+            {
+                "sha": "43f4e85",
+                "message": "Add case-insensitive regex for file type detection in Utils.py",
+                "author": "arabcoders",
+                "date": "2025-03-28T20:23:43+00:00"
+            },
             {
                 "sha": "3b9c9ac",
                 "message": "extends the improvements to download page.",
