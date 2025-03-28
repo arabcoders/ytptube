@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250328-37fc7a7",
-        "date": "2025-03-28T19:21:03+00:00",
+        "tag": "dev-20250328-3b9c9ac",
+        "date": "2025-03-28T19:44:05+00:00",
         "commits": [
+            {
+                "sha": "3b9c9ac",
+                "message": "extends the improvements to download page.",
+                "author": "arabcoders",
+                "date": "2025-03-28T19:44:05+00:00"
+            },
             {
                 "sha": "37fc7a7",
                 "message": "set opacity when model is active in file browser.",
