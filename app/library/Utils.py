@@ -27,12 +27,12 @@ YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
 
 FILES_TYPE: list = [
-    {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$"), "type": "video"},
-    {"rx": re.compile(r"\.(mp3|flac|aac|opus|wav|m4a)$"), "type": "audio"},
-    {"rx": re.compile(r"\.(srt|ass|ssa|smi|sub|idx)$"), "type": "subtitle"},
-    {"rx": re.compile(r"\.(jpg|jpeg|png|gif|bmp|webp)$"), "type": "image"},
-    {"rx": re.compile(r"\.(txt|nfo|md|json|yml|yaml|plexmatch)$"), "type": "text"},
-    {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$"), "type": "metadata"},
+    {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$", re.IGNORECASE), "type": "video"},
+    {"rx": re.compile(r"\.(mp3|flac|aac|opus|wav|m4a)$", re.IGNORECASE), "type": "audio"},
+    {"rx": re.compile(r"\.(srt|ass|ssa|smi|sub|idx)$", re.IGNORECASE), "type": "subtitle"},
+    {"rx": re.compile(r"\.(jpg|jpeg|png|gif|bmp|webp)$", re.IGNORECASE), "type": "image"},
+    {"rx": re.compile(r"\.(txt|nfo|md|json|yml|yaml|plexmatch)$", re.IGNORECASE), "type": "text"},
+    {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$", re.IGNORECASE), "type": "metadata"},
 ]
 
 
