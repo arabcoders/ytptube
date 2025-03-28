@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250328-dc3c2b4",
+        "date": "2025-03-28T00:29:39+00:00",
+        "commits": [
+            {
+                "sha": "8723b83",
+                "message": "Update yt-dlp to 2025.3.27",
+                "author": "ArabCoders",
+                "date": "2025-03-28T00:23:17+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250327-5bac7b8",
         "date": "2025-03-27T23:27:31+00:00",
         "commits": [
