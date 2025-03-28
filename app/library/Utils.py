@@ -26,6 +26,15 @@ YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 
 ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
 
+FILES_TYPE: list = [
+    {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$"), "type": "video"},
+    {"rx": re.compile(r"\.(mp3|flac|aac|opus|wav|m4a)$"), "type": "audio"},
+    {"rx": re.compile(r"\.(srt|ass|ssa|smi|sub|idx)$"), "type": "subtitle"},
+    {"rx": re.compile(r"\.(jpg|jpeg|png|gif|bmp|webp)$"), "type": "image"},
+    {"rx": re.compile(r"\.(txt|nfo|md|json|yml|yaml|plexmatch)$"), "type": "text"},
+    {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$"), "type": "metadata"},
+]
+
 
 class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
@@ -480,7 +489,7 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
         return False
 
 
-def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
+def get_file_sidecar(file: pathlib.Path) -> list[dict]:
     """
     Get sidecar files for the given file.
 
@@ -491,24 +500,58 @@ def get_sidecar_subtitles(file: pathlib.Path) -> list[dict]:
         list: List of sidecar files.
 
     """
-    files = []
+    files = {}
 
     for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
         if f == file or f.is_file() is False or f.stem.startswith("."):
             continue
 
-        if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
-            continue
-
         if f.stat().st_size < 1:
             continue
 
-        lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
-        lang = lg.groupdict().get("lang") if lg else "und"
+        content_type = "Unknown"
+        for pattern in FILES_TYPE:
+            if pattern["rx"].search(f.name):
+                content_type = pattern["type"]
+                break
 
-        files.append({"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"})
+        if content_type == "subtitle":
+            if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
+                continue
+            lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
+            lang = lg.groupdict().get("lang") if lg else "und"
+            content = {"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"}
+        else:
+            content = {"file": f}
+
+        if content_type not in files:
+            files[content_type] = []
+
+        files[content_type].append(content)
+
+    images = get_possible_images(str(file.parent))
+    if len(images) > 0:
+        if "image" not in files:
+            files["image"] = []
+
+        files["image"].extend(images)
 
     return files
+
+
+@lru_cache(maxsize=512)
+def get_possible_images(dir: str) -> list[str]:
+    images = []
+
+    path_loc = pathlib.Path(dir, "test.jpg")
+
+    for filename in ["poster", "thumbnail", "artwork", "cover", "fanart"]:
+        for ext in [".jpg", ".jpeg", ".png", ".webp"]:
+            f = path_loc.with_stem(filename).with_suffix(ext)
+            if f.exists():
+                images.append({"file": f})
+
+    return images
 
 
 def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
@@ -738,13 +781,28 @@ def get_files(base_path: str, dir: str | None = None):
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
 
+        content_type = None
+
+        for pattern in FILES_TYPE:
+            if pattern["rx"].search(file.name):
+                content_type = pattern["type"]
+                break
+
+        if not content_type and file.is_dir():
+            content_type = "dir"
+
+        if not content_type:
+            content_type = "download"
+
         stat = file.stat()
         contents.append(
             {
                 "type": "file" if file.is_file() else "dir",
+                "content_type": content_type,
                 "name": file.name,
                 "path": str(file).replace(base_path, "").strip("/"),
                 "size": stat.st_size,
+                "mime": get_mime_type({}, file) if file.is_file() else "directory",
                 "mtime": datetime.datetime.fromtimestamp(stat.st_mtime, tz=datetime.UTC).isoformat(),
                 "ctime": datetime.datetime.fromtimestamp(stat.st_ctime, tz=datetime.UTC).isoformat(),
                 "is_dir": file.is_dir(),

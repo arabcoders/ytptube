@@ -42,9 +42,9 @@ from .Utils import (
     encrypt_data,
     extract_info,
     get_file,
+    get_file_sidecar,
     get_files,
     get_mime_type,
-    get_sidecar_subtitles,
     validate_url,
     validate_uuid,
 )
@@ -1550,15 +1550,19 @@ class HttpAPI(Common):
             ff_info = await ffprobe(realFile)
 
             response = {
+                "title": str(Path(realFile).stem),
                 "ffprobe": ff_info,
                 "mimetype": get_mime_type(ff_info.get("metadata", {}), realFile),
-                "sidecar": get_sidecar_subtitles(realFile),
+                "sidecar": get_file_sidecar(realFile),
             }
 
-            for i, f in enumerate(response["sidecar"]):
-                response["sidecar"][i]["file"] = (
-                    str(Path(realFile).with_name(f["file"].name)).replace(self.config.download_path, "").strip("/")
-                )
+            for key in response["sidecar"]:
+                for i, f in enumerate(response["sidecar"][key]):
+                    response["sidecar"][key][i]["file"] = (
+                        str(Path(realFile).with_name(Path(f["file"]).name))
+                        .replace(self.config.download_path, "")
+                        .strip("/")
+                    )
 
             return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
         except Exception as e:
