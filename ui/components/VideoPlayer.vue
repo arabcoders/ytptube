@@ -3,8 +3,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
-  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  max-width: 80vw;
 }
 </style>
 <template>

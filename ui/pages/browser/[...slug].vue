@@ -1,10 +1,3 @@
-<style>
-.is-unbounded {
-  max-height: unset !important;
-  width: unset !important;
-}
-</style>
-
 <template>
   <div>
     <div class="mt-1 columns is-multiline">
@@ -114,7 +107,7 @@
     </div>
     <div class="modal is-active" v-if="model_item">
       <div class="modal-background" @click="closeModel"></div>
-      <div class="modal-content" :class="{ 'is-unbounded': ['image', 'text'].includes(model_item.type) }">
+      <div class="modal-content is-unbounded-model">
         <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="model_item"
           class="is-fullwidth" @closeModel="closeModel" v-if="'video' === model_item.type" />
         <GetInfo :link="model_item.filename" :useUrl="true" @closeModel="closeModel" :externalModel="true"

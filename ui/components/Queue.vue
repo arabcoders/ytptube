@@ -137,7 +137,7 @@
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1">
-              <span v-if="isEmbedable(item.url)" @click="() => embed_url = getEmbedable(item.url)" class="play-overlay">
+              <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
                 <div class="play-icon embed-icon"></div>
                 <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   v-if="item.extras?.thumbnail" />
@@ -224,7 +224,7 @@
 
     <div class="modal is-active" v-if="embed_url">
       <div class="modal-background" @click="embed_url = ''"></div>
-      <div class="modal-content">
+      <div class="modal-content is-unbounded-model">
         <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>

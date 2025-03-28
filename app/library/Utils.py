@@ -540,7 +540,7 @@ def get_file_sidecar(file: pathlib.Path) -> list[dict]:
 
 
 @lru_cache(maxsize=512)
-def get_possible_images(dir: str) -> list[str]:
+def get_possible_images(dir: str) -> list[dict]:
     images = []
 
     path_loc = pathlib.Path(dir, "test.jpg")
