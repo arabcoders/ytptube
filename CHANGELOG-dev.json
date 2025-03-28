@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250328-b08d0d9",
-        "date": "2025-03-28T00:26:15+00:00",
+        "tag": "dev-20250328-37fc7a7",
+        "date": "2025-03-28T19:21:03+00:00",
+        "commits": [
+            {
+                "sha": "37fc7a7",
+                "message": "set opacity when model is active in file browser.",
+                "author": "arabcoders",
+                "date": "2025-03-28T19:21:03+00:00"
+            },
+            {
+                "sha": "6b6cfc9",
+                "message": "small improvements to file browser.",
+                "author": "arabcoders",
+                "date": "2025-03-28T19:17:38+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250328-dc3c2b4",
+        "date": "2025-03-28T00:29:39+00:00",
         "commits": [
             {
                 "sha": "8723b83",
