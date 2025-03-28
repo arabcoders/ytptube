@@ -1,9 +1,16 @@
+<style scoped>
+.embed-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+  width: 80vw;
+}
+</style>
 <template>
   <div class="content">
     <h1 class="has-text-white">Not downloaded yet.</h1>
-    <figure class="image is-16by9">
-      <iframe class="has-ratio" :src="url" frameborder="0" allowfullscreen />
-    </figure>
+    <iframe class="embed-content" :src="url" frameborder="0" allowfullscreen />
   </div>
 </template>
 

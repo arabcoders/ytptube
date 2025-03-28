@@ -281,3 +281,8 @@ hr {
   background-repeat: no-repeat;
   background-blend-mode: darken;
 }
+
+.is-unbounded-model {
+  max-height: unset !important;
+  width: unset !important;
+}

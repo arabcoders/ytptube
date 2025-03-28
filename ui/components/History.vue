@@ -350,7 +350,7 @@
 
     <div class="modal is-active" v-if="video_item">
       <div class="modal-background" @click="closeVideo"></div>
-      <div class="modal-content">
+      <div class="modal-content is-unbounded-model">
         <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="video_item"
           class="is-fullwidth" @closeModel="closeVideo" />
       </div>
@@ -359,7 +359,7 @@
 
     <div class="modal is-active" v-if="embed_url">
       <div class="modal-background" @click="embed_url = ''"></div>
-      <div class="modal-content">
+      <div class="modal-content is-unbounded-model">
         <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
@@ -370,7 +370,7 @@
 <script setup>
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import { makeDownload, formatBytes, ucFirst } from '~/utils/index'
+import { makeDownload, formatBytes } from '~/utils/index'
 import toast from '~/plugins/toast'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 

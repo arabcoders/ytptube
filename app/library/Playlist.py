@@ -2,7 +2,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from .ffprobe import ffprobe
-from .Utils import StreamingError, get_sidecar_subtitles
+from .Utils import StreamingError, get_file_sidecar
 
 
 class Playlist:
@@ -30,9 +30,9 @@ class Playlist:
         subs = ""
 
         duration: float = float(ff.metadata.get("duration"))
-        for sub_file in get_sidecar_subtitles(file):
+        for sub_file in get_file_sidecar(file).get("subtitle", []):
             lang = sub_file["lang"]
-            item = sub_file["file"]
+            item = Path(sub_file["file"])
             name = sub_file["name"]
 
             subs = ',SUBTITLES="subs"'

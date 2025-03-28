@@ -3,10 +3,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
-  width: 100%;
+  height: auto;
+  max-height: 80vh;
+  max-width: 80vw;
 }
-
 </style>
 <template>
   <div v-if="infoLoaded">
@@ -15,7 +15,7 @@
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
       <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
-        :srclang="track.lang" :src="track.file" :default="notFirefox && i === 0" />
+        :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
     </video>
   </div>
   <div style="text-align: center;" v-else>
@@ -55,16 +55,16 @@ const volume = useStorage('player_volume', 1)
 const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
 const infoLoaded = ref(false)
 
-let hls = null;
+let hls = null
 
 const eventFunc = e => {
-  if (e.key === 'Escape') {
+  if ('Escape' === e.key) {
     emitter('closeModel')
   }
 }
 
 onMounted(async () => {
-  const req = await request(makeDownload(config, props.item, 'api/file/info'));
+  const req = await request(makeDownload(config, props.item, 'api/file/info'))
 
   const response = await req.json()
 
@@ -74,17 +74,14 @@ onMounted(async () => {
     return
   }
 
-  infoLoaded.value = true
   await nextTick()
-
-  video.value.volume = volume.value
-
-  video.value.addEventListener('volumechange', () => {
-    volume.value = video.value.volume
-  })
 
   if (props.item.extras?.thumbnail) {
     thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
+  } else {
+    if (response?.sidecar?.image && response.sidecar.image.length > 0) {
+      thumbnail.value = makeDownload(config, { "filename": response.sidecar.image[0]['file'] })
+    }
   }
 
   // -- check if mimetype is video/mp4 and device is apple
@@ -115,12 +112,17 @@ onMounted(async () => {
   if (props.item?.title) {
     title.value = props.item.title
   }
+  else {
+    if (response?.title) {
+      title.value = response.title
+    }
+  }
 
   if (!props.item.extras?.is_video && props.item.extras?.is_audio) {
     isAudio.value = true
   }
 
-  response.sidecar.forEach((cap, id) => {
+  response?.sidecar?.subtitle?.forEach((cap, id) => {
     tracks.value.push({
       kind: "captions",
       label: cap.name,
@@ -130,8 +132,11 @@ onMounted(async () => {
   })
 
   if (isApple) {
-    document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
+    document.documentElement.style.setProperty('--webkit-text-track-display', 'block')
   }
+
+  infoLoaded.value = true
+  await nextTick()
 
   prepareVideoPlayer()
   window.addEventListener('keydown', eventFunc)
@@ -162,7 +167,7 @@ const prepareVideoPlayer = () => {
 
   let mediaMetadata = {
     title: title.value,
-  };
+  }
 
   if (thumbnail.value) {
     mediaMetadata.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }]
@@ -172,18 +177,24 @@ const prepareVideoPlayer = () => {
     mediaMetadata.artist = artist.value
   }
 
-  navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
+  navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata)
   if (title.value) {
     window.document.title = `YTPTube - Playing: ${title.value}`
   }
+
+  video.value.volume = volume.value
+
+  video.value.addEventListener('volumechange', () => {
+    volume.value = video.value.volume
+  })
 }
 
 const src_error = () => {
   if (hls) {
     return
   }
-  console.warn('Direct play failed, trying HLS.');
-  attach_hls(makeDownload(config, props.item, 'm3u8'));
+  console.warn('Direct play failed, trying HLS.')
+  attach_hls(makeDownload(config, props.item, 'm3u8'))
 }
 
 const attach_hls = link => {
@@ -193,7 +204,7 @@ const attach_hls = link => {
     lowLatencyMode: true,
     backBufferLength: 120,
     fragLoadingTimeOut: 200000,
-  });
+  })
 
   hls.loadSource(link)
   hls.attachMedia(video.value)

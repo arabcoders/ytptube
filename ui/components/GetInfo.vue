@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="modal is-active">
+    <div class="modal is-active" v-if="false === externalModel">
       <div class="modal-background" @click="closeModal"></div>
       <div class="modal-content" style="width:60vw;">
         <div style="font-size:30vh; width: 99%" class="has-text-centered" v-if="isLoading">
@@ -20,6 +20,17 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closeModal"></button>
     </div>
+    <div style="width:70vw; height: 80vh;" v-else>
+      <div class="p-0 m-0" style="position: relative">
+        <div class="content" style="white-space: pre;">
+          <code class="p-4 is-block" v-text="data" />
+          <button class="button is-small m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
+            style="position: absolute; top:0; right:0;">
+            <span class="icon"><i class="fas fa-copy"></i></span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -34,7 +45,18 @@ const toast = useToast()
 const props = defineProps({
   link: {
     type: String,
-    default: ''
+    default: '',
+    required: false,
+  },
+  useUrl: {
+    type: Boolean,
+    default: false,
+    required: false,
+  },
+  externalModel: {
+    type: Boolean,
+    default: false,
+    required: false,
   },
 })
 
@@ -49,12 +71,19 @@ const eventFunc = e => {
 onMounted(async () => {
   window.addEventListener('keydown', eventFunc)
 
-  const url = '/api/yt-dlp/url/info?url=' + encodePath(props.link)
+  const url = props.useUrl ? props.link : '/api/yt-dlp/url/info?url=' + encodePath(props.link)
 
   try {
     isLoading.value = true
-    const response = await request(url, { credentials: 'include' });
-    data.value = await response.json()
+    const response = await request(url, { credentials: 'include' })
+    const body = await response.text()
+
+    try {
+      data.value = JSON.parse(body)
+    } catch (e) {
+      data.value = body
+    }
+
   } catch (e) {
     console.error(e)
     toast.error(`Error: ${e.message}`)

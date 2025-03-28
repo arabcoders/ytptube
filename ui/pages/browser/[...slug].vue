@@ -52,15 +52,30 @@
                 <td class="has-text-centered is-vcentered">
                   <span class="icon">
                     <i class="fas fa-solid"
-                      :class="{ 'fa-file': item.type === 'file', 'fa-folder': item.type === 'dir' }" />
+                      :class="{ 'fa-file': 'file' === item.type, 'fa-folder': 'dir' === item.type }" />
                   </span>
                 </td>
-                <td class="is-text-overflow is-vcentered" v-tooltip="item.name">
-                  <a :href="`/browser/${item.path}`" v-if="item.type === 'dir'"
-                    @click.prevent="reloadContent(item.path)">
-                    {{ item.name }}
-                  </a>
-                  <a :href="makeDownload({}, { filename: item.path, folder: '' })" v-else>{{ item.name }}</a>
+                <td class="is-text-overflow is-vcentered">
+                  <div class="field is-grouped">
+                    <div class="control is-text-overflow is-expanded" v-tooltip="item.name">
+                      <a :href="`/browser/${item.path}`" v-if="'dir' === item.type"
+                        @click.prevent="reloadContent(item.path)">
+                        {{ item.name }}
+                      </a>
+                      <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                        @click.prevent="handleClick(item)" v-else>
+                        {{ item.name }}
+                      </a>
+                    </div>
+                    <div class="control" v-if="'file' === item.type">
+                      <span class="icon">
+                        <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                          :download="item.name.split('/').reverse()[0]">
+                          <i class="fas fa-download" />
+                        </a>
+                      </span>
+                    </div>
+                  </div>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   {{ 'file' === item.type ? formatBytes(item.size) : 'Dir' }}
@@ -90,12 +105,24 @@
         </Message>
       </div>
     </div>
+    <div class="modal is-active" v-if="model_item">
+      <div class="modal-background" @click="closeModel"></div>
+      <div class="modal-content is-unbounded-model">
+        <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="model_item"
+          class="is-fullwidth" @closeModel="closeModel" v-if="'video' === model_item.type" />
+        <GetInfo :link="model_item.filename" :useUrl="true" @closeModel="closeModel" :externalModel="true"
+          v-if="'text' === model_item.type" />
+        <ImageView :link="model_item.filename" @closeModel="closeModel" v-if="'image' === model_item.type" />
+      </div>
+      <button class="modal-close is-large" aria-label="close" @click="closeModel"></button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { request } from '~/utils/index'
 import moment from 'moment'
+import { useStorage } from '@vueuse/core'
 
 const route = useRoute()
 const toast = useToast()
@@ -106,6 +133,12 @@ const isLoading = ref(false)
 const initialLoad = ref(true)
 const items = ref([])
 const path = ref(`/${route.params.slug?.length > 0 ? route.params.slug?.join('/') : ''}`)
+
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
+
+const model_item = ref()
+const closeModel = () => model_item.value = null
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -127,6 +160,45 @@ watch(() => socket.isConnected, async () => {
     initialLoad.value = false
   }
 })
+
+const handleClick = item => {
+  if ('video' === item.content_type) {
+    model_item.value = {
+      "type": 'video',
+      "filename": item.path,
+      "folder": "",
+      "extras": {},
+    }
+    return
+  }
+
+  if (['text', 'subtitle', 'metadata'].includes(item.content_type)) {
+    model_item.value = {
+      "type": 'text',
+      "filename": makeDownload(config, { "filename": item.path }),
+      "folder": "",
+      "extras": {},
+    }
+    return
+  }
+
+  if ('image' === item.content_type) {
+    model_item.value = {
+      "type": 'image',
+      "filename": makeDownload(config, { "filename": item.path }),
+      "folder": "",
+      "extras": {},
+    }
+    return
+  }
+
+  if ('dir' === item.content_type) {
+    reloadContent(item.path)
+    return
+  }
+
+  window.location = makeDownload(config, { "filename": item.path, "folder": "", "extras": {} })
+}
 
 const reloadContent = async (dir = '/', fromMounted = false) => {
   try {
@@ -230,4 +302,12 @@ const makeBreadCrumb = path => {
   return links
 }
 
+
+watch(model_item, v => {
+  if (!bg_enable.value) {
+    return
+  }
+
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+})
 </script>
