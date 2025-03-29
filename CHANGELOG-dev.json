@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250329-0b3cf65",
-        "date": "2025-03-29T18:32:43+00:00",
+        "tag": "dev-20250330-8f313d7",
+        "date": "2025-03-29T22:43:31+00:00",
         "commits": [
+            {
+                "sha": "8f313d7",
+                "message": "add support for --match-filter",
+                "author": "arabcoders",
+                "date": "2025-03-29T22:43:31+00:00"
+            },
             {
                 "sha": "0b3cf65",
                 "message": "improved the file browser by including searching and sorting",

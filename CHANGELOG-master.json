@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250330-8305518",
+        "date": "2025-03-29T22:47:34+00:00",
+        "commits": [
+            {
+                "sha": "8f313d7",
+                "message": "add support for --match-filter",
+                "author": "arabcoders",
+                "date": "2025-03-29T22:43:31+00:00"
+            },
+            {
+                "sha": "0b3cf65",
+                "message": "improved the file browser by including searching and sorting",
+                "author": "arabcoders",
+                "date": "2025-03-29T18:32:43+00:00"
+            },
+            {
+                "sha": "0f4c7ce",
+                "message": "minor file browser design update",
+                "author": "arabcoders",
+                "date": "2025-03-29T17:23:27+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250328-80737f7",
         "date": "2025-03-28T20:35:50+00:00",
         "commits": [
