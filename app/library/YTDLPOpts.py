@@ -142,4 +142,14 @@ class YTDLPOpts(metaclass=Singleton):
 
             data["impersonate"] = ImpersonateTarget.from_str(data["impersonate"])
 
+        if (
+            "match_filter" in data
+            and isinstance(data["match_filter"], dict)
+            and "filters" in data["match_filter"]
+            and len(data["match_filter"]["filters"]) > 0
+        ):
+            from yt_dlp.utils import match_filter_func
+
+            data["match_filter"] = match_filter_func(data["match_filter"]["filters"])
+
         return data

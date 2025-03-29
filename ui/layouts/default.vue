@@ -27,7 +27,7 @@
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/browser">
             <span class="icon-text">
               <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
-              <span class="is-hidden-mobile">Browser</span>
+              <span class="is-hidden-mobile">Files</span>
             </span>
           </NuxtLink>
         </div>

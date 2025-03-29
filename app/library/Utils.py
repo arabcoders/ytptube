@@ -465,6 +465,13 @@ def arg_converter(args: str) -> dict:
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 
+    if "match_filter" in diff:
+        import inspect
+
+        matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
+        if isinstance(matchFilter, set):
+            diff["match_filter"] = {"filters": list(matchFilter)}
+
     from .encoder import Encoder
 
     return json.loads(json.dumps(diff, cls=Encoder))
@@ -691,7 +698,7 @@ def get(
     if not path:
         return data
 
-    # If data is not a dict or list, attempt to convert it (similar to PHP's get_object_vars).
+    # If data is not a dict or list, attempt to convert it.
     if not isinstance(data, dict | list):
         try:
             data = vars(data)

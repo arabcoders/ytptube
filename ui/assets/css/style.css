@@ -286,3 +286,7 @@ hr {
   max-height: unset !important;
   width: unset !important;
 }
+
+.is-auto {
+  unicode-bidi: embed;
+}
