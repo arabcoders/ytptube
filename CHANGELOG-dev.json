@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250329-0f4c7ce",
-        "date": "2025-03-29T17:23:27+00:00",
+        "tag": "dev-20250329-0b3cf65",
+        "date": "2025-03-29T18:32:43+00:00",
         "commits": [
+            {
+                "sha": "0b3cf65",
+                "message": "improved the file browser by including searching and sorting",
+                "author": "arabcoders",
+                "date": "2025-03-29T18:32:43+00:00"
+            },
             {
                 "sha": "0f4c7ce",
                 "message": "minor file browser design update",
