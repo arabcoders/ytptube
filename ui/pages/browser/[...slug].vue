@@ -19,6 +19,20 @@
         </span>
         <div class="is-pulled-right">
           <div class="field is-grouped">
+            <div class="control has-icons-left" v-if="show_filter">
+              <input type="search" v-model.lazy="search" class="input" id="search" placeholder="Filter">
+              <span class="icon is-left">
+                <i class="fas fa-filter"></i>
+              </span>
+            </div>
+
+            <div class="control">
+              <button class="button is-danger is-light" @click="toggleFilter"
+                v-tooltip.bottom="'Filter content'">
+                <span class="icon"><i class="fas fa-filter" /></span>
+              </button>
+            </div>
+
             <p class="control">
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading">
@@ -40,22 +54,47 @@
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
               <tr class="has-text-centered is-unselectable">
-                <th width="5%">#</th>
-                <th width="70%">Name</th>
-                <th width="10%">Size</th>
-                <th width="15%">Date</th>
+                <th width="5%" @click="changeSort('type')">
+                  #
+                  <span class="icon" v-if="'type' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </th>
+                <th width="70%" @click="changeSort('name')">
+                  Name
+                  <span class="icon" v-if="'name' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+
+                </th>
+                <th width="10%" @click="changeSort('size')">
+                  Size
+                  <span class="icon" v-if="'size' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+
+                </th>
+                <th width="15%" @click="changeSort('date')">
+                  Date
+                  <span class="icon" v-if="'date' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in items" :key="item.path">
+              <tr v-for="item in filteredItems" :key="item.path">
                 <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
                   <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
                 </td>
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
                     <div class="control is-text-overflow is-expanded">
-                      <a :href="`/browser/${item.path}`" v-if="'dir' === item.type"
-                        @click.prevent="reloadContent(item.path)">
+                      <a :href="`/browser/${item.path}`" v-if="'dir' === item.type" @click.prevent="handleClick(item)">
                         {{ item.name }}
                       </a>
                       <a :href="makeDownload({}, { filename: item.path, folder: '' })"
@@ -128,6 +167,59 @@ const path = ref(`/${route.params.slug?.length > 0 ? route.params.slug?.join('/'
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
+const sort_by = useStorage('sort_by', 'name')
+const sort_order = useStorage('sort_order', 'asc')
+
+const search = ref('')
+const show_filter = ref(false)
+
+const filteredItems = computed(() => {
+  if (!search.value) {
+    return sortedItems(items.value)
+  }
+
+  const searchLower = search.value.toLowerCase()
+  return sortedItems(items.value.filter(item => {
+    return item.name.toLowerCase().includes(searchLower)
+  }))
+})
+
+const sortedItems = items => {
+
+  if (!items || items.length < 1) {
+    return []
+  }
+
+  if ('name' === sort_by.value) {
+    return items.sort((a, b) => {
+      return 'asc' === sort_order.value ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+    })
+  }
+
+  if (sort_by.value === 'size') {
+    return items.sort((a, b) => {
+      return 'asc' === sort_order.value ? a.size - b.size : b.size - a.size
+    })
+  }
+
+  if (sort_by.value === 'date') {
+    return items.sort((a, b) => {
+      let aDate = new Date(a.mtime)
+      let bDate = new Date(b.mtime)
+      return 'asc' === sort_order.value ? aDate - bDate : bDate - aDate
+    })
+  }
+
+  if (sort_by.value === 'type') {
+    return items.sort((a, b) => {
+      return 'asc' === sort_order.value ? a.content_type.localeCompare(b.content_type) : b.content_type.localeCompare(a.content_type)
+    })
+  }
+
+  return items
+}
+
+
 const model_item = ref()
 const closeModel = () => model_item.value = null
 
@@ -184,6 +276,11 @@ const handleClick = item => {
   }
 
   if ('dir' === item.content_type) {
+    if (search.value) {
+      search.value = ''
+      show_filter.value = false
+    }
+
     reloadContent(item.path)
     return
   }
@@ -321,4 +418,27 @@ const setIcon = item => {
 
   return 'fa-file'
 }
+
+const changeSort = by => {
+  if (!['name', 'size', 'date', 'type'].includes(by)) {
+    return
+  }
+
+  if (by !== sort_by.value) {
+    sort_by.value = by
+  }
+
+  sort_order.value = 'asc' === sort_order.value ? 'desc' : 'asc'
+}
+
+const toggleFilter = () => {
+  show_filter.value = !show_filter.value
+  if (!show_filter.value) {
+    search.value = ''
+    return
+  }
+
+  awaitElement('#search', e => e.focus())
+}
+
 </script>
