@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250328-43f4e85",
-        "date": "2025-03-28T20:23:43+00:00",
+        "tag": "dev-20250329-0f4c7ce",
+        "date": "2025-03-29T17:23:27+00:00",
+        "commits": [
+            {
+                "sha": "0f4c7ce",
+                "message": "minor file browser design update",
+                "author": "arabcoders",
+                "date": "2025-03-29T17:23:27+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250328-80737f7",
+        "date": "2025-03-28T20:35:50+00:00",
         "commits": [
             {
                 "sha": "43f4e85",
