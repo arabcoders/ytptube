@@ -41,23 +41,19 @@
             <thead>
               <tr class="has-text-centered is-unselectable">
                 <th width="5%">#</th>
-                <th width="55%">Name</th>
+                <th width="70%">Name</th>
                 <th width="10%">Size</th>
-                <th width="15%">Created</th>
-                <th width="15%">Modified</th>
+                <th width="15%">Date</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in items" :key="item.path">
-                <td class="has-text-centered is-vcentered">
-                  <span class="icon">
-                    <i class="fas fa-solid"
-                      :class="{ 'fa-file': 'file' === item.type, 'fa-folder': 'dir' === item.type }" />
-                  </span>
+                <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
+                  <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
                 </td>
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
-                    <div class="control is-text-overflow is-expanded" v-tooltip="item.name">
+                    <div class="control is-text-overflow is-expanded">
                       <a :href="`/browser/${item.path}`" v-if="'dir' === item.type"
                         @click.prevent="reloadContent(item.path)">
                         {{ item.name }}
@@ -79,11 +75,6 @@
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   {{ 'file' === item.type ? formatBytes(item.size) : 'Dir' }}
-                </td>
-                <td class="has-text-centered is-text-overflow is-unselectable">
-                  <span :data-datetime="item.ctime" v-tooltip="moment(item.ctime).format('MMMM Do YYYY, h:mm:ss a')">
-                    {{ moment(item.ctime).fromNow() }}
-                  </span>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('MMMM Do YYYY, h:mm:ss a')">
@@ -310,4 +301,24 @@ watch(model_item, v => {
 
   document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
+
+const setIcon = item => {
+  if ('dir' === item.content_type) {
+    return 'fa-folder'
+  }
+
+  if (['video', 'audio'].includes(item.content_type)) {
+    return 'fa-file-video'
+  }
+
+  if (['text', 'subtitle', 'metadata'].includes(item.content_type)) {
+    return 'fa-file-alt'
+  }
+
+  if (['image'].includes(item.content_type)) {
+    return 'fa-file-image'
+  }
+
+  return 'fa-file'
+}
 </script>
