@@ -84,7 +84,8 @@
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
                       <select id="preset" class="is-fullwidth" v-model="form.preset"
-                        :disabled="addInProgress || hasFormatInConfig">
+                        :disabled="addInProgress || hasFormatInConfig"
+                        v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command arguments for yt-dlp.' : ''">
                         <option v-for="item in config.presets" :key="item.name" :value="item.name">
                           {{ item.name }}
                         </option>
@@ -176,15 +177,12 @@
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
                         to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
-                      For more info. Some arguments are ignored by default. Warning: Use with
-                      caution some of those options can break yt-dlp or the frontend. <span class="has-text-danger">If
-                        <code>-f, --format</code> argument is present, the preset and all it's options will be
-                        ignored</span>.
+                      For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
+                        with caution those arguments can break yt-dlp or the frontend.</span>
                     </span>
                   </span>
                 </div>
               </div>
-
             </div>
           </div>
 

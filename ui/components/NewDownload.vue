@@ -22,7 +22,7 @@
                   <div class="select is-fullwidth">
                     <select id="preset" class="is-fullwidth"
                       :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="selectedPreset"
-                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the config.' : ''">
+                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the Command arguments for yt-dlp.' : ''">
                       <option v-for="item in config.presets" :key="item.name" :value="item.name">
                         {{ item.name }}
                       </option>
@@ -59,16 +59,18 @@
             </div>
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-            <div class="column is-12">
+
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline" for="output_format"
                   v-tooltip="'Default Format: ' + config.app.output_template">
                   Output Template
                 </label>
-                <div class="control">
+                <div class="control has-icons-left">
                   <input type="text" class="input" v-model="output_template" id="output_format"
                     :disabled="!socket.isConnected || addInProgress"
                     placeholder="Uses default output template naming if empty.">
+                  <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -77,32 +79,31 @@
                 </span>
               </div>
             </div>
+
             <div class="column is-6-tablet is-12-mobile">
               <div class="field">
-                <label class="label is-inline" for="ytdlpConfig"
-                  v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                  JSON yt-dlp config or CLI options.
-                  <NuxtLink v-if="ytdlpConfig && ytdlpConfig.trim() && !ytdlpConfig.trim().startsWith('{')"
-                    @click="convertOptions()">
-                    Convert to JSON
-                  </NuxtLink>
+                <label class="label is-inline" for="cli_options">
+                  Command arguments for yt-dlp
                 </label>
-                <div class="control">
-                  <textarea class="textarea" id="ytdlpConfig" v-model="ytdlpConfig"
-                    :disabled="!socket.isConnected || addInProgress || convertInProgress"
-                    placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
+                <div class="control has-icons-left">
+                  <input type="text" class="input" v-model="ytdlp_cli" id="cli_options"
+                    :disabled="!socket.isConnected || addInProgress"
+                    placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
+                  <span class="icon is-small is-left"><i class="fa-solid fa-terminal" /></span>
                 </div>
+
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Extends current global yt-dlp config with given options. Some fields are ignored like
-                    <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with caution
-                    some of those options can break yt-dlp or the frontend. If <code>Format</code> key is present
-                    in the config, <span class="has-text-danger">the preset and all it's options will be
-                      ignored</span>.</span>
+                  <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
+                      to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
+                    For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
+                      with caution those arguments can break yt-dlp or the frontend.</span>
+                  </span>
                 </span>
               </div>
             </div>
-            <div class="column is-6-tablet is-12-mobile">
+
+            <div class="column is-12">
               <div class="field">
                 <label class="label is-inline" for="ytdlpCookies" v-tooltip="'Netscape HTTP Cookie format'">
                   Cookies
@@ -152,7 +153,6 @@
 
 <script setup>
 import { useStorage } from '@vueuse/core'
-import { request } from '~/utils/index'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
@@ -160,31 +160,25 @@ const socket = useSocketStore()
 const toast = useToast()
 
 const selectedPreset = useStorage('selectedPreset', config.app.default_preset)
-const ytdlpConfig = useStorage('ytdlp_config', '')
 const ytdlpCookies = useStorage('ytdlp_cookies', '')
+const ytdlp_cli = useStorage('ytdlp_cli', '')
 const output_template = useStorage('output_template', null)
 const downloadPath = useStorage('downloadPath', null)
 const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
-const convertInProgress = ref(false)
 
 const addDownload = async () => {
   // -- send request to convert cli options to JSON
-  if (ytdlpConfig.value && !ytdlpConfig.value.trim().startsWith('{')) {
-    await convertOptions()
-  }
-
-  if (ytdlpConfig.value) {
-    try {
-      JSON.parse(ytdlpConfig.value)
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
+  if (ytdlp_cli.value && '' !== ytdlp_cli.value) {
+    const options = await convertOptions(ytdlp_cli.value)
+    if (null === options) {
       return
     }
   }
 
   addInProgress.value = true
+
   url.value.split(',').forEach(url => {
     if (!url.trim()) {
       return
@@ -193,9 +187,9 @@ const addDownload = async () => {
       url: url,
       preset: config.app.basic_mode ? config.app.default_preset : selectedPreset.value,
       folder: config.app.basic_mode ? null : downloadPath.value,
-      config: config.app.basic_mode ? '' : ytdlpConfig.value,
       cookies: config.app.basic_mode ? '' : ytdlpCookies.value,
       template: config.app.basic_mode ? null : output_template.value,
+      cli: config.app.basic_mode ? null : ytdlp_cli.value,
     })
   })
 }
@@ -206,7 +200,6 @@ const resetConfig = () => {
   }
 
   selectedPreset.value = config.app.default_preset.value
-  ytdlpConfig.value = ''
   ytdlpCookies.value = ''
   output_template.value = null
   url.value = null
@@ -239,27 +232,24 @@ const unlockDownload = async stream => {
   }
 }
 
-const convertOptions = async () => {
-  if (convertInProgress.value) {
-    return
-  }
-
+const convertOptions = async args => {
   try {
-    convertInProgress.value = true
-    const response = await convertCliOptions(ytdlpConfig.value)
-    ytdlpConfig.value = JSON.stringify(response.opts, null, 2)
+    const response = await convertCliOptions(args)
+
     if (response.output_template) {
       output_template.value = response.output_template
     }
+
     if (response.download_path) {
       downloadPath.value = response.download_path
     }
 
+    return response.opts
   } catch (e) {
     toast.error(e.message)
-  } finally {
-    convertInProgress.value = false
   }
+
+  return null;
 }
 
 onMounted(() => {
@@ -276,14 +266,11 @@ onUnmounted(() => {
 })
 
 const hasFormatInConfig = computed(() => {
-  if (!ytdlpConfig.value) {
+  if (!ytdlp_cli.value) {
     return false
   }
-  try {
-    const config = JSON.parse(ytdlpConfig.value)
-    return "format" in config
-  } catch (e) {
-    return false
+  if (ytdlp_cli.value.includes('-f') || ytdlp_cli.value.includes('--format')) {
+    return true
   }
 })
 </script>
