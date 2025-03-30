@@ -50,7 +50,6 @@
                 </span>
               </div>
 
-
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="name" v-text="'Name'" />
@@ -81,14 +80,11 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="folder">
-                    Preset
-                  </label>
+                  <label class="label is-inline" for="preset">Preset</label>
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
                       <select id="preset" class="is-fullwidth" v-model="form.preset"
-                        :disabled="addInProgress || hasFormatInConfig"
-                        v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the config.' : ''">
+                        :disabled="addInProgress || hasFormatInConfig">
                         <option v-for="item in config.presets" :key="item.name" :value="item.name">
                           {{ item.name }}
                         </option>
@@ -98,8 +94,10 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Select the preset to use for this URL. The preset will be ignored if format key is present in
-                      config.</span>
+                    <span>Select the preset to use for this URL. <span class="text-has-danger">If the
+                        <code>-f, --format</code> argument is present in the command line options, the preset and all
+                        it's options will be ignored.</span>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -126,7 +124,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="showAdvanced">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="folder">
                     Download path
@@ -138,24 +136,25 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Downloads are relative to download path, defaults to root path if not set.</span>
+                    <span>Paths are relative to global download path, defaults to preset download path if set otherwise,
+                      fallback root path if not set.</span>
                   </span>
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="showAdvanced">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
                     Output template
                   </label>
                   <div class="control has-icons-left">
-                    <input type="text" class="input" id="output_template" placeholder="The output template to use"
-                      v-model="form.template" :disabled="addInProgress">
+                    <input type="text" class="input" id="output_template" :disabled="addInProgress"
+                      placeholder="Leave empty to use default template." v-model="form.template">
                     <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The output template to use, if not set, it will defaults to
+                    <span>Use this output template if non are given with URL. if not set, it will defaults to
                       <code>{{ config.app.output_template }}</code>.
                       For more information <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
                         target="_blank">visit this url</NuxtLink>.
@@ -164,41 +163,24 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="showAdvanced">
+              <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="config"
-                    v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                    JSON yt-dlp config or CLI options. <NuxtLink
-                      v-if="form.config && (typeof form.config === 'string') && !form.config.trim().startsWith('{')"
-                      @click="convertOptions()">Convert to JSON</NuxtLink>
+                  <label class="label is-inline" for="cli_options">
+                    Command arguments for yt-dlp
                   </label>
                   <div class="control">
-                    <textarea class="textarea" id="config" v-model="form.config" :disabled="addInProgress"
-                      placeholder="--no-embed-metadata --no-embed-thumbnail"></textarea>
+                    <input type="text" class="input" v-model="form.cli" id="cli_options" :disabled="addInProgress"
+                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span> Extends current global yt-dlp config with given options. Some fields are ignored like
-                      <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with
-                      caution
-                      some of those options can break yt-dlp or the frontend.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile" v-if="showAdvanced">
-                <div class="field">
-                  <label class="label is-inline" for="cookies"
-                    v-tooltip="'Netscape HTTP Cookie format.'">Cookies</label>
-                  <div class="control">
-                    <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress" />
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use the <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                        Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
-                      Cookie format.</span>
+                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
+                      For more info. Some arguments are ignored by default. Warning: Use with
+                      caution some of those options can break yt-dlp or the frontend. <span class="has-text-danger">If
+                        <code>-f, --format</code> argument is present, the preset and all it's options will be
+                        ignored</span>.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -221,12 +203,6 @@
                 <span>Cancel</span>
               </button>
             </p>
-            <p class="card-footer-item">
-              <button class="button is-fullwidth is-info" type="button" @click="showAdvanced = !showAdvanced">
-                <span class="icon"><i class="fa-solid fa-cog" /></span>
-                <span>Advanced</span>
-              </button>
-            </p>
           </div>
         </div>
       </form>
@@ -244,8 +220,6 @@ import { CronExpressionParser } from 'cron-parser'
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useToast();
 const config = useConfigStore();
-const convertInProgress = ref(false);
-const showAdvanced = useStorage('task.showAdvanced', false);
 const showImport = useStorage('showImport', false);
 const import_string = ref('');
 
@@ -269,10 +243,6 @@ const props = defineProps({
 const form = reactive(props.task);
 
 onMounted(() => {
-  if (props.task?.config && (typeof props.task.config === 'object')) {
-    form.config = JSON.stringify(props.task.config, null, 4);
-  }
-
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset);
   }
@@ -304,59 +274,16 @@ const checkInfo = async () => {
     return;
   }
 
-  if (typeof form.config === 'object') {
-    form.config = JSON.stringify(form.config, null, 4);
-  }
-
-  if (form.config && form.config && !form.config.trim().startsWith('{')) {
-    await convertOptions();
-  }
-
-  if (form.config) {
-    try {
-      form.config = JSON.parse(form.config)
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
-      return;
+  if (form?.cli && '' !== form.cli) {
+    const options = await convertOptions(form.cli);
+    if (null === options) {
+      return
     }
+    form.cli = form.cli.trim(" ")
   }
 
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
 }
-
-const convertOptions = async () => {
-  if (convertInProgress.value) {
-    return
-  }
-
-  try {
-    convertInProgress.value = true
-    const response = await convertCliOptions(form.config)
-    form.config = JSON.stringify(response.opts, null, 2)
-    if (response.output_template) {
-      form.template = response.output_template
-    }
-    if (response.download_path) {
-      form.folder = response.download_path
-    }
-  } catch (e) {
-    toast.error(e.message)
-  } finally {
-    convertInProgress.value = false
-  }
-}
-
-const hasFormatInConfig = computed(() => {
-  if (!form.config) {
-    return false
-  }
-  try {
-    const config = JSON.parse(form.config)
-    return "format" in config
-  } catch (e) {
-    return false
-  }
-})
 
 const importItem = async () => {
   let val = import_string.value.trim()
@@ -384,7 +311,7 @@ const importItem = async () => {
       return
     }
 
-    if (form.config || form.url || form.timer) {
+    if (form.url || form.timer) {
       if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
         return
       }
@@ -398,8 +325,8 @@ const importItem = async () => {
       form.url = item.url
     }
 
-    if (item.preset) {
-      form.preset = item.preset
+    if (item.template) {
+      form.template = item.template
     }
 
     if (item.timer) {
@@ -410,12 +337,19 @@ const importItem = async () => {
       form.folder = item.folder
     }
 
-    if (item.template) {
-      form.template = item.template
+    if (item.cli) {
+      form.cli = item.cli
     }
 
-    if (item.config) {
-      form.config = JSON.stringify(item.config, null, 2)
+    if (item.preset) {
+      //  -- check if the preset exists in config.presets
+      const preset = config.presets.find(p => p.name === item.preset)
+      if (!preset) {
+        toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`)
+        form.preset = 'default'
+      } else {
+        form.preset = item.preset
+      }
     }
 
     import_string.value = ''
@@ -424,4 +358,33 @@ const importItem = async () => {
     toast.error(`Failed to import string. ${e.message}`)
   }
 }
+
+const convertOptions = async args => {
+  try {
+    const response = await convertCliOptions(args)
+
+    if (response.output_template) {
+      form.template = response.output_template
+    }
+
+    if (response.download_path) {
+      form.folder = response.download_path
+    }
+
+    return response.opts
+  } catch (e) {
+    toast.error(e.message)
+  }
+
+  return null;
+}
+
+const hasFormatInConfig = computed(() => {
+  if (!form?.cli) {
+    return false
+  }
+  if (form.cli.includes('-f') || form.cli.includes('--format')) {
+    return true
+  }
+})
 </script>

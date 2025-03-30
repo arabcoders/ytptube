@@ -3,12 +3,14 @@ import json
 import logging
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 from aiohttp import web
+
+from app.library.Utils import arg_converter
 
 from .config import Config
 from .encoder import Encoder
@@ -28,8 +30,7 @@ class Task:
     preset: str = ""
     timer: str = ""
     template: str = ""
-    cookies: str = ""
-    config: dict[str, str] = field(default_factory=dict)
+    cli: str = ""
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -134,16 +135,20 @@ class Tasks(metaclass=Singleton):
             with open(self._file) as f:
                 tasks = json.load(f)
         except Exception as e:
-            LOG.error(f"Failed to parse tasks from '{self._file}'. '{e}'.")
+            LOG.error(f"Failed to parse tasks from '{self._file}'. '{e!s}'.")
             return self
 
         if not tasks or len(tasks) < 1:
             LOG.info(f"No tasks were defined in '{self._file}'.")
             return self
 
+        need_update = False
         for i, task in enumerate(tasks):
             try:
+                task, task_status = self.clean_task(task)
                 task = Task(**task)
+                if task_status:
+                    need_update = True
             except Exception as e:
                 LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
                 continue
@@ -156,6 +161,10 @@ class Tasks(metaclass=Singleton):
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue task '{i}: {task.name}'. '{e!s}'.")
+
+        if need_update:
+            LOG.info("Updating tasks file to remove old keys.")
+            self.save(self.get_all())
 
         return self
 
@@ -213,17 +222,12 @@ class Tasks(metaclass=Singleton):
             msg = "No URL found."
             raise ValueError(msg)
 
-        if not isinstance(task.get("cookies"), str):
-            msg = "Invalid cookies type."
-            raise ValueError(msg)  # noqa: TRY004
-
-        if not isinstance(task.get("config"), dict):
-            msg = "Invalid config type."
-            raise ValueError(msg)  # noqa: TRY004
-
-        if not isinstance(task.get("template"), str):
-            msg = "Invalid template type."
-            raise ValueError(msg)  # noqa: TRY004
+        if task.get("cli"):
+            try:
+                arg_converter(args=task.get("cli"))
+            except Exception as e:
+                msg = f"Invalid cli options. '{e!s}'."
+                raise ValueError(msg) from e
 
         return True
 
@@ -263,6 +267,27 @@ class Tasks(metaclass=Singleton):
 
         return self
 
+    def clean_task(self, task: dict) -> tuple[dict, bool]:
+        """
+        Clean the task from old keys.
+
+        Args:
+            task (dict): The task to clean.
+
+        Returns:
+            tuple[dict, bool]: The cleaned task and a status if the task was cleaned.
+
+        """
+        status = False
+        removedKeys = ["cookies", "config"]
+
+        for key in removedKeys:
+            if key in task:
+                status = True
+                task.pop(key)
+
+        return task, status
+
     async def _runner(self, task: Task):
         """
         Run the task.
@@ -283,16 +308,8 @@ class Tasks(metaclass=Singleton):
 
             preset: str = str(task.preset or self._default_preset)
             folder: str = task.folder if task.folder else ""
-            cookies: str = str(task.cookies) if task.cookies else ""
             template: str = task.template if task.template else ""
-
-            config = task.config if task.config else {}
-            if isinstance(config, str) and config:
-                try:
-                    config = json.loads(config)
-                except Exception as e:
-                    LOG.error(f"Failed to parse json yt-dlp config for '{task.name}'. {e!s}")
-                    return
+            cli: str = task.cli if task.cli else ""
 
             LOG.info(f"Task '{task.id}: {task.name}' dispatched at '{timeNow}'.")
 
@@ -307,9 +324,8 @@ class Tasks(metaclass=Singleton):
                         "url": task.url,
                         "preset": preset,
                         "folder": folder,
-                        "cookies": cookies,
-                        "config": config,
                         "template": template,
+                        "cli": cli,
                     },
                     id=task.id,
                 ),

@@ -434,12 +434,13 @@ def validate_url(url: str) -> bool:
     return True
 
 
-def arg_converter(args: str) -> dict:
+def arg_converter(args: str, remove_options: bool = False) -> dict:
     """
     Convert yt-dlp options to a dictionary.
 
     Args:
         args (str): yt-dlp options string.
+        remove_options (bool): Remove default options.
 
     Returns:
         dict: yt-dlp options dictionary.
@@ -471,6 +472,14 @@ def arg_converter(args: str) -> dict:
         matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
         if isinstance(matchFilter, set):
             diff["match_filter"] = {"filters": list(matchFilter)}
+
+    if remove_options:
+        for key in diff.copy():
+            if key in IGNORED_KEYS:
+                diff.pop(key, None)
+
+    if "_warnings" in diff:
+        diff.pop("_warnings", None)
 
     from .encoder import Encoder
 

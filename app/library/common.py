@@ -4,6 +4,7 @@ import logging
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
+from .Utils import arg_converter
 
 LOG = logging.getLogger("common")
 
@@ -92,6 +93,14 @@ class Common:
                 config = json.loads(config)
             except Exception as e:
                 msg = f"Failed to parse json yt-dlp config for '{url}'. {e!s}"
+                raise ValueError(msg) from e
+
+        cli = item.get("cli")
+        if cli and len(cli) > 1:
+            try:
+                config = arg_converter(args=cli, remove_options=True)
+            except Exception as e:
+                msg = f"Failed to parse yt-dlp cli options. {e!s}"
                 raise ValueError(msg) from e
 
         return {

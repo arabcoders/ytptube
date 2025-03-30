@@ -872,14 +872,11 @@ class HttpAPI(Common):
             if not item.get("timer", None) or str(item.get("timer")).strip() == "":
                 item["timer"] = f"{random.randint(1,59)} */1 * * *"  # noqa: S311
 
-            if not item.get("cookies", None):
-                item["cookies"] = ""
-
-            if not item.get("config", None) or str(item.get("config")).strip() == "":
-                item["config"] = {}
-
             if not item.get("template", None):
                 item["template"] = ""
+
+            if not item.get("cli", None):
+                item["cli"] = ""
 
             try:
                 ins.validate(item)
