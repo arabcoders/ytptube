@@ -1,7 +1,31 @@
 [
     {
-        "tag": "dev-20250330-8f313d7",
-        "date": "2025-03-29T22:43:31+00:00",
+        "tag": "dev-20250331-23b1b40",
+        "date": "2025-03-30T23:13:33+00:00",
+        "commits": [
+            {
+                "sha": "23b1b40",
+                "message": "deprecate JSON yt-dlp config & Post-Processors in presets and recommand cli options.",
+                "author": "arabcoders",
+                "date": "2025-03-30T23:13:33+00:00"
+            },
+            {
+                "sha": "ac119db",
+                "message": "remove json config use in add new download. rely on cli options.",
+                "author": "arabcoders",
+                "date": "2025-03-30T21:28:01+00:00"
+            },
+            {
+                "sha": "1bda189",
+                "message": "Convert json config in tasks to use cli arguments.",
+                "author": "arabcoders",
+                "date": "2025-03-30T21:12:35+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250329-8305518",
+        "date": "2025-03-29T22:47:34+00:00",
         "commits": [
             {
                 "sha": "8f313d7",
