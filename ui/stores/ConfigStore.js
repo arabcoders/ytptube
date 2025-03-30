@@ -22,7 +22,12 @@ const CONFIG_KEYS = {
   presets: [
     {
       'name': 'default',
-      'format': 'default'
+      'format': 'default',
+      'folder': '',
+      'template': '',
+      'cookies': '',
+      'cli': '',
+      'default': true
     }
   ],
   folders: [],

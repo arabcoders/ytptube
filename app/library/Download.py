@@ -215,7 +215,7 @@ class Download:
                 f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
             )
 
-            self.logger.debug("Params before passing to yt-dlp.", extra=params)
+            self.logger.debug(f"Params before passing to yt-dlp. {params}")
 
             params["logger"] = NestedLogger(self.logger)
 

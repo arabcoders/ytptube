@@ -13,7 +13,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Can Handle live streams.
 * Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
 * Send notification to targets based on selected events. 
-* Support per link `yt-dlp JSON config or cli options`, `cookies` & `output format`.
+* Support per link `cli options` & `cookies`
 * Queue multiple URLs separated by comma.
 * Simple file browser. `Disabled by default`
 * A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.

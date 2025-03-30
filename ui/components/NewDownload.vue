@@ -23,9 +23,16 @@
                     <select id="preset" class="is-fullwidth"
                       :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="selectedPreset"
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the Command arguments for yt-dlp.' : ''">
-                      <option v-for="item in config.presets" :key="item.name" :value="item.name">
-                        {{ item.name }}
-                      </option>
+                      <optgroup label="Default presets">
+                        <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
+                          {{ item.name }}
+                        </option>
+                      </optgroup>
+                      <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
+                        <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
+                          {{ item.name }}
+                        </option>
+                      </optgroup>
                     </select>
                   </div>
                 </div>
@@ -273,4 +280,7 @@ const hasFormatInConfig = computed(() => {
     return true
   }
 })
+
+const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
+
 </script>

@@ -10,8 +10,6 @@ from typing import Any
 import httpx
 from aiohttp import web
 
-from app.library.Utils import arg_converter
-
 from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events, error, info, success
@@ -224,6 +222,7 @@ class Tasks(metaclass=Singleton):
 
         if task.get("cli"):
             try:
+                from .Utils import arg_converter
                 arg_converter(args=task.get("cli"))
             except Exception as e:
                 msg = f"Invalid cli options. '{e!s}'."

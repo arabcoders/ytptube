@@ -4,7 +4,7 @@ from pathlib import Path
 from .config import Config
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import IGNORED_KEYS, calc_download_path, merge_dict
+from .Utils import IGNORED_KEYS, arg_converter, calc_download_path, merge_dict
 
 LOG = logging.getLogger("YTDLPOpts")
 
@@ -71,6 +71,13 @@ class YTDLPOpts(metaclass=Singleton):
         if not preset or "default" == name:
             return self
 
+        if preset.cli:
+            try:
+                self._preset_opts = arg_converter(args=preset.cli, remove_options=True)
+            except Exception as e:
+                msg = f"Invalid cli options for preset '{preset.name}'. '{e!s}'."
+                raise ValueError(msg) from e
+
         if preset.cookies and with_cookies:
             file = Path(self._config.config_path, "cookies", f"{preset.id}.txt")
 
@@ -94,14 +101,15 @@ class YTDLPOpts(metaclass=Singleton):
                 "temp": self._config.temp_path,
             }
 
-        if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
-            self._preset_opts["postprocessors"] = preset.postprocessors
+        if not preset.cli:
+            if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
+                self._preset_opts["postprocessors"] = preset.postprocessors
 
-        if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
-            for key, value in preset.args.items():
-                if key in IGNORED_KEYS:
-                    continue
-                self._preset_opts[key] = value
+            if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
+                for key, value in preset.args.items():
+                    if key in IGNORED_KEYS:
+                        continue
+                    self._preset_opts[key] = value
 
         return self
 

@@ -453,6 +453,9 @@ class HttpAPI(Common):
             if "paths" in data and "home" in data["paths"]:
                 response["download_path"] = data["paths"]["home"]
 
+            if "format" in data:
+                response["format"] = data["format"]
+
             for key in data:
                 if key in IGNORED_KEYS:
                     continue
