@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250331-8ad5a2f",
-        "date": "2025-03-31T20:09:52+00:00",
+        "tag": "dev-20250401-6fa9741",
+        "date": "2025-03-31T21:02:07+00:00",
+        "commits": [
+            {
+                "sha": "6fa9741",
+                "message": "added youtube short links for embedding",
+                "author": "arabcoders",
+                "date": "2025-03-31T21:02:07+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250331-6cf0b91",
+        "date": "2025-03-31T20:26:01+00:00",
         "commits": [
             {
                 "sha": "8ad5a2f",
