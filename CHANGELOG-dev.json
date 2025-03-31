@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250331-23b1b40",
-        "date": "2025-03-30T23:13:33+00:00",
+        "tag": "dev-20250331-cbc158f",
+        "date": "2025-03-31T00:10:41+00:00",
         "commits": [
+            {
+                "sha": "cbc158f",
+                "message": "Fix preset import output template",
+                "author": "arabcoders",
+                "date": "2025-03-31T00:10:41+00:00"
+            },
             {
                 "sha": "23b1b40",
                 "message": "deprecate JSON yt-dlp config & Post-Processors in presets and recommand cli options.",
