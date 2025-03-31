@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250331-b09bf14",
-        "date": "2025-03-31T19:47:54+00:00",
+        "tag": "dev-20250331-8ad5a2f",
+        "date": "2025-03-31T20:09:52+00:00",
         "commits": [
+            {
+                "sha": "8ad5a2f",
+                "message": "hidden default format in preset page.",
+                "author": "arabcoders",
+                "date": "2025-03-31T20:09:52+00:00"
+            },
             {
                 "sha": "b09bf14",
                 "message": "complete the migration to yt-dlp cli instead of JSON config",
