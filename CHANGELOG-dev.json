@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250331-cbc158f",
-        "date": "2025-03-31T00:10:41+00:00",
+        "tag": "dev-20250331-b09bf14",
+        "date": "2025-03-31T19:47:54+00:00",
         "commits": [
+            {
+                "sha": "b09bf14",
+                "message": "complete the migration to yt-dlp cli instead of JSON config",
+                "author": "arabcoders",
+                "date": "2025-03-31T19:47:54+00:00"
+            },
+            {
+                "sha": "77de306",
+                "message": "updated the conversion process of cli to config",
+                "author": "arabcoders",
+                "date": "2025-03-31T17:46:55+00:00"
+            },
             {
                 "sha": "cbc158f",
                 "message": "Fix preset import output template",
