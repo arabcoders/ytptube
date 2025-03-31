@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-6fa9741",
-        "date": "2025-03-31T21:02:07+00:00",
+        "tag": "dev-20250401-271fd8a",
+        "date": "2025-03-31T21:29:21+00:00",
         "commits": [
+            {
+                "sha": "271fd8a",
+                "message": "when failing to send notification do not span console with exception messages.",
+                "author": "arabcoders",
+                "date": "2025-03-31T21:29:21+00:00"
+            },
             {
                 "sha": "6fa9741",
                 "message": "added youtube short links for embedding",
