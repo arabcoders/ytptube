@@ -76,8 +76,8 @@ div.is-centered {
                       <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
                       <span>The preset is using deprecated options. It is recommended to update the preset to use the
                         new options. It will cease to work in future versions.</span>
-                      <hr>
                     </p>
+                    <hr>
                   </template>
 
                   <p class="is-text-overflow">

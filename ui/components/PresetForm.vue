@@ -444,7 +444,7 @@ const importItem = async () => {
     }
 
     if (item.template) {
-      form.template = item.output_template
+      form.template = item.template
     }
 
     if (item.folder) {
