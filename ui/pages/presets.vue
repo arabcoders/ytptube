@@ -80,7 +80,8 @@ div.is-centered {
                     <hr>
                   </template>
 
-                  <p class="is-text-overflow">
+                  <p class="is-text-overflow"
+                    v-if="item?.format && false === ['default', 'not_set'].includes(item.format)">
                     <span class="icon"><i class="fa-solid fa-f" /></span>
                     <span v-text="item.format" />
                   </p>
