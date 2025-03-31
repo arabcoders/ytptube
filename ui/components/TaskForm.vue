@@ -388,9 +388,8 @@ const hasFormatInConfig = computed(() => {
   if (!form?.cli) {
     return false
   }
-  if (form.cli.includes('-f') || form.cli.includes('--format')) {
-    return true
-  }
+
+  return /(?<!\w)(-f|--format)(=|:)?(?!\w)/.test(form.cli)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)

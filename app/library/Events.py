@@ -90,7 +90,6 @@ class Events:
     LOG_SUCCESS = "log_success"
 
     INITIAL_DATA = "initial_data"
-    YTDLP_CONVERT = "ytdlp_convert"
     ITEM_DELETE = "item_delete"
     ITEM_CANCEL = "item_cancel"
     STATUS = "status"

@@ -35,7 +35,7 @@ ENV XDG_CONFIG_HOME=/config
 ENV XDG_CACHE_HOME=/tmp
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic ffmpeg rtmpdump && \
+  apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic ffmpeg rtmpdump fribidi && \
   useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   rm -rf /var/cache/apk/*
 

@@ -4,7 +4,7 @@ from pathlib import Path
 from .config import Config
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import IGNORED_KEYS, arg_converter, calc_download_path, merge_dict
+from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, merge_dict
 
 LOG = logging.getLogger("YTDLPOpts")
 
@@ -48,10 +48,21 @@ class YTDLPOpts(metaclass=Singleton):
             YTDLPOpts: The instance of the class
 
         """
+        bad_options = {}
+        if from_user:
+            bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+
+        removed_options = []
+
         for key, value in config.items():
-            if key in IGNORED_KEYS and from_user:
+            if from_user and key in bad_options:
+                removed_options.append(bad_options[key])
                 continue
+
             self._item_opts[key] = value
+
+        if len(removed_options) > 0:
+            LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
 
         return self
 
@@ -73,7 +84,13 @@ class YTDLPOpts(metaclass=Singleton):
 
         if preset.cli:
             try:
-                self._preset_opts = arg_converter(args=preset.cli, remove_options=True)
+                removed_options = []
+                self._preset_opts = arg_converter(args=preset.cli, level=True, removed_options=removed_options)
+                if len(removed_options) > 0:
+                    LOG.warning(
+                        "Removed the following options '%s' from preset '%s'.", ", ".join(removed_options), preset.name
+                    )
+
             except Exception as e:
                 msg = f"Invalid cli options for preset '{preset.name}'. '{e!s}'."
                 raise ValueError(msg) from e
@@ -106,10 +123,18 @@ class YTDLPOpts(metaclass=Singleton):
                 self._preset_opts["postprocessors"] = preset.postprocessors
 
             if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
+                bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+                removed_options = []
                 for key, value in preset.args.items():
-                    if key in IGNORED_KEYS:
+                    if key in bad_options:
+                        removed_options.append(bad_options[key])
                         continue
                     self._preset_opts[key] = value
+
+                if len(removed_options) > 0:
+                    LOG.warning(
+                        "Removed the following options '%s' from '%s' args.", ", ".join(removed_options), preset.name
+                    )
 
         return self
 

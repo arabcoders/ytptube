@@ -98,7 +98,11 @@ class Common:
         cli = item.get("cli")
         if cli and len(cli) > 1:
             try:
-                config = arg_converter(args=cli, remove_options=True)
+                removed_options = []
+                config = arg_converter(args=cli, level=True, removed_options=removed_options)
+                if len(removed_options) > 0:
+                    LOG.warning("Removed the following options '%s'.", ", ".join(removed_options))
+
             except Exception as e:
                 msg = f"Failed to parse yt-dlp cli options. {e!s}"
                 raise ValueError(msg) from e

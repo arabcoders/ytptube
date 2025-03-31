@@ -35,7 +35,7 @@ from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
 from .Utils import (
-    IGNORED_KEYS,
+    REMOVE_KEYS,
     StreamingError,
     arg_converter,
     decrypt_data,
@@ -445,7 +445,7 @@ class HttpAPI(Common):
         try:
             response = {"opts": {}, "output_template": None, "download_path": None}
 
-            data = arg_converter(args)
+            data = arg_converter(args, dumps=True)
 
             if "outtmpl" in data and "default" in data["outtmpl"]:
                 response["output_template"] = data["outtmpl"]["default"]
@@ -456,11 +456,18 @@ class HttpAPI(Common):
             if "format" in data:
                 response["format"] = data["format"]
 
+            bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+            removed_options = []
+
             for key in data:
-                if key in IGNORED_KEYS:
+                if key in bad_options.items():
+                    removed_options.append(bad_options[key])
                     continue
                 if not key.startswith("_"):
                     response["opts"][key] = data[key]
+
+            if len(removed_options) > 0:
+                response["opts"]["removed"] = ", ".join(removed_options)
 
             return web.json_response(data=response, status=web.HTTPOk.status_code)
         except Exception as e:

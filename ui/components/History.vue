@@ -141,17 +141,17 @@
                 </td>
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
-                    <div class="control" v-if="'finished' === item.status || isEmbedable(item.url)">
-                      <button v-if="'finished' === item.status" @click="playVideo(item)" v-tooltip="'Play video'"
-                        class="button is-danger is-light is-small">
+                    <div class="control" v-if="('finished' === item.status && item.filename) || isEmbedable(item.url)">
+                      <button v-if="'finished' === item.status && item.filename" @click="playVideo(item)"
+                        v-tooltip="'Play video'" class="button is-danger is-light is-small">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
                       </button>
                       <button v-else @click="embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
-                        class="button is-danger is-light is-small">
+                        class="button is-danger is-small">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
                       </button>
                     </div>
-                    <div class="control" v-if="item.status != 'finished'">
+                    <div class="control" v-if="item.status != 'finished' || !item.filename">
                       <button class="button is-warning is-fullwidth is-small" v-tooltip="'Re-queue video'"
                         @click="reQueueItem(item)">
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
@@ -203,7 +203,7 @@
 
             <div class="card-header-icon">
               <span v-if="hideThumbnail">
-                <a v-if="'finished' === item.status" href="#" @click.prevent="playVideo(item)"
+                <a v-if="'finished' === item.status && item.filename" href="#" @click.prevent="playVideo(item)"
                   v-tooltip="'Play video.'">
                   <span class="icon"><i class="fa-solid fa-play" /></span>
                 </a>
@@ -223,7 +223,7 @@
           </header>
           <div v-if="false === hideThumbnail" class="card-image">
             <figure class="image is-3by1">
-              <span v-if="'finished' === item.status" @click="playVideo(item)" class="play-overlay">
+              <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
                 <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
                   v-if="item.extras?.thumbnail" />
@@ -282,7 +282,7 @@
               </div>
             </div>
             <div class="columns is-mobile is-multiline">
-              <div class="column is-half-mobile" v-if="item.status != 'finished'">
+              <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
                 <a class="button is-warning is-fullwidth" @click="reQueueItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
@@ -512,6 +512,9 @@ const clearIncomplete = () => {
 
 const setIcon = item => {
   if ('finished' === item.status) {
+    if (!item.filename) {
+      return 'fa-solid fa-exclamation'
+    }
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
 
@@ -524,7 +527,7 @@ const setIcon = item => {
   }
 
   if ('not_live' === item.status) {
-    return 'fa-solid fa-hourglass-half fa-spin'
+    return 'fa-solid fa-headset'
   }
 
   return 'fa-solid fa-circle'
@@ -532,6 +535,9 @@ const setIcon = item => {
 
 const setIconColor = item => {
   if ('finished' === item.status) {
+    if (!item.filename) {
+      return 'has-text-warning'
+    }
     return 'has-text-success'
   }
 
@@ -548,6 +554,9 @@ const setIconColor = item => {
 
 const setStatus = item => {
   if ('finished' === item.status) {
+    if (!item.filename) {
+      return 'Skipped?'
+    }
     return item.is_live ? 'Live Ended' : 'Completed'
   }
 

@@ -19,11 +19,16 @@
     "attl",
     "autonumber",
     "changeslog",
+    "consoletitle",
+    "cookiesfrombrowser",
     "copyts",
     "daterange",
     "dotenv",
     "finaldir",
     "flac",
+    "forcejson",
+    "forceprint",
+    "fribidi",
     "getpid",
     "gpac",
     "httpx",
@@ -41,6 +46,7 @@
     "postprocessor",
     "preferredcodec",
     "preferredquality",
+    "printtraffic",
     "quicktime",
     "tmpfilename",
     "urandom",
@@ -56,7 +62,6 @@
     "en"
   ],
   "spellright.documentTypes": [
-    "latex",
-    "plaintext"
+    "latex"
   ],
 }

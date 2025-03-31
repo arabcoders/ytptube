@@ -276,9 +276,8 @@ const hasFormatInConfig = computed(() => {
   if (!ytdlp_cli.value) {
     return false
   }
-  if (ytdlp_cli.value.includes('-f') || ytdlp_cli.value.includes('--format')) {
-    return true
-  }
+
+  return /(?<!\w)(-f|--format)(=|:)?(?!\w)/.test(ytdlp_cli.value)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)

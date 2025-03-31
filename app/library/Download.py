@@ -114,6 +114,8 @@ class Download:
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
+        LOG.debug("Status: %s", data)
+
         if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
             dataDict["filename"] = data["info_dict"]["filename"]
 
