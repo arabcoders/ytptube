@@ -643,6 +643,14 @@ watch(video_item, v => {
   document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
+watch(embed_url, v => {
+  if (!bg_enable.value) {
+    return
+  }
+
+  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+})
+
 const downloadSelected = () => {
   if (selectedElms.value.length < 1) {
     toast.error('No items selected.')
