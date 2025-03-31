@@ -473,10 +473,9 @@ class HttpAPI(Common):
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
-            LOG.error(f"Failed to convert args. '{err}'.")
-            LOG.exception(e)
+            err = err.replace("main.py: error: ", "").strip().capitalize()
             return web.json_response(
-                data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
+                data={"error": f"Failed to command line arguments for yt-dlp. '{err}'."}, status=web.HTTPBadRequest.status_code
             )
 
     @route("GET", "api/yt-dlp/url/info")

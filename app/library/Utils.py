@@ -27,6 +27,7 @@ REMOVE_KEYS: list = [
         "outtmpl": "-o, --output",
         "progress_hooks": "--progress_hooks",
         "postprocessor_hooks": "--postprocessor_hooks",
+        "post_hooks": "--post_hooks",
         "download_archive": "--download_archive",
     },
     {
@@ -50,6 +51,8 @@ REMOVE_KEYS: list = [
         "forcejson": "-j, --dump-json",
         "print_to_file": "--print-to-file",
         "cookiesfrombrowser": "--cookies-from-browser",
+    },
+    {
         "cookiefile": "--cookies",
     },
 ]
@@ -505,24 +508,21 @@ def arg_converter(
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 
-    if "match_filter" in diff:
-        import inspect
-
-        matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
-        if isinstance(matchFilter, set):
-            diff["match_filter"] = {"filters": list(matchFilter)}
-
     if "_warnings" in diff:
         diff.pop("_warnings", None)
 
-    if level:
+    if level is True or isinstance(level, int):
         bad_options = {}
-        level = len(REMOVE_KEYS) if not isinstance(level, int) else level
+        if isinstance(level, bool) or not isinstance(level, int):
+            level = len(REMOVE_KEYS)
 
         for i, item in enumerate(REMOVE_KEYS):
             if i > level:
                 break
+
             bad_options.update(item.items())
+
+        LOG.debug("Removed %i the following options: '%s'.", level, ", ".join(bad_options.values()))
 
         for key in diff.copy():
             if key not in bad_options:
@@ -535,6 +535,13 @@ def arg_converter(
 
     if dumps is True:
         from .encoder import Encoder
+
+        if "match_filter" in diff:
+            import inspect
+
+            matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
+            if isinstance(matchFilter, set):
+                diff["match_filter"] = {"filters": list(matchFilter)}
 
         return json.loads(json.dumps(diff, cls=Encoder))
 

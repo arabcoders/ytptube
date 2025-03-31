@@ -25,22 +25,47 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
-    
-# Recommended basic `ytdlp.json` file settings
 
-Your `/config/ytdlp.json` config should include the following basic options for optimal working conditions.
+# Breaking changes
 
-```json
-{
-  "windowsfilenames": true,
-  "continue_dl": true,
-  "live_from_start": true,
-  "format_sort": [ "codec:avc:m4a" ],
-}
-```
+Starting with versions tagged `*-20250330-*` I have deprecated the JSON yt-dlp config and all of it's related settings.
 
-> [!NOTE]
-> Note, the `format_sort`, forces YouTube to use x264 instead of vp9 codec, you can ignore it if you want. i prefer the media in x264.
+To be frank, it was pain to manage and hard for users to understand how to map cli options to json options. So, I have
+decided to just use the cli options directly. This means that you can now use the same options you would use in the command line
+directly in the WebUI, presets, and tasks.
+
+## `ytdlp.json` vs `ytdlp.cli`
+
+I have also added a new `ytdlp.cli` file that will be used to store the global options for yt-dlp. This file is located in the `/config` directory
+and will be used to store the global options for yt-dlp. This file is not required and presets can fill the gap for most of the
+use cases. But, if you want to use the same options for all your downloads, you can use this file to store the global options.
+
+So, if you have `ytdlp.cli` file it will take priority over the `ytdlp.json` file if both exists. As mitigation, I have implemented
+fallback to `ytdlp.json` file if `ytdlp.cli` file is not found. 
+
+## Presets
+
+I have deprecated the `JSON yt-dlp config` and `JSON yt-dlp Post-Processors` fields, and added new `Command arguments for yt-dlp`
+field to the presets. This field will be used to store the command line options for yt-dlp. I have also have added fallback, 
+if you have the `JSON yt-dlp config/Post-Processors` field set, the logic is, if `Command arguments for yt-dlp` is set
+it will take priority over the `JSON yt-dlp config/Post-Processors` field. If not set, it will fallback to the `JSON yt-dlp config/Post-Processors` field.
+
+If you are adding new presets, the deprecated fields will not show up anymore, they will only show up if actually have content in them 
+and editing old preset. So, Please migrate your presets to the new format.
+
+## Tasks
+
+I have also removed the `JSON yt-dlp config` and replaced it with `Command arguments for yt-dlp` field. Sadly, there is 
+no fallback, and once you upgrade to any version after `*-20250330-*` your `tasks.json` file will be updated to remove the
+`config` key. so, please make sure to backup your `tasks.json` file before upgrading.
+
+## closing statement
+
+I know it's a painful breaking change, but for the sake of maintainability and ease of use, I have decided to
+to make it happen sooner than later, the `JSON yt-dlp config`, was hard to manage and some features weren't really working 
+as expected, for example `--match-filter` and `--date` arguments etc. 
+
+So, Starting with `*-2025040*-*` tagged versions, the all the fallbacks and backwards compatibility will be removed.
 
 # Run using docker command
 
@@ -240,25 +265,19 @@ A Docker image can be built locally (it will build the UI too):
 docker build . -t ytptube
 ```
 
-# ytdlp.json file
+# ytdlp.cli file
 
-The `config/ytdlp.json`, is a json file which can be used to alter the default `yt-dlp` config settings globally. 
+The `config/ytdlp.cli`, is a command line options file for `yt-dlp` it will be globally applied to all downloads.
 
-We recommend not use this file for options that aren't **truly global**, everything that can be done via the `ytdlp.json` file
-can be done via a preset, which only effects the download that uses it. Example of good basic `ytdlp.json` file.
+We strongly recommend not use this file for options that aren't **truly global**, everything that can be done via the file
+can also be done via the presets which is dynamic can be altered per download. Example of good global options are to be 
+used for all downloads are:
 
-```json
-{
-  "windowsfilenames": true,
-  "continue_dl": true,
-  "live_from_start": true,
-  "format_sort": [ "codec:avc:m4a" ],
-}
+```bash
+--continue --windows-filenames --live-from-start
 ```
 
-Everything else can be done via the presets, and it's more flexible and easier to manage. You can convert your 
-own yt-dlp command arguments into a preset using the box found in the presets add page. For reference, The options can be found
-at [yt-dlp YoutubeDL.py](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L214) file. And for the postprocessors at [yt-dlp postprocessor](https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor).
+Everything else can be done via the presets, and it's more flexible and easier to manage.
 
 # Authentication
 
@@ -275,7 +294,7 @@ What does the basic mode do? it hides the the following features from the WebUI.
 
 ### Header
 
-It disables everything except the `theme switcher` and `reload` button.
+It disables everything except the `settings button` and `reload` button.
 
 ### Add form 
 

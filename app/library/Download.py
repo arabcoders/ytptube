@@ -114,8 +114,6 @@ class Download:
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
-        LOG.debug("Status: %s", data)
-
         if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
             dataDict["filename"] = data["info_dict"]["filename"]
 
@@ -136,6 +134,12 @@ class Download:
             filename = data["info_dict"]["filepath"]
 
         self.status_queue.put({"id": self.id, "status": "finished", "filename": filename})
+
+    def post_hooks(self, filename: str | None = None):
+        if not filename:
+            return
+
+        self.status_queue.put({"id": self.id, "filename": filename})
 
     def _download(self):
         try:
@@ -180,6 +184,7 @@ class Download:
                 {
                     "progress_hooks": [self._progress_hook],
                     "postprocessor_hooks": [self._postprocessor_hook],
+                    "post_hooks": [self.post_hooks],
                 }
             )
 

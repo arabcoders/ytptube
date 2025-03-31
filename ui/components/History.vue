@@ -626,9 +626,9 @@ const reQueueItem = item => {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
-    config: item.config,
     cookies: item.cookies,
     template: item.template,
+    cli: item?.cli,
     extras: extras
   })
 }

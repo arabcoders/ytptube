@@ -332,7 +332,7 @@ class Config:
                         removed_options = []
                         self.ytdl_options = arg_converter(
                             args=ytdlp_cli_opts,
-                            level=True,
+                            level=1,
                             removed_options=removed_options,
                         )
 

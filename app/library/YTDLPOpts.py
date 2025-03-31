@@ -118,6 +118,7 @@ class YTDLPOpts(metaclass=Singleton):
                 "temp": self._config.temp_path,
             }
 
+        # @Deprecated - To be removed in future versions.
         if not preset.cli:
             if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
                 self._preset_opts["postprocessors"] = preset.postprocessors
@@ -165,6 +166,7 @@ class YTDLPOpts(metaclass=Singleton):
         if "format" in data and data["format"] in ["not_set", "default"]:
             data["format"] = None
 
+        # @Deprecated - To be removed in future versions, All the checks below this line are deprecated.
         if "daterange" in data and isinstance(data["daterange"], dict):
             from yt_dlp.utils import DateRange
 
