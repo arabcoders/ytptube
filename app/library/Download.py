@@ -135,6 +135,12 @@ class Download:
 
         self.status_queue.put({"id": self.id, "status": "finished", "filename": filename})
 
+    def post_hooks(self, filename: str | None = None):
+        if not filename:
+            return
+
+        self.status_queue.put({"id": self.id, "filename": filename})
+
     def _download(self):
         try:
             params = (
@@ -178,6 +184,7 @@ class Download:
                 {
                     "progress_hooks": [self._progress_hook],
                     "postprocessor_hooks": [self._postprocessor_hook],
+                    "post_hooks": [self.post_hooks],
                 }
             )
 
@@ -215,7 +222,7 @@ class Download:
                 f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
             )
 
-            self.logger.debug("Params before passing to yt-dlp.", extra=params)
+            self.logger.debug(f"Params before passing to yt-dlp. {params}")
 
             params["logger"] = NestedLogger(self.logger)
 

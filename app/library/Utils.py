@@ -21,7 +21,42 @@ from .LogWrapper import LogWrapper
 
 LOG = logging.getLogger("Utils")
 
-IGNORED_KEYS: tuple[str] = ("paths", "outtmpl", "progress_hooks", "postprocessor_hooks", "download_archive")
+REMOVE_KEYS: list = [
+    {
+        "paths": "-P, --paths",
+        "outtmpl": "-o, --output",
+        "progress_hooks": "--progress_hooks",
+        "postprocessor_hooks": "--postprocessor_hooks",
+        "post_hooks": "--post_hooks",
+        "download_archive": "--download_archive",
+    },
+    {
+        "quiet": "-q, --quiet",
+        "no_warnings": "--no-warnings",
+        "skip_download": "--skip-download",
+        "forceprint": "-O, --print",
+        "simulate": "--simulate",
+        "noprogress": "--no-progress",
+        "wait_for_video": "--wait-for-video",
+        "mark_watched": "--mark-watched",
+        "color": "--color",
+        "verbose": "-v, --verbose",
+        "debug_printtraffic": "--print-traffic",
+        "write_pages": "--write-pages",
+        "dump_intermediate_pages": "--dump-pages",
+        "progress_delta": " --progress-delta",
+        "progress_template": "--progress-template",
+        "consoletitle": "--console-title",
+        "progress_with_newline": "--newline",
+        "forcejson": "-j, --dump-json",
+        "print_to_file": "--print-to-file",
+        "cookiesfrombrowser": "--cookies-from-browser",
+    },
+    {
+        "cookiefile": "--cookies",
+    },
+]
+
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
 
 ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
@@ -434,12 +469,20 @@ def validate_url(url: str) -> bool:
     return True
 
 
-def arg_converter(args: str) -> dict:
+def arg_converter(
+    args: str,
+    level: int | bool | None = None,
+    dumps: bool = False,
+    removed_options: list | None = None,
+) -> dict:
     """
     Convert yt-dlp options to a dictionary.
 
     Args:
         args (str): yt-dlp options string.
+        level (int|bool|None): Level of options to remove, True for all.
+        dumps (bool): Dump options as JSON.
+        removed_options (list|None): List of removed options.
 
     Returns:
         dict: yt-dlp options dictionary.
@@ -465,16 +508,44 @@ def arg_converter(args: str) -> dict:
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 
-    if "match_filter" in diff:
-        import inspect
+    if "_warnings" in diff:
+        diff.pop("_warnings", None)
 
-        matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
-        if isinstance(matchFilter, set):
-            diff["match_filter"] = {"filters": list(matchFilter)}
+    if level is True or isinstance(level, int):
+        bad_options = {}
+        if isinstance(level, bool) or not isinstance(level, int):
+            level = len(REMOVE_KEYS)
 
-    from .encoder import Encoder
+        for i, item in enumerate(REMOVE_KEYS):
+            if i > level:
+                break
 
-    return json.loads(json.dumps(diff, cls=Encoder))
+            bad_options.update(item.items())
+
+        LOG.debug("Removed %i the following options: '%s'.", level, ", ".join(bad_options.values()))
+
+        for key in diff.copy():
+            if key not in bad_options:
+                continue
+
+            if isinstance(removed_options, list):
+                removed_options.append(bad_options[key])
+
+            diff.pop(key, None)
+
+    if dumps is True:
+        from .encoder import Encoder
+
+        if "match_filter" in diff:
+            import inspect
+
+            matchFilter = inspect.getclosurevars(diff["match_filter"].func).nonlocals["filters"]
+            if isinstance(matchFilter, set):
+                diff["match_filter"] = {"filters": list(matchFilter)}
+
+        return json.loads(json.dumps(diff, cls=Encoder))
+
+    return diff
 
 
 def validate_uuid(uuid_str: str, version: int = 4) -> bool:

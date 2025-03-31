@@ -6,6 +6,7 @@
     "folder": "",
     "template": "",
     "cookies": "",
+    "cli": "",
     "default": true
   },
   {
@@ -15,69 +16,37 @@
     "folder": "",
     "template": "",
     "cookies": "",
+    "cli": "",
     "default": true
   },
   {
     "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48b",
     "name": "1080p H264/m4a or best available",
     "format": "bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
-    "args": {
-      "format_sort": [
-        "vcodec:h264"
-      ]
-    },
     "folder": "",
     "template": "",
     "cookies": "",
+    "cli": "-S vcodec:h264",
     "default": true
   },
   {
     "id": "9719fcc3-4cf2-4d88-b1e4-74dff3dba00e",
     "name": "720p h264/m4a or best available",
     "format": "bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
-    "args": {
-      "format_sort": [
-        "vcodec:h264"
-      ]
-    },
     "folder": "",
     "template": "",
     "cookies": "",
+    "cli": "-S vcodec:h264",
     "default": true
   },
   {
     "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
     "name": "Audio only",
     "format": "bestaudio/best",
-    "args": {
-      "writethumbnail": true
-    },
-    "postprocessors": [
-      {
-        "key": "FFmpegExtractAudio",
-        "preferredcodec": "best",
-        "preferredquality": "5",
-        "nopostoverwrites": false
-      },
-      {
-        "key": "FFmpegMetadata",
-        "add_chapters": true,
-        "add_metadata": true,
-        "add_infojson": "if_exists"
-      },
-      {
-        "key": "EmbedThumbnail",
-        "already_have_thumbnail": false
-      },
-      {
-        "key": "FFmpegConcat",
-        "only_multi_video": true,
-        "when": "playlist"
-      }
-    ],
     "folder": "",
     "template": "",
     "cookies": "",
+    "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail",
     "default": true
   }
 ]

@@ -1,44 +1,6 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
-      <h1 class="is-unselectable is-pointer title is-5" @click="convertExpanded = !convertExpanded">
-        <span class="icon-text">
-          <span class="icon"><i class="fa-solid" :class="convertExpanded ? 'fa-arrow-up' : 'fa-arrow-down'" /></span>
-          <span>Convert yt-dlp cli options.</span>
-        </span>
-      </h1>
-      <form autocomplete="off" id="convertOpts" @submit.prevent="convertOptions()" v-if="convertExpanded">
-        <div class="box">
-          <label class="label" for="opts">
-            yt-dlp CLI options
-          </label>
-
-          <div class="field has-addons">
-
-            <div class="control has-icons-left is-expanded">
-              <input type="text" class="input" id="opts" v-model="opts"
-                placeholder="-x --audio-format mp3 -f bestaudio">
-              <span class="icon is-small is-left"><i class="fa-solid fa-n" /></span>
-            </div>
-
-            <div class="control">
-              <button form="convertOpts" class="button is-primary" :disabled="convertInProgress || !opts" type="submit"
-                :class="{ 'is-loading': convertInProgress }">
-                <span class="icon"><i class="fa-solid fa-cog" /></span>
-                <span>Convert</span>
-              </button>
-            </div>
-
-          </div>
-          <p class="help">
-            <span class="icon"><i class="fa-solid fa-info" /></span>
-            <span>Convert yt-dlp CLI options to JSON format. This will overwrite the current form fields.</span>
-          </p>
-        </div>
-      </form>
-    </div>
-
-    <div class="column is-12">
       <form autocomplete="off" id="presetForm" @submit.prevent="checkInfo()">
         <div class="card">
           <div class="card-header">
@@ -157,43 +119,21 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="args" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                    JSON yt-dlp config
+                  <label class="label is-inline" for="cli_options">
+                    Command arguments for yt-dlp
                   </label>
                   <div class="control">
-                    <textarea class="textarea" id="args" v-model="form.args" :disabled="addInProgress"
-                      placeholder="{}" />
+                    <input type="text" class="input" v-model="form.cli" id="cli_options" :disabled="addInProgress"
+                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Extends current global yt-dlp config with given options. Some fields are ignored like
-                      <code>cookiefile</code>, <code>paths</code>, and <code>outtmpl</code> etc. Warning: Use with
-                      caution
-                      some of those options can break yt-dlp or the frontend.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="postprocessors"
-                    v-tooltip="'Things to do after download is done.'">
-                    JSON yt-dlp Post-Processors
-                  </label>
-                  <div class="control">
-                    <textarea class="textarea" id="postprocessors" v-model="form.postprocessors"
-                      :disabled="addInProgress" placeholder="[]" />
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
-                      Post-processing operations, refer to <NuxtLink
-                        href="https://github.com/yt-dlp/yt-dlp/tree/master/yt_dlp/postprocessor" target="blank">this url
-                      </NuxtLink> for more info. It's easier for you to use the <b>Convert CLI options</b> to get what
-                      you
-                      want and it will auto-populate the fields if necessary.
+                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
+                      For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
+                        with caution those arguments can break yt-dlp or the frontend.</span>
                     </span>
                   </span>
                 </div>
@@ -214,6 +154,56 @@
                         Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
                       Cookie format.
                     </span>
+                  </span>
+                </div>
+              </div>
+              <div class="column is-12" v-if="has_data(form?.args) || has_data(form?.postprocessors)">
+                <Message title="Deprecation Warning" class="is-background-warning-80 has-text-dark"
+                  icon="fas fa-exclamation-circle">
+                  <ul>
+                    <li>
+                      The <code>JSON yt-dlp config</code> and <code>JSON yt-dlp Post-Processors</code> fields are
+                      deprecated and will be removed in the future. Please use the <b>Command arguments for yt-dlp</b>
+                      field instead. The deprecated fields will still be working for now but they will stop, we suggest
+                      that you migrate to the new field. as soon as possible to avoid any issues. No support will be
+                      given for the deprecated fields.
+                    </li>
+                    <li>
+                      If both fields are set, the <b>Command arguments for yt-dlp</b> field will take precedence over
+                      the deprecated fields. and when you click save it will remove the deprecated fields.
+                    </li>
+                  </ul>
+                </Message>
+              </div>
+              <div class="column is-6-tablet is-12-mobile" v-if="has_data(form?.args)">
+                <div class="field">
+                  <label class="label is-inline" for="args" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
+                    JSON yt-dlp config <span class="has-text-danger">(DEPRECATED)</span>
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="args" v-model="form.args" :disabled="addInProgress"
+                      placeholder="{}" />
+                  </div>
+                  <span class="help has-text-danger">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Deprecated, use <b>Command arguments for yt-dlp</b> field instead. </span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile" v-if="has_data(form?.postprocessors)">
+                <div class="field">
+                  <label class="label is-inline" for="postprocessors"
+                    v-tooltip="'Things to do after download is done.'">
+                    JSON yt-dlp Post-Processors <span class="has-text-danger">(DEPRECATED)</span>
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="postprocessors" v-model="form.postprocessors"
+                      :disabled="addInProgress" placeholder="[]" />
+                  </div>
+                  <span class="help has-text-danger">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Deprecated, use <b>Command arguments for yt-dlp</b> field instead. </span>
                   </span>
                 </div>
               </div>
@@ -239,6 +229,7 @@
         </div>
       </form>
     </div>
+
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
@@ -273,14 +264,15 @@ const props = defineProps({
 
 const config = useConfigStore()
 const toast = useToast()
-const convertInProgress = ref(false)
 const form = reactive(JSON.parse(JSON.stringify(props.preset)))
-const opts = ref('')
 const import_string = ref('')
 const showImport = useStorage('showImport', false);
-const convertExpanded = ref(false)
 
 onMounted(() => {
+  if (props.preset?.cli && '' !== props.preset?.cli) {
+    return
+  }
+
   if (props.preset?.args && (typeof props.preset.args === 'object')) {
     form.args = JSON.stringify(props.preset.args, null, 2)
   }
@@ -297,6 +289,14 @@ const checkInfo = async () => {
       toast.error(`The ${key} field is required.`);
       return
     }
+  }
+
+  if (form?.cli && '' !== form.cli) {
+    const options = await convertOptions(form.cli);
+    if (null === options) {
+      return
+    }
+    form.cli = form.cli.trim()
   }
 
   let copy = JSON.parse(JSON.stringify(form));
@@ -319,29 +319,47 @@ const checkInfo = async () => {
     return;
   }
 
-  if (typeof copy.args === 'object') {
-    copy.args = JSON.stringify(copy.args, null, 2);
-  }
+  if (form?.cli && '' !== form.cli) {
+    if ((has_data(copy?.args) || has_data(copy?.postprocessors))) {
+      if (false === confirm('cli options are set, this will remove the JSON yt-dlp config and Post-Processors. Are you sure?')) {
+        toast.warning('User cancelled the operation.')
+        return
+      }
+    }
 
-  if (typeof copy.postprocessors === 'object') {
-    copy.postprocessors = JSON.stringify(copy.postprocessors, null, 2);
-  }
+    if (copy?.args) {
+      delete copy.args
+    }
 
-  if (copy.args) {
-    try {
-      copy.args = JSON.parse(copy.args)
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
-      return;
+    if (copy?.postprocessors) {
+      delete copy.postprocessors
     }
   }
+  else {
+    if (typeof copy.args === 'object') {
+      copy.args = JSON.stringify(copy.args, null, 2);
+    }
 
-  if (copy.postprocessors) {
-    try {
-      copy.postprocessors = JSON.parse(copy.postprocessors)
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp Post-Processors. ${e.message}`)
-      return;
+    if (typeof copy.postprocessors === 'object') {
+      copy.postprocessors = JSON.stringify(copy.postprocessors, null, 2);
+    }
+
+    if (copy?.args) {
+      try {
+        copy.args = JSON.parse(copy.args)
+      } catch (e) {
+        toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
+        return;
+      }
+    }
+
+    if (copy?.postprocessors) {
+      try {
+        copy.postprocessors = JSON.parse(copy.postprocessors)
+      } catch (e) {
+        toast.error(`Invalid JSON yt-dlp Post-Processors. ${e.message}`)
+        return;
+      }
     }
   }
 
@@ -355,30 +373,9 @@ const checkInfo = async () => {
   emitter('submit', { reference: toRaw(props.reference), preset: toRaw(copy) });
 }
 
-const convertOptions = async () => {
-  if (convertInProgress.value) {
-    return
-  }
-
-  if (form.format || form.args || form.postprocessors || form.template || form.folder) {
-    if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
-      return
-    }
-  }
-
+const convertOptions = async args => {
   try {
-    convertInProgress.value = true
-    const response = await convertCliOptions(opts.value)
-
-    if (!response.opts) {
-      toast.error('Failed to convert options.')
-      return
-    }
-
-    if (response.opts.format) {
-      form.format = response.opts.format
-      delete response.opts.format
-    }
+    const response = await convertCliOptions(args)
 
     if (response.output_template) {
       form.template = response.output_template
@@ -388,18 +385,16 @@ const convertOptions = async () => {
       form.folder = response.download_path
     }
 
-    if (response.opts.postprocessors) {
-      form.postprocessors = JSON.stringify(response.opts.postprocessors, null, 2)
-      delete response.opts.postprocessors
+    if (response.format) {
+      form.format = response.format
     }
 
-    form.args = JSON.stringify(response.opts, null, 2)
-    opts.value = ''
+    return response.opts
   } catch (e) {
     toast.error(e.message)
-  } finally {
-    convertInProgress.value = false
   }
+
+  return null;
 }
 
 const importItem = async () => {
@@ -422,13 +417,15 @@ const importItem = async () => {
   try {
     const item = JSON.parse(val)
 
+    console.log(item)
+
     if ('preset' !== item._type) {
       toast.error(`Invalid import string. Expected type 'preset', got '${item._type}'.`)
       import_string.value = ''
       return
     }
 
-    if (form.format || form.args || form.postprocessors) {
+    if (form.format || form.cli) {
       if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
         return
       }
@@ -442,16 +439,12 @@ const importItem = async () => {
       form.format = item.format
     }
 
-    if (item.args) {
-      form.args = JSON.stringify(item.args, null, 2)
+    if (item.cli) {
+      form.cli = item.cli
     }
 
-    if (item.postprocessors) {
-      form.postprocessors = JSON.stringify(item.postprocessors, null, 2)
-    }
-
-    if (item.output_template) {
-      form.template = item.output_template
+    if (item.template) {
+      form.template = item.template
     }
 
     if (item.folder) {
@@ -465,4 +458,5 @@ const importItem = async () => {
     toast.error(`Failed to string. ${e.message}`)
   }
 }
+
 </script>

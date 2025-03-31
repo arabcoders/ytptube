@@ -4,6 +4,7 @@ import logging
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
+from .Utils import arg_converter
 
 LOG = logging.getLogger("common")
 
@@ -27,7 +28,16 @@ class Common:
         self.default_preset = config.default_preset
 
     async def add(
-        self, url: str, preset: str, folder: str, cookies: str, config: dict, template: str, extras: dict | None = None
+        self,
+        url: str,
+        preset: str,
+        folder: str,
+        cookies: str,
+        # @deprecated: config: dict,
+        config: dict,
+        template: str,
+        extras: dict | None = None,
+        cli: str = "",
     ) -> dict[str, str]:
         """
         Add an item to the download queue.
@@ -40,6 +50,7 @@ class Common:
             config (dict): The yt-dlp config to be used for the download.
             template (str): The template to be used for the download.
             extras (dict): Extra data to be added to the download
+            cli (str): The yt-dlp cli options to be used for the download.
 
         Returns:
             dict[str, str]: The status of the download.
@@ -56,6 +67,7 @@ class Common:
             cookies=cookies,
             config=config if isinstance(config, dict) else {},
             template=template,
+            cli=cli,
             extras=extras,
         )
 
@@ -94,6 +106,19 @@ class Common:
                 msg = f"Failed to parse json yt-dlp config for '{url}'. {e!s}"
                 raise ValueError(msg) from e
 
+        cli = item.get("cli")
+        if cli and len(cli) > 2:
+            try:
+                removed_options = []
+                arg_converter(args=cli, level=True, removed_options=removed_options)
+                if len(removed_options) > 0:
+                    LOG.warning("Removed the following options '%s'.", ", ".join(removed_options))
+
+                config = {}
+            except Exception as e:
+                msg = f"Failed to parse yt-dlp cli options. {e!s}"
+                raise ValueError(msg) from e
+
         return {
             "url": url,
             "preset": preset,
@@ -101,5 +126,6 @@ class Common:
             "cookies": cookies,
             "config": config if isinstance(config, dict) else {},
             "template": template,
+            "cli": cli if isinstance(cli, str) else "",
             "extras": extras if isinstance(extras, dict) else {},
         }

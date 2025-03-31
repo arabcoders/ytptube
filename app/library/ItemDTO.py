@@ -27,7 +27,6 @@ class ItemDTO:
     temp_dir: str | None = None
     status: str | None = None
     cookies: str | None = None
-    config: dict = field(default_factory=dict)
     template: str | None = None
     template_chapter: str | None = None
     timestamp: float = field(default_factory=lambda: time.time_ns())
@@ -37,6 +36,7 @@ class ItemDTO:
     file_size: int | None = None
     options: dict = field(default_factory=dict)
     extras: dict = field(default_factory=dict)
+    cli: str = ""
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
@@ -49,12 +49,13 @@ class ItemDTO:
     speed: str | None = None
     eta: str | None = None
 
-    # DEPRECATED: These fields are deprecated and will be removed in the future.
+    # @Deprecated: These fields are deprecated and will be removed in the future.
     thumbnail: str | None = None
     ytdlp_cookies: str | None = None
     ytdlp_config: dict = field(default_factory=dict)
     output_template: str | None = None
     output_template_chapter: str | None = None
+    config: dict = field(default_factory=dict)
 
     def serialize(self) -> dict:
         deprecated: tuple = (
@@ -65,6 +66,7 @@ class ItemDTO:
             "ytdlp_config",
             "output_template",
             "output_template_chapter",
+            "config",
         )
 
         if self.thumbnail and "thumbnail" not in self.extras:

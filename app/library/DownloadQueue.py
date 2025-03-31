@@ -21,7 +21,7 @@ from .Events import EventBus, Events
 from .ItemDTO import ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import calc_download_path, extract_info, is_downloaded
+from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -177,6 +177,7 @@ class DownloadQueue(metaclass=Singleton):
         cookies: str = "",
         template: str = "",
         extras: dict | None = None,
+        cli: str = "",
         already=None,
     ):
         """
@@ -190,8 +191,8 @@ class DownloadQueue(metaclass=Singleton):
             cookies (str): The cookies to use for the download.
             template (str): The output template to use for the download.
             extras (dict): The extra information to add to the download.
+            cli (str): The yt-dlp command line options to use for the download.
             already (set): The set of already downloaded items.
-
 
         Returns:
             dict: The status of the operation.
@@ -244,6 +245,7 @@ class DownloadQueue(metaclass=Singleton):
                         cookies=cookies,
                         template=template,
                         extras=extras,
+                        cli=cli,
                         already=already,
                     )
                 )
@@ -320,6 +322,7 @@ class DownloadQueue(metaclass=Singleton):
                 is_live=is_live,
                 live_in=live_in,
                 options=options,
+                cli=cli,
                 extras=extras,
             )
 
@@ -352,6 +355,7 @@ class DownloadQueue(metaclass=Singleton):
                 cookies=cookies,
                 template=template,
                 extras=extras,
+                cli=cli,
                 already=already,
             )
 
@@ -365,12 +369,39 @@ class DownloadQueue(metaclass=Singleton):
         config: dict | None = None,
         cookies: str = "",
         template: str = "",
+        cli: str = "",
         extras: dict | None = None,
         already=None,
     ):
+        """
+        Add an item to the download queue.
+
+        Args:
+            url (str): The url to be added to the queue.
+            preset (str): The preset to be used for the download.
+            folder (str): The folder to save the download to.
+            config (dict): The yt-dlp config to be used for the download.
+            cookies (str): The cookies to be used for the download.
+            template (str): The template to be used for the download.
+            cli (str): The yt-dlp cli options to be used for the download.
+            extras (dict): Extra data to be added to the download
+            already (set): Set of already downloaded items.
+
+        Returns:
+            dict[str, str]: The status of the download.
+            { "status": "text" }
+
+        """
         _preset = Presets.get_instance().get(name=preset)
 
         config = config if config else {}
+        if cli:
+            try:
+                config = arg_converter(args=cli, level=True)
+            except Exception as e:
+                LOG.error(f"Invalid cli options '{cli}'. {e!s}")
+                return {"status": "error", "msg": f"Invalid cli options '{cli}'. {e!s}"}
+
         folder = str(folder) if folder else ""
         if not extras:
             extras = {}
@@ -390,7 +421,7 @@ class DownloadQueue(metaclass=Singleton):
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'YTConfig: {config}' 'Extras: {extras}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'CLI: {cli}' 'Extras: {extras}'."
         )
 
         if isinstance(config, str):
@@ -486,6 +517,7 @@ class DownloadQueue(metaclass=Singleton):
             template=template,
             already=already,
             extras=extras,
+            cli=cli,
         )
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:

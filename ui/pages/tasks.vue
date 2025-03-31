@@ -39,8 +39,7 @@ div.is-centered {
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            The task runner is simple queue system that allows you to schedule downloads. The tasks are run at the
-            scheduled time.
+            The task runner is simple queue system that allows you to schedule downloads to run at the specific time.
           </span>
         </div>
       </div>
@@ -62,10 +61,6 @@ div.is-centered {
                   <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
-                  <button @click="item.raw = !item.raw">
-                    <span class="icon"><i class="fa-solid"
-                        :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw }" /></span>
-                  </button>
                 </div>
               </header>
               <div class="card-content">
@@ -86,11 +81,10 @@ div.is-centered {
                     <span class="icon"><i class="fa-solid fa-tv" /></span>
                     <span>{{ item.preset ?? config.app.default_preset }}</span>
                   </p>
-                </div>
-              </div>
-              <div class="card-content" v-if="item?.raw">
-                <div class="content">
-                  <pre><code>{{ filterItem(item) }}</code></pre>
+                  <p class="is-text-overflow">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                    <span>{{ item.cli }}</span>
+                  </p>
                 </div>
               </div>
               <div class="card-footer">
@@ -119,17 +113,6 @@ div.is-centered {
         <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
           icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
       </div>
-    </div>
-    <div class="column is-12" v-if="tasks && tasks.length > 0 && !toggleForm">
-      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
-        <ul>
-          <li>
-            When you export task, the preset settings is automatically merged into the task and the preset set to
-            <code>default</code> to be more portable. The exporter doesn't include <code>Cookies</code> field for
-            security reasons.
-          </li>
-        </ul>
-      </Message>
     </div>
   </div>
 </template>
@@ -202,6 +185,8 @@ const resetForm = (closeForm = false) => {
 }
 
 const updateTasks = async items => {
+  let data = {}
+
   try {
     addInProgress.value = true
 
@@ -213,7 +198,7 @@ const updateTasks = async items => {
       body: JSON.stringify(items),
     })
 
-    const data = await response.json()
+    data = await response.json()
 
     if (200 !== response.status) {
       toast.error(`Failed to update task. ${data.error}`);
@@ -224,7 +209,7 @@ const updateTasks = async items => {
     resetForm(true)
     return true
   } catch (e) {
-    toast.error(`Failed to update task. ${data.error}`);
+    toast.error(`Failed to update task. ${data?.error ?? e.message}`);
   } finally {
     addInProgress.value = false
   }
@@ -270,11 +255,6 @@ const updateItem = async ({ reference, task }) => {
 
   toast.success('Task updated')
   resetForm(true)
-}
-
-const filterItem = item => {
-  const { raw, ...rest } = item
-  return JSON.stringify(rest, null, 2)
 }
 
 const editItem = item => {
@@ -327,21 +307,8 @@ const runNow = item => {
     data.template = item.template
   }
 
-  if (item.cookies) {
-    data.cookies = item.cookies
-  }
-
-  if (item.config) {
-    if (typeof item.config === 'object') {
-      data.config = JSON.stringify(item.config)
-    }
-
-    try {
-      JSON.parse(data.config)
-    } catch (e) {
-      toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
-      return
-    }
+  if (item.cli) {
+    data.cli = item.cli
   }
 
   socket.emit('add_url', data)
@@ -359,69 +326,26 @@ const statusHandler = async stream => {
 }
 
 const exportItem = async item => {
-  let preset = config.presets.find(p => p.name === item.preset)
-  if (!preset) {
-    toast.error('Preset not found.')
-    return
-  }
-
   const info = JSON.parse(JSON.stringify(item))
-  preset = JSON.parse(JSON.stringify(preset))
 
   let data = {
     name: info.name,
     url: info.url,
-    preset: 'default',
+    preset: info.preset,
     timer: info.timer,
     folder: info.folder,
-    template: info.template,
-    config: info.config,
   }
 
-  // -- merge preset options with task args.
-  let args = {}
-
-  if (preset.args && Object.keys(preset.args).length > 0) {
-    for (const key of Object.keys(preset.args)) {
-      args[key] = preset.args[key]
-    }
-  }
-  const defaults = ['default', 'not_set']
-  if (preset.format && !defaults.includes(preset.format)) {
-    args.format = preset.format
+  if (info.template) {
+    data.template = info.template
   }
 
-  if (preset.postprocessors && preset.postprocessors.length > 0) {
-    args.postprocessors = preset.postprocessors
-  }
-
-  if (preset.folder && !info.folder) {
-    data.folder = preset.folder
-  }
-
-  if (preset.template && !info.template) {
-    data.template = preset.template
-  }
-
-  if (!data.config || Object.keys(data.config).length < 1) {
-    data.config = {}
-  }
-
-  for (const key of Object.keys(args)) {
-    if (key in data.config && Array.isArray(args[key]) && Array.isArray(data.config[key])) {
-      data.config[key] = data.config[key].concat(args[key])
-      continue
-    }
-
-    if (data?.config[key]) {
-      continue
-    }
-
-    data.config[key] = args[key]
+  if (info.cli) {
+    data.cli = info.cli
   }
 
   data['_type'] = 'task'
-  data['_version'] = '1.1'
+  data['_version'] = '2.0'
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }

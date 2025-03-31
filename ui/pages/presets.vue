@@ -71,7 +71,17 @@ div.is-centered {
               </header>
               <div class="card-content">
                 <div class="content">
-                  <p class="is-text-overflow">
+                  <template v-if="has_data(item?.args) || has_data(item.postprocessors)">
+                    <p class="has-text-danger is-5 has-text-bold">
+                      <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
+                      <span>The preset is using deprecated options. It is recommended to update the preset to use the
+                        new options. It will cease to work in future versions.</span>
+                    </p>
+                    <hr>
+                  </template>
+
+                  <p class="is-text-overflow"
+                    v-if="item?.format && false === ['default', 'not_set'].includes(item.format)">
                     <span class="icon"><i class="fa-solid fa-f" /></span>
                     <span v-text="item.format" />
                   </p>
@@ -82,6 +92,10 @@ div.is-centered {
                   <p class="is-text-overflow" v-if="item.template">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
                     <span>{{ item.template }}</span>
+                  </p>
+                  <p class="is-text-overflow" v-if="item.cli">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                    <span>{{ item.cli }}</span>
                   </p>
                   <p class="is-text-overflow" v-if="item.cookies">
                     <span class="icon"><i class="fa-solid fa-cookie" /></span>
@@ -293,12 +307,9 @@ const exportItem = item => {
     }
   })
 
-  if (data.args && typeof data.args === "string") {
-    data.args = JSON.parse(data.args)
-  }
-
-  if (data.postprocessors && typeof data.postprocessors === "string") {
-    data.postprocessors = JSON.parse(data.postprocessors)
+  if (has_data(data?.args) || has_data(data?.postprocessors)) {
+    toast.error("v1.0 presets are no longer supported target for export. Please update your preset.")
+    return
   }
 
   let userData = {}
@@ -311,7 +322,7 @@ const exportItem = item => {
   }
 
   userData['_type'] = 'preset'
-  userData['_version'] = '1.0'
+  userData['_version'] = '2.0'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)))
 }

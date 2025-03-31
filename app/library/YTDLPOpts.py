@@ -4,7 +4,7 @@ from pathlib import Path
 from .config import Config
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import IGNORED_KEYS, calc_download_path, merge_dict
+from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, merge_dict
 
 LOG = logging.getLogger("YTDLPOpts")
 
@@ -48,10 +48,21 @@ class YTDLPOpts(metaclass=Singleton):
             YTDLPOpts: The instance of the class
 
         """
+        bad_options = {}
+        if from_user:
+            bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+
+        removed_options = []
+
         for key, value in config.items():
-            if key in IGNORED_KEYS and from_user:
+            if from_user and key in bad_options:
+                removed_options.append(bad_options[key])
                 continue
+
             self._item_opts[key] = value
+
+        if len(removed_options) > 0:
+            LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
 
         return self
 
@@ -70,6 +81,19 @@ class YTDLPOpts(metaclass=Singleton):
         preset = Presets.get_instance().get(name=name)
         if not preset or "default" == name:
             return self
+
+        if preset.cli:
+            try:
+                removed_options = []
+                self._preset_opts = arg_converter(args=preset.cli, level=True, removed_options=removed_options)
+                if len(removed_options) > 0:
+                    LOG.warning(
+                        "Removed the following options '%s' from preset '%s'.", ", ".join(removed_options), preset.name
+                    )
+
+            except Exception as e:
+                msg = f"Invalid cli options for preset '{preset.name}'. '{e!s}'."
+                raise ValueError(msg) from e
 
         if preset.cookies and with_cookies:
             file = Path(self._config.config_path, "cookies", f"{preset.id}.txt")
@@ -94,14 +118,24 @@ class YTDLPOpts(metaclass=Singleton):
                 "temp": self._config.temp_path,
             }
 
-        if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
-            self._preset_opts["postprocessors"] = preset.postprocessors
+        # @Deprecated - To be removed in future versions.
+        if not preset.cli:
+            if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
+                self._preset_opts["postprocessors"] = preset.postprocessors
 
-        if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
-            for key, value in preset.args.items():
-                if key in IGNORED_KEYS:
-                    continue
-                self._preset_opts[key] = value
+            if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
+                bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+                removed_options = []
+                for key, value in preset.args.items():
+                    if key in bad_options:
+                        removed_options.append(bad_options[key])
+                        continue
+                    self._preset_opts[key] = value
+
+                if len(removed_options) > 0:
+                    LOG.warning(
+                        "Removed the following options '%s' from '%s' args.", ", ".join(removed_options), preset.name
+                    )
 
         return self
 
@@ -132,6 +166,7 @@ class YTDLPOpts(metaclass=Singleton):
         if "format" in data and data["format"] in ["not_set", "default"]:
             data["format"] = None
 
+        # @Deprecated - To be removed in future versions, All the checks below this line are deprecated.
         if "daterange" in data and isinstance(data["daterange"], dict):
             from yt_dlp.utils import DateRange
 

@@ -428,6 +428,38 @@ const base64UrlDecode = input => {
   return atob(base64);
 }
 
+
+/**
+ * Check if array or object has data.
+ *
+ * @param {string} item - The item to check
+ * @returns {boolean} - True if the item has data, false otherwise.
+ */
+const has_data = item => {
+  if (!item) {
+    return false
+  }
+
+  if (typeof item === 'string') {
+    try {
+      item = JSON.parse(item)
+    } catch (e) {
+      return true
+    }
+  }
+
+  try {
+    if (typeof item === 'object') {
+      return Object.keys(item).length > 0
+    }
+    return item.length > 0
+  } catch (e) {
+    console.error(e)
+  }
+
+  return false
+}
+
 export {
   ag_set,
   ag,
@@ -452,4 +484,5 @@ export {
   convertCliOptions,
   base64UrlEncode,
   base64UrlDecode,
+  has_data,
 }

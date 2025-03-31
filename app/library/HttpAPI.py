@@ -35,7 +35,7 @@ from .Segments import Segments
 from .Subtitle import Subtitle
 from .Tasks import Task, Tasks
 from .Utils import (
-    IGNORED_KEYS,
+    REMOVE_KEYS,
     StreamingError,
     arg_converter,
     decrypt_data,
@@ -445,7 +445,7 @@ class HttpAPI(Common):
         try:
             response = {"opts": {}, "output_template": None, "download_path": None}
 
-            data = arg_converter(args)
+            data = arg_converter(args, dumps=True)
 
             if "outtmpl" in data and "default" in data["outtmpl"]:
                 response["output_template"] = data["outtmpl"]["default"]
@@ -453,20 +453,29 @@ class HttpAPI(Common):
             if "paths" in data and "home" in data["paths"]:
                 response["download_path"] = data["paths"]["home"]
 
+            if "format" in data:
+                response["format"] = data["format"]
+
+            bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+            removed_options = []
+
             for key in data:
-                if key in IGNORED_KEYS:
+                if key in bad_options.items():
+                    removed_options.append(bad_options[key])
                     continue
                 if not key.startswith("_"):
                     response["opts"][key] = data[key]
+
+            if len(removed_options) > 0:
+                response["opts"]["removed"] = ", ".join(removed_options)
 
             return web.json_response(data=response, status=web.HTTPOk.status_code)
         except Exception as e:
             err = str(e).strip()
             err = err.split("\n")[-1] if "\n" in err else err
-            LOG.error(f"Failed to convert args. '{err}'.")
-            LOG.exception(e)
+            err = err.replace("main.py: error: ", "").strip().capitalize()
             return web.json_response(
-                data={"error": f"Failed to convert args. '{err}'."}, status=web.HTTPBadRequest.status_code
+                data={"error": f"Failed to command line arguments for yt-dlp. '{err}'."}, status=web.HTTPBadRequest.status_code
             )
 
     @route("GET", "api/yt-dlp/url/info")
@@ -872,14 +881,11 @@ class HttpAPI(Common):
             if not item.get("timer", None) or str(item.get("timer")).strip() == "":
                 item["timer"] = f"{random.randint(1,59)} */1 * * *"  # noqa: S311
 
-            if not item.get("cookies", None):
-                item["cookies"] = ""
-
-            if not item.get("config", None) or str(item.get("config")).strip() == "":
-                item["config"] = {}
-
             if not item.get("template", None):
                 item["template"] = ""
+
+            if not item.get("cli", None):
+                item["cli"] = ""
 
             try:
                 ins.validate(item)

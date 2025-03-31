@@ -41,6 +41,9 @@ class Preset:
     cookies: str = ""
     """The default cookies to use if non is given."""
 
+    cli: str = ""
+    """yt-dlp cli command line arguments."""
+
     default: bool = False
 
     def serialize(self) -> dict:
@@ -219,6 +222,15 @@ class Presets(metaclass=Singleton):
         if preset.get("postprocessors") and not isinstance(preset.get("postprocessors"), list):
             msg = "Invalid postprocessors type. expected list."
             raise ValueError(msg)
+
+        if preset.get("cli"):
+            try:
+                from .Utils import arg_converter
+
+                arg_converter(args=preset.get("cli"))
+            except Exception as e:
+                msg = f"Invalid cli options. '{e!s}'."
+                raise ValueError(msg) from e
 
         return True
 

@@ -12,7 +12,7 @@ import coloredlogs
 from dotenv import load_dotenv
 from yt_dlp.version import __version__ as YTDLP_VERSION
 
-from .Utils import IGNORED_KEYS, load_file, merge_dict
+from .Utils import REMOVE_KEYS, arg_converter, load_file, merge_dict
 from .version import APP_VERSION
 
 
@@ -218,7 +218,7 @@ class Config:
         "instance_title",
         "sentry_dsn",
         "console_enabled",
-        "browser_enabled"
+        "browser_enabled",
     )
     "The variables that are relevant to the frontend."
 
@@ -321,8 +321,38 @@ class Config:
             except Exception as e:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
+        ytdlp_cli: str = os.path.join(self.config_path, "ytdlp.cli")
         optsFile: str = os.path.join(self.config_path, "ytdlp.json")
-        if os.path.exists(optsFile) and os.path.getsize(optsFile) > 5:
+        if os.path.exists(ytdlp_cli) and os.path.getsize(ytdlp_cli) > 2:
+            LOG.info(f"Loading yt-dlp custom options from '{ytdlp_cli}'.")
+            with open(ytdlp_cli) as f:
+                ytdlp_cli_opts = f.read().strip()
+                if ytdlp_cli_opts:
+                    try:
+                        removed_options = []
+                        self.ytdl_options = arg_converter(
+                            args=ytdlp_cli_opts,
+                            level=1,
+                            removed_options=removed_options,
+                        )
+
+                        try:
+                            LOG.debug("Parsed yt-dlp cli options '%s'.", self.ytdl_options)
+                        except Exception:
+                            pass
+
+                        if len(removed_options) > 0:
+                            LOG.warning(
+                                "Removed the following options: '%s' from '%s'", ", ".join(removed_options), ytdlp_cli
+                            )
+                    except Exception as e:
+                        msg = f"Failed to parse yt-dlp cli options from '{ytdlp_cli}'. '{e!s}'."
+                        raise ValueError(msg) from e
+                else:
+                    LOG.warning(f"Empty yt-dlp custom options file '{ytdlp_cli}'.")
+        # @Deprecated - To be removed in future versions.
+        elif os.path.exists(optsFile) and os.path.getsize(optsFile) > 5:
+            LOG.warning("The JSON ytdlp.json options file is deprecated, please use 'ytdlp.cli' file instead.")
             LOG.info(f"Loading yt-dlp custom options from '{optsFile}'.")
 
             (opts, status, error) = load_file(optsFile, dict)
@@ -330,16 +360,24 @@ class Config:
                 LOG.error(f"Could not load yt-dlp custom options from '{optsFile}'. {error}")
                 sys.exit(1)
             if isinstance(opts, dict):
-                for key in IGNORED_KEYS:
-                    if key in opts:
-                        LOG.error(f"Key '{key}' is not allowed to be loaded via 'ytdlp.json' file.")
-                        del opts[key]
+                bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+                removed_options = []
+                for key in opts.copy():
+                    if key not in bad_options:
+                        continue
 
+                    removed_options.append(bad_options[key])
+                    opts.pop(key, None)
+
+                if len(removed_options) > 0:
+                    LOG.warning(
+                        "Removed the following options: '%s' from 'ytdlp.json' file.", ", ".join(removed_options)
+                    )
                 self.ytdl_options = merge_dict(self.ytdl_options, opts)
             else:
                 LOG.error(f"Invalid yt-dlp custom options file '{optsFile}'.")
         else:
-            LOG.info(f"No yt-dlp custom options found at '{optsFile}'.")
+            LOG.info(f"No yt-dlp custom options found at '{ytdlp_cli}'.")
 
         self.ytdl_options["socket_timeout"] = self.socket_timeout
 
@@ -373,7 +411,6 @@ class Config:
 
         key_file: str = os.path.join(self.config_path, "secret.key")
 
-        # save key as bytes.
         if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
             with open(key_file, "rb") as f:
                 self.secret_key = f.read().strip()
