@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-899b2a3",
-        "date": "2025-03-31T22:52:26+00:00",
+        "tag": "dev-20250401-8385ec7",
+        "date": "2025-03-31T22:58:53+00:00",
         "commits": [
+            {
+                "sha": "8385ec7",
+                "message": "restore opacity on queue embeded content play",
+                "author": "arabcoders",
+                "date": "2025-03-31T22:58:53+00:00"
+            },
             {
                 "sha": "899b2a3",
                 "message": "make the embeded player button red in queue",
