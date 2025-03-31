@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-271fd8a",
-        "date": "2025-03-31T21:29:21+00:00",
+        "tag": "dev-20250401-899b2a3",
+        "date": "2025-03-31T22:52:26+00:00",
         "commits": [
+            {
+                "sha": "899b2a3",
+                "message": "make the embeded player button red in queue",
+                "author": "arabcoders",
+                "date": "2025-03-31T22:52:26+00:00"
+            },
             {
                 "sha": "271fd8a",
                 "message": "when failing to send notification do not span console with exception messages.",
