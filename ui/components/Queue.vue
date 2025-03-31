@@ -92,7 +92,7 @@
                   <div class="field is-grouped is-grouped-centered">
                     <div class="control" v-if="isEmbedable(item.url)">
                       <button @click="() => embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
-                        class="button is-danger is-light is-small">
+                        class="button is-danger is-small">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
                       </button>
                     </div>
