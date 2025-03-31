@@ -1,5 +1,53 @@
 [
     {
+        "tag": "master-20250331-6cf0b91",
+        "date": "2025-03-31T20:26:01+00:00",
+        "commits": [
+            {
+                "sha": "8ad5a2f",
+                "message": "hidden default format in preset page.",
+                "author": "arabcoders",
+                "date": "2025-03-31T20:09:52+00:00"
+            },
+            {
+                "sha": "b09bf14",
+                "message": "complete the migration to yt-dlp cli instead of JSON config",
+                "author": "arabcoders",
+                "date": "2025-03-31T19:47:54+00:00"
+            },
+            {
+                "sha": "77de306",
+                "message": "updated the conversion process of cli to config",
+                "author": "arabcoders",
+                "date": "2025-03-31T17:46:55+00:00"
+            },
+            {
+                "sha": "cbc158f",
+                "message": "Fix preset import output template",
+                "author": "arabcoders",
+                "date": "2025-03-31T00:10:41+00:00"
+            },
+            {
+                "sha": "23b1b40",
+                "message": "deprecate JSON yt-dlp config & Post-Processors in presets and recommand cli options.",
+                "author": "arabcoders",
+                "date": "2025-03-30T23:13:33+00:00"
+            },
+            {
+                "sha": "ac119db",
+                "message": "remove json config use in add new download. rely on cli options.",
+                "author": "arabcoders",
+                "date": "2025-03-30T21:28:01+00:00"
+            },
+            {
+                "sha": "1bda189",
+                "message": "Convert json config in tasks to use cli arguments.",
+                "author": "arabcoders",
+                "date": "2025-03-30T21:12:35+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250329-8305518",
         "date": "2025-03-29T22:47:34+00:00",
         "commits": [
