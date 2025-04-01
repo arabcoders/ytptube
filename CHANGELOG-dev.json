@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250401-3219408",
-        "date": "2025-04-01T20:19:17+00:00",
+        "tag": "dev-20250401-d8b4afc",
+        "date": "2025-04-01T20:33:37+00:00",
         "commits": [
+            {
+                "sha": "d8b4afc",
+                "message": "upgrade dependencies",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:33:37+00:00"
+            },
+            {
+                "sha": "6cbb8ee",
+                "message": "Fix argument name in YTDLP options and enhance video cleanup on unmount",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:27:14+00:00"
+            },
             {
                 "sha": "3219408",
                 "message": "Removed last reference for ytdlp JSON config in DownloadQueue",
