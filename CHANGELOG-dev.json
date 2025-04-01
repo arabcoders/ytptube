@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-8385ec7",
-        "date": "2025-03-31T22:58:53+00:00",
+        "tag": "dev-20250401-ff21392",
+        "date": "2025-04-01T00:30:33+00:00",
         "commits": [
+            {
+                "sha": "bde3ae6",
+                "message": "Update yt-dlp to 2025.3.31",
+                "author": "ArabCoders",
+                "date": "2025-04-01T00:27:09+00:00"
+            },
             {
                 "sha": "8385ec7",
                 "message": "restore opacity on queue embeded content play",
