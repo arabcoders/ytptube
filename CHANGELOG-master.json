@@ -1,5 +1,41 @@
 [
     {
+        "tag": "master-20250401-2ed0bde",
+        "date": "2025-04-01T16:06:23+00:00",
+        "commits": [
+            {
+                "sha": "bde3ae6",
+                "message": "Update yt-dlp to 2025.3.31",
+                "author": "ArabCoders",
+                "date": "2025-04-01T00:27:09+00:00"
+            },
+            {
+                "sha": "8385ec7",
+                "message": "restore opacity on queue embeded content play",
+                "author": "arabcoders",
+                "date": "2025-03-31T22:58:53+00:00"
+            },
+            {
+                "sha": "899b2a3",
+                "message": "make the embeded player button red in queue",
+                "author": "arabcoders",
+                "date": "2025-03-31T22:52:26+00:00"
+            },
+            {
+                "sha": "271fd8a",
+                "message": "when failing to send notification do not span console with exception messages.",
+                "author": "arabcoders",
+                "date": "2025-03-31T21:29:21+00:00"
+            },
+            {
+                "sha": "6fa9741",
+                "message": "added youtube short links for embedding",
+                "author": "arabcoders",
+                "date": "2025-03-31T21:02:07+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250331-6cf0b91",
         "date": "2025-03-31T20:26:01+00:00",
         "commits": [
