@@ -103,7 +103,7 @@ class Item:
             else:
                 data[k] = v
 
-        items = " ".join(f'{k}="{v}", ' for k, v in data.items() if v)
+        items = "".join(f'{k}="{v}", ' for k, v in data.items() if v)
         return f"Item({items.strip(', ')})"
 
     @staticmethod
