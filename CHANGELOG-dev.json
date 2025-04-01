@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-eac74d0",
-        "date": "2025-04-01T20:44:14+00:00",
+        "tag": "dev-20250402-d7d461c",
+        "date": "2025-04-01T21:41:54+00:00",
         "commits": [
+            {
+                "sha": "d7d461c",
+                "message": "update settings page.",
+                "author": "arabcoders",
+                "date": "2025-04-01T21:41:54+00:00"
+            },
             {
                 "sha": "eac74d0",
                 "message": "trim __repr__ double space",

@@ -1,5 +1,71 @@
 [
     {
+        "tag": "master-20250402-18fe540",
+        "date": "2025-04-01T21:49:10+00:00",
+        "commits": [
+            {
+                "sha": "d7d461c",
+                "message": "update settings page.",
+                "author": "arabcoders",
+                "date": "2025-04-01T21:41:54+00:00"
+            },
+            {
+                "sha": "eac74d0",
+                "message": "trim __repr__ double space",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:44:14+00:00"
+            },
+            {
+                "sha": "d8b4afc",
+                "message": "upgrade dependencies",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:33:37+00:00"
+            },
+            {
+                "sha": "6cbb8ee",
+                "message": "Fix argument name in YTDLP options and enhance video cleanup on unmount",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:27:14+00:00"
+            },
+            {
+                "sha": "3219408",
+                "message": "Removed last reference for ytdlp JSON config in DownloadQueue",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:19:17+00:00"
+            },
+            {
+                "sha": "3fe0a90",
+                "message": "Only load notification targets when load is called",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:13:10+00:00"
+            },
+            {
+                "sha": "f7101f6",
+                "message": "simplified the codebase and removed all backwards compat flags and checks.",
+                "author": "arabcoders",
+                "date": "2025-04-01T19:56:28+00:00"
+            },
+            {
+                "sha": "9b4d860",
+                "message": "Make task run time in log more human readable.",
+                "author": "arabcoders",
+                "date": "2025-04-01T19:47:04+00:00"
+            },
+            {
+                "sha": "4730583",
+                "message": "update newDownload template",
+                "author": "arabcoders",
+                "date": "2025-04-01T17:34:14+00:00"
+            },
+            {
+                "sha": "fa9c084",
+                "message": "remove presets v1.0",
+                "author": "arabcoders",
+                "date": "2025-04-01T17:05:35+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250401-2ed0bde",
         "date": "2025-04-01T16:06:23+00:00",
         "commits": [
