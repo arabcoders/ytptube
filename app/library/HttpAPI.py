@@ -27,6 +27,7 @@ from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus, Events, message
 from .ffprobe import ffprobe
+from .ItemDTO import Item
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
@@ -684,7 +685,7 @@ class HttpAPI(Common):
             data["preset"] = preset
 
         try:
-            status = await self.add(**self.format_item(data))
+            status = await self.add(item=Item.format(data))
         except ValueError as e:
             return web.json_response(data={"status": False, "message": str(e)}, status=web.HTTPBadRequest.status_code)
 
@@ -711,15 +712,16 @@ class HttpAPI(Common):
         if isinstance(data, dict):
             data = [data]
 
+        items = []
         for item in data:
             try:
-                self.format_item(item)
+                items.append(Item.format(item))
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(
             data=await asyncio.wait_for(
-                fut=asyncio.gather(*[self.add(**self.format_item(item)) for item in data]),
+                fut=asyncio.gather(*[self.add(item=item) for item in items]),
                 timeout=None,
             ),
             status=web.HTTPOk.status_code,

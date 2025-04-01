@@ -17,6 +17,7 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import Event, EventBus, Events, error
+from .ItemDTO import Item
 from .Presets import Presets
 from .Utils import is_downloaded
 
@@ -79,7 +80,7 @@ class HttpSocket(Common):
 
         self._notify.subscribe(
             Events.ADD_URL,
-            lambda data, _, **kwargs: self.add(**self.format_item(data.data)),  # noqa: ARG005
+            lambda data, _, **kwargs: self.add(item=Item.format(data.data)),  # noqa: ARG005
             f"{__class__.__name__}.socket_add_url",
         )
 
@@ -188,13 +189,15 @@ class HttpSocket(Common):
             return
 
         try:
-            item = self.format_item(data)
+            await self._notify.emit(
+                event=Events.STATUS,
+                data=await self.add(item=Item.format(data)),
+                to=sid,
+            )
         except ValueError as e:
+            LOG.exception(e)
             await self._notify.emit(Events.ERROR, data=error(str(e)), to=sid)
             return
-
-        status = await self.add(**item)
-        await self._notify.emit(Events.STATUS, data=status, to=sid)
 
     @ws_event
     async def item_cancel(self, sid: str, id: str):

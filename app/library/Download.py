@@ -48,7 +48,6 @@ class Download:
     temp_dir: str = None
     template: str = None
     template_chapter: str = None
-    ytdl_opts: dict = None
     info: ItemDTO = None
     default_ytdl_opts: dict = None
     debug: bool = False
@@ -92,7 +91,6 @@ class Download:
         self.template = info.template
         self.template_chapter = info.template_chapter
         self.preset = info.preset
-        self.ytdl_opts = info.config if info.config else {}
         self.info = info
         self.id = info._id
         self.default_ytdl_opts = config.ytdl_options
@@ -147,7 +145,7 @@ class Download:
                 YTDLPOpts.get_instance()
                 .preset(self.preset)
                 .add({"break_on_existing": True})
-                .add(self.ytdl_opts, from_user=True)
+                .add_cli(self.info.cli, from_user=True)
                 .add(
                     {
                         "color": "no_color",
