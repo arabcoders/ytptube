@@ -141,9 +141,6 @@ class Notification(metaclass=Singleton):
             except Exception:
                 pass
 
-            if os.path.getsize(self._file) > 10:
-                self.load()
-
     @staticmethod
     def get_instance() -> "Notification":
         if Notification._instance is None:
