@@ -156,7 +156,15 @@ class Tasks(metaclass=Singleton):
                 self._scheduler.add(timer=task.timer, func=self._runner, args=(task,), id=task.id)
                 self._tasks.append(task)
 
-                LOG.info(f"Task '{i}: {task.name}' queued to be executed every '{task.timer}'.")
+                try:
+                    from cronsim import CronSim
+
+                    cs = CronSim(task.timer, datetime.now(UTC))
+                    schedule_time = cs.explain()
+                except Exception:
+                    schedule_time = task.timer
+
+                LOG.info(f"Task '{i}: {task.name}' queued to be executed '{schedule_time}'.")
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue task '{i}: {task.name}'. '{e!s}'.")
