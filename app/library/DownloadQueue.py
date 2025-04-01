@@ -243,17 +243,21 @@ class DownloadQueue(metaclass=Singleton):
 
             LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
 
-            if self.done.exists(key=entry["id"], url=str(entry.get("webpage_url") or entry.get("url"))):
-                item = self.done.get(key=entry["id"], url=entry.get("webpage_url") or entry["url"])
-                LOG.warning(f"Item '{item.info.id}' - '{item.info.title}' already downloaded. Removing from history.")
-                await self.clear([item.info._id], remove_file=False)
+            try:
+                _item = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+                if _item is not None:
+                    err_msg = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
+                    LOG.warning(err_msg)
+                    await self.clear([_item.info._id], remove_file=False)
+            except KeyError:
+                pass
 
             try:
-                item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
-                if item is not None:
-                    err_message = f"Item ID '{item.info.id}' - '{item.info.title}' already in download queue."
-                    LOG.info(err_message)
-                    return {"status": "error", "msg": err_message}
+                _item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
+                if _item is not None:
+                    err_msg = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
+                    LOG.info(err_msg)
+                    return {"status": "error", "msg": err_msg}
             except KeyError:
                 pass
 
@@ -269,8 +273,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.exception(e)
                 return {"status": "error", "msg": str(e)}
 
-            fields: tuple = ("uploader", "channel", "thumbnail")
-            for field in fields:
+            for field in ("uploader", "channel", "thumbnail"):
                 if entry.get(field):
                     item.extras[field] = entry.get(field)
 
