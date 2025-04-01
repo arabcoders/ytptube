@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import glob
-import json
 import logging
 import os
 import time
@@ -341,7 +340,7 @@ class DownloadQueue(metaclass=Singleton):
 
         if item.has_cli():
             try:
-                config = arg_converter(args=item.cli, level=True)
+                arg_converter(args=item.cli, level=True)
             except Exception as e:
                 LOG.error(f"Invalid cli options '{item.cli}'. {e!s}")
                 return {"status": "error", "msg": f"Invalid cli options '{item.cli}'. {e!s}"}
@@ -360,13 +359,6 @@ class DownloadQueue(metaclass=Singleton):
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
         LOG.info(f"Adding '{item.__repr__()}'.")
-
-        if isinstance(config, str):
-            try:
-                config = json.loads(config)
-            except Exception as e:
-                LOG.error(f"Unable to load '{config=}'. {e!s}")
-                return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {e!s}"}
 
         already = set() if already is None else already
 
@@ -393,7 +385,7 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **YTDLPOpts.get_instance().preset(name=item.preset).add(config=config, from_user=True).get_all(),
+                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(config=item.cli, from_user=True).get_all(),
             }
 
             if item.cookies:
@@ -402,7 +394,9 @@ class DownloadQueue(metaclass=Singleton):
                         await f.write(item.cookies)
                         yt_conf["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
+                    msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    LOG.error(msg)
+                    return {"status": "error", "msg": msg}
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
