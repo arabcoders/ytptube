@@ -141,9 +141,6 @@ class Notification(metaclass=Singleton):
             except Exception:
                 pass
 
-            if os.path.getsize(self._file) > 10:
-                self.load()
-
     @staticmethod
     def get_instance() -> "Notification":
         if Notification._instance is None:
@@ -371,7 +368,9 @@ class Notification(metaclass=Singleton):
             if "form" == target.request.type.lower():
                 reqBody["data"]["data"] = self._encoder.encode(reqBody["data"]["data"])
 
-            logging.getLogger("httpx").setLevel(logging.WARNING)
+            if not self._debug:
+                logging.getLogger("httpx").setLevel(logging.WARNING)
+
             response = await self._client.request(**reqBody)
 
             respData = {"url": target.request.url, "status": response.status_code, "text": response.text}
@@ -404,7 +403,7 @@ class Notification(metaclass=Singleton):
                 data[k] = [self._deep_unpack(i) for i in v]
             if isinstance(v, datetime):
                 data[k] = v.isoformat()
-            if isinstance(v, ItemDTO):
+            if isinstance(v, object) and hasattr(v, "serialize"):
                 data[k] = v.serialize()
 
         return data

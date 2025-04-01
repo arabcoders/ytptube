@@ -1,12 +1,13 @@
 import asyncio
 import functools
-import json
+import glob
 import logging
 import os
 import time
 import uuid
 from datetime import UTC, datetime
 from email.utils import formatdate
+from pathlib import Path
 from sqlite3 import Connection
 
 import anyio
@@ -18,7 +19,7 @@ from .config import Config
 from .DataStore import DataStore
 from .Download import Download
 from .Events import EventBus, Events
-from .ItemDTO import ItemDTO
+from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
 from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded
@@ -168,45 +169,23 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
-    async def __add_entry(
-        self,
-        entry: dict,
-        preset: str,
-        folder: str,
-        config: dict | None = None,
-        cookies: str = "",
-        template: str = "",
-        extras: dict | None = None,
-        cli: str = "",
-        already=None,
-    ):
+    async def __add_entry(self, entry: dict, item: Item, already=None):
         """
         Add an entry to the download queue.
 
         Args:
             entry (dict): The entry to add to the download queue.
-            preset (str): The preset to use for the download.
-            folder (str): The folder to save the download to.
-            config (dict): The yt-dlp configuration to use for the download.
-            cookies (str): The cookies to use for the download.
-            template (str): The output template to use for the download.
-            extras (dict): The extra information to add to the download.
-            cli (str): The yt-dlp command line options to use for the download.
+            item (Item): The item to add to the download queue.
             already (set): The set of already downloaded items.
 
         Returns:
             dict: The status of the operation.
 
         """
-        if not config:
-            config = {}
-
-        if not extras:
-            extras = {}
-        else:
-            for key in extras.copy():
+        if item.has_extras():
+            for key in item.extras.copy():
                 if not str(key).startswith("playlist"):
-                    extras.pop(key, None)
+                    item.extras.pop(key, None)
 
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
@@ -239,13 +218,7 @@ class DownloadQueue(metaclass=Singleton):
                 results.append(
                     await self.__add_entry(
                         entry=etr,
-                        preset=preset,
-                        folder=folder,
-                        config=config,
-                        cookies=cookies,
-                        template=template,
-                        extras=extras,
-                        cli=cli,
+                        item=item.new_with(url=etr.get("url") or etr.get("webpage_url")),
                         already=already,
                     )
                 )
@@ -291,7 +264,7 @@ class DownloadQueue(metaclass=Singleton):
             is_live = bool(entry.get("is_live") or live_in or entry.get("live_status") in live_status)
 
             try:
-                download_dir = calc_download_path(base_path=self.config.download_path, folder=folder)
+                download_dir = calc_download_path(base_path=self.config.download_path, folder=item.folder)
             except Exception as e:
                 LOG.exception(e)
                 return {"status": "error", "msg": str(e)}
@@ -299,31 +272,30 @@ class DownloadQueue(metaclass=Singleton):
             fields: tuple = ("uploader", "channel", "thumbnail")
             for field in fields:
                 if entry.get(field):
-                    extras[field] = entry.get(field)
+                    item.extras[field] = entry.get(field)
 
             for key in entry:
                 if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
-                    extras[key] = entry.get(key)
+                    item.extras[key] = entry.get(key)
 
             dl = ItemDTO(
                 id=str(entry.get("id")),
                 title=str(entry.get("title")),
                 url=str(entry.get("webpage_url") or entry.get("url")),
-                preset=preset,
-                folder=folder,
+                preset=item.preset,
+                folder=item.folder,
                 download_dir=download_dir,
                 temp_dir=self.config.temp_path,
-                cookies=cookies,
-                config=config,
-                template=template if template else self.config.output_template,
+                cookies=item.cookies,
+                template=item.template if item.template else self.config.output_template,
                 template_chapter=self.config.output_template_chapter,
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
                 live_in=live_in,
                 options=options,
-                cli=cli,
-                extras=extras,
+                cli=item.cli,
+                extras=item.extras,
             )
 
             dlInfo: Download = Download(info=dl, info_dict=entry)
@@ -347,44 +319,16 @@ class DownloadQueue(metaclass=Singleton):
             return {"status": "ok"}
 
         if eventType.startswith("url"):
-            return await self.add(
-                url=str(entry.get("url")),
-                preset=preset,
-                folder=folder,
-                config=config,
-                cookies=cookies,
-                template=template,
-                extras=extras,
-                cli=cli,
-                already=already,
-            )
+            return await self.add(item=item.new_with(url=entry.get("url")), already=already)
 
         return {"status": "error", "msg": f'Unsupported resource "{eventType}"'}
 
-    async def add(
-        self,
-        url: str,
-        preset: str,
-        folder: str,
-        config: dict | None = None,
-        cookies: str = "",
-        template: str = "",
-        cli: str = "",
-        extras: dict | None = None,
-        already=None,
-    ):
+    async def add(self, item: Item, already: set | None = None):
         """
         Add an item to the download queue.
 
         Args:
-            url (str): The url to be added to the queue.
-            preset (str): The preset to be used for the download.
-            folder (str): The folder to save the download to.
-            config (dict): The yt-dlp config to be used for the download.
-            cookies (str): The cookies to be used for the download.
-            template (str): The template to be used for the download.
-            cli (str): The yt-dlp cli options to be used for the download.
-            extras (dict): Extra data to be added to the download
+            item (Item): The item to be added to the queue.
             already (set): Set of already downloaded items.
 
         Returns:
@@ -392,62 +336,47 @@ class DownloadQueue(metaclass=Singleton):
             { "status": "text" }
 
         """
-        _preset = Presets.get_instance().get(name=preset)
+        _preset = Presets.get_instance().get(item.preset)
 
-        config = config if config else {}
-        if cli:
+        if item.has_cli():
             try:
-                config = arg_converter(args=cli, level=True)
+                arg_converter(args=item.cli, level=True)
             except Exception as e:
-                LOG.error(f"Invalid cli options '{cli}'. {e!s}")
-                return {"status": "error", "msg": f"Invalid cli options '{cli}'. {e!s}"}
-
-        folder = str(folder) if folder else ""
-        if not extras:
-            extras = {}
+                LOG.error(f"Invalid cli options '{item.cli}'. {e!s}")
+                return {"status": "error", "msg": f"Invalid cli options '{item.cli}'. {e!s}"}
 
         if _preset:
-            if _preset.folder and not folder:
-                folder = _preset.folder
+            if _preset.folder and not item.folder:
+                item.folder = _preset.folder
 
-            if _preset.template and not template:
-                template = _preset.template
+            if _preset.template and not item.template:
+                item.template = _preset.template
 
-            if _preset.cookies and not cookies:
-                cookies = _preset.cookies
+            if _preset.cookies and not item.cookies:
+                item.cookies = _preset.cookies
 
-        filePath = calc_download_path(base_path=self.config.download_path, folder=folder)
         yt_conf = {}
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
-        LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'CLI: {cli}' 'Extras: {extras}'."
-        )
-
-        if isinstance(config, str):
-            try:
-                config = json.loads(config)
-            except Exception as e:
-                LOG.error(f"Unable to load '{config=}'. {e!s}")
-                return {"status": "error", "msg": f"Failed to parse json yt-dlp config. {e!s}"}
+        LOG.info(f"Adding '{item.__repr__()}'.")
 
         already = set() if already is None else already
 
-        if url in already:
-            LOG.warning(f"Recursion detected with url '{url}' skipping.")
+        if item.url in already:
+            LOG.warning(f"Recursion detected with url '{item.url}' skipping.")
             return {"status": "ok"}
 
-        already.add(url)
+        already.add(item.url)
 
         try:
-            downloaded, id_dict = self._is_downloaded(url)
+            downloaded, id_dict = self._is_downloaded(item.url)
             if downloaded is True and id_dict:
                 message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
                 LOG.info(message)
                 return {"status": "error", "msg": message}
 
             started = time.perf_counter()
-            LOG.debug(f"extract_info: checking {url=}")
+            LOG.debug(f"extract_info: checking '{item.url}'.")
 
             logs = []
 
@@ -456,16 +385,18 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **YTDLPOpts.get_instance().preset(name=preset).add(config=config, from_user=True).get_all(),
+                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
             }
 
-            if cookies:
+            if item.cookies:
                 try:
                     async with await anyio.open_file(cookie_file, "w") as f:
-                        await f.write(cookies)
+                        await f.write(item.cookies)
                         yt_conf["cookiefile"] = f.name
                 except ValueError as e:
-                    LOG.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
+                    msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    LOG.error(msg)
+                    return {"status": "error", "msg": msg}
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
@@ -473,7 +404,7 @@ class DownloadQueue(metaclass=Singleton):
                     functools.partial(
                         extract_info,
                         config=yt_conf,
-                        url=url,
+                        url=item.url,
                         debug=bool(self.config.ytdl_debug),
                         no_archive=False,
                         follow_redirect=True,
@@ -486,7 +417,7 @@ class DownloadQueue(metaclass=Singleton):
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
             LOG.debug(
-                f"extract_info: for 'URL: {url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}'."
+                f"extract_info: for 'URL: {item.url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}/keys'."
             )
         except yt_dlp.utils.ExistingVideoReached as exc:
             LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{exc!s}'.")
@@ -508,17 +439,7 @@ class DownloadQueue(metaclass=Singleton):
                 except Exception as e:
                     LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
-        return await self.__add_entry(
-            entry=entry,
-            preset=preset,
-            folder=folder,
-            config=config,
-            cookies=cookies,
-            template=template,
-            already=already,
-            extras=extras,
-            cli=cli,
-        )
+        return await self.__add_entry(entry=entry, item=item, already=already)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """
@@ -588,7 +509,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             itemRef: str = f"{id=} {item.info.id=} {item.info.title=}"
-            fileDeleted: bool = False
+            removed_files = 0
             filename: str = ""
 
             if remove_file and self.config.remove_files and "finished" == item.info.status:
@@ -602,9 +523,13 @@ class DownloadQueue(metaclass=Singleton):
                         folder=filename,
                         create_path=False,
                     )
-                    if realFile and os.path.exists(realFile):
-                        os.remove(realFile)
-                        fileDeleted = True
+                    rf = Path(realFile)
+                    if rf.is_file() and rf.exists():
+                        for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
+                            if f.is_file() and f.exists() and not f.name.startswith("."):
+                                removed_files += 1
+                                LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
+                                os.remove(f)
                     else:
                         LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
                 except Exception as e:
@@ -614,8 +539,8 @@ class DownloadQueue(metaclass=Singleton):
             await self._notify.emit(Events.CLEARED, data=item.info.serialize())
 
             msg = f"Deleted completed download '{itemRef}'."
-            if fileDeleted and filename:
-                msg += f" and removed local file '{filename}'."
+            if removed_files > 0:
+                msg += f" and removed '{removed_files}' local files."
 
             LOG.info(msg=msg)
             status[id] = "ok"

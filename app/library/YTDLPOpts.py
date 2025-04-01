@@ -36,6 +36,30 @@ class YTDLPOpts(metaclass=Singleton):
 
         return YTDLPOpts._instance
 
+    def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
+        """
+        Prase and add yt-dlp cli options to the item options.
+
+        Args:
+            args (str): The cli options to add
+            from_user (bool): If the options are from the user
+
+        Returns:
+            YTDLPOpts: The instance of the class
+
+        """
+        if not args or len(args) < 2 or not isinstance(args, str):
+            return self
+
+        removed_options = []
+
+        self._item_opts.update(arg_converter(args=args, level=from_user, removed_options=removed_options))
+
+        if len(removed_options) > 0:
+            LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
+
+        return self
+
     def add(self, config: dict, from_user: bool = False) -> "YTDLPOpts":
         """
         Add the options to the item options.
@@ -78,7 +102,7 @@ class YTDLPOpts(metaclass=Singleton):
             YTDLPOpts: The instance of the class
 
         """
-        preset = Presets.get_instance().get(name=name)
+        preset = Presets.get_instance().get(name)
         if not preset or "default" == name:
             return self
 
@@ -118,25 +142,6 @@ class YTDLPOpts(metaclass=Singleton):
                 "temp": self._config.temp_path,
             }
 
-        # @Deprecated - To be removed in future versions.
-        if not preset.cli:
-            if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
-                self._preset_opts["postprocessors"] = preset.postprocessors
-
-            if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
-                bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
-                removed_options = []
-                for key, value in preset.args.items():
-                    if key in bad_options:
-                        removed_options.append(bad_options[key])
-                        continue
-                    self._preset_opts[key] = value
-
-                if len(removed_options) > 0:
-                    LOG.warning(
-                        "Removed the following options '%s' from '%s' args.", ", ".join(removed_options), preset.name
-                    )
-
         return self
 
     def get_all(self, keep: bool = False) -> dict:
@@ -165,26 +170,5 @@ class YTDLPOpts(metaclass=Singleton):
 
         if "format" in data and data["format"] in ["not_set", "default"]:
             data["format"] = None
-
-        # @Deprecated - To be removed in future versions, All the checks below this line are deprecated.
-        if "daterange" in data and isinstance(data["daterange"], dict):
-            from yt_dlp.utils import DateRange
-
-            data["daterange"] = DateRange(data["daterange"]["start"], data["daterange"]["end"])
-
-        if "impersonate" in data and isinstance(data["impersonate"], str):
-            from yt_dlp.networking.impersonate import ImpersonateTarget
-
-            data["impersonate"] = ImpersonateTarget.from_str(data["impersonate"])
-
-        if (
-            "match_filter" in data
-            and isinstance(data["match_filter"], dict)
-            and "filters" in data["match_filter"]
-            and len(data["match_filter"]["filters"]) > 0
-        ):
-            from yt_dlp.utils import match_filter_func
-
-            data["match_filter"] = match_filter_func(data["match_filter"]["filters"])
 
         return data

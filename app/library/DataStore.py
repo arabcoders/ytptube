@@ -8,6 +8,7 @@ from sqlite3 import Connection
 from .config import Config
 from .Download import Download
 from .ItemDTO import ItemDTO
+from .Utils import clean_item
 
 
 class DataStore:
@@ -68,7 +69,7 @@ class DataStore:
 
         for row in cursor:
             rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-            data: dict = json.loads(row["data"])
+            data, _ = clean_item(json.loads(row["data"]), keys=ItemDTO.removed_fields())
             key: str = data.pop("_id")
             item: ItemDTO = ItemDTO(**data)
             item._id = key

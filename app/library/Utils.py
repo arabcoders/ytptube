@@ -522,8 +522,6 @@ def arg_converter(
 
             bad_options.update(item.items())
 
-        LOG.debug("Removed %i the following options: '%s'.", level, ", ".join(bad_options.values()))
-
         for key in diff.copy():
             if key not in bad_options:
                 continue
@@ -889,3 +887,60 @@ def get_files(base_path: str, dir: str | None = None):
         )
 
     return contents
+
+
+def clean_item(item: dict, keys: list | tuple) -> tuple[dict, bool]:
+    """
+    Remove given keys from a dictionary.
+    This function modifies the dictionary in place and returns a tuple
+    containing the modified dictionary and a boolean indicating
+    whether any keys were removed.
+
+    Args:
+        item (dict): The item to clean.
+        keys (list|tuple): The keys to remove.
+
+    Returns:
+        tuple[dict, bool]: The cleaned item and a the status of cleaning operation.
+
+    Raises:
+        TypeError: If item is not a dictionary or keys is not a list or tuple.
+
+    """
+    status = False
+
+    if not isinstance(item, dict):
+        msg = "Item must be a dictionary."
+        raise TypeError(msg)
+
+    if not isinstance(keys, list | tuple):
+        msg = "Keys must be a list or tuple."
+        raise TypeError(msg)
+
+    for key in keys:
+        if key not in item:
+            continue
+
+        status = True
+        item.pop(key)
+
+    return item, status
+
+
+def strip_newline(string: str) -> str:
+    """
+    Remove newlines from a string.
+
+    Args:
+        string (str): The string to process.
+
+    Returns:
+        str: The string without newlines.
+
+    """
+    if not string:
+        return ""
+
+    res = re.sub(r"(\r\n|\r|\n)", " ", string)
+
+    return res.strip() if res else ""

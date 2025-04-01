@@ -28,13 +28,13 @@
 
               <div class="column is-12" v-if="showImport || !reference">
                 <label class="label is-inline" for="import_string">
+                  <span class="icon"><i class="fa-solid fa-file-import" /></span>
                   Import string
                 </label>
 
                 <div class="field has-addons">
-                  <div class="control has-icons-left is-expanded">
+                  <div class="control is-expanded">
                     <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-t" /></span>
                   </div>
 
                   <div class="control">
@@ -52,21 +52,27 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="name" v-text="'Name'" />
+                  <label class="label is-inline" for="name">
+                    <span class="icon"><i class="fa-solid fa-user" /></span>
+                    Name
+                  </label>
                   <div class="control has-icons-left">
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
                     <span class="icon is-small is-left"><i class="fa-solid fa-user" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Task name is used to identify the task in the task list and in logs.</span>
+                    <span>The name is used to identify this specific task.</span>
                   </span>
                 </div>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="url" v-text="'URL'" />
+                  <label class="label is-inline" for="url">
+                    <span class="icon"><i class="fa-solid fa-link" /></span>
+                    URL
+                  </label>
                   <div class="control has-icons-left">
                     <input type="url" class="input" id="url" v-model="form.url" :disabled="addInProgress">
                     <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
@@ -80,8 +86,11 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="preset">Preset</label>
-                  <div class="control has-icons-left">
+                  <label class="label is-inline" for="preset">
+                    <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                    Preset
+                  </label>
+                  <div class="control">
                     <div class="select is-fullwidth">
                       <select id="preset" class="is-fullwidth" v-model="form.preset"
                         :disabled="addInProgress || hasFormatInConfig"
@@ -98,7 +107,6 @@
                         </optgroup>
                       </select>
                     </div>
-                    <span class="icon is-small is-left"><i class="fa-solid fa-tv" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -113,12 +121,12 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="timer">
+                    <span class="icon"><i class="fa-solid fa-clock" /></span>
                     CRON expression timer.
                   </label>
-                  <div class="control has-icons-left">
+                  <div class="control">
                     <input type="text" class="input" id="timer" placeholder="leave empty to run once every hour."
                       v-model="form.timer" :disabled="addInProgress">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-clock" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -135,12 +143,12 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="folder">
-                    Download path
+                    <span class="icon"><i class="fa-solid fa-folder" /></span>
+                    Save in
                   </label>
-                  <div class="control has-icons-left">
+                  <div class="control">
                     <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-folder" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -153,12 +161,12 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
+                    <span class="icon"><i class="fa-solid fa-file" /></span>
                     Output template
                   </label>
-                  <div class="control has-icons-left">
+                  <div class="control">
                     <input type="text" class="input" id="output_template" :disabled="addInProgress"
                       placeholder="Leave empty to use default template." v-model="form.template">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -174,11 +182,13 @@
               <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     Command arguments for yt-dlp
                   </label>
                   <div class="control">
-                    <input type="text" class="input" v-model="form.cli" id="cli_options" :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
+                    <textarea type="text" class="textarea is-pre" v-model="form.cli" id="cli_options"
+                      :disabled="addInProgress"
+                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -389,7 +399,7 @@ const hasFormatInConfig = computed(() => {
     return false
   }
 
-  return /(?<!\w)(-f|--format)(=|:)?(?!\w)/.test(form.cli)
+  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)

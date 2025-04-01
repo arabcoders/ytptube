@@ -27,6 +27,7 @@ from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus, Events, message
 from .ffprobe import ffprobe
+from .ItemDTO import Item
 from .M3u8 import M3u8
 from .Notifications import Notification, NotificationEvents
 from .Playlist import Playlist
@@ -475,7 +476,8 @@ class HttpAPI(Common):
             err = err.split("\n")[-1] if "\n" in err else err
             err = err.replace("main.py: error: ", "").strip().capitalize()
             return web.json_response(
-                data={"error": f"Failed to command line arguments for yt-dlp. '{err}'."}, status=web.HTTPBadRequest.status_code
+                data={"error": f"Failed to parse command arguments for yt-dlp. '{err}'."},
+                status=web.HTTPBadRequest.status_code,
             )
 
     @route("GET", "api/yt-dlp/url/info")
@@ -501,7 +503,7 @@ class HttpAPI(Common):
 
         preset = request.query.get("preset")
         if preset:
-            exists = Presets.get_instance().get(name=preset)
+            exists = Presets.get_instance().get(preset)
             if not exists:
                 return web.json_response(
                     data={"status": False, "message": f"Preset '{preset}' does not exist."},
@@ -674,7 +676,7 @@ class HttpAPI(Common):
 
         preset = request.query.get("preset")
         if preset:
-            exists = Presets.get_instance().get(name=preset)
+            exists = Presets.get_instance().get(preset)
             if not exists:
                 return web.json_response(
                     data={"status": False, "message": f"Preset '{preset}' does not exist."},
@@ -683,7 +685,7 @@ class HttpAPI(Common):
             data["preset"] = preset
 
         try:
-            status = await self.add(**self.format_item(data))
+            status = await self.add(item=Item.format(data))
         except ValueError as e:
             return web.json_response(data={"status": False, "message": str(e)}, status=web.HTTPBadRequest.status_code)
 
@@ -710,15 +712,16 @@ class HttpAPI(Common):
         if isinstance(data, dict):
             data = [data]
 
+        items = []
         for item in data:
             try:
-                self.format_item(item)
+                items.append(Item.format(item))
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
         return web.json_response(
             data=await asyncio.wait_for(
-                fut=asyncio.gather(*[self.add(**self.format_item(item)) for item in data]),
+                fut=asyncio.gather(*[self.add(item=item) for item in items]),
                 timeout=None,
             ),
             status=web.HTTPOk.status_code,
@@ -789,18 +792,6 @@ class HttpAPI(Common):
 
             if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
                 item["id"] = str(uuid.uuid4())
-
-            if not item.get("args", None) or str(item.get("args")).strip() == "":
-                item["args"] = {}
-
-            if item.get("args", None) and isinstance(item.get("args"), str):
-                item["args"] = json.loads(item.get("args"))
-
-            if not item.get("postprocessors", None) or str(item.get("postprocessors")).strip() == "":
-                item["postprocessors"] = []
-
-            if item.get("postprocessors", None) and isinstance(item.get("postprocessors"), str):
-                item["postprocessors"] = json.loads(item.get("postprocessors"))
 
             try:
                 cls.validate(item)
