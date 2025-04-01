@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250401-e79d182",
+        "date": "2025-04-01T22:51:46+00:00",
+        "commits": [
+            {
+                "sha": "a3ef44a",
+                "message": "Fix re-queuing existing item.",
+                "author": "arabcoders",
+                "date": "2025-04-01T22:27:10+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250401-18fe540",
         "date": "2025-04-01T21:49:10+00:00",
         "commits": [
