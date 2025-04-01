@@ -384,8 +384,10 @@ class Notification(metaclass=Singleton):
 
             return respData
         except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{e!s}'.")
+            err_msg = str(e)
+            if not err_msg:
+                err_msg = type(e).__name__
+            LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'.")
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 
     def emit(self, e: Event, _, **kwargs):  # noqa: ARG002
