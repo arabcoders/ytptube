@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250401-d8b4afc",
-        "date": "2025-04-01T20:33:37+00:00",
+        "tag": "dev-20250401-eac74d0",
+        "date": "2025-04-01T20:44:14+00:00",
         "commits": [
+            {
+                "sha": "eac74d0",
+                "message": "trim __repr__ double space",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:44:14+00:00"
+            },
             {
                 "sha": "d8b4afc",
                 "message": "upgrade dependencies",
