@@ -154,6 +154,16 @@ onUnmounted(() => {
   if (title.value) {
     window.document.title = 'YTPTube'
   }
+  if (video.value) {
+    try {
+      video.value.pause()
+      video.value.querySelectorAll("source").forEach(source => source.removeAttribute("src"))
+      video.value.load()
+    }
+    catch (e) {
+      console.error(e)
+    }
+  }
 })
 
 const prepareVideoPlayer = () => {

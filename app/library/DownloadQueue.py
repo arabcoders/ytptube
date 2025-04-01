@@ -385,7 +385,7 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(config=item.cli, from_user=True).get_all(),
+                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
             }
 
             if item.cookies:
