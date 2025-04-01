@@ -501,7 +501,7 @@ class HttpAPI(Common):
 
         preset = request.query.get("preset")
         if preset:
-            exists = Presets.get_instance().get(name=preset)
+            exists = Presets.get_instance().get(preset)
             if not exists:
                 return web.json_response(
                     data={"status": False, "message": f"Preset '{preset}' does not exist."},
@@ -674,7 +674,7 @@ class HttpAPI(Common):
 
         preset = request.query.get("preset")
         if preset:
-            exists = Presets.get_instance().get(name=preset)
+            exists = Presets.get_instance().get(preset)
             if not exists:
                 return web.json_response(
                     data={"status": False, "message": f"Preset '{preset}' does not exist."},
@@ -789,18 +789,6 @@ class HttpAPI(Common):
 
             if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
                 item["id"] = str(uuid.uuid4())
-
-            if not item.get("args", None) or str(item.get("args")).strip() == "":
-                item["args"] = {}
-
-            if item.get("args", None) and isinstance(item.get("args"), str):
-                item["args"] = json.loads(item.get("args"))
-
-            if not item.get("postprocessors", None) or str(item.get("postprocessors")).strip() == "":
-                item["postprocessors"] = []
-
-            if item.get("postprocessors", None) and isinstance(item.get("postprocessors"), str):
-                item["postprocessors"] = json.loads(item.get("postprocessors"))
 
             try:
                 cls.validate(item)

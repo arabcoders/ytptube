@@ -15,6 +15,7 @@ from .encoder import Encoder
 from .Events import EventBus, Events, error, info, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
+from .Utils import clean_item
 
 LOG = logging.getLogger("tasks")
 
@@ -140,13 +141,13 @@ class Tasks(metaclass=Singleton):
             LOG.info(f"No tasks were defined in '{self._file}'.")
             return self
 
-        need_update = False
+        need_save = False
         for i, task in enumerate(tasks):
             try:
-                task, task_status = self.clean_task(task)
+                task, task_status = clean_item(task, keys=("cookies", "config"))
                 task = Task(**task)
                 if task_status:
-                    need_update = True
+                    need_save = True
             except Exception as e:
                 LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
                 continue
@@ -160,7 +161,7 @@ class Tasks(metaclass=Singleton):
                 LOG.exception(e)
                 LOG.error(f"Failed to queue task '{i}: {task.name}'. '{e!s}'.")
 
-        if need_update:
+        if need_save:
             LOG.info("Updating tasks file to remove old keys.")
             self.save(self.get_all())
 
@@ -223,6 +224,7 @@ class Tasks(metaclass=Singleton):
         if task.get("cli"):
             try:
                 from .Utils import arg_converter
+
                 arg_converter(args=task.get("cli"))
             except Exception as e:
                 msg = f"Invalid cli options. '{e!s}'."
@@ -265,27 +267,6 @@ class Tasks(metaclass=Singleton):
             LOG.error(f"Failed to save tasks to '{self._file}'. '{e!s}'.")
 
         return self
-
-    def clean_task(self, task: dict) -> tuple[dict, bool]:
-        """
-        Clean the task from old keys.
-
-        Args:
-            task (dict): The task to clean.
-
-        Returns:
-            tuple[dict, bool]: The cleaned task and a status if the task was cleaned.
-
-        """
-        status = False
-        removedKeys = ["cookies", "config"]
-
-        for key in removedKeys:
-            if key in task:
-                status = True
-                task.pop(key)
-
-        return task, status
 
     async def _runner(self, task: Task):
         """

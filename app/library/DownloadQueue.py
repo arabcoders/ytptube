@@ -392,7 +392,7 @@ class DownloadQueue(metaclass=Singleton):
             { "status": "text" }
 
         """
-        _preset = Presets.get_instance().get(name=preset)
+        _preset = Presets.get_instance().get(preset)
 
         config = config if config else {}
         if cli:

@@ -27,13 +27,13 @@
 
               <div class="column is-12" v-if="showImport || !reference">
                 <label class="label is-inline" for="import_string">
+                  <span class="icon"><i class="fa-solid fa-file-import" /></span>
                   Import string
                 </label>
 
                 <div class="field has-addons">
-                  <div class="control has-icons-left is-expanded">
+                  <div class="control is-expanded">
                     <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-t" /></span>
                   </div>
 
                   <div class="control">
@@ -51,31 +51,35 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="name" v-text="'Name'" />
-                  <div class="control has-icons-left">
+                  <label class="label is-inline" for="name">
+                    <span class="icon"><i class="fa-solid fa-tag" /></span>
+                    Name
+                  </label>
+                  <div class="control">
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-n" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The name to refers to this custom settings.</span>
+                    <span>The name to refers to this preset of settings.</span>
                   </span>
                 </div>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="format" v-text="'Format'" />
-                  <div class="control has-icons-left">
+                  <label class="label is-inline" for="format">
+                    <span class="icon"><i class="fa-solid fa-f" /></span>
+                    Format
+                  </label>
+                  <div class="control">
                     <input type="text" class="input" id="format" v-model="form.format" :disabled="addInProgress">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-f" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
                         href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
-                        url</NuxtLink> for more info.</span>. Note, as this key is required, you can set the value to
-                    <code>default</code> to let <code>yt-dlp</code> choose the best format.
+                        page</NuxtLink> for more info. Note, as this key is required, you can set the value to
+                    <code>default</code> to let <code>yt-dlp</code> choose the best format.</span>
                   </span>
                 </div>
               </div>
@@ -83,12 +87,12 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="folder">
+                    <span class="icon"><i class="fa-solid fa-folder" /></span>
                     Default Download path
                   </label>
-                  <div class="control has-icons-left">
+                  <div class="control">
                     <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-folder" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -101,19 +105,19 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
+                    <span class="icon"><i class="fa-solid fa-file" /></span>
                     Default Output template
                   </label>
-                  <div class="control has-icons-left">
+                  <div class="control">
                     <input type="text" class="input" id="output_template" :disabled="addInProgress"
                       placeholder="Leave empty to use default template." v-model="form.template">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this output template if non are given with URL. if not set, it will defaults to
                       <code>{{ config.app.output_template }}</code>.
-                      For more information <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">visit this url</NuxtLink>.
+                      For more information visit <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
+                        target="_blank">this page</NuxtLink>.
                     </span>
                   </span>
                 </div>
@@ -122,11 +126,12 @@
               <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     Command arguments for yt-dlp
                   </label>
                   <div class="control">
-                    <input type="text" class="input" v-model="form.cli" id="cli_options" :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
+                    <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
+                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -141,8 +146,10 @@
 
               <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="cookies"
-                    v-tooltip="'Netscape HTTP Cookie format.'">Cookies</label>
+                  <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">
+                    <span class="icon"><i class="fa-solid fa-cookie" /></span>
+                    Cookies
+                  </label>
                   <div class="control">
                     <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress"
                       placeholder="Leave empty to use default cookies" />
@@ -157,56 +164,7 @@
                   </span>
                 </div>
               </div>
-              <div class="column is-12" v-if="has_data(form?.args) || has_data(form?.postprocessors)">
-                <Message title="Deprecation Warning" class="is-background-warning-80 has-text-dark"
-                  icon="fas fa-exclamation-circle">
-                  <ul>
-                    <li>
-                      The <code>JSON yt-dlp config</code> and <code>JSON yt-dlp Post-Processors</code> fields are
-                      deprecated and will be removed in the future. Please use the <b>Command arguments for yt-dlp</b>
-                      field instead. The deprecated fields will still be working for now but they will stop, we suggest
-                      that you migrate to the new field. as soon as possible to avoid any issues. No support will be
-                      given for the deprecated fields.
-                    </li>
-                    <li>
-                      If both fields are set, the <b>Command arguments for yt-dlp</b> field will take precedence over
-                      the deprecated fields. and when you click save it will remove the deprecated fields.
-                    </li>
-                  </ul>
-                </Message>
-              </div>
-              <div class="column is-6-tablet is-12-mobile" v-if="has_data(form?.args)">
-                <div class="field">
-                  <label class="label is-inline" for="args" v-tooltip="'Extends current global yt-dlp config. (JSON)'">
-                    JSON yt-dlp config <span class="has-text-danger">(DEPRECATED)</span>
-                  </label>
-                  <div class="control">
-                    <textarea class="textarea" id="args" v-model="form.args" :disabled="addInProgress"
-                      placeholder="{}" />
-                  </div>
-                  <span class="help has-text-danger">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Deprecated, use <b>Command arguments for yt-dlp</b> field instead. </span>
-                  </span>
-                </div>
-              </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="has_data(form?.postprocessors)">
-                <div class="field">
-                  <label class="label is-inline" for="postprocessors"
-                    v-tooltip="'Things to do after download is done.'">
-                    JSON yt-dlp Post-Processors <span class="has-text-danger">(DEPRECATED)</span>
-                  </label>
-                  <div class="control">
-                    <textarea class="textarea" id="postprocessors" v-model="form.postprocessors"
-                      :disabled="addInProgress" placeholder="[]" />
-                  </div>
-                  <span class="help has-text-danger">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Deprecated, use <b>Command arguments for yt-dlp</b> field instead. </span>
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -319,55 +277,11 @@ const checkInfo = async () => {
     return;
   }
 
-  if (form?.cli && '' !== form.cli) {
-    if ((has_data(copy?.args) || has_data(copy?.postprocessors))) {
-      if (false === confirm('cli options are set, this will remove the JSON yt-dlp config and Post-Processors. Are you sure?')) {
-        toast.warning('User cancelled the operation.')
-        return
-      }
-    }
-
-    if (copy?.args) {
-      delete copy.args
-    }
-
-    if (copy?.postprocessors) {
-      delete copy.postprocessors
-    }
-  }
-  else {
-    if (typeof copy.args === 'object') {
-      copy.args = JSON.stringify(copy.args, null, 2);
-    }
-
-    if (typeof copy.postprocessors === 'object') {
-      copy.postprocessors = JSON.stringify(copy.postprocessors, null, 2);
-    }
-
-    if (copy?.args) {
-      try {
-        copy.args = JSON.parse(copy.args)
-      } catch (e) {
-        toast.error(`Invalid JSON yt-dlp config. ${e.message}`)
-        return;
-      }
-    }
-
-    if (copy?.postprocessors) {
-      try {
-        copy.postprocessors = JSON.parse(copy.postprocessors)
-      } catch (e) {
-        toast.error(`Invalid JSON yt-dlp Post-Processors. ${e.message}`)
-        return;
-      }
-    }
-  }
-
-  // trim all fields in copy only if they are strings
   for (const key in copy) {
-    if (typeof copy[key] === 'string') {
-      copy[key] = copy[key].trim()
+    if (typeof copy[key] !== 'string') {
+      continue
     }
+    copy[key] = copy[key].trim()
   }
 
   emitter('submit', { reference: toRaw(props.reference), preset: toRaw(copy) });
@@ -417,18 +331,13 @@ const importItem = async () => {
   try {
     const item = JSON.parse(val)
 
-    console.log(item)
-
-    if ('preset' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'preset', got '${item._type}'.`)
-      import_string.value = ''
+    if (item?._type || 'preset' !== item._type) {
+      toast.error(`Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`)
       return
     }
 
-    if (form.format || form.cli) {
-      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
-        return
-      }
+    if ((form.format || form.cli) && false === confirm('This will overwrite the current data. Are you sure?')) {
+      return
     }
 
     if (item.name) {

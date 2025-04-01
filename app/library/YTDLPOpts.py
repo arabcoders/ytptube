@@ -78,7 +78,7 @@ class YTDLPOpts(metaclass=Singleton):
             YTDLPOpts: The instance of the class
 
         """
-        preset = Presets.get_instance().get(name=name)
+        preset = Presets.get_instance().get(name)
         if not preset or "default" == name:
             return self
 
@@ -117,25 +117,6 @@ class YTDLPOpts(metaclass=Singleton):
                 "home": calc_download_path(base_path=self._config.download_path, folder=preset.folder),
                 "temp": self._config.temp_path,
             }
-
-        # @Deprecated - To be removed in future versions.
-        if not preset.cli:
-            if preset.postprocessors and isinstance(preset.postprocessors, list) and len(preset.postprocessors) > 0:
-                self._preset_opts["postprocessors"] = preset.postprocessors
-
-            if preset.args and isinstance(preset.args, dict) and len(preset.args) > 0:
-                bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
-                removed_options = []
-                for key, value in preset.args.items():
-                    if key in bad_options:
-                        removed_options.append(bad_options[key])
-                        continue
-                    self._preset_opts[key] = value
-
-                if len(removed_options) > 0:
-                    LOG.warning(
-                        "Removed the following options '%s' from '%s' args.", ", ".join(removed_options), preset.name
-                    )
 
         return self
 

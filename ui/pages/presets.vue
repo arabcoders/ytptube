@@ -71,15 +71,6 @@ div.is-centered {
               </header>
               <div class="card-content">
                 <div class="content">
-                  <template v-if="has_data(item?.args) || has_data(item.postprocessors)">
-                    <p class="has-text-danger is-5 has-text-bold">
-                      <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
-                      <span>The preset is using deprecated options. It is recommended to update the preset to use the
-                        new options. It will cease to work in future versions.</span>
-                    </p>
-                    <hr>
-                  </template>
-
                   <p class="is-text-overflow"
                     v-if="item?.format && false === ['default', 'not_set'].includes(item.format)">
                     <span class="icon"><i class="fa-solid fa-f" /></span>
@@ -306,11 +297,6 @@ const exportItem = item => {
       delete data[key]
     }
   })
-
-  if (has_data(data?.args) || has_data(data?.postprocessors)) {
-    toast.error("v1.0 presets are no longer supported target for export. Please update your preset.")
-    return
-  }
 
   let userData = {}
 

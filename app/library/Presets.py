@@ -11,6 +11,7 @@ from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
+from .Utils import arg_converter, clean_item
 
 LOG = logging.getLogger("presets")
 
@@ -25,12 +26,6 @@ class Preset:
 
     format: str
     """The format of the preset."""
-
-    args: dict[str, list[str] | bool] = field(default_factory=dict)
-    """The arguments of the preset."""
-
-    postprocessors: list = field(default_factory=list)
-    """The postprocessors of the preset."""
 
     folder: str = ""
     """The default download folder to use if non is given."""
@@ -83,13 +78,19 @@ class Presets(metaclass=Singleton):
                 pass
 
         with open(os.path.join(os.path.dirname(__file__), "presets.json")) as f:
-            self._default_presets = [Preset(**preset) for preset in json.load(f)]
+            for i, preset in enumerate(json.load(f)):
+                try:
+                    self.validate(preset)
+                    self._default_presets.append(Preset(**preset))
+                except Exception as e:
+                    LOG.error(f"Failed to parse default preset '{i}'. '{e!s}'.")
+                    continue
 
-        EventBus.get_instance().subscribe(
-            Events.PRESETS_ADD,
-            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
-            f"{__class__.__name__}.save",
-        )
+        def event_handler(_, __):
+            msg = "Not implemented"
+            raise Exception(msg)
+
+        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.save")
 
     @staticmethod
     def get_instance() -> "Presets":
@@ -150,22 +151,27 @@ class Presets(metaclass=Singleton):
             LOG.info(f"No presets were defined in '{self._file}'.")
             return self
 
-        needSaving = False
+        need_save = False
 
         for i, preset in enumerate(presets):
             try:
                 if "id" not in preset:
                     preset["id"] = str(uuid.uuid4())
-                    needSaving = True
+                    need_save = True
 
+                preset, preset_status = clean_item(preset, keys=("args", "postprocessors"))
                 preset = Preset(**preset)
+
+                if preset_status:
+                    need_save = True
+
                 self._presets.append(preset)
             except Exception as e:
                 LOG.error(f"Failed to parse preset at list position '{i}'. '{e!s}'.")
                 continue
 
-        if needSaving:
-            LOG.info("Saving presets due to missing ids.")
+        if need_save:
+            LOG.info("Saving presets due to format, or id change.")
             self.save(self._presets)
 
         return self
@@ -198,7 +204,7 @@ class Presets(metaclass=Singleton):
         """
         if not isinstance(preset, dict):
             if not isinstance(preset, Preset):
-                msg = "Invalid preset type."
+                msg = f"Invalid preset type. Was expecting a (Preset|dict), but got '{type(preset).__name__}'."
                 raise ValueError(msg)  # noqa: TRY004
 
             preset = preset.serialize()
@@ -215,18 +221,8 @@ class Presets(metaclass=Singleton):
             msg = "No format found."
             raise ValueError(msg)
 
-        if preset.get("args") and not isinstance(preset.get("args"), dict):
-            msg = "Invalid args type. expected dict."
-            raise ValueError(msg)
-
-        if preset.get("postprocessors") and not isinstance(preset.get("postprocessors"), list):
-            msg = "Invalid postprocessors type. expected list."
-            raise ValueError(msg)
-
         if preset.get("cli"):
             try:
-                from .Utils import arg_converter
-
                 arg_converter(args=preset.get("cli"))
             except Exception as e:
                 msg = f"Invalid cli options. '{e!s}'."
@@ -270,26 +266,24 @@ class Presets(metaclass=Singleton):
 
         return self
 
-    def get(self, id: str | None = None, name: str | None = None) -> Preset | None:
+    def get(self, id_or_name: str) -> Preset | None:
         """
         Get the preset by id or name.
 
         Args:
-            id (str|None): The id of the preset.
-            name (str|None): The name of the preset.
+            id_or_name (str): The id or name of the preset.
 
         Returns:
             Preset|None: The preset if found, None otherwise.
 
         """
-        if not id and not name:
+        if not id_or_name:
             return None
 
         for preset in self.get_all():
-            if preset.id == id:
-                return preset
+            if id_or_name not in (preset.id, preset.name):
+                continue
 
-            if preset.name == name:
-                return preset
+            return preset
 
         return None
