@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250401-f7101f6",
-        "date": "2025-04-01T19:56:28+00:00",
+        "tag": "dev-20250401-3219408",
+        "date": "2025-04-01T20:19:17+00:00",
         "commits": [
+            {
+                "sha": "3219408",
+                "message": "Removed last reference for ytdlp JSON config in DownloadQueue",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:19:17+00:00"
+            },
+            {
+                "sha": "3fe0a90",
+                "message": "Only load notification targets when load is called",
+                "author": "arabcoders",
+                "date": "2025-04-01T20:13:10+00:00"
+            },
             {
                 "sha": "f7101f6",
                 "message": "simplified the codebase and removed all backwards compat flags and checks.",
