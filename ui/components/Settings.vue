@@ -25,7 +25,10 @@
                 Dark
               </label>
             </div>
-            <p class="help">Select the color scheme for the WebUI.</p>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info" /></span>
+              <span>Select the color scheme for the WebUI.</span>
+            </p>
           </div>
 
           <div class="field">
@@ -34,7 +37,10 @@
               <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
               <label for="random_bg" class="is-unselectable">&nbsp;Enable</label>
             </div>
-            <p class="help">Use random background image from your media backends.</p>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info" /></span>
+              <span>Use random background image.</span>
+            </p>
           </div>
 
           <div class="field">
@@ -45,7 +51,10 @@
               <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50" max="1.00"
                 step="0.05">
             </div>
-            <p class="help">How visible the background image should be.</p>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info" /></span>
+              <span>How visible the background image should be.</span>
+            </p>
           </div>
 
           <div class="field" v-if="bg_enable">
@@ -61,7 +70,10 @@
                 </span>
               </button>
             </div>
-            <p class="help">Change the displayed picture.</p>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info" /></span>
+              <span>Change the displayed picture.</span>
+            </p>
           </div>
         </div>
       </div>
