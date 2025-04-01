@@ -5,31 +5,39 @@
         <div class="box">
           <div class="columns is-multiline is-mobile">
             <div class="column is-12">
-              <div class="control has-icons-left">
+              <label class="label is-inline is-unselectable" for="url">
+                <span class="icon"><i class="fa-solid fa-link" /></span>
+                URLs
+              </label>
+              <div class="control">
                 <input type="text" class="input" id="url" placeholder="Video or playlist link"
                   :disabled="!socket.isConnected || addInProgress" v-model="url">
-                <span class="icon is-small is-left">
-                  <i class="fa-solid fa-link" />
-                </span>
               </div>
+              <span class="help">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span>You can add multiple URLs separated by a comma <code>,</code>.</span>
+              </span>
             </div>
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field has-addons">
                 <div class="control">
-                  <a href="#" class="button is-static">Preset</a>
+                  <a href="#" class="button is-static">
+                    <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                    <span>Preset</span>
+                  </a>
                 </div>
                 <div class="control is-expanded">
                   <div class="select is-fullwidth">
                     <select id="preset" class="is-fullwidth"
                       :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="selectedPreset"
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the Command arguments for yt-dlp.' : ''">
-                      <optgroup label="Default presets">
-                        <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
+                      <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
+                        <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
                           {{ item.name }}
                         </option>
                       </optgroup>
-                      <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
-                        <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
+                      <optgroup label="Default presets">
+                        <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
                           {{ item.name }}
                         </option>
                       </optgroup>
@@ -41,7 +49,10 @@
             <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
                 <div class="control">
-                  <a href="#" class="button is-static">Save in</a>
+                  <a href="#" class="button is-static">
+                    <span class="icon"><i class="fa-solid fa-folder" /></span>
+                    <span>Save in</span>
+                  </a>
                 </div>
                 <div class="control is-expanded">
                   <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
@@ -67,17 +78,17 @@
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
 
-            <div class="column is-6-tablet is-12-mobile">
+            <div class="column is-12">
               <div class="field">
-                <label class="label is-inline" for="output_format"
-                  v-tooltip="'Default Format: ' + config.app.output_template">
+                <label class="label is-inline is-unselectable" for="output_format"
+                  v-tooltip="'Default: ' + config.app.output_template">
+                  <span class="icon"><i class="fa-solid fa-file" /></span>
                   Output Template
                 </label>
-                <div class="control has-icons-left">
+                <div class="control">
                   <input type="text" class="input" v-model="output_template" id="output_format"
                     :disabled="!socket.isConnected || addInProgress"
                     placeholder="Uses default output template naming if empty.">
-                  <span class="icon is-small is-left"><i class="fa-solid fa-file" /></span>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -87,16 +98,16 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-12-mobile">
+            <div class="column is-6-tablet is-4-mobile">
               <div class="field">
-                <label class="label is-inline" for="cli_options">
+                <label class="label is-inline is-unselectable" for="cli_options">
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   Command arguments for yt-dlp
                 </label>
-                <div class="control has-icons-left">
-                  <input type="text" class="input" v-model="ytdlp_cli" id="cli_options"
+                <div class="control">
+                  <textarea class="textarea is-pre" v-model="ytdlp_cli" id="cli_options"
                     :disabled="!socket.isConnected || addInProgress"
-                    placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail">
-                  <span class="icon is-small is-left"><i class="fa-solid fa-terminal" /></span>
+                    placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                 </div>
 
                 <span class="help">
@@ -110,9 +121,10 @@
               </div>
             </div>
 
-            <div class="column is-12">
+            <div class="column is-6-tablet is-4-mobile">
               <div class="field">
-                <label class="label is-inline" for="ytdlpCookies" v-tooltip="'Netscape HTTP Cookie format'">
+                <label class="label is-inline is-unselectable" for="ytdlpCookies">
+                  <span class="icon"><i class="fa-solid fa-cookie" /></span>
                   Cookies
                 </label>
                 <div class="control">
@@ -206,8 +218,9 @@ const resetConfig = () => {
     return
   }
 
-  selectedPreset.value = config.app.default_preset.value
+  selectedPreset.value = config.app.default_preset
   ytdlpCookies.value = ''
+  ytdlp_cli.value = ''
   output_template.value = null
   url.value = null
   downloadPath.value = null
@@ -277,9 +290,8 @@ const hasFormatInConfig = computed(() => {
     return false
   }
 
-  return /(?<!\w)(-f|--format)(=|:)?(?!\w)/.test(ytdlp_cli.value)
+  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(ytdlp_cli.value)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
-
 </script>

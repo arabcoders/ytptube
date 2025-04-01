@@ -21,7 +21,7 @@ from .Events import EventBus, Events
 from .ItemDTO import ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded
+from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded, strip_newline
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -421,7 +421,7 @@ class DownloadQueue(metaclass=Singleton):
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
         LOG.info(
-            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'CLI: {cli}' 'Extras: {extras}'."
+            f"Adding 'URL: {url}' to 'Folder: {filePath}' with 'Preset: {preset}' 'Naming: {template}', 'Cookies: {len(cookies)}/chars' 'CLI: {strip_newline(cli)}' 'Extras: {extras}'."
         )
 
         if isinstance(config, str):

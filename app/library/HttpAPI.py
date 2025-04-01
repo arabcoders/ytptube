@@ -475,7 +475,8 @@ class HttpAPI(Common):
             err = err.split("\n")[-1] if "\n" in err else err
             err = err.replace("main.py: error: ", "").strip().capitalize()
             return web.json_response(
-                data={"error": f"Failed to command line arguments for yt-dlp. '{err}'."}, status=web.HTTPBadRequest.status_code
+                data={"error": f"Failed to parse command arguments for yt-dlp. '{err}'."},
+                status=web.HTTPBadRequest.status_code,
             )
 
     @route("GET", "api/yt-dlp/url/info")

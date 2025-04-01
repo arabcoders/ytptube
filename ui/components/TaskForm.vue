@@ -389,7 +389,7 @@ const hasFormatInConfig = computed(() => {
     return false
   }
 
-  return /(?<!\w)(-f|--format)(=|:)?(?!\w)/.test(form.cli)
+  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)

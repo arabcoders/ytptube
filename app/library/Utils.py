@@ -925,3 +925,22 @@ def clean_item(item: dict, keys: list | tuple) -> tuple[dict, bool]:
         item.pop(key)
 
     return item, status
+
+
+def strip_newline(string: str) -> str:
+    """
+    Remove newlines from a string.
+
+    Args:
+        string (str): The string to process.
+
+    Returns:
+        str: The string without newlines.
+
+    """
+    if not string:
+        return ""
+
+    res = re.sub(r"(\r\n|\r|\n)", " ", string)
+
+    return res.strip() if res else ""
