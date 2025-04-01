@@ -1,7 +1,37 @@
 [
     {
-        "tag": "dev-20250401-ff21392",
-        "date": "2025-04-01T00:30:33+00:00",
+        "tag": "dev-20250401-f7101f6",
+        "date": "2025-04-01T19:56:28+00:00",
+        "commits": [
+            {
+                "sha": "f7101f6",
+                "message": "simplified the codebase and removed all backwards compat flags and checks.",
+                "author": "arabcoders",
+                "date": "2025-04-01T19:56:28+00:00"
+            },
+            {
+                "sha": "9b4d860",
+                "message": "Make task run time in log more human readable.",
+                "author": "arabcoders",
+                "date": "2025-04-01T19:47:04+00:00"
+            },
+            {
+                "sha": "4730583",
+                "message": "update newDownload template",
+                "author": "arabcoders",
+                "date": "2025-04-01T17:34:14+00:00"
+            },
+            {
+                "sha": "fa9c084",
+                "message": "remove presets v1.0",
+                "author": "arabcoders",
+                "date": "2025-04-01T17:05:35+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250401-2ed0bde",
+        "date": "2025-04-01T16:06:23+00:00",
         "commits": [
             {
                 "sha": "bde3ae6",
