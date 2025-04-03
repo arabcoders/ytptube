@@ -148,6 +148,9 @@ class Config:
     ytdlp_auto_update: bool = False
     """Enable in-place auto update of yt-dlp package."""
 
+    ytdlp_cli: str = ""
+    """The command line options to use for yt-dlp."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -171,6 +174,7 @@ class Config:
         "tasks",
         "new_version_available",
         "started",
+        "ytdlp_cli",
     )
     "The variables that are immutable."
 
@@ -217,6 +221,7 @@ class Config:
         "sentry_dsn",
         "console_enabled",
         "browser_enabled",
+        "ytdlp_cli",
     )
     "The variables that are relevant to the frontend."
 
@@ -323,12 +328,12 @@ class Config:
         if os.path.exists(opts_file) and os.path.getsize(opts_file) > 2:
             LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
             with open(opts_file) as f:
-                ytdlp_cli_opts = f.read().strip()
-                if ytdlp_cli_opts:
+                self.ytdlp_cli = f.read().strip()
+                if self.ytdlp_cli:
                     try:
                         removed_options = []
                         self.ytdl_options = arg_converter(
-                            args=ytdlp_cli_opts,
+                            args=self.ytdlp_cli,
                             level=1,
                             removed_options=removed_options,
                         )

@@ -22,7 +22,7 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile">
+      <div class="column is-half-mobile" v-if="hasDownloaded">
         <button type="button" class="button is-fullwidth is-link" :disabled="!hasSelected" @click="downloadSelected">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-download" /></span>
@@ -35,7 +35,7 @@
           @click="deleteSelectedItems">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-            <span>Remove</span>
+            <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
           </span>
         </button>
       </div>
@@ -449,6 +449,21 @@ const hasCompleted = computed(() => {
   for (const key in stateStore.history) {
     const element = stateStore.history[key]
     if (element.status === 'finished') {
+      return true
+    }
+  }
+  return false
+})
+
+const hasDownloaded = computed(() => {
+  if (Object.keys(stateStore.history)?.length < 0) {
+    return false
+  }
+
+  for (const key in stateStore.history) {
+    const element = stateStore.history[key]
+    if (element.status === 'finished' && element.filename) {
+      console.log(element);
       return true
     }
   }

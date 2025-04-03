@@ -127,6 +127,11 @@ div.is-centered {
           <li>
             When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
           </li>
+          <li>
+            If you have created a global <code>config/ytdlp.cli</code> file, it will be appended to your exported preset
+            <code><i class="fa-solid fa-terminal" /> Command arguments for yt-dlp</code> field for better compatibility
+            and completeness.
+          </li>
         </ul>
       </Message>
     </div>
@@ -305,6 +310,15 @@ const exportItem = item => {
       continue
     }
     userData[key] = data[key]
+  }
+
+  if (config?.app?.ytdlp_cli) {
+    const val = `# exported from ytdlp.cli #\n${config.app.ytdlp_cli}\n# exported from ytdlp.cli #\n`
+    if (userData.cli) {
+      userData.cli = val + "\n" + userData.cli
+    } else {
+      userData.cli = val
+    }
   }
 
   userData['_type'] = 'preset'

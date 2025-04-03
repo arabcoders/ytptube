@@ -18,6 +18,7 @@ const CONFIG_KEYS = {
     sentry_dsn: null,
     console_enabled: false,
     browser_enabled: false,
+    ytdlp_cli: '',
   },
   presets: [
     {
