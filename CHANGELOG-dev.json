@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250403-245a3e7",
-        "date": "2025-04-03T16:37:44+00:00",
+        "tag": "dev-20250403-04e78f4",
+        "date": "2025-04-03T20:16:47+00:00",
         "commits": [
+            {
+                "sha": "04e78f4",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-04-03T20:16:47+00:00"
+            },
             {
                 "sha": "245a3e7",
                 "message": "added new env variable to auto upgrade yt-dlp on container startup",
