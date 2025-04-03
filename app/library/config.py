@@ -10,7 +10,6 @@ from pathlib import Path
 
 import coloredlogs
 from dotenv import load_dotenv
-from yt_dlp.version import __version__ as YTDLP_VERSION
 
 from .Utils import arg_converter
 from .version import APP_VERSION
@@ -116,9 +115,6 @@ class Config:
     new_version_available: bool = False
     "A new version of the application is available."
 
-    ytdlp_version: str = YTDLP_VERSION
-    "The version of yt-dlp."
-
     started: int = 0
     "The time the application was started."
 
@@ -149,6 +145,9 @@ class Config:
     browser_enabled: bool = False
     "Enable file browser access."
 
+    ytdlp_auto_update: bool = False
+    """Enable in-place auto update of yt-dlp package."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -171,7 +170,6 @@ class Config:
         "ytdl_options",
         "tasks",
         "new_version_available",
-        "ytdlp_version",
         "started",
     )
     "The variables that are immutable."
@@ -200,6 +198,7 @@ class Config:
         "file_logging",
         "console_enabled",
         "browser_enabled",
+        "ytdlp_auto_update",
     )
     "The variables that are booleans."
 
@@ -207,7 +206,6 @@ class Config:
         "download_path",
         "keep_archive",
         "output_template",
-        "ytdlp_version",
         "version",
         "started",
         "remove_files",
@@ -419,5 +417,15 @@ class Config:
         data = {k: getattr(self, k) for k in self._frontend_vars}
         hasCookies = self.ytdl_options.get("cookiefile", None)
         data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
+        data["ytdlp_version"] = Config.ytdlp_version()
 
         return data
+
+    @staticmethod
+    def ytdlp_version():
+        try:
+            from yt_dlp.version import __version__ as YTDLP_VERSION
+
+            return YTDLP_VERSION
+        except ImportError:
+            return "0.0.0"

@@ -33,6 +33,9 @@ ENV YTP_DOWNLOAD_PATH=/downloads
 ENV YTP_PORT=8081
 ENV XDG_CONFIG_HOME=/config
 ENV XDG_CACHE_HOME=/tmp
+ENV PYDEVD_DISABLE_FILE_VALIDATION=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONFAULTHANDLER=1
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
   apk add --update --no-cache bash mkvtoolnix patch aria2 coreutils curl shadow sqlite tzdata libmagic ffmpeg rtmpdump fribidi && \
@@ -69,6 +72,5 @@ HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-ENV PYDEVD_DISABLE_FILE_VALIDATION=1
 
-CMD ["/opt/python/bin/python", "/app/app/main.py", "--ytptube-mp"]
+CMD ["/opt/python/bin/python", "/app/app/upgrader.py", "--run", "--ytptube-mp"]
