@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250403-04e78f4",
-        "date": "2025-04-03T20:16:47+00:00",
+        "tag": "dev-20250404-f17a27d",
+        "date": "2025-04-03T23:08:11+00:00",
+        "commits": [
+            {
+                "sha": "f17a27d",
+                "message": "fixed bug preventing the user from importing a preset",
+                "author": "arabcoders",
+                "date": "2025-04-03T23:08:11+00:00"
+            },
+            {
+                "sha": "d03e04d",
+                "message": "minor changes to webui display",
+                "author": "arabcoders",
+                "date": "2025-04-03T23:07:56+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250403-62b41bf",
+        "date": "2025-04-03T20:31:18+00:00",
         "commits": [
             {
                 "sha": "04e78f4",
