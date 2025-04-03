@@ -39,7 +39,7 @@ class Upgrader:
 
         pkg_installer = PackageInstaller()
 
-        ytdlp_auto_update: bool = bool(os.environ.get("YTP_YTDLP_AUTO_UPDATE", False))
+        ytdlp_auto_update: bool = os.environ.get("YTP_YTDLP_AUTO_UPDATE", "false").strip().lower() == "true"
 
         if ytdlp_auto_update:
             try:

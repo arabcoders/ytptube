@@ -421,6 +421,7 @@ class Config:
 
         return data
 
+    @staticmethod
     def ytdlp_version():
         try:
             from yt_dlp.version import __version__ as YTDLP_VERSION
