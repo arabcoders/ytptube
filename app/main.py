@@ -15,7 +15,6 @@ from library.Events import EventBus, Events
 from library.HttpAPI import HttpAPI
 from library.HttpSocket import HttpSocket
 from library.Notifications import Notification
-from library.PackageInstaller import PackageInstaller
 from library.Presets import Presets
 from library.Scheduler import Scheduler
 from library.Tasks import Tasks
@@ -31,12 +30,6 @@ class Main:
         self._app = web.Application()
 
         self._check_folders()
-
-        try:
-            PackageInstaller(self._config).check()
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Failed to check for packages. Error message '{e!s}'.")
 
         caribou.upgrade(self._config.db_file, os.path.join(self.rootPath, "migrations"))
 

@@ -4,9 +4,26 @@ import os
 import subprocess
 import sys
 
-from library.config import Config
-
 LOG = logging.getLogger("package_installer")
+
+
+class Packages:
+    def __init__(self, env: str | None, file: str | None, upgrade: bool = False):
+        from_env = env.split() if env else []
+        from_file = []
+
+        if os.path.exists(file) and os.access(file, os.R_OK):
+            with open(file) as f:
+                from_file = [pkg.strip() for pkg in f if pkg.strip()]
+
+        self.packages: list = list(set(from_env + from_file))
+        self.upgrade = bool(upgrade)
+
+    def has_packages(self) -> bool:
+        return len(self.packages) > 0
+
+    def allow_upgrade(self) -> bool:
+        return self.upgrade
 
 
 class PackageInstaller:
@@ -14,49 +31,34 @@ class PackageInstaller:
     This class is responsible for installing and upgrading pip packages.
     """
 
-    def __init__(self, config: Config):
-        self.config: Config = config
-
-    def from_env(self):
-        return self.config.pip_packages.split() if self.config.pip_packages else []
-
-    def from_file(self, file_path):
-        if not os.path.exists(file_path):
-            return []
-
-        if os.access(file_path, os.R_OK):
-            with open(file_path) as f:
-                return [pkg.strip() for pkg in f if pkg.strip()]
-        else:
-            LOG.error(f"Could not read pip packages from '{file_path}'.")
-            return []
-
-    def action(self, pkg: str):
+    def action(self, pkg: str, upgrade: bool = False):
         try:
             importlib.import_module(pkg)
-            if self.config.pip_ignore_updates:
+            if upgrade is False:
                 LOG.info(f"'{pkg}' is already installed. Skipping upgrades. as requested.")
                 return
+
             LOG.info(f"'{pkg}' is already installed. Checking for upgrades...")
             subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg], check=True)  # noqa: S603
         except ImportError:
             LOG.info(f"'{pkg}' is not installed. Installing...")
             subprocess.run([sys.executable, "-m", "pip", "install", pkg], check=True)  # noqa: S603
 
-    def check(self):
+    def check(self, pkgs: Packages):
         """
         Checks for user supplied pip packages and installs them if they are not already installed.
-        """
-        pip_file = os.path.join(self.config.config_path, "pip.txt")
-        packages = list(set(self.from_env() + self.from_file(pip_file)))
 
-        if not packages:
+        Args:
+            pkgs (GetPackages): the class with packages and their settings.
+
+        """
+        if not pkgs.has_packages():
             return
 
-        LOG.info(f"Checking for user pip packages: {', '.join(packages)}")
-        for package in packages:
+        LOG.info(f"Checking for user pip packages: {', '.join(pkgs.packages)}")
+        for package in pkgs.packages:
             try:
-                self.action(package)
+                self.action(package, upgrade=pkgs.allow_upgrade())
             except Exception as e:
                 LOG.error(f"Failed to install or upgrade package '{package}'. Error message: {e!s}")
                 LOG.exception(e)

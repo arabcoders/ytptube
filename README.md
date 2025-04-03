@@ -26,47 +26,6 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
 
-# Breaking changes
-
-Starting with versions tagged `*-20250330-*` I have deprecated the JSON yt-dlp config and all of it's related settings.
-
-To be frank, it was pain to manage and hard for users to understand how to map cli options to json options. So, I have
-decided to just use the cli options directly. This means that you can now use the same options you would use in the command line
-directly in the WebUI, presets, and tasks.
-
-## `ytdlp.json` vs `ytdlp.cli`
-
-I have also added a new `ytdlp.cli` file that will be used to store the global options for yt-dlp. This file is located in the `/config` directory
-and will be used to store the global options for yt-dlp. This file is not required and presets can fill the gap for most of the
-use cases. But, if you want to use the same options for all your downloads, you can use this file to store the global options.
-
-So, if you have `ytdlp.cli` file it will take priority over the `ytdlp.json` file if both exists. As mitigation, I have implemented
-fallback to `ytdlp.json` file if `ytdlp.cli` file is not found. 
-
-## Presets
-
-I have deprecated the `JSON yt-dlp config` and `JSON yt-dlp Post-Processors` fields, and added new `Command arguments for yt-dlp`
-field to the presets. This field will be used to store the command line options for yt-dlp. I have also have added fallback, 
-if you have the `JSON yt-dlp config/Post-Processors` field set, the logic is, if `Command arguments for yt-dlp` is set
-it will take priority over the `JSON yt-dlp config/Post-Processors` field. If not set, it will fallback to the `JSON yt-dlp config/Post-Processors` field.
-
-If you are adding new presets, the deprecated fields will not show up anymore, they will only show up if actually have content in them 
-and editing old preset. So, Please migrate your presets to the new format.
-
-## Tasks
-
-I have also removed the `JSON yt-dlp config` and replaced it with `Command arguments for yt-dlp` field. Sadly, there is 
-no fallback, and once you upgrade to any version after `*-20250330-*` your `tasks.json` file will be updated to remove the
-`config` key. so, please make sure to backup your `tasks.json` file before upgrading.
-
-## closing statement
-
-I know it's a painful breaking change, but for the sake of maintainability and ease of use, I have decided to
-to make it happen sooner than later, the `JSON yt-dlp config`, was hard to manage and some features weren't really working 
-as expected, for example `--match-filter` and `--date` arguments etc. 
-
-So, Starting with `*-2025040*-*` tagged versions, the all the fallbacks and backwards compatibility will be removed.
-
 # Run using docker command
 
 ```bash
@@ -139,6 +98,7 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
 | YTP_PICTURES_BACKENDS    | A comma separated list of pictures urls to use.                  | `empty string`                     |
 | YTP_BROWSER_ENABLED      | Whether to enable the file browser                               | `false`                            |
+| YTP_YTDLP_AUTO_UPDATE    | Whether to enable the auto update for yt-dlp                     | `false`                            |
 
 # Browser extensions & bookmarklets
 
