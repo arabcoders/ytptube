@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250404-737b923",
-        "date": "2025-04-04T17:21:40+00:00",
+        "tag": "dev-20250404-260901c",
+        "date": "2025-04-04T19:53:21+00:00",
         "commits": [
+            {
+                "sha": "260901c",
+                "message": "minor changes to newDownload form",
+                "author": "arabcoders",
+                "date": "2025-04-04T19:53:21+00:00"
+            },
+            {
+                "sha": "93e830f",
+                "message": "in some specific cases, users were unable to delete items from history",
+                "author": "arabcoders",
+                "date": "2025-04-04T19:09:58+00:00"
+            },
             {
                 "sha": "737b923",
                 "message": "remove debug statement",
