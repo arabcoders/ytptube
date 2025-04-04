@@ -111,6 +111,9 @@ class Events:
     PRESETS_UPDATE = "presets_update"
     SCHEDULE_ADD = "schedule_add"
 
+    SUBSCRIBED = "subscribed"
+    UNSUBSCRIBED = "unsubscribed"
+
     def get_all() -> list:
         """
         Get all the events.

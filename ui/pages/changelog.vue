@@ -2,12 +2,12 @@
   <div>
     <div class="mt-1 columns is-multiline">
       <div class="column is-12 is-clearfix is-unselectable">
-        <span id="env_page_title" class="title is-4">
+        <span class="title is-4">
           <span class="icon"><i class="fas fa-cogs" /></span>
-          Changes log
+          CHANGELOG
         </span>
         <div class="is-hidden-mobile">
-          <span class="subtitle">This page displays the application change logs.</span>
+          <span class="subtitle">This page display the latest changes and updates from the project.</span>
         </div>
       </div>
     </div>

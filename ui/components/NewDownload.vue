@@ -77,7 +77,6 @@
             </div>
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-
             <div class="column is-12">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="output_format"
@@ -98,7 +97,7 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-4-mobile">
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="cli_options">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
@@ -121,7 +120,7 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-4-mobile">
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="ytdlpCookies">
                   <span class="icon"><i class="fa-solid fa-cookie" /></span>

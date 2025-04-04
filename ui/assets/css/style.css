@@ -51,9 +51,24 @@ hr {
   border-bottom: 1px dotted;
 }
 
+.has-tooltip {
+  cursor: help;
+  border-bottom: 1px dotted;
+}
+
+@media (prefers-color-scheme: light) {
+  .has-tooltip {
+    border-bottom-color: #000;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   * {
     unicode-bidi: plaintext;
+  }
+
+  .has-tooltip {
+    border-bottom-color: rgba(255, 255, 255, 0.3);
   }
 
   .container {
@@ -264,6 +279,10 @@ hr {
 
 .is-pre {
   white-space: pre;
+}
+
+.is-pre-wrap {
+  white-space: pre-wrap;
 }
 
 .has-text-bold {

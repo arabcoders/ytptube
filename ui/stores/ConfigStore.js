@@ -19,6 +19,7 @@ const CONFIG_KEYS = {
     console_enabled: false,
     browser_enabled: false,
     ytdlp_cli: '',
+    file_logging: false,
   },
   presets: [
     {

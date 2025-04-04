@@ -4,14 +4,14 @@ import os
 import re
 import sys
 import time
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from multiprocessing.managers import SyncManager
 from pathlib import Path
 
 import coloredlogs
 from dotenv import load_dotenv
 
-from .Utils import arg_converter
+from .Utils import FileLogFormatter, arg_converter
 from .version import APP_VERSION
 
 
@@ -54,6 +54,9 @@ class Config:
 
     log_level: str = "info"
     """The log level to use for the application."""
+
+    log_level_file: str = "info"
+    """The log level to use for the file logging."""
 
     max_workers: int = 1
     """The maximum number of workers to use for downloading."""
@@ -130,7 +133,7 @@ class Config:
     instance_title: str | None = None
     "The title of the instance."
 
-    file_logging: bool = False
+    file_logging: bool = True
     "Enable file logging."
 
     sentry_dsn: str | None = None
@@ -222,6 +225,7 @@ class Config:
         "console_enabled",
         "browser_enabled",
         "ytdlp_cli",
+        "file_logging",
     )
     "The variables that are relevant to the frontend."
 
@@ -377,11 +381,22 @@ class Config:
             LOG.info("The frontend is running in basic mode.")
 
         if self.file_logging:
-            handler = RotatingFileHandler(
-                os.path.join(self.config_path, "app.log"), maxBytes=1 * 1024 * 1024, backupCount=3
+            log_level_file = getattr(logging, self.log_level_file.upper(), None)
+            if not isinstance(log_level_file, int):
+                msg = f"Invalid file log level '{self.log_level_file}' specified."
+                raise TypeError(msg)
+
+            loggingPath = os.path.join(self.config_path, "logs")
+            if not os.path.exists(loggingPath):
+                os.makedirs(loggingPath, exist_ok=True)
+
+            handler = TimedRotatingFileHandler(
+                filename=os.path.join(self.config_path, "logs", "app.log"),
+                when="midnight",
+                backupCount=3,
             )
-            handler.setLevel(logging.ERROR)
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            handler.setLevel(log_level_file)
+            formatter = FileLogFormatter("%(asctime)s [%(levelname)s.%(name)s]: %(message)s")
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 
