@@ -242,8 +242,6 @@ const scrollToBottom = () => {
 onMounted(async () => {
   await fetchLogs()
   socket.emit('subscribe', 'log_lines')
-  window.socket = socket
-
   socket.on('log_lines', data => {
     if (logs.value.length >= maxLogLimit) {
       logs.value.shift()
