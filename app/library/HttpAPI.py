@@ -46,6 +46,7 @@ from .Utils import (
     get_file_sidecar,
     get_files,
     get_mime_type,
+    read_logfile,
     validate_url,
     validate_uuid,
 )
@@ -73,7 +74,8 @@ class HttpAPI(Common):
         "/presets",
         "/tasks",
         "/notifications",
-        "/changeslog",
+        "/changelog",
+        "/logs",
         "/browser",
         "/browser/{path:.*}",
     ]
@@ -724,6 +726,42 @@ class HttpAPI(Common):
                 fut=asyncio.gather(*[self.add(item=item) for item in items]),
                 timeout=None,
             ),
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
+
+    @route("GET", "api/logs")
+    async def logs(self, request: Request) -> Response:
+        """
+        Get recent logs
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.file_logging:
+            return web.json_response(
+                data={"error": "File logging is not enabled."}, status=web.HTTPNotFound.status_code
+            )
+
+        offset = int(request.query.get("offset", 0))
+        limit = int(request.query.get("limit", 50))
+        if limit < 1 or limit > 150:
+            limit = 50
+
+        return web.json_response(
+            data={
+                "logs": await read_logfile(
+                    file=os.path.join(self.config.config_path, "logs", "app.log"),
+                    offset=offset,
+                    limit=limit,
+                ),
+                "offset": offset,
+                "limit": limit,
+            },
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )

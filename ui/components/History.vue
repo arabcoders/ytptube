@@ -22,7 +22,7 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile">
+      <div class="column is-half-mobile" v-if="hasDownloaded">
         <button type="button" class="button is-fullwidth is-link" :disabled="!hasSelected" @click="downloadSelected">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-download" /></span>
@@ -35,7 +35,7 @@
           @click="deleteSelectedItems">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-            <span>Remove</span>
+            <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
           </span>
         </button>
       </div>
@@ -153,7 +153,7 @@
                     </div>
                     <div class="control" v-if="item.status != 'finished' || !item.filename">
                       <button class="button is-warning is-fullwidth is-small" v-tooltip="'Re-queue video'"
-                        @click="reQueueItem(item)">
+                        @click="(event) => reQueueItem(item, event)">
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                       </button>
                     </div>
@@ -283,7 +283,7 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
-                <a class="button is-warning is-fullwidth" @click="reQueueItem(item)">
+                <a class="button is-warning is-fullwidth" @click="(event) => reQueueItem(item, event)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     <span>Re-queue</span>
@@ -371,13 +371,13 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { makeDownload, formatBytes } from '~/utils/index'
-import toast from '~/plugins/toast'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
-const emitter = defineEmits(['getInfo'])
+const emitter = defineEmits(['getInfo', 'add_new'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
+const toast = useToast()
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)
@@ -449,6 +449,20 @@ const hasCompleted = computed(() => {
   for (const key in stateStore.history) {
     const element = stateStore.history[key]
     if (element.status === 'finished') {
+      return true
+    }
+  }
+  return false
+})
+
+const hasDownloaded = computed(() => {
+  if (Object.keys(stateStore.history)?.length < 0) {
+    return false
+  }
+
+  for (const key in stateStore.history) {
+    const element = stateStore.history[key]
+    if (element.status === 'finished' && element.filename) {
       return true
     }
   }
@@ -609,12 +623,10 @@ const removeItem = item => {
   })
 }
 
-const reQueueItem = item => {
-  socket.emit('item_delete', { id: item._id, remove_file: false })
-
+const reQueueItem = (item, event = null) => {
   let extras = {}
 
-  if (item.extras) {
+  if (item?.extras) {
     Object.keys(item.extras).forEach(k => {
       if (k && true === k.startsWith('playlist')) {
         extras[k] = item.extras[k]
@@ -622,7 +634,7 @@ const reQueueItem = item => {
     })
   }
 
-  socket.emit('add_url', {
+  const item_req = {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
@@ -630,7 +642,17 @@ const reQueueItem = item => {
     template: item.template,
     cli: item?.cli,
     extras: extras
-  })
+  };
+
+  socket.emit('item_delete', { id: item._id, remove_file: false })
+
+  if (event && (event?.altKey && true === event?.altKey)) {
+    toast.info('Removed the item from history, and added it to the new download form.')
+    emitter('add_new', item_req)
+    return
+  }
+
+  socket.emit('add_url', item_req)
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null

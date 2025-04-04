@@ -11,7 +11,7 @@
               </label>
               <div class="control">
                 <input type="text" class="input" id="url" placeholder="Video or playlist link"
-                  :disabled="!socket.isConnected || addInProgress" v-model="url">
+                  :disabled="!socket.isConnected || addInProgress" v-model="form.url">
               </div>
               <span class="help">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -29,7 +29,7 @@
                 <div class="control is-expanded">
                   <div class="select is-fullwidth">
                     <select id="preset" class="is-fullwidth"
-                      :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="selectedPreset"
+                      :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="form.preset"
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the Command arguments for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                         <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
@@ -55,7 +55,7 @@
                   </a>
                 </div>
                 <div class="control is-expanded">
-                  <input type="text" class="input is-fullwidth" id="path" v-model="downloadPath" placeholder="Default"
+                  <input type="text" class="input is-fullwidth" id="path" v-model="form.folder" placeholder="Default"
                     :disabled="!socket.isConnected || addInProgress" list="folders">
                 </div>
               </div>
@@ -63,7 +63,7 @@
             <div class="column">
               <button type="submit" class="button is-primary"
                 :class="{ 'is-loading': !socket.isConnected || addInProgress }"
-                :disabled="!socket.isConnected || addInProgress || !url">
+                :disabled="!socket.isConnected || addInProgress || !form?.url">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
                 <span>Add</span>
               </button>
@@ -77,7 +77,6 @@
             </div>
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-
             <div class="column is-12">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="output_format"
@@ -86,7 +85,7 @@
                   Output Template
                 </label>
                 <div class="control">
-                  <input type="text" class="input" v-model="output_template" id="output_format"
+                  <input type="text" class="input" v-model="form.template" id="output_format"
                     :disabled="!socket.isConnected || addInProgress"
                     placeholder="Uses default output template naming if empty.">
                 </div>
@@ -98,14 +97,14 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-4-mobile">
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="cli_options">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   Command arguments for yt-dlp
                 </label>
                 <div class="control">
-                  <textarea class="textarea is-pre" v-model="ytdlp_cli" id="cli_options"
+                  <textarea class="textarea is-pre" v-model="form.cli" id="cli_options"
                     :disabled="!socket.isConnected || addInProgress"
                     placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                 </div>
@@ -121,14 +120,14 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-4-mobile">
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="ytdlpCookies">
                   <span class="icon"><i class="fa-solid fa-cookie" /></span>
                   Cookies
                 </label>
                 <div class="control">
-                  <textarea class="textarea is-pre" id="ytdlpCookies" v-model="ytdlpCookies"
+                  <textarea class="textarea is-pre" id="ytdlpCookies" v-model="form.cookies"
                     :disabled="!socket.isConnected || addInProgress" />
                 </div>
                 <span class="help">
@@ -141,21 +140,20 @@
               </div>
             </div>
             <div class="column is-6-tablet is-4-mobile has-text-left">
-              <button type="button" class="button is-info" @click="emitter('getInfo', url)"
-                :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected || addInProgress || !url">
+              <button type="button" class="button is-info" @click="emitter('getInfo', form.url)"
+                :class="{ 'is-loading': !socket.isConnected }"
+                :disabled="!socket.isConnected || addInProgress || !form?.url">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
                 <span>Information</span>
               </button>
             </div>
             <div class="column is-6-tablet is-6-mobile has-text-right">
-              <div class="field">
+              <div class="field is-grouped is-justify-self-end">
                 <div class="control">
-                  <button type="button" class="button is-danger" @click="resetConfig" :disabled="!socket.isConnected"
-                    v-tooltip="'This configuration are stored locally in your browser.'">
-                    <span class="icon">
-                      <i class="fa-solid fa-trash" />
-                    </span>
-                    <span>Reset Local Configuration</span>
+                  <button type="button" class="button is-danger" @click="resetConfig"
+                    :disabled="!socket.isConnected || form?.id" v-tooltip="'Reset local settings'">
+                    <span class="icon"><i class="fa-solid fa-rotate-left" /></span>
+                    <span>Reset</span>
                   </button>
                 </div>
               </div>
@@ -173,24 +171,36 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 
-const emitter = defineEmits(['getInfo'])
+const props = defineProps({
+  item: {
+    type: Object,
+    required: false,
+    default: () => { },
+  },
+})
+
+const emitter = defineEmits(['getInfo', 'clear_form'])
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useToast()
 
-const selectedPreset = useStorage('selectedPreset', config.app.default_preset)
-const ytdlpCookies = useStorage('ytdlp_cookies', '')
-const ytdlp_cli = useStorage('ytdlp_cli', '')
-const output_template = useStorage('output_template', null)
-const downloadPath = useStorage('downloadPath', null)
-const url = useStorage('downloadUrl', null)
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
 
+const form = useStorage('local_config_v1', {
+  id: null,
+  url: '',
+  preset: config.app.default_preset,
+  cookies: '',
+  cli: '',
+  template: '',
+  folder: '',
+  extras: {},
+})
+
 const addDownload = async () => {
-  // -- send request to convert cli options to JSON
-  if (ytdlp_cli.value && '' !== ytdlp_cli.value) {
-    const options = await convertOptions(ytdlp_cli.value)
+  if (form.value?.cli && '' !== form.value.cli) {
+    const options = await convertOptions(form.value.cli)
     if (null === options) {
       return
     }
@@ -198,18 +208,24 @@ const addDownload = async () => {
 
   addInProgress.value = true
 
-  url.value.split(',').forEach(url => {
+  form.value.url.split(',').forEach(url => {
     if (!url.trim()) {
       return
     }
-    socket.emit('add_url', {
+    const data = {
       url: url,
-      preset: config.app.basic_mode ? config.app.default_preset : selectedPreset.value,
-      folder: config.app.basic_mode ? null : downloadPath.value,
-      cookies: config.app.basic_mode ? '' : ytdlpCookies.value,
-      template: config.app.basic_mode ? null : output_template.value,
-      cli: config.app.basic_mode ? null : ytdlp_cli.value,
-    })
+      preset: config.app.basic_mode ? config.app.default_preset : form.value.preset,
+      folder: config.app.basic_mode ? null : form.value.folder,
+      template: config.app.basic_mode ? null : form.value.template,
+      cookies: config.app.basic_mode ? '' : form.value.cookies,
+      cli: config.app.basic_mode ? null : form.value.cli,
+    }
+
+    if (form.value?.extras && Object.keys(form.value.extras).length > 0) {
+      data.extras = form.value.extras
+    }
+
+    socket.emit('add_url', data)
   })
 }
 
@@ -218,12 +234,17 @@ const resetConfig = () => {
     return
   }
 
-  selectedPreset.value = config.app.default_preset
-  ytdlpCookies.value = ''
-  ytdlp_cli.value = ''
-  output_template.value = null
-  url.value = null
-  downloadPath.value = null
+  form.value = {
+    id: null,
+    url: '',
+    preset: config.app.default_preset,
+    cookies: '',
+    cli: '',
+    template: '',
+    folder: '',
+    extras: {},
+  }
+
   showAdvanced.value = false
 
   toast.success('Local configuration has been reset.')
@@ -239,7 +260,7 @@ const statusHandler = async stream => {
     return
   }
 
-  url.value = ''
+  form.value.url = ''
 }
 
 const unlockDownload = async stream => {
@@ -247,7 +268,7 @@ const unlockDownload = async stream => {
   if (!json?.data) {
     return
   }
-  if ("unlock" in json.data && json.data.unlock === true) {
+  if ("unlock" in json.data && true === json.data.unlock) {
     addInProgress.value = false
   }
 }
@@ -257,11 +278,11 @@ const convertOptions = async args => {
     const response = await convertCliOptions(args)
 
     if (response.output_template) {
-      output_template.value = response.output_template
+      form.value.template = response.output_template
     }
 
     if (response.download_path) {
-      downloadPath.value = response.download_path
+      form.value.folder = response.download_path
     }
 
     return response.opts
@@ -272,11 +293,27 @@ const convertOptions = async args => {
   return null;
 }
 
-onMounted(() => {
+onMounted(async () => {
   socket.on('status', statusHandler)
   socket.on('error', unlockDownload)
-  if ('' === selectedPreset.value) {
-    selectedPreset.value = config.app.default_preset.value
+
+  await nextTick()
+
+  if ('' === form.value?.preset) {
+    form.value.preset = config.app.default_preset
+  }
+
+  if (props?.item) {
+    Object.keys(props.item).forEach(key => {
+      if (key in form.value) {
+        let value = props.item[key]
+        if ('extras' === key) {
+          value = JSON.parse(JSON.stringify(props.item[key]))
+        }
+        form.value[key] = value
+      }
+    })
+    emitter('clear_form');
   }
 })
 
@@ -286,11 +323,11 @@ onUnmounted(() => {
 })
 
 const hasFormatInConfig = computed(() => {
-  if (!ytdlp_cli.value) {
+  if (!form?.value?.value) {
     return false
   }
 
-  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(ytdlp_cli.value)
+  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.value.cli)
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)

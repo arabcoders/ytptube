@@ -19,7 +19,7 @@ from .encoder import Encoder
 from .Events import Event, EventBus, Events, error
 from .ItemDTO import Item
 from .Presets import Presets
-from .Utils import is_downloaded
+from .Utils import is_downloaded, tail_log
 
 LOG = logging.getLogger("socket_api")
 
@@ -32,6 +32,12 @@ class HttpSocket(Common):
     config: Config
     sio: socketio.AsyncServer
     queue: DownloadQueue
+
+    subscribers: dict[str, list[str]] = {}
+    """Event subscriber list."""
+
+    log_task = None
+    """Task to tail the log file."""
 
     def __init__(
         self,
@@ -288,3 +294,92 @@ class HttpSocket(Common):
     async def resume(self, *_, **__):
         self.queue.resume()
         await self._notify.emit(Events.PAUSED, data={"paused": False, "at": time.time()})
+
+    @ws_event
+    async def subscribe(self, sid: str, event: str):
+        """
+        Subscribe to a specific event.
+
+        Args:
+            sid (str): The session ID of the client.
+            event (str): The event to subscribe to.
+
+        """
+        if not isinstance(event, str):
+            await self._notify.emit(Events.ERROR, data=error("Invalid event."), to=sid)
+            return
+
+        if event not in self.subscribers:
+            self.subscribers[event] = []
+
+        if sid not in self.subscribers[event]:
+            self.subscribers[event].append(sid)
+            LOG.debug(f"Client '{sid}' subscribed to event '{event}'.")
+            await self.sio.emit(Events.SUBSCRIBED, data={"event": event}, to=sid)
+
+        async def emit_logs(data: dict):
+            await self.subscribe_emit(event=event, data=data)
+
+        if "log_lines" == event and self.log_task is None:
+            LOG.debug("Starting log tailing task.")
+            self.log_task = asyncio.create_task(
+                tail_log(
+                    file=os.path.join(self.config.config_path, "logs", "app.log"),
+                    emitter=emit_logs,
+                ),
+                name="tail_log",
+            )
+
+    @ws_event
+    async def unsubscribe(self, sid: str, event: str):
+        """
+        Unsubscribe from a specific event.
+
+        Args:
+            sid (str): The session ID of the client.
+            event (str): The event to unsubscribe from.
+
+        """
+        if event not in self.subscribers:
+            return
+
+        if sid not in self.subscribers[event]:
+            return
+
+        self.subscribers[event].remove(sid)
+        await self.sio.emit(Events.UNSUBSCRIBED, data={"event": event}, to=sid)
+
+        LOG.debug(f"Client '{sid}' unsubscribed from event '{event}'.")
+
+        if "log_lines" != event or not self.log_task or "log_lines" not in self.subscribers:
+            return
+
+        if len(self.subscribers["log_lines"]) < 1:
+            try:
+                LOG.debug("Stopping log tailing task.")
+                self.log_task.cancel()
+                self.log_task = None
+            except asyncio.CancelledError:
+                pass
+
+    @ws_event
+    async def disconnect(self, sid: str):
+        """
+        Handle client disconnection.
+
+        Args:
+            sid (str): The session ID of the client.
+
+        """
+        LOG.debug(f"Client '{sid}' disconnected.")
+
+        for event in self.subscribers:
+            if sid in self.subscribers[event]:
+                await self.unsubscribe(sid=sid, event=event)
+
+    async def subscribe_emit(self, event: str, data: dict):
+        if event not in self.subscribers or len(self.subscribers[event]) < 1:
+            return
+
+        for sid in self.subscribers[event]:
+            await self.sio.emit(event=event, data=data, to=sid)

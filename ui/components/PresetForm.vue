@@ -331,7 +331,7 @@ const importItem = async () => {
   try {
     const item = JSON.parse(val)
 
-    if (item?._type || 'preset' !== item._type) {
+    if (!item?._type || 'preset' !== item._type) {
       toast.error(`Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`)
       return
     }

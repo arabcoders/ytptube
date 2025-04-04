@@ -41,15 +41,6 @@
           </NuxtLink>
         </div>
 
-        <div class="navbar-item" v-if="!config.app.basic_mode && config.app.console_enabled">
-          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
-            <span class="icon-text">
-              <span class="icon"><i class="fa-solid fa-terminal" /></span>
-              <span class="is-hidden-mobile">Terminal</span>
-            </span>
-          </NuxtLink>
-        </div>
-
         <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/tasks">
             <span class="icon-text">
@@ -59,11 +50,29 @@
           </NuxtLink>
         </div>
 
-        <div class="navbar-item" v-if="!config.app.basic_mode" v-tooltip.bottom="'Notifications'">
+        <div class="navbar-item" v-if="!config.app.basic_mode">
           <NuxtLink class="button is-dark has-tooltip-bottom" to="/notifications">
             <span class="icon-text">
               <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
               <span class="is-hidden-mobile">Notifications</span>
+            </span>
+          </NuxtLink>
+        </div>
+
+        <div class="navbar-item" v-if="!config.app.basic_mode && config.app.console_enabled">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/console">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-terminal" /></span>
+              <span class="is-hidden-mobile">Terminal</span>
+            </span>
+          </NuxtLink>
+        </div>
+
+        <div class="navbar-item" v-if="!config.app.basic_mode && config.app.file_logging">
+          <NuxtLink class="button is-dark has-tooltip-bottom" to="/logs">
+            <span class="icon-text">
+              <span class="icon"><i class="fa-solid fa-file-lines" /></span>
+              <span class="is-hidden-mobile">Logs</span>
             </span>
           </NuxtLink>
         </div>
@@ -96,7 +105,7 @@
           <span class="is-hidden-mobile">&nbsp;({{ config?.app?.version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
           <span class="is-hidden-mobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
-          - <NuxtLink :to="`/changeslog?version=${config?.app?.version || 'unknown'}`">CHANGELOG</NuxtLink>
+          - <NuxtLink :to="`/changelog?version=${config?.app?.version || 'unknown'}`">CHANGELOG</NuxtLink>
         </div>
       </div>
       <div class="column is-4-mobile" v-if="config.app?.started">

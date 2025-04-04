@@ -70,9 +70,16 @@ FILES_TYPE: list = [
     {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$", re.IGNORECASE), "type": "metadata"},
 ]
 
+DATETIME_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
+
 
 class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
+
+
+class FileLogFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
+        return datetime.datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
 
 def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
@@ -944,3 +951,103 @@ def strip_newline(string: str) -> str:
     res = re.sub(r"(\r\n|\r|\n)", " ", string)
 
     return res.strip() if res else ""
+
+
+async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> list[str]:
+    """
+    Read log file and return limited lines from the end.
+
+    Args:
+        file (str): The log file path.
+        offset (int): The number of lines to skip from the end.
+        limit (int): The number of lines to read.
+
+    Returns:
+        list[str]: A list of log lines.
+
+    """
+    from anyio import open_file
+
+    if not os.path.exists(file):
+        return []
+
+    from hashlib import sha256
+
+    try:
+        async with await open_file(file, "rb") as f:
+            await f.seek(0, os.SEEK_END)
+            size = await f.tell()
+
+            block_size = 1024
+            block_end = size
+            buffer = b""
+            lines = []
+
+            while len(lines) < (offset + limit) and block_end > 0:
+                block_start = max(0, block_end - block_size)
+                await f.seek(block_start)
+                chunk = await f.read(block_end - block_start)
+                buffer = chunk + buffer
+                lines = buffer.splitlines()
+                block_end = block_start
+
+            selected_lines = lines[-(offset + limit) :] if offset else lines[-limit:]
+            if offset:
+                selected_lines = selected_lines[:-offset] or []
+
+            result = []
+            for line in selected_lines:
+                line_bytes = line if isinstance(line, bytes) else line.encode()
+                msg = line.decode(errors="replace")
+                dt_match = DATETIME_PATTERN.match(msg)
+
+                result.append(
+                    {
+                        "id": sha256(line_bytes).hexdigest(),
+                        "line": msg[dt_match.end() :] if dt_match else msg,
+                        "datetime": dt_match.group(1) if dt_match else None,
+                    }
+                )
+
+            return result
+
+    except Exception:
+        return []
+
+
+async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
+    """
+    Continuously read a log file and emit new lines.
+
+    Args:
+        file (str): The log file path.
+        emitter (callable): A callable to emit new lines.
+        sleep_time (float): The time to sleep between reads.
+
+    """
+    from asyncio import sleep as asyncio_sleep
+    from hashlib import sha256
+
+    from anyio import open_file
+
+    if not os.path.exists(file):
+        return
+
+    async with await open_file(file, "rb") as f:
+        await f.seek(0, os.SEEK_END)
+        while True:
+            line = await f.readline()
+            if not line:
+                await asyncio_sleep(sleep_time)
+                continue
+
+            msg = line.decode(errors="replace")
+            dt_match = DATETIME_PATTERN.match(msg)
+
+            await emitter(
+                {
+                    "id": sha256(line if isinstance(line, bytes) else line.encode()).hexdigest(),
+                    "line": msg[dt_match.end() :] if dt_match else msg,
+                    "datetime": dt_match.group(1) if dt_match else None,
+                }
+            )
