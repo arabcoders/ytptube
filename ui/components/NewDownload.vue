@@ -195,6 +195,7 @@ const form = useStorage('local_config', {
   cli: '',
   template: '',
   folder: '',
+  extras: {},
 })
 
 const addDownload = async () => {
@@ -211,14 +212,20 @@ const addDownload = async () => {
     if (!url.trim()) {
       return
     }
-    socket.emit('add_url', {
+    const data = {
       url: url,
       preset: config.app.basic_mode ? config.app.default_preset : form.value.preset,
       folder: config.app.basic_mode ? null : form.value.folder,
       template: config.app.basic_mode ? null : form.value.template,
       cookies: config.app.basic_mode ? '' : form.value.cookies,
       cli: config.app.basic_mode ? null : form.value.cli,
-    })
+    }
+
+    if (form.value?.extras && Object.keys(form.value.extras).length > 0) {
+      data.extras = form.value.extras
+    }
+
+    socket.emit('add_url', data)
   })
 }
 

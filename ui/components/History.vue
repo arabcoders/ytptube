@@ -627,7 +627,7 @@ const removeItem = item => {
 const reQueueItem = (item, event = null) => {
   let extras = {}
 
-  if (item.extras) {
+  if (item?.extras) {
     Object.keys(item.extras).forEach(k => {
       if (k && true === k.startsWith('playlist')) {
         extras[k] = item.extras[k]
