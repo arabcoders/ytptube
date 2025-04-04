@@ -1,5 +1,59 @@
 [
     {
+        "tag": "master-20250404-c118522",
+        "date": "2025-04-04T20:40:01+00:00",
+        "commits": [
+            {
+                "sha": "44b1452",
+                "message": "remove debug statements.",
+                "author": "arabcoders",
+                "date": "2025-04-04T20:17:07+00:00"
+            },
+            {
+                "sha": "b08be6f",
+                "message": "retain extras data when re-queueing via alt+click",
+                "author": "arabcoders",
+                "date": "2025-04-04T20:05:26+00:00"
+            },
+            {
+                "sha": "260901c",
+                "message": "minor changes to newDownload form",
+                "author": "arabcoders",
+                "date": "2025-04-04T19:53:21+00:00"
+            },
+            {
+                "sha": "93e830f",
+                "message": "in some specific cases, users were unable to delete items from history",
+                "author": "arabcoders",
+                "date": "2025-04-04T19:09:58+00:00"
+            },
+            {
+                "sha": "737b923",
+                "message": "remove debug statement",
+                "author": "arabcoders",
+                "date": "2025-04-04T17:21:40+00:00"
+            },
+            {
+                "sha": "48e388b",
+                "message": "Add logs viewing and enable file logging by default",
+                "author": "arabcoders",
+                "date": "2025-04-04T17:18:03+00:00"
+            },
+            {
+                "sha": "f17a27d",
+                "message": "fixed bug preventing the user from importing a preset",
+                "author": "arabcoders",
+                "date": "2025-04-03T23:08:11+00:00"
+            },
+            {
+                "sha": "d03e04d",
+                "message": "minor changes to webui display",
+                "author": "arabcoders",
+                "date": "2025-04-03T23:07:56+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250403-62b41bf",
         "date": "2025-04-03T20:31:18+00:00",
         "commits": [
