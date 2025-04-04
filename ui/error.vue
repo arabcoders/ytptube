@@ -43,11 +43,13 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   error: {
     type: Object,
     required: true
   }
 })
 const showStacks = ref(false)
+
+onMounted(() => console.error(props.error))
 </script>

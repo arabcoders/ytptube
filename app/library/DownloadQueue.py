@@ -18,7 +18,7 @@ from .AsyncPool import AsyncPool
 from .config import Config
 from .DataStore import DataStore
 from .Download import Download
-from .Events import EventBus, Events
+from .Events import EventBus, Events, info
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
@@ -307,6 +307,14 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo.info.status = "not_live"
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = Events.COMPLETED
+                log_message = f"{dl.title or dl.id or dl._id}: stream is not live yet."
+                if dlInfo.info.live_in:
+                    log_message += f" Will start in {dlInfo.info.live_in}."
+
+                await self._notify.emit(
+                    Events.LOG_INFO,
+                    data=info(msg=log_message, data=itemDownload.info.serialize()),
+                )
             elif self.config.allow_manifestless is False and is_manifestless is True:
                 dlInfo.info.status = "error"
                 dlInfo.info.error = "Video is in post-live manifestless mode."

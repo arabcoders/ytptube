@@ -309,3 +309,7 @@ hr {
 .is-auto {
   unicode-bidi: embed;
 }
+
+.is-justify-self-end {
+  justify-self: end;
+}

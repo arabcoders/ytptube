@@ -49,7 +49,7 @@
             </p>
 
             <p class="control" v-if="!config.app.basic_mode">
-              <button v-tooltip.bottom="'Toggle Add Form'" class="button is-primary has-tooltip-bottom"
+              <button v-tooltip.bottom="'Toggle new download form'" class="button is-primary has-tooltip-bottom"
                 @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
               </button>
@@ -73,9 +73,10 @@
       </div>
     </div>
 
-    <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" />
+    <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
+      @clear_form="item_form = {}" />
     <Queue @getInfo="url => get_info = url" />
-    <History @getInfo="url => get_info = url" />
+    <History @getInfo="url => get_info = url" @add_new="item => toNewDownload(item)" />
     <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
   </div>
 </template>
@@ -94,6 +95,7 @@ const get_info = ref('')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
 const display_style = useStorage('display_style', 'cards')
+const item_form = ref({})
 
 onMounted(() => {
   if (!config.app.ui_update_title) {
@@ -159,4 +161,20 @@ watch(get_info, v => {
 })
 
 const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
+
+const toNewDownload = async (item) => {
+  if (!item) {
+    return
+  }
+
+  if (config.showForm) {
+    config.showForm = false
+    await nextTick()
+  }
+
+  item_form.value = item
+
+  await nextTick()
+  config.showForm = true
+}
 </script>
