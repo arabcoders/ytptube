@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250404-260901c",
-        "date": "2025-04-04T19:53:21+00:00",
+        "tag": "dev-20250404-b08be6f",
+        "date": "2025-04-04T20:05:26+00:00",
         "commits": [
+            {
+                "sha": "b08be6f",
+                "message": "retain extras data when re-queueing via alt+click",
+                "author": "arabcoders",
+                "date": "2025-04-04T20:05:26+00:00"
+            },
             {
                 "sha": "260901c",
                 "message": "minor changes to newDownload form",
