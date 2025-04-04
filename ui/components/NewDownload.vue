@@ -187,7 +187,7 @@ const toast = useToast()
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
 
-const form = useStorage('local_config', {
+const form = useStorage('local_config_v1', {
   id: null,
   url: '',
   preset: config.app.default_preset,
@@ -242,6 +242,7 @@ const resetConfig = () => {
     cli: '',
     template: '',
     folder: '',
+    extras: {},
   }
 
   showAdvanced.value = false
@@ -304,9 +305,12 @@ onMounted(async () => {
 
   if (props?.item) {
     Object.keys(props.item).forEach(key => {
-      console.log(key, form.value[key], props.item[key])
       if (key in form.value) {
-        form.value[key] = props.item[key]
+        let value = props.item[key]
+        if ('extras' === key) {
+          value = JSON.parse(JSON.stringify(props.item[key]))
+        }
+        form.value[key] = value
       }
     })
     emitter('clear_form');

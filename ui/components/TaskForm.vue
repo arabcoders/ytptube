@@ -276,7 +276,7 @@ const checkInfo = async () => {
     try {
       CronExpressionParser.parse(form.timer);
     } catch (e) {
-      console.log(e)
+      console.error(e)
       toast.error(`Invalid CRON expression. ${e.message}`);
       return;
     }

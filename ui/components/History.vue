@@ -463,7 +463,6 @@ const hasDownloaded = computed(() => {
   for (const key in stateStore.history) {
     const element = stateStore.history[key]
     if (element.status === 'finished' && element.filename) {
-      console.log(element);
       return true
     }
   }
