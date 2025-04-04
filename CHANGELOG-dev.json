@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250404-b08be6f",
-        "date": "2025-04-04T20:05:26+00:00",
+        "tag": "dev-20250404-44b1452",
+        "date": "2025-04-04T20:17:07+00:00",
         "commits": [
+            {
+                "sha": "44b1452",
+                "message": "remove debug statements.",
+                "author": "arabcoders",
+                "date": "2025-04-04T20:17:07+00:00"
+            },
             {
                 "sha": "b08be6f",
                 "message": "retain extras data when re-queueing via alt+click",
