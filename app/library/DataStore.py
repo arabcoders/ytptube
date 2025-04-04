@@ -70,9 +70,9 @@ class DataStore:
         for row in cursor:
             rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             data, _ = clean_item(json.loads(row["data"]), keys=ItemDTO.removed_fields())
-            key: str = data.pop("_id")
+            data.pop("_id", None)
             item: ItemDTO = ItemDTO(**data)
-            item._id = key
+            item._id = row["id"]
             item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
             items.append((row["id"], item))
 
