@@ -402,7 +402,6 @@ class DownloadQueue(metaclass=Singleton):
                 return {"status": "error", "msg": message}
 
             started = time.perf_counter()
-            LOG.debug(f"extract_info: checking '{item.url}'.")
 
             if item.cookies:
                 try:
@@ -415,6 +414,8 @@ class DownloadQueue(metaclass=Singleton):
                     msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
                     LOG.error(msg)
                     return {"status": "error", "msg": msg}
+
+            LOG.info(f"Checking '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else 'no cookies'}.")
 
             entry = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(

@@ -196,8 +196,6 @@ class YTDLPOpts(metaclass=Singleton):
 
         data = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
 
-        LOG.debug("YTDLP options: '%s'.", data)
-
         if not keep:
             self.presets_opts = {}
             self._item_opts = {}
@@ -210,5 +208,7 @@ class YTDLPOpts(metaclass=Singleton):
 
             if data["format"] == "-best":
                 data["format"] = data["format"][1:]
+
+        LOG.debug(f"Parsed yt-dlp options are: '{data!s}'.")
 
         return data
