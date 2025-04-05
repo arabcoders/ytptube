@@ -339,7 +339,7 @@ class Config:
                     self._ytdlp_cli_mutable = self.ytdlp_cli
                     try:
                         removed_options = []
-                        ytdl_options = arg_converter(args=self.ytdlp_cli, level=1, removed_options=removed_options)
+                        ytdl_options = arg_converter(args=self.ytdlp_cli, level=True, removed_options=removed_options)
 
                         try:
                             LOG.debug("Parsed yt-dlp cli options '%s'.", ytdl_options)

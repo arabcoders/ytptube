@@ -51,9 +51,6 @@ REMOVE_KEYS: list = [
         "print_to_file": "--print-to-file",
         "cookiesfrombrowser": "--cookies-from-browser",
     },
-    {
-        "cookiefile": "--cookies",
-    },
 ]
 
 YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
