@@ -1,5 +1,41 @@
 [
     {
+        "tag": "master-20250405-ec1f2f4",
+        "date": "2025-04-05T23:31:30+00:00",
+        "commits": [
+            {
+                "sha": "ce1d499",
+                "message": "minor fixes to how we handle preset cookies",
+                "author": "arabcoders",
+                "date": "2025-04-05T23:17:00+00:00"
+            },
+            {
+                "sha": "4966461",
+                "message": "minor log messages update",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:50:18+00:00"
+            },
+            {
+                "sha": "2fedc6d",
+                "message": "update console/logs page opacity",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:21:34+00:00"
+            },
+            {
+                "sha": "0881fce",
+                "message": "allow --cookies",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:14:44+00:00"
+            },
+            {
+                "sha": "d6ab18e",
+                "message": "migrate the entire app to use cli options for ytdlp and make it behave as close to cli options parsing as possible.",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:03:17+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250404-c118522",
         "date": "2025-04-04T20:40:01+00:00",
         "commits": [
