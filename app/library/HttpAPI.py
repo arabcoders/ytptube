@@ -46,6 +46,7 @@ from .Utils import (
     get_file_sidecar,
     get_files,
     get_mime_type,
+    load_cookies,
     read_logfile,
     validate_url,
     validate_uuid,
@@ -530,8 +531,8 @@ class HttpAPI(Common):
 
             opts = {}
 
-            if self.config.ytdl_options.get("proxy", None):
-                opts["proxy"] = self.config.ytdl_options.get("proxy", None)
+            if ytdlp_proxy := self.config.get_ytdlp_args().get("proxy", None):
+                opts["proxy"] = ytdlp_proxy
 
             ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
 
@@ -608,7 +609,7 @@ class HttpAPI(Common):
                     id,
                     extract_info(
                         config={
-                            "proxy": self.config.ytdl_options.get("proxy", None),
+                            "proxy": self.config.get_ytdlp_args().get("proxy", None),
                             "simulate": True,
                             "dump_single_json": True,
                         },
@@ -1411,16 +1412,16 @@ class HttpAPI(Common):
             return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
 
         try:
+            ytdlp_args = self.config.get_ytdlp_args()
             opts = {
-                "proxy": self.config.ytdl_options.get("proxy", None),
+                "proxy": ytdlp_args.get("proxy", None),
                 "headers": {
-                    "User-Agent": self.config.ytdl_options.get(
+                    "User-Agent": ytdlp_args.get(
                         "user_agent", request.headers.get("User-Agent", f"YTPTube/{self.config.version}")
                     ),
                 },
             }
 
-            logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 LOG.debug(f"Fetching thumbnail from '{url}'.")
                 response = await client.request(method="GET", url=url)
@@ -1473,14 +1474,14 @@ class HttpAPI(Common):
                     },
                 )
 
+            ytdlp_args = self.config.get_ytdlp_args()
             opts = {
-                "proxy": self.config.ytdl_options.get("proxy", None),
+                "proxy": ytdlp_args.get("proxy", None),
                 "headers": {
-                    "User-Agent": self.config.ytdl_options.get("user_agent", f"YTPTube/{self.config.version}"),
+                    "User-Agent": ytdlp_args.get("user_agent", f"YTPTube/{self.config.version}"),
                 },
             }
 
-            logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 response = await client.request(method="GET", url=backend, follow_redirects=True)
 
@@ -1616,7 +1617,9 @@ class HttpAPI(Common):
             Response: The response object
 
         """
-        cookie_file = self.config.ytdl_options.get("cookiefile", None)
+        ytdlp_args = self.config.get_ytdlp_args()
+
+        cookie_file = ytdlp_args.get("cookiefile", None)
         if not cookie_file:
             return web.json_response(data={"message": "No cookie file provided."}, status=web.HTTPForbidden.status_code)
 
@@ -1627,32 +1630,24 @@ class HttpAPI(Common):
             )
 
         try:
-            import http.cookiejar
-
-            cookies = http.cookiejar.MozillaCookieJar(cookie_file, None, None)
-            cookies.load()
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"failed to load cookies from '{cookie_file}'. '{e!s}'.")
-            return web.json_response(
-                data={"message": "Failed to load cookies"},
-                status=web.HTTPInternalServerError.status_code,
-            )
+            _, cookies = load_cookies(cookie_file)
+        except ValueError as e:
+            LOG.error(str(e))
+            return web.json_response(data={"message": str(e)}, status=web.HTTPInternalServerError.status_code)
 
         url = "https://www.youtube.com/account"
 
         try:
             opts = {
-                "proxy": self.config.ytdl_options.get("proxy", None),
+                "proxy": ytdlp_args.get("proxy", None),
                 "headers": {
-                    "User-Agent": self.config.ytdl_options.get(
+                    "User-Agent": ytdlp_args.get(
                         "user_agent", request.headers.get("User-Agent", f"YTPTube/{self.config.version}")
                     ),
                 },
                 "cookies": cookies,
             }
 
-            logging.getLogger("httpx").setLevel(logging.WARNING)
             async with httpx.AsyncClient(**opts) as client:
                 LOG.debug(f"Checking '{url}' redirection.")
                 response = await client.request(method="GET", url=url, follow_redirects=False)

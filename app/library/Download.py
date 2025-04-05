@@ -15,7 +15,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import extract_info
+from .Utils import extract_info, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("Download")
@@ -49,7 +49,6 @@ class Download:
     template: str = None
     template_chapter: str = None
     info: ItemDTO = None
-    default_ytdl_opts: dict = None
     debug: bool = False
     temp_path: str = None
     cancelled: bool = False
@@ -93,9 +92,7 @@ class Download:
         self.preset = info.preset
         self.info = info
         self.id = info._id
-        self.default_ytdl_opts = config.ytdl_options
         self.debug = bool(config.debug)
-        self.archive = bool(config.keep_archive)
         self.debug_ytdl = bool(config.ytdl_debug)
         self.cancelled = False
         self.tmpfilename = None
@@ -143,11 +140,11 @@ class Download:
         try:
             params = (
                 YTDLPOpts.get_instance()
-                .preset(self.preset)
+                .preset(self.preset, with_cookies=not self.info.cookies)
                 .add({"break_on_existing": True})
-                .add_cli(self.info.cli, from_user=True)
+                .add_cli(args=self.info.cli, from_user=True)
                 .add(
-                    {
+                    config={
                         "color": "no_color",
                         "paths": {
                             "home": self.download_dir,
@@ -164,19 +161,6 @@ class Download:
                 )
                 .get_all()
             )
-
-            if not self.info_dict:
-                self.logger.info(f"Extracting info for '{self.info.url}'.")
-                info = extract_info(
-                    config=params,
-                    url=self.info.url,
-                    debug=self.debug,
-                    no_archive=not self.archive,
-                    follow_redirect=True,
-                )
-
-                if info:
-                    self.info_dict = info
 
             params.update(
                 {
@@ -199,8 +183,25 @@ class Download:
                     with open(cookie_file, "w") as f:
                         f.write(self.info.cookies)
                         params["cookiefile"] = f.name
-                except ValueError as e:
-                    self.logger.error(f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'.")
+
+                    load_cookies(cookie_file)
+                except Exception as e:
+                    err_msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    self.logger.error(err_msg)
+                    raise ValueError(err_msg) from e
+
+            if not self.info_dict:
+                self.logger.info(f"Extracting info for '{self.info.url}'.")
+                info = extract_info(
+                    config=params,
+                    url=self.info.url,
+                    debug=self.debug,
+                    no_archive=not params.get("download_archive", False),
+                    follow_redirect=True,
+                )
+
+                if info:
+                    self.info_dict = info
 
             if self.is_live or self.is_manifestless:
                 hasDeletedOptions = False
@@ -217,7 +218,7 @@ class Download:
                     )
 
             self.logger.info(
-                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
+                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" started.'
             )
 
             self.logger.debug(f"Params before passing to yt-dlp. {params}")

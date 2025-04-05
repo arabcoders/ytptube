@@ -58,6 +58,7 @@
 import "@xterm/xterm/css/xterm.css"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
+import { useStorage } from '@vueuse/core'
 
 const terminal = ref()
 const terminalFit = ref()
@@ -67,6 +68,8 @@ const command_input = ref()
 const isLoading = ref(false)
 const config = useConfigStore()
 const socket = useSocketStore()
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 watch(() => isLoading.value, async value => {
   if (value) {
@@ -185,11 +188,17 @@ onMounted(async () => {
   socket.off('cli_output', writer)
   socket.on('cli_close', loader)
   socket.on('cli_output', writer)
+  if (bg_enable.value) {
+    document.querySelector('body').setAttribute("style", `opacity: 1.0`)
+  }
 })
 
 onUnmounted(() => {
   socket.off('cli_close', loader)
   socket.off('cli_output', writer)
   window.removeEventListener('resize', reSizeTerminal)
+  if (bg_enable.value) {
+    document.querySelector('body').setAttribute("style", `opacity: ${bg_opacity.value}`)
+  }
 });
 </script>

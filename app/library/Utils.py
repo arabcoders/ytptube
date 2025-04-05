@@ -12,6 +12,7 @@ import shlex
 import socket
 import uuid
 from functools import lru_cache
+from http.cookiejar import MozillaCookieJar
 from typing import Any
 
 import yt_dlp
@@ -28,7 +29,6 @@ REMOVE_KEYS: list = [
         "progress_hooks": "--progress_hooks",
         "postprocessor_hooks": "--postprocessor_hooks",
         "post_hooks": "--post_hooks",
-        "download_archive": "--download_archive",
     },
     {
         "quiet": "-q, --quiet",
@@ -38,7 +38,6 @@ REMOVE_KEYS: list = [
         "simulate": "--simulate",
         "noprogress": "--no-progress",
         "wait_for_video": "--wait-for-video",
-        "mark_watched": "--mark-watched",
         "color": "--color",
         "verbose": "-v, --verbose",
         "debug_printtraffic": "--print-traffic",
@@ -51,9 +50,6 @@ REMOVE_KEYS: list = [
         "forcejson": "-j, --dump-json",
         "print_to_file": "--print-to-file",
         "cookiesfrombrowser": "--cookies-from-browser",
-    },
-    {
-        "cookiefile": "--cookies",
     },
 ]
 
@@ -1051,3 +1047,26 @@ async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
                     "datetime": dt_match.group(1) if dt_match else None,
                 }
             )
+
+
+def load_cookies(file: str) -> tuple[bool, MozillaCookieJar]:
+    """
+    Validate and load a cookie file.
+
+    Args:
+        file (str): The cookie file path.
+
+    Returns:
+        bool: True if the cookie file is valid.
+
+    """
+    try:
+        from http.cookiejar import MozillaCookieJar
+
+        cookies = MozillaCookieJar(file, None, None)
+        cookies.load()
+
+        return (True, cookies)
+    except Exception as e:
+        msg = f"Invalid cookie file '{file}'. '{e!s}'"
+        raise ValueError(msg) from e

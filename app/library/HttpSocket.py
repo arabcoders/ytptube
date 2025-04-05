@@ -236,13 +236,22 @@ class HttpSocket(Common):
 
     @ws_event
     async def archive_item(self, _: str, data: dict):
-        if not isinstance(data, dict) or "url" not in data or not self.config.keep_archive:
+        if not isinstance(data, dict) or "url" not in data:
             return
 
-        if not isinstance(self.config.ytdl_options, dict):
-            self.config.ytdl_options = {}
+        from .YTDLPOpts import YTDLPOpts
 
-        file: str = self.config.ytdl_options.get("download_archive", None)
+        params = YTDLPOpts.get_instance()
+
+        if "preset" in data and isinstance(data["preset"], str):
+            params.preset(name=data["preset"])
+
+        if "cli" in data and isinstance(data["cli"], str) and len(data["cli"]) > 1:
+            params.add_cli(data["cli"], from_user=True)
+
+        params = params.get_all()
+
+        file: str = params.get("download_archive", None)
 
         if not file:
             return
@@ -267,8 +276,9 @@ class HttpSocket(Common):
             if not previouslyArchived:
                 async with await anyio.open_file(manual_archive, "a") as f:
                     await f.write(f"{idDict['archive_id']} - at: {datetime.now(UTC).isoformat()}\n")
-
-        LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
+                    LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
+            else:
+                LOG.info(f"URL '{data['url']}' with id '{idDict['archive_id']}' already archived.")
 
     @ws_event
     async def connect(self, sid: str, _=None):
