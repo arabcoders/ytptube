@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250406-4966461",
-        "date": "2025-04-05T22:50:18+00:00",
+        "tag": "dev-20250406-ce1d499",
+        "date": "2025-04-05T23:17:00+00:00",
         "commits": [
+            {
+                "sha": "ce1d499",
+                "message": "minor fixes to how we handle preset cookies",
+                "author": "arabcoders",
+                "date": "2025-04-05T23:17:00+00:00"
+            },
             {
                 "sha": "4966461",
                 "message": "minor log messages update",
