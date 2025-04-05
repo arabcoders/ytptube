@@ -368,9 +368,6 @@ class Notification(metaclass=Singleton):
             if "form" == target.request.type.lower():
                 reqBody["data"]["data"] = self._encoder.encode(reqBody["data"]["data"])
 
-            if not self._debug:
-                logging.getLogger("httpx").setLevel(logging.WARNING)
-
             response = await self._client.request(**reqBody)
 
             respData = {"url": target.request.url, "status": response.status_code, "text": response.text}

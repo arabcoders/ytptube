@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from .Singleton import Singleton
 
-LOG = logging.getLogger("EventsSubscriber")
+LOG = logging.getLogger("Events")
 
 
 def error(msg: str, data: dict | None = None) -> dict:
@@ -152,6 +152,16 @@ class Events:
             Events.CLI_OUTPUT,
         ]
 
+    def only_debug() -> list:
+        """
+        High frequency events that should only be logged in debug mode.
+
+        Returns:
+            list: The list of debug events.
+
+        """
+        return [Events.UPDATED]
+
 
 @dataclass(kw_only=True)
 class Event:
@@ -226,8 +236,15 @@ class EventBus(metaclass=Singleton):
     _listeners: dict[str, list[str, EventListener]] = {}
     """The listeners for the events."""
 
+    debug: bool = False
+    """Whether to log debug messages or not."""
+
     def __init__(self):
         EventBus._instance = self
+
+        from .config import Config
+
+        self.debug = Config.get_instance().debug
 
     @staticmethod
     def get_instance() -> "EventBus":
@@ -353,7 +370,9 @@ class EventBus(metaclass=Singleton):
             return []
 
         ev = Event(event=event, data=data)
-        LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
+
+        if self.debug or event not in Events.only_debug():
+            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
         tasks = []
         for handler in self._listeners[event].values():

@@ -11,7 +11,7 @@ from pathlib import Path
 import coloredlogs
 from dotenv import load_dotenv
 
-from .Utils import FileLogFormatter, arg_converter
+from .Utils import FileLogFormatter, arg_converter, load_cookies
 from .version import APP_VERSION
 
 
@@ -112,9 +112,6 @@ class Config:
     __instance = None
     "The instance of the class."
 
-    ytdl_options: dict = {}
-    "The options to use for yt-dlp."
-
     new_version_available: bool = False
     "A new version of the application is available."
 
@@ -154,6 +151,9 @@ class Config:
     ytdlp_cli: str = ""
     """The command line options to use for yt-dlp."""
 
+    _ytdlp_cli_mutable: str = ""
+    """The command line options to use for yt-dlp."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -178,6 +178,7 @@ class Config:
         "new_version_available",
         "started",
         "ytdlp_cli",
+        "_ytdlp_cli_mutable",
     )
     "The variables that are immutable."
 
@@ -328,22 +329,20 @@ class Config:
             except Exception as e:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
+        ytdl_options = {}
         opts_file: str = os.path.join(self.config_path, "ytdlp.cli")
         if os.path.exists(opts_file) and os.path.getsize(opts_file) > 2:
             LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
                 if self.ytdlp_cli:
+                    self._ytdlp_cli_mutable = self.ytdlp_cli
                     try:
                         removed_options = []
-                        self.ytdl_options = arg_converter(
-                            args=self.ytdlp_cli,
-                            level=1,
-                            removed_options=removed_options,
-                        )
+                        ytdl_options = arg_converter(args=self.ytdlp_cli, level=1, removed_options=removed_options)
 
                         try:
-                            LOG.debug("Parsed yt-dlp cli options '%s'.", self.ytdl_options)
+                            LOG.debug("Parsed yt-dlp cli options '%s'.", ytdl_options)
                         except Exception:
                             pass
 
@@ -359,17 +358,28 @@ class Config:
         else:
             LOG.info(f"No yt-dlp custom options found at '{opts_file}'.")
 
-        self.ytdl_options["socket_timeout"] = self.socket_timeout
+        self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
         if self.keep_archive:
             LOG.info("keep archive option is enabled.")
-            self.ytdl_options["download_archive"] = os.path.join(self.config_path, "archive.log")
+            archive_file: str = os.path.join(self.config_path, "archive.log")
+            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file}"
 
-        cookiesFile: str = os.path.join(self.config_path, "cookies.txt")
+        if cookies_file := ytdl_options.get("cookiefile", None):
+            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
+                LOG.info(f"Using cookies from '{cookies_file}'.")
+                load_cookies(cookies_file)
+                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
+            else:
+                LOG.warning(f"Invalid cookie file '{cookies_file}' specified.")
+                ytdl_options.pop("cookiefile", None)
 
-        if os.path.exists(cookiesFile) and self.ytdl_options.get("cookiefile", None) is None:
-            LOG.info(f"Using cookies from '{cookiesFile}' as default.")
-            self.ytdl_options["cookiefile"] = cookiesFile
+        if not ytdl_options.get("cookiefile", None):
+            cookies_file: str = os.path.join(self.config_path, "cookies.txt")
+            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
+                LOG.info(f"Using cookies from '{cookies_file}'.")
+                load_cookies(cookies_file)
+                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
 
         if self.temp_keep:
             LOG.info("Keep temp files option is enabled.")
@@ -412,6 +422,9 @@ class Config:
 
         self.started = time.time()
 
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.INFO)
+
     def _get_attributes(self) -> dict:
         attrs: dict = {}
         vClass: str = self.__class__
@@ -426,6 +439,13 @@ class Config:
 
         return attrs
 
+    def get_ytdlp_args(self) -> dict:
+        try:
+            return arg_converter(args=self._ytdlp_cli_mutable, level=True)
+        except Exception as e:
+            msg = f"Invalid ytdlp.cli options for yt-dlp. '{e!s}'."
+            raise ValueError(msg) from e
+
     def frontend(self) -> dict:
         """
         Returns configuration variables relevant to the frontend.
@@ -435,10 +455,16 @@ class Config:
 
         """
         data = {k: getattr(self, k) for k in self._frontend_vars}
-        hasCookies = self.ytdl_options.get("cookiefile", None)
-        data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
-        data["ytdlp_version"] = Config.ytdlp_version()
 
+        ytdlp_args = self.get_ytdlp_args()
+
+        hasCookies = ytdlp_args.get("cookiefile", None)
+        data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
+
+        if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
+            data["keep_archive"] = True
+
+        data["ytdlp_version"] = Config.ytdlp_version()
         return data
 
     @staticmethod

@@ -4,7 +4,7 @@ from pathlib import Path
 from .config import Config
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, merge_dict
+from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, load_cookies, merge_dict
 
 LOG = logging.getLogger("YTDLPOpts")
 
@@ -15,6 +15,12 @@ class YTDLPOpts(metaclass=Singleton):
 
     _preset_opts: dict = {}
     """The preset options."""
+
+    _item_cli: list = []
+    """The item cli options."""
+
+    _preset_cli: str = ""
+    """The preset cli options."""
 
     _instance = None
     """The instance of the class."""
@@ -38,7 +44,7 @@ class YTDLPOpts(metaclass=Singleton):
 
     def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
         """
-        Prase and add yt-dlp cli options to the item options.
+        Parse and add yt-dlp cli options to the item options.
 
         Args:
             args (str): The cli options to add
@@ -51,12 +57,13 @@ class YTDLPOpts(metaclass=Singleton):
         if not args or len(args) < 2 or not isinstance(args, str):
             return self
 
-        removed_options = []
+        try:
+            arg_converter(args=args, level=from_user)
+        except Exception as e:
+            msg = f"Invalid cli options for were given. '{e!s}'."
+            raise ValueError(msg) from e
 
-        self._item_opts.update(arg_converter(args=args, level=from_user, removed_options=removed_options))
-
-        if len(removed_options) > 0:
-            LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
+        self._item_cli.append(args)
 
         return self
 
@@ -108,13 +115,9 @@ class YTDLPOpts(metaclass=Singleton):
 
         if preset.cli:
             try:
-                removed_options = []
-                self._preset_opts = arg_converter(args=preset.cli, level=True, removed_options=removed_options)
-                if len(removed_options) > 0:
-                    LOG.warning(
-                        "Removed the following options '%s' from preset '%s'.", ", ".join(removed_options), preset.name
-                    )
-
+                arg_converter(args=preset.cli, level=True)
+                self._preset_opts = {}
+                self._preset_cli = preset.cli
             except Exception as e:
                 msg = f"Invalid cli options for preset '{preset.name}'. '{e!s}'."
                 raise ValueError(msg) from e
@@ -127,6 +130,8 @@ class YTDLPOpts(metaclass=Singleton):
 
             with open(file, "w") as f:
                 f.write(preset.cookies)
+
+            load_cookies(file)
 
             self._preset_opts["cookiefile"] = str(file)
 
@@ -155,20 +160,55 @@ class YTDLPOpts(metaclass=Singleton):
             dict: The options
 
         """
-        default_opts = self._config.ytdl_options
+        default_opts = {}
         default_opts["paths"] = {"home": self._config.download_path, "temp": self._config.temp_path}
         default_opts["outtmpl"] = {
             "default": self._config.output_template,
             "chapter": self._config.output_template_chapter,
         }
 
-        data = merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts))
+        if not isinstance(self._item_cli, list):
+            self._item_cli = []
+
+        merge = []
+        if self._config._ytdlp_cli_mutable and len(self._config._ytdlp_cli_mutable) > 1:
+            merge.append(self._config._ytdlp_cli_mutable)
+
+        if self._preset_cli and len(self._preset_cli) > 1:
+            merge.append(self._preset_cli)
+
+        if len(merge) > 0:
+            # prepend the cli options to the list
+            self._item_cli = merge + self._item_cli
+
+        user_cli = {}
+
+        if len(self._item_cli) > 0:
+            try:
+                removed_options = []
+                user_cli = arg_converter(args="\n".join(self._item_cli), level=True, removed_options=removed_options)
+
+                if len(removed_options) > 0:
+                    LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
+            except Exception as e:
+                msg = f"Invalid cli options were given. '{e!s}'."
+                raise ValueError(msg) from e
+
+        data = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
+
+        LOG.debug("YTDLP options: '%s'.", data)
 
         if not keep:
             self.presets_opts = {}
             self._item_opts = {}
+            self._item_cli = []
+            self._preset_cli = ""
 
-        if "format" in data and data["format"] in ["not_set", "default"]:
-            data["format"] = None
+        if "format" in data:
+            if data["format"] in ["not_set", "default", "best"]:
+                data["format"] = None
+
+            if data["format"] == "-best":
+                data["format"] = data["format"][1:]
 
         return data

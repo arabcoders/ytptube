@@ -22,7 +22,7 @@ from .Events import EventBus, Events, info
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Singleton import Singleton
-from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded
+from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -301,33 +301,38 @@ class DownloadQueue(metaclass=Singleton):
                 extras=item.extras,
             )
 
-            dlInfo: Download = Download(info=dl, info_dict=entry)
+            try:
+                dlInfo: Download = Download(info=dl, info_dict=entry)
 
-            if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
-                dlInfo.info.status = "not_live"
-                itemDownload = self.done.put(dlInfo)
-                NotifyEvent = Events.COMPLETED
-                log_message = f"{dl.title or dl.id or dl._id}: stream is not live yet."
-                if dlInfo.info.live_in:
-                    log_message += f" Will start in {dlInfo.info.live_in}."
+                if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
+                    dlInfo.info.status = "not_live"
+                    itemDownload = self.done.put(dlInfo)
+                    NotifyEvent = Events.COMPLETED
+                    log_message = f"{dl.title or dl.id or dl._id}: stream is not live yet."
+                    if dlInfo.info.live_in:
+                        log_message += f" Will start in {dlInfo.info.live_in}."
 
-                await self._notify.emit(
-                    Events.LOG_INFO,
-                    data=info(msg=log_message, data=itemDownload.info.serialize()),
-                )
-            elif self.config.allow_manifestless is False and is_manifestless is True:
-                dlInfo.info.status = "error"
-                dlInfo.info.error = "Video is in post-live manifestless mode."
-                itemDownload = self.done.put(dlInfo)
-                NotifyEvent = Events.COMPLETED
-            else:
-                NotifyEvent = Events.ADDED
-                itemDownload = self.queue.put(dlInfo)
-                self.event.set()
+                    await self._notify.emit(
+                        Events.LOG_INFO,
+                        data=info(msg=log_message, data=itemDownload.info.serialize()),
+                    )
+                elif self.config.allow_manifestless is False and is_manifestless is True:
+                    dlInfo.info.status = "error"
+                    dlInfo.info.error = "Video is in post-live manifestless mode."
+                    itemDownload = self.done.put(dlInfo)
+                    NotifyEvent = Events.COMPLETED
+                else:
+                    NotifyEvent = Events.ADDED
+                    itemDownload = self.queue.put(dlInfo)
+                    self.event.set()
 
-            await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
+                await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
 
-            return {"status": "ok"}
+                return {"status": "ok"}
+            except Exception as e:
+                LOG.exception(e)
+                LOG.error(f"Failed to download item. '{e!s}'")
+                return {"status": "error", "msg": str(e)}
 
         if eventType.startswith("url"):
             return await self.add(item=item.new_with(url=entry.get("url")), already=already)
@@ -380,15 +385,6 @@ class DownloadQueue(metaclass=Singleton):
         already.add(item.url)
 
         try:
-            downloaded, id_dict = self._is_downloaded(item.url)
-            if downloaded is True and id_dict:
-                message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
-                LOG.info(message)
-                return {"status": "error", "msg": message}
-
-            started = time.perf_counter()
-            LOG.debug(f"extract_info: checking '{item.url}'.")
-
             logs = []
 
             yt_conf = {
@@ -399,12 +395,23 @@ class DownloadQueue(metaclass=Singleton):
                 **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
             }
 
+            downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
+            if downloaded is True and id_dict:
+                message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
+                LOG.info(message)
+                return {"status": "error", "msg": message}
+
+            started = time.perf_counter()
+            LOG.debug(f"extract_info: checking '{item.url}'.")
+
             if item.cookies:
                 try:
                     async with await anyio.open_file(cookie_file, "w") as f:
                         await f.write(item.cookies)
                         yt_conf["cookiefile"] = f.name
-                except ValueError as e:
+
+                    load_cookies(cookie_file)
+                except Exception as e:
                     msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
                     LOG.error(msg)
                     return {"status": "error", "msg": msg}
@@ -691,18 +698,19 @@ class DownloadQueue(metaclass=Singleton):
         if self.event:
             self.event.set()
 
-    def _is_downloaded(self, url: str) -> tuple[bool, dict | None]:
+    def _is_downloaded(self, url: str, file: str | None = None) -> tuple[bool, dict | None]:
         """
         Check if the url has been downloaded already.
 
         Args:
             url (str): The url to check.
+            file (str | None): The archive file to check.
 
         Returns:
             tuple: A tuple with the status of the operation and the id of the downloaded item.
 
         """
-        if not url or not self.config.keep_archive:
+        if not url or not file:
             return False, None
 
-        return is_downloaded(self.config.ytdl_options.get("download_archive", None), url)
+        return is_downloaded(file, url)
