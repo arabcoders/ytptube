@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250406-d6ab18e",
-        "date": "2025-04-05T22:03:17+00:00",
+        "tag": "dev-20250406-0881fce",
+        "date": "2025-04-05T22:14:44+00:00",
         "commits": [
+            {
+                "sha": "0881fce",
+                "message": "allow --cookies",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:14:44+00:00"
+            },
             {
                 "sha": "d6ab18e",
                 "message": "migrate the entire app to use cli options for ytdlp and make it behave as close to cli options parsing as possible.",
