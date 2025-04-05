@@ -97,6 +97,7 @@ div.logbox pre {
 import moment from 'moment'
 import { request } from '~/utils/index'
 import { ref, onMounted, nextTick } from 'vue'
+import { useStorage } from '@vueuse/core'
 
 let scrollTimeout = null
 
@@ -113,6 +114,8 @@ const logContainer = ref(null)
 const bottomMarker = ref(null)
 const autoScroll = ref(true)
 const textWrap = ref(true)
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 const query = ref(useRoute().query.filter ?? '')
 const toggleFilter = ref(false)
@@ -254,19 +257,25 @@ onMounted(async () => {
         bottomMarker.value.scrollIntoView({ behavior: 'smooth' })
       }
     })
-
   })
+  if (bg_enable.value) {
+    document.querySelector('body').setAttribute("style", `opacity: 1.0`)
+  }
 })
 
 onUnmounted(() => {
   socket.emit('unsubscribe', 'log_lines')
   socket.off('log_lines')
+  if (bg_enable.value) {
+    document.querySelector('body').setAttribute("style", `opacity: ${bg_opacity.value}`)
+  }
 })
 
 onBeforeUnmount(() => {
   socket.emit('unsubscribe', 'log_lines')
   socket.off('log_lines')
   if (scrollTimeout) clearTimeout(scrollTimeout)
+
 })
 
 useHead({ title: 'Logs' })
