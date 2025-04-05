@@ -140,11 +140,11 @@ class Download:
         try:
             params = (
                 YTDLPOpts.get_instance()
-                .preset(self.preset)
+                .preset(self.preset, with_cookies=not self.info.cookies)
                 .add({"break_on_existing": True})
-                .add_cli(self.info.cli, from_user=True)
+                .add_cli(args=self.info.cli, from_user=True)
                 .add(
-                    {
+                    config={
                         "color": "no_color",
                         "paths": {
                             "home": self.download_dir,
@@ -218,7 +218,7 @@ class Download:
                     )
 
             self.logger.info(
-                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" started.'
+                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" started.'
             )
 
             self.logger.debug(f"Params before passing to yt-dlp. {params}")

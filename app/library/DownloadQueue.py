@@ -368,9 +368,6 @@ class DownloadQueue(metaclass=Singleton):
             if _preset.template and not item.template:
                 item.template = _preset.template
 
-            if _preset.cookies and not item.cookies:
-                item.cookies = _preset.cookies
-
         yt_conf = {}
         cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
 
@@ -392,7 +389,10 @@ class DownloadQueue(metaclass=Singleton):
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
                 },
-                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
+                **YTDLPOpts.get_instance()
+                .preset(name=item.preset, with_cookies=not item.cookies)
+                .add_cli(args=item.cli, from_user=True)
+                .get_all(),
             }
 
             downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
@@ -411,7 +411,7 @@ class DownloadQueue(metaclass=Singleton):
 
                     load_cookies(cookie_file)
                 except Exception as e:
-                    msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    msg = f"Failed to create cookie file for '{item.url}'. '{e!s}'."
                     LOG.error(msg)
                     return {"status": "error", "msg": msg}
 
