@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250406-0881fce",
-        "date": "2025-04-05T22:14:44+00:00",
+        "tag": "dev-20250406-2fedc6d",
+        "date": "2025-04-05T22:21:34+00:00",
         "commits": [
+            {
+                "sha": "2fedc6d",
+                "message": "update console/logs page opacity",
+                "author": "arabcoders",
+                "date": "2025-04-05T22:21:34+00:00"
+            },
             {
                 "sha": "0881fce",
                 "message": "allow --cookies",
