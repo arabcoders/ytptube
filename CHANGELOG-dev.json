@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250406-ce1d499",
-        "date": "2025-04-05T23:17:00+00:00",
+        "tag": "dev-20250406-33397db",
+        "date": "2025-04-06T13:14:31+00:00",
+        "commits": [
+            {
+                "sha": "33397db",
+                "message": "go with blacklist approach for blocking yt-dlp options.",
+                "author": "arabcoders",
+                "date": "2025-04-06T13:14:31+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250405-ec1f2f4",
+        "date": "2025-04-05T23:31:30+00:00",
         "commits": [
             {
                 "sha": "ce1d499",
