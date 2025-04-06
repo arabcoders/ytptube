@@ -38,18 +38,11 @@ REMOVE_KEYS: list = [
         "simulate": "--simulate",
         "noprogress": "--no-progress",
         "wait_for_video": "--wait-for-video",
-        "color": "--color",
-        "verbose": "-v, --verbose",
-        "debug_printtraffic": "--print-traffic",
-        "write_pages": "--write-pages",
-        "dump_intermediate_pages": "--dump-pages",
         "progress_delta": " --progress-delta",
         "progress_template": "--progress-template",
         "consoletitle": "--console-title",
         "progress_with_newline": "--newline",
         "forcejson": "-j, --dump-json",
-        "print_to_file": "--print-to-file",
-        "cookiesfrombrowser": "--cookies-from-browser",
     },
 ]
 
