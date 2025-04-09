@@ -292,8 +292,7 @@ class Notification(metaclass=Singleton):
             raise ValueError(msg)
 
         if "data_key" not in target["request"]:
-            msg = "Invalid notification target. No data_key found."
-            raise ValueError(msg)
+            target["request"]["data_key"] = "data"
 
         if "method" in target["request"] and target["request"]["method"].upper() not in ["POST", "PUT"]:
             msg = "Invalid notification target. Invalid method found."
