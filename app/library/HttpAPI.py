@@ -749,19 +749,22 @@ class HttpAPI(Common):
             )
 
         offset = int(request.query.get("offset", 0))
-        limit = int(request.query.get("limit", 50))
+        limit = int(request.query.get("limit", 100))
         if limit < 1 or limit > 150:
             limit = 50
 
+        logs_data = await read_logfile(
+            file=os.path.join(self.config.config_path, "logs", "app.log"),
+            offset=offset,
+            limit=limit,
+        )
         return web.json_response(
             data={
-                "logs": await read_logfile(
-                    file=os.path.join(self.config.config_path, "logs", "app.log"),
-                    offset=offset,
-                    limit=limit,
-                ),
+                "logs": logs_data["logs"],
                 "offset": offset,
                 "limit": limit,
+                "next_offset": logs_data["next_offset"],
+                "end_is_reached": logs_data["end_is_reached"],
             },
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
