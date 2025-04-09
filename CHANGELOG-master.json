@@ -1,5 +1,47 @@
 [
     {
+        "tag": "master-20250410-53da40b",
+        "date": "2025-04-09T22:38:01+00:00",
+        "commits": [
+            {
+                "sha": "17dd007",
+                "message": "Show that a external dl is being used if we are stuck in preparing stage as yt-dlp doesn't trigger progress_hook",
+                "author": "arabcoders",
+                "date": "2025-04-09T22:32:32+00:00"
+            },
+            {
+                "sha": "4a21592",
+                "message": "raise an error if item was using invalid preset.",
+                "author": "arabcoders",
+                "date": "2025-04-09T21:59:52+00:00"
+            },
+            {
+                "sha": "ee2fd3f",
+                "message": "Only show notification target, id or url incase of error loading the target.",
+                "author": "arabcoders",
+                "date": "2025-04-09T16:41:54+00:00"
+            },
+            {
+                "sha": "c2fa066",
+                "message": "set default data_key for notification targets if not provided",
+                "author": "arabcoders",
+                "date": "2025-04-09T16:36:49+00:00"
+            },
+            {
+                "sha": "88163ca",
+                "message": "make it possible to change notification data field key name",
+                "author": "arabcoders",
+                "date": "2025-04-09T14:35:11+00:00"
+            },
+            {
+                "sha": "817e7d2",
+                "message": "minor ui change",
+                "author": "arabcoders",
+                "date": "2025-04-08T20:30:08+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250406-31f64e6",
         "date": "2025-04-06T23:31:21+00:00",
         "commits": [
