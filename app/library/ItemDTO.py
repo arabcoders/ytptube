@@ -134,6 +134,12 @@ class Item:
 
         preset = item.get("preset")
         if preset and isinstance(preset, str) and preset != Item._default_preset():
+            from .Presets import Presets
+
+            if not Presets.get_instance().has(preset):
+                msg = f"Preset '{preset}' does not exist."
+                raise ValueError(msg)
+
             data["preset"] = preset
 
         if item.get("folder") and isinstance(item.get("folder"), str):
