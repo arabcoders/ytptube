@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250408-817e7d2",
-        "date": "2025-04-08T20:30:08+00:00",
+        "tag": "dev-20250409-88163ca",
+        "date": "2025-04-09T14:35:11+00:00",
         "commits": [
+            {
+                "sha": "88163ca",
+                "message": "make it possible to change notification data field key name",
+                "author": "arabcoders",
+                "date": "2025-04-09T14:35:11+00:00"
+            },
             {
                 "sha": "817e7d2",
                 "message": "minor ui change",
