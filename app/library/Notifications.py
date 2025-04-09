@@ -215,7 +215,8 @@ class Notification(metaclass=Singleton):
                 try:
                     Notification.validate(target)
                 except ValueError as e:
-                    LOG.error(f"Invalid notification target '{target}'. '{e!s}'")
+                    name = target.get("name") or target.get("id") or target.get("request", {}).get("url") or "unknown"
+                    LOG.error(f"Invalid notification target '{name}'. '{e!s}'")
                     continue
 
                 target = self.make_target(target)
