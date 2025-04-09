@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250410-17dd007",
-        "date": "2025-04-09T22:32:32+00:00",
+        "tag": "dev-20250410-bcdc4ee",
+        "date": "2025-04-09T23:32:38+00:00",
+        "commits": [
+            {
+                "sha": "bcdc4ee",
+                "message": "Increase log retrieval limit and enhance log pagination metadata",
+                "author": "arabcoders",
+                "date": "2025-04-09T23:32:38+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250409-53da40b",
+        "date": "2025-04-09T22:38:01+00:00",
         "commits": [
             {
                 "sha": "17dd007",
