@@ -138,7 +138,7 @@
                 </div>
               </div>
 
-              <div class="column is-12 is-clearfix">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="on">
                     Select Events
@@ -162,6 +162,26 @@
                       Subscribe to the events you want to listen for. When the event is triggered, the notification will
                       be sent to the target URL. If no events are selected, the notification will be sent for all
                       events.
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="data_key">
+                    Data field
+                  </label>
+                  <div class="control has-icons-left">
+                    <input type="text" class="input" id="data_key" v-model="form.request.data_key"
+                      :disabled="addInProgress" required>
+                    <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>
+                      The field name to use when sending the notification. This is used to identify the data in the
+                      request. The default is <code>data</code>.
                     </span>
                   </span>
                 </div>
@@ -277,7 +297,7 @@ const showImport = useStorage('showImport', false);
 const import_string = ref('');
 
 const checkInfo = async () => {
-  const required = ['name', 'request.url', 'request.method', 'request.type'];
+  const required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
   for (const key of required) {
     if (key.includes('.')) {
       const [parent, child] = key.split('.');
@@ -356,6 +376,10 @@ const importItem = async () => {
       form.request = item.request
     }
 
+    if (item.data_key) {
+      form.data_key = item.data_key
+    }
+
     if (item.on) {
       form.on = item.on
     }
@@ -366,5 +390,4 @@ const importItem = async () => {
     toast.error(`Failed to import task. ${e.message}`)
   }
 }
-
 </script>

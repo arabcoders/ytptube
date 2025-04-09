@@ -46,12 +46,14 @@ class TargetRequest:
     method: str
     url: str
     headers: list[TargetRequestHeader] = field(default_factory=list)
+    data_key: str = "data"
 
     def serialize(self) -> dict:
         return {
             "type": self.type,
             "method": self.method,
             "url": self.url,
+            "data_key": self.data_key,
             "headers": [h.serialize() for h in self.headers],
         }
 
@@ -247,6 +249,7 @@ class Notification(metaclass=Singleton):
                 type=target.get("request", {}).get("type", "json"),
                 method=target.get("request", {}).get("method", "POST"),
                 url=target.get("request", {}).get("url"),
+                data_key=target.get("request", {}).get("data_key", "data"),
                 headers=[
                     TargetRequestHeader(
                         key=str(h.get("key", "")).strip(),
@@ -286,6 +289,10 @@ class Notification(metaclass=Singleton):
 
         if "url" not in target["request"]:
             msg = "Invalid notification target. No URL found."
+            raise ValueError(msg)
+
+        if "data_key" not in target["request"]:
+            msg = "Invalid notification target. No data_key found."
             raise ValueError(msg)
 
         if "method" in target["request"] and target["request"]["method"].upper() not in ["POST", "PUT"]:
@@ -363,10 +370,17 @@ class Notification(metaclass=Singleton):
                 for h in target.request.headers:
                     reqBody["headers"][h.key] = h.value
 
-            reqBody["json" if "json" == target.request.type.lower() else "data"] = self._deep_unpack(ev.serialize())
+            body_key = "json" if "json" == target.request.type.lower() else "data"
+            reqBody[body_key] = self._deep_unpack(ev.serialize())
+
+            if "data" != target.request.data_key:
+                reqBody[body_key][target.request.data_key] = reqBody[body_key]["data"]
+                reqBody[body_key].pop("data", None)
 
             if "form" == target.request.type.lower():
-                reqBody["data"]["data"] = self._encoder.encode(reqBody["data"]["data"])
+                reqBody[body_key][target.request.data_key] = self._encoder.encode(
+                    reqBody[body_key][target.request.data_key]
+                )
 
             response = await self._client.request(**reqBody)
 
