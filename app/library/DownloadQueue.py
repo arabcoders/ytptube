@@ -184,8 +184,8 @@ class DownloadQueue(metaclass=Singleton):
         """
         if item.has_extras():
             for key in item.extras.copy():
-                if not str(key).startswith("playlist"):
-                    item.extras.pop(key, None)
+                if not self.keep_extra_key(key):
+                    item.extras.pop(key)
 
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
@@ -394,6 +394,10 @@ class DownloadQueue(metaclass=Singleton):
                 .add_cli(args=item.cli, from_user=True)
                 .get_all(),
             }
+
+            if yt_conf.get("external_downloader"):
+                LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
+                item.extras.update({"external_downloader": True})
 
             downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
             if downloaded is True and id_dict:
@@ -715,3 +719,17 @@ class DownloadQueue(metaclass=Singleton):
             return False, None
 
         return is_downloaded(file, url)
+
+    def keep_extra_key(self, key: str) -> bool:
+        """
+        Check if the extra key should be kept.
+
+        Args:
+            key (str): The extra key to check.
+
+        Returns:
+            bool: True if the extra key should be kept, False otherwise.
+
+        """
+        keys = ("playlist", "external_downloader")
+        return any(key == k or key.startswith(k) for k in keys)
