@@ -942,54 +942,64 @@ def strip_newline(string: str) -> str:
     return res.strip() if res else ""
 
 
-async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> list[str]:
+async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
     """
-    Read log file and return limited lines from the end.
+    Read a log file and return a set of log lines along with pagination metadata.
 
     Args:
         file (str): The log file path.
-        offset (int): The number of lines to skip from the end.
-        limit (int): The number of lines to read.
+        offset (int): Number of lines to skip from the end (newer entries).
+        limit (int): Number of lines to return.
 
     Returns:
-        list[str]: A list of log lines.
-
+        dict: A dictionary containing:
+            - logs: List of log entries.
+            - next_offset: Offset for the next page or None.
+            - end_is_reached: True if there are no older logs.
     """
     from anyio import open_file
-
-    if not os.path.exists(file):
-        return []
-
     from hashlib import sha256
 
+    if not pathlib.Path(file).exists():
+        return {"logs": [], "next_offset": None, "end_is_reached": True}
+
+    result = []
     try:
         async with await open_file(file, "rb") as f:
             await f.seek(0, os.SEEK_END)
-            size = await f.tell()
+            file_size = await f.tell()
 
             block_size = 1024
-            block_end = size
+            block_end = file_size
             buffer = b""
             lines = []
 
-            while len(lines) < (offset + limit) and block_end > 0:
+            required_count = offset + limit + 1
+
+            while len(lines) < required_count and block_end > 0:
                 block_start = max(0, block_end - block_size)
                 await f.seek(block_start)
                 chunk = await f.read(block_end - block_start)
-                buffer = chunk + buffer
+                buffer = chunk + buffer  # prepend the chunk
                 lines = buffer.splitlines()
                 block_end = block_start
 
-            selected_lines = lines[-(offset + limit) :] if offset else lines[-limit:]
-            if offset:
-                selected_lines = selected_lines[:-offset] or []
+            if len(lines) > offset + limit:
+                next_offset = offset + limit
+                end_is_reached = False
+            else:
+                next_offset = None
+                end_is_reached = True
 
-            result = []
+            if offset:
+                selected_lines = lines[-(offset + limit) : -offset]
+            else:
+                selected_lines = lines[-limit:]
+
             for line in selected_lines:
                 line_bytes = line if isinstance(line, bytes) else line.encode()
                 msg = line.decode(errors="replace")
                 dt_match = DATETIME_PATTERN.match(msg)
-
                 result.append(
                     {
                         "id": sha256(line_bytes).hexdigest(),
@@ -998,10 +1008,9 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> list[str]
                     }
                 )
 
-            return result
-
+            return {"logs": result, "next_offset": next_offset, "end_is_reached": end_is_reached}
     except Exception:
-        return []
+        return {"logs": [], "next_offset": None, "end_is_reached": True}
 
 
 async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
@@ -1019,7 +1028,7 @@ async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
 
     from anyio import open_file
 
-    if not os.path.exists(file):
+    if not pathlib(file).exists():
         return
 
     async with await open_file(file, "rb") as f:
