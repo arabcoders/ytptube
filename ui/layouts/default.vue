@@ -205,6 +205,10 @@ onMounted(async () => {
 
 watch(selectedTheme, value => {
   try {
+    if ('auto' === value) {
+      applyPreferredColorScheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      return
+    }
     applyPreferredColorScheme(value)
   } catch (e) { }
 })

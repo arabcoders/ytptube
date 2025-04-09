@@ -301,6 +301,10 @@ const setStatus = item => {
     return 'Live Streaming';
   }
 
+  if ('preparing' === item.status) {
+    return ag(item, 'extras.external_downloader') ? 'External DL' : 'Preparing..';
+  }
+
   if (!item.status) {
     return 'Unknown..';
   }
@@ -372,7 +376,7 @@ const updateProgress = (item) => {
   }
 
   if ('preparing' === item.status) {
-    return 'Preparing';
+    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
   }
 
   if (null != item.status) {

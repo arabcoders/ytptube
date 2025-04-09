@@ -266,6 +266,19 @@ class Presets(metaclass=Singleton):
 
         return self
 
+    def has(self, id_or_name: str) -> bool:
+        """
+        Check if the preset exists by id or name.
+
+        Args:
+            id_or_name (str): The id or name of the preset.
+
+        Returns:
+            bool: True if the preset exists, False otherwise.
+
+        """
+        return self.get(id_or_name) is not None
+
     def get(self, id_or_name: str) -> Preset | None:
         """
         Get the preset by id or name.
