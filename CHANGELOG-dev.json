@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250409-88163ca",
-        "date": "2025-04-09T14:35:11+00:00",
+        "tag": "dev-20250409-ee2fd3f",
+        "date": "2025-04-09T16:41:54+00:00",
         "commits": [
+            {
+                "sha": "ee2fd3f",
+                "message": "Only show notification target, id or url incase of error loading the target.",
+                "author": "arabcoders",
+                "date": "2025-04-09T16:41:54+00:00"
+            },
+            {
+                "sha": "c2fa066",
+                "message": "set default data_key for notification targets if not provided",
+                "author": "arabcoders",
+                "date": "2025-04-09T16:36:49+00:00"
+            },
             {
                 "sha": "88163ca",
                 "message": "make it possible to change notification data field key name",
