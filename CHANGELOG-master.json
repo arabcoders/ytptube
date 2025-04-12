@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250412-fb2aa73",
+        "date": "2025-04-12T15:49:53+00:00",
+        "commits": [
+            {
+                "sha": "fa3d950",
+                "message": "Minor refactor for is_downloaded function and updated dependencies",
+                "author": "arabcoders",
+                "date": "2025-04-12T15:44:10+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250409-2beb6a6",
         "date": "2025-04-09T23:52:40+00:00",
         "commits": [

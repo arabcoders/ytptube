@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250410-bcdc4ee",
-        "date": "2025-04-09T23:32:38+00:00",
+        "tag": "dev-20250412-fa3d950",
+        "date": "2025-04-12T15:44:10+00:00",
+        "commits": [
+            {
+                "sha": "fa3d950",
+                "message": "Minor refactor for is_downloaded function and updated dependencies",
+                "author": "arabcoders",
+                "date": "2025-04-12T15:44:10+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250409-2beb6a6",
+        "date": "2025-04-09T23:52:40+00:00",
         "commits": [
             {
                 "sha": "bcdc4ee",
