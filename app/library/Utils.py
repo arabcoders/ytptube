@@ -142,7 +142,13 @@ def extract_info(
     for key in keys_to_remove:
         params.pop(key, None)
 
-    log_wrapper.add_target(target=logging.getLogger("yt-dlp"), level=logging.DEBUG if debug else logging.WARNING)
+    id = None
+    idDict = get_archive_id(url=url)
+    if idDict.get("id"):
+        id = f".{idDict['id']}"
+
+    log_wrapper.add_target(target=logging.getLogger(f"yt-dlp{id}"), level=logging.DEBUG if debug else logging.WARNING)
+
     if debug:
         params["verbose"] = True
     else:
@@ -236,55 +242,18 @@ def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, s
         dict: Video information.
 
     """
-    global YTDLP_INFO_CLS  # noqa: PLW0603
-
-    idDict = {
-        "id": None,
-        "ie_key": None,
-        "archive_id": None,
-    }
+    idDict = {"id": None, "ie_key": None, "archive_id": None}
 
     if not url or not archive_file or not os.path.exists(archive_file):
-        return (
-            False,
-            idDict,
-        )
-
-    if YTDLP_INFO_CLS is None:
-        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(
-            params={
-                "color": "no_color",
-                "extract_flat": True,
-                "skip_download": True,
-                "ignoreerrors": True,
-                "ignore_no_formats_error": True,
-                "quiet": True,
-            }
-        )
-
-    for key, ie in YTDLP_INFO_CLS._ies.items():
-        if not ie.suitable(url):
-            continue
-
-        if not ie.working():
-            break
-
-        temp_id = ie.get_temp_id(url)
-        if not temp_id:
-            break
-
-        idDict["id"] = temp_id
-        idDict["ie_key"] = key
-        idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
-        break
-
-    if not idDict["archive_id"]:
         return (False, idDict)
 
-    with open(archive_file) as f:
-        for line in f:
-            if idDict["archive_id"] in line:
-                return (True, idDict)
+    idDict = get_archive_id(url=url)
+
+    if idDict.get("archive_id"):
+        with open(archive_file) as f:
+            for line in f:
+                if idDict["archive_id"] in line:
+                    return (True, idDict)
 
     return (False, idDict)
 
@@ -956,9 +925,11 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
             - logs: List of log entries.
             - next_offset: Offset for the next page or None.
             - end_is_reached: True if there are no older logs.
+
     """
-    from anyio import open_file
     from hashlib import sha256
+
+    from anyio import open_file
 
     if not pathlib.Path(file).exists():
         return {"logs": [], "next_offset": None, "end_is_reached": True}
@@ -991,12 +962,7 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
                 next_offset = None
                 end_is_reached = True
 
-            if offset:
-                selected_lines = lines[-(offset + limit) : -offset]
-            else:
-                selected_lines = lines[-limit:]
-
-            for line in selected_lines:
+            for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
                 line_bytes = line if isinstance(line, bytes) else line.encode()
                 msg = line.decode(errors="replace")
                 dt_match = DATETIME_PATTERN.match(msg)
@@ -1072,3 +1038,54 @@ def load_cookies(file: str) -> tuple[bool, MozillaCookieJar]:
     except Exception as e:
         msg = f"Invalid cookie file '{file}'. '{e!s}'"
         raise ValueError(msg) from e
+
+
+def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+    """
+    Get the archive ID for a given URL.
+
+    Args:
+        url (str): URL to check.
+
+    Returns:
+        bool: True if the video is already downloaded.
+        dict: Video information.
+
+    """
+    global YTDLP_INFO_CLS  # noqa: PLW0603
+
+    idDict = {
+        "id": None,
+        "ie_key": None,
+        "archive_id": None,
+    }
+
+    if YTDLP_INFO_CLS is None:
+        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(
+            params={
+                "color": "no_color",
+                "extract_flat": True,
+                "skip_download": True,
+                "ignoreerrors": True,
+                "ignore_no_formats_error": True,
+                "quiet": True,
+            }
+        )
+
+    for key, ie in YTDLP_INFO_CLS._ies.items():
+        if not ie.suitable(url):
+            continue
+
+        if not ie.working():
+            break
+
+        temp_id = ie.get_temp_id(url)
+        if not temp_id:
+            break
+
+        idDict["id"] = temp_id
+        idDict["ie_key"] = key
+        idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
+        break
+
+    return idDict

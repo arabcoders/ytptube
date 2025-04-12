@@ -18,8 +18,6 @@ from .ItemDTO import ItemDTO
 from .Utils import extract_info, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
-LOG = logging.getLogger("Download")
-
 
 class NestedLogger:
     debug_messages = ["[debug] ", "[download] "]
