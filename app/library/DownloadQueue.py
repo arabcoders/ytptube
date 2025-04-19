@@ -751,11 +751,13 @@ class DownloadQueue(metaclass=Singleton):
 
         LOG.debug("Checking for stale items in the download queue.")
         for id, item in list(self.queue.items()):
+            item_ref = f"{id=} {item.info.id=} {item.info.title=}"
             if not item.is_stale():
-                LOG.debug(f"Item '{item.info.id}: {item.info.title}: {item.info.status}' is not stale.")
+                LOG.debug(f"Item '{item_ref}' is not stale.")
                 continue
 
-            LOG.warning(
-                f"Cancelling staled item '{item.info.id}: {item.info.title}: {item.info.status}' download queue."
-            )
-            self.cancel([id])
+            LOG.warning(f"Cancelling staled item '{item_ref}' from download queue.")
+            try:
+                await self.cancel([id])
+            except Exception as e:
+                LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
