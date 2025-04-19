@@ -56,7 +56,7 @@ class HttpSocket(Common):
         def emit(e: Event, _, **kwargs):
             return self.sio.emit(event=e.event, data=encoder.encode(e.data), **kwargs)
 
-        self._notify.subscribe("frontend", emit, f"{__class__.__name__}.socket_api")
+        self._notify.subscribe("frontend", emit, f"{__class__.__name__}.emit")
 
         super().__init__(queue=queue, encoder=encoder, config=config)
 
@@ -87,7 +87,7 @@ class HttpSocket(Common):
         self._notify.subscribe(
             Events.ADD_URL,
             lambda data, _, **kwargs: self.add(item=Item.format(data.data)),  # noqa: ARG005
-            f"{__class__.__name__}.socket_add_url",
+            f"{__class__.__name__}.add",
         )
 
         # register the shutdown event.

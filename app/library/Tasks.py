@@ -109,7 +109,7 @@ class Tasks(metaclass=Singleton):
         self._notify.subscribe(
             Events.TASKS_ADD,
             lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
-            f"{__class__.__name__}.save",
+            f"{__class__.__name__}.add",
         )
 
     def get_all(self) -> list[Task]:

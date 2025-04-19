@@ -103,7 +103,7 @@ class Scheduler(metaclass=Singleton):
 
         self._jobs[job_id] = job
 
-        LOG.debug(f"Added job {job_id} to the schedule.")
+        LOG.debug(f"Added job '{job_id}' to the schedule.")
 
         return job_id
 
@@ -132,7 +132,7 @@ class Scheduler(metaclass=Singleton):
                 return False
 
             del self._jobs[id]
-            LOG.debug(f"Removed job {id} from the schedule.")
+            LOG.debug(f"Removed job '{id}' from the schedule.")
             return True
 
         return False

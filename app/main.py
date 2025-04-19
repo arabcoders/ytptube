@@ -84,10 +84,12 @@ class Main:
         """
         EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
 
+        Scheduler.get_instance().attach(self._app)
+
         self._socket.attach(self._app)
         self._http.attach(self._app)
         self._queue.attach(self._app)
-        Scheduler.get_instance().attach(self._app)
+
         Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
