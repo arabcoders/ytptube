@@ -344,7 +344,8 @@ class EventBus(metaclass=Singleton):
         LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
         results = []
-        for handler in self._listeners[event].items():
+
+        for handler in self._listeners[event].values():
             try:
                 results.append(asyncio.get_event_loop().run_until_complete(handler.handle(ev, **kwargs)))
             except Exception as e:

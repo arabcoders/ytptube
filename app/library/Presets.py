@@ -90,7 +90,7 @@ class Presets(metaclass=Singleton):
             msg = "Not implemented"
             raise Exception(msg)
 
-        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.save")
+        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.add")
 
     @staticmethod
     def get_instance() -> "Presets":

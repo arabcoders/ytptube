@@ -21,6 +21,7 @@ from .Download import Download
 from .Events import EventBus, Events, info
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
+from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded, load_cookies
 from .YTDLPOpts import YTDLPOpts
@@ -89,6 +90,13 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         app.on_startup.append(lambda _: self.initialize())
+
+        Scheduler.get_instance().add(
+            timer="* * * * *",
+            func=self.monitor_queue_for_stale_items,
+            id=f"{__class__.__name__}.monitor_queue_for_stale_items",
+        )
+
         # app.on_shutdown.append(self.on_shutdown)
 
         # async def close_pool(_: web.Application):
@@ -733,3 +741,21 @@ class DownloadQueue(metaclass=Singleton):
         """
         keys = ("playlist", "external_downloader")
         return any(key == k or key.startswith(k) for k in keys)
+
+    async def monitor_queue_for_stale_items(self):
+        """
+        Monitor the queue for stale items and cancel them if needed.
+        """
+        if self.is_paused() or not self.queue.has_downloads():
+            return
+
+        LOG.debug("Checking for stale items in the download queue.")
+        for id, item in list(self.queue.items()):
+            if not item.is_stale():
+                LOG.debug(f"Item '{item.info.id}: {item.info.title}: {item.info.status}' is not stale.")
+                continue
+
+            LOG.warning(
+                f"Cancelling staled item '{item.info.id}: {item.info.title}: {item.info.status}' download queue."
+            )
+            self.cancel([id])

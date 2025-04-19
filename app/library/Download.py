@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import time
+from datetime import UTC, datetime
 from email.utils import formatdate
 
 import yt_dlp
@@ -103,6 +104,8 @@ class Download:
         self.is_manifestless = "is_manifestless" in self.info.options and self.info.options["is_manifestless"] is True
         self.info_dict = info_dict
         self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
+        self.started_time = 0
+        self.queue_time = datetime.now(tz=UTC)
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -224,6 +227,8 @@ class Download:
             params["logger"] = NestedLogger(self.logger)
 
             cls = yt_dlp.YoutubeDL(params=params)
+
+            self.started_time = int(time.time())
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
@@ -442,3 +447,37 @@ class Download:
                     self.logger.error(f"Failed to ffprobe: {status.get}. {e}")
 
             await self._notify.emit(Events.UPDATED, data=self.info)
+
+    def is_stale(self) -> bool:
+        """
+        Check if the download task is stale.
+        A download task is considered stale if it has not been updated for a certain period of time.
+
+        Returns:
+            bool: True if the download task is stale, False otherwise.
+
+        """
+        if self.started_time < 1:
+            self.logger.debug(f"Download task '{self.info.title}: {self.info.id}' not started yet.")
+            return False
+
+        if int(time.time()) - self.started_time < 300:
+            self.logger.debug(
+                f"Download task '{self.info.title}: {self.info.id}' started for '{int(time.time()) - self.started_time}' seconds."
+            )
+            return False
+
+        if not self.running():
+            self.logger.warning(
+                f"Download task '{self.info.title}: {self.info.id}' not started running for '{int(time.time()) - self.started_time}' seconds."
+            )
+            return True
+
+        if self.info.status not in ["finished", "error", "cancelled", "downloading", "postprocessing"]:
+            status = self.info.status if self.info.status else "unknown"
+            self.logger.warning(
+                f"Download task '{self.info.title}: {self.info.id}' has been stuck in '{status}' state for '{int(time.time()) - self.started_time}' seconds."
+            )
+            return True
+
+        return False
