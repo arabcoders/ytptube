@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250412-fa3d950",
-        "date": "2025-04-12T15:44:10+00:00",
+        "tag": "dev-20250419-f8b18de",
+        "date": "2025-04-19T14:49:38+00:00",
+        "commits": [
+            {
+                "sha": "f8b18de",
+                "message": "wrap cancel in try catch to avoid possible problems.",
+                "author": "arabcoders",
+                "date": "2025-04-19T14:49:38+00:00"
+            },
+            {
+                "sha": "7755f3c",
+                "message": "added some protection aganist staled download blocking the download queue.",
+                "author": "arabcoders",
+                "date": "2025-04-19T14:44:09+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250412-fb2aa73",
+        "date": "2025-04-12T15:49:53+00:00",
         "commits": [
             {
                 "sha": "fa3d950",
