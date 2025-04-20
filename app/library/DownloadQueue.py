@@ -313,12 +313,10 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo: Download = Download(info=dl, info_dict=entry)
 
                 if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
-                    dlInfo.info.status = "not_live"
-                    itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
-                    log_message = f"{dl.title or dl.id or dl._id}: stream is not live yet."
-                    if dlInfo.info.live_in:
-                        log_message += f" Will start in {dlInfo.info.live_in}."
+                    dlInfo.info.status = "not_live"
+                    dlInfo.info.msg = "Stream is not live yet."
+                    itemDownload = self.done.put(dlInfo)
                 elif len(entry.get("formats", [])) < 1:
                     availability = entry.get("availability", "public")
                     msg = "No formats found."
