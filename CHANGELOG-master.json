@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250420-a2f8cb5",
+        "date": "2025-04-20T14:00:39+00:00",
+        "commits": [
+            {
+                "sha": "bcd6df3",
+                "message": "Display better desorption when there are no formats available.",
+                "author": "arabcoders",
+                "date": "2025-04-20T13:48:50+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250419-3425657",
         "date": "2025-04-19T14:56:31+00:00",
         "commits": [
