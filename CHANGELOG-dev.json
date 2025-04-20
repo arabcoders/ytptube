@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250420-bcd6df3",
-        "date": "2025-04-20T13:48:50+00:00",
+        "tag": "dev-20250420-f6c7d82",
+        "date": "2025-04-20T17:07:18+00:00",
+        "commits": [
+            {
+                "sha": "f6c7d82",
+                "message": "restore message about live stream not being live yet.",
+                "author": "arabcoders",
+                "date": "2025-04-20T17:07:18+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250420-a2f8cb5",
+        "date": "2025-04-20T14:00:39+00:00",
         "commits": [
             {
                 "sha": "bcd6df3",
