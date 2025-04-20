@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250419-f8b18de",
-        "date": "2025-04-19T14:49:38+00:00",
+        "tag": "dev-20250420-bcd6df3",
+        "date": "2025-04-20T13:48:50+00:00",
+        "commits": [
+            {
+                "sha": "bcd6df3",
+                "message": "Display better desorption when there are no formats available.",
+                "author": "arabcoders",
+                "date": "2025-04-20T13:48:50+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250419-3425657",
+        "date": "2025-04-19T14:56:31+00:00",
         "commits": [
             {
                 "sha": "f8b18de",
