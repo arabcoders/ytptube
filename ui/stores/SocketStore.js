@@ -52,6 +52,16 @@ export const useSocketStore = defineStore('socket', () => {
       toast.success(json?.message);
     });
 
+    socket.value.on('log_warning', stream => {
+      const json = JSON.parse(stream);
+      toast.warning(json?.message);
+    });
+
+    socket.value.on('log_error', stream => {
+      const json = JSON.parse(stream);
+      toast.error(json?.message);
+    });
+
     socket.value.on('completed', stream => {
       const item = JSON.parse(stream);
 

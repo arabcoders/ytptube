@@ -280,6 +280,17 @@ inside the `/config` directory named `yt-dlp` so, the path will be `/config/yt-d
 
 Once you have installed the plugins, restart the container and the plugins will be auto-loaded on demand.
 
+# How to load random backgrounds from WatchState or any other source?
+
+YTPTube can be configured to pull random background images from different sources, including `WatchState` which is another 
+project of mine, simply change the `YTP_PICTURES_BACKENDS` environment variable to the following url
+
+```env
+YTP_PICTURES_BACKENDS=https://watchstate.ip/v1/api/system/images/background?apikey=[api_key]
+```
+
+Where `[api_key]` is the api key you get from your WatchState instance.
+
 # The origin of the project.
 
 The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 

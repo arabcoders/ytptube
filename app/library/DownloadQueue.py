@@ -18,7 +18,8 @@ from .AsyncPool import AsyncPool
 from .config import Config
 from .DataStore import DataStore
 from .Download import Download
-from .Events import EventBus, Events, info
+from .Events import EventBus, Events
+from .Events import warning as event_warning
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
@@ -313,22 +314,21 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo: Download = Download(info=dl, info_dict=entry)
 
                 if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
-                    dlInfo.info.status = "not_live"
-                    itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
-                    log_message = f"{dl.title or dl.id or dl._id}: stream is not live yet."
-                    if dlInfo.info.live_in:
-                        log_message += f" Will start in {dlInfo.info.live_in}."
+                    dlInfo.info.status = "not_live"
+                    dlInfo.info.msg = "Stream is not live yet."
+                    itemDownload = self.done.put(dlInfo)
                 elif len(entry.get("formats", [])) < 1:
                     availability = entry.get("availability", "public")
                     msg = "No formats found."
-                    if "public" != availability:
+                    if availability and availability not in ("public",):
                         msg += f" Availability is set for '{availability}'."
 
                     dlInfo.info.status = "error"
                     dlInfo.info.error = msg
                     itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
+                    await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
                 elif self.config.allow_manifestless is False and is_manifestless is True:
                     dlInfo.info.status = "error"
                     dlInfo.info.error = "Video is in post-live manifestless mode."
@@ -416,6 +416,7 @@ class DownloadQueue(metaclass=Singleton):
             if downloaded is True and id_dict:
                 message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
                 LOG.info(message)
+                await self._notify.emit(Events.LOG_WARNING, data=event_warning(message))
                 return {"status": "error", "msg": message}
 
             started = time.perf_counter()
