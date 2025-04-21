@@ -18,7 +18,7 @@ from .AsyncPool import AsyncPool
 from .config import Config
 from .DataStore import DataStore
 from .Download import Download
-from .Events import EventBus, Events, info
+from .Events import EventBus, Events
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
@@ -320,7 +320,7 @@ class DownloadQueue(metaclass=Singleton):
                 elif len(entry.get("formats", [])) < 1:
                     availability = entry.get("availability", "public")
                     msg = "No formats found."
-                    if "public" != availability:
+                    if availability and availability not in ("public",):
                         msg += f" Availability is set for '{availability}'."
 
                     dlInfo.info.status = "error"
