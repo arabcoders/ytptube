@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250421-5172742",
-        "date": "2025-04-21T14:40:36+00:00",
+        "tag": "dev-20250421-9ba7b34",
+        "date": "2025-04-21T15:21:29+00:00",
         "commits": [
+            {
+                "sha": "9ba7b34",
+                "message": "Add more events",
+                "author": "arabcoders",
+                "date": "2025-04-21T15:21:29+00:00"
+            },
             {
                 "sha": "5172742",
                 "message": "Only display availability when it's set",
