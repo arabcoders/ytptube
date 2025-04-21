@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250420-f6c7d82",
-        "date": "2025-04-20T17:07:18+00:00",
+        "tag": "dev-20250421-5172742",
+        "date": "2025-04-21T14:40:36+00:00",
         "commits": [
+            {
+                "sha": "5172742",
+                "message": "Only display availability when it's set",
+                "author": "arabcoders",
+                "date": "2025-04-21T14:40:36+00:00"
+            },
             {
                 "sha": "f6c7d82",
                 "message": "restore message about live stream not being live yet.",
