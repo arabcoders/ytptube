@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250421-9ba7b34",
-        "date": "2025-04-21T15:21:29+00:00",
+        "tag": "dev-20250421-62703f3",
+        "date": "2025-04-21T15:40:00+00:00",
         "commits": [
+            {
+                "sha": "62703f3",
+                "message": "add event warning about adding url saved to archive",
+                "author": "arabcoders",
+                "date": "2025-04-21T15:40:00+00:00"
+            },
             {
                 "sha": "9ba7b34",
                 "message": "Add more events",
