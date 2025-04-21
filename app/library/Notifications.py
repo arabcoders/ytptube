@@ -96,6 +96,8 @@ class NotificationEvents:
     CLEARED = Events.CLEARED
     LOG_INFO = Events.LOG_INFO
     LOG_SUCCESS = Events.LOG_SUCCESS
+    LOG_WARNING = Events.LOG_WARNING
+    LOG_ERROR = Events.LOG_ERROR
     TEST = Events.TEST
 
     @staticmethod

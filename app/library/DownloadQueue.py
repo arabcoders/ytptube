@@ -19,6 +19,7 @@ from .config import Config
 from .DataStore import DataStore
 from .Download import Download
 from .Events import EventBus, Events
+from .Events import warning as event_warning
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
@@ -327,6 +328,7 @@ class DownloadQueue(metaclass=Singleton):
                     dlInfo.info.error = msg
                     itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
+                    await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
                 elif self.config.allow_manifestless is False and is_manifestless is True:
                     dlInfo.info.status = "error"
                     dlInfo.info.error = "Video is in post-live manifestless mode."

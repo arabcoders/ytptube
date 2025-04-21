@@ -25,6 +25,21 @@ def error(msg: str, data: dict | None = None) -> dict:
     return message("error", msg, data)
 
 
+def warning(msg: str, data: dict | None = None) -> dict:
+    """
+    Create an error message.
+
+    Args:
+        msg (str): The message.
+        data (dict|None): The data to include in the message.
+
+    Returns:
+        dict : The message wrapped in a dictionary.
+
+    """
+    return message("warning", msg, data)
+
+
 def info(msg: str, data: dict | None = None) -> dict:
     """
     Create an info message.
@@ -87,6 +102,8 @@ class Events:
     CLEARED = "cleared"
     ERROR = "error"
     LOG_INFO = "log_info"
+    LOG_WARNING = "log_warning"
+    LOG_ERROR = "log_error"
     LOG_SUCCESS = "log_success"
 
     INITIAL_DATA = "initial_data"
@@ -139,6 +156,8 @@ class Events:
             Events.ADDED,
             Events.ERROR,
             Events.LOG_INFO,
+            Events.LOG_WARNING,
+            Events.LOG_ERROR,
             Events.LOG_SUCCESS,
             Events.COMPLETED,
             Events.CANCELLED,
