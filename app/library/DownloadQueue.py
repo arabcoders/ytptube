@@ -298,9 +298,6 @@ class DownloadQueue(metaclass=Singleton):
                 if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
                     item.extras[key] = entry.get(key)
 
-            if not live_in and item.extras.get("live_in"):
-                live_in = item.extras.get("live_in")
-
             dl = ItemDTO(
                 id=str(entry.get("id")),
                 title=str(entry.get("title")),
@@ -315,7 +312,7 @@ class DownloadQueue(metaclass=Singleton):
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
-                live_in=live_in,
+                live_in=live_in if live_in else item.extras.get("live_in", None),
                 options=options,
                 cli=item.cli,
                 extras=item.extras,
@@ -324,7 +321,7 @@ class DownloadQueue(metaclass=Singleton):
             try:
                 dlInfo: Download = Download(info=dl, info_dict=entry)
 
-                if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
+                if live_in or "is_upcoming" == entry.get("live_status"):
                     NotifyEvent = Events.COMPLETED
                     dlInfo.info.status = "not_live"
                     dlInfo.info.msg = "Stream is not live yet."
