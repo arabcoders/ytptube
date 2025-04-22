@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250422-3d99247",
-        "date": "2025-04-22T14:24:48+00:00",
+        "tag": "dev-20250422-d3c6517",
+        "date": "2025-04-22T14:38:32+00:00",
         "commits": [
+            {
+                "sha": "d3c6517",
+                "message": "typo update",
+                "author": "arabcoders",
+                "date": "2025-04-22T14:38:32+00:00"
+            },
+            {
+                "sha": "4f0e5d5",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-04-22T14:38:05+00:00"
+            },
             {
                 "sha": "3d99247",
                 "message": "make the date update dynamic",
