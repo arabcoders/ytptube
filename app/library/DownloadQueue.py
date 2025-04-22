@@ -802,7 +802,7 @@ class DownloadQueue(metaclass=Singleton):
             starts_in = parsedate_to_datetime(item.info.live_in)
 
             if time_now < (starts_in + timedelta(minutes=1)):
-                LOG.debug(f"Item '{item_ref}' is not yet live. will start at '{dt_delta(starts_in-time_now)}'.")
+                LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
                 continue
 
             LOG.info(f"Re-queuing item '{item_ref}' for download.")
