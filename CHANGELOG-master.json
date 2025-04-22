@@ -1,5 +1,53 @@
 [
     {
+        "tag": "master-20250422-b29dc00",
+        "date": "2025-04-22T16:10:33+00:00",
+        "commits": [
+            {
+                "sha": "eebfb2a",
+                "message": "Fix re-adding the item after live_in kicks in",
+                "author": "arabcoders",
+                "date": "2025-04-22T16:06:43+00:00"
+            },
+            {
+                "sha": "f0c04e1",
+                "message": "retain live_in value cross re-queue, as sometimes the queue happens and the stream not yet live.",
+                "author": "arabcoders",
+                "date": "2025-04-22T15:13:49+00:00"
+            },
+            {
+                "sha": "d3c6517",
+                "message": "typo update",
+                "author": "arabcoders",
+                "date": "2025-04-22T14:38:32+00:00"
+            },
+            {
+                "sha": "4f0e5d5",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-04-22T14:38:05+00:00"
+            },
+            {
+                "sha": "3d99247",
+                "message": "make the date update dynamic",
+                "author": "arabcoders",
+                "date": "2025-04-22T14:24:48+00:00"
+            },
+            {
+                "sha": "bfe30bc",
+                "message": "update README",
+                "author": "arabcoders",
+                "date": "2025-04-22T13:54:31+00:00"
+            },
+            {
+                "sha": "0b79b6f",
+                "message": "Automatically re-queue upcoming live streams in history.",
+                "author": "arabcoders",
+                "date": "2025-04-22T13:52:52+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250421-53d3b3c",
         "date": "2025-04-21T17:53:59+00:00",
         "commits": [

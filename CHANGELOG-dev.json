@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250422-d3c6517",
-        "date": "2025-04-22T14:38:32+00:00",
+        "tag": "dev-20250422-eebfb2a",
+        "date": "2025-04-22T16:06:43+00:00",
         "commits": [
+            {
+                "sha": "eebfb2a",
+                "message": "Fix re-adding the item after live_in kicks in",
+                "author": "arabcoders",
+                "date": "2025-04-22T16:06:43+00:00"
+            },
+            {
+                "sha": "f0c04e1",
+                "message": "retain live_in value cross re-queue, as sometimes the queue happens and the stream not yet live.",
+                "author": "arabcoders",
+                "date": "2025-04-22T15:13:49+00:00"
+            },
             {
                 "sha": "d3c6517",
                 "message": "typo update",
