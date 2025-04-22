@@ -1093,12 +1093,19 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
 
 def dt_delta(delta: timedelta) -> str:
     """
-    Turn a timedelta into “1d 20h 5min” style output.
+    Convert a timedelta object to a human-readable string.
+
+    Args:
+        delta (timedelta): The timedelta object.
+
+    Returns:
+        str: A human-readable string representing the timedelta.
+
     """
     total_secs = int(delta.total_seconds())
     days, rem = divmod(total_secs, 86400)
     hours, rem = divmod(rem, 3600)
-    minutes = rem // 60
+    minutes, secs = divmod(rem, 60)
 
     parts = []
     if days:
@@ -1106,10 +1113,12 @@ def dt_delta(delta: timedelta) -> str:
     if hours:
         parts.append(f"{hours}h")
     if minutes:
-        parts.append(f"{minutes}min")
+        parts.append(f"{minutes}m")
+    if secs:
+        parts.append(f"{secs}s")
 
-    # if it's under one minute:
+    # if it's under one second
     if not parts:
-        parts.append("0min")
+        parts.append("<1s")
 
     return " ".join(parts)
