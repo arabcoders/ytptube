@@ -83,10 +83,8 @@
                   </div>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
-                  <span :data-datetime="item.datetime"
-                    v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
-                    {{ moment(item.datetime).fromNow() }}
-                  </span>
+                  <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')"
+                    :data-datetime="item.datetime" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
@@ -167,10 +165,8 @@
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <span :data-datetime="item.datetime"
-                  v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')">
-                  {{ moment(item.datetime).fromNow() }}
-                </span>
+                <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
+                  v-rtime="item.datetime" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <label class="checkbox is-block">

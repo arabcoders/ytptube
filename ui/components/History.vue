@@ -125,17 +125,13 @@
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
                   <span class="user-hint" :date-datetime="item.datetime"
-                    v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
-                    {{ moment(item.datetime).fromNow() }}
-                  </span>
+                    v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable"
                   v-if="item.live_in && 'not_live' === item.status">
-                  <span class="icon"><i class="fa-solid fa-spin fa-rotate-right" /></span>
                   <span :date-datetime="item.live_in" class="user-hint"
-                    v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
-                    {{ moment(item.live_in).fromNow() }}
-                  </span>
+                    v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
+                    v-rtime="item.live_in" />
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable" v-else>
                   {{ item.file_size ? formatBytes(item.file_size) : '-' }}
@@ -259,17 +255,13 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.live_in && 'not_live' === item.status">
-                <span class="icon"><i class="fa-solid fa-spin fa-rotate-right" /></span>
                 <span :date-datetime="item.live_in" class="user-hint"
-                  v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
-                  {{ moment(item.live_in).fromNow() }}
-                </span>
+                  v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
+                  v-rtime="item.live_in" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="user-hint" :date-datetime="item.datetime"
-                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
-                  {{ moment(item.datetime).fromNow() }}
-                </span>
+                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.file_size">
