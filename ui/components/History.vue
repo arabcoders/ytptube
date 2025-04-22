@@ -618,16 +618,6 @@ const removeItem = item => {
 }
 
 const reQueueItem = (item, event = null) => {
-  let extras = {}
-
-  if (item?.extras) {
-    Object.keys(item.extras).forEach(k => {
-      if (k && true === k.startsWith('playlist')) {
-        extras[k] = item.extras[k]
-      }
-    })
-  }
-
   const item_req = {
     url: item.url,
     preset: item.preset,
@@ -635,7 +625,7 @@ const reQueueItem = (item, event = null) => {
     cookies: item.cookies,
     template: item.template,
     cli: item?.cli,
-    extras: extras
+    extras: item?.extras && Object.keys(item.extras) > 0 ? item.extras : {},
   };
 
   socket.emit('item_delete', { id: item._id, remove_file: false })

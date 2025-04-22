@@ -200,6 +200,8 @@ class DownloadQueue(metaclass=Singleton):
             for key in item.extras.copy():
                 if not self.keep_extra_key(key):
                     item.extras.pop(key)
+        else:
+            item.extras = {}
 
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
@@ -250,6 +252,7 @@ class DownloadQueue(metaclass=Singleton):
             if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
                 if entry.get("release_timestamp"):
                     live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
+                    item.extras.update({"live_in": live_in})
                 else:
                     error = "Live stream not yet started. And no date is set."
             else:
@@ -294,6 +297,9 @@ class DownloadQueue(metaclass=Singleton):
             for key in entry:
                 if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
                     item.extras[key] = entry.get(key)
+
+            if not live_in and item.extras.get("live_in"):
+                live_in = item.extras.get("live_in")
 
             dl = ItemDTO(
                 id=str(entry.get("id")),
@@ -750,7 +756,7 @@ class DownloadQueue(metaclass=Singleton):
             bool: True if the extra key should be kept, False otherwise.
 
         """
-        keys = ("playlist", "external_downloader")
+        keys = ("playlist", "external_downloader", "live_in")
         return any(key == k or key.startswith(k) for k in keys)
 
     async def monitor_queue_for_stale_items(self):
@@ -772,6 +778,7 @@ class DownloadQueue(metaclass=Singleton):
                 await self.cancel([id])
             except Exception as e:
                 LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
+                LOG.exception(e)
 
     async def monitor_queue_live(self):
         """
@@ -805,7 +812,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
                 continue
 
-            LOG.info(f"Re-queuing item '{item_ref}' for download.")
+            LOG.info(f"Re-queuing item '{item_ref} {item.info.extras=}' for download.")
 
             try:
                 await self.clear([item.info._id], remove_file=False)
@@ -824,7 +831,7 @@ class DownloadQueue(metaclass=Singleton):
                     cli=item.info.cli,
                     extras=item.info.extras,
                 )
-
                 await self.add(item=new_queue)
             except Exception as e:
                 LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")
+                LOG.exception(e)
