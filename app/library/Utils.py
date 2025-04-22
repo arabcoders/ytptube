@@ -1,6 +1,5 @@
 import base64
 import copy
-import datetime
 import glob
 import ipaddress
 import json
@@ -11,6 +10,7 @@ import re
 import shlex
 import socket
 import uuid
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
 from typing import Any
@@ -68,7 +68,7 @@ class StreamingError(Exception):
 
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
-        return datetime.datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+        return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
 
 def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
@@ -844,8 +844,8 @@ def get_files(base_path: str, dir: str | None = None):
                 "path": str(file).replace(base_path, "").strip("/"),
                 "size": stat.st_size,
                 "mime": get_mime_type({}, file) if file.is_file() else "directory",
-                "mtime": datetime.datetime.fromtimestamp(stat.st_mtime, tz=datetime.UTC).isoformat(),
-                "ctime": datetime.datetime.fromtimestamp(stat.st_ctime, tz=datetime.UTC).isoformat(),
+                "mtime": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
+                "ctime": datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
                 "is_dir": file.is_dir(),
                 "is_file": file.is_file(),
             }
@@ -1089,3 +1089,36 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
         break
 
     return idDict
+
+
+def dt_delta(delta: timedelta) -> str:
+    """
+    Convert a timedelta object to a human-readable string.
+
+    Args:
+        delta (timedelta): The timedelta object.
+
+    Returns:
+        str: A human-readable string representing the timedelta.
+
+    """
+    total_secs = int(delta.total_seconds())
+    days, rem = divmod(total_secs, 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, secs = divmod(rem, 60)
+
+    parts = []
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    if secs:
+        parts.append(f"{secs}s")
+
+    # if it's under one second
+    if not parts:
+        parts.append("<1s")
+
+    return " ".join(parts)

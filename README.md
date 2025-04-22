@@ -25,6 +25,7 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Support for both advanced and basic mode for WebUI.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
+* Automatic upcoming live stream re-queue.
 
 # Run using docker command
 

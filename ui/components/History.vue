@@ -125,16 +125,13 @@
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
                   <span class="user-hint" :date-datetime="item.datetime"
-                    v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
-                    {{ moment(item.datetime).fromNow() }}
-                  </span>
+                    v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable"
                   v-if="item.live_in && 'not_live' === item.status">
                   <span :date-datetime="item.live_in" class="user-hint"
-                    v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
-                    {{ moment(item.live_in).fromNow() }}
-                  </span>
+                    v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
+                    v-rtime="item.live_in" />
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable" v-else>
                   {{ item.file_size ? formatBytes(item.file_size) : '-' }}
@@ -259,15 +256,12 @@
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.live_in && 'not_live' === item.status">
                 <span :date-datetime="item.live_in" class="user-hint"
-                  v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
-                  {{ moment(item.live_in).fromNow() }}
-                </span>
+                  v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
+                  v-rtime="item.live_in" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="user-hint" :date-datetime="item.datetime"
-                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
-                  {{ moment(item.datetime).fromNow() }}
-                </span>
+                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.file_size">
@@ -624,16 +618,6 @@ const removeItem = item => {
 }
 
 const reQueueItem = (item, event = null) => {
-  let extras = {}
-
-  if (item?.extras) {
-    Object.keys(item.extras).forEach(k => {
-      if (k && true === k.startsWith('playlist')) {
-        extras[k] = item.extras[k]
-      }
-    })
-  }
-
   const item_req = {
     url: item.url,
     preset: item.preset,
@@ -641,7 +625,7 @@ const reQueueItem = (item, event = null) => {
     cookies: item.cookies,
     template: item.template,
     cli: item?.cli,
-    extras: extras
+    extras: item?.extras && Object.keys(item.extras) > 0 ? item.extras : {},
   };
 
   socket.emit('item_delete', { id: item._id, remove_file: false })

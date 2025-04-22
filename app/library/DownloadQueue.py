@@ -5,8 +5,8 @@ import logging
 import os
 import time
 import uuid
-from datetime import UTC, datetime
-from email.utils import formatdate
+from datetime import UTC, datetime, timedelta
+from email.utils import formatdate, parsedate_to_datetime
 from pathlib import Path
 from sqlite3 import Connection
 
@@ -24,7 +24,7 @@ from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import arg_converter, calc_download_path, extract_info, is_downloaded, load_cookies
+from .Utils import arg_converter, calc_download_path, dt_delta, extract_info, is_downloaded, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -95,9 +95,14 @@ class DownloadQueue(metaclass=Singleton):
         Scheduler.get_instance().add(
             timer="* * * * *",
             func=self.monitor_queue_for_stale_items,
-            id=f"{__class__.__name__}.monitor_queue_for_stale_items",
+            id=f"{__class__.__name__}.{__class__.monitor_queue_for_stale_items.__name__}",
         )
 
+        Scheduler.get_instance().add(
+            timer="* * * * *",
+            func=self.monitor_queue_live,
+            id=f"{__class__.__name__}.{__class__.monitor_queue_live.__name__}",
+        )
         # app.on_shutdown.append(self.on_shutdown)
 
         # async def close_pool(_: web.Application):
@@ -195,6 +200,8 @@ class DownloadQueue(metaclass=Singleton):
             for key in item.extras.copy():
                 if not self.keep_extra_key(key):
                     item.extras.pop(key)
+        else:
+            item.extras = {}
 
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
@@ -243,8 +250,9 @@ class DownloadQueue(metaclass=Singleton):
         if ("video" == eventType or eventType.startswith("url")) and "id" in entry and "title" in entry:
             # check if the video is live stream.
             if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
-                if "release_timestamp" in entry and entry.get("release_timestamp"):
-                    live_in = formatdate(entry.get("release_timestamp"))
+                if entry.get("release_timestamp"):
+                    live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
+                    item.extras.update({"live_in": live_in})
                 else:
                     error = "Live stream not yet started. And no date is set."
             else:
@@ -304,7 +312,7 @@ class DownloadQueue(metaclass=Singleton):
                 datetime=formatdate(time.time()),
                 error=error,
                 is_live=is_live,
-                live_in=live_in,
+                live_in=live_in if live_in else item.extras.get("live_in", None),
                 options=options,
                 cli=item.cli,
                 extras=item.extras,
@@ -313,7 +321,7 @@ class DownloadQueue(metaclass=Singleton):
             try:
                 dlInfo: Download = Download(info=dl, info_dict=entry)
 
-                if dlInfo.info.live_in or "is_upcoming" == entry.get("live_status"):
+                if live_in or "is_upcoming" == entry.get("live_status"):
                     NotifyEvent = Events.COMPLETED
                     dlInfo.info.status = "not_live"
                     dlInfo.info.msg = "Stream is not live yet."
@@ -745,14 +753,14 @@ class DownloadQueue(metaclass=Singleton):
             bool: True if the extra key should be kept, False otherwise.
 
         """
-        keys = ("playlist", "external_downloader")
+        keys = ("playlist", "external_downloader", "live_in")
         return any(key == k or key.startswith(k) for k in keys)
 
     async def monitor_queue_for_stale_items(self):
         """
         Monitor the queue for stale items and cancel them if needed.
         """
-        if self.is_paused() or not self.queue.has_downloads():
+        if self.is_paused() or self.queue.empty():
             return
 
         LOG.debug("Checking for stale items in the download queue.")
@@ -767,3 +775,60 @@ class DownloadQueue(metaclass=Singleton):
                 await self.cancel([id])
             except Exception as e:
                 LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
+                LOG.exception(e)
+
+    async def monitor_queue_live(self):
+        """
+        Monitor the queue for items marked as live events and queue them when time is reached.
+        """
+        if self.is_paused() or self.done.empty():
+            return
+
+        LOG.debug("Checking for live stream items in the history queue.")
+
+        time_now = datetime.now(tz=UTC)
+
+        status = ["not_live", "is_upcoming", "is_live"]
+
+        for id, item in list(self.done.items()):
+            if item.info.status not in status:
+                continue
+
+            item_ref = f"{id=} {item.info.id=} {item.info.title=}"
+            if not item.is_live:
+                LOG.debug(f"Item '{item_ref}' is not a live stream.")
+                continue
+
+            if not item.info.live_in:
+                LOG.debug(f"Item '{item_ref}' marked as live stream, but no date is set.")
+                continue
+
+            starts_in = parsedate_to_datetime(item.info.live_in)
+
+            if time_now < (starts_in + timedelta(minutes=1)):
+                LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
+                continue
+
+            LOG.info(f"Re-queuing item '{item_ref} {item.info.extras=}' for download.")
+
+            try:
+                await self.clear([item.info._id], remove_file=False)
+            except Exception as e:
+                LOG.error(f"Failed to clear item '{item_ref}'. {e!s}")
+                continue
+
+            try:
+                info = item.info
+                new_queue = Item(
+                    url=info.url,
+                    preset=info.preset,
+                    folder=info.folder,
+                    cookies=info.cookies,
+                    template=info.template,
+                    cli=item.info.cli,
+                    extras=item.info.extras,
+                )
+                await self.add(item=new_queue)
+            except Exception as e:
+                LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")
+                LOG.exception(e)
