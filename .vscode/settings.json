@@ -52,6 +52,7 @@
     "tmpfilename",
     "upgrader",
     "urandom",
+    "usegmt",
     "vcodec",
     "vconvert",
     "writedescription",

@@ -131,8 +131,9 @@
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable"
                   v-if="item.live_in && 'not_live' === item.status">
+                  <span class="icon"><i class="fa-solid fa-spin fa-rotate-right" /></span>
                   <span :date-datetime="item.live_in" class="user-hint"
-                    v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                    v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                     {{ moment(item.live_in).fromNow() }}
                   </span>
                 </td>
@@ -258,8 +259,9 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.live_in && 'not_live' === item.status">
+                <span class="icon"><i class="fa-solid fa-spin fa-rotate-right" /></span>
                 <span :date-datetime="item.live_in" class="user-hint"
-                  v-tooltip="'Starts at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
+                  v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')">
                   {{ moment(item.live_in).fromNow() }}
                 </span>
               </div>
