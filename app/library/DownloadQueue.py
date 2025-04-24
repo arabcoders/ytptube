@@ -804,6 +804,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             starts_in = parsedate_to_datetime(item.info.live_in)
+            starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
 
             if time_now < (starts_in + timedelta(minutes=1)):
                 LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
