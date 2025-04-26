@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250424-4f81944",
-        "date": "2025-04-24T12:57:10+00:00",
+        "tag": "dev-20250426-68a0d6b",
+        "date": "2025-04-26T14:08:13+00:00",
         "commits": [
+            {
+                "sha": "68a0d6b",
+                "message": "Added more protection to workers pool being stuck in preparing state.",
+                "author": "arabcoders",
+                "date": "2025-04-26T14:08:13+00:00"
+            },
             {
                 "sha": "4f81944",
                 "message": "ensure info_dict contains formats before passing to yt-dlp",
