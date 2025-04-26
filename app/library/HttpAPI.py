@@ -1029,11 +1029,10 @@ class HttpAPI(Common):
 
         """
         data: dict = {"queue": [], "history": []}
+        q = self.queue.get()
 
-        for _, v in self.queue.queue.saved_items():
-            data["queue"].append(v)
-        for _, v in self.queue.done.saved_items():
-            data["history"].append(v)
+        data["queue"].extend([q.get("queue", {}).get(k) for k in q.get("queue", {})])
+        data["history"].extend([q.get("done", {}).get(k) for k in q.get("done", {})])
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
