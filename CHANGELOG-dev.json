@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250426-ca10ce2",
-        "date": "2025-04-26T14:56:01+00:00",
+        "tag": "dev-20250426-ae9b30d",
+        "date": "2025-04-26T15:51:33+00:00",
         "commits": [
+            {
+                "sha": "ae9b30d",
+                "message": "removed imageipsum as background source.",
+                "author": "arabcoders",
+                "date": "2025-04-26T15:51:33+00:00"
+            },
+            {
+                "sha": "7a01a84",
+                "message": "Add missing None check",
+                "author": "arabcoders",
+                "date": "2025-04-26T15:51:07+00:00"
+            },
             {
                 "sha": "ca10ce2",
                 "message": "Import ag_utils",
