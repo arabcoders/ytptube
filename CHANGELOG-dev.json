@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250426-ae9b30d",
-        "date": "2025-04-26T15:51:33+00:00",
+        "tag": "dev-20250426-2fa5218",
+        "date": "2025-04-26T16:51:42+00:00",
+        "commits": [
+            {
+                "sha": "2fa5218",
+                "message": "upgrade external packages.",
+                "author": "arabcoders",
+                "date": "2025-04-26T16:51:42+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250426-1bbaf46",
+        "date": "2025-04-26T16:34:31+00:00",
         "commits": [
             {
                 "sha": "ae9b30d",
