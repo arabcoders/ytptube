@@ -24,7 +24,7 @@ from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import ag, arg_converter, calc_download_path, dt_delta, extract_info, is_downloaded, load_cookies
+from .Utils import arg_converter, calc_download_path, dt_delta, extract_info, is_downloaded, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -786,8 +786,8 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.debug(f"Checking for stale workers. {len(workers)} workers found.")
 
             for worker_id in workers:
-                worker = ag(workers, worker_id, {})
-                started = ag(worker, "started", None)
+                worker = workers.get(worker_id, {})
+                started = worker.get("started", None)
                 if not started:
                     LOG.debug(f"Worker '{worker_id}' not working yet.")
                     continue
@@ -798,18 +798,20 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.debug(f"Worker '{worker_id}' is not consider stale yet.")
                     continue
 
-                status = ag(worker, "data.status", None)
+                data = worker.get("data", {})
+
+                status = data.get("status", None)
                 if "preparing" != status:
                     LOG.debug(f"Worker '{worker_id}' not stuck. Status '{status}'.")
                     continue
 
-                _id = ag(worker, "data._id", None)
+                _id = data.get("data._id", None)
                 if not _id:
                     LOG.debug(f"Worker '{worker_id}' has no id.")
                     continue
 
-                id = ag(worker, "data.id", None)
-                title = ag(worker, "data.title", None)
+                id = data.get("id", None)
+                title = data.get("title", None)
 
                 item_ref = f"{_id=} {id=} {title=}"
 
