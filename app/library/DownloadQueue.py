@@ -50,7 +50,8 @@ class DownloadQueue(metaclass=Singleton):
     pool: AsyncPool | None = None
     """Pool of workers to download the files."""
 
-    _active_downloads: dict[str, Download] = {}
+    _active: dict[str, Download] = {}
+    """Dictionary of active downloads."""
 
     _instance = None
     """Instance of the DownloadQueue."""
@@ -94,8 +95,8 @@ class DownloadQueue(metaclass=Singleton):
 
         Scheduler.get_instance().add(
             timer="* * * * *",
-            func=self.monitor_queue_for_stale_items,
-            id=f"{__class__.__name__}.{__class__.monitor_queue_for_stale_items.__name__}",
+            func=self.monitor_stale,
+            id=f"{__class__.__name__}.{__class__.monitor_stale.__name__}",
         )
 
         Scheduler.get_instance().add(
@@ -176,10 +177,10 @@ class DownloadQueue(metaclass=Singleton):
 
     async def on_shutdown(self, _: web.Application):
         LOG.debug("Canceling all active downloads.")
-        if self._active_downloads:
+        if self._active:
             self.pause()
             try:
-                await self.cancel(list(self._active_downloads.keys()))
+                await self.cancel(list(self._active.keys()))
             except Exception as e:
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
@@ -603,14 +604,14 @@ class DownloadQueue(metaclass=Singleton):
         items = {"queue": {}, "done": {}}
 
         for k, v in self.queue.saved_items():
-            items["queue"][k] = v
+            items["queue"][k] = self._active[k].info if k in self._active else v
 
         for k, v in self.done.saved_items():
             items["done"][k] = v
 
         for k, v in self.queue.items():
             if k not in items["queue"]:
-                items["queue"][k] = v.info
+                items["queue"][k] = self._active[k].info if k in self._active else v
 
         for k, v in self.done.items():
             if k not in items["done"]:
@@ -690,7 +691,7 @@ class DownloadQueue(metaclass=Singleton):
         )
 
         try:
-            self._active_downloads[entry.info._id] = entry
+            self._active[entry.info._id] = entry
             await entry.start()
 
             if "finished" != entry.info.status:
@@ -703,8 +704,8 @@ class DownloadQueue(metaclass=Singleton):
 
                 entry.info.status = "error"
         finally:
-            if entry.info._id in self._active_downloads:
-                self._active_downloads.pop(entry.info._id, None)
+            if entry.info._id in self._active:
+                self._active.pop(entry.info._id, None)
 
             await entry.close()
 
@@ -756,26 +757,73 @@ class DownloadQueue(metaclass=Singleton):
         keys = ("playlist", "external_downloader", "live_in")
         return any(key == k or key.startswith(k) for k in keys)
 
-    async def monitor_queue_for_stale_items(self):
+    async def monitor_stale(self):
         """
-        Monitor the queue for stale items and cancel them if needed.
+        Monitor the queue and pool for stale downloads and cancel them if needed.
         """
         if self.is_paused() or self.queue.empty():
             return
 
-        LOG.debug("Checking for stale items in the download queue.")
-        for id, item in list(self.queue.items()):
-            item_ref = f"{id=} {item.info.id=} {item.info.title=}"
-            if not item.is_stale():
-                LOG.debug(f"Item '{item_ref}' is not stale.")
-                continue
+        if not self.queue.empty():
+            LOG.debug("Checking for stale items in the download queue.")
+            for _id, item in list(self.queue.items()):
+                item_ref = f"{_id=} {item.info.id=} {item.info.title=}"
+                if not item.is_stale():
+                    LOG.debug(f"Item '{item_ref}' is not stale.")
+                    continue
 
-            LOG.warning(f"Cancelling staled item '{item_ref}' from download queue.")
-            try:
-                await self.cancel([id])
-            except Exception as e:
-                LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
-                LOG.exception(e)
+                LOG.warning(f"Cancelling staled item '{item_ref}' from download queue.")
+                try:
+                    await self.cancel([_id])
+                except Exception as e:
+                    LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
+                    LOG.exception(e)
+
+        if self.pool:
+            time_now = datetime.now(tz=UTC)
+            workers = self.pool.get_workers_status()
+            if len(workers) > 0:
+                LOG.debug(f"Checking for stale workers. {len(workers)} workers found.")
+
+            for worker_id in workers:
+                worker = workers.get(worker_id, {})
+                if not worker:
+                    continue
+
+                started = worker.get("started", None)
+                if not started:
+                    LOG.debug(f"Worker '{worker_id}' not working yet.")
+                    continue
+
+                started = datetime.fromisoformat(started)
+
+                if time_now - started < timedelta(minutes=5):
+                    LOG.debug(f"Worker '{worker_id}' is not consider stale yet.")
+                    continue
+
+                data = worker.get("data", {})
+
+                status = data.get("status", None)
+                if "preparing" != status:
+                    LOG.debug(f"Worker '{worker_id}' not stuck. Status '{status}'.")
+                    continue
+
+                _id = data.get("data._id", None)
+                if not _id:
+                    LOG.debug(f"Worker '{worker_id}' has no id.")
+                    continue
+
+                id = data.get("id", None)
+                title = data.get("title", None)
+
+                item_ref = f"{_id=} {id=} {title=}"
+
+                LOG.warning(f"Cancelling staled item '{item_ref}' from worker pool.")
+                try:
+                    await self.cancel([_id])
+                except Exception as e:
+                    LOG.error(f"Failed to cancel staled item '{item_ref}' from worker pool. {e!s}")
+                    LOG.exception(e)
 
     async def monitor_queue_live(self):
         """
@@ -804,6 +852,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             starts_in = parsedate_to_datetime(item.info.live_in)
+            starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
 
             if time_now < (starts_in + timedelta(minutes=1)):
                 LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")

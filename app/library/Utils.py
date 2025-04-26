@@ -13,7 +13,6 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
-from typing import Any
 
 import yt_dlp
 from Crypto.Cipher import AES
@@ -277,7 +276,7 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
             opts = json.load(json_data)
 
         if check_type:
-            assert isinstance(opts, check_type)  # noqa: S101
+            assert isinstance(opts, check_type)
 
         return (opts, True, "")
     except Exception:
@@ -288,7 +287,7 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 opts = json5_load(json_data)
 
                 if check_type:
-                    assert isinstance(opts, check_type)  # noqa: S101
+                    assert isinstance(opts, check_type)
 
                 return (opts, True, "")
             except AssertionError:
@@ -327,63 +326,6 @@ def check_id(file: pathlib.Path) -> bool | str:
     return False
 
 
-def get_value(value):
-    return value() if callable(value) else value
-
-
-def ag(array: dict | list, path: list[str | int] | str | int, default: Any = None, separator: str = ".") -> Any:
-    """
-    dict/array getter: Retrieve a value from a nested dict or object using a path.
-
-    Args:
-        array (dict|list): dict-like or object from which to retrieve values.
-        path (list|str|int): Represents the path to retrieve:
-            - If None or empty string, returns the entire structure.
-            - If list, tries each path and returns the first found.
-            - If string, navigates through nested dict keys separated by `separator`.
-        default (Any): Value (or callable) returned if nothing is found.
-        separator (str): Separator for nested paths in strings.
-
-    Returns:
-        Any: The found value or the default if not found.
-
-    """
-    if path is None or path == "":
-        return array
-
-    if not isinstance(array, dict):
-        try:
-            array = vars(array)
-        except TypeError:
-            array = dict(array)
-
-    if isinstance(path, list):
-        randomValue = str(uuid.uuid4())
-        for key in path:
-            val = ag(array, key, randomValue, separator)
-            if val != randomValue:
-                return val
-
-        return get_value(default)
-
-    if path in array and array[path] is not None:
-        return array[path]
-
-    if separator not in path:
-        return array.get(path, get_value(default))
-
-    keys = path.split(separator)
-    current = array
-
-    for segment in keys:
-        if isinstance(current, dict) and segment in current:
-            current = current[segment]
-        else:
-            return get_value(default)
-
-    return current
-
-
 @lru_cache(maxsize=512)
 def is_private_address(hostname: str) -> bool:
     try:
@@ -402,11 +344,11 @@ def validate_url(url: str) -> bool:
     Args:
         url (str): URL to validate.
 
-    Raises:
-        ValueError: If the URL is invalid or not allowed.
-
     Returns:
         bool: True if the URL is valid and allowed.
+
+    Raises:
+        ValueError: If the URL is invalid or not allowed.
 
     """
     if not url:

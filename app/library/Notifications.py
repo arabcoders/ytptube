@@ -10,12 +10,13 @@ from typing import Any
 import httpx
 from aiohttp import web
 
+from .ag_utils import ag
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
-from .Utils import ag, validate_uuid
+from .Utils import validate_uuid
 from .version import APP_VERSION
 
 LOG = logging.getLogger("notifications")

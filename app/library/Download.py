@@ -218,6 +218,10 @@ class Download:
                         f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted which are known to cause issues with live stream and post stream manifestless mode."
                     )
 
+            if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
+                msg = f"Failed to extract formats for '{self.info.url}'. The extracted info dict is empty."
+                raise ValueError(msg)  # noqa: TRY301
+
             self.logger.info(
                 f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" started.'
             )
