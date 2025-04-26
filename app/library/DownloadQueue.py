@@ -787,6 +787,9 @@ class DownloadQueue(metaclass=Singleton):
 
             for worker_id in workers:
                 worker = workers.get(worker_id, {})
+                if not worker:
+                    continue
+
                 started = worker.get("started", None)
                 if not started:
                     LOG.debug(f"Worker '{worker_id}' not working yet.")
