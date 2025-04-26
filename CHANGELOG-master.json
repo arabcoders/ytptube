@@ -1,5 +1,53 @@
 [
     {
+        "tag": "master-20250426-1bbaf46",
+        "date": "2025-04-26T16:34:31+00:00",
+        "commits": [
+            {
+                "sha": "ae9b30d",
+                "message": "removed imageipsum as background source.",
+                "author": "arabcoders",
+                "date": "2025-04-26T15:51:33+00:00"
+            },
+            {
+                "sha": "7a01a84",
+                "message": "Add missing None check",
+                "author": "arabcoders",
+                "date": "2025-04-26T15:51:07+00:00"
+            },
+            {
+                "sha": "ca10ce2",
+                "message": "Import ag_utils",
+                "author": "arabcoders",
+                "date": "2025-04-26T14:56:01+00:00"
+            },
+            {
+                "sha": "0f69ec0",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-04-26T14:22:59+00:00"
+            },
+            {
+                "sha": "68a0d6b",
+                "message": "Added more protection to workers pool being stuck in preparing state.",
+                "author": "arabcoders",
+                "date": "2025-04-26T14:08:13+00:00"
+            },
+            {
+                "sha": "4f81944",
+                "message": "ensure info_dict contains formats before passing to yt-dlp",
+                "author": "arabcoders",
+                "date": "2025-04-24T12:57:10+00:00"
+            },
+            {
+                "sha": "e59ed7c",
+                "message": "fix timezone issue in monitor live streams",
+                "author": "arabcoders",
+                "date": "2025-04-24T12:44:51+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250422-b29dc00",
         "date": "2025-04-22T16:10:33+00:00",
         "commits": [
