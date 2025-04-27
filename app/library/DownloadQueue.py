@@ -761,7 +761,7 @@ class DownloadQueue(metaclass=Singleton):
         """
         Monitor the queue and pool for stale downloads and cancel them if needed.
         """
-        if self.is_paused() or self.queue.empty():
+        if self.is_paused():
             return
 
         if not self.queue.empty():
