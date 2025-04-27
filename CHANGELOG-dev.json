@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250426-2fa5218",
-        "date": "2025-04-26T16:51:42+00:00",
+        "tag": "dev-20250427-2d86aae",
+        "date": "2025-04-27T16:44:44+00:00",
+        "commits": [
+            {
+                "sha": "2d86aae",
+                "message": "attempt at fixing duplicate logging",
+                "author": "arabcoders",
+                "date": "2025-04-27T16:44:44+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250426-d385e41",
+        "date": "2025-04-26T16:58:34+00:00",
         "commits": [
             {
                 "sha": "2fa5218",
