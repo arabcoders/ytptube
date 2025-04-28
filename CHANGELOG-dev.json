@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250427-2d86aae",
-        "date": "2025-04-27T16:44:44+00:00",
+        "tag": "dev-20250428-d895904",
+        "date": "2025-04-28T15:40:23+00:00",
         "commits": [
+            {
+                "sha": "d895904",
+                "message": "Switched newDownload form to use HttpAPI for easier unlocking of download button.",
+                "author": "arabcoders",
+                "date": "2025-04-28T15:40:23+00:00"
+            },
+            {
+                "sha": "d4ca763",
+                "message": "reverted some changes to logging",
+                "author": "arabcoders",
+                "date": "2025-04-28T15:15:11+00:00"
+            },
             {
                 "sha": "2d86aae",
                 "message": "attempt at fixing duplicate logging",
