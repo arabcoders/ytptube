@@ -206,12 +206,13 @@ const addDownload = async () => {
     }
   }
 
-  addInProgress.value = true
+  const request_data = []
 
-  form.value.url.split(',').forEach(url => {
+  form.value.url.split(',').forEach(async (url) => {
     if (!url.trim()) {
       return
     }
+
     const data = {
       url: url,
       preset: config.app.basic_mode ? config.app.default_preset : form.value.preset,
@@ -225,8 +226,31 @@ const addDownload = async () => {
       data.extras = form.value.extras
     }
 
-    socket.emit('add_url', data)
+    request_data.push(data)
   })
+
+  try {
+    addInProgress.value = true
+    const response = await request('/api/history', {
+      credentials: 'include',
+      method: 'POST',
+      body: JSON.stringify(request_data),
+    })
+
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.error)
+    }
+
+    form.value.url = ''
+    emitter('clear_form')
+  }
+  catch (e) {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+  } finally {
+    addInProgress.value = false
+  }
 }
 
 const resetConfig = () => {
@@ -250,29 +274,6 @@ const resetConfig = () => {
   toast.success('Local configuration has been reset.')
 }
 
-const statusHandler = async stream => {
-  const { status, msg } = JSON.parse(stream)
-
-  addInProgress.value = false
-
-  if ('error' === status) {
-    toast.error(msg)
-    return
-  }
-
-  form.value.url = ''
-}
-
-const unlockDownload = async stream => {
-  const json = JSON.parse(stream)
-  if (!json?.data) {
-    return
-  }
-  if ("unlock" in json.data && true === json.data.unlock) {
-    addInProgress.value = false
-  }
-}
-
 const convertOptions = async args => {
   try {
     const response = await convertCliOptions(args)
@@ -294,9 +295,6 @@ const convertOptions = async args => {
 }
 
 onMounted(async () => {
-  socket.on('status', statusHandler)
-  socket.on('error', unlockDownload)
-
   await nextTick()
 
   if ('' === form.value?.preset) {
@@ -315,11 +313,6 @@ onMounted(async () => {
     })
     emitter('clear_form');
   }
-})
-
-onUnmounted(() => {
-  socket.off('status', statusHandler)
-  socket.off('error', unlockDownload)
 })
 
 const hasFormatInConfig = computed(() => {
