@@ -1,5 +1,8 @@
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
+
+LOG = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
@@ -8,6 +11,7 @@ class LogTarget:
     A data class that represents a logging target with its level and type.
 
     Attributes:
+        name (str): The name of the logging target.
         target: The logging target, which can be a logging.Logger instance or a callable.
         level (int): The logging level for the target.
         logger (bool): True if the target is a logging.Logger instance, False otherwise.
@@ -15,7 +19,8 @@ class LogTarget:
 
     """
 
-    target: "logging.Logger|callable"
+    name: str | None = None
+    target: logging.Logger | Callable
     level: int
     logger: bool
 
@@ -55,17 +60,36 @@ class LogWrapper:
     """
 
     targets: list[LogTarget] = []
+    """A list of dictionaries where each dictionary represents a logging target with its level and type."""
 
-    def add_target(self, target: "logging.Logger|callable", level: int = logging.DEBUG):
+    def __init__(self):
+        self.targets: list[LogTarget] = []
+
+    def add_target(self, target: logging.Logger | Callable, level: int = logging.DEBUG, name: str | None = None):
         """
         Adds a new logging target with the specified logging level.
 
         Args:
-            target (logging.Logger|callable): The logging target, which can be a logging.Logger instance or a callable.
+            target (logging.Logger|Callable): The logging target, which can be a logging.Logger instance or a Callable.
             level (int): The logging level for the target. Defaults to logging.DEBUG.
+            name (str|None): The name of the logging target. Defaults to None.
 
         """
-        self.targets.append(LogTarget(target=target, level=level, logger=isinstance(target, logging.Logger)))
+        if not isinstance(target, logging.Logger | Callable):
+            msg = "Target must be a logging.Logger instance or a callable."
+            raise TypeError(msg)
+
+        if name is None:
+            name = target.name if isinstance(target, logging.Logger) else target.__name__
+
+        self.targets.append(
+            LogTarget(
+                name=name,
+                target=target,
+                level=level,
+                logger=isinstance(target, logging.Logger),
+            )
+        )
 
     def has_targets(self):
         """

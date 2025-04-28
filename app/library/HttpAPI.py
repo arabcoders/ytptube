@@ -722,14 +722,15 @@ class HttpAPI(Common):
             except ValueError as e:
                 return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
-        return web.json_response(
-            data=await asyncio.wait_for(
-                fut=asyncio.gather(*[self.add(item=item) for item in items]),
-                timeout=None,
-            ),
-            status=web.HTTPOk.status_code,
-            dumps=self.encoder.encode,
+        status = await asyncio.wait_for(
+            fut=asyncio.gather(*[self.add(item=item) for item in items]),
+            timeout=None,
         )
+        response = []
+        for i, item in enumerate(items):
+            response.append({"item": item, "status": status[i].get("status") == "ok", "msg": status[i].get("msg")})
+
+        return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("GET", "api/logs")
     async def logs(self, request: Request) -> Response:

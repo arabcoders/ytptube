@@ -109,6 +109,7 @@ def extract_info(
     no_archive: bool = False,
     follow_redirect: bool = False,
     sanitize_info: bool = False,
+    **kwargs,  # noqa: ARG001
 ) -> dict:
     """
     Extracts video information from the given URL.
@@ -120,13 +121,12 @@ def extract_info(
         no_archive (bool): Disable download archive.
         follow_redirect (bool): Follow URL redirects.
         sanitize_info (bool): Sanitize the extracted information
+        **kwargs: Additional arguments.
 
     Returns:
         dict: Video information.
 
     """
-    log_wrapper = LogWrapper()
-
     params: dict = {
         **config,
         "color": "no_color",
@@ -141,26 +141,31 @@ def extract_info(
     for key in keys_to_remove:
         params.pop(key, None)
 
-    id = None
-    idDict = get_archive_id(url=url)
-    if idDict.get("id"):
-        id = f".{idDict['id']}"
-
-    log_wrapper.add_target(target=logging.getLogger(f"yt-dlp{id}"), level=logging.DEBUG if debug else logging.WARNING)
-
     if debug:
         params["verbose"] = True
     else:
         params["quiet"] = True
+
+    log_wrapper = LogWrapper()
+    idDict = get_archive_id(url=url)
+    archive_id = f".{idDict['id']}" if idDict.get("id") else None
+
+    log_wrapper.add_target(
+        target=logging.getLogger(f"yt-dlp{archive_id}"),
+        level=logging.DEBUG if debug else logging.WARNING,
+    )
 
     if "callback" in params:
         if isinstance(params["callback"], dict):
             log_wrapper.add_target(
                 target=params["callback"]["func"],
                 level=params["callback"]["level"] or logging.ERROR,
+                name=params["callback"]["name"] or "callback",
             )
         else:
-            log_wrapper.add_target(target=params["callback"], level=logging.ERROR)
+            log_wrapper.add_target(target=params["callback"], level=logging.ERROR, name="callback")
+
+    if "callback" in params:
         del params["callback"]
 
     if log_wrapper.has_targets():
