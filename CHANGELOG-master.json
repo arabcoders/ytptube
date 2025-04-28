@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250428-9f0d883",
+        "date": "2025-04-28T16:24:37+00:00",
+        "commits": [
+            {
+                "sha": "d895904",
+                "message": "Switched newDownload form to use HttpAPI for easier unlocking of download button.",
+                "author": "arabcoders",
+                "date": "2025-04-28T15:40:23+00:00"
+            },
+            {
+                "sha": "d4ca763",
+                "message": "reverted some changes to logging",
+                "author": "arabcoders",
+                "date": "2025-04-28T15:15:11+00:00"
+            },
+            {
+                "sha": "2d86aae",
+                "message": "attempt at fixing duplicate logging",
+                "author": "arabcoders",
+                "date": "2025-04-27T16:44:44+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250426-d385e41",
         "date": "2025-04-26T16:58:34+00:00",
         "commits": [
