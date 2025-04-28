@@ -109,7 +109,7 @@ def extract_info(
     no_archive: bool = False,
     follow_redirect: bool = False,
     sanitize_info: bool = False,
-    **kwargs,
+    **kwargs,  # noqa: ARG001
 ) -> dict:
     """
     Extracts video information from the given URL.
@@ -127,9 +127,6 @@ def extract_info(
         dict: Video information.
 
     """
-    is_recursive = bool(kwargs.get("log_wrapper"))
-    log_wrapper = kwargs.get("log_wrapper") or LogWrapper()
-
     params: dict = {
         **config,
         "color": "no_color",
@@ -149,31 +146,31 @@ def extract_info(
     else:
         params["quiet"] = True
 
-    if not is_recursive:
-        archive_id = None
-        idDict = get_archive_id(url=url)
-        if idDict.get("id"):
-            archive_id = f".{idDict['id']}"
+    log_wrapper = LogWrapper()
+    idDict = get_archive_id(url=url)
+    archive_id = f".{idDict['id']}" if idDict.get("id") else None
 
-        _logger = logging.getLogger(f"yt-dlp{archive_id}")
-        _logger.propagate = False
-        log_wrapper.add_target(target=_logger, level=logging.DEBUG if debug else logging.WARNING)
+    log_wrapper.add_target(
+        target=logging.getLogger(f"yt-dlp{archive_id}"),
+        level=logging.DEBUG if debug else logging.WARNING,
+    )
 
-        if "callback" in params:
-            if isinstance(params["callback"], dict):
-                log_wrapper.add_target(
-                    target=params["callback"]["func"],
-                    level=params["callback"]["level"] or logging.ERROR,
-                )
-            else:
-                log_wrapper.add_target(target=params["callback"], level=logging.ERROR)
+    if "callback" in params:
+        if isinstance(params["callback"], dict):
+            log_wrapper.add_target(
+                target=params["callback"]["func"],
+                level=params["callback"]["level"] or logging.ERROR,
+                name=params["callback"]["name"] or "callback",
+            )
+        else:
+            log_wrapper.add_target(target=params["callback"], level=logging.ERROR, name="callback")
+
+    if "callback" in params:
+        del params["callback"]
 
     if log_wrapper.has_targets():
-        if "logger" in params and not is_recursive:
+        if "logger" in params:
             log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
-
-        if "callback" in params:
-            del params["callback"]
 
         params["logger"] = log_wrapper
 
@@ -190,7 +187,6 @@ def extract_info(
             no_archive=no_archive,
             follow_redirect=follow_redirect,
             sanitize_info=sanitize_info,
-            log_wrapper=log_wrapper,
         )
 
     if not data:

@@ -410,6 +410,7 @@ class DownloadQueue(metaclass=Singleton):
                 "callback": {
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
+                    "name": "callback-logger",
                 },
                 **YTDLPOpts.get_instance()
                 .preset(name=item.preset, with_cookies=not item.cookies)
@@ -462,9 +463,8 @@ class DownloadQueue(metaclass=Singleton):
             if not entry:
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
-            LOG.debug(
-                f"extract_info: for 'URL: {item.url}' is done in '{time.perf_counter() - started}'. Length: '{len(entry)}/keys'."
-            )
+            end_time = time.perf_counter() - started
+            LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
         except yt_dlp.utils.ExistingVideoReached as exc:
             LOG.error(f"Video has been downloaded already and recorded in archive.log file. '{exc!s}'.")
             return {"status": "error", "msg": "Video has been downloaded already and recorded in archive.log file."}

@@ -1,7 +1,8 @@
 import logging
-import weakref
 from collections.abc import Callable
 from dataclasses import dataclass
+
+LOG = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True)
@@ -19,7 +20,7 @@ class LogTarget:
     """
 
     name: str | None = None
-    target: logging.Logger|Callable
+    target: logging.Logger | Callable
     level: int
     logger: bool
 
@@ -63,69 +64,32 @@ class LogWrapper:
 
     def __init__(self):
         self.targets: list[LogTarget] = []
-        weakref.finalize(self, LogWrapper.cleanup, self)
 
-    def add_target(self, target: logging.Logger | Callable, level: int = logging.DEBUG):
+    def add_target(self, target: logging.Logger | Callable, level: int = logging.DEBUG, name: str | None = None):
         """
         Adds a new logging target with the specified logging level.
 
         Args:
             target (logging.Logger|Callable): The logging target, which can be a logging.Logger instance or a Callable.
             level (int): The logging level for the target. Defaults to logging.DEBUG.
+            name (str|None): The name of the logging target. Defaults to None.
 
         """
         if not isinstance(target, logging.Logger | Callable):
             msg = "Target must be a logging.Logger instance or a callable."
             raise TypeError(msg)
 
+        if name is None:
+            name = target.name if isinstance(target, logging.Logger) else target.__name__
+
         self.targets.append(
             LogTarget(
-                name=target.name if isinstance(target, logging.Logger) else None,
+                name=name,
                 target=target,
                 level=level,
                 logger=isinstance(target, logging.Logger),
             )
         )
-
-    def cleanup(self, name: str = "yt-dlp"):
-        """
-        Remove automatic handlers
-
-        Args:
-            name (str): The name of the logger to clean up. Defaults to "ytdlp".
-
-        """
-        mgr = logging.root.manager
-        to_drop = []
-
-        for tgt in list(self.targets):
-            # only consider real Logger targets whose name
-            if tgt.logger and tgt.name and tgt.name.startswith(name):
-                name = tgt.name
-                logger = tgt.target
-
-                # 1) detach all handlers.
-                for h in list(logger.handlers):
-                    logger.removeHandler(h)
-
-                # 2) restore default logger settings
-                logger.propagate = True
-                logger.setLevel(logging.NOTSET)
-
-                # 3) purge logger & its children from the internal registry
-                for key in [k for k in mgr.loggerDict if k == name or k.startswith(name + ".")]:
-                    mgr.loggerDict.pop(key, None)
-
-                to_drop.append(tgt)
-
-        # drop those targets from our wrapper
-        self.targets = [t for t in self.targets if t not in to_drop]
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        self.cleanup()
 
     def has_targets(self):
         """
