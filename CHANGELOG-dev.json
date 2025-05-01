@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250501-cc65b4b",
-        "date": "2025-05-01T15:28:12+00:00",
+        "tag": "dev-20250501-28ea6c6",
+        "date": "2025-05-01T15:51:23+00:00",
         "commits": [
+            {
+                "sha": "28ea6c6",
+                "message": "truncate oveflowing error text with option to display all on click",
+                "author": "arabcoders",
+                "date": "2025-05-01T15:51:23+00:00"
+            },
             {
                 "sha": "cc65b4b",
                 "message": "Communicate more error logs to user when yt-dlp throws them.",
