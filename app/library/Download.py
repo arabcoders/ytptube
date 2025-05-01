@@ -16,7 +16,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import extract_info, load_cookies
+from .Utils import extract_info, extract_ytdlp_logs, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 
@@ -81,7 +81,19 @@ class Download:
     temp_keep: bool = False
     "Keep temp folder after download."
 
-    def __init__(self, info: ItemDTO, info_dict: dict = None):
+    logs: list = []
+    "Logs from yt-dlp."
+
+    def __init__(self, info: ItemDTO, info_dict: dict = None, logs: list | None = None):
+        """
+        Initialize download task.
+
+        Args:
+            info (ItemDTO): ItemDTO object.
+            info_dict (dict): yt-dlp metadata dict.
+            logs (list): Logs from yt-dlp.
+
+        """
         config = Config.get_instance()
 
         self.download_dir = info.download_dir
@@ -106,6 +118,7 @@ class Download:
         self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
         self.started_time = 0
         self.queue_time = datetime.now(tz=UTC)
+        self.logs = logs if logs else []
 
     def _progress_hook(self, data: dict):
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
@@ -193,6 +206,14 @@ class Download:
 
             if not self.info_dict:
                 self.logger.info(f"Extracting info for '{self.info.url}'.")
+                self.logs = []
+                ie_params = params.copy()
+                ie_params["callback"] = {
+                    "func": lambda _, msg: self.logs.append(msg),
+                    "level": logging.WARNING,
+                    "name": "callback-logger",
+                }
+
                 info = extract_info(
                     config=params,
                     url=self.info.url,
@@ -219,7 +240,10 @@ class Download:
                     )
 
             if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
-                msg = f"Failed to extract formats for '{self.info.url}'. The extracted info dict is empty."
+                msg = f"Failed to extract any formats for '{self.info.url}'."
+                if filtered_logs := extract_ytdlp_logs(self.logs):
+                    msg += f" Logs: {', '.join(filtered_logs)}"
+
                 raise ValueError(msg)  # noqa: TRY301
 
             self.logger.info(
