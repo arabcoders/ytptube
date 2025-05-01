@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250501-734de82",
-        "date": "2025-05-01T00:35:49+00:00",
+        "tag": "dev-20250501-fb70f0b",
+        "date": "2025-05-01T14:08:28+00:00",
+        "commits": [
+            {
+                "sha": "fb70f0b",
+                "message": "attempt at fixing yt-dlp youtube live_from_start for premiere",
+                "author": "arabcoders",
+                "date": "2025-05-01T14:08:28+00:00"
+            },
+            {
+                "sha": "7292d75",
+                "message": "Made the built-in yt-dlp upgrader actually work.",
+                "author": "arabcoders",
+                "date": "2025-05-01T14:08:08+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250501-1deba05",
+        "date": "2025-05-01T00:40:42+00:00",
         "commits": [
             {
                 "sha": "54c7069",
