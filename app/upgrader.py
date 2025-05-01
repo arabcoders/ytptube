@@ -75,11 +75,10 @@ if __name__ == "__main__":
     try:
         import coloredlogs
 
-        logging.basicConfig(level=logging.DEBUG)
         coloredlogs.install(
             level=logging.INFO, fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s", datefmt="%H:%M:%S"
         )
     except ImportError:
-        pass
+        logging.basicConfig(level=logging.DEBUG)
 
     Upgrader()
