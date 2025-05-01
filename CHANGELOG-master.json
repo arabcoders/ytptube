@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250501-1deba05",
+        "date": "2025-05-01T00:40:42+00:00",
+        "commits": [
+            {
+                "sha": "54c7069",
+                "message": "Update yt-dlp to 2025.4.30",
+                "author": "ArabCoders",
+                "date": "2025-05-01T00:27:36+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250428-9f0d883",
         "date": "2025-04-28T16:24:37+00:00",
         "commits": [
