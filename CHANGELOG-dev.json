@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250501-fb70f0b",
-        "date": "2025-05-01T14:08:28+00:00",
+        "tag": "dev-20250501-cc65b4b",
+        "date": "2025-05-01T15:28:12+00:00",
         "commits": [
+            {
+                "sha": "cc65b4b",
+                "message": "Communicate more error logs to user when yt-dlp throws them.",
+                "author": "arabcoders",
+                "date": "2025-05-01T15:28:12+00:00"
+            },
             {
                 "sha": "fb70f0b",
                 "message": "attempt at fixing yt-dlp youtube live_from_start for premiere",
