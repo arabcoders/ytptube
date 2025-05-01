@@ -22,6 +22,78 @@ from library.Tasks import Tasks
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
+# Monkey patch yt-dlp to fix live_from_start mpd issues
+
+from yt_dlp.extractor.youtube import YoutubeIE
+
+
+def _patched_prepare_live_from_start_formats(
+    self, formats, video_id, live_start_time, url, webpage_url, smuggled_data, is_live
+):
+    import functools
+    import threading
+    import time
+
+    from yt_dlp.utils import LazyList, bug_reports_message
+
+    lock = threading.Lock()
+    start_time = time.time()
+    formats = [f for f in formats if f.get("is_from_start")]
+
+    def refetch_manifest(format_id, delay):  # noqa: ARG001
+        nonlocal formats, start_time, is_live
+        if time.time() <= start_time + delay:
+            return
+        # re-download player responses & re-list formats
+        _, _, prs, player_url = self._download_player_responses(url, smuggled_data, video_id, webpage_url)
+        video_details = self.traverse_obj(prs, (..., "videoDetails"), expected_type=dict)
+        microformats = self.traverse_obj(prs, (..., "microformat", "playerMicroformatRenderer"), expected_type=dict)
+        _, live_status, _, formats, _ = self._list_formats(video_id, microformats, video_details, prs, player_url)
+        is_live = live_status == "is_live"
+        start_time = time.time()
+
+    def mpd_feed(format_id, delay):
+        """
+        @returns (manifest_url, manifest_stream_number, is_live) or None
+        """
+        for retry in self.RetryManager(fatal=False):
+            with lock:
+                refetch_manifest(format_id, delay)
+
+            # only pick formats that actually have a manifest_url
+            f = next((f for f in formats if f.get("format_id") == format_id and "manifest_url" in f), None)
+            if not f:
+                if "manifest_url" not in f:
+                    retry.error = f"{video_id}: In post manifest-less mode."
+                elif not is_live:
+                    retry.error = f"{video_id}: Video is no longer live"
+                else:
+                    retry.error = f"Cannot find refreshed manifest for format {format_id}{bug_reports_message()}"
+                continue
+            return f.get("manifest_url"), f.get("manifest_stream_number"), is_live
+        return None
+
+    for f in formats:
+        f["is_live"] = is_live
+        gen = functools.partial(
+            self._live_dash_fragments,
+            video_id,
+            f.get("format_id"),
+            live_start_time,
+            mpd_feed,
+            (not is_live) and f.copy(),
+        )
+        if is_live:
+            f["fragments"] = gen
+            f["protocol"] = "http_dash_segments_generator"
+        else:
+            f["fragments"] = LazyList(gen({}))
+            f.pop("is_from_start", None)
+
+
+YoutubeIE._prepare_live_from_start_formats = _patched_prepare_live_from_start_formats
+# End
+
 
 class Main:
     def __init__(self):
