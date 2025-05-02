@@ -68,7 +68,10 @@ def _patched_prepare_live_from_start_formats(
                     retry.error = f"Cannot find refreshed manifest for format {format_id}{bug_reports_message()}"
                 continue
 
-            return (f["manifest_url"], f["manifest_stream_number"], is_live) if f else None
+            if not isinstance(f, dict) or not f.get("manifest_url"):
+                break
+
+            return f["manifest_url"], f["manifest_stream_number"], is_live
 
         return None
 
