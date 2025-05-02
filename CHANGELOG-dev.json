@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250502-99a2f60",
-        "date": "2025-05-02T16:49:13+00:00",
+        "tag": "dev-20250502-999dbf3",
+        "date": "2025-05-02T18:12:00+00:00",
         "commits": [
+            {
+                "sha": "999dbf3",
+                "message": "it works!",
+                "author": "arabcoders",
+                "date": "2025-05-02T18:12:00+00:00"
+            },
             {
                 "sha": "99a2f60",
                 "message": "another attempt at fixing mpd streams",
