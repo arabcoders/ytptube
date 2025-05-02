@@ -34,7 +34,7 @@ def _patched_prepare_live_from_start_formats(
     import threading
     import time
 
-    from yt_dlp.utils import LazyList, bug_reports_message
+    from yt_dlp.utils import LazyList, bug_reports_message, traverse_obj
 
     lock = threading.Lock()
     start_time = time.time()
@@ -46,8 +46,8 @@ def _patched_prepare_live_from_start_formats(
             return
         # re-download player responses & re-list formats
         _, _, prs, player_url = self._download_player_responses(url, smuggled_data, video_id, webpage_url)
-        video_details = self.traverse_obj(prs, (..., "videoDetails"), expected_type=dict)
-        microformats = self.traverse_obj(prs, (..., "microformat", "playerMicroformatRenderer"), expected_type=dict)
+        video_details = traverse_obj(prs, (..., "videoDetails"), expected_type=dict)
+        microformats = traverse_obj(prs, (..., "microformat", "playerMicroformatRenderer"), expected_type=dict)
         _, live_status, _, formats, _ = self._list_formats(video_id, microformats, video_details, prs, player_url)
         is_live = live_status == "is_live"
         start_time = time.time()

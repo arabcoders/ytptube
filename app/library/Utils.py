@@ -1088,6 +1088,7 @@ def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) 
         "Video unavailable. This video is private",
         "This video is available to this channel",
         "Private video. Sign in if you've been granted access to this video",
+        "[youtube] Premieres in",
     ] + (filters or [])
 
     compiled: list[re.Pattern] = [
