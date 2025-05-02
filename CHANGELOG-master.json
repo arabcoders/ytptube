@@ -1,5 +1,59 @@
 [
     {
+        "tag": "master-20250502-12b4b12",
+        "date": "2025-05-02T18:20:42+00:00",
+        "commits": [
+            {
+                "sha": "999dbf3",
+                "message": "it works!",
+                "author": "arabcoders",
+                "date": "2025-05-02T18:12:00+00:00"
+            },
+            {
+                "sha": "99a2f60",
+                "message": "another attempt at fixing mpd streams",
+                "author": "arabcoders",
+                "date": "2025-05-02T16:49:13+00:00"
+            },
+            {
+                "sha": "1754841",
+                "message": "Another attempt at fixing live_from_start",
+                "author": "arabcoders",
+                "date": "2025-05-02T14:43:05+00:00"
+            },
+            {
+                "sha": "f1a04ac",
+                "message": "Fixes to live_from_start",
+                "author": "arabcoders",
+                "date": "2025-05-02T10:18:14+00:00"
+            },
+            {
+                "sha": "28ea6c6",
+                "message": "truncate oveflowing error text with option to display all on click",
+                "author": "arabcoders",
+                "date": "2025-05-01T15:51:23+00:00"
+            },
+            {
+                "sha": "cc65b4b",
+                "message": "Communicate more error logs to user when yt-dlp throws them.",
+                "author": "arabcoders",
+                "date": "2025-05-01T15:28:12+00:00"
+            },
+            {
+                "sha": "fb70f0b",
+                "message": "attempt at fixing yt-dlp youtube live_from_start for premiere",
+                "author": "arabcoders",
+                "date": "2025-05-01T14:08:28+00:00"
+            },
+            {
+                "sha": "7292d75",
+                "message": "Made the built-in yt-dlp upgrader actually work.",
+                "author": "arabcoders",
+                "date": "2025-05-01T14:08:08+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250501-1deba05",
         "date": "2025-05-01T00:40:42+00:00",
         "commits": [
