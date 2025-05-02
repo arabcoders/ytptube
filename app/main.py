@@ -63,13 +63,14 @@ def _patched_prepare_live_from_start_formats(
             # only pick formats that actually have a manifest_url
             f = next((f for f in formats if f.get("format_id") == format_id and "manifest_url" in f), None)
             if not f:
-                if "manifest_url" not in f:
-                    retry.error = f"{video_id}: In post manifest-less mode."
+                if f and isinstance(f, dict) and "manifest_url" not in f:
+                    retry.error = f"{video_id}: In post manifest-less mode"
                 elif not is_live:
                     retry.error = f"{video_id}: Video is no longer live"
                 else:
                     retry.error = f"Cannot find refreshed manifest for format {format_id}{bug_reports_message()}"
                 continue
+
             return f.get("manifest_url"), f.get("manifest_stream_number"), is_live
         return None
 
