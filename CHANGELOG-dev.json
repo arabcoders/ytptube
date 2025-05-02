@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250502-f1a04ac",
-        "date": "2025-05-02T10:18:14+00:00",
+        "tag": "dev-20250502-1754841",
+        "date": "2025-05-02T14:43:05+00:00",
         "commits": [
+            {
+                "sha": "1754841",
+                "message": "Another attempt at fixing live_from_start",
+                "author": "arabcoders",
+                "date": "2025-05-02T14:43:05+00:00"
+            },
             {
                 "sha": "f1a04ac",
                 "message": "Fixes to live_from_start",
