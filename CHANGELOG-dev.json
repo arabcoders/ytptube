@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250501-28ea6c6",
-        "date": "2025-05-01T15:51:23+00:00",
+        "tag": "dev-20250502-f1a04ac",
+        "date": "2025-05-02T10:18:14+00:00",
         "commits": [
+            {
+                "sha": "f1a04ac",
+                "message": "Fixes to live_from_start",
+                "author": "arabcoders",
+                "date": "2025-05-02T10:18:14+00:00"
+            },
             {
                 "sha": "28ea6c6",
                 "message": "truncate oveflowing error text with option to display all on click",
