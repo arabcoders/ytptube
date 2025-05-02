@@ -110,10 +110,10 @@
                   <div class="is-text-overflow" v-tooltip="item.title">
                     <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                   </div>
-                  <div v-if="item.error">
+                  <div v-if="item.error" class="is-text-overflow is-pointer" @click="toggle_class($event)">
                     <span class="has-text-danger">{{ item.error }}</span>
                   </div>
-                  <div v-if="showMessage(item)">
+                  <div v-if="showMessage(item)" class="is-text-overflow is-pointer" @click="toggle_class($event)">
                     <span class="has-text-danger">{{ item.msg }}</span>
                   </div>
                 </td>
@@ -242,10 +242,14 @@
           <div class="card-content">
             <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.error">
-                <span class="has-text-danger">{{ item.error }}</span>
+                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
+                  <span class="has-text-danger">{{ item.error }}</span>
+                </div>
               </div>
               <div class="column is-12" v-if="showMessage(item)">
-                <span class="has-text-danger">{{ item.msg }}</span>
+                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
+                  <span class="has-text-danger">{{ item.msg }}</span>
+                </div>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon-text">
@@ -686,4 +690,6 @@ const downloadSelected = () => {
     body.removeChild(link);
   }
 }
+
+const toggle_class = e => e.currentTarget.classList.toggle('is-text-overflow')
 </script>

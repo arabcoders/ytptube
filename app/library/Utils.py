@@ -1069,3 +1069,33 @@ def dt_delta(delta: timedelta) -> str:
         parts.append("<1s")
 
     return " ".join(parts)
+
+
+def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) -> list[str]:
+    """
+    Extract yt-dlp log lines matching built-in filters plus any extras.
+
+    Args:
+        logs (list): log strings.
+        filters (list[str|Re.Pattern]): Optional extra filters of strings and/or regex.
+
+    Returns:
+        (list): List of matching log lines.
+
+    """
+    all_patterns: list[str | re.Pattern] = [
+        "This live event will begin",
+        "Video unavailable. This video is private",
+        "This video is available to this channel",
+        "Private video. Sign in if you've been granted access to this video",
+        "[youtube] Premieres in",
+    ] + (filters or [])
+
+    compiled: list[re.Pattern] = [
+        p if isinstance(p, re.Pattern) else re.compile(re.escape(p), re.IGNORECASE) for p in all_patterns
+    ]
+
+    matched: list[str] = []
+    matched.extend(line for line in logs if line and any(p.search(line) for p in compiled))
+
+    return list(dict.fromkeys(matched))

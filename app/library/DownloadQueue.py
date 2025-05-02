@@ -24,7 +24,15 @@ from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import arg_converter, calc_download_path, dt_delta, extract_info, is_downloaded, load_cookies
+from .Utils import (
+    arg_converter,
+    calc_download_path,
+    dt_delta,
+    extract_info,
+    extract_ytdlp_logs,
+    is_downloaded,
+    load_cookies,
+)
 from .YTDLPOpts import YTDLPOpts
 
 LOG = logging.getLogger("DownloadQueue")
@@ -184,7 +192,7 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
-    async def __add_entry(self, entry: dict, item: Item, already=None):
+    async def __add_entry(self, entry: dict, item: Item, already=None, logs: list | None = None):
         """
         Add an entry to the download queue.
 
@@ -192,11 +200,15 @@ class DownloadQueue(metaclass=Singleton):
             entry (dict): The entry to add to the download queue.
             item (Item): The item to add to the download queue.
             already (set): The set of already downloaded items.
+            logs (list): The list of logs generated during information extraction.
 
         Returns:
             dict: The status of the operation.
 
         """
+        if not logs:
+            logs = []
+
         if item.has_extras():
             for key in item.extras.copy():
                 if not self.keep_extra_key(key):
@@ -320,12 +332,15 @@ class DownloadQueue(metaclass=Singleton):
             )
 
             try:
-                dlInfo: Download = Download(info=dl, info_dict=entry)
+                dlInfo: Download = Download(info=dl, info_dict=entry, logs=logs)
+                text_logs = ""
+                if filtered_logs := extract_ytdlp_logs(logs):
+                    text_logs = f" Logs: {', '.join(filtered_logs)}"
 
                 if live_in or "is_upcoming" == entry.get("live_status"):
                     NotifyEvent = Events.COMPLETED
                     dlInfo.info.status = "not_live"
-                    dlInfo.info.msg = "Stream is not live yet."
+                    dlInfo.info.msg = "Stream is not live yet." + text_logs
                     itemDownload = self.done.put(dlInfo)
                 elif len(entry.get("formats", [])) < 1:
                     availability = entry.get("availability", "public")
@@ -333,14 +348,15 @@ class DownloadQueue(metaclass=Singleton):
                     if availability and availability not in ("public",):
                         msg += f" Availability is set for '{availability}'."
 
+                    dlInfo.info.error = msg + text_logs
                     dlInfo.info.status = "error"
-                    dlInfo.info.error = msg
                     itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
                     await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
                 elif self.config.allow_manifestless is False and is_manifestless is True:
                     dlInfo.info.status = "error"
-                    dlInfo.info.error = "Video is in post-live manifestless mode."
+                    dlInfo.info.error = "Video is in post-live manifestless mode." + text_logs
+
                     itemDownload = self.done.put(dlInfo)
                     NotifyEvent = Events.COMPLETED
                 else:
@@ -485,7 +501,7 @@ class DownloadQueue(metaclass=Singleton):
                 except Exception as e:
                     LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
-        return await self.__add_entry(entry=entry, item=item, already=already)
+        return await self.__add_entry(entry=entry, item=item, already=already, logs=logs)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """
