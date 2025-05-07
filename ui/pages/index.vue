@@ -1,19 +1,3 @@
-<style>
-.navbar-dropdown {
-  display: none;
-}
-
-.navbar-item.is-active .navbar-dropdown,
-.navbar-item.is-hoverable:focus .navbar-dropdown,
-.navbar-item.is-hoverable:focus-within .navbar-dropdown,
-.navbar-item.is-hoverable:hover .navbar-dropdown {
-  display: block;
-}
-
-.navbar-item.has-dropdown {
-  padding: 0.5rem 0.75rem;
-}
-</style>
 <template>
   <div>
     <div class="mt-1 columns is-multiline">
@@ -21,10 +5,7 @@
         <span class="title is-4">
           <span class="icon-text">
             <span class="icon"><i class="fa-solid fa-download" /></span>
-            <span class="is-hidden-mobile">Downloads</span>
-            <span class="is-hidden-tablet">
-              {{ config?.app?.instance_title ? config.app.instance_title : 'Downloads' }}
-            </span>
+            <span>Downloads</span>
           </span>
         </span>
 

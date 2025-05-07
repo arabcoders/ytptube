@@ -297,6 +297,9 @@ class Conditions(metaclass=Singleton):
             Condition|None: The condition if found, None otherwise.
 
         """
+        if len(self._items) < 1 or not info or not isinstance(info, dict) or len(info) < 1:
+            return None
+
         from yt_dlp.utils import match_str
 
         for item in self.get_all():

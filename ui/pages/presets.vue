@@ -197,7 +197,7 @@ const reloadContent = async (fromMounted = false) => {
       return
     }
     console.error(e)
-    toast.error("Failed to fetch tasks.")
+    toast.error("Failed to fetch page content.")
   } finally {
     isLoading.value = false
   }

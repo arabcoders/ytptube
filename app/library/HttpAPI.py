@@ -78,6 +78,7 @@ class HttpAPI(Common):
         "/notifications",
         "/changelog",
         "/logs",
+        "/conditions",
         "/browser",
         "/browser/{path:.*}",
     ]
