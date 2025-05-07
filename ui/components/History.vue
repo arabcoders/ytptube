@@ -190,7 +190,7 @@
     <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="hideThumbnail ? 210 : 410" class="column is-6"
         v-for="item in sortCompleted" :key="item._id">
-        <div class="card"
+        <div class="card is-flex is-full-height is-flex-direction-column"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header has-tooltip">
 
@@ -239,7 +239,7 @@
               </template>
             </figure>
           </div>
-          <div class="card-content">
+          <div class="card-content is-flex-grow-1">
             <div class="columns is-mobile is-multiline">
               <div class="column is-12" v-if="item.error">
                 <div class="is-text-overflow is-pointer" @click="toggle_class($event)">

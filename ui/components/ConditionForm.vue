@@ -2,7 +2,7 @@
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
       <form autocomplete="off" id="addForm" @submit.prevent="checkInfo()">
-        <div class="card">
+        <div class="card is-flex is-full-height is-flex-direction-column">
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
@@ -21,7 +21,7 @@
             </div>
           </div>
 
-          <div class="card-content">
+          <div class="card-content is-flex-grow-1">
 
             <div class="columns is-multiline is-mobile">
 
@@ -106,7 +106,7 @@
             </div>
           </div>
 
-          <div class="card-footer">
+          <div class="card-footer mt-auto">
             <div class="card-footer-item">
               <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
                 :class="{ 'is-loading': addInProgress }" form="addForm">

@@ -37,7 +37,7 @@
       <div class="column is-12" v-if="!toggleForm">
         <div class="columns is-multiline" v-if="items.length > 0">
           <div class="column is-6" v-for="cond in items" :key="cond.id">
-            <div class="card">
+            <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
                 <div class="card-header-icon">
@@ -52,7 +52,7 @@
                   </button>
                 </div>
               </header>
-              <div class="card-content">
+              <div class="card-content is-flex-grow-1">
                 <div class="content">
                   <p class="is-text-overflow">
                     <span class="icon"><i class="fa-solid fa-filter" /></span>
@@ -69,7 +69,7 @@
                   <pre><code>{{ filterItem(cond) }}</code></pre>
                 </div>
               </div>
-              <div class="card-footer">
+              <div class="card-footer mt-auto">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(cond)">
                     <span class="icon"><i class="fa-solid fa-cog" /></span>

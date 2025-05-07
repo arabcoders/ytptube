@@ -118,7 +118,7 @@
     <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="hideThumbnail ? 265 : 475" class="column is-6"
         v-for="item in stateStore.queue" :key="item._id">
-        <div class="card">
+        <div class="card is-flex is-full-height is-flex-direction-column">
           <header class="card-header">
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -148,7 +148,7 @@
               </template>
             </figure>
           </div>
-          <div class="card-content">
+          <div class="card-content is-flex-grow-1">
             <div class="columns is-multiline is-mobile">
               <div class="column is-12">
                 <div class="progress-bar is-unselectable">
