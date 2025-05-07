@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250507-815bd3c",
-        "date": "2025-05-07T16:56:28+00:00",
+        "tag": "dev-20250507-f7abca8",
+        "date": "2025-05-07T18:56:27+00:00",
         "commits": [
+            {
+                "sha": "f7abca8",
+                "message": "minor design update",
+                "author": "arabcoders",
+                "date": "2025-05-07T18:56:27+00:00"
+            },
             {
                 "sha": "815bd3c",
                 "message": "improved menubar",
