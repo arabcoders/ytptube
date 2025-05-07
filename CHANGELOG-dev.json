@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250502-999dbf3",
-        "date": "2025-05-02T18:12:00+00:00",
+        "tag": "dev-20250507-815bd3c",
+        "date": "2025-05-07T16:56:28+00:00",
+        "commits": [
+            {
+                "sha": "815bd3c",
+                "message": "improved menubar",
+                "author": "arabcoders",
+                "date": "2025-05-07T16:56:28+00:00"
+            },
+            {
+                "sha": "b5a3ed1",
+                "message": "Added info dict condition checker",
+                "author": "arabcoders",
+                "date": "2025-05-07T14:58:33+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250502-12b4b12",
+        "date": "2025-05-02T18:20:42+00:00",
         "commits": [
             {
                 "sha": "999dbf3",
