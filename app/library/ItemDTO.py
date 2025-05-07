@@ -36,6 +36,9 @@ class Item:
     extras: dict = field(default_factory=dict)
     """Extra data to be added to the download."""
 
+    requeued: bool = False
+    """If the item has been re-queued already via conditions."""
+
     def serialize(self) -> dict:
         return self.__dict__.copy()
 
@@ -154,6 +157,9 @@ class Item:
         extras = item.get("extras")
         if extras and isinstance(extras, dict) and len(extras) > 0:
             data["extras"] = extras
+
+        if item.get("requeued") and isinstance(item.get("requeued"), bool):
+            data["requeued"] = item.get("requeued")
 
         cli = item.get("cli")
         if cli and len(cli) > 2:

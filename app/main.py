@@ -9,6 +9,7 @@ from pathlib import Path
 import caribou
 import magic
 from aiohttp import web
+from library.conditions import Conditions
 from library.config import Config
 from library.DownloadQueue import DownloadQueue
 from library.Events import EventBus, Events
@@ -167,6 +168,7 @@ class Main:
         Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
+        Conditions.get_instance().attach(self._app)
 
         EventBus.get_instance().sync_emit(Events.LOADED, data={"app": self._app})
 

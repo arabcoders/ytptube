@@ -22,6 +22,7 @@ from yt_dlp.cookies import LenientSimpleCookie
 
 from .cache import Cache
 from .common import Common
+from .conditions import Condition, Conditions
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
@@ -770,6 +771,94 @@ class HttpAPI(Common):
             status=web.HTTPOk.status_code,
             dumps=self.encoder.encode,
         )
+
+    @route("GET", "api/conditions")
+    async def conditions(self, _: Request) -> Response:
+        """
+        Get the conditions
+
+        Args:
+            _ (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        return web.json_response(
+            data=Conditions.get_instance().get_all(),
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
+
+    @route("PUT", "api/conditions")
+    async def conditions_add(self, request: Request) -> Response:
+        """
+        Save Conditions.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+
+        """
+        data = await request.json()
+
+        if not isinstance(data, list):
+            return web.json_response(
+                {"error": "Invalid request body expecting list with dicts."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        items: list = []
+
+        cls = Conditions.get_instance()
+
+        for item in data:
+            if not isinstance(item, dict):
+                return web.json_response(
+                    {"error": "Invalid request body expecting list with dicts."},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            if not item.get("name"):
+                return web.json_response(
+                    {"error": "name is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("filter"):
+                return web.json_response(
+                    {"error": "filter is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("cli"):
+                return web.json_response(
+                    {"error": "CLI arguments is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                )
+
+            if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
+                item["id"] = str(uuid.uuid4())
+
+            try:
+                cls.validate(item)
+            except ValueError as e:
+                return web.json_response(
+                    {"error": f"Failed to validate condition '{item.get('name')}'. '{e!s}'"},
+                    status=web.HTTPBadRequest.status_code,
+                )
+
+            items.append(Condition(**item))
+        try:
+            items = cls.save(items=items).load().get_all()
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response(
+                {"error": "Failed to save conditions.", "message": str(e)},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        await self._notify.emit(Events.CONDITIONS_UPDATE, data=items)
+        return web.json_response(data=items, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
     @route("GET", "api/presets")
     async def presets(self, request: Request) -> Response:
