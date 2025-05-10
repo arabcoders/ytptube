@@ -1,8 +1,20 @@
 [
     {
-        "tag": "dev-20250510-5a76f1d",
-        "date": "2025-05-10T14:54:04+00:00",
+        "tag": "dev-20250510-1a59926",
+        "date": "2025-05-10T15:26:43+00:00",
         "commits": [
+            {
+                "sha": "1a59926",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-05-10T15:26:43+00:00"
+            },
+            {
+                "sha": "f62b01b",
+                "message": "Enable floating image for list view.",
+                "author": "arabcoders",
+                "date": "2025-05-10T15:13:40+00:00"
+            },
             {
                 "sha": "5a76f1d",
                 "message": "Fold  preset --format into the cli args",
