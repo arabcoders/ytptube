@@ -49,7 +49,7 @@
                 </span>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="name">
                     <span class="icon"><i class="fa-solid fa-tag" /></span>
@@ -65,26 +65,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="format">
-                    <span class="icon"><i class="fa-solid fa-f" /></span>
-                    Format
-                  </label>
-                  <div class="control">
-                    <input type="text" class="input" id="format" v-model="form.format" :disabled="addInProgress">
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The yt-dlp <code>[--format, -f]</code> video format code. see <NuxtLink
-                        href="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#format-selection" target="blank">this
-                        page</NuxtLink> for more info. Note, as this key is required, you can set the value to
-                    <code>default</code> to let <code>yt-dlp</code> choose the best format.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -102,7 +83,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
@@ -127,7 +108,7 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command arguments for yt-dlp
+                    Command options for yt-dlp
                   </label>
                   <div class="control">
                     <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
@@ -241,8 +222,7 @@ onMounted(() => {
 })
 
 const checkInfo = async () => {
-  const required = ['name', 'format'];
-  for (const key of required) {
+  for (const key of ['name']) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`);
       return
@@ -299,10 +279,6 @@ const convertOptions = async args => {
       form.folder = response.download_path
     }
 
-    if (response.format) {
-      form.format = response.format
-    }
-
     return response.opts
   } catch (e) {
     toast.error(e.message)
@@ -336,7 +312,7 @@ const importItem = async () => {
       return
     }
 
-    if ((form.format || form.cli) && false === confirm('This will overwrite the current data. Are you sure?')) {
+    if (form.cli && false === confirm('This will overwrite the current data. Are you sure?')) {
       return
     }
 
@@ -344,12 +320,18 @@ const importItem = async () => {
       form.name = item.name
     }
 
-    if (item.format) {
-      form.format = item.format
-    }
-
     if (item.cli) {
       form.cli = item.cli
+    }
+
+    // -- backwards compatibility for old presets.
+    if (item.format) {
+      if (!item?.cli) {
+        form.cli = `--format '${item.format}'`
+      } else {
+        form.cli = `--format '${item.format}'\n${form.cli}`
+      }
+      form.cli = form.cli.trim()
     }
 
     if (item.template) {
@@ -364,7 +346,7 @@ const importItem = async () => {
     showImport.value = false
   } catch (e) {
     console.error(e)
-    toast.error(`Failed to string. ${e.message}`)
+    toast.error(`Failed to parse string. ${e.message}`)
   }
 }
 

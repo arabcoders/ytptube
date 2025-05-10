@@ -918,11 +918,6 @@ class HttpAPI(Common):
                     {"error": "name is required.", "data": item}, status=web.HTTPBadRequest.status_code
                 )
 
-            if not item.get("format"):
-                return web.json_response(
-                    {"error": "format is required.", "data": item}, status=web.HTTPBadRequest.status_code
-                )
-
             if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
                 item["id"] = str(uuid.uuid4())
 
@@ -936,7 +931,7 @@ class HttpAPI(Common):
 
             presets.append(Preset(**item))
         try:
-            presets = cls.save(presets=presets).load().get_all()
+            presets = cls.save(items=presets).load().get_all()
         except Exception as e:
             LOG.exception(e)
             return web.json_response(
@@ -1728,7 +1723,7 @@ class HttpAPI(Common):
             LOG.error(str(e))
             return web.json_response(data={"message": str(e)}, status=web.HTTPInternalServerError.status_code)
 
-        url = "https://www.youtube.com/account"
+        url = "https://www.youtube.com/paid_memberships"
 
         try:
             opts = {
@@ -1745,8 +1740,8 @@ class HttpAPI(Common):
                 LOG.debug(f"Checking '{url}' redirection.")
                 response = await client.request(method="GET", url=url, follow_redirects=False)
                 return web.json_response(
-                    data={"message": "Authenticated." if response.status_code == 200 else "Not authenticated."},
-                    status=200 if response.status_code == 200 else 401,
+                    data={"message": "Authenticated." if 200 == response.status_code else "Not authenticated."},
+                    status=200 if 200 == response.status_code else 401,
                 )
         except Exception as e:
             LOG.error(f"Failed to request '{url}'. '{e}'.")

@@ -24,9 +24,6 @@ class Preset:
     name: str
     """The name of the preset."""
 
-    format: str
-    """The format of the preset."""
-
     folder: str = ""
     """The default download folder to use if non is given."""
 
@@ -56,13 +53,13 @@ class Presets(metaclass=Singleton):
     This class is used to manage the presets.
     """
 
-    _presets: list[Preset] = []
+    _items: list[Preset] = []
     """The list of presets."""
 
     _instance = None
     """The instance of the class."""
 
-    _default_presets: list[Preset] = []
+    _default: list[Preset] = []
 
     def __init__(self, file: str | None = None, config: Config | None = None):
         Presets._instance = self
@@ -77,13 +74,14 @@ class Presets(metaclass=Singleton):
             except Exception:
                 pass
 
-        with open(os.path.join(os.path.dirname(__file__), "presets.json")) as f:
+        default_file = os.path.join(os.path.dirname(__file__), "presets.json")
+        with open(default_file) as f:
             for i, preset in enumerate(json.load(f)):
                 try:
                     self.validate(preset)
-                    self._default_presets.append(Preset(**preset))
+                    self._default.append(Preset(**preset))
                 except Exception as e:
-                    LOG.error(f"Failed to parse default preset '{i}'. '{e!s}'.")
+                    LOG.error(f"Failed to parse '{default_file}:{i}'. '{e!s}'.")
                     continue
 
         def event_handler(_, __):
@@ -111,7 +109,7 @@ class Presets(metaclass=Singleton):
 
     def attach(self, _: web.Application):
         """
-        Attach the work to the aiohttp application.
+        Attach the class to the aiohttp application.
 
         Args:
             _ (web.Application): The aiohttp application.
@@ -123,12 +121,12 @@ class Presets(metaclass=Singleton):
         self.load()
 
     def get_all(self) -> list[Preset]:
-        """Return the presets."""
-        return self._default_presets + self._presets
+        """Return the items."""
+        return self._default + self._items
 
     def load(self) -> "Presets":
         """
-        Load the Presets.
+        Load the items.
 
         Returns:
             Presets: The current instance.
@@ -139,16 +137,15 @@ class Presets(metaclass=Singleton):
         if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
             return self
 
-        LOG.info(f"Loading presets from '{self._file}'.")
+        LOG.info(f"Loading '{self._file}'.")
         try:
             with open(self._file) as f:
                 presets = json.load(f)
         except Exception as e:
-            LOG.error(f"Failed to parse presets from '{self._file}'. '{e}'.")
+            LOG.error(f"Failed to parse '{self._file}'. '{e}'.")
             return self
 
         if not presets or len(presets) < 1:
-            LOG.info(f"No presets were defined in '{self._file}'.")
             return self
 
         need_save = False
@@ -160,134 +157,144 @@ class Presets(metaclass=Singleton):
                     need_save = True
 
                 preset, preset_status = clean_item(preset, keys=("args", "postprocessors"))
+                if preset.get("format"):
+                    if not preset.get("cli"):
+                        preset.update({"cli": f"--format {preset['format']}"})
+                    else:
+                        preset["cli"] = f"--format '{preset['format']}'\n" + preset["cli"]
+
+                    preset["cli"] = str(preset["cli"]).strip()
+
+                    preset.pop("format")
+                    need_save = True
+
                 preset = Preset(**preset)
 
                 if preset_status:
                     need_save = True
 
-                self._presets.append(preset)
+                self._items.append(preset)
             except Exception as e:
-                LOG.error(f"Failed to parse preset at list position '{i}'. '{e!s}'.")
+                LOG.error(f"Failed to parse '{self._file}:{i}'. '{e!s}'.")
                 continue
 
         if need_save:
-            LOG.info("Saving presets due to format, or id change.")
-            self.save(self._presets)
+            LOG.info(f"Saving '{self._file}' due to changes.")
+            self.save(self._items)
 
         return self
 
     def clear(self) -> "Presets":
         """
-        Clear all presets
+        Clear all items.
 
         Returns:
             Presets: The current instance.
 
         """
-        if len(self._presets) < 1:
+        if len(self._items) < 1:
             return self
 
-        self._presets.clear()
+        self._items.clear()
 
         return self
 
-    def validate(self, preset: Preset | dict) -> bool:
+    def validate(self, item: Preset | dict) -> bool:
         """
-        Validate the preset.
+        Validate the item.
 
         Args:
-            preset (Preset|dict): The preset to validate.
+            item (Preset|dict): The item to validate.
 
         Returns:
-            bool: True if the preset is valid, False otherwise.
+            bool: True if valid
+
+        Raises:
+            ValueError: If the item is not valid.
 
         """
-        if not isinstance(preset, dict):
-            if not isinstance(preset, Preset):
-                msg = f"Invalid preset type. Was expecting a (Preset|dict), but got '{type(preset).__name__}'."
+        if not isinstance(item, dict):
+            if not isinstance(item, Preset):
+                msg = f"Unexpected '{type(item).__name__}' type was given."
                 raise ValueError(msg)  # noqa: TRY004
 
-            preset = preset.serialize()
+            item = item.serialize()
 
-        if not preset.get("id"):
+        if not item.get("id"):
             msg = "No id found."
             raise ValueError(msg)
 
-        if not preset.get("name"):
+        if not item.get("name"):
             msg = "No name found."
             raise ValueError(msg)
 
-        if not preset.get("format"):
-            msg = "No format found."
-            raise ValueError(msg)
-
-        if preset.get("cli"):
+        if item.get("cli"):
             try:
-                arg_converter(args=preset.get("cli"))
+                arg_converter(args=item.get("cli"))
             except Exception as e:
                 msg = f"Invalid cli options. '{e!s}'."
                 raise ValueError(msg) from e
 
         return True
 
-    def save(self, presets: list[Preset | dict]) -> "Presets":
+    def save(self, items: list[Preset | dict]) -> "Presets":
         """
-        Save the presets.
+        Save the items.
 
         Args:
-            presets (list[Preset]): The presets to save.
+            items (list[Preset]): The items to save.
 
         Returns:
             Presets: The current instance.
 
         """
-        for i, preset in enumerate(presets):
+        for i, preset in enumerate(items):
             try:
                 if not isinstance(preset, Preset):
                     preset = Preset(**preset)
-                    presets[i] = preset
+                    items[i] = preset
             except Exception as e:
-                LOG.error(f"Failed to save preset '{i}' due to parsing error. '{e!s}'.")
+                LOG.error(f"Failed to save item '{i}' due to parsing error. '{e!s}'.")
                 continue
 
             try:
                 self.validate(preset)
             except ValueError as e:
-                LOG.error(f"Failed to validate preset '{i}: {preset.name}'. '{e}'.")
+                LOG.error(f"Failed to validate item '{i}: {preset.name}'. '{e}'.")
                 continue
 
         try:
             with open(self._file, "w") as f:
-                json.dump(obj=[preset.serialize() for preset in presets if preset.default is False], fp=f, indent=4)
+                json.dump(obj=[preset.serialize() for preset in items if preset.default is False], fp=f, indent=4)
 
-            LOG.info(f"Presets saved to '{self._file}'.")
+            LOG.info(f"Saved '{self._file}'.")
         except Exception as e:
-            LOG.error(f"Failed to save presets to '{self._file}'. '{e!s}'.")
+            LOG.error(f"Failed to save '{self._file}'. '{e!s}'.")
 
         return self
 
     def has(self, id_or_name: str) -> bool:
         """
-        Check if the preset exists by id or name.
+        Check if the item exists by id or name.
 
         Args:
-            id_or_name (str): The id or name of the preset.
+            id_or_name (str): The id or name of the item.
 
         Returns:
-            bool: True if the preset exists, False otherwise.
+            bool: True if exists, False otherwise.
 
         """
         return self.get(id_or_name) is not None
 
     def get(self, id_or_name: str) -> Preset | None:
         """
-        Get the preset by id or name.
+        Get the item by id or name.
 
         Args:
-            id_or_name (str): The id or name of the preset.
+            id_or_name (str): The id or name of the item.
 
         Returns:
-            Preset|None: The preset if found, None otherwise.
+            Preset|None: The item if found, None otherwise.
 
         """
         if not id_or_name:

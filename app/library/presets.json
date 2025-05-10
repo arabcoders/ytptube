@@ -2,7 +2,6 @@
   {
     "id": "3e163c6c-64eb-4448-924f-814b629b3810",
     "name": "default",
-    "format": "default",
     "folder": "",
     "template": "",
     "cookies": "",
@@ -12,41 +11,37 @@
   {
     "id": "5bf9c42b-8852-468a-99f5-915622dfba25",
     "name": "Best video and audio",
-    "format": "bv+ba/b",
     "folder": "",
     "template": "",
     "cookies": "",
-    "cli": "",
+    "cli": "--format 'bv+ba/b'",
     "default": true
   },
   {
     "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48b",
     "name": "1080p H264/m4a or best available",
-    "format": "bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
     "folder": "",
     "template": "",
     "cookies": "",
-    "cli": "-S vcodec:h264",
+    "cli": "-S vcodec:h264 --format 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
     "default": true
   },
   {
     "id": "9719fcc3-4cf2-4d88-b1e4-74dff3dba00e",
     "name": "720p h264/m4a or best available",
-    "format": "bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]",
     "folder": "",
     "template": "",
     "cookies": "",
-    "cli": "-S vcodec:h264",
+    "cli": "-S vcodec:h264 --format 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
     "default": true
   },
   {
     "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
     "name": "Audio only",
-    "format": "bestaudio/best",
     "folder": "",
     "template": "",
     "cookies": "",
-    "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail",
+    "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
     "default": true
   }
 ]

@@ -71,11 +71,6 @@ div.is-centered {
               </header>
               <div class="card-content is-flex-grow-1">
                 <div class="content">
-                  <p class="is-text-overflow"
-                    v-if="item?.format && false === ['default', 'not_set'].includes(item.format)">
-                    <span class="icon"><i class="fa-solid fa-f" /></span>
-                    <span v-text="item.format" />
-                  </p>
                   <p class="is-text-overflow" v-if="item.folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
                     <span>{{ calcPath(item.folder) }}</span>
@@ -322,7 +317,7 @@ const exportItem = item => {
   }
 
   userData['_type'] = 'preset'
-  userData['_version'] = '2.0'
+  userData['_version'] = '2.5'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)))
 }
