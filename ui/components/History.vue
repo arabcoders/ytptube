@@ -107,9 +107,19 @@
                   </label>
                 </td>
                 <td class="is-vcentered">
-                  <div class="is-text-overflow" v-tooltip="item.title">
-                    <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                  <div v-if="item.extras.thumbnail">
+                    <FloatingImage :image="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                      :title="item.title">
+                      <div class="is-text-overflow">
+                        <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                      </div>
+                    </FloatingImage>
                   </div>
+                  <template v-else>
+                    <div class="is-text-overflow" v-tooltip="item.title">
+                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                    </div>
+                  </template>
                   <div v-if="item.error" class="is-text-overflow is-pointer" @click="toggle_class($event)">
                     <span class="has-text-danger">{{ item.error }}</span>
                   </div>

@@ -1,14 +1,16 @@
 <template>
   <vTooltip @show="loadContent" @hide="stopTimer">
     <slot />
-    <template #popper>
-      <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin"></i></span>
+    <template #popper class="p-0 m-0">
+      <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin" /></span>
       <template v-else>
-        <div>
-          <h1 v-if="props.title" class="is-4">{{ props.title }}</h1>
-          <img :src="url" style="width:720px; height: auto" class="card-image" :alt="props.title" @error="clearCache"
-            :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
-            :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
+        <div style="max-width:650px" class="m-1">
+          <div class="is-block" style="word-break: all;" v-text="props.title" v-if="props.title" />
+          <figure class="image is-3by1">
+            <img @load="e => pImg(e)" :src="url" :alt="props.title" @error="clearCache"
+              :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
+              :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
+          </figure>
         </div>
       </template>
     </template>
@@ -54,9 +56,7 @@ const defaultLoader = async () => {
       return
     }
 
-    const response = await request('/api/thumbnail?url=' + encodePath(props.image), {
-      signal: cancelRequest.signal,
-    })
+    const response = await request(props.image, { signal: cancelRequest.signal })
 
     if (200 !== response.status) {
       toast.error(`ImageView Request error. ${response.status}: ${response.statusText}`)
@@ -110,4 +110,6 @@ const clearCache = async () => {
   url.value = '';
   return loadContent()
 }
+
+const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
 </script>
