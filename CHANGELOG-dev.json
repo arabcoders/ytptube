@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250507-f7abca8",
-        "date": "2025-05-07T18:56:27+00:00",
+        "tag": "dev-20250510-5a76f1d",
+        "date": "2025-05-10T14:54:04+00:00",
         "commits": [
+            {
+                "sha": "5a76f1d",
+                "message": "Fold  preset --format into the cli args",
+                "author": "arabcoders",
+                "date": "2025-05-10T14:54:04+00:00"
+            },
             {
                 "sha": "f7abca8",
                 "message": "minor design update",
