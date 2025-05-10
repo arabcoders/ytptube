@@ -135,9 +135,6 @@ class YTDLPOpts(metaclass=Singleton):
 
             self._preset_opts["cookiefile"] = str(file)
 
-        if preset.format:
-            self._preset_opts["format"] = preset.format
-
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
 

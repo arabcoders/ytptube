@@ -373,15 +373,16 @@ class HttpSocket(Common):
                 pass
 
     @ws_event
-    async def disconnect(self, sid: str):
+    async def disconnect(self, sid: str, reason: str):
         """
         Handle client disconnection.
 
         Args:
             sid (str): The session ID of the client.
+            reason (str): The reason for disconnection.
 
         """
-        LOG.debug(f"Client '{sid}' disconnected.")
+        LOG.debug(f"Client '{sid}' disconnected. {reason}")
 
         for event in self.subscribers:
             if sid in self.subscribers[event]:

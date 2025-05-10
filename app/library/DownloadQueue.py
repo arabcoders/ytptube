@@ -15,6 +15,7 @@ import yt_dlp
 from aiohttp import web
 
 from .AsyncPool import AsyncPool
+from .conditions import Conditions
 from .config import Config
 from .DataStore import DataStore
 from .Download import Download
@@ -227,7 +228,7 @@ class DownloadQueue(metaclass=Singleton):
         eventType = entry.get("_type") or "video"
 
         if "playlist" == eventType:
-            LOG.info("Processing playlist")
+            LOG.info(f"Processing playlist '{entry.get('id')}: {entry.get('title')}'.")
             entries = entry.get("entries", [])
             playlistCount = int(entry.get("playlist_count", len(entries)))
             results = []
@@ -478,6 +479,13 @@ class DownloadQueue(metaclass=Singleton):
 
             if not entry:
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
+
+            if not item.requeued:
+                condition = Conditions.get_instance().match(info=entry)
+                if condition is not None:
+                    already.pop()
+                    LOG.info(f"Condition '{condition}' matched for '{item.url}'.")
+                    return await self.add(item=item.new_with(requeued=True, cli=condition.cli),already=already)
 
             end_time = time.perf_counter() - started
             LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")

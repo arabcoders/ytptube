@@ -128,6 +128,9 @@ class Events:
     PRESETS_UPDATE = "presets_update"
     SCHEDULE_ADD = "schedule_add"
 
+    CONDITIONS_ADD = "conditions_add"
+    CONDITIONS_UPDATE = "conditions_update"
+
     SUBSCRIBED = "subscribed"
     UNSUBSCRIBED = "unsubscribed"
 

@@ -54,7 +54,7 @@ div.is-centered {
       <div class="column is-12" v-if="!toggleForm">
         <div class="columns is-multiline" v-if="presetsNoDefault && presetsNoDefault.length > 0">
           <div class="column is-6" v-for="item in presetsNoDefault" :key="item.id">
-            <div class="card">
+            <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
@@ -69,13 +69,8 @@ div.is-centered {
                   </button>
                 </div>
               </header>
-              <div class="card-content">
+              <div class="card-content is-flex-grow-1">
                 <div class="content">
-                  <p class="is-text-overflow"
-                    v-if="item?.format && false === ['default', 'not_set'].includes(item.format)">
-                    <span class="icon"><i class="fa-solid fa-f" /></span>
-                    <span v-text="item.format" />
-                  </p>
                   <p class="is-text-overflow" v-if="item.folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
                     <span>{{ calcPath(item.folder) }}</span>
@@ -99,7 +94,7 @@ div.is-centered {
                   <pre><code>{{ filterItem(item) }}</code></pre>
                 </div>
               </div>
-              <div class="card-footer">
+              <div class="card-footer mt-auto">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(item)">
                     <span class="icon"><i class="fa-solid fa-cog" /></span>
@@ -197,7 +192,7 @@ const reloadContent = async (fromMounted = false) => {
       return
     }
     console.error(e)
-    toast.error("Failed to fetch tasks.")
+    toast.error("Failed to fetch page content.")
   } finally {
     isLoading.value = false
   }
@@ -322,7 +317,7 @@ const exportItem = item => {
   }
 
   userData['_type'] = 'preset'
-  userData['_version'] = '2.0'
+  userData['_version'] = '2.5'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)))
 }

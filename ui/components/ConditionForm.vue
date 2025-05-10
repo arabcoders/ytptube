@@ -1,8 +1,8 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
-      <form autocomplete="off" id="presetForm" @submit.prevent="checkInfo()">
-        <div class="card">
+      <form autocomplete="off" id="addForm" @submit.prevent="checkInfo()">
+        <div class="card is-flex is-full-height is-flex-direction-column">
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
@@ -21,7 +21,7 @@
             </div>
           </div>
 
-          <div class="card-content">
+          <div class="card-content is-flex-grow-1">
 
             <div class="columns is-multiline is-mobile">
 
@@ -56,50 +56,29 @@
                     Name
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
+                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress"
+                    placeholder="For the problematic channel or video name.">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The name to refers to this preset of settings.</span>
+                    <span>The name that refers to this condition.</span>
                   </span>
                 </div>
               </div>
 
               <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="folder">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    Default Download path
+                  <label class="label is-inline" for="filter">
+                    <span class="icon"><i class="fa-solid fa-filter" /></span>
+                    Filter
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
-                      v-model="form.folder" :disabled="addInProgress" list="folders">
+                    <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
+                    placeholder="availability = 'needs_auth' & channel_id = 'channel_id'">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this folder if non is given with URL. Leave empty to use default download path. Default
-                      download path <code>{{ config.app.download_path }}</code>.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-12">
-                <div class="field">
-                  <label class="label is-inline" for="output_template">
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    Default Output template
-                  </label>
-                  <div class="control">
-                    <input type="text" class="input" id="output_template" :disabled="addInProgress"
-                      placeholder="Leave empty to use default template." v-model="form.template">
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this output template if non are given with URL. if not set, it will defaults to
-                      <code>{{ config.app.output_template }}</code>.
-                      For more information visit <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">this page</NuxtLink>.
-                    </span>
+                    <span>The yt-dlp <code>[--match-filters]</code> filter logic.</span>
                   </span>
                 </div>
               </div>
@@ -108,51 +87,29 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command options for yt-dlp
+                    Command arguments for yt-dlp
                   </label>
                   <div class="control">
                     <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
+                      placeholder="command options to use, e.g. --proxy 1.2.3.4:3128" />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
-                      For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
-                        with caution those arguments can break yt-dlp or the frontend.</span>
+                    <span>If the filter is matched, these options will be used.
+                      <span class="has-text-danger">This will override the cli arguments given with the URL. it's
+                        recommended to use presets and keep the cli with url empty if you plan to use this
+                        feature.</span>
                     </span>
                   </span>
                 </div>
               </div>
-
-              <div class="column is-12">
-                <div class="field">
-                  <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">
-                    <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                    Cookies
-                  </label>
-                  <div class="control">
-                    <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress"
-                      placeholder="Leave empty to use default cookies" />
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this cookies if non are given with the URL. Use the <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                        Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
-                      Cookie format.
-                    </span>
-                  </span>
-                </div>
-              </div>
-
             </div>
           </div>
 
-          <div class="card-footer">
+          <div class="card-footer mt-auto">
             <div class="card-footer-item">
               <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                :class="{ 'is-loading': addInProgress }" form="presetForm">
+                :class="{ 'is-loading': addInProgress }" form="addForm">
                 <span class="icon"><i class="fa-solid fa-save" /></span>
                 <span>Save</span>
               </button>
@@ -168,10 +125,6 @@
         </div>
       </form>
     </div>
-
-    <datalist id="folders" v-if="config?.folders">
-      <option v-for="dir in config.folders" :key="dir" :value="dir" />
-    </datalist>
   </main>
 </template>
 
@@ -185,7 +138,7 @@ const props = defineProps({
     required: false,
     default: null,
   },
-  preset: {
+  item: {
     type: Object,
     required: true,
   },
@@ -194,35 +147,17 @@ const props = defineProps({
     required: false,
     default: false,
   },
-  presets: {
-    type: Array,
-    required: false,
-    default: () => [],
-  },
 })
 
-const config = useConfigStore()
 const toast = useToast()
-const form = reactive(JSON.parse(JSON.stringify(props.preset)))
+const form = reactive(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
 const showImport = useStorage('showImport', false);
 
-onMounted(() => {
-  if (props.preset?.cli && '' !== props.preset?.cli) {
-    return
-  }
-
-  if (props.preset?.args && (typeof props.preset.args === 'object')) {
-    form.args = JSON.stringify(props.preset.args, null, 2)
-  }
-
-  if (props.preset?.postprocessors && (typeof props.preset.postprocessors === 'object')) {
-    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2)
-  }
-})
-
 const checkInfo = async () => {
-  for (const key of ['name']) {
+  const required = ['name', 'filter', 'cli'];
+
+  for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`);
       return
@@ -239,24 +174,6 @@ const checkInfo = async () => {
 
   let copy = JSON.parse(JSON.stringify(form));
 
-  let usedName = false;
-  let name = String(form.name).trim().toLowerCase();
-
-  props.presets.forEach(p => {
-    if (p.id === props.reference) {
-      return;
-    }
-
-    if (String(p.name).toLowerCase() === name) {
-      usedName = true;
-    }
-  });
-
-  if (true === usedName) {
-    toast.error('The preset name is already in use.');
-    return;
-  }
-
   for (const key in copy) {
     if (typeof copy[key] !== 'string') {
       continue
@@ -264,26 +181,16 @@ const checkInfo = async () => {
     copy[key] = copy[key].trim()
   }
 
-  emitter('submit', { reference: toRaw(props.reference), preset: toRaw(copy) });
+  emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) });
 }
 
 const convertOptions = async args => {
   try {
     const response = await convertCliOptions(args)
-
-    if (response.output_template) {
-      form.template = response.output_template
-    }
-
-    if (response.download_path) {
-      form.folder = response.download_path
-    }
-
     return response.opts
   } catch (e) {
     toast.error(e.message)
   }
-
   return null;
 }
 
@@ -307,12 +214,12 @@ const importItem = async () => {
   try {
     const item = JSON.parse(val)
 
-    if (!item?._type || 'preset' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`)
+    if (!item?._type || 'condition' !== item._type) {
+      toast.error(`Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`)
       return
     }
 
-    if (form.cli && false === confirm('This will overwrite the current data. Are you sure?')) {
+    if ((form.filter || form.cli) && false === confirm('This will overwrite the current data. Are you sure?')) {
       return
     }
 
@@ -320,34 +227,19 @@ const importItem = async () => {
       form.name = item.name
     }
 
+    if (item.filter) {
+      form.filter = item.filter
+    }
+
     if (item.cli) {
       form.cli = item.cli
-    }
-
-    // -- backwards compatibility for old presets.
-    if (item.format) {
-      if (!item?.cli) {
-        form.cli = `--format '${item.format}'`
-      } else {
-        form.cli = `--format '${item.format}'\n${form.cli}`
-      }
-      form.cli = form.cli.trim()
-    }
-
-    if (item.template) {
-      form.template = item.template
-    }
-
-    if (item.folder) {
-      form.folder = item.folder
     }
 
     import_string.value = ''
     showImport.value = false
   } catch (e) {
     console.error(e)
-    toast.error(`Failed to parse string. ${e.message}`)
+    toast.error(`Failed to parse import string. ${e.message}`)
   }
 }
-
 </script>
