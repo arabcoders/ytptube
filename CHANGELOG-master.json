@@ -1,5 +1,53 @@
 [
     {
+        "tag": "master-20250510-853a443",
+        "date": "2025-05-10T16:54:07+00:00",
+        "commits": [
+            {
+                "sha": "45f4382",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-05-10T16:38:36+00:00"
+            },
+            {
+                "sha": "1a59926",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-05-10T15:26:43+00:00"
+            },
+            {
+                "sha": "f62b01b",
+                "message": "Enable floating image for list view.",
+                "author": "arabcoders",
+                "date": "2025-05-10T15:13:40+00:00"
+            },
+            {
+                "sha": "5a76f1d",
+                "message": "Fold  preset --format into the cli args",
+                "author": "arabcoders",
+                "date": "2025-05-10T14:54:04+00:00"
+            },
+            {
+                "sha": "f7abca8",
+                "message": "minor design update",
+                "author": "arabcoders",
+                "date": "2025-05-07T18:56:27+00:00"
+            },
+            {
+                "sha": "815bd3c",
+                "message": "improved menubar",
+                "author": "arabcoders",
+                "date": "2025-05-07T16:56:28+00:00"
+            },
+            {
+                "sha": "b5a3ed1",
+                "message": "Added info dict condition checker",
+                "author": "arabcoders",
+                "date": "2025-05-07T14:58:33+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250502-12b4b12",
         "date": "2025-05-02T18:20:42+00:00",
         "commits": [
