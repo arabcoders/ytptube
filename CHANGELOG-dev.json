@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250510-45f4382",
-        "date": "2025-05-10T16:38:36+00:00",
+        "tag": "dev-20250511-802ec99",
+        "date": "2025-05-11T14:40:35+00:00",
+        "commits": [
+            {
+                "sha": "802ec99",
+                "message": "Make check cookie more user customizable.",
+                "author": "arabcoders",
+                "date": "2025-05-11T14:40:35+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250510-853a443",
+        "date": "2025-05-10T16:54:07+00:00",
         "commits": [
             {
                 "sha": "45f4382",
