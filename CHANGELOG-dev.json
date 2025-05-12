@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250512-2828737",
-        "date": "2025-05-12T14:15:21+00:00",
+        "tag": "dev-20250512-8c308c1",
+        "date": "2025-05-12T15:55:29+00:00",
+        "commits": [
+            {
+                "sha": "8c308c1",
+                "message": "Hide floating image for mobile in list mode.",
+                "author": "arabcoders",
+                "date": "2025-05-12T15:55:29+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250512-cbc6277",
+        "date": "2025-05-12T15:21:51+00:00",
         "commits": [
             {
                 "sha": "2828737",
