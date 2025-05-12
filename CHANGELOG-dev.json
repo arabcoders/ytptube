@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250511-802ec99",
-        "date": "2025-05-11T14:40:35+00:00",
+        "tag": "dev-20250512-9aed6d1",
+        "date": "2025-05-12T14:02:08+00:00",
         "commits": [
+            {
+                "sha": "9aed6d1",
+                "message": "Fix CORS issue with extensions",
+                "author": "arabcoders",
+                "date": "2025-05-12T14:02:08+00:00"
+            },
             {
                 "sha": "802ec99",
                 "message": "Make check cookie more user customizable.",
