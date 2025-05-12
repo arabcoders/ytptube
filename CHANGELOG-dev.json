@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250512-9aed6d1",
-        "date": "2025-05-12T14:02:08+00:00",
+        "tag": "dev-20250512-2828737",
+        "date": "2025-05-12T14:15:21+00:00",
         "commits": [
+            {
+                "sha": "2828737",
+                "message": "skip auth for OPTIONS request",
+                "author": "arabcoders",
+                "date": "2025-05-12T14:15:21+00:00"
+            },
             {
                 "sha": "9aed6d1",
                 "message": "Fix CORS issue with extensions",
