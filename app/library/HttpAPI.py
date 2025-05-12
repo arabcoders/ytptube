@@ -305,6 +305,10 @@ class HttpAPI(Common):
 
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            # if OPTIONS request, skip auth
+            if request.method == "OPTIONS":
+                return await handler(request)
+
             auth_header = request.headers.get("Authorization")
             if auth_header is None and request.query.get("apikey") is not None:
                 auth_header = f"Basic {request.query.get('apikey')}"
