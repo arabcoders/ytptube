@@ -150,10 +150,11 @@ class HttpAPI(Common):
             if "Server" in response.headers:
                 del response.headers["Server"]
 
-            if "Origin" in request.headers:
-                response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-                response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
+            response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = str(60 * 15)
 
         try:
             app.on_response_prepare.append(on_prepare)
