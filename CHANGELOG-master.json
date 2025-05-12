@@ -1,5 +1,29 @@
 [
     {
+        "tag": "master-20250512-cbc6277",
+        "date": "2025-05-12T15:21:51+00:00",
+        "commits": [
+            {
+                "sha": "2828737",
+                "message": "skip auth for OPTIONS request",
+                "author": "arabcoders",
+                "date": "2025-05-12T14:15:21+00:00"
+            },
+            {
+                "sha": "9aed6d1",
+                "message": "Fix CORS issue with extensions",
+                "author": "arabcoders",
+                "date": "2025-05-12T14:02:08+00:00"
+            },
+            {
+                "sha": "802ec99",
+                "message": "Make check cookie more user customizable.",
+                "author": "arabcoders",
+                "date": "2025-05-11T14:40:35+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250510-853a443",
         "date": "2025-05-10T16:54:07+00:00",
         "commits": [
