@@ -150,10 +150,11 @@ class HttpAPI(Common):
             if "Server" in response.headers:
                 del response.headers["Server"]
 
-            if "Origin" in request.headers:
-                response.headers["Access-Control-Allow-Origin"] = request.headers["Origin"]
-                response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
-                response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
+            response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+            response.headers["Access-Control-Allow-Methods"] = "GET, PATCH, PUT, POST, DELETE"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = str(60 * 15)
 
         try:
             app.on_response_prepare.append(on_prepare)
@@ -304,6 +305,10 @@ class HttpAPI(Common):
 
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+            # if OPTIONS request, skip auth
+            if request.method == "OPTIONS":
+                return await handler(request)
+
             auth_header = request.headers.get("Authorization")
             if auth_header is None and request.query.get("apikey") is not None:
                 auth_header = f"Basic {request.query.get('apikey')}"
@@ -1694,9 +1699,9 @@ class HttpAPI(Common):
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
     @route("GET", "api/youtube/auth")
-    async def is_authenticated(self, request: Request) -> Response:
+    async def is_authenticated(self, _: Request) -> Response:
         """
-        Check if the user yt-dlp cookie is valid & authenticated.
+        Check if the user cookies are valid.
 
         Args:
             request (Request): The request object.
@@ -1707,11 +1712,28 @@ class HttpAPI(Common):
         """
         ytdlp_args = self.config.get_ytdlp_args()
 
-        cookie_file = ytdlp_args.get("cookiefile", None)
-        if not cookie_file:
-            return web.json_response(data={"message": "No cookie file provided."}, status=web.HTTPForbidden.status_code)
+        c_request = {}
+        c_request_file = os.path.join(self.config.config_path, "check_cookie_request.json")
+        if os.path.exists(c_request_file):
+            async with await anyio.open_file(c_request_file, "r", encoding="utf-8") as f:
+                try:
+                    c_request = json.loads(await f.read())
+                except json.JSONDecodeError as e:
+                    LOG.error(f"Failed to load '{c_request_file}'. '{e!s}'.")
+                    LOG.exception(e)
+                    return web.json_response(
+                        data={"message": "Failed to load cookie request file. Check logs for more details."},
+                        status=web.HTTPInternalServerError.status_code,
+                    )
 
-        cookie_file = os.path.realpath(cookie_file)
+        cookie_file = c_request.get("cookie_file", None)
+        if not cookie_file:
+            cookie_file = ytdlp_args.get("cookiefile", None)
+            if not cookie_file:
+                return web.json_response(
+                    data={"message": "No cookie file provided."}, status=web.HTTPNotFound.status_code
+                )
+
         if not os.path.exists(cookie_file):
             return web.json_response(
                 data={"message": f"Cookie file '{cookie_file}' does not exist."}, status=web.HTTPNotFound.status_code
@@ -1720,34 +1742,56 @@ class HttpAPI(Common):
         try:
             _, cookies = load_cookies(cookie_file)
         except ValueError as e:
-            LOG.error(str(e))
-            return web.json_response(data={"message": str(e)}, status=web.HTTPInternalServerError.status_code)
-
-        url = "https://www.youtube.com/paid_memberships"
-
-        try:
-            opts = {
-                "proxy": ytdlp_args.get("proxy", None),
-                "headers": {
-                    "User-Agent": ytdlp_args.get(
-                        "user_agent", request.headers.get("User-Agent", f"YTPTube/{self.config.version}")
-                    ),
-                },
-                "cookies": cookies,
-            }
-
-            async with httpx.AsyncClient(**opts) as client:
-                LOG.debug(f"Checking '{url}' redirection.")
-                response = await client.request(method="GET", url=url, follow_redirects=False)
-                return web.json_response(
-                    data={"message": "Authenticated." if 200 == response.status_code else "Not authenticated."},
-                    status=200 if 200 == response.status_code else 401,
-                )
-        except Exception as e:
-            LOG.error(f"Failed to request '{url}'. '{e}'.")
+            LOG.error(f"Failed to load cookies from '{cookie_file}'. '{e!s}'.")
             LOG.exception(e)
             return web.json_response(
-                data={"message": f"Failed to request website. {e!s}"},
+                data={"message": "Failed to load cookies. Check logs for more details."},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        url = c_request.get("url", "https://www.youtube.com/paid_memberships")
+
+        try:
+            opts = {}
+            if c_request.get("proxy"):
+                opts["proxy"] = c_request.get("proxy")
+
+            try:
+                c_status = c_request.get("status", [200])
+                if isinstance(c_status, int):
+                    c_status = [c_status]
+                if not isinstance(c_status, list):
+                    c_status = [200]
+            except Exception:
+                c_status = [200]
+
+            async with httpx.AsyncClient(**opts) as client:
+                if "user-agent" in client.headers:
+                    client.headers.pop("user-agent")
+
+                LOG.info(f"Checking '{url}' to validate if cookies are valid.")
+                response = await client.request(
+                    method=c_request.get("method", "GET"),
+                    url=url,
+                    data=c_request.get("data", None),
+                    json=c_request.get("json", None),
+                    params=c_request.get("params", None),
+                    headers=c_request.get("headers", None),
+                    cookies=cookies,
+                    follow_redirects=bool(c_request.get("follow_redirects", False)),
+                )
+
+                valid = response.status_code in c_status
+
+                return web.json_response(
+                    data={"message": "Authenticated." if valid else "Not authenticated."},
+                    status=web.HTTPOk.status_code if valid else web.HTTPUnauthorized.status_code,
+                )
+        except Exception as e:
+            LOG.error(f"Failed to request '{url}'. '{e!s}'.")
+            LOG.exception(e)
+            return web.json_response(
+                data={"message": "Failed to check cookies status. Check logs for more details."},
                 status=web.HTTPInternalServerError.status_code,
             )
 
