@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250512-8c308c1",
-        "date": "2025-05-12T15:55:29+00:00",
+        "tag": "dev-20250513-bba0370",
+        "date": "2025-05-13T13:22:19+00:00",
         "commits": [
+            {
+                "sha": "bba0370",
+                "message": "Fix healthcheck when user:pass are set.",
+                "author": "arabcoders",
+                "date": "2025-05-13T13:22:19+00:00"
+            },
             {
                 "sha": "8c308c1",
                 "message": "Hide floating image for mobile in list mode.",
