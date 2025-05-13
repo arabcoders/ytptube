@@ -157,7 +157,6 @@ class Config:
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
-        "https://spaceholder.cc/i/1920x1080",
         "https://placedog.net/1920/1080",
     ]
     "The list of picture backends to use for the background."
