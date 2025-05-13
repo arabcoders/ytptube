@@ -4,11 +4,11 @@
     <template #popper class="p-0 m-0">
       <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin" /></span>
       <template v-else>
-        <div style="width: 25vw; height: auto;" class="m-1">
+        <div style="min-width: 300px; width: 25vw; height: auto;" class="m-1">
           <div class="is-block" style="word-break: all;" v-if="props.title">
             <span style="font-size: 120%;">{{ props.title }}</span>
           </div>
-          <figure class="image is-3by1">
+          <figure class="image is-3by1 is-hidden-mobile">
             <img @load="e => pImg(e)" :src="url" :alt="props.title" @error="clearCache"
               :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
               :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
