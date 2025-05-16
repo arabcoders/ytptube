@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250513-bba0370",
-        "date": "2025-05-13T13:22:19+00:00",
+        "tag": "dev-20250516-4ba5e9b",
+        "date": "2025-05-16T18:47:39+00:00",
+        "commits": [
+            {
+                "sha": "4ba5e9b",
+                "message": "turn YTP_YTDLP_AUTO_UPDATE on by default",
+                "author": "arabcoders",
+                "date": "2025-05-16T18:47:39+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250513-f7f5ef0",
+        "date": "2025-05-13T13:33:46+00:00",
         "commits": [
             {
                 "sha": "bba0370",
