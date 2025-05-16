@@ -4,7 +4,7 @@ WORKDIR /app
 COPY ui ./
 RUN if [ ! -f "/app/exported/index.html" ]; then yarn install --production --prefer-offline --frozen-lockfile && yarn run generate; else echo "Skipping UI build, already built."; fi
 
-FROM python:3.11-alpine AS python_builder
+FROM python:3.13-alpine AS python_builder
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -21,7 +21,7 @@ ARG PIPENV_FLAGS="--deploy"
 COPY ./Pipfile* .
 RUN PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
 
-FROM python:3.11-alpine
+FROM python:3.13-alpine
 
 ARG TZ=UTC
 ARG USER_ID=1000
@@ -72,5 +72,4 @@ HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-
-CMD ["/opt/python/bin/python", "/app/app/upgrader.py", "--run", "--ytptube-mp"]
+CMD ["/opt/python/bin/python", "/app/app/main.py", "--ytp-process"]

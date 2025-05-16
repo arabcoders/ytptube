@@ -132,8 +132,9 @@ The engine which powers the actual video downloads in YTPTube is [yt-dlp](https:
 sites regularly change their layouts, frequent updates of yt-dlp are required to keep up.
 
 We have added `YTP_YTDLP_AUTO_UPDATE` environment, which allows you to automatically update yt-dlp to the latest version. 
-To get latest version, simply set the environment variable to `true` and restart the container. Now, whenever you restart
-the container, it will check for the latest version of yt-dlp and update it if a new version is available.
+To get latest version, It's enabled by default and whenever you start the container, it will check for the latest 
+version of yt-dlp and update it if a new version is available. To disable this feature, set the environment variable
+`YTP_YTDLP_AUTO_UPDATE` to `false`.
 
 We will no longer release new versions of YTPTube for every new version of yt-dlp.
 
@@ -288,5 +289,5 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_BASIC_MODE           | Whether to run WebUI in basic mode                               | `false`                            |
 | YTP_PICTURES_BACKENDS    | A comma separated list of pictures urls to use.                  | `empty string`                     |
 | YTP_BROWSER_ENABLED      | Whether to enable the file browser                               | `false`                            |
-| YTP_YTDLP_AUTO_UPDATE    | Whether to enable the auto update for yt-dlp                     | `false`                            |
+| YTP_YTDLP_AUTO_UPDATE    | Whether to enable the auto update for yt-dlp                     | `true`                             |
 
