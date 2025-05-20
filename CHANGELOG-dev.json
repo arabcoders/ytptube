@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250516-4ba5e9b",
-        "date": "2025-05-16T18:47:39+00:00",
+        "tag": "dev-20250520-198e80a",
+        "date": "2025-05-20T16:02:44+00:00",
         "commits": [
+            {
+                "sha": "198e80a",
+                "message": "Minor changes to preset to include descriptions.",
+                "author": "arabcoders",
+                "date": "2025-05-20T16:02:44+00:00"
+            },
             {
                 "sha": "4ba5e9b",
                 "message": "turn YTP_YTDLP_AUTO_UPDATE on by default",
