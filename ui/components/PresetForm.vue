@@ -65,7 +65,7 @@
                 </div>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -83,7 +83,7 @@
                 </div>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
@@ -104,7 +104,7 @@
                 </div>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
@@ -125,7 +125,7 @@
                 </div>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">
                     <span class="icon"><i class="fa-solid fa-cookie" /></span>
@@ -146,6 +146,22 @@
                 </div>
               </div>
 
+              <div class="column">
+                <div class="field">
+                  <label class="label is-inline" for="description">
+                    <span class="icon"><i class="fa-solid fa-comment" /></span>
+                    Description
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="description" v-model="form.description" :disabled="addInProgress"
+                      placeholder="Extras instructions for users to follow" />
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use this field to help users to understand how to use this preset.</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -342,11 +358,15 @@ const importItem = async () => {
       form.folder = item.folder
     }
 
+    if (item.description) {
+      form.description = item.description
+    }
+
     import_string.value = ''
     showImport.value = false
   } catch (e) {
     console.error(e)
-    toast.error(`Failed to parse string. ${e.message}`)
+    toast.error(`Failed to parse. ${e.message}`)
   }
 }
 

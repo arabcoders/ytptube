@@ -58,9 +58,9 @@ div.is-centered {
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Export preset.'" @click.prevent="exportItem(item)">
+                  <button class="has-text-primary" v-tooltip="'Export preset.'" @click="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                  </a>
+                  </button>
                   <button @click="item.raw = !item.raw">
                     <span class="icon"><i class="fa-solid" :class="{
                       'fa-arrow-down': !item?.raw,
@@ -87,11 +87,24 @@ div.is-centered {
                     <span class="icon"><i class="fa-solid fa-cookie" /></span>
                     <span>Has cookies</span>
                   </p>
+                  <button @click="item.toggle_description = !item.toggle_description" v-if="item.description">
+                    <span class="icon"><i class="fa-solid"
+                        :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw, }" /></span>
+                    <span>{{ !item.toggle_description ? 'Show' : 'Hide' }} Description</span>
+                  </button>
                 </div>
               </div>
-              <div class="card-content" v-if="item?.raw">
-                <div class="content">
+              <div class="card-content content m-1 p-1 is-overflow-auto" style="max-height: 300px;"
+                v-if="item?.toggle_description">
+                <div class="is-pre-wrap">{{ item.description }}</div>
+              </div>
+              <div class="card-content content is-overflow-auto m-0 p-0" v-if="item?.raw" style="max-height: 300px;">
+                <div class="is-position-relative">
                   <pre><code>{{ filterItem(item) }}</code></pre>
+                  <button class="button is-small is-primary is-position-absolute" style="top:0; right:0"
+                    @click="copyText(filterItem(item))">
+                    <span class="icon"><i class="fa-solid fa-copy" /></span>
+                  </button>
                 </div>
               </div>
               <div class="card-footer mt-auto">
@@ -276,13 +289,16 @@ const updateItem = async ({ reference, preset }) => {
   resetForm(true)
 }
 
-const filterItem = (item) => {
-  const { raw, ...rest } = item
+const filterItem = item => {
+  const { raw, toggle_description, ...rest } = item
+  if ("default" in rest) {
+    delete rest.default
+  }
   return JSON.stringify(rest, null, 2)
 }
 
-const editItem = (item) => {
-  preset.value = item
+const editItem = item => {
+  preset.value = JSON.parse(filterItem(item))
   presetRef.value = item.id
   toggleForm.value = true
 }
@@ -291,7 +307,7 @@ onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""))
 
 const exportItem = item => {
   let data = JSON.parse(JSON.stringify(item))
-  const keys = ["id", "default", "raw", "cookies"]
+  const keys = ["id", "default", "raw", "cookies", "toggle_description"]
   keys.forEach(key => {
     if (key in data) {
       delete data[key]

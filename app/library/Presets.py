@@ -24,6 +24,9 @@ class Preset:
     name: str
     """The name of the preset."""
 
+    description: str = ""
+    """The description of the preset."""
+
     folder: str = ""
     """The default download folder to use if non is given."""
 
@@ -37,6 +40,7 @@ class Preset:
     """yt-dlp cli command line arguments."""
 
     default: bool = False
+    """If True, the preset is a default preset."""
 
     def serialize(self) -> dict:
         return self.__dict__
