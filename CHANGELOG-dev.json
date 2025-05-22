@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250523-59b8c62",
-        "date": "2025-05-22T21:15:09+00:00",
+        "tag": "dev-20250523-4137079",
+        "date": "2025-05-22T21:24:11+00:00",
         "commits": [
+            {
+                "sha": "4137079",
+                "message": "Remove global cookie checking",
+                "author": "arabcoders",
+                "date": "2025-05-22T21:24:11+00:00"
+            },
             {
                 "sha": "59b8c62",
                 "message": "ci #6",
