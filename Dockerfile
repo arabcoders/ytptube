@@ -2,7 +2,7 @@ FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
-RUN if [ ! -f "/app/exported/index.html" ]; then yarn install --production --prefer-offline --frozen-lockfile && yarn run generate; else echo "Skipping UI build, already built."; fi
+RUN if [ ! -f "/app/exported/index.html" ]; then pnpm install --production --prefer-offline --frozen-lockfile && pnpm run generate; else echo "Skipping UI build, already built."; fi
 
 FROM python:3.13-alpine AS python_builder
 

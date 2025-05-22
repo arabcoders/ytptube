@@ -55,17 +55,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install frontend dependencies
-        uses: bahmutov/npm-install@v1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          working-directory: ui
-          install-command: yarn --production --prefer-offline --frozen-lockfile
+          version: 10
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install frontend dependencies
+        working-directory: ui
+        run: pnpm install --production --prefer-offline --frozen-lockfile
 
       - name: Build frontend
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: ui
-          install-command: yarn run generate
+        working-directory: ui
+        run: pnpm run generate
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -92,17 +100,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install frontend dependencies
-        uses: bahmutov/npm-install@v1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          working-directory: ui
-          install-command: yarn --production --prefer-offline --frozen-lockfile
+          version: 10
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install frontend dependencies
+        working-directory: ui
+        run: pnpm install --production --prefer-offline --frozen-lockfile
 
       - name: Build frontend
-        uses: bahmutov/npm-install@v1
-        with:
-          working-directory: ui
-          install-command: yarn run generate
+        working-directory: ui
+        run: pnpm run generate
 
       - name: Update Version File
         uses: ArabCoders/write-version-to-file@master
