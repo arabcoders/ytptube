@@ -1,6 +1,6 @@
 <template>
   <main class="columns mt-2">
-    <div class="column">
+    <div class="column is-12">
       <form autocomplete="off" @submit.prevent="addDownload">
         <div class="box">
           <div class="columns is-multiline is-mobile">
@@ -74,6 +74,13 @@
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
                 <span>Opts</span>
               </button>
+            </div>
+          </div>
+          <div class="column is-12" v-if="get_preset(form.preset)?.description">
+            <div class="is-overflow-auto" style="max-height: 150px;">
+              <div class="is-ellipsis is-clickable" @click="expand_description">
+                <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}
+              </div>
             </div>
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
@@ -324,4 +331,7 @@ const hasFormatInConfig = computed(() => {
 })
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
+const get_preset = name => config.presets.find(item => item.name === name)
+const expand_description = e => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
+
 </script>

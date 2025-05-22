@@ -13,7 +13,7 @@
         "--port",
         "8082"
       ],
-      "runtimeExecutable": "yarn",
+      "runtimeExecutable": "pnpm",
       "type": "node",
       "cwd": "${workspaceFolder}/ui",
       "env": {
@@ -45,7 +45,7 @@
         "run",
         "generate"
       ],
-      "runtimeExecutable": "yarn",
+      "runtimeExecutable": "pnpm",
       "type": "node",
       "cwd": "${workspaceFolder}/ui",
       "console": "internalConsole",

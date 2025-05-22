@@ -317,3 +317,15 @@ hr {
 .is-full-height {
   height: 100%;
 }
+
+.is-ellipsis {
+  max-width: calc(100% - 10px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.is-max-width {
+  max-width: calc(100% - 10px);
+}

@@ -46,6 +46,8 @@ env:
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
   PLATFORMS: linux/amd64
+  PNPM_VERSION: 10
+  NODE_VERSION: 20
 
 jobs:
   build-pr:
@@ -55,17 +57,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install frontend dependencies
-        uses: bahmutov/npm-install@v1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          working-directory: ui
-          install-command: yarn --production --prefer-offline --frozen-lockfile
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Build frontend
-        uses: bahmutov/npm-install@v1
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          working-directory: ui
-          install-command: yarn run generate
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: 'ui/pnpm-lock.yaml'
+
+      - name: Install frontend dependencies & Build
+        working-directory: ui
+        run: |
+          pnpm install --production --prefer-offline --frozen-lockfile
+          pnpm run generate
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -92,17 +100,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install frontend dependencies
-        uses: bahmutov/npm-install@v1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
         with:
-          working-directory: ui
-          install-command: yarn --production --prefer-offline --frozen-lockfile
+          version: ${{ env.PNPM_VERSION }}
 
-      - name: Build frontend
-        uses: bahmutov/npm-install@v1
+      - name: Install Node.js
+        uses: actions/setup-node@v4
         with:
-          working-directory: ui
-          install-command: yarn run generate
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: 'ui/pnpm-lock.yaml'
+
+      - name: Install frontend dependencies & Build
+        working-directory: ui
+        run: |
+          pnpm install --production --prefer-offline --frozen-lockfile
+          pnpm run generate
 
       - name: Update Version File
         uses: ArabCoders/write-version-to-file@master

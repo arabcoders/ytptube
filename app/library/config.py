@@ -145,7 +145,7 @@ class Config:
     browser_enabled: bool = False
     "Enable file browser access."
 
-    ytdlp_auto_update: bool = False
+    ytdlp_auto_update: bool = True
     """Enable in-place auto update of yt-dlp package."""
 
     ytdlp_cli: str = ""

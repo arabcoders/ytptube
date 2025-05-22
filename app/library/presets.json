@@ -2,6 +2,7 @@
   {
     "id": "3e163c6c-64eb-4448-924f-814b629b3810",
     "name": "default",
+    "description": "",
     "folder": "",
     "template": "",
     "cookies": "",
@@ -11,6 +12,7 @@
   {
     "id": "5bf9c42b-8852-468a-99f5-915622dfba25",
     "name": "Best video and audio",
+    "description": "",
     "folder": "",
     "template": "",
     "cookies": "",
@@ -20,6 +22,7 @@
   {
     "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48b",
     "name": "1080p H264/m4a or best available",
+    "description": "",
     "folder": "",
     "template": "",
     "cookies": "",
@@ -29,6 +32,7 @@
   {
     "id": "9719fcc3-4cf2-4d88-b1e4-74dff3dba00e",
     "name": "720p h264/m4a or best available",
+    "description": "",
     "folder": "",
     "template": "",
     "cookies": "",
@@ -38,10 +42,21 @@
   {
     "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
     "name": "Audio only",
+    "description": "",
     "folder": "",
     "template": "",
     "cookies": "",
     "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
+    "default": true
+  },
+  {
+    "id": "2ade2c28-cad4-4a06-b7eb-2439fdf46f60",
+    "name": "ytdlp-info-reader",
+    "description": "This preset generate specific filename format and metadata to work with yt-dlp info reader plugins for jellyfin/emby and plex and to make play state sync work for WatchState.\n\nThere is one more step you need to do via Other > Terminal if you have it enabled or directly from container shell\n\nyt-dlp -I0 --write-info-json --write-thumbnail --convert-thumbnails jpg --paths /downloads/youtube -o \"%(channel|Unknown_title)s [%(channel_id|Unknown_id)s]/%(title).180B [%(channel_id|Unknown_id)s].%(ext)s\" -- https://www.youtube.com/channel/UCClfFsWcT3N2I7VTXXyt84A\n\nChange the url to the channel you want to download.\n\nFor more information please visit \nhttps://github.com/arabcoders/watchstate/blob/master/FAQ.md#how-to-get-watchstate-working-with-youtube-contentlibrary",
+    "folder": "youtube",
+    "template": "%(channel)s %(channel_id|Unknown_id)s/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(extractor)s-%(id)s].%(ext)s",
+    "cookies": "",
+    "cli": "--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
     "default": true
   }
 ]

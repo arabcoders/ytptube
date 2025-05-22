@@ -460,6 +460,19 @@ const has_data = item => {
   return false
 }
 
+const toggleClass = (target, className) => {
+  if (Array.isArray(className)) {
+    className.forEach(name => toggleClass(target, name))
+    return;
+  }
+
+  if (target.classList.contains(className)) {
+    target.classList.remove(className)
+    return;
+  }
+  target.classList.add(className)
+}
+
 export {
   ag_set,
   ag,
@@ -485,4 +498,5 @@ export {
   base64UrlEncode,
   base64UrlDecode,
   has_data,
+  toggleClass,
 }
