@@ -1,8 +1,56 @@
 [
     {
-        "tag": "dev-20250520-198e80a",
-        "date": "2025-05-20T16:02:44+00:00",
+        "tag": "dev-20250523-59b8c62",
+        "date": "2025-05-22T21:15:09+00:00",
         "commits": [
+            {
+                "sha": "59b8c62",
+                "message": "ci #6",
+                "author": "arabcoders",
+                "date": "2025-05-22T21:15:09+00:00"
+            },
+            {
+                "sha": "2c711a2",
+                "message": "ci #5",
+                "author": "arabcoders",
+                "date": "2025-05-22T21:03:34+00:00"
+            },
+            {
+                "sha": "a4778df",
+                "message": "ci #4",
+                "author": "arabcoders",
+                "date": "2025-05-22T21:00:02+00:00"
+            },
+            {
+                "sha": "24b67c8",
+                "message": "ci #3",
+                "author": "arabcoders",
+                "date": "2025-05-22T20:59:04+00:00"
+            },
+            {
+                "sha": "5e23698",
+                "message": "fix ci",
+                "author": "arabcoders",
+                "date": "2025-05-22T20:54:51+00:00"
+            },
+            {
+                "sha": "1c39d42",
+                "message": "switch to pnpm",
+                "author": "arabcoders",
+                "date": "2025-05-22T20:49:02+00:00"
+            },
+            {
+                "sha": "870a2a8",
+                "message": "update yt-dlp",
+                "author": "arabcoders",
+                "date": "2025-05-22T20:48:55+00:00"
+            },
+            {
+                "sha": "a077c81",
+                "message": "minor embedable content update",
+                "author": "arabcoders",
+                "date": "2025-05-22T20:20:19+00:00"
+            },
             {
                 "sha": "198e80a",
                 "message": "Minor changes to preset to include descriptions.",
