@@ -11,14 +11,7 @@
 
         <div class="is-pulled-right" v-if="socket.isConnected && false === config.app.basic_mode">
           <div class="field is-grouped">
-            <p class="control" v-if="config.app.has_cookies">
-              <button class="button is-purple" @click="checkCookies" v-tooltip.bottom="'Check youtube cookies status.'"
-                :disabled="isChecking">
-                <span class="icon"><i class="fas fa-cookie" :class="{ 'is-loading': isChecking }" /></span>
-              </button>
-            </p>
-
-            <p class="control">
+            <p class="control" v-if="!config.app.basic_mode">
               <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused"
                 v-tooltip.bottom="'Pause non-active downloads.'">
                 <span class="icon"><i class="fas fa-pause" /></span>
@@ -63,15 +56,12 @@
 </template>
 
 <script setup>
-import { request } from '~/utils/index'
 import { useStorage } from '@vueuse/core'
 
 const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
-const toast = useToast()
-const isChecking = ref(false)
 const get_info = ref('')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
@@ -99,31 +89,6 @@ watch(() => stateStore.queue, () => {
   }
   useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}  | ${Object.keys(stateStore.history).length || 0} )` })
 }, { deep: true })
-
-const checkCookies = async () => {
-  if (true === isChecking.value) {
-    return
-  }
-
-  if (false === confirm(`Check for cookies status?`)) {
-    return
-  }
-
-  try {
-    isChecking.value = true
-    const response = await request('/api/youtube/auth')
-    const data = await response.json()
-    if (response.ok) {
-      toast.success('Succuss. ' + data.message)
-    } else {
-      toast.error('Failed. ' + data.message)
-    }
-  } catch (e) {
-    toast.error('Failed to check cookies state. ' + e.message)
-  } finally {
-    isChecking.value = false
-  }
-}
 
 const pauseDownload = () => {
   if (false === confirm('Are you sure you want to pause all non-active downloads?')) {

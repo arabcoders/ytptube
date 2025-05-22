@@ -47,7 +47,6 @@ from .Utils import (
     get_file_sidecar,
     get_files,
     get_mime_type,
-    load_cookies,
     read_logfile,
     validate_url,
     validate_uuid,
@@ -1697,103 +1696,6 @@ class HttpAPI(Common):
         except Exception as e:
             LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
-
-    @route("GET", "api/youtube/auth")
-    async def is_authenticated(self, _: Request) -> Response:
-        """
-        Check if the user cookies are valid.
-
-        Args:
-            request (Request): The request object.
-
-        Returns:
-            Response: The response object
-
-        """
-        ytdlp_args = self.config.get_ytdlp_args()
-
-        c_request = {}
-        c_request_file = os.path.join(self.config.config_path, "check_cookie_request.json")
-        if os.path.exists(c_request_file):
-            async with await anyio.open_file(c_request_file, "r", encoding="utf-8") as f:
-                try:
-                    c_request = json.loads(await f.read())
-                except json.JSONDecodeError as e:
-                    LOG.error(f"Failed to load '{c_request_file}'. '{e!s}'.")
-                    LOG.exception(e)
-                    return web.json_response(
-                        data={"message": "Failed to load cookie request file. Check logs for more details."},
-                        status=web.HTTPInternalServerError.status_code,
-                    )
-
-        cookie_file = c_request.get("cookie_file", None)
-        if not cookie_file:
-            cookie_file = ytdlp_args.get("cookiefile", None)
-            if not cookie_file:
-                return web.json_response(
-                    data={"message": "No cookie file provided."}, status=web.HTTPNotFound.status_code
-                )
-
-        if not os.path.exists(cookie_file):
-            return web.json_response(
-                data={"message": f"Cookie file '{cookie_file}' does not exist."}, status=web.HTTPNotFound.status_code
-            )
-
-        try:
-            _, cookies = load_cookies(cookie_file)
-        except ValueError as e:
-            LOG.error(f"Failed to load cookies from '{cookie_file}'. '{e!s}'.")
-            LOG.exception(e)
-            return web.json_response(
-                data={"message": "Failed to load cookies. Check logs for more details."},
-                status=web.HTTPInternalServerError.status_code,
-            )
-
-        url = c_request.get("url", "https://www.youtube.com/paid_memberships")
-
-        try:
-            opts = {}
-            if c_request.get("proxy"):
-                opts["proxy"] = c_request.get("proxy")
-
-            try:
-                c_status = c_request.get("status", [200])
-                if isinstance(c_status, int):
-                    c_status = [c_status]
-                if not isinstance(c_status, list):
-                    c_status = [200]
-            except Exception:
-                c_status = [200]
-
-            async with httpx.AsyncClient(**opts) as client:
-                if "user-agent" in client.headers:
-                    client.headers.pop("user-agent")
-
-                LOG.info(f"Checking '{url}' to validate if cookies are valid.")
-                response = await client.request(
-                    method=c_request.get("method", "GET"),
-                    url=url,
-                    data=c_request.get("data", None),
-                    json=c_request.get("json", None),
-                    params=c_request.get("params", None),
-                    headers=c_request.get("headers", None),
-                    cookies=cookies,
-                    follow_redirects=bool(c_request.get("follow_redirects", False)),
-                )
-
-                valid = response.status_code in c_status
-
-                return web.json_response(
-                    data={"message": "Authenticated." if valid else "Not authenticated."},
-                    status=web.HTTPOk.status_code if valid else web.HTTPUnauthorized.status_code,
-                )
-        except Exception as e:
-            LOG.error(f"Failed to request '{url}'. '{e!s}'.")
-            LOG.exception(e)
-            return web.json_response(
-                data={"message": "Failed to check cookies status. Check logs for more details."},
-                status=web.HTTPInternalServerError.status_code,
-            )
 
     @route("GET", "api/notifications")
     async def notifications(self, _: Request) -> Response:
