@@ -268,6 +268,8 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
+        registered_options = []
+
         for attr_name in dir(self):
             method = getattr(self, attr_name)
             if hasattr(method, "_http_method") and hasattr(method, "_http_path"):
@@ -276,6 +278,15 @@ class HttpAPI(Common):
                     http_path = method._http_path[1:]
 
                 self.routes.route(method._http_method, f"/{http_path}")(method)
+
+                if http_path in registered_options:
+                    continue
+
+                async def options_handler(_: Request) -> Response:
+                    return web.Response(status=204)
+
+                self.routes.route("OPTIONS", f"/{http_path}")(options_handler)
+                registered_options.append(http_path)
 
         self.routes.static("/api/download/", self.config.download_path)
         self._preload_static(app)
@@ -391,7 +402,16 @@ class HttpAPI(Common):
                         },
                     )
 
-            response = await handler(request)
+            try:
+                response = await handler(request)
+            except web.HTTPException as e:
+                return web.json_response(data={"error": str(e)}, status=e.status_code)
+            except Exception as e:
+                LOG.exception(e)
+                response = web.json_response(
+                    data={"error": "Internal Server Error"},
+                    status=web.HTTPInternalServerError.status_code,
+                )
 
             if isinstance(response, web.FileResponse):
                 try:
@@ -404,20 +424,6 @@ class HttpAPI(Common):
             return response
 
         return middleware_handler
-
-    @route("OPTIONS", "/{path:.*}")
-    async def add_coors(self, _: Request) -> Response:
-        """
-        Add CORS headers to the response.
-
-        Args:
-            _: The request object.
-
-        Returns:
-            Response: The response object.
-
-        """
-        return web.json_response(data={"status": "ok"}, status=web.HTTPOk.status_code)
 
     @route("GET", "api/ping")
     async def ping(self, _: Request) -> Response:

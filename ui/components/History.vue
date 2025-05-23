@@ -639,7 +639,7 @@ const reQueueItem = (item, event = null) => {
     cookies: item.cookies,
     template: item.template,
     cli: item?.cli,
-    extras: item?.extras && Object.keys(item.extras) > 0 ? item.extras : {},
+    extras: toRaw(item.extras ?? {}) ?? {},
   };
 
   socket.emit('item_delete', { id: item._id, remove_file: false })

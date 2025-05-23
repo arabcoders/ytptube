@@ -43,9 +43,6 @@ class Config:
     ytdl_debug: bool = False
     """Enable yt-dlp debugging."""
 
-    allow_manifestless: bool = False
-    """Allow downloading videos without manifest."""
-
     host: str = "0.0.0.0"
     """The host to bind the server to."""
 
@@ -194,7 +191,6 @@ class Config:
         "ytdl_debug",
         "debug",
         "temp_keep",
-        "allow_manifestless",
         "access_log",
         "remove_files",
         "ignore_ui",
