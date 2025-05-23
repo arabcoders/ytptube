@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250523-adb191b",
+        "date": "2025-05-23T15:31:36+00:00",
+        "commits": [
+            {
+                "sha": "647acc4",
+                "message": "Fix problem with processing playlist",
+                "author": "arabcoders",
+                "date": "2025-05-23T15:20:35+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250522-4398b30",
         "date": "2025-05-22T23:08:13+00:00",
         "commits": [
