@@ -63,7 +63,7 @@ class Download:
         "fragment_retries",
         "skip_unavailable_fragments",
     ]
-    "Bad yt-dlp options which are known to cause issues with live stream and post manifestless mode."
+    "Bad yt-dlp options which are known to cause issues with live stream."
 
     _ytdlp_fields: tuple = (
         "tmpfilename",
@@ -113,7 +113,6 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.temp_keep = bool(config.temp_keep)
         self.is_live = bool(info.is_live) or info.live_in is not None
-        self.is_manifestless = "is_manifestless" in self.info.options and self.info.options["is_manifestless"] is True
         self.info_dict = info_dict
         self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
         self.started_time = 0
@@ -225,7 +224,7 @@ class Download:
                 if info:
                     self.info_dict = info
 
-            if self.is_live or self.is_manifestless:
+            if self.is_live:
                 hasDeletedOptions = False
                 deletedOpts: list = []
                 for opt in self.bad_live_options:
@@ -236,7 +235,7 @@ class Download:
 
                 if hasDeletedOptions:
                     self.logger.warning(
-                        f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted which are known to cause issues with live stream and post stream manifestless mode."
+                        f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted."
                     )
 
             if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
@@ -263,7 +262,7 @@ class Download:
                 cls.process_ie_result(
                     ie_result=self.info_dict,
                     download=True,
-                    extra_info={k: v for k, v in self.info.extras.items() if k.startswith("playlist")},
+                    extra_info={k: v for k, v in self.info.extras.items() if k not in self.info_dict},
                 )
                 ret = cls._download_retcode
             else:

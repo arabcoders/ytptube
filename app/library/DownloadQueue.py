@@ -193,7 +193,153 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
-    async def __add_entry(self, entry: dict, item: Item, already=None, logs: list | None = None):
+    async def _process_playlist(self, entry: dict, item: Item, already=None):
+        LOG.info(f"Processing playlist '{entry.get('id')}: {entry.get('title')}'.")
+        entries = entry.get("entries", [])
+        playlistCount = int(entry.get("playlist_count", len(entries)))
+        results = []
+
+        for i, etr in enumerate(entries, start=1):
+            extras = {
+                "playlist": entry.get("id"),
+                "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
+                "playlist_autonumber": i,
+            }
+
+            for property in ("id", "title", "uploader", "uploader_id"):
+                if property in entry:
+                    extras[f"playlist_{property}"] = entry.get(property)
+
+            if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
+                extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
+
+            results.append(
+                await self.add(
+                    item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
+                    already=already,
+                )
+            )
+
+        if any("error" == res["status"] for res in results):
+            return {
+                "status": "error",
+                "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
+            }
+
+        return {"status": "ok"}
+
+    async def _add_video(self, entry: dict, item: Item, logs: list[str] | None = None):
+        if not logs:
+            logs: list[str] = []
+
+        options: dict = {}
+        error: str | None = None
+        live_in: str | None = None
+
+        # check if the video is live stream.
+        if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
+            if entry.get("release_timestamp"):
+                live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
+                item.extras.update({"live_in": live_in})
+            else:
+                error = "Live stream not yet started. And no date is set."
+        else:
+            error = entry.get("msg")
+
+        LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
+
+        try:
+            _item = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+            if _item is not None:
+                err_msg = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
+                LOG.warning(err_msg)
+                await self.clear([_item.info._id], remove_file=False)
+        except KeyError:
+            pass
+
+        try:
+            _item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
+            if _item is not None:
+                err_msg = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
+                LOG.info(err_msg)
+                return {"status": "error", "msg": err_msg}
+        except KeyError:
+            pass
+
+        live_status: list = ["is_live", "is_upcoming"]
+        is_live = bool(entry.get("is_live") or live_in or entry.get("live_status") in live_status)
+
+        try:
+            download_dir = calc_download_path(base_path=self.config.download_path, folder=item.folder)
+        except Exception as e:
+            LOG.exception(e)
+            return {"status": "error", "msg": str(e)}
+
+        for field in ("uploader", "channel", "thumbnail"):
+            if entry.get(field):
+                item.extras[field] = entry.get(field)
+
+        for key in entry:
+            if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
+                item.extras[key] = entry.get(key)
+
+        dl = ItemDTO(
+            id=str(entry.get("id")),
+            title=str(entry.get("title")),
+            url=str(entry.get("webpage_url") or entry.get("url")),
+            preset=item.preset,
+            folder=item.folder,
+            download_dir=download_dir,
+            temp_dir=self.config.temp_path,
+            cookies=item.cookies,
+            template=item.template if item.template else self.config.output_template,
+            template_chapter=self.config.output_template_chapter,
+            datetime=formatdate(time.time()),
+            error=error,
+            is_live=is_live,
+            live_in=live_in if live_in else item.extras.get("live_in", None),
+            options=options,
+            cli=item.cli,
+            extras=item.extras,
+        )
+
+        try:
+            dlInfo: Download = Download(info=dl, info_dict=entry, logs=logs)
+
+            text_logs = ""
+            if filtered_logs := extract_ytdlp_logs(logs):
+                text_logs = f" Logs: {', '.join(filtered_logs)}"
+
+            if live_in or "is_upcoming" == entry.get("live_status"):
+                NotifyEvent = Events.COMPLETED
+                dlInfo.info.status = "not_live"
+                dlInfo.info.msg = "Stream is not live yet." + text_logs
+                itemDownload = self.done.put(dlInfo)
+            elif len(entry.get("formats", [])) < 1:
+                availability = entry.get("availability", "public")
+                msg = "No formats found."
+                if availability and availability not in ("public",):
+                    msg += f" Availability is set for '{availability}'."
+
+                dlInfo.info.error = msg + text_logs
+                dlInfo.info.status = "error"
+                itemDownload = self.done.put(dlInfo)
+                NotifyEvent = Events.COMPLETED
+                await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
+            else:
+                NotifyEvent = Events.ADDED
+                itemDownload = self.queue.put(dlInfo)
+                self.event.set()
+
+            await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
+
+            return {"status": "ok"}
+        except Exception as e:
+            LOG.exception(e)
+            LOG.error(f"Failed to download item. '{e!s}'")
+            return {"status": "error", "msg": str(e)}
+
+    async def _add_item(self, entry: dict, item: Item, already=None, logs: list | None = None):
         """
         Add an entry to the download queue.
 
@@ -207,176 +353,21 @@ class DownloadQueue(metaclass=Singleton):
             dict: The status of the operation.
 
         """
-        if not logs:
-            logs = []
-
-        if item.has_extras():
-            for key in item.extras.copy():
-                if not self.keep_extra_key(key):
-                    item.extras.pop(key)
-        else:
-            item.extras = {}
-
         if not entry:
             return {"status": "error", "msg": "Invalid/empty data was given."}
 
-        options: dict = {}
+        event_type = entry.get("_type", "video")
 
-        error: str | None = None
-        live_in: str | None = None
+        if event_type.startswith("playlist"):
+            return await self._process_playlist(entry=entry, item=item, already=already)
 
-        eventType = entry.get("_type") or "video"
-
-        if "playlist" == eventType:
-            LOG.info(f"Processing playlist '{entry.get('id')}: {entry.get('title')}'.")
-            entries = entry.get("entries", [])
-            playlistCount = int(entry.get("playlist_count", len(entries)))
-            results = []
-
-            for i, etr in enumerate(entries, start=1):
-                etr["playlist"] = entry.get("id")
-                etr["playlist_index"] = f"{{0:0{len(str(playlistCount)):d}d}}".format(i)
-                etr["playlist_autonumber"] = i
-
-                for property in ("id", "title", "uploader", "uploader_id"):
-                    if property in entry:
-                        etr[f"playlist_{property}"] = entry.get(property)
-
-                if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                    etr["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
-
-                results.append(
-                    await self.__add_entry(
-                        entry=etr,
-                        item=item.new_with(url=etr.get("url") or etr.get("webpage_url")),
-                        already=already,
-                    )
-                )
-
-            if any("error" == res["status"] for res in results):
-                return {
-                    "status": "error",
-                    "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
-                }
-
-            return {"status": "ok"}
-
-        if ("video" == eventType or eventType.startswith("url")) and "id" in entry and "title" in entry:
-            # check if the video is live stream.
-            if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
-                if entry.get("release_timestamp"):
-                    live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
-                    item.extras.update({"live_in": live_in})
-                else:
-                    error = "Live stream not yet started. And no date is set."
-            else:
-                error = entry.get("msg")
-
-            LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
-
-            try:
-                _item = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
-                if _item is not None:
-                    err_msg = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
-                    LOG.warning(err_msg)
-                    await self.clear([_item.info._id], remove_file=False)
-            except KeyError:
-                pass
-
-            try:
-                _item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
-                if _item is not None:
-                    err_msg = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
-                    LOG.info(err_msg)
-                    return {"status": "error", "msg": err_msg}
-            except KeyError:
-                pass
-
-            is_manifestless = entry.get("is_manifestless", False)
-            options.update({"is_manifestless": is_manifestless})
-
-            live_status: list = ["is_live", "is_upcoming"]
-            is_live = bool(entry.get("is_live") or live_in or entry.get("live_status") in live_status)
-
-            try:
-                download_dir = calc_download_path(base_path=self.config.download_path, folder=item.folder)
-            except Exception as e:
-                LOG.exception(e)
-                return {"status": "error", "msg": str(e)}
-
-            for field in ("uploader", "channel", "thumbnail"):
-                if entry.get(field):
-                    item.extras[field] = entry.get(field)
-
-            for key in entry:
-                if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
-                    item.extras[key] = entry.get(key)
-
-            dl = ItemDTO(
-                id=str(entry.get("id")),
-                title=str(entry.get("title")),
-                url=str(entry.get("webpage_url") or entry.get("url")),
-                preset=item.preset,
-                folder=item.folder,
-                download_dir=download_dir,
-                temp_dir=self.config.temp_path,
-                cookies=item.cookies,
-                template=item.template if item.template else self.config.output_template,
-                template_chapter=self.config.output_template_chapter,
-                datetime=formatdate(time.time()),
-                error=error,
-                is_live=is_live,
-                live_in=live_in if live_in else item.extras.get("live_in", None),
-                options=options,
-                cli=item.cli,
-                extras=item.extras,
-            )
-
-            try:
-                dlInfo: Download = Download(info=dl, info_dict=entry, logs=logs)
-                text_logs = ""
-                if filtered_logs := extract_ytdlp_logs(logs):
-                    text_logs = f" Logs: {', '.join(filtered_logs)}"
-
-                if live_in or "is_upcoming" == entry.get("live_status"):
-                    NotifyEvent = Events.COMPLETED
-                    dlInfo.info.status = "not_live"
-                    dlInfo.info.msg = "Stream is not live yet." + text_logs
-                    itemDownload = self.done.put(dlInfo)
-                elif len(entry.get("formats", [])) < 1:
-                    availability = entry.get("availability", "public")
-                    msg = "No formats found."
-                    if availability and availability not in ("public",):
-                        msg += f" Availability is set for '{availability}'."
-
-                    dlInfo.info.error = msg + text_logs
-                    dlInfo.info.status = "error"
-                    itemDownload = self.done.put(dlInfo)
-                    NotifyEvent = Events.COMPLETED
-                    await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
-                elif self.config.allow_manifestless is False and is_manifestless is True:
-                    dlInfo.info.status = "error"
-                    dlInfo.info.error = "Video is in post-live manifestless mode." + text_logs
-
-                    itemDownload = self.done.put(dlInfo)
-                    NotifyEvent = Events.COMPLETED
-                else:
-                    NotifyEvent = Events.ADDED
-                    itemDownload = self.queue.put(dlInfo)
-                    self.event.set()
-
-                await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
-
-                return {"status": "ok"}
-            except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to download item. '{e!s}'")
-                return {"status": "error", "msg": str(e)}
-
-        if eventType.startswith("url"):
+        if event_type.startswith("url"):
             return await self.add(item=item.new_with(url=entry.get("url")), already=already)
 
-        return {"status": "error", "msg": f'Unsupported resource "{eventType}"'}
+        if not event_type.startswith("video"):
+            return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
+
+        return await self._add_video(entry=entry, item=item, logs=logs)
 
     async def add(self, item: Item, already: set | None = None):
         """
@@ -485,7 +476,7 @@ class DownloadQueue(metaclass=Singleton):
                 if condition is not None:
                     already.pop()
                     LOG.info(f"Condition '{condition}' matched for '{item.url}'.")
-                    return await self.add(item=item.new_with(requeued=True, cli=condition.cli),already=already)
+                    return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
             end_time = time.perf_counter() - started
             LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
@@ -504,12 +495,12 @@ class DownloadQueue(metaclass=Singleton):
         finally:
             if cookie_file and os.path.exists(cookie_file):
                 try:
-                    os.remove(yt_conf["cookiefile"])
+                    os.remove(cookie_file)
                     del yt_conf["cookiefile"]
                 except Exception as e:
                     LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
-        return await self.__add_entry(entry=entry, item=item, already=already, logs=logs)
+        return await self._add_item(entry=entry, item=item, already=already, logs=logs)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """
@@ -766,20 +757,6 @@ class DownloadQueue(metaclass=Singleton):
             return False, None
 
         return is_downloaded(file, url)
-
-    def keep_extra_key(self, key: str) -> bool:
-        """
-        Check if the extra key should be kept.
-
-        Args:
-            key (str): The extra key to check.
-
-        Returns:
-            bool: True if the extra key should be kept, False otherwise.
-
-        """
-        keys = ("playlist", "external_downloader", "live_in")
-        return any(key == k or key.startswith(k) for k in keys)
 
     async def monitor_stale(self):
         """

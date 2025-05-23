@@ -81,7 +81,7 @@ div.is-centered {
                     <span class="icon"><i class="fa-solid fa-tv" /></span>
                     <span>{{ item.preset ?? config.app.default_preset }}</span>
                   </p>
-                  <p class="is-text-overflow">
+                  <p class="is-text-overflow" v-if="item.cli">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>{{ item.cli }}</span>
                   </p>

@@ -941,7 +941,7 @@ async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
 
     from anyio import open_file
 
-    if not pathlib(file).exists():
+    if not pathlib.Path(file).exists():
         return
 
     async with await open_file(file, "rb") as f:
@@ -1020,20 +1020,23 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
         )
 
     for key, ie in YTDLP_INFO_CLS._ies.items():
-        if not ie.suitable(url):
-            continue
+        try:
+            if not ie.suitable(url):
+                continue
 
-        if not ie.working():
+            if not ie.working():
+                break
+
+            temp_id = ie.get_temp_id(url)
+            if not temp_id:
+                break
+
+            idDict["id"] = temp_id
+            idDict["ie_key"] = key
+            idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
             break
-
-        temp_id = ie.get_temp_id(url)
-        if not temp_id:
-            break
-
-        idDict["id"] = temp_id
-        idDict["ie_key"] = key
-        idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
-        break
+        except Exception as e:
+            LOG.error(f"Error getting archive ID: {e}")
 
     return idDict
 

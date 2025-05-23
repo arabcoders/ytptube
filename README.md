@@ -270,7 +270,6 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_TEMP_KEEP            | Whether to keep the Individual video temp directory or remove it | `false`                            |
 | YTP_KEEP_ARCHIVE         | Keep history of downloaded videos                                | `true`                             |
 | YTP_YTDL_DEBUG           | Whether to turn debug logging for the internal `yt-dlp` package  | `false`                            |
-| YTP_ALLOW_MANIFESTLESS   | Allow `yt-dlp` to download unprocessed streams                   | `false`                            |
 | YTP_HOST                 | Which IP address to bind to                                      | `0.0.0.0`                          |
 | YTP_PORT                 | Which port to bind to                                            | `8081`                             |
 | YTP_LOG_LEVEL            | Log level                                                        | `info`                             |

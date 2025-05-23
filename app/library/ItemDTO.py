@@ -68,6 +68,7 @@ class Item:
         """
         return self.cli and len(self.cli) > 2
 
+    @staticmethod
     def _default_preset() -> str:
         from .config import Config
 

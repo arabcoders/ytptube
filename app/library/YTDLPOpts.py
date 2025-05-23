@@ -131,7 +131,7 @@ class YTDLPOpts(metaclass=Singleton):
             with open(file, "w") as f:
                 f.write(preset.cookies)
 
-            load_cookies(file)
+            load_cookies(str(file))
 
             self._preset_opts["cookiefile"] = str(file)
 
