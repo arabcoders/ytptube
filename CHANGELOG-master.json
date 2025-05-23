@@ -1,10 +1,10 @@
 [
     {
-        "tag": "master-20250523-adb191b",
+        "tag": "master-20250523-adb191bb",
         "date": "2025-05-23T15:31:36+00:00",
         "commits": [
             {
-                "sha": "647acc4",
+                "sha": "647acc48",
                 "message": "Fix problem with processing playlist",
                 "author": "arabcoders",
                 "date": "2025-05-23T15:20:35+00:00"
@@ -12,71 +12,71 @@
         ]
     },
     {
-        "tag": "master-20250522-4398b30",
+        "tag": "master-20250522-4398b30b",
         "date": "2025-05-22T23:08:13+00:00",
         "commits": [
             {
-                "sha": "4137079",
+                "sha": "41370795",
                 "message": "Remove global cookie checking",
                 "author": "arabcoders",
                 "date": "2025-05-22T21:24:11+00:00"
             },
             {
-                "sha": "59b8c62",
+                "sha": "59b8c629",
                 "message": "ci #6",
                 "author": "arabcoders",
                 "date": "2025-05-22T21:15:09+00:00"
             },
             {
-                "sha": "2c711a2",
+                "sha": "2c711a22",
                 "message": "ci #5",
                 "author": "arabcoders",
                 "date": "2025-05-22T21:03:34+00:00"
             },
             {
-                "sha": "a4778df",
+                "sha": "a4778df2",
                 "message": "ci #4",
                 "author": "arabcoders",
                 "date": "2025-05-22T21:00:02+00:00"
             },
             {
-                "sha": "24b67c8",
+                "sha": "24b67c88",
                 "message": "ci #3",
                 "author": "arabcoders",
                 "date": "2025-05-22T20:59:04+00:00"
             },
             {
-                "sha": "5e23698",
+                "sha": "5e236989",
                 "message": "fix ci",
                 "author": "arabcoders",
                 "date": "2025-05-22T20:54:51+00:00"
             },
             {
-                "sha": "1c39d42",
+                "sha": "1c39d42a",
                 "message": "switch to pnpm",
                 "author": "arabcoders",
                 "date": "2025-05-22T20:49:02+00:00"
             },
             {
-                "sha": "870a2a8",
+                "sha": "870a2a88",
                 "message": "update yt-dlp",
                 "author": "arabcoders",
                 "date": "2025-05-22T20:48:55+00:00"
             },
             {
-                "sha": "a077c81",
+                "sha": "a077c816",
                 "message": "minor embedable content update",
                 "author": "arabcoders",
                 "date": "2025-05-22T20:20:19+00:00"
             },
             {
-                "sha": "198e80a",
+                "sha": "198e80ad",
                 "message": "Minor changes to preset to include descriptions.",
                 "author": "arabcoders",
                 "date": "2025-05-20T16:02:44+00:00"
             },
             {
-                "sha": "4ba5e9b",
+                "sha": "4ba5e9bd",
                 "message": "turn YTP_YTDLP_AUTO_UPDATE on by default",
                 "author": "arabcoders",
                 "date": "2025-05-16T18:47:39+00:00"
@@ -84,17 +84,17 @@
         ]
     },
     {
-        "tag": "master-20250513-f7f5ef0",
+        "tag": "master-20250513-f7f5ef0e",
         "date": "2025-05-13T13:33:46+00:00",
         "commits": [
             {
-                "sha": "bba0370",
+                "sha": "bba03702",
                 "message": "Fix healthcheck when user:pass are set.",
                 "author": "arabcoders",
                 "date": "2025-05-13T13:22:19+00:00"
             },
             {
-                "sha": "8c308c1",
+                "sha": "8c308c1c",
                 "message": "Hide floating image for mobile in list mode.",
                 "author": "arabcoders",
                 "date": "2025-05-12T15:55:29+00:00"
@@ -102,23 +102,23 @@
         ]
     },
     {
-        "tag": "master-20250512-cbc6277",
+        "tag": "master-20250512-cbc6277d",
         "date": "2025-05-12T15:21:51+00:00",
         "commits": [
             {
-                "sha": "2828737",
+                "sha": "28287375",
                 "message": "skip auth for OPTIONS request",
                 "author": "arabcoders",
                 "date": "2025-05-12T14:15:21+00:00"
             },
             {
-                "sha": "9aed6d1",
+                "sha": "9aed6d18",
                 "message": "Fix CORS issue with extensions",
                 "author": "arabcoders",
                 "date": "2025-05-12T14:02:08+00:00"
             },
             {
-                "sha": "802ec99",
+                "sha": "802ec99c",
                 "message": "Make check cookie more user customizable.",
                 "author": "arabcoders",
                 "date": "2025-05-11T14:40:35+00:00"
@@ -126,47 +126,47 @@
         ]
     },
     {
-        "tag": "master-20250510-853a443",
+        "tag": "master-20250510-853a443b",
         "date": "2025-05-10T16:54:07+00:00",
         "commits": [
             {
-                "sha": "45f4382",
+                "sha": "45f43827",
                 "message": "minor fixes",
                 "author": "arabcoders",
                 "date": "2025-05-10T16:38:36+00:00"
             },
             {
-                "sha": "1a59926",
+                "sha": "1a59926c",
                 "message": "fixes",
                 "author": "arabcoders",
                 "date": "2025-05-10T15:26:43+00:00"
             },
             {
-                "sha": "f62b01b",
+                "sha": "f62b01b3",
                 "message": "Enable floating image for list view.",
                 "author": "arabcoders",
                 "date": "2025-05-10T15:13:40+00:00"
             },
             {
-                "sha": "5a76f1d",
+                "sha": "5a76f1d6",
                 "message": "Fold  preset --format into the cli args",
                 "author": "arabcoders",
                 "date": "2025-05-10T14:54:04+00:00"
             },
             {
-                "sha": "f7abca8",
+                "sha": "f7abca8d",
                 "message": "minor design update",
                 "author": "arabcoders",
                 "date": "2025-05-07T18:56:27+00:00"
             },
             {
-                "sha": "815bd3c",
+                "sha": "815bd3c0",
                 "message": "improved menubar",
                 "author": "arabcoders",
                 "date": "2025-05-07T16:56:28+00:00"
             },
             {
-                "sha": "b5a3ed1",
+                "sha": "b5a3ed1a",
                 "message": "Added info dict condition checker",
                 "author": "arabcoders",
                 "date": "2025-05-07T14:58:33+00:00"
@@ -174,53 +174,53 @@
         ]
     },
     {
-        "tag": "master-20250502-12b4b12",
+        "tag": "master-20250502-12b4b123",
         "date": "2025-05-02T18:20:42+00:00",
         "commits": [
             {
-                "sha": "999dbf3",
+                "sha": "999dbf35",
                 "message": "it works!",
                 "author": "arabcoders",
                 "date": "2025-05-02T18:12:00+00:00"
             },
             {
-                "sha": "99a2f60",
+                "sha": "99a2f60a",
                 "message": "another attempt at fixing mpd streams",
                 "author": "arabcoders",
                 "date": "2025-05-02T16:49:13+00:00"
             },
             {
-                "sha": "1754841",
+                "sha": "1754841d",
                 "message": "Another attempt at fixing live_from_start",
                 "author": "arabcoders",
                 "date": "2025-05-02T14:43:05+00:00"
             },
             {
-                "sha": "f1a04ac",
+                "sha": "f1a04aca",
                 "message": "Fixes to live_from_start",
                 "author": "arabcoders",
                 "date": "2025-05-02T10:18:14+00:00"
             },
             {
-                "sha": "28ea6c6",
+                "sha": "28ea6c6a",
                 "message": "truncate oveflowing error text with option to display all on click",
                 "author": "arabcoders",
                 "date": "2025-05-01T15:51:23+00:00"
             },
             {
-                "sha": "cc65b4b",
+                "sha": "cc65b4b3",
                 "message": "Communicate more error logs to user when yt-dlp throws them.",
                 "author": "arabcoders",
                 "date": "2025-05-01T15:28:12+00:00"
             },
             {
-                "sha": "fb70f0b",
+                "sha": "fb70f0b2",
                 "message": "attempt at fixing yt-dlp youtube live_from_start for premiere",
                 "author": "arabcoders",
                 "date": "2025-05-01T14:08:28+00:00"
             },
             {
-                "sha": "7292d75",
+                "sha": "7292d75f",
                 "message": "Made the built-in yt-dlp upgrader actually work.",
                 "author": "arabcoders",
                 "date": "2025-05-01T14:08:08+00:00"
@@ -228,11 +228,11 @@
         ]
     },
     {
-        "tag": "master-20250501-1deba05",
+        "tag": "master-20250501-1deba059",
         "date": "2025-05-01T00:40:42+00:00",
         "commits": [
             {
-                "sha": "54c7069",
+                "sha": "54c70692",
                 "message": "Update yt-dlp to 2025.4.30",
                 "author": "ArabCoders",
                 "date": "2025-05-01T00:27:36+00:00"
@@ -240,23 +240,23 @@
         ]
     },
     {
-        "tag": "master-20250428-9f0d883",
+        "tag": "master-20250428-9f0d8837",
         "date": "2025-04-28T16:24:37+00:00",
         "commits": [
             {
-                "sha": "d895904",
+                "sha": "d8959043",
                 "message": "Switched newDownload form to use HttpAPI for easier unlocking of download button.",
                 "author": "arabcoders",
                 "date": "2025-04-28T15:40:23+00:00"
             },
             {
-                "sha": "d4ca763",
+                "sha": "d4ca763a",
                 "message": "reverted some changes to logging",
                 "author": "arabcoders",
                 "date": "2025-04-28T15:15:11+00:00"
             },
             {
-                "sha": "2d86aae",
+                "sha": "2d86aaef",
                 "message": "attempt at fixing duplicate logging",
                 "author": "arabcoders",
                 "date": "2025-04-27T16:44:44+00:00"
@@ -264,11 +264,11 @@
         ]
     },
     {
-        "tag": "master-20250426-d385e41",
+        "tag": "master-20250426-d385e41f",
         "date": "2025-04-26T16:58:34+00:00",
         "commits": [
             {
-                "sha": "2fa5218",
+                "sha": "2fa52188",
                 "message": "upgrade external packages.",
                 "author": "arabcoders",
                 "date": "2025-04-26T16:51:42+00:00"
@@ -276,47 +276,47 @@
         ]
     },
     {
-        "tag": "master-20250426-1bbaf46",
+        "tag": "master-20250426-1bbaf461",
         "date": "2025-04-26T16:34:31+00:00",
         "commits": [
             {
-                "sha": "ae9b30d",
+                "sha": "ae9b30d0",
                 "message": "removed imageipsum as background source.",
                 "author": "arabcoders",
                 "date": "2025-04-26T15:51:33+00:00"
             },
             {
-                "sha": "7a01a84",
+                "sha": "7a01a840",
                 "message": "Add missing None check",
                 "author": "arabcoders",
                 "date": "2025-04-26T15:51:07+00:00"
             },
             {
-                "sha": "ca10ce2",
+                "sha": "ca10ce28",
                 "message": "Import ag_utils",
                 "author": "arabcoders",
                 "date": "2025-04-26T14:56:01+00:00"
             },
             {
-                "sha": "0f69ec0",
+                "sha": "0f69ec04",
                 "message": "fixes",
                 "author": "arabcoders",
                 "date": "2025-04-26T14:22:59+00:00"
             },
             {
-                "sha": "68a0d6b",
+                "sha": "68a0d6b5",
                 "message": "Added more protection to workers pool being stuck in preparing state.",
                 "author": "arabcoders",
                 "date": "2025-04-26T14:08:13+00:00"
             },
             {
-                "sha": "4f81944",
+                "sha": "4f819441",
                 "message": "ensure info_dict contains formats before passing to yt-dlp",
                 "author": "arabcoders",
                 "date": "2025-04-24T12:57:10+00:00"
             },
             {
-                "sha": "e59ed7c",
+                "sha": "e59ed7c2",
                 "message": "fix timezone issue in monitor live streams",
                 "author": "arabcoders",
                 "date": "2025-04-24T12:44:51+00:00"
@@ -324,47 +324,47 @@
         ]
     },
     {
-        "tag": "master-20250422-b29dc00",
+        "tag": "master-20250422-b29dc00b",
         "date": "2025-04-22T16:10:33+00:00",
         "commits": [
             {
-                "sha": "eebfb2a",
+                "sha": "eebfb2ab",
                 "message": "Fix re-adding the item after live_in kicks in",
                 "author": "arabcoders",
                 "date": "2025-04-22T16:06:43+00:00"
             },
             {
-                "sha": "f0c04e1",
+                "sha": "f0c04e12",
                 "message": "retain live_in value cross re-queue, as sometimes the queue happens and the stream not yet live.",
                 "author": "arabcoders",
                 "date": "2025-04-22T15:13:49+00:00"
             },
             {
-                "sha": "d3c6517",
+                "sha": "d3c65175",
                 "message": "typo update",
                 "author": "arabcoders",
                 "date": "2025-04-22T14:38:32+00:00"
             },
             {
-                "sha": "4f0e5d5",
+                "sha": "4f0e5d55",
                 "message": "minor fixes",
                 "author": "arabcoders",
                 "date": "2025-04-22T14:38:05+00:00"
             },
             {
-                "sha": "3d99247",
+                "sha": "3d99247c",
                 "message": "make the date update dynamic",
                 "author": "arabcoders",
                 "date": "2025-04-22T14:24:48+00:00"
             },
             {
-                "sha": "bfe30bc",
+                "sha": "bfe30bc5",
                 "message": "update README",
                 "author": "arabcoders",
                 "date": "2025-04-22T13:54:31+00:00"
             },
             {
-                "sha": "0b79b6f",
+                "sha": "0b79b6f6",
                 "message": "Automatically re-queue upcoming live streams in history.",
                 "author": "arabcoders",
                 "date": "2025-04-22T13:52:52+00:00"
@@ -372,35 +372,35 @@
         ]
     },
     {
-        "tag": "master-20250421-53d3b3c",
+        "tag": "master-20250421-53d3b3c8",
         "date": "2025-04-21T17:53:59+00:00",
         "commits": [
             {
-                "sha": "cdcb5d6",
+                "sha": "cdcb5d61",
                 "message": "update README",
                 "author": "arabcoders",
                 "date": "2025-04-21T17:53:45+00:00"
             },
             {
-                "sha": "62703f3",
+                "sha": "62703f3c",
                 "message": "add event warning about adding url saved to archive",
                 "author": "arabcoders",
                 "date": "2025-04-21T15:40:00+00:00"
             },
             {
-                "sha": "9ba7b34",
+                "sha": "9ba7b348",
                 "message": "Add more events",
                 "author": "arabcoders",
                 "date": "2025-04-21T15:21:29+00:00"
             },
             {
-                "sha": "5172742",
+                "sha": "5172742e",
                 "message": "Only display availability when it's set",
                 "author": "arabcoders",
                 "date": "2025-04-21T14:40:36+00:00"
             },
             {
-                "sha": "f6c7d82",
+                "sha": "f6c7d823",
                 "message": "restore message about live stream not being live yet.",
                 "author": "arabcoders",
                 "date": "2025-04-20T17:07:18+00:00"
@@ -408,11 +408,11 @@
         ]
     },
     {
-        "tag": "master-20250420-a2f8cb5",
+        "tag": "master-20250420-a2f8cb55",
         "date": "2025-04-20T14:00:39+00:00",
         "commits": [
             {
-                "sha": "bcd6df3",
+                "sha": "bcd6df3e",
                 "message": "Display better desorption when there are no formats available.",
                 "author": "arabcoders",
                 "date": "2025-04-20T13:48:50+00:00"
@@ -420,17 +420,17 @@
         ]
     },
     {
-        "tag": "master-20250419-3425657",
+        "tag": "master-20250419-3425657d",
         "date": "2025-04-19T14:56:31+00:00",
         "commits": [
             {
-                "sha": "f8b18de",
+                "sha": "f8b18ded",
                 "message": "wrap cancel in try catch to avoid possible problems.",
                 "author": "arabcoders",
                 "date": "2025-04-19T14:49:38+00:00"
             },
             {
-                "sha": "7755f3c",
+                "sha": "7755f3c4",
                 "message": "added some protection aganist staled download blocking the download queue.",
                 "author": "arabcoders",
                 "date": "2025-04-19T14:44:09+00:00"
@@ -438,11 +438,11 @@
         ]
     },
     {
-        "tag": "master-20250412-fb2aa73",
+        "tag": "master-20250412-fb2aa739",
         "date": "2025-04-12T15:49:53+00:00",
         "commits": [
             {
-                "sha": "fa3d950",
+                "sha": "fa3d9502",
                 "message": "Minor refactor for is_downloaded function and updated dependencies",
                 "author": "arabcoders",
                 "date": "2025-04-12T15:44:10+00:00"
@@ -450,11 +450,11 @@
         ]
     },
     {
-        "tag": "master-20250409-2beb6a6",
+        "tag": "master-20250409-2beb6a6b",
         "date": "2025-04-09T23:52:40+00:00",
         "commits": [
             {
-                "sha": "bcdc4ee",
+                "sha": "bcdc4ee0",
                 "message": "Increase log retrieval limit and enhance log pagination metadata",
                 "author": "arabcoders",
                 "date": "2025-04-09T23:32:38+00:00"
@@ -462,41 +462,41 @@
         ]
     },
     {
-        "tag": "master-20250409-53da40b",
+        "tag": "master-20250409-53da40b5",
         "date": "2025-04-09T22:38:01+00:00",
         "commits": [
             {
-                "sha": "17dd007",
+                "sha": "17dd007f",
                 "message": "Show that a external dl is being used if we are stuck in preparing stage as yt-dlp doesn't trigger progress_hook",
                 "author": "arabcoders",
                 "date": "2025-04-09T22:32:32+00:00"
             },
             {
-                "sha": "4a21592",
+                "sha": "4a21592e",
                 "message": "raise an error if item was using invalid preset.",
                 "author": "arabcoders",
                 "date": "2025-04-09T21:59:52+00:00"
             },
             {
-                "sha": "ee2fd3f",
+                "sha": "ee2fd3f3",
                 "message": "Only show notification target, id or url incase of error loading the target.",
                 "author": "arabcoders",
                 "date": "2025-04-09T16:41:54+00:00"
             },
             {
-                "sha": "c2fa066",
+                "sha": "c2fa0666",
                 "message": "set default data_key for notification targets if not provided",
                 "author": "arabcoders",
                 "date": "2025-04-09T16:36:49+00:00"
             },
             {
-                "sha": "88163ca",
+                "sha": "88163cad",
                 "message": "make it possible to change notification data field key name",
                 "author": "arabcoders",
                 "date": "2025-04-09T14:35:11+00:00"
             },
             {
-                "sha": "817e7d2",
+                "sha": "817e7d2e",
                 "message": "minor ui change",
                 "author": "arabcoders",
                 "date": "2025-04-08T20:30:08+00:00"
@@ -504,11 +504,11 @@
         ]
     },
     {
-        "tag": "master-20250406-31f64e6",
+        "tag": "master-20250406-31f64e67",
         "date": "2025-04-06T23:31:21+00:00",
         "commits": [
             {
-                "sha": "33397db",
+                "sha": "33397db6",
                 "message": "go with blacklist approach for blocking yt-dlp options.",
                 "author": "arabcoders",
                 "date": "2025-04-06T13:14:31+00:00"
@@ -516,35 +516,35 @@
         ]
     },
     {
-        "tag": "master-20250405-ec1f2f4",
+        "tag": "master-20250405-ec1f2f44",
         "date": "2025-04-05T23:31:30+00:00",
         "commits": [
             {
-                "sha": "ce1d499",
+                "sha": "ce1d4991",
                 "message": "minor fixes to how we handle preset cookies",
                 "author": "arabcoders",
                 "date": "2025-04-05T23:17:00+00:00"
             },
             {
-                "sha": "4966461",
+                "sha": "4966461c",
                 "message": "minor log messages update",
                 "author": "arabcoders",
                 "date": "2025-04-05T22:50:18+00:00"
             },
             {
-                "sha": "2fedc6d",
+                "sha": "2fedc6d0",
                 "message": "update console/logs page opacity",
                 "author": "arabcoders",
                 "date": "2025-04-05T22:21:34+00:00"
             },
             {
-                "sha": "0881fce",
+                "sha": "0881fce2",
                 "message": "allow --cookies",
                 "author": "arabcoders",
                 "date": "2025-04-05T22:14:44+00:00"
             },
             {
-                "sha": "d6ab18e",
+                "sha": "d6ab18ec",
                 "message": "migrate the entire app to use cli options for ytdlp and make it behave as close to cli options parsing as possible.",
                 "author": "arabcoders",
                 "date": "2025-04-05T22:03:17+00:00"
@@ -552,53 +552,53 @@
         ]
     },
     {
-        "tag": "master-20250404-c118522",
+        "tag": "master-20250404-c118522f",
         "date": "2025-04-04T20:40:01+00:00",
         "commits": [
             {
-                "sha": "44b1452",
+                "sha": "44b14527",
                 "message": "remove debug statements.",
                 "author": "arabcoders",
                 "date": "2025-04-04T20:17:07+00:00"
             },
             {
-                "sha": "b08be6f",
+                "sha": "b08be6f8",
                 "message": "retain extras data when re-queueing via alt+click",
                 "author": "arabcoders",
                 "date": "2025-04-04T20:05:26+00:00"
             },
             {
-                "sha": "260901c",
+                "sha": "260901cf",
                 "message": "minor changes to newDownload form",
                 "author": "arabcoders",
                 "date": "2025-04-04T19:53:21+00:00"
             },
             {
-                "sha": "93e830f",
+                "sha": "93e830f0",
                 "message": "in some specific cases, users were unable to delete items from history",
                 "author": "arabcoders",
                 "date": "2025-04-04T19:09:58+00:00"
             },
             {
-                "sha": "737b923",
+                "sha": "737b923a",
                 "message": "remove debug statement",
                 "author": "arabcoders",
                 "date": "2025-04-04T17:21:40+00:00"
             },
             {
-                "sha": "48e388b",
+                "sha": "48e388b0",
                 "message": "Add logs viewing and enable file logging by default",
                 "author": "arabcoders",
                 "date": "2025-04-04T17:18:03+00:00"
             },
             {
-                "sha": "f17a27d",
+                "sha": "f17a27d3",
                 "message": "fixed bug preventing the user from importing a preset",
                 "author": "arabcoders",
                 "date": "2025-04-03T23:08:11+00:00"
             },
             {
-                "sha": "d03e04d",
+                "sha": "d03e04db",
                 "message": "minor changes to webui display",
                 "author": "arabcoders",
                 "date": "2025-04-03T23:07:56+00:00"
@@ -606,17 +606,17 @@
         ]
     },
     {
-        "tag": "master-20250403-62b41bf",
+        "tag": "master-20250403-62b41bfd",
         "date": "2025-04-03T20:31:18+00:00",
         "commits": [
             {
-                "sha": "04e78f4",
+                "sha": "04e78f4c",
                 "message": "minor fixes",
                 "author": "arabcoders",
                 "date": "2025-04-03T20:16:47+00:00"
             },
             {
-                "sha": "245a3e7",
+                "sha": "245a3e7f",
                 "message": "added new env variable to auto upgrade yt-dlp on container startup",
                 "author": "arabcoders",
                 "date": "2025-04-03T16:37:44+00:00"
@@ -624,11 +624,11 @@
         ]
     },
     {
-        "tag": "master-20250401-e79d182",
+        "tag": "master-20250401-e79d182d",
         "date": "2025-04-01T22:51:46+00:00",
         "commits": [
             {
-                "sha": "a3ef44a",
+                "sha": "a3ef44a5",
                 "message": "Fix re-queuing existing item.",
                 "author": "arabcoders",
                 "date": "2025-04-01T22:27:10+00:00"
@@ -636,65 +636,65 @@
         ]
     },
     {
-        "tag": "master-20250401-18fe540",
+        "tag": "master-20250401-18fe5409",
         "date": "2025-04-01T21:49:10+00:00",
         "commits": [
             {
-                "sha": "d7d461c",
+                "sha": "d7d461c7",
                 "message": "update settings page.",
                 "author": "arabcoders",
                 "date": "2025-04-01T21:41:54+00:00"
             },
             {
-                "sha": "eac74d0",
+                "sha": "eac74d07",
                 "message": "trim __repr__ double space",
                 "author": "arabcoders",
                 "date": "2025-04-01T20:44:14+00:00"
             },
             {
-                "sha": "d8b4afc",
+                "sha": "d8b4afc4",
                 "message": "upgrade dependencies",
                 "author": "arabcoders",
                 "date": "2025-04-01T20:33:37+00:00"
             },
             {
-                "sha": "6cbb8ee",
+                "sha": "6cbb8eea",
                 "message": "Fix argument name in YTDLP options and enhance video cleanup on unmount",
                 "author": "arabcoders",
                 "date": "2025-04-01T20:27:14+00:00"
             },
             {
-                "sha": "3219408",
+                "sha": "3219408a",
                 "message": "Removed last reference for ytdlp JSON config in DownloadQueue",
                 "author": "arabcoders",
                 "date": "2025-04-01T20:19:17+00:00"
             },
             {
-                "sha": "3fe0a90",
+                "sha": "3fe0a90a",
                 "message": "Only load notification targets when load is called",
                 "author": "arabcoders",
                 "date": "2025-04-01T20:13:10+00:00"
             },
             {
-                "sha": "f7101f6",
+                "sha": "f7101f6a",
                 "message": "simplified the codebase and removed all backwards compat flags and checks.",
                 "author": "arabcoders",
                 "date": "2025-04-01T19:56:28+00:00"
             },
             {
-                "sha": "9b4d860",
+                "sha": "9b4d8604",
                 "message": "Make task run time in log more human readable.",
                 "author": "arabcoders",
                 "date": "2025-04-01T19:47:04+00:00"
             },
             {
-                "sha": "4730583",
+                "sha": "47305835",
                 "message": "update newDownload template",
                 "author": "arabcoders",
                 "date": "2025-04-01T17:34:14+00:00"
             },
             {
-                "sha": "fa9c084",
+                "sha": "fa9c0843",
                 "message": "remove presets v1.0",
                 "author": "arabcoders",
                 "date": "2025-04-01T17:05:35+00:00"
@@ -702,35 +702,35 @@
         ]
     },
     {
-        "tag": "master-20250401-2ed0bde",
+        "tag": "master-20250401-2ed0bde9",
         "date": "2025-04-01T16:06:23+00:00",
         "commits": [
             {
-                "sha": "bde3ae6",
+                "sha": "bde3ae63",
                 "message": "Update yt-dlp to 2025.3.31",
                 "author": "ArabCoders",
                 "date": "2025-04-01T00:27:09+00:00"
             },
             {
-                "sha": "8385ec7",
+                "sha": "8385ec7b",
                 "message": "restore opacity on queue embeded content play",
                 "author": "arabcoders",
                 "date": "2025-03-31T22:58:53+00:00"
             },
             {
-                "sha": "899b2a3",
+                "sha": "899b2a36",
                 "message": "make the embeded player button red in queue",
                 "author": "arabcoders",
                 "date": "2025-03-31T22:52:26+00:00"
             },
             {
-                "sha": "271fd8a",
+                "sha": "271fd8af",
                 "message": "when failing to send notification do not span console with exception messages.",
                 "author": "arabcoders",
                 "date": "2025-03-31T21:29:21+00:00"
             },
             {
-                "sha": "6fa9741",
+                "sha": "6fa9741b",
                 "message": "added youtube short links for embedding",
                 "author": "arabcoders",
                 "date": "2025-03-31T21:02:07+00:00"
@@ -738,47 +738,47 @@
         ]
     },
     {
-        "tag": "master-20250331-6cf0b91",
+        "tag": "master-20250331-6cf0b912",
         "date": "2025-03-31T20:26:01+00:00",
         "commits": [
             {
-                "sha": "8ad5a2f",
+                "sha": "8ad5a2ff",
                 "message": "hidden default format in preset page.",
                 "author": "arabcoders",
                 "date": "2025-03-31T20:09:52+00:00"
             },
             {
-                "sha": "b09bf14",
+                "sha": "b09bf14a",
                 "message": "complete the migration to yt-dlp cli instead of JSON config",
                 "author": "arabcoders",
                 "date": "2025-03-31T19:47:54+00:00"
             },
             {
-                "sha": "77de306",
+                "sha": "77de3060",
                 "message": "updated the conversion process of cli to config",
                 "author": "arabcoders",
                 "date": "2025-03-31T17:46:55+00:00"
             },
             {
-                "sha": "cbc158f",
+                "sha": "cbc158f4",
                 "message": "Fix preset import output template",
                 "author": "arabcoders",
                 "date": "2025-03-31T00:10:41+00:00"
             },
             {
-                "sha": "23b1b40",
+                "sha": "23b1b409",
                 "message": "deprecate JSON yt-dlp config & Post-Processors in presets and recommand cli options.",
                 "author": "arabcoders",
                 "date": "2025-03-30T23:13:33+00:00"
             },
             {
-                "sha": "ac119db",
+                "sha": "ac119db6",
                 "message": "remove json config use in add new download. rely on cli options.",
                 "author": "arabcoders",
                 "date": "2025-03-30T21:28:01+00:00"
             },
             {
-                "sha": "1bda189",
+                "sha": "1bda1893",
                 "message": "Convert json config in tasks to use cli arguments.",
                 "author": "arabcoders",
                 "date": "2025-03-30T21:12:35+00:00"
@@ -786,23 +786,23 @@
         ]
     },
     {
-        "tag": "master-20250329-8305518",
+        "tag": "master-20250329-8305518a",
         "date": "2025-03-29T22:47:34+00:00",
         "commits": [
             {
-                "sha": "8f313d7",
+                "sha": "8f313d7f",
                 "message": "add support for --match-filter",
                 "author": "arabcoders",
                 "date": "2025-03-29T22:43:31+00:00"
             },
             {
-                "sha": "0b3cf65",
+                "sha": "0b3cf653",
                 "message": "improved the file browser by including searching and sorting",
                 "author": "arabcoders",
                 "date": "2025-03-29T18:32:43+00:00"
             },
             {
-                "sha": "0f4c7ce",
+                "sha": "0f4c7ced",
                 "message": "minor file browser design update",
                 "author": "arabcoders",
                 "date": "2025-03-29T17:23:27+00:00"
@@ -810,29 +810,29 @@
         ]
     },
     {
-        "tag": "master-20250328-80737f7",
+        "tag": "master-20250328-80737f7d",
         "date": "2025-03-28T20:35:50+00:00",
         "commits": [
             {
-                "sha": "43f4e85",
+                "sha": "43f4e85d",
                 "message": "Add case-insensitive regex for file type detection in Utils.py",
                 "author": "arabcoders",
                 "date": "2025-03-28T20:23:43+00:00"
             },
             {
-                "sha": "3b9c9ac",
+                "sha": "3b9c9acd",
                 "message": "extends the improvements to download page.",
                 "author": "arabcoders",
                 "date": "2025-03-28T19:44:05+00:00"
             },
             {
-                "sha": "37fc7a7",
+                "sha": "37fc7a76",
                 "message": "set opacity when model is active in file browser.",
                 "author": "arabcoders",
                 "date": "2025-03-28T19:21:03+00:00"
             },
             {
-                "sha": "6b6cfc9",
+                "sha": "6b6cfc9d",
                 "message": "small improvements to file browser.",
                 "author": "arabcoders",
                 "date": "2025-03-28T19:17:38+00:00"
@@ -840,11 +840,11 @@
         ]
     },
     {
-        "tag": "master-20250328-dc3c2b4",
+        "tag": "master-20250328-dc3c2b41",
         "date": "2025-03-28T00:29:39+00:00",
         "commits": [
             {
-                "sha": "8723b83",
+                "sha": "8723b832",
                 "message": "Update yt-dlp to 2025.3.27",
                 "author": "ArabCoders",
                 "date": "2025-03-28T00:23:17+00:00"
@@ -852,11 +852,11 @@
         ]
     },
     {
-        "tag": "master-20250327-5bac7b8",
+        "tag": "master-20250327-5bac7b8d",
         "date": "2025-03-27T23:27:31+00:00",
         "commits": [
             {
-                "sha": "729f8a1",
+                "sha": "729f8a1f",
                 "message": "Nested browser frontend page was not loading correctly.",
                 "author": "arabcoders",
                 "date": "2025-03-27T23:22:38+00:00"
@@ -864,23 +864,23 @@
         ]
     },
     {
-        "tag": "master-20250327-daad775",
+        "tag": "master-20250327-daad7752",
         "date": "2025-03-27T23:12:41+00:00",
         "commits": [
             {
-                "sha": "bdaf07d",
+                "sha": "bdaf07df",
                 "message": "added browser to static paths",
                 "author": "arabcoders",
                 "date": "2025-03-27T23:07:55+00:00"
             },
             {
-                "sha": "21e5dea",
+                "sha": "21e5dea5",
                 "message": "Added simple file browser",
                 "author": "arabcoders",
                 "date": "2025-03-27T22:58:22+00:00"
             },
             {
-                "sha": "fa73e81",
+                "sha": "fa73e817",
                 "message": "Make it possible to override the pictures backends urls.",
                 "author": "arabcoders",
                 "date": "2025-03-26T22:13:52+00:00"
@@ -888,11 +888,11 @@
         ]
     },
     {
-        "tag": "master-20250326-15e4232",
+        "tag": "master-20250326-15e4232f",
         "date": "2025-03-26T21:55:40+00:00",
         "commits": [
             {
-                "sha": "581442d",
+                "sha": "581442d2",
                 "message": "minor update to list view, and added download selected items.",
                 "author": "arabcoders",
                 "date": "2025-03-26T21:48:26+00:00"
@@ -900,23 +900,23 @@
         ]
     },
     {
-        "tag": "master-20250326-6d77de7",
+        "tag": "master-20250326-6d77de76",
         "date": "2025-03-26T19:12:28+00:00",
         "commits": [
             {
-                "sha": "3d9d0e2",
+                "sha": "3d9d0e22",
                 "message": "Only show list when there are items.",
                 "author": "arabcoders",
                 "date": "2025-03-26T19:07:52+00:00"
             },
             {
-                "sha": "edcecc6",
+                "sha": "edcecc62",
                 "message": "Added list disable for downloads.",
                 "author": "arabcoders",
                 "date": "2025-03-26T18:52:44+00:00"
             },
             {
-                "sha": "ed1ec6f",
+                "sha": "ed1ec6fc",
                 "message": "Merge theme selector into the settings page.",
                 "author": "arabcoders",
                 "date": "2025-03-26T16:17:04+00:00"
@@ -924,11 +924,11 @@
         ]
     },
     {
-        "tag": "master-20250326-5f7bbb5",
+        "tag": "master-20250326-5f7bbb5e",
         "date": "2025-03-26T01:00:50+00:00",
         "commits": [
             {
-                "sha": "5ac0bbc",
+                "sha": "5ac0bbc0",
                 "message": "Update yt-dlp to 2025.3.26",
                 "author": "ArabCoders",
                 "date": "2025-03-26T00:23:24+00:00"
@@ -936,29 +936,29 @@
         ]
     },
     {
-        "tag": "master-20250325-df699dd",
+        "tag": "master-20250325-df699dd0",
         "date": "2025-03-25T22:04:58+00:00",
         "commits": [
             {
-                "sha": "aa35389",
+                "sha": "aa353891",
                 "message": "Maintain playlist keys. Fixes #227",
                 "author": "arabcoders",
                 "date": "2025-03-25T21:54:46+00:00"
             },
             {
-                "sha": "7542a9a",
+                "sha": "7542a9a0",
                 "message": "Restore opacity on get_info",
                 "author": "arabcoders",
                 "date": "2025-03-25T17:51:50+00:00"
             },
             {
-                "sha": "2b66651",
+                "sha": "2b666517",
                 "message": "add sanitize_info for get url info",
                 "author": "arabcoders",
                 "date": "2025-03-25T17:42:09+00:00"
             },
             {
-                "sha": "b0ff4f4",
+                "sha": "b0ff4f41",
                 "message": "update dependencies",
                 "author": "arabcoders",
                 "date": "2025-03-25T17:41:32+00:00"
@@ -966,11 +966,11 @@
         ]
     },
     {
-        "tag": "master-20250325-fd93472",
+        "tag": "master-20250325-fd93472b",
         "date": "2025-03-25T01:03:22+00:00",
         "commits": [
             {
-                "sha": "af1537d",
+                "sha": "af1537d4",
                 "message": "Update yt-dlp to 2025.3.25",
                 "author": "ArabCoders",
                 "date": "2025-03-25T00:23:45+00:00"
@@ -978,11 +978,11 @@
         ]
     },
     {
-        "tag": "master-20250324-810a63d",
+        "tag": "master-20250324-810a63d4",
         "date": "2025-03-24T23:08:38+00:00",
         "commits": [
             {
-                "sha": "fad709b",
+                "sha": "fad709b4",
                 "message": "restore opacity if the video is playing.",
                 "author": "arabcoders",
                 "date": "2025-03-24T23:03:44+00:00"
@@ -990,17 +990,17 @@
         ]
     },
     {
-        "tag": "master-20250324-68473a1",
+        "tag": "master-20250324-68473a1b",
         "date": "2025-03-24T22:56:18+00:00",
         "commits": [
             {
-                "sha": "55b3c34",
+                "sha": "55b3c34e",
                 "message": "updated README.md",
                 "author": "arabcoders",
                 "date": "2025-03-24T22:47:49+00:00"
             },
             {
-                "sha": "c81f50a",
+                "sha": "c81f50a4",
                 "message": "minor change to add random background to the WebUI.",
                 "author": "arabcoders",
                 "date": "2025-03-24T22:38:59+00:00"
@@ -1008,23 +1008,23 @@
         ]
     },
     {
-        "tag": "master-20250322-28d902b",
+        "tag": "master-20250322-28d902b2",
         "date": "2025-03-22T21:55:16+00:00",
         "commits": [
             {
-                "sha": "37ef931",
+                "sha": "37ef9314",
                 "message": "fix notification.emit return to return coro incase we don't have any targets.",
                 "author": "ArabCoders",
                 "date": "2025-03-22T21:46:24+00:00"
             },
             {
-                "sha": "c46aa1c",
+                "sha": "c46aa1cf",
                 "message": "minor fix to EventBus, and trim all preset form fields.",
                 "author": "ArabCoders",
                 "date": "2025-03-22T21:22:33+00:00"
             },
             {
-                "sha": "706dba9",
+                "sha": "706dba92",
                 "message": "README update",
                 "author": "ArabCoders",
                 "date": "2025-03-22T19:48:01+00:00"
@@ -1032,29 +1032,29 @@
         ]
     },
     {
-        "tag": "master-20250322-00f3f27",
+        "tag": "master-20250322-00f3f27b",
         "date": "2025-03-22T17:43:51+00:00",
         "commits": [
             {
-                "sha": "450ca3e",
+                "sha": "450ca3e1",
                 "message": "Updated yt-dlp to 2025.3.21",
                 "author": "ArabCoders",
                 "date": "2025-03-22T15:35:37+00:00"
             },
             {
-                "sha": "4ed7c26",
+                "sha": "4ed7c26b",
                 "message": "migrated all our emitter usage to EventBus",
                 "author": "ArabCoders",
                 "date": "2025-03-21T23:05:52+00:00"
             },
             {
-                "sha": "07fc865",
+                "sha": "07fc8656",
                 "message": "updated the app to use EventBus",
                 "author": "ArabCoders",
                 "date": "2025-03-21T20:56:02+00:00"
             },
             {
-                "sha": "a973ce8",
+                "sha": "a973ce8b",
                 "message": "Finalize EventBus design",
                 "author": "ArabCoders",
                 "date": "2025-03-21T18:54:28+00:00"
@@ -1062,23 +1062,23 @@
         ]
     },
     {
-        "tag": "master-20250319-25da932",
+        "tag": "master-20250319-25da932d",
         "date": "2025-03-19T22:04:48+00:00",
         "commits": [
             {
-                "sha": "b7ded32",
+                "sha": "b7ded323",
                 "message": "bump curl_cffi=0.7.1",
                 "author": "ArabCoders",
                 "date": "2025-03-19T21:40:24+00:00"
             },
             {
-                "sha": "5b9f085",
+                "sha": "5b9f085e",
                 "message": "hard lock curl_cffi to 0.5.10 for yt-dlp support",
                 "author": "ArabCoders",
                 "date": "2025-03-19T19:01:44+00:00"
             },
             {
-                "sha": "44fa844",
+                "sha": "44fa844c",
                 "message": "pull mp4box from external source to reduce build time",
                 "author": "ArabCoders",
                 "date": "2025-03-17T22:34:43+00:00"
@@ -1086,23 +1086,23 @@
         ]
     },
     {
-        "tag": "master-20250317-87e93a5",
+        "tag": "master-20250317-87e93a5d",
         "date": "2025-03-17T21:24:48+00:00",
         "commits": [
             {
-                "sha": "fee4440",
+                "sha": "fee44403",
                 "message": "Update README.md",
                 "author": "ArabCoders",
                 "date": "2025-03-17T21:10:20+00:00"
             },
             {
-                "sha": "b6fd560",
+                "sha": "b6fd560a",
                 "message": "update external packages",
                 "author": "ArabCoders",
                 "date": "2025-03-17T20:55:05+00:00"
             },
             {
-                "sha": "c287c55",
+                "sha": "c287c557",
                 "message": "potential fix for #217",
                 "author": "ArabCoders",
                 "date": "2025-03-17T20:35:18+00:00"
@@ -1110,11 +1110,11 @@
         ]
     },
     {
-        "tag": "master-20250317-9445e3e",
+        "tag": "master-20250317-9445e3ef",
         "date": "2025-03-17T16:52:45+00:00",
         "commits": [
             {
-                "sha": "6f71c5c",
+                "sha": "6f71c5ce",
                 "message": "added /changelogs to static path",
                 "author": "ArabCoders",
                 "date": "2025-03-16T21:37:09+00:00"
@@ -1122,11 +1122,11 @@
         ]
     },
     {
-        "tag": "master-20250316-0ed8aa5",
+        "tag": "master-20250316-0ed8aa5a",
         "date": "2025-03-16T21:12:13+00:00",
         "commits": [
             {
-                "sha": "8ce19b5",
+                "sha": "8ce19b5a",
                 "message": "Add changeslog page to WebUI",
                 "author": "ArabCoders",
                 "date": "2025-03-16T20:18:49+00:00"
@@ -1134,11 +1134,11 @@
         ]
     },
     {
-        "tag": "master-20250316-3161fc0",
+        "tag": "master-20250316-3161fc0b",
         "date": "2025-03-16T18:32:25+00:00",
         "commits": [
             {
-                "sha": "ca00aff",
+                "sha": "ca00aff9",
                 "message": "fix params Impersonate target",
                 "author": "ArabCoders",
                 "date": "2025-03-16T18:24:00+00:00"
@@ -1146,35 +1146,35 @@
         ]
     },
     {
-        "tag": "master-20250316-98970da",
+        "tag": "master-20250316-98970da6",
         "date": "2025-03-16T18:13:29+00:00",
         "commits": [
             {
-                "sha": "1e794a6",
+                "sha": "1e794a62",
                 "message": "updated README",
                 "author": "ArabCoders",
                 "date": "2025-03-16T18:06:07+00:00"
             },
             {
-                "sha": "b116d48",
+                "sha": "b116d48d",
                 "message": "added converter for date range objects param",
                 "author": "ArabCoders",
                 "date": "2025-03-16T17:12:18+00:00"
             },
             {
-                "sha": "2e9c76a",
+                "sha": "2e9c76a1",
                 "message": "bundle mp4box into the image",
                 "author": "ArabCoders",
                 "date": "2025-03-15T23:03:43+00:00"
             },
             {
-                "sha": "095bca9",
+                "sha": "095bca9e",
                 "message": "more fit approch to handle yt-dlp logging messages.",
                 "author": "ArabCoders",
                 "date": "2025-03-15T19:29:05+00:00"
             },
             {
-                "sha": "1b57e41",
+                "sha": "1b57e41e",
                 "message": "try to differentiate yt-dlp logs for each download.",
                 "author": "ArabCoders",
                 "date": "2025-03-15T17:10:28+00:00"
@@ -1182,23 +1182,23 @@
         ]
     },
     {
-        "tag": "master-20250314-19bdd84",
+        "tag": "master-20250314-19bdd84d",
         "date": "2025-03-14T22:33:55+00:00",
         "commits": [
             {
-                "sha": "d94f004",
+                "sha": "d94f004e",
                 "message": "if the url is video with playlist, follow redirect and queue all videos in the playlist.",
                 "author": "ArabCoders",
                 "date": "2025-03-14T22:29:58+00:00"
             },
             {
-                "sha": "7849eb8",
+                "sha": "7849eb87",
                 "message": "make break_on_existing optional and overridable by user.",
                 "author": "ArabCoders",
                 "date": "2025-03-14T22:00:27+00:00"
             },
             {
-                "sha": "8dd7c7d",
+                "sha": "8dd7c7de",
                 "message": "Added indicator in the WebUI for when post-processing are running.",
                 "author": "ArabCoders",
                 "date": "2025-03-14T21:06:13+00:00"
@@ -1206,29 +1206,29 @@
         ]
     },
     {
-        "tag": "master-20250314-9adb6ef",
+        "tag": "master-20250314-9adb6efb",
         "date": "2025-03-14T20:18:44+00:00",
         "commits": [
             {
-                "sha": "bce8416",
+                "sha": "bce84163",
                 "message": "make sure task preset format isn't default",
                 "author": "ArabCoders",
                 "date": "2025-03-14T20:14:58+00:00"
             },
             {
-                "sha": "83152f0",
+                "sha": "83152f0e",
                 "message": "minor fixes to not export default format",
                 "author": "ArabCoders",
                 "date": "2025-03-14T20:06:09+00:00"
             },
             {
-                "sha": "fc696b6",
+                "sha": "fc696b6a",
                 "message": "standardize the form design, and update packages to latest version.",
                 "author": "ArabCoders",
                 "date": "2025-03-14T19:46:31+00:00"
             },
             {
-                "sha": "b5803f9",
+                "sha": "b5803f94",
                 "message": "added export to tasks.",
                 "author": "ArabCoders",
                 "date": "2025-03-14T18:30:29+00:00"
@@ -1236,17 +1236,17 @@
         ]
     },
     {
-        "tag": "master-20250313-674c538",
+        "tag": "master-20250313-674c5389",
         "date": "2025-03-13T20:16:12+00:00",
         "commits": [
             {
-                "sha": "ada7b5d",
+                "sha": "ada7b5db",
                 "message": "Update presets to use safe url base64 for exported string.",
                 "author": "ArabCoders",
                 "date": "2025-03-13T18:47:01+00:00"
             },
             {
-                "sha": "cc96879",
+                "sha": "cc96879a",
                 "message": "show play icon if hideThumbnail is set and content is embedable",
                 "author": "ArabCoders",
                 "date": "2025-03-11T18:31:59+00:00"
@@ -1254,17 +1254,17 @@
         ]
     },
     {
-        "tag": "master-20250311-d5efb99",
+        "tag": "master-20250311-d5efb994",
         "date": "2025-03-11T18:10:27+00:00",
         "commits": [
             {
-                "sha": "1596954",
+                "sha": "15969542",
                 "message": "restore check for format in preset compiling for YTDLPOpts",
                 "author": "ArabCoders",
                 "date": "2025-03-11T18:06:29+00:00"
             },
             {
-                "sha": "608b012",
+                "sha": "608b0128",
                 "message": "Made it possible to not use format in preset",
                 "author": "ArabCoders",
                 "date": "2025-03-11T17:59:08+00:00"
@@ -1272,41 +1272,41 @@
         ]
     },
     {
-        "tag": "master-20250310-10aeff4",
+        "tag": "master-20250310-10aeff4b",
         "date": "2025-03-10T23:23:11+00:00",
         "commits": [
             {
-                "sha": "6b38c5f",
+                "sha": "6b38c5fc",
                 "message": "add advanced iOS shortcut",
                 "author": "ArabCoders",
                 "date": "2025-03-10T23:19:57+00:00"
             },
             {
-                "sha": "1aeb8ef",
+                "sha": "1aeb8efa",
                 "message": "updated yt-dlp/url/info to give cookies in valid way.",
                 "author": "ArabCoders",
                 "date": "2025-03-10T23:08:13+00:00"
             },
             {
-                "sha": "cd977ea",
+                "sha": "cd977ea2",
                 "message": "minor updates to webui",
                 "author": "ArabCoders",
                 "date": "2025-03-10T23:07:56+00:00"
             },
             {
-                "sha": "c193914",
+                "sha": "c1939144",
                 "message": "parse yt-dlp header cookie for yt-dlp/url/info",
                 "author": "ArabCoders",
                 "date": "2025-03-10T21:08:24+00:00"
             },
             {
-                "sha": "72bac24",
+                "sha": "72bac24f",
                 "message": "minor updates to extract_info",
                 "author": "ArabCoders",
                 "date": "2025-03-10T20:12:08+00:00"
             },
             {
-                "sha": "643688b",
+                "sha": "643688bf",
                 "message": "support sending presets with api/yt-dlp/url/info",
                 "author": "ArabCoders",
                 "date": "2025-03-10T00:56:10+00:00"
@@ -1314,29 +1314,29 @@
         ]
     },
     {
-        "tag": "master-20250309-9427f7b",
+        "tag": "master-20250309-9427f7b2",
         "date": "2025-03-09T22:48:30+00:00",
         "commits": [
             {
-                "sha": "dcab253",
+                "sha": "dcab2530",
                 "message": "Improve history status display and added button to play the video incase thumbnail is hidden.",
                 "author": "ArabCoders",
                 "date": "2025-03-09T21:53:04+00:00"
             },
             {
-                "sha": "329a8f5",
+                "sha": "329a8f51",
                 "message": "add reference to the iOS shortcut.",
                 "author": "ArabCoders",
                 "date": "2025-03-09T21:52:42+00:00"
             },
             {
-                "sha": "3a8b67f",
+                "sha": "3a8b67ff",
                 "message": "normalize return response for api/history/add",
                 "author": "ArabCoders",
                 "date": "2025-03-09T02:22:16+00:00"
             },
             {
-                "sha": "6822829",
+                "sha": "68228294",
                 "message": "made api/history/add easier to script",
                 "author": "ArabCoders",
                 "date": "2025-03-09T02:09:26+00:00"
@@ -1344,41 +1344,41 @@
         ]
     },
     {
-        "tag": "master-20250308-7a2dc8a",
+        "tag": "master-20250308-7a2dc8a4",
         "date": "2025-03-08T22:20:58+00:00",
         "commits": [
             {
-                "sha": "20ddbb1",
+                "sha": "20ddbb1a",
                 "message": "typo",
                 "author": "ArabCoders",
                 "date": "2025-03-08T22:15:30+00:00"
             },
             {
-                "sha": "c7ace29",
+                "sha": "c7ace294",
                 "message": "updated README with bookmarklets and updated the favicon.",
                 "author": "ArabCoders",
                 "date": "2025-03-08T22:15:00+00:00"
             },
             {
-                "sha": "bb507c6",
+                "sha": "bb507c62",
                 "message": "added filter to presets, so we can reduce data usage when creating a iOS shortcut",
                 "author": "ArabCoders",
                 "date": "2025-03-08T17:20:54+00:00"
             },
             {
-                "sha": "65e7d3e",
+                "sha": "65e7d3e6",
                 "message": "reduce log spam",
                 "author": "ArabCoders",
                 "date": "2025-03-08T16:56:55+00:00"
             },
             {
-                "sha": "e4794ed",
+                "sha": "e4794eda",
                 "message": "Updated the worker pool to be dynamic, and make it so that live stream downloading doesn't count towards the worker pool limit.",
                 "author": "ArabCoders",
                 "date": "2025-03-08T16:53:15+00:00"
             },
             {
-                "sha": "fbdeec6",
+                "sha": "fbdeec6a",
                 "message": "add different icon for embeded content",
                 "author": "ArabCoders",
                 "date": "2025-03-08T15:22:50+00:00"
@@ -1386,35 +1386,35 @@
         ]
     },
     {
-        "tag": "master-20250307-243d455",
+        "tag": "master-20250307-243d4554",
         "date": "2025-03-07T17:45:37+00:00",
         "commits": [
             {
-                "sha": "64c84e5",
+                "sha": "64c84e5c",
                 "message": "Make it possible to embed content if the content is being downloaded or yet to complete.",
                 "author": "ArabCoders",
                 "date": "2025-03-07T17:40:31+00:00"
             },
             {
-                "sha": "f89e726",
+                "sha": "f89e7266",
                 "message": "make to possible to specify the preset when adding via /api/history/add",
                 "author": "ArabCoders",
                 "date": "2025-03-07T17:16:19+00:00"
             },
             {
-                "sha": "89684ac",
+                "sha": "89684ac4",
                 "message": "add the new variable to enable yt-dlp console access to README",
                 "author": "ArabCoders",
                 "date": "2025-03-07T17:13:39+00:00"
             },
             {
-                "sha": "e0e63d6",
+                "sha": "e0e63d61",
                 "message": "for some reason, people were exposing ytptube directly to internet without any authentication. therefore, we have disabled the console access by default.",
                 "author": "ArabCoders",
                 "date": "2025-03-07T17:11:21+00:00"
             },
             {
-                "sha": "04efb1c",
+                "sha": "04efb1c2",
                 "message": "when video info fail to load raise error and close the modal",
                 "author": "ArabCoders",
                 "date": "2025-03-07T17:10:35+00:00"
@@ -1422,29 +1422,29 @@
         ]
     },
     {
-        "tag": "master-20250307-7b395d7",
+        "tag": "master-20250307-7b395d71",
         "date": "2025-03-07T16:01:07+00:00",
         "commits": [
             {
-                "sha": "7fd0e1e",
+                "sha": "7fd0e1ed",
                 "message": "make releases manual process",
                 "author": "ArabCoders",
                 "date": "2025-03-07T15:44:54+00:00"
             },
             {
-                "sha": "981405a",
+                "sha": "981405a4",
                 "message": "make URL options have higher proirity than preset and default options",
                 "author": "ArabCoders",
                 "date": "2025-03-07T15:44:44+00:00"
             },
             {
-                "sha": "414b52d",
+                "sha": "414b52de",
                 "message": "removed dead code",
                 "author": "ArabCoders",
                 "date": "2025-03-06T23:20:46+00:00"
             },
             {
-                "sha": "cc21a93",
+                "sha": "cc21a93c",
                 "message": "Make presets more powerful",
                 "author": "ArabCoders",
                 "date": "2025-03-06T23:14:10+00:00"
@@ -1452,11 +1452,11 @@
         ]
     },
     {
-        "tag": "master-20250306-c944c36",
+        "tag": "master-20250306-c944c360",
         "date": "2025-03-06T22:27:25+00:00",
         "commits": [
             {
-                "sha": "61fd6d4",
+                "sha": "61fd6d45",
                 "message": "remove debug statement",
                 "author": "ArabCoders",
                 "date": "2025-03-06T22:14:05+00:00"
@@ -1464,23 +1464,23 @@
         ]
     },
     {
-        "tag": "master-20250306-e52bef3",
+        "tag": "master-20250306-e52bef37",
         "date": "2025-03-06T22:05:05+00:00",
         "commits": [
             {
-                "sha": "6e52b3c",
+                "sha": "6e52b3c3",
                 "message": "for basic auth rely on cookies and not just the Authorization header",
                 "author": "ArabCoders",
                 "date": "2025-03-06T22:01:05+00:00"
             },
             {
-                "sha": "0b04f09",
+                "sha": "0b04f098",
                 "message": "preload all pages.",
                 "author": "ArabCoders",
                 "date": "2025-03-05T23:06:53+00:00"
             },
             {
-                "sha": "241efc8",
+                "sha": "241efc8d",
                 "message": "added autoplay",
                 "author": "ArabCoders",
                 "date": "2025-03-05T22:48:37+00:00"
@@ -1488,29 +1488,29 @@
         ]
     },
     {
-        "tag": "master-20250305-73f97b8",
+        "tag": "master-20250305-73f97b80",
         "date": "2025-03-05T19:18:35+00:00",
         "commits": [
             {
-                "sha": "2106ea2",
+                "sha": "2106ea29",
                 "message": "disable default subtitle track for firefox as it has problem when we switch sources.",
                 "author": "ArabCoders",
                 "date": "2025-03-05T18:50:54+00:00"
             },
             {
-                "sha": "931ad0c",
+                "sha": "931ad0c5",
                 "message": "no longer rely on plyr for playing videos instead use native video element",
                 "author": "ArabCoders",
                 "date": "2025-03-05T18:07:49+00:00"
             },
             {
-                "sha": "dcc5cd0",
+                "sha": "dcc5cd0a",
                 "message": "fixed the icon not showing up correctly.",
                 "author": "ArabCoders",
                 "date": "2025-03-04T23:57:48+00:00"
             },
             {
-                "sha": "d6e2a5f",
+                "sha": "d6e2a5f7",
                 "message": "mostly text and logo update.",
                 "author": "ArabCoders",
                 "date": "2025-03-04T23:40:54+00:00"
@@ -1518,17 +1518,17 @@
         ]
     },
     {
-        "tag": "master-20250304-327136b",
+        "tag": "master-20250304-327136bf",
         "date": "2025-03-04T18:25:12+00:00",
         "commits": [
             {
-                "sha": "4036dca",
+                "sha": "4036dcac",
                 "message": "updated readme with new changes",
                 "author": "ArabCoders",
                 "date": "2025-03-04T18:08:08+00:00"
             },
             {
-                "sha": "c58faa2",
+                "sha": "c58faa28",
                 "message": "added button to run task now",
                 "author": "ArabCoders",
                 "date": "2025-03-04T17:27:26+00:00"
@@ -1536,17 +1536,17 @@
         ]
     },
     {
-        "tag": "master-20250303-48c849d",
+        "tag": "master-20250303-48c849da",
         "date": "2025-03-03T23:18:46+00:00",
         "commits": [
             {
-                "sha": "49bc28e",
+                "sha": "49bc28ed",
                 "message": "Make it possible to manage presets via webui",
                 "author": "ArabCoders",
                 "date": "2025-03-03T23:11:17+00:00"
             },
             {
-                "sha": "d88ee15",
+                "sha": "d88ee150",
                 "message": "separated the scheduler from tasks, to allow us to schedule non add url tasks in the future",
                 "author": "ArabCoders",
                 "date": "2025-03-02T18:49:52+00:00"
@@ -1554,11 +1554,11 @@
         ]
     },
     {
-        "tag": "master-20250301-a608d02",
+        "tag": "master-20250301-a608d02d",
         "date": "2025-03-01T17:15:40+00:00",
         "commits": [
             {
-                "sha": "ea98562",
+                "sha": "ea985629",
                 "message": "better fallback if file was renamed and retains the same ID",
                 "author": "ArabCoders",
                 "date": "2025-03-01T17:04:28+00:00"
@@ -1566,65 +1566,65 @@
         ]
     },
     {
-        "tag": "master-20250227-65dbfc7",
+        "tag": "master-20250227-65dbfc77",
         "date": "2025-02-27T22:53:32+00:00",
         "commits": [
             {
-                "sha": "f0836dd",
+                "sha": "f0836ddd",
                 "message": "apple like to be snowflake.",
                 "author": "ArabCoders",
                 "date": "2025-02-27T22:21:45+00:00"
             },
             {
-                "sha": "e847fea",
+                "sha": "e847fea2",
                 "message": "for iOS devices fallback directly to m3u8",
                 "author": "ArabCoders",
                 "date": "2025-02-27T22:06:58+00:00"
             },
             {
-                "sha": "1fa4c52",
+                "sha": "1fa4c523",
                 "message": "intercept file response and add correct mime-type",
                 "author": "ArabCoders",
                 "date": "2025-02-27T21:44:02+00:00"
             },
             {
-                "sha": "689ce42",
+                "sha": "689ce421",
                 "message": "add sentry for webui error reporting",
                 "author": "ArabCoders",
                 "date": "2025-02-27T20:54:49+00:00"
             },
             {
-                "sha": "3a964a6",
+                "sha": "3a964a6a",
                 "message": "add mimetype to source list",
                 "author": "ArabCoders",
                 "date": "2025-02-27T16:19:32+00:00"
             },
             {
-                "sha": "63a9a15",
+                "sha": "63a9a15e",
                 "message": "do not consider 0 byte files.",
                 "author": "ArabCoders",
                 "date": "2025-02-27T15:42:35+00:00"
             },
             {
-                "sha": "b7b72cf",
+                "sha": "b7b72cf2",
                 "message": "try to direct play video first and fallback to hls if we encounter error.",
                 "author": "ArabCoders",
                 "date": "2025-02-27T15:31:17+00:00"
             },
             {
-                "sha": "259eae2",
+                "sha": "259eae25",
                 "message": "initial work to support adding/deleting presets from api",
                 "author": "ArabCoders",
                 "date": "2025-02-27T12:30:52+00:00"
             },
             {
-                "sha": "c5924b0",
+                "sha": "c5924b02",
                 "message": "support format key in ytdlp.json, using the key will ignore the selected preset.",
                 "author": "ArabCoders",
                 "date": "2025-02-27T11:58:06+00:00"
             },
             {
-                "sha": "0cb9064",
+                "sha": "0cb90645",
                 "message": "display portrait image in more clean way",
                 "author": "ArabCoders",
                 "date": "2025-02-27T11:09:11+00:00"
@@ -1632,41 +1632,41 @@
         ]
     },
     {
-        "tag": "master-20250226-ad561f7",
+        "tag": "master-20250226-ad561f7e",
         "date": "2025-02-26T21:45:51+00:00",
         "commits": [
             {
-                "sha": "9626030",
+                "sha": "96260301",
                 "message": "we no longer use json cookies, instead rely on netescape cookies and recommend what yt-dlp recommend as well.",
                 "author": "ArabCoders",
                 "date": "2025-02-26T21:39:18+00:00"
             },
             {
-                "sha": "1934815",
+                "sha": "1934815a",
                 "message": "show extract_info logs via notification",
                 "author": "ArabCoders",
                 "date": "2025-02-26T21:38:39+00:00"
             },
             {
-                "sha": "7bdd548",
+                "sha": "7bdd5483",
                 "message": "don't show merge commits",
                 "author": "ArabCoders",
                 "date": "2025-02-26T21:38:08+00:00"
             },
             {
-                "sha": "e0058d9",
+                "sha": "e0058d96",
                 "message": "added file logging and automatically load config/cookies.txt if non is given via ytdlp.json file.",
                 "author": "ArabCoders",
                 "date": "2025-02-26T21:37:59+00:00"
             },
             {
-                "sha": "ccd5b06",
+                "sha": "ccd5b060",
                 "message": "updated dependencies",
                 "author": "ArabCoders",
                 "date": "2025-02-26T21:35:53+00:00"
             },
             {
-                "sha": "8e97cba",
+                "sha": "8e97cba4",
                 "message": "update dependencies",
                 "author": "ArabCoders",
                 "date": "2025-02-23T16:32:39+00:00"
@@ -1674,11 +1674,11 @@
         ]
     },
     {
-        "tag": "master-20250220-806b795",
+        "tag": "master-20250220-806b795b",
         "date": "2025-02-20T14:32:03+00:00",
         "commits": [
             {
-                "sha": "f340a4c",
+                "sha": "f340a4c6",
                 "message": "updated dependencies",
                 "author": "ArabCoders",
                 "date": "2025-02-20T14:06:17+00:00"
@@ -1686,17 +1686,17 @@
         ]
     },
     {
-        "tag": "master-20250130-a1f8245",
+        "tag": "master-20250130-a1f82450",
         "date": "2025-01-30T15:23:46+00:00",
         "commits": [
             {
-                "sha": "5063099",
+                "sha": "50630990",
                 "message": "Added YTP_INSTANCE_TITLE",
                 "author": "ArabCoders",
                 "date": "2025-01-30T13:18:29+00:00"
             },
             {
-                "sha": "67543e6",
+                "sha": "67543e60",
                 "message": "revert changes to theme switch button.",
                 "author": "ArabCoders",
                 "date": "2025-01-29T13:32:53+00:00"
@@ -1704,29 +1704,29 @@
         ]
     },
     {
-        "tag": "master-20250129-d135de5",
+        "tag": "master-20250129-d135de50",
         "date": "2025-01-29T10:29:17+00:00",
         "commits": [
             {
-                "sha": "0d8d9bb",
+                "sha": "0d8d9bb1",
                 "message": "fixed bug preventing get_info from working, and added auto theme.",
                 "author": "ArabCoders",
                 "date": "2025-01-29T10:09:07+00:00"
             },
             {
-                "sha": "4587896",
+                "sha": "45878965",
                 "message": "fixed linting problems",
                 "author": "ArabCoders",
                 "date": "2025-01-28T20:05:59+00:00"
             },
             {
-                "sha": "fdec16e",
+                "sha": "fdec16e8",
                 "message": "mostly linter fixes.",
                 "author": "ArabCoders",
                 "date": "2025-01-28T16:43:51+00:00"
             },
             {
-                "sha": "2b84aad",
+                "sha": "2b84aad8",
                 "message": "change default umask to 0002 to allow group users to act on files and folders.",
                 "author": "ArabCoders",
                 "date": "2025-01-28T14:18:54+00:00"
@@ -1734,59 +1734,59 @@
         ]
     },
     {
-        "tag": "master-20250127-f554871",
+        "tag": "master-20250127-f554871b",
         "date": "2025-01-27T21:18:41+00:00",
         "commits": [
             {
-                "sha": "d063cf0",
+                "sha": "d063cf0f",
                 "message": "use same name cross client and server for variables and config files.",
                 "author": "ArabCoders",
                 "date": "2025-01-27T21:09:46+00:00"
             },
             {
-                "sha": "41ddc14",
+                "sha": "41ddc14a",
                 "message": "Updated README.md",
                 "author": "ArabCoders",
                 "date": "2025-01-27T19:30:19+00:00"
             },
             {
-                "sha": "6a92cf9",
+                "sha": "6a92cf9e",
                 "message": "added timeout param for wait_for",
                 "author": "ArabCoders",
                 "date": "2025-01-27T18:23:57+00:00"
             },
             {
-                "sha": "cda863b",
+                "sha": "cda863b0",
                 "message": "missed a bug fix",
                 "author": "ArabCoders",
                 "date": "2025-01-27T18:19:09+00:00"
             },
             {
-                "sha": "f62ba22",
+                "sha": "f62ba220",
                 "message": "move format_item to common class, and update methods to use it",
                 "author": "ArabCoders",
                 "date": "2025-01-27T18:14:01+00:00"
             },
             {
-                "sha": "1187bad",
+                "sha": "1187badc",
                 "message": "fixed bug preventing adding items via /api/history endpoint",
                 "author": "ArabCoders",
                 "date": "2025-01-27T18:10:53+00:00"
             },
             {
-                "sha": "d3d6665",
+                "sha": "d3d6665e",
                 "message": "updated dependencies",
                 "author": "ArabCoders",
                 "date": "2025-01-27T17:43:29+00:00"
             },
             {
-                "sha": "9022447",
+                "sha": "90224476",
                 "message": "Major code changes.",
                 "author": "ArabCoders",
                 "date": "2025-01-27T16:53:59+00:00"
             },
             {
-                "sha": "94f60e0",
+                "sha": "94f60e01",
                 "message": "added Intellisense support for css in vue files.",
                 "author": "ArabCoders",
                 "date": "2025-01-25T20:30:49+00:00"
@@ -1794,23 +1794,23 @@
         ]
     },
     {
-        "tag": "master-20250125-f790257",
+        "tag": "master-20250125-f790257b",
         "date": "2025-01-25T19:56:30+00:00",
         "commits": [
             {
-                "sha": "dbee7cf",
+                "sha": "dbee7cf2",
                 "message": "standardize more events.",
                 "author": "ArabCoders",
                 "date": "2025-01-25T19:46:33+00:00"
             },
             {
-                "sha": "ddc216c",
+                "sha": "ddc216cc",
                 "message": "revamped the notification system",
                 "author": "ArabCoders",
                 "date": "2025-01-25T19:24:13+00:00"
             },
             {
-                "sha": "922d194",
+                "sha": "922d194d",
                 "message": "simplify API calls.",
                 "author": "ArabCoders",
                 "date": "2025-01-25T14:25:58+00:00"
@@ -1818,17 +1818,17 @@
         ]
     },
     {
-        "tag": "master-20250124-f0ac16c",
+        "tag": "master-20250124-f0ac16ce",
         "date": "2025-01-24T20:29:46+00:00",
         "commits": [
             {
-                "sha": "e5f2a09",
+                "sha": "e5f2a09c",
                 "message": "Added backward compatibility fix.",
                 "author": "ArabCoders",
                 "date": "2025-01-24T20:25:03+00:00"
             },
             {
-                "sha": "a482720",
+                "sha": "a4827202",
                 "message": "overhauled the tasks page to support adding/editing/deleting tasks from the WebUI directly instead of relying on tasks.json file.",
                 "author": "ArabCoders",
                 "date": "2025-01-24T20:13:53+00:00"
@@ -1836,59 +1836,59 @@
         ]
     },
     {
-        "tag": "master-20250123-ff540ad",
+        "tag": "master-20250123-ff540add",
         "date": "2025-01-23T15:30:03+00:00",
         "commits": [
             {
-                "sha": "96c79be",
+                "sha": "96c79be7",
                 "message": "Build arm64 images only on master builds, as it's quite slow.",
                 "author": "ArabCoders",
                 "date": "2025-01-23T15:21:23+00:00"
             },
             {
-                "sha": "4eb9457",
+                "sha": "4eb94578",
                 "message": "update job name",
                 "author": "ArabCoders",
                 "date": "2025-01-23T15:04:26+00:00"
             },
             {
-                "sha": "2ea407b",
+                "sha": "2ea407b6",
                 "message": "improve build process include linux/arm64",
                 "author": "ArabCoders",
                 "date": "2025-01-23T15:03:24+00:00"
             },
             {
-                "sha": "cb735cb",
+                "sha": "cb735cbb",
                 "message": "Added new feature to parse yt-dlp CLI arguments in yt-dlp JSON config box",
                 "author": "ArabCoders",
                 "date": "2025-01-23T14:35:03+00:00"
             },
             {
-                "sha": "a02233a",
+                "sha": "a02233a8",
                 "message": "separate PR and push workflow",
                 "author": "ArabCoders",
                 "date": "2025-01-19T19:45:12+00:00"
             },
             {
-                "sha": "3e51b7a",
+                "sha": "3e51b7a7",
                 "message": "updated version tagger",
                 "author": "ArabCoders",
                 "date": "2025-01-19T19:26:02+00:00"
             },
             {
-                "sha": "00c165e",
+                "sha": "00c165e0",
                 "message": "updated how we tag releases and builds",
                 "author": "ArabCoders",
                 "date": "2025-01-19T18:36:40+00:00"
             },
             {
-                "sha": "cc9a470",
+                "sha": "cc9a4702",
                 "message": "add branch name to app version",
                 "author": "ArabCoders",
                 "date": "2025-01-19T17:16:13+00:00"
             },
             {
-                "sha": "2b8e79c",
+                "sha": "2b8e79c1",
                 "message": "Switch to single Manager instead of one manager per download",
                 "author": "ArabCoders",
                 "date": "2025-01-19T17:01:46+00:00"
