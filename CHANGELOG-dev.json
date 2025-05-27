@@ -1,7 +1,31 @@
 [
     {
-        "tag": "dev-20250523-647acc48",
-        "date": "2025-05-23T15:20:35+00:00",
+        "tag": "dev-20250527-ba152fcb",
+        "date": "2025-05-27T18:59:16+00:00",
+        "commits": [
+            {
+                "sha": "ba152fcb",
+                "message": "packages update.",
+                "author": "arabcoders",
+                "date": "2025-05-27T18:59:16+00:00"
+            },
+            {
+                "sha": "f8405147",
+                "message": "update /api/history docs",
+                "author": "arabcoders",
+                "date": "2025-05-27T16:55:45+00:00"
+            },
+            {
+                "sha": "bb52513c",
+                "message": "disable generate_release_notes",
+                "author": "arabcoders",
+                "date": "2025-05-23T15:44:00+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250523-adb191bb",
+        "date": "2025-05-23T15:31:36+00:00",
         "commits": [
             {
                 "sha": "647acc48",
