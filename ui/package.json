@@ -13,8 +13,8 @@
   "dependencies": {
     "@pinia/nuxt": "^0.11.0",
     "@sentry/nuxt": "^9.22.0",
-    "@vueuse/core": "^13.2.0",
-    "@vueuse/nuxt": "^13.2.0",
+    "@vueuse/core": "^13.3.0",
+    "@vueuse/nuxt": "^13.3.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "cron-parser": "^5.2.0",
@@ -25,7 +25,7 @@
     "nuxt": "^3.17.4",
     "pinia": "^3.0.2",
     "socket.io-client": "^4.8.1",
-    "vue": "^3.5.14",
+    "vue": "^3.5.15",
     "vue-router": "^4.5.1",
     "vue-toastification": "2.0.0-rc.5"
   }
