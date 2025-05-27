@@ -58,6 +58,7 @@
     "tmpfilename",
     "upgrader",
     "urandom",
+    "urlsafe",
     "usegmt",
     "vcodec",
     "vconvert",

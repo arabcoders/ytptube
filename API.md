@@ -51,13 +51,13 @@ If `Config.auth_username` and `Config.auth_password` are set, all API requests m
 1. HTTP Basic Auth header:
 
    ```
-   Authorization: Basic base64("<username>:<password>")
+   Authorization: Basic base64_urlsafe("<username>:<password>")
    ```
 
 2. Query Parameter fallback:
 
    ```
-   ?apikey=<base64("<username>:<password>")>
+   ?apikey=<base64_urlsafe("<username>:<password>")>
    ```
 
 If you fail to provide valid credentials, a `401 Unauthorized` response is returned.
@@ -199,9 +199,7 @@ or an error:
   "folder": "folder relative to download_path",
   "cookies": "...",
   "template": "...",
-  "config": {
-    /* advanced config options for yt-dlp */
-  }
+  "cli": "--write-subs --embed-subs",
 }
 
 // Or multiple items (array of objects)
