@@ -199,9 +199,7 @@ or an error:
   "folder": "folder relative to download_path",
   "cookies": "...",
   "template": "...",
-  "config": {
-    /* advanced config options for yt-dlp */
-  }
+  "cli": "--write-subs --embed-subs",
 }
 
 // Or multiple items (array of objects)
