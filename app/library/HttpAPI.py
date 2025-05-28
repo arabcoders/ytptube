@@ -483,7 +483,7 @@ class HttpAPI(Common):
                     response["opts"][key] = data[key]
 
             if len(removed_options) > 0:
-                response["opts"]["removed"] = ", ".join(removed_options)
+                response["removed_options"] = removed_options
 
             return web.json_response(data=response, status=web.HTTPOk.status_code)
         except Exception as e:

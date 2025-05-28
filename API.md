@@ -36,7 +36,15 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/player/subtitle/{file:.\*}.vtt](#get-apiplayersubtitlefilevtt)
     - [GET /api/thumbnail](#get-apithumbnail)
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
-    - [GET /api/youtube/auth](#get-apiyoutubeauth)
+    - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
+    - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
+    - [GET /api/yt-dlp/archive/recheck](#get-apiyt-dlparchiverecheck)
+    - [GET /api/random/background](#get-apirandombackground)
+    - [GET /api/presets](#get-apipresets)
+    - [PUT /api/presets](#put-apipresets)
+    - [GET /api/conditions](#get-apiconditions)
+    - [PUT /api/conditions](#put-apiconditions)
+    - [GET /api/logs](#get-apilogs)
     - [GET /api/notifications](#get-apinotifications)
     - [PUT /api/notifications](#put-apinotifications)
     - [POST /api/notifications/test](#post-apinotificationstest)
@@ -46,12 +54,12 @@ This document describes the available endpoints and their usage. All endpoints r
 
 ## Authentication
 
-If `Config.auth_username` and `Config.auth_password` are set, all API requests must include a valid credential using one of the following:
+If `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` are set, all API requests must include a valid credential using one of the following:
 
 1. HTTP Basic Auth header:
 
    ```
-   Authorization: Basic base64_urlsafe("<username>:<password>")
+   Authorization: Basic base64("<username>:<password>")
    ```
 
 2. Query Parameter fallback:
@@ -80,7 +88,6 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
   ```json
   {
     "error": "Description of the error",
-    "message": "More details if available"
   }
   ```
   with an appropriate HTTP status code.
@@ -118,19 +125,16 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
 **Response**:  
 ```json
 {
-    "postprocessors": [
-        {
-            "already_have_subtitle": true,
-            "key": "FFmpegEmbedSubtitle"
-        }
-    ],
-    "writesubtitles": true
+    "opts": { ... },
+    "output_template": "...",
+    "download_path": "...",
+    "removed_options": ["option1", "option2"]  // optional, only if options were removed
 }
 ```
 or an error:
 ```json
 {
-  "error": "Failed to convert args. '<reason>'."
+  "error": "Failed to parse command arguments for yt-dlp. '<reason>'."
 }
 ```
 
@@ -140,7 +144,9 @@ or an error:
 **Purpose**: Retrieves metadata (info) for a provided URL without adding it to the download queue.
 
 **Query Parameters**:
-- `?url=<video-url>`
+- `url=<video-url>` (required)
+- `preset=<preset-name>` (optional) - The preset to use for extracting info
+- `force=true` (optional) - Force fetch new info instead of using cache
 
 **Response** (example):
 ```json
@@ -149,6 +155,7 @@ or an error:
   "duration": 123.4,
   "extractor": "youtube",
   "_cached": {
+    "status": "miss|hit",
     "key": "<hash>",
     "ttl": 300,
     "ttl_left": 299.82,
@@ -164,6 +171,7 @@ or an error:
 }
 ```
 - If the URL is invalid or missing, returns `400 Bad Request`.
+- If the preset is specified and not found, returns `404 Not Found`.
 
 ---
 
@@ -185,21 +193,26 @@ or an error:
 - If `url` is missing, returns `400 Bad Request`.
 - If `preset` is set and not found, returns `404 Not Found`.
 
+> [!NOTE]
+> This endpoint is a quick way to add a single item to the queue without needing to format a full JSON body. It is primarily for convenience and may not support all options available in the full POST `/api/history` endpoint.
+> Also note, that the endpoint uses different error format compared to the other endpoints, returning a simple JSON object with `status` and `message` fields.
+> This is to make easier to script bookmarklets or simple API requests.
+
 ---
 
 ### POST /api/history
 **Purpose**: Add one or multiple items (URLs) to the download queue via JSON body.  
 
 **Body**:
-```json
+```json5
 // Single item
 {
-  "url": "https://youtube.com/watch?v=...",
-  "preset": "default",
-  "folder": "folder relative to download_path",
-  "cookies": "...",
-  "template": "...",
-  "cli": "--write-subs --embed-subs",
+  "url": "https://youtube.com/watch?v=...", // -- required. The video URL to download.
+  "preset": "default", // -- optional. The preset to use for this item.
+  "folder": "my_channel/foo", // -- optional. The folder to save the item in, relative to the `download_path`.
+  "cookies": "...", // -- optional. If provided, it MUST BE in Netscape HTTP Cookie format.
+  "template": "%(title)s.%(ext)s", // -- optional. The filename template to use for this item.
+  "cli": "--write-subs --embed-subs", // -- optional. Additional yt-dlp CLI arguments to apply to this item.
 }
 
 // Or multiple items (array of objects)
@@ -236,7 +249,7 @@ or an error:
 {
   "ids": ["<id1>", "<id2>"],
   "where": "queue" | "done",
-  "remove_file": true | false   // optional, defaults to false, whether to delete the file from disk.
+  "remove_file": true | false   // optional, defaults to True, whether to delete the file from disk if enabled.
 }
 ```
 **Response**:  
@@ -538,18 +551,248 @@ Binary image data with the appropriate `Content-Type`.
 }
 ```
 
----
+### GET /api/file/info/{file:.*}
+**Purpose**: Get comprehensive file information including ffprobe data, MIME type, and sidecar files.  
 
-### GET /api/youtube/auth
-**Purpose**: Checks if a valid YouTube session cookie is set (to confirm authentication).  
+**Path Parameter**:
+- `file` = Relative path to the file inside `download_path`.
 
 **Response**:
 ```json
 {
-  "message": "Authenticated."
+  "title": "filename",
+  "ffprobe": {
+    "streams": [...],
+    "format": { ... },
+    ...
+  },
+  "mimetype": "video/mp4",
+  "sidecar": {
+    "subtitles": [
+      {
+        "file": "filename.xxx.vtt",
+        "lang": "xxx",
+        "name": "VTT 0 - XXX|end",
+      },
+      ...
+      }
+    ],
+    "video": [],
+    "audio": [],
+    "image": [],
+    "text": [],
+    "metadata": [],
+    ...
+  }
 }
 ```
-Returns `200 OK` if cookies are valid, otherwise `401` with `{ "message": "Not authenticated." }`.
+
+---
+
+### GET /api/file/browser/{path:.*}
+**Purpose**: Browse files and directories within the download path (if browser is enabled).  
+
+**Path Parameter**:
+- `path` = Relative path within the download directory (URL-encoded).
+
+**Response**:
+```json
+{
+  "path": "/some/path",
+  "contents": [
+    {
+      "type": "file",
+      "content_type": "video|subtitle|audio|image|text|metadata|dir|download",
+      "name": "filename.mp4",
+      "path": "/filename.mp4",
+      "size": 123456789,
+      "mimetype": "mime/type",
+      "mtime": "2023-01-01T12:00:00Z",
+      "ctime": "2023-01-01T12:00:00Z",
+      "is_dir": true|false,
+      "is_file": true|false,
+      ...
+    },
+    {
+      "type": "dir",
+      "content_type": "dir",
+      "name": "Season 2025",
+      "path": "/Season 2025",
+      ...
+    }
+  ]
+}
+```
+- Returns `403 Forbidden` if file browser is disabled.
+- Returns `404 Not Found` if the path doesn't exist.
+
+---
+
+### GET /api/yt-dlp/archive/recheck
+**Purpose**: Recheck manual archive entries to see if become available or not.
+
+**Response**:
+```json
+[
+  {
+    "id": "youtube_video_id",
+    "url": "https://youtube.com/watch?v=...",
+    "status": "available|unavailable|error",
+    "info": { ... }  // video info if available
+  },
+  ...
+]
+```
+- Returns `404 Not Found` if manual archive is not enabled or file doesn't exist.
+
+---
+
+### GET /api/random/background
+**Purpose**: Get a random background image from configured backends.  
+
+**Query Parameters**:
+- `force=true` (optional) - Force fetch a new image instead of using cache.
+
+**Response**:
+Binary image data with appropriate `Content-Type` header.
+
+---
+
+### GET /api/presets
+**Purpose**: Retrieve all available download presets.  
+
+**Query Parameters**:
+- `filter=<field1,field2>` (optional) - Comma-separated list of fields to include in response.
+
+**Response**:
+```json5
+[
+  {
+    "id": "<uuid>",
+    "name": "preset_name",
+    "description": "...",
+    "folder": "my_channel/foo",
+    "template": "%(title)s.%(ext)s",
+    "cookies": "...",
+    "cli": "--write-subs --embed-subs",
+    "default": true|false, // optional, indicates if this is the default preset.
+    ...
+  },
+  ...
+]
+```
+
+---
+
+### PUT /api/presets
+**Purpose**: Save/update download presets.  
+
+**Body**: An array of preset objects:
+```json
+[
+  {
+    "name": "My Preset", // required, unique name for the preset
+    "id": "<uuid>",  // optional, will be generated if not provided
+    "description": "...", // optional, description of the preset
+    "folder": "my_channel/foo", // optional, relative to download_path
+    "template": "%(title)s.%(ext)s", // optional, filename template
+    "cookies": "...", // optional, Netscape HTTP Cookie format
+    "cli": "--write-subs --embed-subs", // optional, additional yt-dlp CLI arguments
+  },
+  ...
+]
+```
+
+**Response**:
+```json
+[
+  {
+    "id": "<uuid>",
+    "name": "My Preset",
+    "description": "...",
+  },
+  ...
+]
+```
+
+---
+
+### GET /api/conditions
+**Purpose**: Retrieve all configured download conditions.  
+
+**Response**:
+```json
+[
+  {
+    "id": "<uuid>",
+    "name": "condition_name",
+    "filter": "...",
+    "cli": "...",
+    ...
+  },
+  ...
+]
+```
+
+---
+
+### PUT /api/conditions
+**Purpose**: Save/update download conditions.  
+
+**Body**: An array of condition objects:
+```json
+[
+  {
+    "id": "<uuid>",  // optional, will be generated if not provided
+    "name": "Use proxy for region locked content",
+    "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
+    "cli": "--proxy http://myproxy.com:8080",
+  },
+  ...
+]
+```
+
+**Response**:
+```json
+[
+  {
+    "id": "<uuid>",
+    "name": "Use proxy for region locked content",
+    "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
+    "cli": "--proxy http://myproxy.com:8080",
+  },
+  ...
+]
+```
+
+---
+
+### GET /api/logs
+**Purpose**: Retrieve recent application logs (if file logging is enabled).  
+
+**Query Parameters**:
+- `offset=<number>` (optional, default: 0) - Number of log entries to skip.
+- `limit=<number>` (optional, default: 100, max: 150) - Number of log entries to return.
+
+**Response**:
+```json
+{
+  "logs": [
+    {
+      "timestamp": "2023-01-01T12:00:00Z",
+      "level": "INFO",
+      "message": "...",
+      ...
+    },
+    ...
+  ],
+  "offset": 0,
+  "limit": 100,
+  "next_offset": 100,
+  "end_is_reached": false
+}
+```
+- Returns `404 Not Found` if file logging is not enabled.
 
 ---
 
@@ -576,7 +819,7 @@ Returns `200 OK` if cookies are valid, otherwise `401` with `{ "message": "Not a
       }
     }
   ],
-  "allowedTypes": ["added", "completed", "error", "cancelled", "cleared", "log_info", "log_success", ...]
+  "allowedTypes": ["added", "completed", "error", "cancelled", "cleared", "log_info", "log_success", "log_warning", "log_error", "test"]
 }
 ```
 

@@ -208,7 +208,7 @@ Disables the `Information` button.
 
 # API Documentation
 
-For API endpoints, please refer to the [API documentation](API.md). it's somewhat outdated, but it's a good starting point.
+For simple API documentation, you can refer to the [API documentation](API.md).
 
 # How to autoload yt-dlp plugins?
 
