@@ -1383,16 +1383,8 @@ class HttpAPI(Common):
             lastMod = time.strftime("%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(mtime, tz=UTC).timetuple())
             return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
-        segmenter = Segments(
-            download_path=self.config.download_path,
-            index=int(segment),
-            duration=float(f"{float(sd if sd else M3u8.duration):.6f}"),
-            vconvert=vc == 1,
-            aconvert=ac == 1,
-        )
-
-        return web.Response(
-            body=await segmenter.stream(file=realFile),
+        resp = web.StreamResponse(
+            status=web.HTTPOk.status_code,
             headers={
                 "Content-Type": "video/mpegts",
                 "X-Accel-Buffering": "no",
@@ -1406,8 +1398,19 @@ class HttpAPI(Common):
                     "%a, %d %b %Y %H:%M:%S GMT", datetime.fromtimestamp(time.time() + 31536000, tz=UTC).timetuple()
                 ),
             },
-            status=web.HTTPOk.status_code,
         )
+
+        await resp.prepare(request)
+
+        await Segments(
+            download_path=self.config.download_path,
+            index=int(segment),
+            duration=float(f"{float(sd if sd else M3u8.duration):.6f}"),
+            vconvert=vc == 1,
+            aconvert=ac == 1,
+        ).stream(realFile, resp)
+
+        return resp
 
     @route("GET", "api/player/subtitle/{file:.*}.vtt")
     async def subtitles(self, request: Request) -> Response:

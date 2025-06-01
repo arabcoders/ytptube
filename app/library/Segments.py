@@ -5,9 +5,10 @@ import os
 import tempfile
 from pathlib import Path
 
+from aiohttp import web
+
 from .config import Config
 from .ffprobe import ffprobe
-from .Utils import StreamingError
 
 LOG = logging.getLogger("player.segments")
 
@@ -26,86 +27,99 @@ class Segments:
         self.vconvert = True
         self.aconvert = True
 
-    async def stream(self, file: Path) -> bytes:
+    async def build_ffmpeg_args(self, file: Path) -> list[str]:
         try:
             ff = await ffprobe(file)
         except UnicodeDecodeError:
             pass
 
-        tmpDir: str = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f'ytptube_stream.{hashlib.sha256(str(file).encode("utf-8")).hexdigest()}')
+        tmpDir = tempfile.gettempdir()
+        tmpFile = os.path.join(tmpDir, f"ytptube_stream.{hashlib.sha256(str(file).encode()).hexdigest()}")
 
         if not os.path.exists(tmpFile):
             os.symlink(file, tmpFile)
 
-        if self.index == 0:
-            startTime: float = f"{0:.6f}"
-        else:
-            startTime: float = f"{self.duration * self.index:.6f}"
+        startTime = f"{0:.6f}" if self.index == 0 else f"{self.duration * self.index:.6f}"
 
-        fargs = []
-        fargs.append("-xerror")
-        fargs.append("-hide_banner")
-        fargs.append("-loglevel")
-        fargs.append("error")
+        fargs = [
+            "-xerror",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-ss",
+            str(startTime),
+            "-t",
+            str(f"{self.duration:.6f}"),
+            "-copyts",
+            "-i",
+            f"file:{tmpFile}",
+            "-map_metadata",
+            "-1",
+        ]
 
-        fargs.append("-ss")
-        fargs.append(str(startTime if startTime else "0.00000"))
-        fargs.append("-t")
-        fargs.append(str(f"{self.duration:.6f}"))
+        if ff and ff.has_video():
+            fargs += [
+                "-pix_fmt",
+                "yuv420p",
+                "-g",
+                "52",
+                "-map",
+                "0:v:0",
+                "-strict",
+                "-2",
+                "-codec:v",
+                self.vcodec if self.vconvert else "copy",
+            ]
 
-        fargs.append("-copyts")
+        if ff and ff.has_audio():
+            fargs += ["-map", "0:a:0", "-codec:a", self.acodec if self.aconvert else "copy"]
 
-        fargs.append("-i")
-        fargs.append(f"file:{tmpFile}")
-        fargs.append("-map_metadata")
-        fargs.append("-1")
+        fargs += ["-sn", "-muxdelay", "0", "-f", "mpegts", "pipe:1"]
+        return fargs
 
-        # video section.
-        if ff.has_video():
-            fargs.append("-pix_fmt")
-            fargs.append("yuv420p")
-            fargs.append("-g")
-            fargs.append("52")
+    async def stream(self, file: Path, resp: web.StreamResponse):
+        ffmpeg_args = await self.build_ffmpeg_args(file)
 
-            fargs.append("-map")
-            fargs.append("0:v:0")
-            fargs.append("-strict")
-            fargs.append("-2")
-
-            fargs.append("-codec:v")
-            fargs.append(self.vcodec if self.vconvert else "copy")
-
-        # audio section.
-        if ff.has_audio():
-            fargs.append("-map")
-            fargs.append("0:a:0")
-            fargs.append("-codec:a")
-            fargs.append(self.acodec if self.aconvert else "copy")
-
-        fargs.append("-sn")
-
-        fargs.append("-muxdelay")
-        fargs.append("0")
-        fargs.append("-f")
-        fargs.append("mpegts")
-        fargs.append("pipe:1")
-
-        LOG.debug(f"Streaming '{file}' segment '{self.index}'. ffmpeg: {' '.join(fargs)}")
-
-        proc = await asyncio.subprocess.create_subprocess_exec(
+        proc = await asyncio.create_subprocess_exec(
             "ffmpeg",
-            *fargs,
+            *ffmpeg_args,
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
 
-        data, err = await proc.communicate()
+        client_disconnected = False
 
-        if 0 != proc.returncode:
-            LOG.error(f"Failed to stream '{file}' segment '{self.index}'. {err.decode('utf-8')}.")
-            msg = f"Failed to stream '{file}' segment '{self.index}'."
-            raise StreamingError(msg)
+        LOG.debug(f"Streaming '{file}' segment '{self.index}'. ffmpeg: {' '.join(ffmpeg_args)}")
 
-        return data
+        try:
+            while True:
+                chunk = await proc.stdout.read(1024 * 64)
+                if not chunk:
+                    break
+                try:
+                    await resp.write(chunk)
+                except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError, ConnectionError):
+                    LOG.warning("Client disconnected or connection reset while writing.")
+                    client_disconnected = True
+                    break
+        except asyncio.CancelledError:
+            LOG.warning("Client disconnected. Terminating ffmpeg.")
+            client_disconnected = True
+            proc.terminate()
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=5)
+            except TimeoutError:
+                LOG.error("ffmpeg process did not terminate in time. Killing it.")
+                proc.kill()
+            raise
+        except ConnectionResetError:
+            LOG.warning("Connection reset by peer. Skipping further writes.")
+            client_disconnected = True
+        finally:
+            if not client_disconnected:
+                try:
+                    await resp.write_eof()
+                except (ConnectionResetError, RuntimeError):
+                    LOG.warning("Failed to write EOF; client already disconnected.")
+            await proc.wait()
