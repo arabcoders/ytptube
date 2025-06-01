@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250528-c636ea5e",
-        "date": "2025-05-28T14:51:16+00:00",
+        "tag": "dev-20250601-d6aa7116",
+        "date": "2025-06-01T15:22:19+00:00",
+        "commits": [
+            {
+                "sha": "d6aa7116",
+                "message": "Refactor streaming logic to be more efficient",
+                "author": "arabcoders",
+                "date": "2025-06-01T15:22:19+00:00"
+            },
+            {
+                "sha": "890f2e99",
+                "message": "packages update",
+                "author": "arabcoders",
+                "date": "2025-06-01T15:21:47+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250528-8dfdf7f6",
+        "date": "2025-05-28T15:24:50+00:00",
         "commits": [
             {
                 "sha": "c636ea5e",
