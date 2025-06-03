@@ -9,9 +9,9 @@
           </span>
         </span>
 
-        <div class="is-pulled-right" v-if="socket.isConnected && false === config.app.basic_mode">
+        <div class="is-pulled-right" v-if="socket.isConnected">
           <div class="field is-grouped">
-            <p class="control" v-if="!config.app.basic_mode">
+            <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
               <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused"
                 v-tooltip.bottom="'Pause non-active downloads.'">
                 <span class="icon"><i class="fas fa-pause" /></span>
@@ -22,7 +22,7 @@
               </button>
             </p>
 
-            <p class="control" v-if="!config.app.basic_mode">
+            <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
               <button v-tooltip.bottom="'Toggle new download form'" class="button is-primary has-tooltip-bottom"
                 @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
