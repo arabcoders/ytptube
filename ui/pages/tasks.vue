@@ -3,17 +3,13 @@ table.is-fixed {
   table-layout: fixed;
 }
 
-div.table-container {
-  overflow: hidden;
-}
-
 div.is-centered {
   justify-content: center;
 }
 </style>
 
 <template>
-  <div>
+  <main>
     <div class="mt-1 columns is-multiline">
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
@@ -25,14 +21,24 @@ div.is-centered {
         <div class="is-pulled-right">
           <div class="field is-grouped">
             <p class="control">
-              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm">
-                <span class="icon"><i class="fas fa-add"></i></span>
+              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm"
+                v-tooltip.bottom="'Toggle Add form'">
+                <span class="icon"><i class="fas fa-add" /></span>
               </button>
             </p>
+
+            <p class="control">
+              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
+                @click="() => display_style = display_style === 'cards' ? 'list' : 'cards'">
+                <span class="icon"><i class="fa-solid"
+                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+              </button>
+            </p>
+
             <p class="control">
               <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="tasks && tasks.length > 0">
-                <span class="icon"><i class="fas fa-refresh"></i></span>
+                <span class="icon"><i class="fas fa-refresh" /></span>
               </button>
             </p>
           </div>
@@ -43,84 +49,174 @@ div.is-centered {
           </span>
         </div>
       </div>
+    </div>
 
-      <div class="column is-12" v-if="toggleForm">
+    <div class="columns is-multiline" v-if="toggleForm">
+      <div class="column is-12">
         <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task" @cancel="resetForm(true);"
           @submit="updateItem" />
       </div>
+    </div>
 
-      <div class="column is-12" v-if="!toggleForm">
-        <div class="columns is-multiline" v-if="tasks && tasks.length > 0">
-          <div class="column is-6" v-for="item in tasks" :key="item.id">
-            <div class="card is-flex is-full-height is-flex-direction-column">
-              <header class="card-header">
-                <div class="card-header-title is-text-overflow is-block">
-                  <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
-                </div>
-                <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
-                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                  </a>
-                </div>
-              </header>
-              <div class="card-content is-flex-grow-1">
-                <div class="content">
-                  <p class="is-text-overflow">
+    <div class="columns is-multiline" v-if="!isLoading && !toggleForm && tasks && tasks.length > 0">
+      <template v-if="'list' === display_style">
+        <div class="column is-12">
+          <div class="table-container">
+            <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+              style="min-width: 850px; table-layout: fixed;">
+              <thead>
+                <tr class="has-text-centered is-unselectable">
+                  <th width="50%">
+                    <span class="icon"><i class="fa-solid fa-tasks" /></span>
+                    <span>Task</span>
+                  </th>
+                  <th width="30%">
                     <span class="icon"><i class="fa-solid fa-clock" /></span>
-                    <span v-if="item.timer">{{ tryParse(item.timer) }} - {{ item.timer }}</span>
-                    <span v-else>No timer is set</span>
-                  </p>
-                  <p class="is-text-overflow" v-if="item.folder">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    <span>{{ calcPath(item.folder) }}</span>
-                  </p>
-                  <p class="is-text-overflow" v-if="item.template">
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.template }}</span>
-                  </p>
-                  <p class="is-text-overflow">
-                    <span class="icon"><i class="fa-solid fa-tv" /></span>
-                    <span>{{ item.preset ?? config.app.default_preset }}</span>
-                  </p>
-                  <p class="is-text-overflow" v-if="item.cli">
-                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>{{ item.cli }}</span>
-                  </p>
-                </div>
+                    <span>Timer</span>
+                  </th>
+                  <th width="20%">
+                    <span class="icon"><i class="fa-solid fa-gear" /></span>
+                    <span>Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in tasks" :key="item.id">
+                  <td class="is-vcentered">
+                    <div class="is-text-overflow">
+                      <NuxtLink target="_blank" :href="item.url" class="is-bold">
+                        {{ item.name }}
+                      </NuxtLink>
+                    </div>
+                    <div v-if="item.preset">
+                      <span class="icon"><i class="fa-solid fa-tv" /></span>
+                      <span>{{ item.preset ?? config.app.default_preset }}</span>
+                    </div>
+                  </td>
+                  <td class="is-vcentered has-text-centered">
+                    <span v-if="item.timer" class="has-tooltip" v-tooltip="item.timer">
+                      {{ tryParse(item.timer) }}
+                    </span>
+                    <span v-else class="has-text-danger">
+                      <span class="icon"><i class="fa-solid fa-exclamation-triangle" /></span>
+                      <span>No timer is set</span>
+                    </span>
+                  </td>
+                  <td class="is-vcentered is-items-center">
+                    <div class="field is-grouped is-grouped-centered">
+
+                      <div class="control">
+                        <button class="button is-purple is-small is-fullwidth" v-tooltip="'Run now'"
+                          @click="runNow(item)" :class="{ 'is-loading': item?.in_progress }">
+                          <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+                        </button>
+                      </div>
+
+                      <div class="control">
+                        <button class="button is-primary is-small is-fullwidth" v-tooltip="'Export'"
+                          @click="exportItem(item)">
+                          <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                        </button>
+                      </div>
+                      <div class="control">
+                        <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
+                          @click="editItem(item)">
+                          <span class="icon"><i class="fa-solid fa-cog" /></span>
+                        </button>
+                      </div>
+                      <div class="control">
+                        <button class="button is-danger is-small is-fullwidth" v-tooltip="'Delete'"
+                          @click="deleteItem(item)">
+                          <span class="icon"><i class="fa-solid fa-trash" /></span>
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="column is-6" v-for="item in tasks" :key="item.id">
+          <div class="card is-flex is-full-height is-flex-direction-column">
+            <header class="card-header">
+              <div class="card-header-title is-text-overflow is-block">
+                <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
               </div>
-              <div class="card-footer mt-auto">
-                <div class="card-footer-item">
-                  <button class="button is-warning is-fullwidth" @click="editItem(item);">
-                    <span class="icon"><i class="fa-solid fa-cog" /></span>
-                    <span>Edit</span>
-                  </button>
-                </div>
-                <div class="card-footer-item">
-                  <button class="button is-danger is-fullwidth" @click="deleteItem(item)">
-                    <span class="icon"><i class="fa-solid fa-trash" /></span>
-                    <span>Delete</span>
-                  </button>
-                </div>
-                <div class="card-footer-item">
-                  <button class="button is-purple is-fullwidth" @click="runNow(item)"
-                    :class="{ 'is-loading': item?.in_progress }">
-                    <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
-                    <span>Run now</span>
-                  </button>
-                </div>
+              <div class="card-header-icon">
+                <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                  <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                </a>
+              </div>
+            </header>
+            <div class="card-content is-flex-grow-1">
+              <div class="content">
+                <p class="is-text-overflow">
+                  <span class="icon"><i class="fa-solid fa-clock" /></span>
+                  <span v-if="item.timer">{{ tryParse(item.timer) }} - {{ item.timer }}</span>
+                  <span v-else>No timer is set</span>
+                </p>
+                <p class="is-text-overflow" v-if="item.folder">
+                  <span class="icon"><i class="fa-solid fa-folder" /></span>
+                  <span>{{ calcPath(item.folder) }}</span>
+                </p>
+                <p class="is-text-overflow" v-if="item.template">
+                  <span class="icon"><i class="fa-solid fa-file" /></span>
+                  <span>{{ item.template }}</span>
+                </p>
+                <p class="is-text-overflow">
+                  <span class="icon"><i class="fa-solid fa-tv" /></span>
+                  <span>{{ item.preset ?? config.app.default_preset }}</span>
+                </p>
+                <p class="is-text-overflow" v-if="item.cli">
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  <span>{{ item.cli }}</span>
+                </p>
+              </div>
+            </div>
+            <div class="card-footer mt-auto">
+              <div class="card-footer-item">
+                <button class="button is-warning is-fullwidth" @click="editItem(item);">
+                  <span class="icon"><i class="fa-solid fa-cog" /></span>
+                  <span>Edit</span>
+                </button>
+              </div>
+              <div class="card-footer-item">
+                <button class="button is-danger is-fullwidth" @click="deleteItem(item)">
+                  <span class="icon"><i class="fa-solid fa-trash" /></span>
+                  <span>Delete</span>
+                </button>
+              </div>
+              <div class="card-footer-item">
+                <button class="button is-purple is-fullwidth" @click="runNow(item)"
+                  :class="{ 'is-loading': item?.in_progress }">
+                  <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+                  <span>Run now</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
+      </template>
+    </div>
+
+    <div class="columns is-multiline" v-if="!tasks || tasks.length < 1">
+      <div class="column is-12">
+        <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
+          message="Loading data. Please wait..." v-if="isLoading" />
         <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
-          icon="fas fa-exclamation-circle" v-if="!tasks || tasks.length < 1" />
+          icon="fas fa-exclamation-circle" v-else />
       </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
 import moment from 'moment'
+import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
 
@@ -133,9 +229,10 @@ const tasks = ref([])
 const task = ref({})
 const taskRef = ref('')
 const toggleForm = ref(false)
-const isLoading = ref(false)
+const isLoading = ref(true)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+const display_style = useStorage("tasks_display_style", "cards")
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {

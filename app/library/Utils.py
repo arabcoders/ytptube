@@ -779,7 +779,7 @@ def get_files(base_path: str, dir: str | None = None):
         return []
 
     contents: list = []
-    for file in pathlib.Path(dir_path).iterdir():
+    for file in dir_path.iterdir():
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
 
