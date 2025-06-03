@@ -149,7 +149,7 @@ div.is-centered {
 <script setup>
 import { request } from '~/utils/index'
 
-const toast = useToast()
+const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 

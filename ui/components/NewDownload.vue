@@ -189,7 +189,7 @@ const props = defineProps({
 const emitter = defineEmits(['getInfo', 'clear_form'])
 const config = useConfigStore()
 const socket = useSocketStore()
-const toast = useToast()
+const toast = useNotification()
 
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)

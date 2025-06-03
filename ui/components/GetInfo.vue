@@ -40,7 +40,7 @@ import { request } from '~/utils/index'
 const emitter = defineEmits(['closeModel'])
 const isLoading = ref(false)
 const data = ref({})
-const toast = useToast()
+const toast = useNotification()
 
 const props = defineProps({
   link: {

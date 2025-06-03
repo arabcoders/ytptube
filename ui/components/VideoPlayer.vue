@@ -31,7 +31,7 @@ import { onMounted, onUpdated, ref, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import { makeDownload } from '~/utils/index'
 const config = useConfigStore()
-const toast = useToast()
+const toast = useNotification()
 
 const props = defineProps({
   item: {

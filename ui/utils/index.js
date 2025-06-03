@@ -1,6 +1,4 @@
-import { useStorage } from '@vueuse/core'
-
-const toast = useToast()
+const toast = useNotification()
 const AG_SEPARATOR = '.'
 
 /**

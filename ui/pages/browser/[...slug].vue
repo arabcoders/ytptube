@@ -155,7 +155,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 
 const route = useRoute()
-const toast = useToast()
+const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 

@@ -117,7 +117,7 @@ import { useStorage } from '@vueuse/core'
 
 let scrollTimeout = null
 
-const toast = useToast()
+const toast = useNotification()
 const socket = useSocketStore()
 const config = useConfigStore()
 

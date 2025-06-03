@@ -268,7 +268,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 const emitter = defineEmits(['cancel', 'submit']);
-const toast = useToast();
+const toast = useNotification();
 const props = defineProps({
   reference: {
     type: String,

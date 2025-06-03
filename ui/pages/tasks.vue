@@ -122,7 +122,7 @@ import moment from 'moment'
 import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
 
-const toast = useToast()
+const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 

@@ -233,7 +233,7 @@ import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 
 const emitter = defineEmits(['cancel', 'submit']);
-const toast = useToast();
+const toast = useNotification();
 const config = useConfigStore();
 const showImport = useStorage('showImport', false);
 const import_string = ref('');

@@ -385,7 +385,7 @@ const emitter = defineEmits(['getInfo', 'add_new'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
-const toast = useToast()
+const toast = useNotification()
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)

@@ -218,7 +218,7 @@ const props = defineProps({
 })
 
 const config = useConfigStore()
-const toast = useToast()
+const toast = useNotification()
 const form = reactive(JSON.parse(JSON.stringify(props.preset)))
 const import_string = ref('')
 const showImport = useStorage('showImport', false);
