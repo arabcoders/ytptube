@@ -760,14 +760,39 @@ def get_files(base_path: str, dir: str | None = None):
     else:
         dir_path = base_path
 
-    if not os.path.isdir(dir_path):
+    dir_path = pathlib.Path(dir_path)
+    if dir_path.is_symlink():
+        try:
+            dir_path = dir_path.resolve()
+        except OSError as e:
+            LOG.warning(f"Skipping broken symlink: {dir_path} - {e}")
+            return []
+
+    if not str(dir_path).startswith(base_path):
+        msg = f"Invalid path: '{dir_path}' - must be inside '{base_path}'."
+        LOG.warning(msg)
+        return []
+
+    if not dir_path.is_dir():
         msg = f"Invalid path: '{dir_path}' - must be a directory."
-        raise OSError(msg)
+        LOG.warning(msg)
+        return []
 
     contents: list = []
     for file in pathlib.Path(dir_path).iterdir():
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
+
+        if file.is_symlink():
+            try:
+                test: pathlib.Path = file.resolve()
+                if not str(test).startswith(base_path):
+                    msg = f"Invalid symlink: '{file}' - must resolve inside '{base_path}'."
+                    LOG.warning(msg)
+                    continue
+            except OSError:
+                LOG.warning(f"Skipping broken symlink: {file}")
+                continue
 
         content_type = None
 
