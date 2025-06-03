@@ -221,7 +221,8 @@ const config = useConfigStore()
 const toast = useNotification()
 const form = reactive(JSON.parse(JSON.stringify(props.preset)))
 const import_string = ref('')
-const showImport = useStorage('showImport', false);
+const showImport = useStorage('showImport', false)
+const box = useConfirm()
 
 onMounted(() => {
   if (props.preset?.cli && '' !== props.preset?.cli) {
@@ -328,7 +329,7 @@ const importItem = async () => {
       return
     }
 
-    if (form.cli && false === confirm('This will overwrite the current data. Are you sure?')) {
+    if (form.cli && false === box.confirm('This will overwrite the current data. Are you sure?', true)) {
       return
     }
 

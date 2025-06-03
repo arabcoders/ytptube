@@ -386,6 +386,7 @@ const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
 const toast = useNotification()
+const box = useConfirm()
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)
@@ -488,7 +489,7 @@ const deleteSelectedItems = () => {
     msg += '\nThis will delete the files from the server if they exist.'
   }
 
-  if (false === confirm(msg)) {
+  if (false === box.confirm(msg, config.app.remove_files)) {
     return
   }
 
@@ -506,7 +507,7 @@ const deleteSelectedItems = () => {
 
 const clearCompleted = () => {
   let msg = 'Are you sure you want to clear all completed downloads?'
-  if (false === confirm(msg)) {
+  if (false === box.confirm(msg)) {
     return
   }
 
@@ -518,7 +519,7 @@ const clearCompleted = () => {
 }
 
 const clearIncomplete = () => {
-  if (false === confirm('Are you sure you want to clear all in-complete downloads?')) {
+  if (false === box.confirm('Are you sure you want to clear all in-complete downloads?')) {
     return
   }
 
@@ -598,7 +599,7 @@ const setStatus = item => {
 }
 
 const requeueIncomplete = () => {
-  if (false === confirm('Are you sure you want to re-queue all incomplete downloads?')) {
+  if (false === box.confirm('Are you sure you want to re-queue all incomplete downloads?')) {
     return false
   }
 
@@ -612,7 +613,7 @@ const requeueIncomplete = () => {
 }
 
 const archiveItem = item => {
-  if (!confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
+  if (!box.confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
     return
   }
   socket.emit('archive_item', item)
@@ -621,7 +622,7 @@ const archiveItem = item => {
 
 const removeItem = item => {
   const msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?\n this will delete the file from the server.`
-  if (config.app.remove_files && !confirm(msg)) {
+  if (false === box.confirm(msg, config.app.remove_files)) {
     return false
   }
 

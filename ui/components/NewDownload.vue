@@ -190,6 +190,7 @@ const emitter = defineEmits(['getInfo', 'clear_form'])
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
+const box = useConfirm()
 
 const showAdvanced = useStorage('show_advanced', false)
 const addInProgress = ref(false)
@@ -261,7 +262,7 @@ const addDownload = async () => {
 }
 
 const resetConfig = () => {
-  if (true !== confirm('Reset your local configuration?')) {
+  if (true !== box.confirm('Reset your local configuration?')) {
     return
   }
 

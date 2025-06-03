@@ -125,6 +125,7 @@ import { request } from '~/utils/index'
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const box = useConfirm()
 
 const tasks = ref([])
 const task = ref({})
@@ -216,7 +217,7 @@ const updateTasks = async items => {
 }
 
 const deleteItem = async item => {
-  if (true !== confirm(`Are you sure you want to delete (${item.name})?`)) {
+  if (true !== box.confirm(`Are you sure you want to delete (${item.name})?`, true)) {
     return
   }
 
@@ -290,7 +291,7 @@ const tryParse = expression => {
 }
 
 const runNow = item => {
-  if (true !== confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
+  if (true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
     return
   }
 

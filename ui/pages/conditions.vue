@@ -116,6 +116,7 @@ import { request } from '~/utils/index'
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const box = useConfirm()
 
 const items = ref([])
 const item = ref({})
@@ -213,7 +214,7 @@ const updateItems = async items => {
 }
 
 const deleteItem = async (item) => {
-  if (true !== confirm(`Delete '${item.name}'?`)) {
+  if (true !== box.confirm(`Delete '${item.name}'?`, true)) {
     return
   }
 

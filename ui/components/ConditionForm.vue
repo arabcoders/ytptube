@@ -57,7 +57,7 @@
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress"
-                    placeholder="For the problematic channel or video name.">
+                      placeholder="For the problematic channel or video name.">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -74,7 +74,7 @@
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
-                    placeholder="availability = 'needs_auth' & channel_id = 'channel_id'">
+                      placeholder="availability = 'needs_auth' & channel_id = 'channel_id'">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -150,6 +150,7 @@ const props = defineProps({
 })
 
 const toast = useNotification()
+const box = useConfirm()
 const form = reactive(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
 const showImport = useStorage('showImport', false);
@@ -219,7 +220,7 @@ const importItem = async () => {
       return
     }
 
-    if ((form.filter || form.cli) && false === confirm('This will overwrite the current data. Are you sure?')) {
+    if ((form.filter || form.cli) && false === box.confirm('This will overwrite the current data. Are you sure?', true)) {
       return
     }
 

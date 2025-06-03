@@ -74,4 +74,13 @@
   "spellright.documentTypes": [
     "latex"
   ],
+  "search.exclude": {
+    "ui/.nuxt": true,
+    "ui/.output": true,
+    "ui/dist": true,
+    "ui/exported": true,
+    "ui/node_modules": true,
+    "ui/.out": true,
+    "**/.venv": true,
+  }
 }

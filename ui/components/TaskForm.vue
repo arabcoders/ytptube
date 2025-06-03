@@ -232,11 +232,12 @@
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 
-const emitter = defineEmits(['cancel', 'submit']);
-const toast = useNotification();
-const config = useConfigStore();
-const showImport = useStorage('showImport', false);
-const import_string = ref('');
+const emitter = defineEmits(['cancel', 'submit'])
+const toast = useNotification()
+const config = useConfigStore()
+const showImport = useStorage('showImport', false)
+const import_string = ref('')
+const box = useConfirm()
 
 const props = defineProps({
   reference: {
@@ -255,49 +256,49 @@ const props = defineProps({
   },
 })
 
-const form = reactive(props.task);
+const form = reactive(props.task)
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
-    form.preset = toRaw(config.app.default_preset);
+    form.preset = toRaw(config.app.default_preset)
   }
 })
 
 const checkInfo = async () => {
-  const required = ['name', 'url'];
+  const required = ['name', 'url']
   for (const key of required) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
-      return;
+      toast.error(`The ${key} field is required.`)
+      return
     }
   }
 
   if (form.timer) {
     try {
-      CronExpressionParser.parse(form.timer);
+      CronExpressionParser.parse(form.timer)
     } catch (e) {
       console.error(e)
-      toast.error(`Invalid CRON expression. ${e.message}`);
-      return;
+      toast.error(`Invalid CRON expression. ${e.message}`)
+      return
     }
   }
 
   try {
-    new URL(form.url);
+    new URL(form.url)
   } catch (e) {
-    toast.error('Invalid URL');
-    return;
+    toast.error('Invalid URL')
+    return
   }
 
   if (form?.cli && '' !== form.cli) {
-    const options = await convertOptions(form.cli);
+    const options = await convertOptions(form.cli)
     if (null === options) {
       return
     }
     form.cli = form.cli.trim(" ")
   }
 
-  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
+  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) })
 }
 
 const importItem = async () => {
@@ -327,7 +328,7 @@ const importItem = async () => {
     }
 
     if (form.url || form.timer) {
-      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+      if (false === box.confirm('This will overwrite the current form fields. Are you sure?', true)) {
         return
       }
     }
@@ -391,7 +392,7 @@ const convertOptions = async args => {
     toast.error(e.message)
   }
 
-  return null;
+  return null
 }
 
 const hasFormatInConfig = computed(() => {

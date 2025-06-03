@@ -152,6 +152,7 @@ import { request } from '~/utils/index'
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const box = useConfirm()
 
 const presets = ref([])
 const preset = ref({})
@@ -249,7 +250,7 @@ const updatePresets = async (items) => {
 }
 
 const deleteItem = async (item) => {
-  if (true !== confirm(`Delete preset '${item.name}'?`)) {
+  if (true !== box.confirm(`Delete preset '${item.name}'?`, true)) {
     return
   }
 
