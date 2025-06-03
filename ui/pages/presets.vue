@@ -3,17 +3,13 @@ table.is-fixed {
   table-layout: fixed;
 }
 
-div.table-container {
-  overflow: hidden;
-}
-
 div.is-centered {
   justify-content: center;
 }
 </style>
 
 <template>
-  <div>
+  <main>
     <div class="mt-1 columns is-multiline">
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
@@ -25,17 +21,23 @@ div.is-centered {
         <div class="is-pulled-right">
           <div class="field is-grouped">
             <p class="control">
-              <button class="button is-primary" @click="
-                resetForm(false);
-              toggleForm = !toggleForm;
-              ">
-                <span class="icon"><i class="fas fa-add"></i></span>
+              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;"
+                v-tooltip.bottom="'Toggle add form'">
+                <span class="icon"><i class="fas fa-add"/></span>
+              </button>
+            </p>
+
+            <p class="control">
+              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
+                @click="() => display_style = display_style === 'cards' ? 'list' : 'cards'">
+                <span class="icon"><i class="fa-solid"
+                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
               </button>
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="presets && presets.length > 0">
-                <span class="icon"><i class="fas fa-refresh"></i></span>
+                <span class="icon"><i class="fas fa-refresh"/></span>
               </button>
             </p>
           </div>
@@ -45,14 +47,64 @@ div.is-centered {
             that you want to apply to given download.</span>
         </div>
       </div>
+    </div>
 
-      <div class="column is-12" v-if="toggleForm">
+    <div class="columns" v-if="toggleForm">
+      <div class="column is-12">
         <PresetForm :addInProgress="addInProgress" :reference="presetRef" :preset="preset" @cancel="resetForm(true)"
           @submit="updateItem" :presets="presets" />
       </div>
+    </div>
 
-      <div class="column is-12" v-if="!toggleForm">
-        <div class="columns is-multiline" v-if="presetsNoDefault && presetsNoDefault.length > 0">
+    <div class="columns is-multiline" v-if="!toggleForm">
+      <template v-if="presetsNoDefault && presetsNoDefault.length > 0">
+        <template v-if="display_style === 'list'">
+          <div class="column is-12">
+            <div class="table-container">
+              <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+                style="min-width: 650px; table-layout: fixed;">
+                <thead>
+                  <tr class="has-text-centered is-unselectable">
+                    <th width="80%">Preset</th>
+                    <th width="20%">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in presetsNoDefault" :key="item.id">
+                    <td class="is-vcentered">
+                      <div class="is-text-overflow">
+                        {{ item.name }}
+                      </div>
+                    </td>
+                    <td class="is-vcentered is-items-center">
+                      <div class="field is-grouped is-grouped-centered">
+                        <div class="control">
+                          <button class="button is-primary is-small is-fullwidth" v-tooltip="'Export preset.'"
+                            @click="exportItem(item)">
+                            <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                          </button>
+                        </div>
+                        <div class="control">
+                          <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit preset.'"
+                            @click="editItem(item)">
+                            <span class="icon"><i class="fa-solid fa-cog" /></span>
+                          </button>
+                        </div>
+                        <div class="control">
+                          <button class="button is-danger is-small is-fullwidth" v-tooltip="'Delete preset.'"
+                            @click="deleteItem(item)">
+                            <span class="icon"><i class="fa-solid fa-trash" /></span>
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+        <template v-else>
           <div class="column is-6" v-for="item in presetsNoDefault" :key="item.id">
             <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
@@ -123,36 +175,46 @@ div.is-centered {
               </div>
             </div>
           </div>
-        </div>
+        </template>
+      </template>
+
+      <div class="column is-12" v-if="!presets || presets.length < 1">
         <Message title="No presets" message="There are no custom defined presets."
-          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle"
-          v-if="!presets || presets.length < 1" />
+          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle" />
       </div>
     </div>
-    <div class="column is-12" v-if="presets && presets.length > 0 && !toggleForm">
-      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
-        <ul>
-          <li>
-            When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
-          </li>
-          <li>
-            If you have created a global <code>config/ytdlp.cli</code> file, it will be appended to your exported preset
-            <code><i class="fa-solid fa-terminal" /> Command arguments for yt-dlp</code> field for better compatibility
-            and completeness.
-          </li>
-        </ul>
-      </Message>
+
+    <div class="columns is-multiline" v-if="!toggleForm">
+      <div class="column is-12" v-if="presets && presets.length > 0">
+        <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
+          <ul>
+            <li>
+              When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
+            </li>
+            <li>
+              If you have created a global <code>config/ytdlp.cli</code> file, it will be appended to your exported
+              preset
+              <code><i class="fa-solid fa-terminal" /> Command options for yt-dlp</code> field for better
+              compatibility
+              and completeness.
+            </li>
+          </ul>
+        </Message>
+      </div>
     </div>
-  </div>
+  </main>
 </template>
 
 <script setup>
+import { useStorage } from '@vueuse/core'
 import { request } from '~/utils/index'
 
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
+
+const display_style = useStorage("display_style", "cards")
 
 const presets = ref([])
 const preset = ref({})
@@ -161,6 +223,7 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+
 
 const presetsNoDefault = computed(() =>
   presets.value.filter((t) => !t.default),
