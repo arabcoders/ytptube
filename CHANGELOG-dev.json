@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250603-38bf6af1",
-        "date": "2025-06-03T19:15:06+00:00",
+        "tag": "dev-20250603-1de2de97",
+        "date": "2025-06-03T19:37:21+00:00",
         "commits": [
+            {
+                "sha": "1de2de97",
+                "message": "Give more control over the toasts.",
+                "author": "arabcoders",
+                "date": "2025-06-03T19:37:21+00:00"
+            },
             {
                 "sha": "38bf6af1",
                 "message": "Improved the testing logic for conditions filter.",
