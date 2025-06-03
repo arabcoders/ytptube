@@ -12,7 +12,7 @@
           <div class="columns is-multiline">
             <div class="column is-6">
               <div class="field">
-                <label class="label" for="random_bg">Color scheme</label>
+                <label class="label">Color scheme</label>
                 <div class="control">
                   <label for="auto" class="radio">
                     <input id="auto" type="radio" v-model="selectedTheme" value="auto">
@@ -81,7 +81,7 @@
               </div>
 
               <div class="field">
-                <label class="label" for="allow_toasts">Show notification toasts</label>
+                <label class="label" for="allow_toasts">Show toasts</label>
                 <div class="control">
                   <input id="allow_toasts" type="checkbox" class="switch is-success" v-model="allow_toasts">
                   <label for="allow_toasts" class="is-unselectable">
@@ -95,6 +95,34 @@
                   </span>
                 </p>
               </div>
+
+              <div class="field">
+                <label class="label">Toasts position</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select v-model="toast_position">
+                      <option :value="POSITION.TOP_RIGHT">{{ POSITION.TOP_RIGHT }}</option>
+                      <option :value="POSITION.TOP_CENTER">{{ POSITION.TOP_CENTER }}</option>
+                      <option :value="POSITION.TOP_LEFT">{{ POSITION.TOP_LEFT }}</option>
+                      <option :value="POSITION.BOTTOM_RIGHT">{{ POSITION.BOTTOM_RIGHT }}</option>
+                      <option :value="POSITION.BOTTOM_CENTER">{{ POSITION.BOTTOM_CENTER }}</option>
+                      <option :value="POSITION.BOTTOM_LEFT">{{ POSITION.BOTTOM_LEFT }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label" for="dismiss_on_click">Dismiss toasts on click</label>
+                <div class="control">
+                  <input id="dismiss_on_click" type="checkbox" class="switch is-success"
+                    v-model="toast_dismiss_on_click">
+                  <label for="dismiss_on_click" class="is-unselectable">
+                    &nbsp;{{ toast_dismiss_on_click ? 'Enabled' : 'Disabled' }}
+                  </label>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -103,10 +131,9 @@
   </div>
 </template>
 
-
 <script setup>
-
 import { useStorage } from '@vueuse/core'
+import { POSITION } from 'vue-toastification'
 
 defineProps({
   isLoading: {
@@ -120,5 +147,6 @@ const bg_opacity = useStorage('random_bg_opacity', 0.85)
 const selectedTheme = useStorage('theme', 'auto')
 const allow_toasts = useStorage('allow_toasts', true)
 const reduce_confirm = useStorage('reduce_confirm', false)
-
+const toast_position = useStorage('toast_position', POSITION.TOP_RIGHT)
+const toast_dismiss_on_click = useStorage('toast_dismiss_on_click', true)
 </script>
