@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250603-8f61c6e8",
-        "date": "2025-06-03T00:09:54+00:00",
+        "tag": "dev-20250603-0306f9e6",
+        "date": "2025-06-03T14:01:38+00:00",
+        "commits": [
+            {
+                "sha": "0306f9e6",
+                "message": "Add try catch block for url decoding. Fix #287",
+                "author": "arabcoders",
+                "date": "2025-06-03T14:01:38+00:00"
+            },
+            {
+                "sha": "5af46554",
+                "message": "Fix not being able to add --sponsorblock-mark",
+                "author": "arabcoders",
+                "date": "2025-06-03T13:40:51+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250603-2a60a848",
+        "date": "2025-06-03T00:15:42+00:00",
         "commits": [
             {
                 "sha": "8f61c6e8",
