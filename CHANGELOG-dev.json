@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250603-bdf50d0e",
-        "date": "2025-06-03T16:11:55+00:00",
+        "tag": "dev-20250603-55b2e3e7",
+        "date": "2025-06-03T17:05:13+00:00",
         "commits": [
+            {
+                "sha": "55b2e3e7",
+                "message": "Add test button for conditions",
+                "author": "arabcoders",
+                "date": "2025-06-03T17:05:13+00:00"
+            },
             {
                 "sha": "bdf50d0e",
                 "message": "Make it possible to create tasks without timer.",
