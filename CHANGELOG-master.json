@@ -1,5 +1,89 @@
 [
     {
+        "tag": "master-20250603-cf2fb5fa",
+        "date": "2025-06-03T21:45:25+00:00",
+        "commits": [
+            {
+                "sha": "46b57e06",
+                "message": "Add list view for tasks.",
+                "author": "arabcoders",
+                "date": "2025-06-03T21:35:36+00:00"
+            },
+            {
+                "sha": "f57f1d39",
+                "message": "Fix symlinks in file browser. Fixes #288",
+                "author": "arabcoders",
+                "date": "2025-06-03T21:33:45+00:00"
+            },
+            {
+                "sha": "a795429c",
+                "message": "Add list view for presets.",
+                "author": "arabcoders",
+                "date": "2025-06-03T20:52:35+00:00"
+            },
+            {
+                "sha": "1af17552",
+                "message": "Enhance UI layout and loading state for changelog page",
+                "author": "arabcoders",
+                "date": "2025-06-03T20:46:29+00:00"
+            },
+            {
+                "sha": "1de2de97",
+                "message": "Give more control over the toasts.",
+                "author": "arabcoders",
+                "date": "2025-06-03T19:37:21+00:00"
+            },
+            {
+                "sha": "38bf6af1",
+                "message": "Improved the testing logic for conditions filter.",
+                "author": "arabcoders",
+                "date": "2025-06-03T19:15:06+00:00"
+            },
+            {
+                "sha": "55b2e3e7",
+                "message": "Add test button for conditions",
+                "author": "arabcoders",
+                "date": "2025-06-03T17:05:13+00:00"
+            },
+            {
+                "sha": "bdf50d0e",
+                "message": "Make it possible to create tasks without timer.",
+                "author": "arabcoders",
+                "date": "2025-06-03T16:11:55+00:00"
+            },
+            {
+                "sha": "23c74d84",
+                "message": "improve task page information display.",
+                "author": "arabcoders",
+                "date": "2025-06-03T15:32:13+00:00"
+            },
+            {
+                "sha": "0156052a",
+                "message": "Reduce confirmation box usage with optional WebUI flag.",
+                "author": "arabcoders",
+                "date": "2025-06-03T15:03:23+00:00"
+            },
+            {
+                "sha": "c13c4427",
+                "message": "Proxy our toast usage via our own methods to be able to control enabling/disabling it.",
+                "author": "arabcoders",
+                "date": "2025-06-03T14:44:23+00:00"
+            },
+            {
+                "sha": "0306f9e6",
+                "message": "Add try catch block for url decoding. Fix #287",
+                "author": "arabcoders",
+                "date": "2025-06-03T14:01:38+00:00"
+            },
+            {
+                "sha": "5af46554",
+                "message": "Fix not being able to add --sponsorblock-mark",
+                "author": "arabcoders",
+                "date": "2025-06-03T13:40:51+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250603-2a60a848",
         "date": "2025-06-03T00:15:42+00:00",
         "commits": [
