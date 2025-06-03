@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250603-23c74d84",
-        "date": "2025-06-03T15:32:13+00:00",
+        "tag": "dev-20250603-bdf50d0e",
+        "date": "2025-06-03T16:11:55+00:00",
         "commits": [
+            {
+                "sha": "bdf50d0e",
+                "message": "Make it possible to create tasks without timer.",
+                "author": "arabcoders",
+                "date": "2025-06-03T16:11:55+00:00"
+            },
             {
                 "sha": "23c74d84",
                 "message": "improve task page information display.",
