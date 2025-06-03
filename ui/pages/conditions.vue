@@ -66,7 +66,7 @@
               </div>
               <div class="card-content" v-if="cond?.raw">
                 <div class="content">
-                  <pre><code>{{ filterItem(cond) }}</code></pre>
+                  <pre><code>{{ JSON.stringify(cleanObject(cond, remove_keys), null, 2) }}</code></pre>
                 </div>
               </div>
               <div class="card-footer mt-auto">
@@ -80,6 +80,13 @@
                   <button class="button is-danger is-fullwidth" @click="deleteItem(cond)">
                     <span class="icon"><i class="fa-solid fa-trash" /></span>
                     <span>Delete</span>
+                  </button>
+                </div>
+                <div class="card-footer-item">
+                  <button class="button is-purple is-fullwidth" @click="TestCondition(cond)"
+                    :class="{ 'is-loading': cond?.in_progress }">
+                    <span class="icon"><i class="fa-solid fa-play" /></span>
+                    <span>Test</span>
                   </button>
                 </div>
               </div>
@@ -104,6 +111,10 @@
             filter i am able to bypass it <code>availability = 'needs_auth' & channel_id = 'channel_id'</code>.
             and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.
           </li>
+          <li>
+            The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the
+            information button, and check the data to craft your filter.
+          </li>
         </ul>
       </Message>
     </div>
@@ -125,6 +136,7 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+const remove_keys = ['in_progress', 'raw']
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -236,6 +248,7 @@ const deleteItem = async (item) => {
 }
 
 const updateItem = async ({ reference, item }) => {
+  item = cleanObject(item, remove_keys)
   if (reference) {
     const index = items.value.findIndex(t => t?.id === reference)
     if (index > -1) {
@@ -254,10 +267,7 @@ const updateItem = async ({ reference, item }) => {
   resetForm(true)
 }
 
-const filterItem = item => {
-  const { raw, ...rest } = item
-  return JSON.stringify(rest, null, 2)
-}
+const filterItem = i => JSON.stringify(cleanObject(i, remove_keys), null, 2)
 
 const editItem = _item => {
   item.value = _item
@@ -286,5 +296,34 @@ const exportItem = item => {
   userData['_version'] = '1.0'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)))
+}
+
+const TestCondition = async (item) => {
+  const url = box.prompt("Enter URL to test condition against:")
+  if (!url) {
+    return
+  }
+
+  item.in_progress = true
+
+  try {
+    const response = await request("/api/conditions/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url, condition: item.id || item.name }),
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      toast.error(`Failed to test condition. ${data.error}`)
+      return
+    }
+
+    toast.success(data?.message || "Condition tested successfully.")
+  } catch (e) {
+    toast.error(`Failed to test condition. ${e.message}`)
+  } finally {
+    item.in_progress = false
+  }
 }
 </script>

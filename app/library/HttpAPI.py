@@ -871,6 +871,74 @@ class HttpAPI(Common):
         await self._notify.emit(Events.CONDITIONS_UPDATE, data=items)
         return web.json_response(data=items, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
+    @route("POST", "api/conditions/test")
+    async def conditions_test(self, request: Request) -> Response:
+        """
+        Test condition against URL.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+
+        """
+        data = await request.json()
+
+        if not isinstance(data, dict):
+            return web.json_response(
+                {"error": "Invalid request body expecting dict."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        url = data.get("url")
+        if not url:
+            return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
+
+        cond = data.get("condition")
+        if not cond:
+            return web.json_response({"error": "condition name is required."}, status=web.HTTPBadRequest.status_code)
+
+        try:
+            opts = {}
+
+            if ytdlp_proxy := self.config.get_ytdlp_args().get("proxy", None):
+                opts["proxy"] = ytdlp_proxy
+
+            preset = data.get("preset", self.config.default_preset)
+            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
+            key = self.cache.hash(url + str(preset))
+            if not self.cache.has(key):
+                data = extract_info(
+                    config=ytdlp_opts,
+                    url=url,
+                    debug=False,
+                    no_archive=True,
+                    follow_redirect=True,
+                    sanitize_info=True,
+                )
+                self.cache.set(key=key, value=data, ttl=600)
+            else:
+                data = self.cache.get(key)
+        except Exception as e:
+            LOG.exception(e)
+            return web.json_response(
+                data={"error": f"Failed to extract video info. '{e!s}'"},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        matched = Conditions.get_instance().single_match(name=cond, info=data)
+        if matched is None:
+            return web.json_response(
+                data={"error": f"Condition '{cond}' doesn't match the data from the URL."},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        return web.json_response(
+            data={"message": f"Condition '{cond}' matched the data from the URL."},
+            status=web.HTTPOk.status_code,
+        )
+
     @route("GET", "api/presets")
     async def presets(self, request: Request) -> Response:
         """

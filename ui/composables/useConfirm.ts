@@ -14,6 +14,10 @@ function alert(msg: string): boolean {
   return window.confirm(msg)
 }
 
+function prompt(msg: string, defaultValue: string = ''): string | null {
+  return window.prompt(msg, defaultValue)
+}
+
 export default function useConfirm() {
-  return { confirm, alert, reduceConfirm }
+  return { confirm, alert, prompt, reduceConfirm }
 }

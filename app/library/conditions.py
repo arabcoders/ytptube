@@ -317,3 +317,26 @@ class Conditions(metaclass=Singleton):
                 continue
 
         return None
+
+    def single_match(self, name: str, info: dict) -> Condition | None:
+        """
+        Check if condition matches the info dict.
+
+        Args:
+            name (str): The condition name to check.
+            info (dict): The info dict to check.
+
+        Returns:
+            Condition|None: The condition if found, None otherwise.
+
+        """
+        if len(self._items) < 1 or not info or not isinstance(info, dict) or len(info) < 1:
+            return None
+
+        item = self.get(name)
+        if not item or not item.filter:
+            return None
+
+        from yt_dlp.utils import match_str
+
+        return item if match_str(item.filter, info) else None
