@@ -101,8 +101,9 @@ div.is-centered {
                   </button>
                 </div>
                 <div class="card-footer-item">
-                  <button class="button is-purple is-fullwidth" @click="runNow(item)">
-                    <span class="icon"><i class="fa-solid fa-microchip" /></span>
+                  <button class="button is-purple is-fullwidth" @click="runNow(item)"
+                    :class="{ 'is-loading': runNowInProgress }">
+                    <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                     <span>Run now</span>
                   </button>
                 </div>
@@ -134,6 +135,7 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+const runNowInProgress = ref(false)
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -217,7 +219,7 @@ const updateTasks = async items => {
 }
 
 const deleteItem = async item => {
-  if (true !== box.confirm(`Are you sure you want to delete (${item.name})?`, true)) {
+  if (true !== box.confirm(`Delete '${item.name}' task?`, true)) {
     return
   }
 
@@ -290,10 +292,12 @@ const tryParse = expression => {
   }
 }
 
-const runNow = item => {
+const runNow = async item => {
   if (true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
     return
   }
+
+  runNowInProgress.value = true
 
   let data = {
     url: item.url,
@@ -313,6 +317,11 @@ const runNow = item => {
   }
 
   socket.emit('add_url', data)
+
+  setTimeout(async () => {
+    await nextTick()
+    runNowInProgress.value = false
+  }, 500)
 }
 
 onUnmounted(() => socket.off('status', statusHandler))
@@ -350,4 +359,5 @@ const exportItem = async item => {
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }
+
 </script>

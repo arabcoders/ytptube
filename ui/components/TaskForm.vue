@@ -111,8 +111,9 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Select the preset to use for this URL. <span class="text-has-danger">If the
-                        <code>-f, --format</code> argument is present in the command line options, the preset and all
-                        it's options will be ignored.</span>
+                        <code>-f, --format</code> <span class="has-text-danger">
+                          argument is present in the command line options, the preset and all
+                          it's options will be ignored.</span></span>
                     </span>
                   </span>
                 </div>
@@ -152,8 +153,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Paths are relative to global download path, defaults to preset download path if set otherwise,
-                      fallback root path if not set.</span>
+                    <span>Current download folder: <code>{{ get_download_folder() }}</code>. All folders are
+                      sub-folders of <code>{{ config.app.download_path }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -170,11 +171,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this output template if non are given with URL. if not set, it will defaults to
-                      <code>{{ config.app.output_template }}</code>.
-                      For more information <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">visit this url</NuxtLink>.
-                    </span>
+                    <span>Current output format: <code>{{ get_output_template() }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -405,4 +402,23 @@ const hasFormatInConfig = computed(() => {
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 
+const get_download_folder = () => {
+  if (form.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.preset)
+    if (preset && preset.folder) {
+      return preset.folder.replace(config.app.download_path, '')
+    }
+  }
+  return '/'
+}
+
+const get_output_template = () => {
+  if (form.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.preset)
+    if (preset && preset.template) {
+      return preset.template
+    }
+  }
+  return config.app.output_template || '%(title)s.%(ext)s'
+}
 </script>
