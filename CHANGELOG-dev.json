@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250604-46b57e06",
-        "date": "2025-06-03T21:35:36+00:00",
+        "tag": "dev-20250604-73161496",
+        "date": "2025-06-03T21:59:53+00:00",
+        "commits": [
+            {
+                "sha": "73161496",
+                "message": "Incorrect message of deleting file is showing even though the option to delete file is disabled.",
+                "author": "arabcoders",
+                "date": "2025-06-03T21:59:53+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250603-cf2fb5fa",
+        "date": "2025-06-03T21:45:25+00:00",
         "commits": [
             {
                 "sha": "46b57e06",
