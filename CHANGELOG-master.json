@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250603-2a60a848",
+        "date": "2025-06-03T00:15:42+00:00",
+        "commits": [
+            {
+                "sha": "8f61c6e8",
+                "message": "minor UI and text update.",
+                "author": "arabcoders",
+                "date": "2025-06-03T00:09:54+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250601-a434e3a6",
         "date": "2025-06-01T16:21:01+00:00",
         "commits": [
