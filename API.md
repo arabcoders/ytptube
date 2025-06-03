@@ -2,7 +2,7 @@
 
 This document describes the available endpoints and their usage. All endpoints return JSON responses (unless otherwise specified) and may require certain parameters (query, body, or path). Some endpoints serve static or streaming content (e.g., `.ts`, `.m3u8`, `.vtt` files).
 
-> **Note**: If Basic Authentication is configured (via `auth_username` and `auth_password` in your configuration), you must include an `Authorization: Basic <base64-encoded-credentials>` header or use `?apikey=<base64-encoded-credentials>` query parameter (fallback) in every request.
+> **Note**: If Basic Authentication is configured (via `auth_username` and `auth_password` in your configuration), you must include an `Authorization: Basic <urlsafe-base64-encoded-credentials>` header or use `?apikey=<urlsafe-base64-encoded-credentials>` query parameter (fallback) in every request.
 
 - All responses use standard HTTP status codes to indicate success or error conditions.
 - Endpoints support an `OPTIONS` request for CORS.

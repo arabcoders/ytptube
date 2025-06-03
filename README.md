@@ -9,29 +9,33 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 # YTPTube Features.
 
 * Multi-downloads support.
-* Random beautiful background. `can be disabled`.
+* Random beautiful background. `can be disabled or source changed`.
 * Can handle live streams.
 * Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
 * Send notification to targets based on selected events. 
-* Support per link `cli options` & `cookies`
+* Support per link `cli options` & `cookies`.
 * Queue multiple URLs separated by comma.
-* Simple file browser. `Disabled by default`
-* A built in video player that can play any video file regardless of the format. **With support for sidecar external subtitles**.
+* Presets system to re-use frequently used yt-dlp options.
+* Simple file browser. `Disabled by default`.
+* A built in video player **with support for sidecar external subtitles**.
 * New `POST /api/history` endpoint that allow one or multiple links to be sent at the same time.
 * New `GET /api/history/add?url=http://..` endpoint that allow to add single item via GET request.
 * Modern frontend UI.
 * SQLite as database backend.
-* Basic Authentication support.
+* Basic authentication support.
 * Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
-* Support for both advanced and basic mode for WebUI.
+* Support basic mode for WebUI for non-technical users, which hides most of the normal features from view.
 * Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
 * Automatic upcoming live stream re-queue.
 * Apply `yt-dlp` options per custom defined conditions.
+* Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 
 # Run using docker command
 
 ```bash
-docker run -d --rm --name ytptube -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw ghcr.io/arabcoders/ytptube:latest
+mkdir -p ./{config,downloads} && docker run -d --rm --user "$UID:${GID-$UID}" --name ytptube \
+-p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
+ghcr.io/arabcoders/ytptube:latest
 ```
 
 # Using compose file
@@ -41,7 +45,7 @@ The following is an example of a `compose.yaml` file that can be used to run YTP
 ```yaml
 services:
   ytptube:
-    user: "1000:1000" # change this to your user id and group id
+    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
     image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
@@ -55,7 +59,7 @@ services:
 ```
 
 ```bash
-$ mkdir {config,downloads} && docker compose -f compose.yaml up -d
+$ mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
@@ -96,7 +100,7 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 # Run behind reverse proxy.
 
-It's advisable to run YTPTube behind a reverse proxy, if authentication and/or HTTPS support are required.
+It's advisable to run YTPTube behind a reverse proxy, if better authentication and/or HTTPS support are required.
 
 ### Nginx http server
 
@@ -129,28 +133,30 @@ example.com {
 # Updating yt-dlp
 
 The engine which powers the actual video downloads in YTPTube is [yt-dlp](https://github.com/yt-dlp/yt-dlp). Since video 
-sites regularly change their layouts, frequent updates of yt-dlp are required to keep up.
+sites regularly updated, frequent updates of yt-dlp are required to keep up.
 
-We have added `YTP_YTDLP_AUTO_UPDATE` environment, which allows you to automatically update yt-dlp to the latest version. 
-To get latest version, It's enabled by default and whenever you start the container, it will check for the latest 
-version of yt-dlp and update it if a new version is available. To disable this feature, set the environment variable
-`YTP_YTDLP_AUTO_UPDATE` to `false`.
+We have added the `YTP_YTDLP_AUTO_UPDATE` environment variable, which is enabled by default. This feature allows the 
+container to automatically update `yt-dlp` to the latest version whenever the container starts. If a new version is 
+available, it will be downloaded and applied automatically. To disable this automatic update, set the 
+`YTP_YTDLP_AUTO_UPDATE` environment variable to `false`.
+
 
 We will no longer release new versions of YTPTube for every new version of yt-dlp.
 
 # Troubleshooting and submitting issues
 
-Before asking a question or submitting an issue for YTPTube, Please remember that YTPTube is only a thin WebUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp). 
-Any issues you might be experiencing with authentication to video websites, postprocessing, permissions, other `yt-dlp options` 
-configurations which seem not to work, or anything else that concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project. 
+Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a thin wrapper for 
+[yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, 
+postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that 
+concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
 
-In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, 
-bypassing the UI, and once that is working, importing the options that worked for you into a new `preset` or `ytdlp.cli` file.
+In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, 
+and once that is working, importing the options that worked for you into a new `preset` or `ytdlp.cli` file.
 
 ## Via HTTP
 
-If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Terminal` button in 
-your navbar and directly use the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else.
+If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Other > Terminal` use
+ the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else.
 
 ## Via CLI 
 
@@ -168,9 +174,9 @@ Once there, you can use the yt-dlp command freely.
 
 The `config/ytdlp.cli`, is a command line options file for `yt-dlp` it will be globally applied to all downloads.
 
-We strongly recommend not use this file for options that aren't **truly global**, everything that can be done via the file
-can also be done via the presets which is dynamic can be altered per download. Example of good global options are to be 
-used for all downloads are:
+We strongly recommend not use this file for options that aren't **truly global**, everything that can be done via the 
+file can also be done via the presets which is dynamic can be altered per download. Example of good global options 
+are to be used for all downloads are:
 
 ```bash
 --continue --windows-filenames --live-from-start
@@ -180,8 +186,8 @@ Everything else can be done via the presets, and it's more flexible and easier t
 
 # Authentication
 
-To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart the container.
-This will prompt the user to enter the username and password before accessing the web interface/API.
+To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart 
+the container. This will prompt the user to enter the username and password before accessing the web interface/API.
 As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
 
 `http://username:password@your_ytptube_url:port`
@@ -196,8 +202,8 @@ It disables everything except the `settings button` and `reload` button.
 
 ### Add form 
 
+* Disable Everything except the `URL` and `Add`.
 * The form will always be visible and un-collapsible.
-* Everything except the `URL` and `Add` button will be disabled and hidden.
 * The preset will be the default preset, which can be specified via `YTP_DEFAULT_PRESET` environment variable.
 * The output template will be the default template which can be specified via `YTP_OUTPUT_TEMPLATE` environment variable.
 * The download path will be the default download path which can be specified via `YTP_DOWNLOAD_PATH` environment variable.
@@ -212,7 +218,7 @@ For simple API documentation, you can refer to the [API documentation](API.md).
 
 # How to autoload yt-dlp plugins?
 
-Loading yt-dlp plugin in YTPTube is is quite simple, we already have everything setup for you. simply, create a folder 
+Loading yt-dlp plugins in YTPTube is quite simple, we already have everything setup for you. simply, create a folder 
 inside the `/config` directory named `yt-dlp` so, the path will be `/config/yt-dlp`. then follow 
 [yt-dlp plugins docs](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#plugins) to know how to install the plugins.
 
@@ -265,8 +271,8 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_AUTH_PASSWORD        | Password for basic authentication                                | `empty string`                     |
 | YTP_CONSOLE_ENABLED      | Whether to enable the console                                    | `false`                            |
 | YTP_REMOVE_FILES         | Remove the actual file when clicking the remove button           | `false`                            |
-| YTP_CONFIG_PATH          | Path to where the queue persistence files will be saved          | `/config`                          |
-| YTP_TEMP_PATH            | Path where intermediary download files will be saved             | `/tmp`                             |
+| YTP_CONFIG_PATH          | Path to where the config files will be stored.                   | `/config`                          |
+| YTP_TEMP_PATH            | Path to where tmp files are stored.                              | `/tmp`                             |
 | YTP_TEMP_KEEP            | Whether to keep the Individual video temp directory or remove it | `false`                            |
 | YTP_KEEP_ARCHIVE         | Keep history of downloaded videos                                | `true`                             |
 | YTP_YTDL_DEBUG           | Whether to turn debug logging for the internal `yt-dlp` package  | `false`                            |

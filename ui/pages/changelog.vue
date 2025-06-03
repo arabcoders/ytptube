@@ -26,7 +26,7 @@
           <li v-for="commit in log.commits" :key="commit.sha">
             <strong>{{ ucFirst(commit.message).replace(/\.$/, "") }}.</strong> -
             <small>
-              <NuxtLink :to="`https://github.com/arabcoders/watchstate/commit/${commit.sha}`" target="_blank">
+              <NuxtLink :to="`https://github.com/arabcoders/ytptube/commit/${commit.sha}`" target="_blank">
                 <span class="has-tooltip" v-tooltip="`SHA: ${commit.sha} - Date: ${commit.date}`">
                   {{ moment(commit.date).fromNow() }}
                 </span>
@@ -42,13 +42,12 @@
 <script setup>
 import moment from 'moment'
 
-useHead({ title: 'Change log' })
+useHead({ title: 'CHANGELOG' })
 
 const REPO_URL = "https://arabcoders.github.io/ytptube/CHANGELOG-{branch}.json?version={version}";
 const logs = ref([]);
 const config = useConfigStore()
 const api_version = ref('')
-const toast = useToast()
 
 const branch = computed(() => {
   const branch = String(api_version.value).split('-')[0] ?? 'master';

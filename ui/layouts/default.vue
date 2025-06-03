@@ -85,6 +85,7 @@
               <span>Reload</span>
             </button>
           </div>
+
           <div class="navbar-item is-hidden-mobile">
             <button class="button is-dark has-tooltip-bottom" v-tooltip.bottom="'WebUI Settings'"
               @click="show_settings = !show_settings">
@@ -97,6 +98,7 @@
               <span>WebUI Settings</span>
             </button>
           </div>
+
         </div>
       </div>
     </nav>
