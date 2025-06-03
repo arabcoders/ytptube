@@ -1007,9 +1007,6 @@ class HttpAPI(Common):
             if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
                 item["id"] = str(uuid.uuid4())
 
-            if not item.get("timer", None) or str(item.get("timer")).strip() == "":
-                item["timer"] = f"{random.randint(1,59)} */1 * * *"  # noqa: S311
-
             if not item.get("template", None):
                 item["template"] = ""
 

@@ -126,16 +126,15 @@
                     CRON expression timer.
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="timer" placeholder="leave empty to run once every hour."
-                      v-model="form.timer" :disabled="addInProgress">
+                    <input type="text" class="input" id="timer" v-model="form.timer" :disabled="addInProgress"
+                    placeholder="0 12 * * 5">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The CRON timer expression to use for this task. If not set, the task will run once an hour in a
-                      random
-                      minute. For more information on CRON expressions, see <NuxtLink to="https://crontab.guru/"
-                        target="_blank">crontab.guru</NuxtLink>.
+                      The CRON timer expression to use for this task. If not set, the task will be disabled. For more
+                      information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
+                        crontab.guru</NuxtLink>.
                     </span>
                   </span>
                 </div>

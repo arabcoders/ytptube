@@ -476,6 +476,22 @@ const toggleClass = (target, className) => {
   target.classList.add(className)
 }
 
+const cleanObject = (item, fields = []) => {
+  if (!item || typeof item !== 'object' || fields.length < 1) {
+    return item
+  }
+
+  const cleaned = {}
+
+  for (const key of Object.keys(item)) {
+    if (false === fields.includes(key)) {
+      cleaned[key] = item[key]
+    }
+  }
+
+  return cleaned
+}
+
 export {
   ag_set,
   ag,
@@ -502,4 +518,5 @@ export {
   base64UrlDecode,
   has_data,
   toggleClass,
+  cleanObject,
 }

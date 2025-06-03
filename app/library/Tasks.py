@@ -108,7 +108,7 @@ class Tasks(metaclass=Singleton):
         self.load()
         self._notify.subscribe(
             Events.TASKS_ADD,
-            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
+            lambda data, _, **kwargs: self.save(**data.data),  # noqa: ARG005
             f"{__class__.__name__}.add",
         )
 
@@ -145,6 +145,7 @@ class Tasks(metaclass=Singleton):
         for i, task in enumerate(tasks):
             try:
                 task, task_status = clean_item(task, keys=("cookies", "config"))
+                self.validate(task)
                 task = Task(**task)
                 if task_status:
                     need_save = True
@@ -152,9 +153,13 @@ class Tasks(metaclass=Singleton):
                 LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
                 continue
 
+            self._tasks.append(task)
+
+            if not task.timer:
+                continue
+
             try:
                 self._scheduler.add(timer=task.timer, func=self._runner, args=(task,), id=task.id)
-                self._tasks.append(task)
 
                 try:
                     from cronsim import CronSim
@@ -221,13 +226,18 @@ class Tasks(metaclass=Singleton):
             msg = "No name found."
             raise ValueError(msg)
 
-        if not task.get("timer"):
-            msg = "No timer found."
-            raise ValueError(msg)
-
         if not task.get("url"):
             msg = "No URL found."
             raise ValueError(msg)
+
+        if task.get("timer"):
+            try:
+                from cronsim import CronSim
+
+                CronSim(task.get("timer"), datetime.now(UTC))
+            except Exception as e:
+                msg = f"Invalid timer format. '{e!s}'."
+                raise ValueError(msg) from e
 
         if task.get("cli"):
             try:

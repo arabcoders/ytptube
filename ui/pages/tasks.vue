@@ -67,7 +67,8 @@ div.is-centered {
                 <div class="content">
                   <p class="is-text-overflow">
                     <span class="icon"><i class="fa-solid fa-clock" /></span>
-                    <span>{{ tryParse(item.timer) }} - {{ item.timer }}</span>
+                    <span v-if="item.timer">{{ tryParse(item.timer) }} - {{ item.timer }}</span>
+                    <span v-else>No timer is set</span>
                   </p>
                   <p class="is-text-overflow" v-if="item.folder">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -102,7 +103,7 @@ div.is-centered {
                 </div>
                 <div class="card-footer-item">
                   <button class="button is-purple is-fullwidth" @click="runNow(item)"
-                    :class="{ 'is-loading': runNowInProgress }">
+                    :class="{ 'is-loading': item?.in_progress }">
                     <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                     <span>Run now</span>
                   </button>
@@ -135,7 +136,6 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
-const runNowInProgress = ref(false)
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -241,6 +241,7 @@ const deleteItem = async item => {
 }
 
 const updateItem = async ({ reference, task }) => {
+  task = cleanObject(task, ['in_progress'])
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)
@@ -297,7 +298,7 @@ const runNow = async item => {
     return
   }
 
-  runNowInProgress.value = true
+  item.in_progress = true
 
   let data = {
     url: item.url,
@@ -320,7 +321,7 @@ const runNow = async item => {
 
   setTimeout(async () => {
     await nextTick()
-    runNowInProgress.value = false
+    item.in_progress = false
   }, 500)
 }
 
@@ -359,5 +360,6 @@ const exportItem = async item => {
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }
+
 
 </script>
