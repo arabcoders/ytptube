@@ -62,6 +62,8 @@ const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
+const box = useConfirm()
+
 const get_info = ref('')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
@@ -91,7 +93,7 @@ watch(() => stateStore.queue, () => {
 }, { deep: true })
 
 const pauseDownload = () => {
-  if (false === confirm('Are you sure you want to pause all non-active downloads?')) {
+  if (false === box.confirm('Are you sure you want to pause all non-active downloads?')) {
     return false
   }
 

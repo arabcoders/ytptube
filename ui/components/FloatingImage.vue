@@ -43,7 +43,7 @@ const props = defineProps({
 });
 
 const cache = useSessionCache()
-const toast = useToast()
+const toast = useNotification()
 const url = ref()
 const error = ref(false)
 const isPreloading = ref(false)

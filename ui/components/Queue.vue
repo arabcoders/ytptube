@@ -235,12 +235,13 @@ import { ucFirst } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo'])
-const config = useConfigStore();
-const stateStore = useStateStore();
-const socket = useSocketStore();
+const config = useConfigStore()
+const stateStore = useStateStore()
+const socket = useSocketStore()
+const box = useConfirm()
 
-const selectedElms = ref([]);
-const masterSelectAll = ref(false);
+const selectedElms = ref([])
+const masterSelectAll = ref(false)
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'cards')
@@ -252,11 +253,11 @@ const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {
-    const element = stateStore.queue[key];
+    const element = stateStore.queue[key]
     if (value) {
-      selectedElms.value.push(element._id);
+      selectedElms.value.push(element._id)
     } else {
-      selectedElms.value = [];
+      selectedElms.value = []
     }
   }
 })
@@ -266,35 +267,35 @@ const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
 
 const setIcon = item => {
   if ('downloading' === item.status && item.is_live) {
-    return 'fa-globe fa-spin';
+    return 'fa-globe fa-spin'
   }
 
   if ('downloading' === item.status) {
-    return 'fa-download';
+    return 'fa-download'
   }
 
   if ('postprocessing' === item.status) {
-    return 'fa-cog fa-spin';
+    return 'fa-cog fa-spin'
   }
 
   if (null === item.status && true === config.paused) {
-    return 'fa-pause-circle';
+    return 'fa-pause-circle'
   }
 
   if (!item.status) {
-    return 'fa-question';
+    return 'fa-question'
   }
 
-  return 'fa-spinner fa-spin';
+  return 'fa-spinner fa-spin'
 }
 
 const setStatus = item => {
   if (null === item.status && true === config.paused) {
-    return 'Paused';
+    return 'Paused'
   }
 
   if ('downloading' === item.status && item.is_live) {
-    return 'Live Streaming';
+    return 'Live Streaming'
   }
 
   if ('preparing' === item.status) {
@@ -302,7 +303,7 @@ const setStatus = item => {
   }
 
   if (!item.status) {
-    return 'Unknown..';
+    return 'Unknown..'
   }
 
   return ucFirst(item.status)
@@ -324,84 +325,82 @@ const setIconColor = item => {
   return ''
 }
 
-
-
 const ETAPipe = value => {
   if (value === null || 0 === value) {
-    return 'Live';
+    return 'Live'
   }
   if (value < 60) {
-    return `${Math.round(value)}s`;
+    return `${Math.round(value)}s`
   }
   if (value < 3600) {
-    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`;
+    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`
   }
   const hours = Math.floor(value / 3600)
   const minutes = value % 3600
-  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`;
+  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`
 }
 
 const speedPipe = value => {
   if (null === value || 0 === value) {
-    return '0KB/s';
+    return '0KB/s'
   }
 
-  const k = 1024;
-  const dm = 2;
-  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s'];
-  const i = Math.floor(Math.log(value) / Math.log(k));
-  return parseFloat((value / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  const k = 1024
+  const dm = 2
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s']
+  const i = Math.floor(Math.log(value) / Math.log(k))
+  return parseFloat((value / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
 const percentPipe = value => {
   if (value === null || 0 === value) {
-    return '00.00';
+    return '00.00'
   }
-  return parseFloat(value).toFixed(2);
+  return parseFloat(value).toFixed(2)
 }
 
 const updateProgress = (item) => {
-  let string = '';
+  let string = ''
 
   if (null === item.status && true === config.paused) {
-    return 'Paused';
+    return 'Paused'
   }
 
   if ('postprocessing' === item.status) {
-    return 'Post-processors are running.';
+    return 'Post-processors are running.'
   }
 
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
+    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
   }
 
   if (null != item.status) {
-    string += item.percent && !item.is_live ? percentPipe(item.percent) + '%' : 'Live';
+    string += item.percent && !item.is_live ? percentPipe(item.percent) + '%' : 'Live'
   }
 
-  string += item.speed ? ' - ' + speedPipe(item.speed) : ' - Waiting..';
+  string += item.speed ? ' - ' + speedPipe(item.speed) : ' - Waiting..'
 
   if (null != item.status && item.eta) {
-    string += ' - ' + ETAPipe(item.eta);
+    string += ' - ' + ETAPipe(item.eta)
   }
 
   return string;
 }
 
 const confirmCancel = item => {
-  if (true !== confirm(`Are you sure you want to cancel (${item.title})?`)) {
-    return false;
+  if (true !== box.confirm(`Are you sure you want to cancel (${item.title})?`)) {
+    return false
   }
-  cancelItems(item._id);
-  return true;
+  cancelItems(item._id)
+  return true
 }
 
 const cancelSelected = () => {
-  if (true !== confirm('Are you sure you want to cancel selected items?')) {
+  if (true !== box.confirm('Are you sure you want to cancel selected items?')) {
     return false;
   }
-  cancelItems(selectedElms.value);
-  selectedElms.value = [];
+  cancelItems(selectedElms.value)
+  selectedElms.value = []
   return true;
 }
 
@@ -410,20 +409,21 @@ const cancelItems = item => {
 
   if (typeof item === 'object') {
     for (const key in item) {
-      items.push(item[key]);
+      items.push(item[key])
     }
   } else {
-    items.push(item);
+    items.push(item)
   }
 
   if (items.length < 0) {
-    return;
+    return
   }
 
-  items.forEach(id => socket.emit('item_cancel', id));
+  items.forEach(id => socket.emit('item_cancel', id))
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+
 watch(embed_url, v => {
   if (!bg_enable.value) {
     return

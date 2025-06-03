@@ -1,6 +1,4 @@
-import { useStorage } from '@vueuse/core'
-
-const toast = useToast()
+const toast = useNotification()
 const AG_SEPARATOR = '.'
 
 /**
@@ -221,7 +219,12 @@ const encodePath = item => {
   }
 
   item = item.replace(/#/g, '%23')
-  return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/')
+  try {
+    return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/')
+  } catch (e) {
+    console.error('Error encoding path:', e, item)
+    return item
+  }
 }
 
 /**
@@ -473,6 +476,22 @@ const toggleClass = (target, className) => {
   target.classList.add(className)
 }
 
+const cleanObject = (item, fields = []) => {
+  if (!item || typeof item !== 'object' || fields.length < 1) {
+    return item
+  }
+
+  const cleaned = {}
+
+  for (const key of Object.keys(item)) {
+    if (false === fields.includes(key)) {
+      cleaned[key] = item[key]
+    }
+  }
+
+  return cleaned
+}
+
 export {
   ag_set,
   ag,
@@ -499,4 +518,5 @@ export {
   base64UrlDecode,
   has_data,
   toggleClass,
+  cleanObject,
 }

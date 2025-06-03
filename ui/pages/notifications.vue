@@ -140,9 +140,10 @@ div.is-centered {
 <script setup>
 import { request } from '~/utils/index'
 
-const toast = useToast()
+const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const box = useConfirm()
 
 const allowedEvents = ref([])
 const notifications = ref([])
@@ -234,7 +235,7 @@ const updateData = async notifications => {
 }
 
 const deleteItem = async item => {
-  if (true !== confirm(`Are you sure you want to delete notification target (${item.name})?`)) {
+  if (true !== box.confirm(`Are you sure you want to delete notification target (${item.name})?`)) {
     return
   }
 
@@ -294,7 +295,7 @@ const editItem = item => {
 const join_events = events => (!events || events.length < 1) ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
 
 const sendTest = async () => {
-  if (true !== confirm('Are you sure you want to send a test notification?')) {
+  if (true !== box.confirm('Are you sure you want to send a test notification?')) {
     return
   }
 

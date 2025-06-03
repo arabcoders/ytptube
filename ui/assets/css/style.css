@@ -325,7 +325,10 @@ hr {
   white-space: nowrap;
 }
 
-
 .is-max-width {
   max-width: calc(100% - 10px);
+}
+
+.is-bold {
+  font-weight: bold;
 }

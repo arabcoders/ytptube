@@ -66,7 +66,7 @@
               </div>
               <div class="card-content" v-if="cond?.raw">
                 <div class="content">
-                  <pre><code>{{ filterItem(cond) }}</code></pre>
+                  <pre><code>{{ JSON.stringify(cleanObject(cond, remove_keys), null, 2) }}</code></pre>
                 </div>
               </div>
               <div class="card-footer mt-auto">
@@ -104,6 +104,10 @@
             filter i am able to bypass it <code>availability = 'needs_auth' & channel_id = 'channel_id'</code>.
             and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.
           </li>
+          <li>
+            The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the
+            information button, and check the data to craft your filter.
+          </li>
         </ul>
       </Message>
     </div>
@@ -113,9 +117,10 @@
 <script setup>
 import { request } from '~/utils/index'
 
-const toast = useToast()
+const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const box = useConfirm()
 
 const items = ref([])
 const item = ref({})
@@ -124,6 +129,7 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+const remove_keys = ['in_progress', 'raw']
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -213,7 +219,7 @@ const updateItems = async items => {
 }
 
 const deleteItem = async (item) => {
-  if (true !== confirm(`Delete '${item.name}'?`)) {
+  if (true !== box.confirm(`Delete '${item.name}'?`, true)) {
     return
   }
 
@@ -235,6 +241,7 @@ const deleteItem = async (item) => {
 }
 
 const updateItem = async ({ reference, item }) => {
+  item = cleanObject(item, remove_keys)
   if (reference) {
     const index = items.value.findIndex(t => t?.id === reference)
     if (index > -1) {
@@ -251,11 +258,6 @@ const updateItem = async ({ reference, item }) => {
 
   toast.success(`Item ${reference ? "updated" : "added"}.`)
   resetForm(true)
-}
-
-const filterItem = item => {
-  const { raw, ...rest } = item
-  return JSON.stringify(rest, null, 2)
 }
 
 const editItem = _item => {

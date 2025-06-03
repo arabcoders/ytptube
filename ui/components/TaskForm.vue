@@ -111,8 +111,9 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Select the preset to use for this URL. <span class="text-has-danger">If the
-                        <code>-f, --format</code> argument is present in the command line options, the preset and all
-                        it's options will be ignored.</span>
+                        <code>-f, --format</code> <span class="has-text-danger">
+                          argument is present in the command line options, the preset and all
+                          it's options will be ignored.</span></span>
                     </span>
                   </span>
                 </div>
@@ -125,16 +126,15 @@
                     CRON expression timer.
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="timer" placeholder="leave empty to run once every hour."
-                      v-model="form.timer" :disabled="addInProgress">
+                    <input type="text" class="input" id="timer" v-model="form.timer" :disabled="addInProgress"
+                    placeholder="0 12 * * 5">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The CRON timer expression to use for this task. If not set, the task will run once an hour in a
-                      random
-                      minute. For more information on CRON expressions, see <NuxtLink to="https://crontab.guru/"
-                        target="_blank">crontab.guru</NuxtLink>.
+                      The CRON timer expression to use for this task. If not set, the task will be disabled. For more
+                      information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
+                        crontab.guru</NuxtLink>.
                     </span>
                   </span>
                 </div>
@@ -152,8 +152,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Paths are relative to global download path, defaults to preset download path if set otherwise,
-                      fallback root path if not set.</span>
+                    <span>Current download folder: <code>{{ get_download_folder() }}</code>. All folders are
+                      sub-folders of <code>{{ config.app.download_path }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -170,11 +170,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this output template if non are given with URL. if not set, it will defaults to
-                      <code>{{ config.app.output_template }}</code>.
-                      For more information <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">visit this url</NuxtLink>.
-                    </span>
+                    <span>Current output format: <code>{{ get_output_template() }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -232,11 +228,12 @@
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 
-const emitter = defineEmits(['cancel', 'submit']);
-const toast = useToast();
-const config = useConfigStore();
-const showImport = useStorage('showImport', false);
-const import_string = ref('');
+const emitter = defineEmits(['cancel', 'submit'])
+const toast = useNotification()
+const config = useConfigStore()
+const showImport = useStorage('showImport', false)
+const import_string = ref('')
+const box = useConfirm()
 
 const props = defineProps({
   reference: {
@@ -255,49 +252,49 @@ const props = defineProps({
   },
 })
 
-const form = reactive(props.task);
+const form = reactive(props.task)
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
-    form.preset = toRaw(config.app.default_preset);
+    form.preset = toRaw(config.app.default_preset)
   }
 })
 
 const checkInfo = async () => {
-  const required = ['name', 'url'];
+  const required = ['name', 'url']
   for (const key of required) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
-      return;
+      toast.error(`The ${key} field is required.`)
+      return
     }
   }
 
   if (form.timer) {
     try {
-      CronExpressionParser.parse(form.timer);
+      CronExpressionParser.parse(form.timer)
     } catch (e) {
       console.error(e)
-      toast.error(`Invalid CRON expression. ${e.message}`);
-      return;
+      toast.error(`Invalid CRON expression. ${e.message}`)
+      return
     }
   }
 
   try {
-    new URL(form.url);
+    new URL(form.url)
   } catch (e) {
-    toast.error('Invalid URL');
-    return;
+    toast.error('Invalid URL')
+    return
   }
 
   if (form?.cli && '' !== form.cli) {
-    const options = await convertOptions(form.cli);
+    const options = await convertOptions(form.cli)
     if (null === options) {
       return
     }
     form.cli = form.cli.trim(" ")
   }
 
-  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) });
+  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) })
 }
 
 const importItem = async () => {
@@ -327,7 +324,7 @@ const importItem = async () => {
     }
 
     if (form.url || form.timer) {
-      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+      if (false === box.confirm('This will overwrite the current form fields. Are you sure?', true)) {
         return
       }
     }
@@ -391,7 +388,7 @@ const convertOptions = async args => {
     toast.error(e.message)
   }
 
-  return null;
+  return null
 }
 
 const hasFormatInConfig = computed(() => {
@@ -404,4 +401,23 @@ const hasFormatInConfig = computed(() => {
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 
+const get_download_folder = () => {
+  if (form.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.preset)
+    if (preset && preset.folder) {
+      return preset.folder.replace(config.app.download_path, '')
+    }
+  }
+  return '/'
+}
+
+const get_output_template = () => {
+  if (form.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.preset)
+    if (preset && preset.template) {
+      return preset.template
+    }
+  }
+  return config.app.output_template || '%(title)s.%(ext)s'
+}
 </script>

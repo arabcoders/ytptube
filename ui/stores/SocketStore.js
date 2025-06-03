@@ -5,7 +5,7 @@ export const useSocketStore = defineStore('socket', () => {
   const runtimeConfig = useRuntimeConfig()
   const config = useConfigStore()
   const stateStore = useStateStore()
-  const toast = useToast()
+  const toast = useNotification()
 
   const socket = ref(null);
   const isConnected = ref(false);

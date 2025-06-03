@@ -268,7 +268,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 const emitter = defineEmits(['cancel', 'submit']);
-const toast = useToast();
+const toast = useNotification();
 const props = defineProps({
   reference: {
     type: String,
@@ -295,6 +295,7 @@ const requestMethods = ['POST', 'PUT'];
 const requestType = ['json', 'form'];
 const showImport = useStorage('showImport', false);
 const import_string = ref('');
+const box = useConfirm()
 
 const checkInfo = async () => {
   const required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
@@ -331,7 +332,6 @@ const checkInfo = async () => {
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) });
 }
 
-
 const importItem = async () => {
   let val = import_string.value.trim()
   if (!val) {
@@ -359,7 +359,7 @@ const importItem = async () => {
     }
 
     if (form.target) {
-      if (false === confirm('This will overwrite the current form fields. Are you sure?')) {
+      if (false === box.confirm('This will overwrite the current form fields. Are you sure?', true)) {
         return
       }
     }
