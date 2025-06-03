@@ -82,13 +82,6 @@
                     <span>Delete</span>
                   </button>
                 </div>
-                <div class="card-footer-item">
-                  <button class="button is-purple is-fullwidth" @click="TestCondition(cond)"
-                    :class="{ 'is-loading': cond?.in_progress }">
-                    <span class="icon"><i class="fa-solid fa-play" /></span>
-                    <span>Test</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -267,8 +260,6 @@ const updateItem = async ({ reference, item }) => {
   resetForm(true)
 }
 
-const filterItem = i => JSON.stringify(cleanObject(i, remove_keys), null, 2)
-
 const editItem = _item => {
   item.value = _item
   itemRef.value = _item.id
@@ -296,34 +287,5 @@ const exportItem = item => {
   userData['_version'] = '1.0'
 
   return copyText(base64UrlEncode(JSON.stringify(userData)))
-}
-
-const TestCondition = async (item) => {
-  const url = box.prompt("Enter URL to test condition against:")
-  if (!url) {
-    return
-  }
-
-  item.in_progress = true
-
-  try {
-    const response = await request("/api/conditions/test", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: url, condition: item.id || item.name }),
-    })
-
-    const data = await response.json()
-    if (!response.ok) {
-      toast.error(`Failed to test condition. ${data.error}`)
-      return
-    }
-
-    toast.success(data?.message || "Condition tested successfully.")
-  } catch (e) {
-    toast.error(`Failed to test condition. ${e.message}`)
-  } finally {
-    item.in_progress = false
-  }
 }
 </script>

@@ -70,7 +70,7 @@
                 <div class="field">
                   <label class="label is-inline" for="filter">
                     <span class="icon"><i class="fa-solid fa-filter" /></span>
-                    Filter
+                    Condition Filter
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
@@ -78,7 +78,12 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The yt-dlp <code>[--match-filters]</code> filter logic.</span>
+                    <span>
+                      The yt-dlp <code>[--match-filters]</code> filter logic.
+                      <NuxtLink @click="test_data.show = true" :disabled="addInProgress || !form.filter" class="is-bold">
+                        Test filter logic
+                      </NuxtLink>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -108,29 +113,102 @@
 
           <div class="card-footer mt-auto">
             <div class="card-footer-item">
-              <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                :class="{ 'is-loading': addInProgress }" form="addForm">
-                <span class="icon"><i class="fa-solid fa-save" /></span>
-                <span>Save</span>
-              </button>
-            </div>
-            <div class="card-footer-item">
-              <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
-                type="button">
-                <span class="icon"><i class="fa-solid fa-times" /></span>
-                <span>Cancel</span>
-              </button>
+              <div class="card-footer-item">
+                <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
+                  :class="{ 'is-loading': addInProgress }" form="addForm">
+                  <span class="icon"><i class="fa-solid fa-save" /></span>
+                  <span>Save</span>
+                </button>
+              </div>
+              <div class="card-footer-item">
+                <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
+                  type="button">
+                  <span class="icon"><i class="fa-solid fa-times" /></span>
+                  <span>Cancel</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </form>
+    </div>
+
+    <div v-if="test_data.show" class="column is-12">
+      <Modal @close="test_data.show = false" title="Test condition">
+        <form autocomplete="off" id="testCondition" @submit.prevent="run_test()">
+          <div class="card">
+            <div class="card-content">
+              <div class="field">
+                <label class="label is-inline" for="url">
+                  <span class="icon"><i class="fa-solid fa-link" /></span>
+                  URL
+                </label>
+                <div class="field-body">
+                  <div class="field is-grouped">
+                    <div class="control is-expanded">
+                      <input type="url" class="input " id="url" v-model="test_data.url"
+                        :disabled="test_data.in_progress" placeholder="https://..." required>
+                    </div>
+                    <div class="control">
+                      <button class="button is-primary" type="submit" :disabled="test_data.in_progress"
+                        :class="{ 'is-loading': test_data.in_progress }">
+                        <span class="icon"><i class="fa-solid fa-play" /></span>
+                        <span>Test</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <span class="help">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>The url to test the filter against.</span>
+                </span>
+              </div>
+
+              <div class="field">
+                <label class="label is-inline" for="filter">
+                  <span class="icon"><i class="fa-solid fa-filter" /></span>
+                  Condition Filter
+                </label>
+                <div class="control">
+                  <input type="text" class="input" id="filter" v-model="form.filter" :disabled="test_data.in_progress"
+                    placeholder="availability = 'needs_auth' & channel_id = 'channel_id'" required>
+                </div>
+                <span class="help">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>The yt-dlp <code>[--match-filters]</code> filter logic.</span><br>
+                </span>
+              </div>
+
+              <div class="field">
+                <span class="is-bold" :class="{
+                  'has-text-success': true === test_data?.data?.status,
+                  'has-text-danger': false === test_data?.data?.status,
+                }">
+                  <span class="icon"><i class="fa-solid" :class="{
+                    'fa-check': true === test_data.data.status,
+                    'fa-xmark': false === test_data.data.status,
+                    'fa-question': null === (test_data.data.status || null),
+                  }" /></span>
+                  Filter Status: {{ test_data?.data?.status === null ? 'Not tested' : test_data?.data?.status ?
+                    'Matched' : 'Not matched' }}
+                </span>
+              </div>
+
+              <div class="field">
+                <pre style="height:60vh;"><code>{{ show_data() }}</code></pre>
+              </div>
+
+            </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   </main>
 </template>
 
 <script setup>
 import { useStorage } from '@vueuse/core'
-const emitter = defineEmits(['cancel', 'submit']);
+const emitter = defineEmits(['cancel', 'submit'])
 
 const props = defineProps({
   reference: {
@@ -149,31 +227,72 @@ const props = defineProps({
   },
 })
 
+const test_data = ref({ show: false, url: '', data: { status: null, data: {} }, in_progress: false })
+
 const toast = useNotification()
 const box = useConfirm()
 const form = reactive(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
-const showImport = useStorage('showImport', false);
+const showImport = useStorage('showImport', false)
+
+const run_test = async () => {
+  if (!test_data.value.url) {
+    toast.error('The URL is required for testing.', { force: true })
+    return
+  }
+
+  try {
+    new URL(test_data.value.url)
+  } catch (e) {
+    toast.error('The URL is invalid.', { force: true })
+    return
+  }
+
+  test_data.value.in_progress = true
+  test_data.value.data.status = null
+
+  try {
+    const response = await request('/api/conditions/test', {
+      method: 'POST',
+      body: JSON.stringify({
+        url: test_data.value.url,
+        condition: form.filter,
+      }),
+    })
+
+    const json = await response.json()
+    if (!response.ok) {
+      toast.error(json.message || json.error || 'Unknown error', { force: true })
+      return
+    }
+
+    test_data.value.data = json
+  } catch (e) {
+    toast.error(`Failed to test condition. ${error.message}`)
+  } finally {
+    test_data.value.in_progress = false
+  }
+}
 
 const checkInfo = async () => {
-  const required = ['name', 'filter', 'cli'];
+  const required = ['name', 'filter', 'cli']
 
   for (const key of required) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
+      toast.error(`The ${key} field is required.`)
       return
     }
   }
 
   if (form?.cli && '' !== form.cli) {
-    const options = await convertOptions(form.cli);
+    const options = await convertOptions(form.cli)
     if (null === options) {
       return
     }
     form.cli = form.cli.trim()
   }
 
-  let copy = JSON.parse(JSON.stringify(form));
+  let copy = JSON.parse(JSON.stringify(form))
 
   for (const key in copy) {
     if (typeof copy[key] !== 'string') {
@@ -182,7 +301,7 @@ const checkInfo = async () => {
     copy[key] = copy[key].trim()
   }
 
-  emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) });
+  emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) })
 }
 
 const convertOptions = async args => {
@@ -192,7 +311,7 @@ const convertOptions = async args => {
   } catch (e) {
     toast.error(e.message)
   }
-  return null;
+  return null
 }
 
 const importItem = async () => {
@@ -242,5 +361,13 @@ const importItem = async () => {
     console.error(e)
     toast.error(`Failed to parse import string. ${e.message}`)
   }
+}
+
+const show_data = () => {
+  if (!test_data.value.data?.data || !Object.keys(test_data.value.data?.data).length) {
+    return 'No data to show.'
+  }
+
+  return JSON.stringify(test_data.value.data.data, null, 2)
 }
 </script>

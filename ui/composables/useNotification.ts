@@ -3,14 +3,16 @@ import { useToast } from "vue-toastification"
 
 type notificationType = 'info' | 'success' | 'warning' | 'error'
 type notificationOptions = {
-  timeout?: number
+  timeout?: number,
+  force?: boolean,
 }
 
 const allowToast = useStorage<boolean>('allow_toasts', true)
 const toast = useToast()
 
 function notify(type: notificationType, message: string, opts?: notificationOptions): void {
-  if (!allowToast.value) {
+  let force = opts?.force || false;
+  if (false === allowToast.value && false === force) {
     return;
   }
 
