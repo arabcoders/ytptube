@@ -221,7 +221,12 @@ const encodePath = item => {
   }
 
   item = item.replace(/#/g, '%23')
-  return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/')
+  try {
+    return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/')
+  } catch (e) {
+    console.error('Error encoding path:', e, item)
+    return item
+  }
 }
 
 /**
