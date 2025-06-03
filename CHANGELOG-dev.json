@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250603-55b2e3e7",
-        "date": "2025-06-03T17:05:13+00:00",
+        "tag": "dev-20250603-38bf6af1",
+        "date": "2025-06-03T19:15:06+00:00",
         "commits": [
+            {
+                "sha": "38bf6af1",
+                "message": "Improved the testing logic for conditions filter.",
+                "author": "arabcoders",
+                "date": "2025-06-03T19:15:06+00:00"
+            },
             {
                 "sha": "55b2e3e7",
                 "message": "Add test button for conditions",
