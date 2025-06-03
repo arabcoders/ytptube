@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250601-d6aa7116",
-        "date": "2025-06-01T15:22:19+00:00",
+        "tag": "dev-20250603-8f61c6e8",
+        "date": "2025-06-03T00:09:54+00:00",
+        "commits": [
+            {
+                "sha": "8f61c6e8",
+                "message": "minor UI and text update.",
+                "author": "arabcoders",
+                "date": "2025-06-03T00:09:54+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250601-a434e3a6",
+        "date": "2025-06-01T16:21:01+00:00",
         "commits": [
             {
                 "sha": "d6aa7116",
