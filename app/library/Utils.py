@@ -453,7 +453,7 @@ def arg_converter(
             if isinstance(matchFilter, set):
                 diff["match_filter"] = {"filters": list(matchFilter)}
 
-        return json.loads(json.dumps(diff, cls=Encoder))
+        return json.loads(json.dumps(diff, cls=Encoder, default=str))
 
     return diff
 
