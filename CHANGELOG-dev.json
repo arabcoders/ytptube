@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250603-0156052a",
-        "date": "2025-06-03T15:03:23+00:00",
+        "tag": "dev-20250603-23c74d84",
+        "date": "2025-06-03T15:32:13+00:00",
         "commits": [
+            {
+                "sha": "23c74d84",
+                "message": "improve task page information display.",
+                "author": "arabcoders",
+                "date": "2025-06-03T15:32:13+00:00"
+            },
             {
                 "sha": "0156052a",
                 "message": "Reduce confirmation box usage with optional WebUI flag.",
