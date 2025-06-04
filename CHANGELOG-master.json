@@ -1,5 +1,23 @@
 [
     {
+        "tag": "master-20250604-4a26dc1a",
+        "date": "2025-06-04T19:42:10+00:00",
+        "commits": [
+            {
+                "sha": "ca106405",
+                "message": "Minor improvements to notification dropdown",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:38:38+00:00"
+            },
+            {
+                "sha": "e2e66195",
+                "message": "fixed bug in default URL separator selector.",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:33:05+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250604-3bbb1509",
         "date": "2025-06-04T19:23:56+00:00",
         "commits": [
