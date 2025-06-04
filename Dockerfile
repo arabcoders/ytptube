@@ -1,8 +1,9 @@
+# syntax=docker/dockerfile:1.4
 FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
-RUN if [ ! -f "/app/exported/index.html" ]; then pnpm install --production --prefer-offline --frozen-lockfile && pnpm run generate; else echo "Skipping UI build, already built."; fi
+RUN if [ ! -f "/app/exported/index.html" ]; then npm install --production --prefer-offline --frozen-lockfile && npm run generate; else echo "Skipping UI build, already built."; fi
 
 FROM python:3.13-alpine AS python_builder
 
@@ -10,6 +11,8 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONFAULTHANDLER=1
+ENV PIP_NO_CACHE_DIR=off
+ENV PIP_CACHE_DIR=/root/.cache/pip
 
 # Use sed to strip carriage-return characters from the entrypoint script (in case building on Windows)
 # Install dependencies
@@ -19,7 +22,7 @@ WORKDIR /app
 
 ARG PIPENV_FLAGS="--deploy"
 COPY ./Pipfile* .
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
+RUN --mount=type=cache,target=/root/.cache/pip PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
 
 FROM python:3.13-alpine
 
