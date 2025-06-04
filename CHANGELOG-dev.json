@@ -1,8 +1,14 @@
 [
     {
-        "tag": "dev-20250604-ca106405",
-        "date": "2025-06-04T19:38:38+00:00",
+        "tag": "dev-20250604-18dea307",
+        "date": "2025-06-04T19:48:45+00:00",
         "commits": [
+            {
+                "sha": "18dea307",
+                "message": "Make sure to build linux/arm64 for default branch",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:48:45+00:00"
+            },
             {
                 "sha": "ca106405",
                 "message": "Minor improvements to notification dropdown",

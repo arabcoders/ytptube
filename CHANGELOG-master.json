@@ -1,5 +1,17 @@
 [
     {
+        "tag": "master-20250604-38d99c0e",
+        "date": "2025-06-04T19:49:13+00:00",
+        "commits": [
+            {
+                "sha": "18dea307",
+                "message": "Make sure to build linux/arm64 for default branch",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:48:45+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250604-4a26dc1a",
         "date": "2025-06-04T19:42:10+00:00",
         "commits": [
