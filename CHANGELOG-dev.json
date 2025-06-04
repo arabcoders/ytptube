@@ -1,8 +1,32 @@
 [
     {
-        "tag": "dev-20250604-1a48a3ee",
-        "date": "2025-06-04T16:53:55+00:00",
+        "tag": "dev-20250604-5075571c",
+        "date": "2025-06-04T19:15:00+00:00",
         "commits": [
+            {
+                "sha": "5075571c",
+                "message": "Disable linux/arm64 builds for non-default branch",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:15:00+00:00"
+            },
+            {
+                "sha": "5543c68e",
+                "message": "Update README for clarity and improve installation instructions for podman and unraid.",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:08:52+00:00"
+            },
+            {
+                "sha": "4294070b",
+                "message": "Make the URLs separator user configurable",
+                "author": "arabcoders",
+                "date": "2025-06-04T18:55:47+00:00"
+            },
+            {
+                "sha": "4ad9ee53",
+                "message": "Refactor terminology from \"CLI arguments\" to \"command options for yt-dlp\" across multiple files for consistency and clarity.",
+                "author": "arabcoders",
+                "date": "2025-06-04T18:54:53+00:00"
+            },
             {
                 "sha": "1a48a3ee",
                 "message": "improve the build process",
