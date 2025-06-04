@@ -1688,7 +1688,6 @@ class HttpAPI(Common):
                     },
                 )
         except Exception as e:
-            LOG.exception(e)
             LOG.error(f"Failed to request random background image from '{backend!s}'.'. '{e!s}'.")
             return web.json_response(
                 data={"error": "failed to retrieve the random background image."},
