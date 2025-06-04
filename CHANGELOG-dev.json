@@ -1,8 +1,26 @@
 [
     {
-        "tag": "dev-20250604-73161496",
-        "date": "2025-06-03T21:59:53+00:00",
+        "tag": "dev-20250604-1a48a3ee",
+        "date": "2025-06-04T16:53:55+00:00",
         "commits": [
+            {
+                "sha": "1a48a3ee",
+                "message": "improve the build process",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:53:55+00:00"
+            },
+            {
+                "sha": "36475959",
+                "message": "Make it possible to import data from pre-existing preset.",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:31:39+00:00"
+            },
+            {
+                "sha": "e8a52509",
+                "message": "Implemented notification center. Closes #290",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:11:55+00:00"
+            },
             {
                 "sha": "73161496",
                 "message": "Incorrect message of deleting file is showing even though the option to delete file is disabled.",
