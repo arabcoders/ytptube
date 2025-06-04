@@ -1,5 +1,59 @@
 [
     {
+        "tag": "master-20250604-3bbb1509",
+        "date": "2025-06-04T19:23:56+00:00",
+        "commits": [
+            {
+                "sha": "5075571c",
+                "message": "Disable linux/arm64 builds for non-default branch",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:15:00+00:00"
+            },
+            {
+                "sha": "5543c68e",
+                "message": "Update README for clarity and improve installation instructions for podman and unraid.",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:08:52+00:00"
+            },
+            {
+                "sha": "4294070b",
+                "message": "Make the URLs separator user configurable",
+                "author": "arabcoders",
+                "date": "2025-06-04T18:55:47+00:00"
+            },
+            {
+                "sha": "4ad9ee53",
+                "message": "Refactor terminology from \"CLI arguments\" to \"command options for yt-dlp\" across multiple files for consistency and clarity.",
+                "author": "arabcoders",
+                "date": "2025-06-04T18:54:53+00:00"
+            },
+            {
+                "sha": "1a48a3ee",
+                "message": "improve the build process",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:53:55+00:00"
+            },
+            {
+                "sha": "36475959",
+                "message": "Make it possible to import data from pre-existing preset.",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:31:39+00:00"
+            },
+            {
+                "sha": "e8a52509",
+                "message": "Implemented notification center. Closes #290",
+                "author": "arabcoders",
+                "date": "2025-06-04T16:11:55+00:00"
+            },
+            {
+                "sha": "73161496",
+                "message": "Incorrect message of deleting file is showing even though the option to delete file is disabled.",
+                "author": "arabcoders",
+                "date": "2025-06-03T21:59:53+00:00"
+            }
+        ]
+    },
+    {
         "tag": "master-20250603-cf2fb5fa",
         "date": "2025-06-03T21:45:25+00:00",
         "commits": [
