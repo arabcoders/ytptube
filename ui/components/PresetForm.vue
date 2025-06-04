@@ -22,32 +22,70 @@
           </div>
 
           <div class="card-content">
-
             <div class="columns is-multiline is-mobile">
-
-              <div class="column is-12" v-if="showImport || !reference">
-                <label class="label is-inline" for="import_string">
-                  <span class="icon"><i class="fa-solid fa-file-import" /></span>
-                  Import string
-                </label>
-
-                <div class="field has-addons">
-                  <div class="control is-expanded">
-                    <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
-                  </div>
-
-                  <div class="control">
-                    <button class="button is-primary" :disabled="!import_string" type="button" @click="importItem">
-                      <span class="icon"><i class="fa-solid fa-add" /></span>
-                      <span>Import</span>
-                    </button>
+              <template v-if="showImport || !reference">
+                <div class="column is-6-tablet is-12-mobile">
+                  <div class="field">
+                    <label class="label is-inline" for="import_string">
+                      <span class="icon"><i class="fa-solid fa-file-import" /></span>
+                      Import form pre-existing preset
+                    </label>
+                    <div class="control is-expanded">
+                      <div class="select is-fullwidth">
+                        <select class="is-fullwidth" v-model="selected_preset" @change="import_existing_preset">
+                          <option value="" disabled>Select a preset</option>
+                          <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
+                            <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
+                              {{ item.name }}
+                            </option>
+                          </optgroup>
+                          <optgroup label="Default presets">
+                            <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
+                              {{ item.name }}
+                            </option>
+                          </optgroup>
+                        </select>
+                      </div>
+                    </div>
+                    <span class="help is-bold">
+                      <span class="icon"><i class="fa-solid fa-info" /></span>
+                      <span>Select a preset to import its data. <span class="has-text-danger">Warning: This will
+                          overwrite the current form data.</span></span>
+                    </span>
                   </div>
                 </div>
-                <span class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>You can use this field to populate the data, using shared string.</span>
-                </span>
-              </div>
+
+                <div class="column is-6-tablet is-12-mobile">
+                  <div class="field">
+                    <label class="label is-inline" for="import_string">
+                      <span class="icon"><i class="fa-solid fa-file-import" /></span>
+                      Import string
+                    </label>
+                    <div class="field-body">
+                      <div class="field has-addons">
+                        <div class="control is-expanded">
+                          <input type="text" class="input" id="import_string" v-model="import_string"
+                            autocomplete="off">
+                        </div>
+                        <div class="control">
+                          <button class="button is-primary" :disabled="!import_string" type="button"
+                            @click="importItem">
+                            <span class="icon"><i class="fa-solid fa-add" /></span>
+                            <span>Import</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <span class="help is-bold">
+                      <span class="icon"><i class="fa-solid fa-info" /></span>
+                      <span>Paste shared preset string here to import it. <span class="has-text-danger">Warning:
+                          This will overwrite the current form data.</span></span>
+                    </span>
+                  </div>
+                </div>
+
+              </template>
+
 
               <div class="column is-12">
                 <div class="field">
@@ -98,7 +136,8 @@
                     <span>Use this output template if non are given with URL. if not set, it will defaults to
                       <code>{{ config.app.output_template }}</code>.
                       For more information visit <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">this page</NuxtLink>.
+                        target="_blank">
+                        this page</NuxtLink>.
                     </span>
                   </span>
                 </div>
@@ -223,6 +262,7 @@ const form = reactive(JSON.parse(JSON.stringify(props.preset)))
 const import_string = ref('')
 const showImport = useStorage('showImport', false)
 const box = useConfirm()
+const selected_preset = ref('')
 
 onMounted(() => {
   if (props.preset?.cli && '' !== props.preset?.cli) {
@@ -329,10 +369,6 @@ const importItem = async () => {
       return
     }
 
-    if (form.cli && false === box.confirm('This will overwrite the current data. Are you sure?', true)) {
-      return
-    }
-
     if (item.name) {
       form.name = item.name
     }
@@ -371,4 +407,26 @@ const importItem = async () => {
   }
 }
 
+const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
+
+const import_existing_preset = async () => {
+  if (!selected_preset.value) {
+    return
+  }
+
+  const preset = config.presets.find(p => p.name === selected_preset.value)
+  if (!preset) {
+    toast.error('Preset not found.')
+    return
+  }
+
+  form.cli = preset.cli || ''
+  form.folder = preset.folder || ''
+  form.template = preset.template || ''
+  form.cookies = preset.cookies || ''
+  form.description = preset.description || ''
+
+  await nextTick()
+  selected_preset.value = ''
+}
 </script>
