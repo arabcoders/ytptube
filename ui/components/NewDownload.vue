@@ -232,7 +232,7 @@ const getSeparatorsName = (value) => {
 }
 
 const showAdvanced = useStorage('show_advanced', false)
-const separator = useStorage('url_separator', separators[0])
+const separator = useStorage('url_separator', separators[0].value)
 
 const addInProgress = ref(false)
 
