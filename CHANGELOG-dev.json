@@ -1,7 +1,25 @@
 [
     {
-        "tag": "dev-20250604-5075571c",
-        "date": "2025-06-04T19:15:00+00:00",
+        "tag": "dev-20250604-ca106405",
+        "date": "2025-06-04T19:38:38+00:00",
+        "commits": [
+            {
+                "sha": "ca106405",
+                "message": "Minor improvements to notification dropdown",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:38:38+00:00"
+            },
+            {
+                "sha": "e2e66195",
+                "message": "fixed bug in default URL separator selector.",
+                "author": "arabcoders",
+                "date": "2025-06-04T19:33:05+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250604-3bbb1509",
+        "date": "2025-06-04T19:23:56+00:00",
         "commits": [
             {
                 "sha": "5075571c",
