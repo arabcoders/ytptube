@@ -13,9 +13,10 @@
                 <input type="text" class="input" id="url" placeholder="Video or playlist link"
                   :disabled="!socket.isConnected || addInProgress" v-model="form.url">
               </div>
-              <span class="help">
+              <span class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>You can add multiple URLs separated by a comma <code>,</code>.</span>
+                <span>You can add multiple URLs separated by <code
+                    class="is-bold">{{ getSeparatorsName(separator) }}</code>.</span>
               </span>
             </div>
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
@@ -30,7 +31,7 @@
                   <div class="select is-fullwidth">
                     <select id="preset" class="is-fullwidth"
                       :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="form.preset"
-                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the Command arguments for yt-dlp.' : ''">
+                      v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                         <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
                           {{ item.name }}
@@ -84,7 +85,30 @@
             </div>
           </div>
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-            <div class="column is-12">
+
+            <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
+              <div class="field">
+                <label class="label is-inline is-unselectable">
+                  <span class="icon"><i class="fa-solid fa-comment" /></span>
+                  <span>URLs Separator</span>
+                </label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select class="is-fullwidth" :disabled="!socket.isConnected || addInProgress" v-model="separator">
+                      <option v-for="(sep, index) in separators" :key="`sep-${index}`" :value="sep.value">
+                        {{ sep.name }} ({{ sep.value }})
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                <span class="help is-bold">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Use this separate multiple URLs in the input field.</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="column is-8-tablet is-12-mobile">
               <div class="field">
                 <label class="label is-inline is-unselectable" for="output_format"
                   v-tooltip="'Default: ' + config.app.output_template">
@@ -96,7 +120,7 @@
                     :disabled="!socket.isConnected || addInProgress"
                     placeholder="Uses default output template naming if empty.">
                 </div>
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>All output template naming options can be found at <NuxtLink target="_blank"
                       to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
@@ -108,7 +132,7 @@
               <div class="field">
                 <label class="label is-inline is-unselectable" for="cli_options">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  Command arguments for yt-dlp
+                  Command options for yt-dlp
                 </label>
                 <div class="control">
                   <textarea class="textarea is-pre" v-model="form.cli" id="cli_options"
@@ -116,12 +140,13 @@
                     placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                 </div>
 
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
-                      to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
-                    For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
-                      with caution those arguments can break yt-dlp or the frontend.</span>
+                  <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this page
+                    </NuxtLink> for more info. <span class="has-text-danger">Not all options are supported <NuxtLink
+                        target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L24-L46">some are
+                        ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.</span>
                   </span>
                 </span>
               </div>
@@ -137,12 +162,13 @@
                   <textarea class="textarea is-pre" id="ytdlpCookies" v-model="form.cookies"
                     :disabled="!socket.isConnected || addInProgress" />
                 </div>
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>Use the <NuxtLink target="_blank"
                       to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                      Recommended addon</NuxtLink> by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP
-                    Cookie format.</span>
+                      Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
+                      cookies MUST be in Netscape HTTP Cookie format.</span>
+                  </span>
                 </span>
               </div>
             </div>
@@ -192,7 +218,22 @@ const socket = useSocketStore()
 const toast = useNotification()
 const box = useConfirm()
 
+const separators = [
+  { name: 'Comma', value: ',', },
+  { name: 'Semicolon', value: ';', },
+  { name: 'Colon', value: ':', },
+  { name: 'Pipe', value: '|', },
+  { name: 'Space', value: ' ', }
+]
+
+const getSeparatorsName = (value) => {
+  const sep = separators.find(s => s.value === value)
+  return sep ? `${sep.name} (${value})` : 'Unknown'
+}
+
 const showAdvanced = useStorage('show_advanced', false)
+const separator = useStorage('url_separator', separators[0])
+
 const addInProgress = ref(false)
 
 const form = useStorage('local_config_v1', {
@@ -216,7 +257,7 @@ const addDownload = async () => {
 
   const request_data = []
 
-  form.value.url.split(',').forEach(async (url) => {
+  form.value.url.split(separator.value).forEach(async (url) => {
     if (!url.trim()) {
       return
     }
@@ -245,10 +286,18 @@ const addDownload = async () => {
       body: JSON.stringify(request_data),
     })
 
+    const data = await response.json()
     if (!response.ok) {
-      const data = await response.json()
-      throw new Error(data.error)
+      toast.error(`Error: ${data.error || 'Failed to add download.'}`)
+      return
     }
+
+    data.forEach(item => {
+      if (false !== item.status) {
+        return
+      }
+      toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+    })
 
     form.value.url = ''
     emitter('clear_form')
