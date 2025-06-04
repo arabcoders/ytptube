@@ -245,7 +245,7 @@ class Tasks(metaclass=Singleton):
 
                 arg_converter(args=task.get("cli"))
             except Exception as e:
-                msg = f"Invalid cli options. '{e!s}'."
+                msg = f"Invalid command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
 
         return True

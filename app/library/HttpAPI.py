@@ -491,7 +491,7 @@ class HttpAPI(Common):
             err = err.split("\n")[-1] if "\n" in err else err
             err = err.replace("main.py: error: ", "").strip().capitalize()
             return web.json_response(
-                data={"error": f"Failed to parse command arguments for yt-dlp. '{err}'."},
+                data={"error": f"Failed to parse command options for yt-dlp. '{err}'."},
                 status=web.HTTPBadRequest.status_code,
             )
 
@@ -844,7 +844,8 @@ class HttpAPI(Common):
 
             if not item.get("cli"):
                 return web.json_response(
-                    {"error": "CLI arguments is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                    {"error": "command options for yt-dlp is required.", "data": item},
+                    status=web.HTTPBadRequest.status_code,
                 )
 
             if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):

@@ -108,7 +108,7 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
 ---
 
 ### POST /api/yt-dlp/convert
-**Purpose**: Convert a string of yt-dlp or youtube-dl CLI arguments into a JSON-friendly structure.
+**Purpose**: Convert a string of yt-dlp options into a JSON-friendly structure.
 
 **Body**:
 ```json
@@ -134,7 +134,7 @@ If you fail to provide valid credentials, a `401 Unauthorized` response is retur
 or an error:
 ```json
 {
-  "error": "Failed to parse command arguments for yt-dlp. '<reason>'."
+  "error": "Failed to parse command options for yt-dlp. '<reason>'."
 }
 ```
 
@@ -212,7 +212,7 @@ or an error:
   "folder": "my_channel/foo", // -- optional. The folder to save the item in, relative to the `download_path`.
   "cookies": "...", // -- optional. If provided, it MUST BE in Netscape HTTP Cookie format.
   "template": "%(title)s.%(ext)s", // -- optional. The filename template to use for this item.
-  "cli": "--write-subs --embed-subs", // -- optional. Additional yt-dlp CLI arguments to apply to this item.
+  "cli": "--write-subs --embed-subs", // -- optional. Additional command options for yt-dlp to apply to this item.
 }
 
 // Or multiple items (array of objects)
@@ -697,7 +697,7 @@ Binary image data with appropriate `Content-Type` header.
     "folder": "my_channel/foo", // optional, relative to download_path
     "template": "%(title)s.%(ext)s", // optional, filename template
     "cookies": "...", // optional, Netscape HTTP Cookie format
-    "cli": "--write-subs --embed-subs", // optional, additional yt-dlp CLI arguments
+    "cli": "--write-subs --embed-subs", // optional, additional command options for yt-dlp
   },
   ...
 ]

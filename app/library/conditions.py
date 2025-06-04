@@ -204,13 +204,13 @@ class Conditions(metaclass=Singleton):
             raise ValueError(msg) from e
 
         if not item.get("cli"):
-            msg = "No CLI arguments were found."
+            msg = "No command options for yt-dlp were found."
             raise ValueError(msg)
 
         try:
             arg_converter(args=item.get("cli"))
         except Exception as e:
-            msg = f"Invalid cli options. '{e!s}'."
+            msg = f"Invalid command options for yt-dlp. '{e!s}'."
             raise ValueError(msg) from e
 
         return True

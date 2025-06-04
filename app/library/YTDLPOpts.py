@@ -17,10 +17,10 @@ class YTDLPOpts(metaclass=Singleton):
     """The preset options."""
 
     _item_cli: list = []
-    """The item cli options."""
+    """The command options for yt-dlp from item."""
 
     _preset_cli: str = ""
-    """The preset cli options."""
+    """The command options for yt-dlp from preset."""
 
     _instance = None
     """The instance of the class."""
@@ -44,10 +44,10 @@ class YTDLPOpts(metaclass=Singleton):
 
     def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
         """
-        Parse and add yt-dlp cli options to the item options.
+        Parse and add command options for yt-dlp to the item options.
 
         Args:
-            args (str): The cli options to add
+            args (str): The command options for yt-dlp to add
             from_user (bool): If the options are from the user
 
         Returns:
@@ -60,7 +60,7 @@ class YTDLPOpts(metaclass=Singleton):
         try:
             arg_converter(args=args, level=from_user)
         except Exception as e:
-            msg = f"Invalid cli options for were given. '{e!s}'."
+            msg = f"Invalid command options for yt-dlp were given. '{e!s}'."
             raise ValueError(msg) from e
 
         self._item_cli.append(args)
@@ -119,7 +119,7 @@ class YTDLPOpts(metaclass=Singleton):
                 self._preset_opts = {}
                 self._preset_cli = preset.cli
             except Exception as e:
-                msg = f"Invalid cli options for preset '{preset.name}'. '{e!s}'."
+                msg = f"Invalid preset '{preset.name}' command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
 
         if preset.cookies and with_cookies:
@@ -175,7 +175,7 @@ class YTDLPOpts(metaclass=Singleton):
             merge.append(self._preset_cli)
 
         if len(merge) > 0:
-            # prepend the cli options to the list
+            # prepend the yt-dlp command options to the list
             self._item_cli = merge + self._item_cli
 
         user_cli = {}
@@ -188,7 +188,7 @@ class YTDLPOpts(metaclass=Singleton):
                 if len(removed_options) > 0:
                     LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
             except Exception as e:
-                msg = f"Invalid cli options were given. '{e!s}'."
+                msg = f"Invalid command options for yt-dlp were given. '{e!s}'."
                 raise ValueError(msg) from e
 
         data = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
