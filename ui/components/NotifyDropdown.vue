@@ -2,16 +2,18 @@
   <div class="navbar-item has-dropdown is-hoverable">
     <a class="navbar-link">
       <span class="icon"><i class="fas fa-bell" /></span>
-      <span class="tag is-underlined ml-2">{{ store.unreadCount }}</span>
+      <span class="tag ml-2">
+        <span class="is-underlined">{{ store.unreadCount }}</span>
+        <span>&nbsp;/&nbsp;</span>
+        <span class="is-underlined">{{ store.notifications.length }}</span>
+      </span>
     </a>
     <div class="navbar-dropdown is-right" style="width: 400px;">
       <template v-if="store.notifications.length > 0">
         <div class="px-3 py-2 is-flex is-justify-content-space-between is-align-items-center">
-          <span class="has-text-grey">
-            <span class="is-underlined">{{ store.notifications.length }}</span> Total
-          </span>
-          <div class="field is-grouped">
+          <span class="has-text-grey"></span>
 
+          <div class="field is-grouped">
             <div class="control" v-if="store.unreadCount > 0">
               <button class="button is-small is-light mr-1" @click="store.markAllRead">
                 <span class="icon"><i class="fas fa-check" /></span>
