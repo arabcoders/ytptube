@@ -86,6 +86,8 @@
             </button>
           </div>
 
+          <NotifyDropdown />
+
           <div class="navbar-item is-hidden-mobile">
             <button class="button is-dark has-tooltip-bottom mr-4" v-tooltip.bottom="'WebUI Settings'"
               @click="show_settings = !show_settings">

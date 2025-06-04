@@ -94,7 +94,7 @@
                     <div class="select is-fullwidth">
                       <select id="preset" class="is-fullwidth" v-model="form.preset"
                         :disabled="addInProgress || hasFormatInConfig"
-                        v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command arguments for yt-dlp.' : ''">
+                        v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                         <optgroup label="Default presets">
                           <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
                             {{ item.name }}
@@ -179,7 +179,7 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command arguments for yt-dlp
+                    Command options for yt-dlp
                   </label>
                   <div class="control">
                     <textarea type="text" class="textarea is-pre" v-model="form.cli" id="cli_options"

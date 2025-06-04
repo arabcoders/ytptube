@@ -233,6 +233,7 @@ const isLoading = ref(true)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
 const display_style = useStorage("tasks_display_style", "cards")
+const remove_keys = ['in_progress']
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -295,7 +296,7 @@ const updateTasks = async items => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(items),
+      body: JSON.stringify(items.map(item => cleanObject(toRaw(item), remove_keys))),
     })
 
     data = await response.json()
@@ -338,7 +339,6 @@ const deleteItem = async item => {
 }
 
 const updateItem = async ({ reference, task }) => {
-  task = cleanObject(task, ['in_progress'])
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)

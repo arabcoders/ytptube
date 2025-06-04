@@ -45,7 +45,6 @@ on:
 env:
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
-  PLATFORMS: linux/amd64
   PNPM_VERSION: 10
   NODE_VERSION: 20
 
@@ -67,7 +66,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: 'ui/pnpm-lock.yaml'
+          cache-dependency-path: "ui/pnpm-lock.yaml"
 
       - name: Install frontend dependencies & Build
         working-directory: ui
@@ -87,8 +86,8 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
-          cache-from: type=gha, scope=pr_${{ github.workflow }}
-          cache-to: type=gha, scope=pr_${{ github.workflow }}
+          cache-from: type=gha, scope=${{ github.workflow }}
+          cache-to: type=gha, mode=max, scope=${{ github.workflow }}
 
   push-build:
     runs-on: ubuntu-latest
@@ -110,7 +109,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
-          cache-dependency-path: 'ui/pnpm-lock.yaml'
+          cache-dependency-path: "ui/pnpm-lock.yaml"
 
       - name: Install frontend dependencies & Build
         working-directory: ui
@@ -178,7 +177,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha, scope=${{ github.workflow }}
-          cache-to: type=gha, scope=${{ github.workflow }}
+          cache-to: type=gha, mode=max, scope=${{ github.workflow }}
 
       - name: Version tag
         uses: arabcoders/action-python-autotagger@master

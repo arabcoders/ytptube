@@ -37,7 +37,7 @@ class Preset:
     """The default cookies to use if non is given."""
 
     cli: str = ""
-    """yt-dlp cli command line arguments."""
+    """command options for yt-dlp."""
 
     default: bool = False
     """If True, the preset is a default preset."""
@@ -236,7 +236,7 @@ class Presets(metaclass=Singleton):
             try:
                 arg_converter(args=item.get("cli"))
             except Exception as e:
-                msg = f"Invalid cli options. '{e!s}'."
+                msg = f"Invalid command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
 
         return True

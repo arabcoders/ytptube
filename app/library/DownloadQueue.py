@@ -388,8 +388,8 @@ class DownloadQueue(metaclass=Singleton):
             try:
                 arg_converter(args=item.cli, level=True)
             except Exception as e:
-                LOG.error(f"Invalid cli options '{item.cli}'. {e!s}")
-                return {"status": "error", "msg": f"Invalid cli options '{item.cli}'. {e!s}"}
+                LOG.error(f"Invalid command options for yt-dlp '{item.cli}'. {e!s}")
+                return {"status": "error", "msg": f"Invalid command options for yt-dlp '{item.cli}'. {e!s}"}
 
         if _preset:
             if _preset.folder and not item.folder:

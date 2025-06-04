@@ -125,7 +125,7 @@ const r = (text, context = {}) => {
   return text
 }
 
-const copyText = (str, notify = true) => {
+const copyText = (str, notify = true, store = false) => {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(str).then(() => {
       if (notify) {
@@ -148,7 +148,7 @@ const copyText = (str, notify = true) => {
   document.body.removeChild(el)
 
   if (notify) {
-    toast.success('Text copied to clipboard.')
+    toast.success('Text copied to clipboard.', { store: store })
   }
 }
 

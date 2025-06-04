@@ -80,7 +80,8 @@
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
                       The yt-dlp <code>[--match-filters]</code> filter logic.
-                      <NuxtLink @click="test_data.show = true" :disabled="addInProgress || !form.filter" class="is-bold">
+                      <NuxtLink @click="test_data.show = true" :disabled="addInProgress || !form.filter"
+                        class="is-bold">
                         Test filter logic
                       </NuxtLink>
                     </span>
@@ -92,7 +93,7 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command arguments for yt-dlp
+                    Command options for yt-dlp
                   </label>
                   <div class="control">
                     <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
@@ -101,8 +102,8 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>If the filter is matched, these options will be used.
-                      <span class="has-text-danger">This will override the cli arguments given with the URL. it's
-                        recommended to use presets and keep the cli with url empty if you plan to use this
+                      <span class="has-text-danger">This will override the command options for yt-dlp given with the
+                        URL. it's recommended to use presets and keep that field with url empty if you plan to use this
                         feature.</span>
                     </span>
                   </span>

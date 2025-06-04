@@ -2,9 +2,11 @@
 
 ![Build Status](https://github.com/ArabCoders/ytptube/actions/workflows/main.yml/badge.svg)
 
-Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel support.
+**YTPTube** is a web-based GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp), designed to make downloading videos from 
+YouTube and other video platforms easier and more user-friendly. It supports downloading playlists, channels, and 
+live streams, and includes features like scheduling downloads, sending notifications, and a built-in video player.
 
-[![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_full.png)
+![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)
 
 # YTPTube Features.
 
@@ -30,7 +32,9 @@ Web GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) with playlist & channel s
 * Apply `yt-dlp` options per custom defined conditions.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 
-# Run using docker command
+# Installation
+
+## Run using docker command
 
 ```bash
 mkdir -p ./{config,downloads} && docker run -d --rm --user "$UID:${GID-$UID}" --name ytptube \
@@ -38,7 +42,13 @@ mkdir -p ./{config,downloads} && docker run -d --rm --user "$UID:${GID-$UID}" --
 ghcr.io/arabcoders/ytptube:latest
 ```
 
-# Using compose file
+Then you can access the WebUI at `http://localhost:8081`.
+
+> [!NOTE]
+> If you are using `podman` instead of `docker`, you can use the same command, but you need to change the user to `0:0`
+> it will appears to be running as root, but it will run as the user who started the container.
+
+## Using compose file
 
 The following is an example of a `compose.yaml` file that can be used to run YTPTube.
 
@@ -58,11 +68,23 @@ services:
       - /tmp
 ```
 
+> [!IMPORTANT]
+> Make sure to change the `user` line to match your user id and group id
+
 ```bash
 $ mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
+
+> [!NOTE]
+> you can use podman-compose instead of docker-compose, as it supports the same syntax. However, you should change the 
+> user to `0:0` it will appears to be running as root, but it will run as the user who started the container.
+
+## Unraid
+
+For `Unraid` users You can install the `Community Applications` plugin, and search for **ytptube** it comes 
+pre-configured.
 
 # Browser extensions & bookmarklets
 

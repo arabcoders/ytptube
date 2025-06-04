@@ -19,19 +19,19 @@ class Item:
     """The URL of the item to be downloaded."""
 
     preset: str = field(default_factory=lambda: Item._default_preset())
-    """The preset to be used for the download."""
+    """The preset to be used for this download."""
 
     folder: str = ""
     """The folder to save the download to."""
 
     cookies: str = ""
-    """The cookies to be used for the download."""
+    """The cookies to be used for this download."""
 
     template: str = ""
-    """The template to be used for the download."""
+    """The template to be used for this download."""
 
     cli: str = ""
-    """The yt-dlp cli options to be used for the download."""
+    """The command options for yt-dlp to be used for this download."""
 
     extras: dict = field(default_factory=dict)
     """Extra data to be added to the download."""
@@ -60,10 +60,10 @@ class Item:
 
     def has_cli(self) -> bool:
         """
-        Check if the item has any yt-dlp cli options associated with it.
+        Check if the item has any command options for yt-dlp associated with it.
 
         Returns:
-            bool: True if the item has yt-dlp cli options, False otherwise.
+            bool: True if the item has command options for yt, False otherwise.
 
         """
         return self.cli and len(self.cli) > 2
@@ -120,7 +120,7 @@ class Item:
 
         Raises:
             ValueError: If the url is not provided.
-            ValueError: If the yt-cli command line arguments are not valid.
+            ValueError: If the command options for yt-cli are invalid.
 
         Returns:
             Item: The formatted item.
@@ -174,7 +174,7 @@ class Item:
 
                 data["cli"] = cli
             except Exception as e:
-                msg = f"Failed to parse yt-dlp cli options. {e!s}"
+                msg = f"Failed to parse command options for yt-dlp. {e!s}"
                 raise ValueError(msg) from e
 
         return Item(**data)

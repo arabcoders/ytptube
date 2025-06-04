@@ -621,7 +621,10 @@ const archiveItem = item => {
 }
 
 const removeItem = item => {
-  const msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?\n this will delete the file from the server.`
+  let msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?`
+  if (item.status === 'finished' && item.filename && config.app.remove_files) {
+    msg += '\nThis will delete the file from the server if it exists.'
+  }
   if (false === box.confirm(msg, config.app.remove_files)) {
     return false
   }
