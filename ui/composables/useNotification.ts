@@ -1,12 +1,23 @@
 import { useStorage } from '@vueuse/core'
 import { POSITION, useToast } from "vue-toastification"
 
-type notificationType = 'info' | 'success' | 'warning' | 'error'
-type notificationOptions = {
+export type notificationType = 'info' | 'success' | 'warning' | 'error'
+
+export interface Notification {
+  id: string;
+  message: string
+  level: notificationType
+  seen: boolean
+  created: Date
+};
+
+export interface notificationOptions {
   timeout?: number,
   force?: boolean,
+  store?: boolean,
   closeOnClick?: boolean,
   position?: POSITION
+  onClick?: (closeToast: Function) => void
 }
 
 const allowToast = useStorage<boolean>('allow_toasts', true)
@@ -15,8 +26,21 @@ const toastDismissOnClick = useStorage<boolean>('toast_dismiss_on_click', true)
 const toast = useToast()
 
 function notify(type: notificationType, message: string, opts?: notificationOptions): void {
-  let force = opts?.force || false;
+  const notificationStore = useNotificationStore()
+
+  let id: string = ''
+  const force = opts?.force || false;
+  const store = opts?.store || true;
+
+  if (store && notificationStore) {
+    id = notificationStore.add(type, message, false)
+  }
+
   if (false === allowToast.value && false === force) {
+    return;
+  }
+
+  if (false === document.hasFocus()) {
     return;
   }
 
@@ -30,6 +54,14 @@ function notify(type: notificationType, message: string, opts?: notificationOpti
 
   opts.closeOnClick = toastDismissOnClick.value
   opts.position = toastPosition.value ?? POSITION.TOP_RIGHT
+  opts.onClick = (closeToast: Function) => {
+    if (opts?.closeOnClick !== false) {
+      closeToast()
+    }
+    if (notificationStore) {
+      notificationStore.markRead(id)
+    }
+  }
 
   switch (type) {
     case 'info':
