@@ -124,29 +124,23 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 It's advisable to run YTPTube behind a reverse proxy, if better authentication and/or HTTPS support are required.
 
-### Nginx http server
-
-```nginx
-location /ytptube/ {
-  proxy_pass http://ytptube:8081;
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "upgrade";
-  proxy_set_header Host $host;
-}
-```
-
-> [!NOTE]
-> The extra `proxy_set_header` directives are there to make web socket connection work.
-
-### Caddy http server
+## Caddy http server
 
 The following example Caddyfile gets a reverse proxy going behind [caddy](https://caddyserver.com).
 
 ```caddyfile
-example.com {
+# If you are using sub-domain.
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+ytp.example.org {
+  reverse_proxy ytptube:8081
+}
+
+# If you are using sub-folder, for example: https://example.org/ytptube/
+# Also make sure to set the `YTP_BASE_PATH` environment variable to `/ytptube/`
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+example.org {
+  redir /ytptube /ytptube/
   route /ytptube/* {
-    uri strip_prefix ytptube
     reverse_proxy ytptube:8081
   }
 }
@@ -161,7 +155,6 @@ We have added the `YTP_YTDLP_AUTO_UPDATE` environment variable, which is enabled
 container to automatically update `yt-dlp` to the latest version whenever the container starts. If a new version is 
 available, it will be downloaded and applied automatically. To disable this automatic update, set the 
 `YTP_YTDLP_AUTO_UPDATE` environment variable to `false`.
-
 
 We will no longer release new versions of YTPTube for every new version of yt-dlp.
 
@@ -317,4 +310,5 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PICTURES_BACKENDS    | A comma separated list of pictures urls to use.                  | `empty string`                     |
 | YTP_BROWSER_ENABLED      | Whether to enable the file browser                               | `false`                            |
 | YTP_YTDLP_AUTO_UPDATE    | Whether to enable the auto update for yt-dlp                     | `true`                             |
+| YTP_BASE_PATH            | Set this if you are serving YTPTube from sub-folder              | `/`                                |
 

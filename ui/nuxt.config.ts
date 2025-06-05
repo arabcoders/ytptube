@@ -30,9 +30,8 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      domain: '/',
+      APP_ENV: process.env.APP_ENV || "production",
       wss: process.env.VUE_APP_BASE_URL ?? '',
-      version: '2.0.0',
       sentry: process.env.NUXT_PUBLIC_SENTRY_DSN ?? '',
     }
   },
@@ -40,6 +39,7 @@ export default defineNuxtConfig({
     transpile: ['vue-toastification'],
   },
   app: {
+    baseURL: 'dev' == process.env.APP_ENV ? '/' : '',
     buildAssetsDir: "assets",
     head: {
       "meta": [
@@ -47,7 +47,8 @@ export default defineNuxtConfig({
         { "name": "viewport", "content": "width=device-width, initial-scale=1.0, maximum-scale=1.0" },
         { "name": "theme-color", "content": "#000000" },
       ],
-      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico?v=100' }]
+      base: { "href": "/" },
+      link: [{ rel: 'icon', type: 'image/x-icon', href: 'favicon.ico?v=100' }]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },
@@ -66,7 +67,7 @@ export default defineNuxtConfig({
 
   nitro: {
     output: {
-      publicDir: path.join(__dirname, 'exported')
+      publicDir: path.join(__dirname, 'dev' == process.env.APP_ENV ? 'dist' : 'exported')
     },
     ...extraNitro,
   },

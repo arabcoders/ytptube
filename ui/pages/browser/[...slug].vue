@@ -94,7 +94,7 @@
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
                     <div class="control is-text-overflow is-expanded">
-                      <a :href="`/browser/${item.path}`" v-if="'dir' === item.type" @click.prevent="handleClick(item)">
+                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.type" @click.prevent="handleClick(item)">
                         {{ item.name }}
                       </a>
                       <a :href="makeDownload({}, { filename: item.path, folder: '' })"
@@ -321,7 +321,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
     }
 
     const title = `File Browser: /${dir}`
-    const stateUrl = `/browser/${dir}`
+    const stateUrl = uri(`/browser/${dir}`)
 
     if (false === fromMounted) {
       history.pushState({ path: dir, title: title }, title, stateUrl)

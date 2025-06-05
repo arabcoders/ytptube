@@ -28,9 +28,6 @@ class Config:
     temp_keep: bool = False
     """Keep temporary files after the download is complete."""
 
-    url_socketio: str = "/socket.io"
-    """The URL to use for the socket.io server."""
-
     output_template: str = "%(title)s.%(ext)s"
     """The output template to use for the downloaded files."""
 
@@ -55,11 +52,15 @@ class Config:
     log_level_file: str = "info"
     """The log level to use for the file logging."""
 
+    base_path: str = "/"
+    """The base path to use for the application."""
+
     max_workers: int = 1
     """The maximum number of workers to use for downloading."""
 
     streamer_vcodec: str = "libx264"
     """The video codec to use for streaming."""
+
     streamer_acodec: str = "aac"
     """The audio codec to use for streaming."""
 
@@ -221,6 +222,7 @@ class Config:
         "browser_enabled",
         "ytdlp_cli",
         "file_logging",
+        "base_path",
     )
     "The variables that are relevant to the frontend."
 

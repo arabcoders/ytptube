@@ -50,6 +50,9 @@
       "cwd": "${workspaceFolder}/ui",
       "console": "internalConsole",
       "outputCapture": "std",
+      "env": {
+        "APP_ENV": "production"
+      }
     },
     {
       "name": "Python: main.py (Deep)",

@@ -10,7 +10,7 @@
 </style>
 <template>
   <div v-if="infoLoaded">
-    <video class="player" ref="video" :poster="thumbnail" :title="title" playsinline controls crossorigin="anonymous"
+    <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls crossorigin="anonymous"
       preload="auto" autoplay>
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />

@@ -50,6 +50,7 @@ class HttpSocket(Common):
         self.queue = queue or DownloadQueue.get_instance()
         self._notify = EventBus.get_instance()
 
+        #logger=True, engineio_logger=True,
         self.sio = sio or socketio.AsyncServer(cors_allowed_origins="*")
         encoder = encoder or Encoder()
 
@@ -77,7 +78,7 @@ class HttpSocket(Common):
         LOG.debug("Shutting down socket server.")
 
     def attach(self, app: web.Application):
-        self.sio.attach(app, socketio_path=self.config.url_socketio)
+        self.sio.attach(app, socketio_path=f"{self.config.base_path.rstrip('/')}/socket.io")
 
         for attr_name in dir(self):
             method = getattr(self, attr_name)

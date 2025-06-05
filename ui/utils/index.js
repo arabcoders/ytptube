@@ -1,4 +1,5 @@
 const toast = useNotification()
+const runtimeConfig = useRuntimeConfig()
 const AG_SEPARATOR = '.'
 
 /**
@@ -237,7 +238,6 @@ const encodePath = item => {
  * @returns {Promise<Response>} - The response from the API
  */
 const request = (url, options = {}) => {
-  const runtimeConfig = useRuntimeConfig()
   options = options || {}
   options.method = options.method || 'GET'
   options.headers = options.headers || {}
@@ -257,7 +257,7 @@ const request = (url, options = {}) => {
     options.credentials = 'same-origin'
   }
 
-  return fetch(url.startsWith('/') ? eTrim(runtimeConfig.public.domain, '/') + '/' + sTrim(url, '/') : url, options)
+  return fetch(url.startsWith('/') ? uri(url) : url, options)
 }
 
 /**
@@ -360,7 +360,8 @@ const makeDownload = (config, item, base = 'api/download') => {
   }
 
   let url = `/${sTrim(baseDir, '/')}${encodePath(item.filename)}`;
-  return ('m3u8' === base) ? url + '.m3u8' : url;
+
+  return uri(('m3u8' === base) ? url + '.m3u8' : url);
 }
 
 /**
@@ -492,6 +493,18 @@ const cleanObject = (item, fields = []) => {
   return cleaned
 }
 
+const uri = u => {
+  if (!u || '/' === runtimeConfig.app.baseURL || !u.startsWith('/')) {
+    return u
+  }
+
+  if (true === u.startsWith(runtimeConfig.app.baseURL)) {
+    return u
+  }
+
+  return eTrim(runtimeConfig.app.baseURL, '/') + '/' + sTrim(u, '/');
+}
+
 export {
   ag_set,
   ag,
@@ -519,4 +532,5 @@ export {
   has_data,
   toggleClass,
   cleanObject,
+  uri,
 }
