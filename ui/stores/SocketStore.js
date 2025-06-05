@@ -7,11 +7,20 @@ export const useSocketStore = defineStore('socket', () => {
   const stateStore = useStateStore()
   const toast = useNotification()
 
-  const socket = ref(null);
-  const isConnected = ref(false);
+  const socket = ref(null)
+  const isConnected = ref(false)
 
   const connect = () => {
-    socket.value = io(runtimeConfig.public.wss, { withCredentials: true })
+    let opts = { withCredentials: true }
+
+    let url = runtimeConfig.public.wss
+
+    if ('dev' !== runtimeConfig.public.APP_ENV) {
+      url = window.origin;
+      opts.path = `${runtimeConfig.app.baseURL.replace(/\/$/, '')}/socket.io`;
+    }
+
+    socket.value = io(url, opts)
 
     socket.value.on('connect', () => isConnected.value = true);
     socket.value.on('disconnect', () => isConnected.value = false);

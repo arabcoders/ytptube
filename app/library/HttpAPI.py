@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import quote, unquote_plus, urlparse
+from urllib.parse import unquote_plus, urlparse
 
 import anyio
 import httpx
@@ -70,7 +70,7 @@ class HttpAPI(Common):
     }
     """Map ext to mimetype"""
 
-    _frontend_routes = [
+    _frontend_routes: list[str] = [
         "/console",
         "/presets",
         "/tasks",
@@ -97,17 +97,19 @@ class HttpAPI(Common):
         self.rootPath = str(Path(__file__).parent.parent.parent)
         self.routes = web.RouteTableDef()
         self.cache = Cache()
+        self.app: web.Application | None = None
 
         super().__init__(queue=self.queue, encoder=self.encoder, config=self.config)
 
     @staticmethod
-    def route(method: str, path: str) -> Awaitable:
+    def route(method: str, path: str, name: str | None = None) -> Awaitable:
         """
         Decorator to mark a method as an HTTP route handler.
 
         Args:
             method (str): The HTTP method.
             path (str): The path to the route.
+            name (str | None): The name of the route (optional).
 
         Returns:
             Awaitable: The decorated function.
@@ -121,6 +123,7 @@ class HttpAPI(Common):
 
             wrapper._http_method = method.upper()
             wrapper._http_path = path
+            wrapper._http_name = name
             return wrapper
 
         return decorator
@@ -139,7 +142,16 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
-        app.middlewares.append(HttpAPI.middle_wares(download_path=self.config.download_path))
+        self.app = app
+
+        app.middlewares.append(
+            HttpAPI.middle_wares(
+                app=app,
+                base_path=self.config.base_path.rstrip("/"),
+                download_path=self.config.download_path,
+            )
+        )
+
         if self.config.auth_username and self.config.auth_password:
             app.middlewares.append(HttpAPI.basic_auth(self.config.auth_username, self.config.auth_password))
 
@@ -175,6 +187,9 @@ class HttpAPI(Common):
 
         """
         path = req.path
+
+        if "/" != self.config.base_path and path.rstrip("/") == self.config.base_path.rstrip("/"):
+            path: str = f"{self.config.base_path.rstrip('/')}/index.html"
 
         if path not in self._static_holder:
             for k in self._static_holder:
@@ -217,13 +232,15 @@ class HttpAPI(Common):
 
         preloaded = 0
 
+        base_path: str = self.config.base_path.rstrip("/")
+
         for root, _, files in os.walk(staticDir):
             for file in files:
                 if file.endswith(".map"):
                     continue
 
                 file = os.path.join(root, file)
-                urlPath = f"/{file.replace(f'{staticDir}/', '')}"
+                urlPath: str = f"{base_path}/{file.replace(f'{staticDir}/', '')}"
 
                 with open(file, "rb") as f:
                     content = f.read()
@@ -237,6 +254,7 @@ class HttpAPI(Common):
 
                 if urlPath.endswith("/index.html"):
                     for path in self._frontend_routes:
+                        path: str = f"{base_path}/{path.lstrip('/')}"
                         self._static_holder[path] = {"content": content, "content_type": contentType}
                         app.router.add_get(path, self._static_file)
                         if "{" not in path:
@@ -255,6 +273,13 @@ class HttpAPI(Common):
 
         LOG.info(f"Preloaded '{preloaded}' static files.")
 
+        if "/" != self.config.base_path:
+            LOG.debug(f"adding base_path folder '{self.config.base_path}' to routes.")
+            app.router.add_get(self.config.base_path.rstrip("/"), self._static_file, name="base_path_static")
+            app.router.add_get(
+                f"{self.config.base_path.rstrip('/')}/", self._static_file, name="base_path_static_slash"
+            )
+
         return self
 
     def add_routes(self, app: web.Application) -> "HttpAPI":
@@ -268,7 +293,9 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
-        registered_options = []
+        registered_options: list = []
+
+        base_path: str = self.config.base_path.rstrip("/")
 
         for attr_name in dir(self):
             method = getattr(self, attr_name)
@@ -277,7 +304,12 @@ class HttpAPI(Common):
                 if http_path.startswith("/"):
                     http_path = method._http_path[1:]
 
-                self.routes.route(method._http_method, f"/{http_path}")(method)
+                opts = {}
+                if hasattr(method, "_http_name") and method._http_name:
+                    opts["name"] = method._http_name
+
+                LOG.debug(f"Registering route {method._http_method} {base_path}/{http_path}' {opts}.")
+                self.routes.route(method._http_method, f"{base_path}/{http_path}", **opts)(method)
 
                 if http_path in registered_options:
                     continue
@@ -285,10 +317,13 @@ class HttpAPI(Common):
                 async def options_handler(_: Request) -> Response:
                     return web.Response(status=204)
 
-                self.routes.route("OPTIONS", f"/{http_path}")(options_handler)
+                if "name" in opts:
+                    opts["name"] = f"{opts['name']}_options"
+
+                self.routes.route("OPTIONS", f"{base_path}/{http_path}", **opts)(options_handler)
                 registered_options.append(http_path)
 
-        self.routes.static("/api/download/", self.config.download_path)
+        self.routes.static(f"{base_path}/api/download/", self.config.download_path, name="download_static")
         self._preload_static(app)
 
         try:
@@ -386,19 +421,24 @@ class HttpAPI(Common):
         return middleware_handler
 
     @staticmethod
-    def middle_wares(download_path: str) -> Awaitable:
+    def middle_wares(app: web.Application, base_path: str, download_path: str) -> Awaitable:
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
-            if request.path.startswith("/api/download"):
+            static_path = str(app.router["download_static"].url_for(filename=""))
+            if request.path.startswith(static_path):
                 realFile, status = get_file(
                     download_path=download_path,
-                    file=request.path.replace("/api/download/", ""),
+                    file=request.path.replace(static_path, ""),
                 )
                 if web.HTTPFound.status_code == status:
                     return Response(
                         status=status,
                         headers={
-                            "Location": f"/api/download/{quote(str(realFile).replace(download_path, '').strip('/'))}"
+                            "Location": str(
+                                app.router["download_static"].url_for(
+                                    filename=str(realFile).replace(download_path, "").strip("/")
+                                )
+                            )
                         },
                     )
 
@@ -413,6 +453,17 @@ class HttpAPI(Common):
                     status=web.HTTPInternalServerError.status_code,
                 )
 
+            contentType: str | None = response.headers.get("content-type", None)
+            if contentType and "/" != base_path and contentType.startswith("text/html"):
+                rewrite_path: str = base_path.rstrip("/")
+                content: str = (
+                    response.body.decode("utf-8")
+                    .replace('<base href="/">', f'<base href="{rewrite_path}/">')
+                    .replace('baseURL:""', f'baseURL:"{rewrite_path}/"')
+                )
+
+                response.body = content.encode("utf-8")
+
             if isinstance(response, web.FileResponse):
                 try:
                     ff_info = await ffprobe(response._path)
@@ -425,7 +476,7 @@ class HttpAPI(Common):
 
         return middleware_handler
 
-    @route("GET", "api/ping")
+    @route("GET", "api/ping", "ping")
     async def ping(self, _: Request) -> Response:
         """
         Ping the server.
@@ -440,7 +491,7 @@ class HttpAPI(Common):
         await self.queue.test()
         return web.json_response(data={"status": "pong"}, status=web.HTTPOk.status_code)
 
-    @route("POST", "api/yt-dlp/convert")
+    @route("POST", "api/yt-dlp/convert", "yt_dlp_convert")
     async def yt_dlp_convert(self, request: Request) -> Response:
         """
         Convert the yt-dlp args to a dict.
@@ -495,7 +546,7 @@ class HttpAPI(Common):
                 status=web.HTTPBadRequest.status_code,
             )
 
-    @route("GET", "api/yt-dlp/url/info")
+    @route("GET", "api/yt-dlp/url/info", "get_info")
     async def get_info(self, request: Request) -> Response:
         """
         Get the video info.
@@ -588,7 +639,7 @@ class HttpAPI(Common):
                 status=web.HTTPInternalServerError.status_code,
             )
 
-    @route("GET", "api/yt-dlp/archive/recheck")
+    @route("GET", "api/yt-dlp/archive/recheck", "archive_recheck")
     async def archive_recheck(self, _) -> Response:
         """
         Recheck the manual archive entries.
@@ -669,7 +720,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/history/add")
+    @route("GET", "api/history/add", "quick_add")
     async def quick_add(self, request: Request) -> Response:
         """
         Add a URL to the download queue.
@@ -710,7 +761,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("POST", "api/history")
+    @route("POST", "api/history", "history_item_add")
     async def history_item_add(self, request: Request) -> Response:
         """
         Add a URL to the download queue.
@@ -744,7 +795,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/logs")
+    @route("GET", "api/logs", "logs")
     async def logs(self, request: Request) -> Response:
         """
         Get recent logs
@@ -783,7 +834,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("GET", "api/conditions")
+    @route("GET", "api/conditions", "conditions")
     async def conditions(self, _: Request) -> Response:
         """
         Get the conditions
@@ -801,7 +852,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("PUT", "api/conditions")
+    @route("PUT", "api/conditions", "conditions_add")
     async def conditions_add(self, request: Request) -> Response:
         """
         Save Conditions.
@@ -872,7 +923,7 @@ class HttpAPI(Common):
         await self._notify.emit(Events.CONDITIONS_UPDATE, data=items)
         return web.json_response(data=items, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("POST", "api/conditions/test")
+    @route("POST", "api/conditions/test", "conditions_test")
     async def conditions_test(self, request: Request) -> Response:
         """
         Test condition against URL.
@@ -949,7 +1000,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("GET", "api/presets")
+    @route("GET", "api/presets", "presets")
     async def presets(self, request: Request) -> Response:
         """
         Get the presets.
@@ -970,7 +1021,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("PUT", "api/presets")
+    @route("PUT", "api/presets", "presets_add")
     async def presets_add(self, request: Request) -> Response:
         """
         Add presets.
@@ -1030,7 +1081,7 @@ class HttpAPI(Common):
         await self._notify.emit(Events.PRESETS_UPDATE, data=presets)
         return web.json_response(data=presets, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/tasks")
+    @route("GET", "api/tasks", "tasks")
     async def tasks(self, _: Request) -> Response:
         """
         Get the tasks.
@@ -1046,7 +1097,7 @@ class HttpAPI(Common):
             data=Tasks.get_instance().get_all(), status=web.HTTPOk.status_code, dumps=self.encoder.encode
         )
 
-    @route("PUT", "api/tasks")
+    @route("PUT", "api/tasks", "tasks_add")
     async def tasks_add(self, request: Request) -> Response:
         """
         Add tasks to the queue.
@@ -1112,7 +1163,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=tasks, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("DELETE", "api/history")
+    @route("DELETE", "api/history", "history_delete")
     async def history_delete(self, request: Request) -> Response:
         """
         Delete an item from the queue.
@@ -1140,7 +1191,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("POST", "api/history/{id}")
+    @route("POST", "api/history/{id}", "history_item_update")
     async def history_item_update(self, request: Request) -> Response:
         """
         Update an item in the history.
@@ -1187,7 +1238,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("GET", "api/history")
+    @route("GET", "api/history", "history")
     async def history(self, _: Request) -> Response:
         """
         Get the history.
@@ -1207,7 +1258,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/workers")
+    @route("GET", "api/workers", "pool_list")
     async def pool_list(self, _) -> Response:
         """
         Get the workers status.
@@ -1245,7 +1296,7 @@ class HttpAPI(Common):
             dumps=lambda obj: json.dumps(obj, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"),
         )
 
-    @route("POST", "api/workers")
+    @route("POST", "api/workers", "pool_start")
     async def pool_restart(self, _) -> Response:
         """
         Restart the workers pool.
@@ -1264,7 +1315,7 @@ class HttpAPI(Common):
 
         return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
 
-    @route("PATCH", "api/workers/{id}")
+    @route("PATCH", "api/workers/{id}", "worker_restart")
     async def worker_restart(self, request: Request) -> Response:
         """
         Restart a worker.
@@ -1287,7 +1338,7 @@ class HttpAPI(Common):
 
         return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route("DELETE", "api/workers/{id}")
+    @route("DELETE", "api/workers/{id}", "worker_stop")
     async def worker_stop(self, request: Request) -> Response:
         """
         Stop a worker.
@@ -1310,7 +1361,7 @@ class HttpAPI(Common):
 
         return web.json_response({"status": "stopped" if status else "in_error_state"}, status=web.HTTPOk.status_code)
 
-    @route("GET", "api/player/playlist/{file:.*}.m3u8")
+    @route("GET", "api/player/playlist/{file:.*}.m3u8", "playlist")
     async def playlist(self, request: Request) -> Response:
         """
         Get the playlist.
@@ -1327,13 +1378,19 @@ class HttpAPI(Common):
         if not file:
             return web.json_response(data={"error": "file is required"}, status=web.HTTPBadRequest.status_code)
 
+        base_path: str = self.config.base_path.rstrip("/")
+
         try:
             realFile, status = get_file(download_path=self.config.download_path, file=file)
             if web.HTTPFound.status_code == status:
                 return Response(
                     status=web.HTTPFound.status_code,
                     headers={
-                        "Location": f"/api/player/playlist/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.m3u8"
+                        "Location": str(
+                            self.app.router["playlist"].url_for(
+                                file=str(realFile).replace(self.config.download_path, "").strip("/")
+                            )
+                        ),
                     },
                 )
 
@@ -1341,7 +1398,7 @@ class HttpAPI(Common):
                 return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
 
             return web.Response(
-                text=await Playlist(download_path=self.config.download_path, url="/").make(file=realFile),
+                text=await Playlist(download_path=self.config.download_path, url=f"{base_path}/").make(file=realFile),
                 headers={
                     "Content-Type": "application/x-mpegURL",
                     "Cache-Control": "no-cache",
@@ -1352,7 +1409,7 @@ class HttpAPI(Common):
         except StreamingError as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPNotFound.status_code)
 
-    @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8")
+    @route("GET", "api/player/m3u8/{mode}/{file:.*}.m3u8", "m3u8")
     async def m3u8(self, request: Request) -> Response:
         """
         Get the m3u8 file.
@@ -1383,15 +1440,22 @@ class HttpAPI(Common):
 
             duration = float(duration)
 
+        base_path: str = self.config.base_path.rstrip("/")
+
         try:
-            cls = M3u8(download_path=self.config.download_path, url="/")
+            cls = M3u8(download_path=self.config.download_path, url=f"{base_path}/")
 
             realFile, status = get_file(download_path=self.config.download_path, file=file)
             if web.HTTPFound.status_code == status:
                 return Response(
                     status=status,
                     headers={
-                        "Location": f"/api/player/m3u8/{mode}/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.m3u8"
+                        "Location": str(
+                            self.app.router["m3u8"].url_for(
+                                mode=mode,
+                                file=str(realFile).replace(self.config.download_path, "").strip("/"),
+                            )
+                        ),
                     },
                 )
 
@@ -1416,7 +1480,7 @@ class HttpAPI(Common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts")
+    @route("GET", r"api/player/segments/{segment:\d+}/{file:.*}.ts", "segments")
     async def segments(self, request: Request) -> Response:
         """
         Get the segments.
@@ -1445,7 +1509,12 @@ class HttpAPI(Common):
             return Response(
                 status=status,
                 headers={
-                    "Location": f"/api/player/segments/{segment}/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.ts"
+                    "Location": str(
+                        self.app.router["segments"].url_for(
+                            segment=segment,
+                            file=str(realFile).replace(self.config.download_path, "").strip("/"),
+                        )
+                    ),
                 },
             )
 
@@ -1487,7 +1556,7 @@ class HttpAPI(Common):
 
         return resp
 
-    @route("GET", "api/player/subtitle/{file:.*}.vtt")
+    @route("GET", "api/player/subtitle/{file:.*}.vtt", "subtitles")
     async def subtitles(self, request: Request) -> Response:
         """
         Get the subtitles.
@@ -1509,7 +1578,11 @@ class HttpAPI(Common):
             return Response(
                 status=status,
                 headers={
-                    "Location": f"/api/player/subtitle/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}.vtt"
+                    "Location": str(
+                        self.app.router["subtitles"].url_for(
+                            file=str(realFile).replace(self.config.download_path, "").strip("/")
+                        )
+                    ),
                 },
             )
 
@@ -1540,7 +1613,7 @@ class HttpAPI(Common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", "/")
+    @route("GET", "/", "index")
     async def index(self, _: Request) -> Response:
         """
         Get the index file.
@@ -1566,7 +1639,7 @@ class HttpAPI(Common):
             status=web.HTTPOk.status_code,
         )
 
-    @route("GET", "api/thumbnail")
+    @route("GET", "api/thumbnail", "get_thumbnail")
     async def get_thumbnail(self, request: Request) -> Response:
         """
         Get the thumbnail.
@@ -1620,7 +1693,7 @@ class HttpAPI(Common):
                 data={"error": "failed to retrieve the thumbnail."}, status=web.HTTPInternalServerError.status_code
             )
 
-    @route("GET", "api/random/background")
+    @route("GET", "api/random/background", "get_background")
     async def get_background(self, request: Request) -> Response:
         """
         Get random background.
@@ -1694,7 +1767,7 @@ class HttpAPI(Common):
                 status=web.HTTPInternalServerError.status_code,
             )
 
-    @route("GET", "api/file/ffprobe/{file:.*}")
+    @route("GET", "api/file/ffprobe/{file:.*}", "ffprobe")
     async def get_ffprobe(self, request: Request) -> Response:
         """
         Get the ffprobe data.
@@ -1716,7 +1789,11 @@ class HttpAPI(Common):
                 return Response(
                     status=web.HTTPFound.status_code,
                     headers={
-                        "Location": f"/api/file/ffprobe/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}"
+                        "Location": str(
+                            self.app.router["ffprobe"].url_for(
+                                file=str(realFile).replace(self.config.download_path, "").strip("/")
+                            )
+                        ),
                     },
                 )
 
@@ -1729,7 +1806,7 @@ class HttpAPI(Common):
         except Exception as e:
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
-    @route("GET", "api/file/info/{file:.*}")
+    @route("GET", "api/file/info/{file:.*}", "file_info")
     async def get_file_info(self, request: Request) -> Response:
         """
         Get file info
@@ -1751,7 +1828,11 @@ class HttpAPI(Common):
                 return Response(
                     status=web.HTTPFound.status_code,
                     headers={
-                        "Location": f"/api/file/info/{quote(str(realFile).replace(self.config.download_path, '').strip('/'))}"
+                        "Location": str(
+                            self.app.router["file_info"].url_for(
+                                file=str(realFile).replace(self.config.download_path, "").strip("/")
+                            )
+                        ),
                     },
                 )
 
@@ -1780,7 +1861,7 @@ class HttpAPI(Common):
             LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
 
-    @route("GET", "api/notifications")
+    @route("GET", "api/notifications", "notifications")
     async def notifications(self, _: Request) -> Response:
         """
         Get the notification targets.
@@ -1801,7 +1882,7 @@ class HttpAPI(Common):
             dumps=self.encoder.encode,
         )
 
-    @route("PUT", "api/notifications")
+    @route("PUT", "api/notifications", "notification_add")
     async def notification_add(self, request: Request) -> Response:
         """
         Add notification targets.
@@ -1857,7 +1938,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("POST", "api/notifications/test")
+    @route("POST", "api/notifications/test", "notification_test")
     async def notification_test(self, _: Request) -> Response:
         """
         Test the notification.
@@ -1875,7 +1956,7 @@ class HttpAPI(Common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/file/browser/{path:.*}")
+    @route("GET", "api/file/browser/{path:.*}", "file_browser")
     async def file_browser(self, request: Request) -> Response:
         """
         Get the file browser.

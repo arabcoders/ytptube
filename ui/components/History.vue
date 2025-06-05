@@ -108,7 +108,7 @@
                 </td>
                 <td class="is-vcentered">
                   <div v-if="item.extras.thumbnail">
-                    <FloatingImage :image="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                    <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -232,19 +232,19 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                  :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -378,7 +378,7 @@
 <script setup>
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
-import { makeDownload, formatBytes } from '~/utils/index'
+import { makeDownload, formatBytes, uri } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo', 'add_new'])

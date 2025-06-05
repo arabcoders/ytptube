@@ -969,24 +969,28 @@ async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
     if not pathlib.Path(file).exists():
         return
 
-    async with await open_file(file, "rb") as f:
-        await f.seek(0, os.SEEK_END)
-        while True:
-            line = await f.readline()
-            if not line:
-                await asyncio_sleep(sleep_time)
-                continue
+    try:
+        async with await open_file(file, "rb") as f:
+            await f.seek(0, os.SEEK_END)
+            while True:
+                line = await f.readline()
+                if not line:
+                    await asyncio_sleep(sleep_time)
+                    continue
 
-            msg = line.decode(errors="replace")
-            dt_match = DATETIME_PATTERN.match(msg)
+                msg = line.decode(errors="replace")
+                dt_match = DATETIME_PATTERN.match(msg)
 
-            await emitter(
-                {
-                    "id": sha256(line if isinstance(line, bytes) else line.encode()).hexdigest(),
-                    "line": msg[dt_match.end() :] if dt_match else msg,
-                    "datetime": dt_match.group(1) if dt_match else None,
-                }
-            )
+                await emitter(
+                    {
+                        "id": sha256(line if isinstance(line, bytes) else line.encode()).hexdigest(),
+                        "line": msg[dt_match.end() :] if dt_match else msg,
+                        "datetime": dt_match.group(1) if dt_match else None,
+                    }
+                )
+    except Exception as e:
+        LOG.error(f"Error while tailing log file '{file!s}': {e!s}")
+        return
 
 
 def load_cookies(file: str) -> tuple[bool, MozillaCookieJar]:

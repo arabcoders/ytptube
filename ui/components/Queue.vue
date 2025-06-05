@@ -65,8 +65,20 @@
                       :id="'checkbox-' + item._id" :value="item._id">
                   </label>
                 </td>
-                <td class="is-text-overflow is-vcentered" v-tooltip="item.title">
-                  <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                <td class="is-text-overflow is-vcentered">
+                  <div v-if="item.extras?.thumbnail">
+                    <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                      :title="item.title">
+                      <div class="is-text-overflow">
+                        <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                      </div>
+                    </FloatingImage>
+                  </div>
+                  <template v-else>
+                    <div class="is-text-overflow" v-tooltip="item.title">
+                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                    </div>
+                  </template>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   <span class="icon-text">
@@ -137,13 +149,13 @@
             <figure class="image is-3by1">
               <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)"
+                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="'/api/thumbnail?url=' + encodePath(item.extras.thumbnail)" />
+                  :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>

@@ -124,29 +124,22 @@ other than the shortcut itself. this shortcut missing support for parsing the ht
 
 It's advisable to run YTPTube behind a reverse proxy, if better authentication and/or HTTPS support are required.
 
-### Nginx http server
-
-```nginx
-location /ytptube/ {
-  proxy_pass http://ytptube:8081;
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "upgrade";
-  proxy_set_header Host $host;
-}
-```
-
-> [!NOTE]
-> The extra `proxy_set_header` directives are there to make web socket connection work.
-
-### Caddy http server
+## Caddy http server
 
 The following example Caddyfile gets a reverse proxy going behind [caddy](https://caddyserver.com).
 
 ```caddyfile
+# If you are using sub-domain.
+youtube.example.com {
+  reverse_proxy ytptube:8081
+}
+
+# If you are using sub-folder, for example: https://example.com/ytptube/
+# Make sure to change the `ytptube` to the name of your container.
+# Also make sure to set the `YTP_BASE_PATH` environment variable to `/ytptube/`
 example.com {
+  redir /ytptube /ytptube/
   route /ytptube/* {
-    uri strip_prefix ytptube
     reverse_proxy ytptube:8081
   }
 }
@@ -317,4 +310,5 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PICTURES_BACKENDS    | A comma separated list of pictures urls to use.                  | `empty string`                     |
 | YTP_BROWSER_ENABLED      | Whether to enable the file browser                               | `false`                            |
 | YTP_YTDLP_AUTO_UPDATE    | Whether to enable the auto update for yt-dlp                     | `true`                             |
+| YTP_BASE_PATH            | Set this if you are serving YTPTube from sub-folder              | `/`                                |
 

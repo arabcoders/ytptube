@@ -23,6 +23,7 @@ from library.Tasks import Tasks
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
+
 class Main:
     def __init__(self):
         self._config = Config.get_instance()
@@ -99,14 +100,16 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube v{self._config.version} - started on http://{self._config.host}:{self._config.port}")
+            LOG.info(
+                f"YTPTube v{self._config.version} - started on http://{self._config.host}:{self._config.port}{self._config.base_path}"
+            )
             LOG.info("=" * 40)
 
         HTTP_LOGGER = None
         if self._config.access_log:
             from library.HttpAPI import LOG as HTTP_LOGGER
 
-            HTTP_LOGGER.addFilter(lambda record: "GET /api/ping" not in record.getMessage())
+            HTTP_LOGGER.addFilter(lambda record: f"GET {self._app.router['ping'].url_for()}" not in record.getMessage())
 
         web.run_app(
             self._app,
