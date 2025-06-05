@@ -17,7 +17,6 @@ from .Events import Event, EventBus, Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
 from .Utils import validate_uuid
-from .version import APP_VERSION
 
 LOG = logging.getLogger("notifications")
 
@@ -138,6 +137,7 @@ class Notification(metaclass=Singleton):
         self._file: str = file or os.path.join(config.config_path, "notifications.json")
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
+        self._version = config.version
 
         if os.path.exists(self._file):
             try:
@@ -360,7 +360,7 @@ class Notification(metaclass=Singleton):
                 "method": target.request.method.upper(),
                 "url": target.request.url,
                 "headers": {
-                    "User-Agent": f"YTPTube/{APP_VERSION}",
+                    "User-Agent": f"YTPTube/{self._version}",
                     "X-Event-Id": ev.id,
                     "X-Event": ev.event,
                     "Content-Type": "application/json"

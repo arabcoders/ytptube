@@ -421,6 +421,9 @@ class Config:
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.INFO)
 
+        if self.version == "dev-master":
+            self._version_via_git()
+
     def _get_attributes(self) -> dict:
         attrs: dict = {}
         vClass: str = self.__class__
@@ -471,3 +474,59 @@ class Config:
             return YTDLP_VERSION
         except ImportError:
             return "0.0.0"
+
+    def _version_via_git(self):
+        """
+        Updates the version of the application using git tags.
+        This is used to set the version to the latest git tag.
+        """
+        git_path: str = os.path.join(os.path.dirname(__file__), "..", "..", ".git")
+        if not os.path.exists(git_path):
+            logging.warning(f"Git directory '{git_path}' does not exist. Cannot determine version.")
+            return
+
+        try:
+            import subprocess
+
+            branch_result = subprocess.run(  # noqa: S603
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
+                cwd=os.path.dirname(git_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != branch_result.returncode:
+                logging.error(f"Git rev-parse failed: {branch_result.stderr.strip()}")
+                return
+
+            branch_name: str = branch_result.stdout.strip()
+            if not branch_name:
+                logging.warning("Git branch name is empty.")
+                return
+
+            commit_result = subprocess.run(  # noqa: S603
+                ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
+                cwd=os.path.dirname(git_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != commit_result.returncode:
+                logging.error(f"Git log failed: {commit_result.stderr.strip()}")
+                return
+
+            commit_info: str = commit_result.stdout.strip()
+            if not commit_info:
+                logging.warning("Git commit info is empty.")
+                return
+
+            commit_date, commit_sha = commit_info.split("_", 1)
+            commit_date = time.strftime("%Y%m%d", time.localtime(int(commit_date)))
+            commit_sha = commit_sha[:8]
+
+            self.version = f"{branch_name}-{commit_date}-{commit_sha}"
+            logging.info(f"Application version set to '{self.version}' based on git data.")
+        except Exception as e:
+            logging.error(f"Error while getting git version: {e!s}")
