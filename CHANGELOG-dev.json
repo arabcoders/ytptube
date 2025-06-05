@@ -1,7 +1,31 @@
 [
     {
-        "tag": "dev-20250604-18dea307",
-        "date": "2025-06-04T19:48:45+00:00",
+        "tag": "dev-20250605-cfb600b6",
+        "date": "2025-06-05T18:51:06+00:00",
+        "commits": [
+            {
+                "sha": "cfb600b6",
+                "message": "minor README text update",
+                "author": "arabcoders",
+                "date": "2025-06-05T18:51:06+00:00"
+            },
+            {
+                "sha": "8b0b744d",
+                "message": "Add option to completely disable videos thumbnail.",
+                "author": "arabcoders",
+                "date": "2025-06-05T18:36:52+00:00"
+            },
+            {
+                "sha": "0f0dd51a",
+                "message": "Add support for running YTPTube from sub-directory. Fix #295",
+                "author": "arabcoders",
+                "date": "2025-06-05T18:04:00+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250604-38d99c0e",
+        "date": "2025-06-04T19:49:13+00:00",
         "commits": [
             {
                 "sha": "18dea307",
