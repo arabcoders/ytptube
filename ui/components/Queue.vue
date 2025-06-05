@@ -66,7 +66,7 @@
                   </label>
                 </td>
                 <td class="is-text-overflow is-vcentered">
-                  <div v-if="item.extras?.thumbnail">
+                  <div v-if="showThumbnails && item.extras?.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
                       <div class="is-text-overflow">
@@ -128,7 +128,7 @@
     </div>
 
     <div class="columns is-multiline" v-else>
-      <LateLoader :unrender="true" :min-height="hideThumbnail ? 265 : 475" class="column is-6"
+      <LateLoader :unrender="true" :min-height="showThumbnails ? 475 : 265" class="column is-6"
         v-for="item in stateStore.queue" :key="item._id">
         <div class="card is-flex is-full-height is-flex-direction-column">
           <header class="card-header">
@@ -139,13 +139,13 @@
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
-              <button @click="hideThumbnail = !hideThumbnail">
+              <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
               </button>
             </div>
           </header>
-          <div v-if="false === hideThumbnail" class="card-image">
+          <div v-if="showThumbnails" class="card-image">
             <figure class="image is-3by1">
               <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
                 <div class="play-icon embed-icon"></div>
@@ -247,6 +247,12 @@ import { ucFirst } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo'])
+const props = defineProps({
+  thumbnails: {
+    type: Boolean,
+    default: true
+  }
+})
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
@@ -257,6 +263,7 @@ const masterSelectAll = ref(false)
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'cards')
+const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
 
 const embed_url = ref('')
 

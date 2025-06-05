@@ -49,8 +49,8 @@
 
     <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
       @clear_form="item_form = {}" />
-    <Queue @getInfo="url => get_info = url" />
-    <History @getInfo="url => get_info = url" @add_new="item => toNewDownload(item)" />
+    <Queue @getInfo="url => get_info = url" :thumbnails="show_thumbnail" />
+    <History @getInfo="url => get_info = url" @add_new="item => toNewDownload(item)" :thumbnails="show_thumbnail" />
     <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
   </div>
 </template>
@@ -68,6 +68,8 @@ const get_info = ref('')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
 const display_style = useStorage('display_style', 'cards')
+const show_thumbnail = useStorage('show_thumbnail', true)
+
 const item_form = ref({})
 
 onMounted(() => {

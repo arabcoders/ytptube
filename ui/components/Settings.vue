@@ -11,92 +11,87 @@
         <div class="card-content">
           <div class="columns is-multiline">
             <div class="column is-6">
+
               <div class="field">
-                <label class="label">Color scheme</label>
+                <label class="label is-unselectable">Color scheme</label>
                 <div class="control">
                   <label for="auto" class="radio">
                     <input id="auto" type="radio" v-model="selectedTheme" value="auto">
-                    System Default
+                    <span class="icon"><i class="fa-solid fa-circle-half-stroke" /></span>
+                    <span>Auto</span>
                   </label>
                   <label for="light" class="radio">
                     <input id="light" type="radio" v-model="selectedTheme" value="light">
-                    Light
+                    <span class="icon has-text-warning"><i class="fa-solid fa-sun" /></span>
+                    <span>Light</span>
                   </label>
                   <label for="dark" class="radio">
                     <input id="dark" type="radio" v-model="selectedTheme" value="dark">
-                    Dark
+                    <span class="icon"><i class="fa-solid fa-moon" /></span>
+                    <span>Dark</span>
                   </label>
                 </div>
-                <p class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Select the color scheme for the WebUI.</span>
-                </p>
               </div>
 
               <div class="field">
-                <label class="label" for="random_bg">Backgrounds</label>
+                <label class="label is-unselectable">
+                  Backgrounds
+                  <template v-if="bg_enable">
+                    <NuxtLink @click="$emit('reload_bg')" class="is-bold">Reload</NuxtLink>
+                    <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
+                  </template>
+                </label>
                 <div class="control">
                   <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
-                  <label for="random_bg" class="is-unselectable">&nbsp;Enable</label>
+                  <label for="random_bg" class="is-unselectable">
+                    &nbsp;{{ bg_enable ? 'Enabled' : 'Disabled' }}
+                  </label>
                 </div>
-                <p class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>
-                    Use random background image.
-                    <NuxtLink @click="$emit('reload_bg')" class="is-bold" v-if="bg_enable">
-                      Reload
-                    </NuxtLink>
-                    <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
-                  </span>
-                </p>
               </div>
 
               <div class="field">
-                <label class="label" for="random_bg_opacity">
-                  Background Visibility: (<code>{{ bg_opacity }}</code>)
+                <label class="label is-unselectable" for="random_bg_opacity">
+                  Background visibility <code>{{ parseFloat(1.0 - bg_opacity).toFixed(2) }}</code>
                 </label>
                 <div class="control">
                   <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50"
                     max="1.00" step="0.05">
                 </div>
-                <p class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>How visible the background image should be.</span>
-                </p>
               </div>
+
+              <div class="field">
+                <label class="label is-unselectable" for="show_thumbnail">Show Videos Thumbnail when possible</label>
+                <div class="control">
+                  <input id="show_thumbnail" type="checkbox" class="switch is-success" v-model="show_thumbnail">
+                  <label for="show_thumbnail" class="is-unselectable">
+                    &nbsp;{{ show_thumbnail ? 'Enabled' : 'Disabled' }}
+                  </label>
+                </div>
+              </div>
+
             </div>
             <div class="column is-6">
               <div class="field">
-                <label class="label" for="reduce_confirm">Reduce confirm box usage</label>
+                <label class="label is-unselectable" for="reduce_confirm">Reduce confirm box usage</label>
                 <div class="control">
                   <input id="reduce_confirm" type="checkbox" class="switch is-success" v-model="reduce_confirm">
                   <label for="reduce_confirm" class="is-unselectable">
                     &nbsp;{{ reduce_confirm ? 'Enabled' : 'Disabled' }}
                   </label>
                 </div>
-                <p class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Reduce the usage of confirm boxes in the WebUI.</span>
-                </p>
               </div>
 
               <div class="field">
-                <label class="label" for="allow_toasts">Show toasts</label>
+                <label class="label" for="allow_toasts">Show notifications toasts</label>
                 <div class="control">
                   <input id="allow_toasts" type="checkbox" class="switch is-success" v-model="allow_toasts">
                   <label for="allow_toasts" class="is-unselectable">
                     &nbsp;{{ allow_toasts ? 'Enabled' : 'Disabled' }}
                   </label>
                 </div>
-                <p class="help">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span class="has-text-danger is-bold">
-                    Show notification toasts. If disabled, you will not see errors reported or anything else.
-                  </span>
-                </p>
               </div>
 
-              <div class="field">
+              <div class="field" v-if="allow_toasts">
                 <label class="label">Toasts position</label>
                 <div class="control">
                   <div class="select is-fullwidth">
@@ -112,7 +107,7 @@
                 </div>
               </div>
 
-              <div class="field">
+              <div class="field" v-if="allow_toasts">
                 <label class="label" for="dismiss_on_click">Dismiss toasts on click</label>
                 <div class="control">
                   <input id="dismiss_on_click" type="checkbox" class="switch is-success"
@@ -149,4 +144,6 @@ const allow_toasts = useStorage('allow_toasts', true)
 const reduce_confirm = useStorage('reduce_confirm', false)
 const toast_position = useStorage('toast_position', POSITION.TOP_RIGHT)
 const toast_dismiss_on_click = useStorage('toast_dismiss_on_click', true)
+const show_thumbnail = useStorage('show_thumbnail', true)
+
 </script>

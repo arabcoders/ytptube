@@ -107,7 +107,7 @@
                   </label>
                 </td>
                 <td class="is-vcentered">
-                  <div v-if="item.extras.thumbnail">
+                  <div v-if="showThumbnails && item.extras.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
                       <div class="is-text-overflow">
@@ -198,37 +198,36 @@
     </div>
 
     <div class="columns is-multiline" v-else>
-      <LateLoader :unrender="true" :min-height="hideThumbnail ? 210 : 410" class="column is-6"
+      <LateLoader :unrender="true" :min-height="showThumbnails ? 410 : 210" class="column is-6"
         v-for="item in sortCompleted" :key="item._id">
         <div class="card is-flex is-full-height is-flex-direction-column"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
-          <header class="card-header has-tooltip">
-
+          <header class="card-header ">
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+              <NuxtLink target="_blank" :href="item.url" class="has-tooltip">{{ item.title }}</NuxtLink>
             </div>
 
             <div class="card-header-icon">
-              <span v-if="hideThumbnail">
+              <span v-if="!showThumbnails">
                 <a v-if="'finished' === item.status && item.filename" href="#" @click.prevent="playVideo(item)"
                   v-tooltip="'Play video.'">
                   <span class="icon"><i class="fa-solid fa-play" /></span>
                 </a>
                 <a v-else-if="isEmbedable(item.url)" href="#" @click.prevent="embed_url = getEmbedable(item.url)"
-                  v-tooltip="'Play video.'">
+                  v-tooltip="'Play video.'" class="has-text-danger">
                   <span class="icon"><i class="fa-solid fa-play" /></span>
                 </a>
               </span>
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
-              <button @click="hideThumbnail = !hideThumbnail">
+              <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
               </button>
             </div>
           </header>
-          <div v-if="false === hideThumbnail" class="card-image">
+          <div v-if="showThumbnails" class="card-image">
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
@@ -382,6 +381,14 @@ import { makeDownload, formatBytes, uri } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
 const emitter = defineEmits(['getInfo', 'add_new'])
+
+const props = defineProps({
+  thumbnails: {
+    type: Boolean,
+    default: true
+  }
+})
+
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
@@ -400,6 +407,8 @@ const video_item = ref(null)
 
 const playVideo = item => video_item.value = item
 const closeVideo = () => video_item.value = null
+
+const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
 
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
