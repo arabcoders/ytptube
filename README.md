@@ -130,14 +130,15 @@ The following example Caddyfile gets a reverse proxy going behind [caddy](https:
 
 ```caddyfile
 # If you are using sub-domain.
-youtube.example.com {
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+ytp.example.org {
   reverse_proxy ytptube:8081
 }
 
-# If you are using sub-folder, for example: https://example.com/ytptube/
-# Make sure to change the `ytptube` to the name of your container.
+# If you are using sub-folder, for example: https://example.org/ytptube/
 # Also make sure to set the `YTP_BASE_PATH` environment variable to `/ytptube/`
-example.com {
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+example.org {
   redir /ytptube /ytptube/
   route /ytptube/* {
     reverse_proxy ytptube:8081
@@ -154,7 +155,6 @@ We have added the `YTP_YTDLP_AUTO_UPDATE` environment variable, which is enabled
 container to automatically update `yt-dlp` to the latest version whenever the container starts. If a new version is 
 available, it will be downloaded and applied automatically. To disable this automatic update, set the 
 `YTP_YTDLP_AUTO_UPDATE` environment variable to `false`.
-
 
 We will no longer release new versions of YTPTube for every new version of yt-dlp.
 
