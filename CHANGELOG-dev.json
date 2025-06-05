@@ -1,7 +1,19 @@
 [
     {
-        "tag": "dev-20250605-cfb600b6",
-        "date": "2025-06-05T18:51:06+00:00",
+        "tag": "dev-20250605-517f60f4",
+        "date": "2025-06-05T20:47:00+00:00",
+        "commits": [
+            {
+                "sha": "517f60f4",
+                "message": "Added ts implementation of yt-dlp match_str",
+                "author": "arabcoders",
+                "date": "2025-06-05T20:47:00+00:00"
+            }
+        ]
+    },
+    {
+        "tag": "dev-20250605-f1f79afe",
+        "date": "2025-06-05T19:52:13+00:00",
         "commits": [
             {
                 "sha": "cfb600b6",
