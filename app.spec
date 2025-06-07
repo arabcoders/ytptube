@@ -1,5 +1,5 @@
 import json
-import os
+import os  # noqa: F401
 import platform
 import sys
 
@@ -14,10 +14,7 @@ if sys.platform.startswith("linux"):
         libdir = "/usr/lib/aarch64-linux-gnu"
     else:
         libdir = "/usr/lib"
-    binaries = [
-        (os.path.join(libdir, "libwebkit2gtk-4.1.so.0"), "."),
-        (os.path.join(libdir, "libjavascriptcoregtk-4.1.so.0"), "."),
-    ]
+    binaries = []
 elif sys.platform == "darwin":
     binaries = []
 elif sys.platform.startswith("win"):
@@ -38,7 +35,7 @@ hidden = [
 
 hidden = [f.replace("-", "_") for f in hidden]
 
-a = Analysis(
+a = Analysis(  # noqa: F821 # type: ignore
     ["app/native.py"],  # your entrypoint
     pathex=["."],  # make sure PyInstaller can find your code
     binaries=binaries,
@@ -54,9 +51,9 @@ a = Analysis(
     cipher=block_cipher,
 )
 
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)  # type: ignore # noqa: F821
 
-exe = EXE(
+exe = EXE(  # type: ignore # noqa: F821
     pyz,
     a.scripts,
     a.binaries,
