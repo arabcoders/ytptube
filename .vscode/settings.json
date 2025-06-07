@@ -51,6 +51,7 @@
     "muxdelay",
     "nodesc",
     "noprogress",
+    "onefile",
     "pathex",
     "plexmatch",
     "postprocessor",
