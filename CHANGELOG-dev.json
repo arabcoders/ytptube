@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250607-700fe41c",
-        "date": "2025-06-07T14:51:00+00:00",
+        "tag": "dev-20250607-6e7684cc",
+        "date": "2025-06-07T16:14:08+00:00",
         "commits": [
+            {
+                "sha": "6e7684cc",
+                "message": "app.spec",
+                "author": "arabcoders",
+                "date": "2025-06-07T16:14:08+00:00",
+                "full_sha": "6e7684cc8aaf8ffbb077433b1ecfc9b12faf54c1"
+            },
             {
                 "sha": "700fe41c",
                 "message": "plans for native app",
@@ -25,7 +32,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "700fe41c1541a48ec03cfd39ccdf7f22c66fd3f4"
+        "full_sha": "6e7684cc8aaf8ffbb077433b1ecfc9b12faf54c1"
     },
     {
         "tag": "dev-20250605-f1f79afe",
