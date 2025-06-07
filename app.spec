@@ -5,7 +5,6 @@ import sys
 
 block_cipher = None
 
-# Detect OS and architecture to include the correct GTK/WebKit libs
 machine = platform.machine().lower()
 binaries = []
 if sys.platform.startswith("linux"):
@@ -20,15 +19,12 @@ if sys.platform.startswith("linux"):
         (os.path.join(libdir, "libjavascriptcoregtk-4.1.so.0"), "."),
     ]
 elif sys.platform == "darwin":
-    binaries = [
-        ("/Library/Frameworks/WebKit.framework/Versions/Current/WebKit", "."),
-    ]
+    binaries = []
 elif sys.platform.startswith("win"):
-    # Windows DLLs go here (example paths)
-    binaries = [("C:\\\\path\\\\to\\\\WebKit2.dll", ".")]
+    # Windows DLLs
+    binaries = []
 
-# pull in all your Pipfile.lock defaults as hidden-imports:
-with open("Pipfile.lock") as f:
+with open("./Pipfile.lock") as f:
     lock = json.load(f)
 
 hidden = [
