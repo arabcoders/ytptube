@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250607-6e7684cc",
-        "date": "2025-06-07T16:14:08+00:00",
+        "tag": "dev-20250607-2676ed09",
+        "date": "2025-06-07T20:40:59+00:00",
         "commits": [
+            {
+                "sha": "2676ed09",
+                "message": "support pywebview",
+                "author": "arabcoders",
+                "date": "2025-06-07T20:40:59+00:00",
+                "full_sha": "2676ed099db74baf470b5f69a7486561b326e6e4"
+            },
             {
                 "sha": "6e7684cc",
                 "message": "app.spec",
@@ -32,7 +39,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "6e7684cc8aaf8ffbb077433b1ecfc9b12faf54c1"
+        "full_sha": "2676ed099db74baf470b5f69a7486561b326e6e4"
     },
     {
         "tag": "dev-20250605-f1f79afe",
