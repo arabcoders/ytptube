@@ -85,6 +85,7 @@ class HttpAPI(Common):
 
     def __init__(
         self,
+        root_path: str,
         queue: DownloadQueue | None = None,
         encoder: Encoder | None = None,
         config: Config | None = None,
@@ -94,7 +95,7 @@ class HttpAPI(Common):
         self.config = config or Config.get_instance()
         self._notify = EventBus.get_instance()
 
-        self.rootPath = str(Path(__file__).parent.parent.parent)
+        self.rootPath = root_path
         self.routes = web.RouteTableDef()
         self.cache = Cache()
         self.app: web.Application | None = None
@@ -227,8 +228,10 @@ class HttpAPI(Common):
         """
         staticDir = os.path.join(self.rootPath, "ui", "exported")
         if not os.path.exists(staticDir):
-            msg = f"Could not find the frontend UI static assets. '{staticDir}'."
-            raise ValueError(msg)
+            staticDir = os.path.join(self.rootPath, "..", "ui", "exported")
+            if not os.path.exists(staticDir):
+                msg = f"Could not find the frontend UI static assets. '{staticDir}'."
+                raise ValueError(msg)
 
         preloaded = 0
 

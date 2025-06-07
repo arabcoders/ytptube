@@ -23,16 +23,17 @@ from library.Tasks import Tasks
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
+ROOT_PATH: Path = Path(__file__).parent.absolute()
+
 
 class Main:
     def __init__(self):
         self._config = Config.get_instance()
-        self.rootPath = str(Path(__file__).parent.absolute())
         self._app = web.Application()
 
         self._check_folders()
 
-        caribou.upgrade(self._config.db_file, os.path.join(self.rootPath, "migrations"))
+        caribou.upgrade(self._config.db_file, os.path.join(ROOT_PATH, "migrations"))
 
         connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
         connection.row_factory = sqlite3.Row
@@ -50,7 +51,7 @@ class Main:
             pass
 
         self._queue = DownloadQueue(connection=connection)
-        self._http = HttpAPI(queue=self._queue)
+        self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
         self._socket = HttpSocket(queue=self._queue)
 
         self._app.on_cleanup.append(_close_connection)
@@ -79,12 +80,14 @@ class Main:
             LOG.error(f"Could not create database file at '{self._config.db_file}'.")
             raise
 
-    def start(self, host: str | None = None, port: int | None = None):
+    def start(self, host: str | None = None, port: int | None = None, cb=None):
         """
         Start the application.
         """
-        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
+        host = host or self._config.host
+        port = port or self._config.port
 
+        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
@@ -100,10 +103,10 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(
-                f"YTPTube v{self._config.version} - started on http://{self._config.host}:{self._config.port}{self._config.base_path}"
-            )
+            LOG.info(f"YTPTube v{self._config.version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
+            if cb:
+                cb()
 
         HTTP_LOGGER = None
         if self._config.access_log:
@@ -113,12 +116,13 @@ class Main:
 
         web.run_app(
             self._app,
-            host=host or self._config.host,
-            port=port or self._config.port,
+            host=host,
+            port=port,
             reuse_port=True,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
             print=started,
+            handle_signals=cb is None,
         )
 
 

@@ -50,8 +50,8 @@ class HttpSocket(Common):
         self.queue = queue or DownloadQueue.get_instance()
         self._notify = EventBus.get_instance()
 
-        #logger=True, engineio_logger=True,
-        self.sio = sio or socketio.AsyncServer(cors_allowed_origins="*")
+        # logger=True, engineio_logger=True,
+        self.sio = sio or socketio.AsyncServer(async_mode="aiohttp", cors_allowed_origins="*")
         encoder = encoder or Encoder()
 
         def emit(e: Event, _, **kwargs):

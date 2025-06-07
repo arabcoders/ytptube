@@ -24,6 +24,7 @@ brotlicffi = "*"
 anyio = "*"
 pycryptodome = "*"
 yt-dlp = "*"
+platformdirs = "*"
 
 [dev-packages]
 
