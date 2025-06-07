@@ -79,7 +79,7 @@ class Main:
             LOG.error(f"Could not create database file at '{self._config.db_file}'.")
             raise
 
-    def start(self):
+    def start(self, host: str | None = None, port: int | None = None):
         """
         Start the application.
         """
@@ -113,8 +113,8 @@ class Main:
 
         web.run_app(
             self._app,
-            host=self._config.host,
-            port=self._config.port,
+            host=host or self._config.host,
+            port=port or self._config.port,
             reuse_port=True,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
