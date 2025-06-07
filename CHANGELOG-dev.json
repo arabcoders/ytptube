@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250606-9419e15a",
-        "date": "2025-06-05T22:33:29+00:00",
+        "tag": "dev-20250607-700fe41c",
+        "date": "2025-06-07T14:51:00+00:00",
         "commits": [
+            {
+                "sha": "700fe41c",
+                "message": "plans for native app",
+                "author": "arabcoders",
+                "date": "2025-06-07T14:51:00+00:00",
+                "full_sha": "700fe41c1541a48ec03cfd39ccdf7f22c66fd3f4"
+            },
             {
                 "sha": "9419e15a",
                 "message": "minor changes to changelog page",
@@ -18,7 +25,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "9419e15a4f5bdc3aeed8dd494f4c8824a5cf33a8"
+        "full_sha": "700fe41c1541a48ec03cfd39ccdf7f22c66fd3f4"
     },
     {
         "tag": "dev-20250605-f1f79afe",
