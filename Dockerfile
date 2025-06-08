@@ -13,6 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONFAULTHANDLER=1
 ENV PIP_NO_CACHE_DIR=off
 ENV PIP_CACHE_DIR=/root/.cache/pip
+ENV UV_CACHE_DIR=/root/.cache/pip
 
 # Install dependencies
 RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev curl make && pip install uv
@@ -20,7 +21,7 @@ RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev curl
 WORKDIR /opt/
 
 COPY ./pyproject.toml ./uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/pip uv --no-cache venv --system-site-packages --relocatable ./python && \
+RUN --mount=type=cache,target=/root/.cache/pip uv venv --system-site-packages --relocatable ./python && \
   VIRTUAL_ENV=/opt/python uv sync --link-mode=copy --active
 
 FROM python:3.13-alpine
