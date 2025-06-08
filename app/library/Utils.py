@@ -89,17 +89,17 @@ def calc_download_path(base_path: str, folder: str | None = None, create_path: b
     if folder.startswith("/"):
         folder = folder[1:]
 
-    realBasePath = os.path.realpath(base_path)
-    download_path = os.path.realpath(os.path.join(base_path, folder))
+    realBasePath = pathlib.Path(base_path).absolute()
+    download_path = pathlib.Path(realBasePath / folder).absolute()
 
-    if not download_path.startswith(realBasePath):
+    if not str(download_path).startswith(str(realBasePath)):
         msg = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
         raise Exception(msg)
 
-    if not os.path.isdir(download_path) and create_path:
-        os.makedirs(download_path, exist_ok=True)
+    if not download_path.is_dir() and create_path:
+        download_path.mkdir(parents=True, exist_ok=True)
 
-    return download_path
+    return str(download_path)
 
 
 def extract_info(
