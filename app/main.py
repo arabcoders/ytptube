@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import os
 import sqlite3
 import sys
 from pathlib import Path
@@ -34,7 +33,7 @@ class Main:
 
         self._check_folders()
 
-        caribou.upgrade(self._config.db_file, os.path.join(ROOT_PATH, "migrations"))
+        caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")
 
         connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
         connection.row_factory = sqlite3.Row
@@ -46,8 +45,9 @@ class Main:
             LOG.debug("Database connection closed.")
 
         try:
-            if "600" != oct(os.stat(self._config.db_file).st_mode)[-3:]:
-                os.chmod(self._config.db_file, 0o600)
+            db_file = Path(self._config.db_file)
+            if "600" != oct(db_file.stat().st_mode)[-3:]:
+                db_file.chmod(0o600)
         except Exception:
             pass
 
@@ -62,23 +62,24 @@ class Main:
         folders = (self._config.download_path, self._config.temp_path, self._config.config_path)
 
         for folder in folders:
+            folder = Path(folder)
             try:
                 LOG.debug(f"Checking folder at '{folder}'.")
-                if not os.path.exists(folder):
+                if not folder.exists():
                     LOG.info(f"Creating folder at '{folder}'.")
-                    os.makedirs(folder, exist_ok=True)
+                    folder.mkdir(parents=True, exist_ok=True)
             except OSError:
                 LOG.error(f"Could not create folder at '{folder}'.")
                 raise
 
         try:
-            LOG.debug(f"Checking database file at '{self._config.db_file}'.")
-            if not os.path.exists(self._config.db_file):
-                LOG.info(f"Creating database file at '{self._config.db_file}'.")
-                with open(self._config.db_file, "w") as _:
-                    pass
-        except OSError:
-            LOG.error(f"Could not create database file at '{self._config.db_file}'.")
+            db_file = Path(self._config.db_file)
+            LOG.debug(f"Checking database file at '{db_file}'.")
+            if not db_file.exists():
+                LOG.info(f"Creating database file at '{db_file}'.")
+                db_file.touch(exist_ok=True)
+        except OSError as e:
+            LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
             raise
 
     def start(self, host: str | None = None, port: int | None = None, cb=None):

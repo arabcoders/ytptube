@@ -1131,3 +1131,47 @@ def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) 
     matched.extend(line for line in logs if line and any(p.search(line) for p in compiled))
 
     return list(dict.fromkeys(matched))
+
+
+def delete_dir(dir: pathlib.Path) -> bool:
+    """
+    Delete a directory and all its contents.
+
+    Args:
+        dir (Path): The directory to delete.
+
+    Returns:
+        bool: True if the directory was deleted successfully, False otherwise.
+
+    """
+    if not dir or not dir.exists() or not dir.is_dir():
+        return False
+
+    try:
+        for item in dir.iterdir():
+            if item.is_dir():
+                delete_dir(item)
+            else:
+                item.unlink()
+        dir.rmdir()
+        return True
+    except Exception as e:
+        LOG.error(f"Failed to delete directory '{dir}': {e}")
+        return False
+
+
+def init_class(cls: type, data: dict):
+    """
+    Initialize a class instance with data from a dictionary, filtering out keys not present in the class fields.
+
+    Args:
+        cls (type): The class to initialize.
+        data (dict): The data to use for initialization.
+
+    Returns:
+        object: An instance of the class initialized with the provided data.
+
+    """
+    from dataclasses import fields
+
+    return cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)}})

@@ -1,8 +1,8 @@
 import json
 import logging
-import os
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -13,7 +13,7 @@ from .Events import EventBus, Events
 from .Singleton import Singleton
 from .Utils import arg_converter
 
-LOG = logging.getLogger("presets")
+LOG = logging.getLogger("conditions")
 
 
 @dataclass(kw_only=True)
@@ -51,16 +51,16 @@ class Conditions(metaclass=Singleton):
     _instance = None
     """The instance of the class."""
 
-    def __init__(self, file: str | None = None, config: Config | None = None):
+    def __init__(self, file: Path | str | None = None, config: Config | None = None):
         Conditions._instance = self
 
         config = config or Config.get_instance()
 
-        self._file: str = file or os.path.join(config.config_path, "conditions.json")
+        self._file: Path = Path(file) if file else Path(config.config_path) / "conditions.json"
 
-        if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                os.chmod(self._file, 0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
@@ -68,7 +68,7 @@ class Conditions(metaclass=Singleton):
             msg = "Not implemented"
             raise Exception(msg)
 
-        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.add")
+        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.save")
 
     @staticmethod
     def get_instance() -> "Conditions":
@@ -114,7 +114,7 @@ class Conditions(metaclass=Singleton):
         """
         self.clear()
 
-        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+        if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
         LOG.info(f"Loading '{self._file}'.")

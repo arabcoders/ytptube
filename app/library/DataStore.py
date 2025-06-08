@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 from collections import OrderedDict
 from datetime import UTC, datetime
 from email.utils import formatdate
@@ -8,7 +9,9 @@ from sqlite3 import Connection
 from .config import Config
 from .Download import Download
 from .ItemDTO import ItemDTO
-from .Utils import clean_item
+from .Utils import init_class
+
+LOG = logging.getLogger("datastore")
 
 
 class DataStore:
@@ -69,9 +72,9 @@ class DataStore:
 
         for row in cursor:
             rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
-            data, _ = clean_item(json.loads(row["data"]), keys=ItemDTO.removed_fields())
+            data: dict = json.loads(row["data"])
             data.pop("_id", None)
-            item: ItemDTO = ItemDTO(**data)
+            item: ItemDTO = init_class(ItemDTO, data)
             item._id = row["id"]
             item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
             items.append((row["id"], item))
@@ -147,10 +150,4 @@ class DataStore:
         )
 
     def _delete_store_item(self, key: str) -> None:
-        self.connection.execute(
-            'DELETE FROM "history" WHERE "type" = ? AND "id" = ?',
-            (
-                self.type,
-                key,
-            ),
-        )
+        self.connection.execute('DELETE FROM "history" WHERE "type" = ? AND "id" = ?', (self.type, key))

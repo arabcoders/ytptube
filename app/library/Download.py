@@ -4,10 +4,10 @@ import logging
 import multiprocessing
 import os
 import re
-import shutil
 import time
 from datetime import UTC, datetime
 from email.utils import formatdate
+from pathlib import Path
 
 import yt_dlp
 
@@ -16,7 +16,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import extract_info, extract_ytdlp_logs, load_cookies
+from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
 from .YTDLPOpts import YTDLPOpts
 
 
@@ -137,7 +137,7 @@ class Download:
             return
 
         if "__finaldir" in data["info_dict"]:
-            filename = os.path.join(data["info_dict"]["__finaldir"], os.path.basename(data["info_dict"]["filepath"]))
+            filename = str(Path(data["info_dict"]["__finaldir"]) / Path(data["info_dict"]["filepath"]).name)
         else:
             filename = data["info_dict"]["filepath"]
 
@@ -160,8 +160,8 @@ class Download:
                     config={
                         "color": "no_color",
                         "paths": {
-                            "home": self.download_dir,
-                            "temp": self.temp_path,
+                            "home": str(self.download_dir),
+                            "temp": str(self.temp_path),
                         },
                         "outtmpl": {
                             "default": self.template,
@@ -189,13 +189,12 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    cookie_file = os.path.join(self.temp_path, f"cookie_{self.info._id}.txt")
+                    cookie_file = Path(self.temp_path) / f"cookie_{self.info._id}.txt"
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
                     )
-                    with open(cookie_file, "w") as f:
-                        f.write(self.info.cookies)
-                        params["cookiefile"] = f.name
+                    cookie_file.write_text(self.info.cookies)
+                    params["cookiefile"] = str(cookie_file.as_posix())
 
                     load_cookies(cookie_file)
                 except Exception as e:
@@ -280,10 +279,12 @@ class Download:
         self.status_queue = Config.get_manager().Queue()
 
         # Create temp dir for each download.
-        self.temp_path = os.path.join(self.temp_dir, hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5))
+        self.temp_path = Path(self.temp_dir) / hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5)
 
-        if not os.path.exists(self.temp_path):
-            os.makedirs(self.temp_path, exist_ok=True)
+        if not self.temp_path.exists():
+            self.temp_path.mkdir(parents=True, exist_ok=True)
+
+        self.info.temp_path = str(self.temp_path)
 
         self.proc = multiprocessing.Process(name=f"download-{self.id}", target=self._download)
         self.proc.start()
@@ -385,17 +386,19 @@ class Download:
             )
             return
 
-        if not os.path.exists(self.temp_path):
+        tmp_dir = Path(self.temp_path)
+
+        if not tmp_dir.exists():
             return
 
-        if self.temp_path == self.temp_dir:
+        if str(tmp_dir) == str(self.temp_dir):
             self.logger.warning(
-                f"Attempted to delete video temp folder: {self.temp_path}, but it is the same as main temp folder."
+                f"Attempted to delete video temp folder '{self.temp_path}', but it is the same as main temp folder."
             )
             return
 
-        self.logger.info(f"Deleting Temp folder '{self.temp_path}'.")
-        shutil.rmtree(self.temp_path, ignore_errors=True)
+        status = delete_dir(tmp_dir)
+        self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
 
     async def progress_update(self):
         """
@@ -424,11 +427,15 @@ class Download:
             self.tmpfilename = status.get("tmpfilename")
 
             if "filename" in status:
-                self.info.filename = os.path.relpath(status.get("filename"), self.download_dir)
+                fl = Path(status.get("filename"))
+                try:
+                    self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.download_dir)))
+                except ValueError:
+                    self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.temp_path)))
 
-                if os.path.exists(status.get("filename")):
+                if fl.is_file() and fl.exists():
                     try:
-                        self.info.file_size = os.path.getsize(status.get("filename"))
+                        self.info.file_size = fl.stat().st_size
                     except FileNotFoundError:
                         self.info.file_size = 0
 
@@ -439,7 +446,8 @@ class Download:
                 self.info.error = status.get("error")
                 await self._notify.emit(Events.ERROR, data={"message": self.info.error, "data": self.info})
 
-            if "downloaded_bytes" in status:
+            if "downloaded_bytes" in status and status.get("downloaded_bytes") > 0:
+                self.info.downloaded_bytes = status.get("downloaded_bytes")
                 total = status.get("total_bytes") or status.get("total_bytes_estimate")
                 if total:
                     try:
@@ -451,17 +459,11 @@ class Download:
             self.info.speed = status.get("speed")
             self.info.eta = status.get("eta")
 
-            if (
-                "finished" == self.info.status
-                and "filename" in status
-                and os.path.isfile(status.get("filename"))
-                and os.path.exists(status.get("filename"))
-            ):
-                try:
-                    self.info.file_size = os.path.getsize(status.get("filename"))
-                    self.info.datetime = str(formatdate(time.time()))
-                except FileNotFoundError:
-                    pass
+            fl = Path(status.get("filename")) if status and "filename" in status else None
+
+            if "finished" == self.info.status and fl and fl.is_file() and fl.exists():
+                self.info.file_size = fl.stat().st_size
+                self.info.datetime = str(formatdate(time.time()))
 
                 try:
                     ff = await ffprobe(status.get("filename"))
@@ -471,7 +473,7 @@ class Download:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True
                     self.logger.exception(e)
-                    self.logger.error(f"Failed to ffprobe: {status.get}. {e}")
+                    self.logger.error(f"Failed to run ffprobe. {status.get}. {e}")
 
             await self._notify.emit(Events.UPDATED, data=self.info)
 
