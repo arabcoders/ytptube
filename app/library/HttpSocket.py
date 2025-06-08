@@ -6,6 +6,7 @@ import os
 import shlex
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import anyio
 import socketio
@@ -289,13 +290,17 @@ class HttpSocket(Common):
 
         manual_archive = self.config.manual_archive
         if manual_archive:
+            manual_archive = Path(manual_archive)
+
+            if not manual_archive.exists():
+                manual_archive.touch(exist_ok=True)
+
             previouslyArchived = False
-            if os.path.exists(manual_archive):
-                async with await anyio.open_file(manual_archive) as f:
-                    async for line in f:
-                        if idDict["archive_id"] in line:
-                            previouslyArchived = True
-                            break
+            async with await anyio.open_file(manual_archive) as f:
+                async for line in f:
+                    if idDict["archive_id"] in line:
+                        previouslyArchived = True
+                        break
 
             if not previouslyArchived:
                 async with await anyio.open_file(manual_archive, "a") as f:
@@ -313,9 +318,7 @@ class HttpSocket(Common):
             "paused": self.queue.is_paused(),
         }
 
-        # get download folder listing.
-        downloadPath: str = self.config.download_path
-        data["folders"] = [name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))]
+        data["folders"] = [folder.name for folder in Path(self.config.download_path).iterdir() if folder.is_dir()]
 
         await self._notify.emit(Events.INITIAL_DATA, data=data, to=sid)
 
@@ -355,10 +358,11 @@ class HttpSocket(Common):
             await self.subscribe_emit(event=event, data=data)
 
         if "log_lines" == event and self.log_task is None:
-            LOG.debug("Starting log tailing task.")
+            log_file = Path(self.config.config_path) / "logs" / "app.log"
+            LOG.debug(f"Starting tailing '{log_file!s}'.")
             self.log_task = asyncio.create_task(
                 tail_log(
-                    file=os.path.join(self.config.config_path, "logs", "app.log"),
+                    file=log_file,
                     emitter=emit_logs,
                 ),
                 name="tail_log",

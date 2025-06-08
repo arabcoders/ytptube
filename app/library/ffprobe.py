@@ -7,6 +7,7 @@ import functools
 import json
 import operator
 import os
+from pathlib import Path
 
 import anyio
 
@@ -271,7 +272,7 @@ async def ffprobe(file: str) -> FFProbeResult:
         msg = "ffprobe not found."
         raise OSError(msg) from e
 
-    if not os.path.isfile(file):
+    if not Path(file).exists():
         msg = f"No such media file '{file}'."
         raise OSError(msg)
 
@@ -290,7 +291,7 @@ async def ffprobe(file: str) -> FFProbeResult:
     if 0 == exitCode:
         parsed: dict = json.loads(data.decode("utf-8"))
     else:
-        msg = f"FFProbe return with non-0 exit code. '{err.decode('utf-8')}'"
+        msg = f"ffprobe returned with non-0 exit code. '{err.decode('utf-8')}'"
         raise FFProbeError(msg)
 
     result = FFProbeResult()

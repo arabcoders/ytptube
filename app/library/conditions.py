@@ -11,7 +11,7 @@ from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
-from .Utils import arg_converter
+from .Utils import arg_converter, init_class
 
 LOG = logging.getLogger("conditions")
 
@@ -117,12 +117,12 @@ class Conditions(metaclass=Singleton):
         if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
-        LOG.info(f"Loading '{self._file}'.")
         try:
-            with open(self._file) as f:
-                items = json.load(f)
+            LOG.info(f"Loading '{self._file}'.")
+            items = json.loads(self._file.read_text())
         except Exception as e:
-            LOG.error(f"Failed to parse '{self._file}'. '{e}'.")
+            LOG.exception(e)
+            LOG.error(f"Error loading '{self._file}'. '{e}'.")
             return self
 
         if not items or len(items) < 1:
@@ -137,15 +137,15 @@ class Conditions(metaclass=Singleton):
                     item["id"] = str(uuid.uuid4())
                     need_save = True
 
-                item = Condition(**item)
+                item: Condition = init_class(Condition, item)
 
                 self._items.append(item)
             except Exception as e:
-                LOG.error(f"Failed to parse failure condition at list position '{i}'. '{e!s}'.")
+                LOG.error(f"Failed to parse condition at list position '{i}'. '{e!s}'.")
                 continue
 
         if need_save:
-            LOG.info("Saving failure conditions due to format, or id change.")
+            LOG.info("Saving conditions due to format, or id change.")
             self.save(self._items)
 
         return self
@@ -229,7 +229,7 @@ class Conditions(metaclass=Singleton):
         for i, item in enumerate(items):
             try:
                 if not isinstance(item, Condition):
-                    item = Condition(**item)
+                    item: Condition = init_class(Condition, item)
                     items[i] = item
             except Exception as e:
                 LOG.error(f"Failed to save '{i}' due to parsing error. '{e!s}'.")
@@ -242,12 +242,10 @@ class Conditions(metaclass=Singleton):
                 continue
 
         try:
-            with open(self._file, "w") as f:
-                json.dump(obj=[item.serialize() for item in items], fp=f, indent=4)
-
+            self._file.write_text(json.dumps(obj=[item.serialize() for item in items], indent=4))
             LOG.info(f"Updated '{self._file}'.")
         except Exception as e:
-            LOG.error(f"Failed to save '{self._file}'. '{e!s}'.")
+            LOG.error(f"Error saving '{self._file}'. '{e!s}'.")
 
         return self
 

@@ -951,7 +951,7 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
         return {"logs": [], "next_offset": None, "end_is_reached": True}
 
 
-async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
+async def tail_log(file: pathlib.Path, emitter: callable, sleep_time: float = 0.5):
     """
     Continuously read a log file and emit new lines.
 
@@ -966,7 +966,7 @@ async def tail_log(file: str, emitter: callable, sleep_time: float = 0.5):
 
     from anyio import open_file
 
-    if not pathlib.Path(file).exists():
+    if not file.exists():
         return
 
     try:

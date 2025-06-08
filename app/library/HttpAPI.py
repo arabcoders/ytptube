@@ -47,6 +47,7 @@ from .Utils import (
     get_file_sidecar,
     get_files,
     get_mime_type,
+    init_class,
     read_logfile,
     validate_url,
     validate_uuid,
@@ -914,7 +915,7 @@ class HttpAPI(Common):
                     status=web.HTTPBadRequest.status_code,
                 )
 
-            items.append(Condition(**item))
+            items.append(init_class(Condition, item))
         try:
             items = cls.save(items=items).load().get_all()
         except Exception as e:
