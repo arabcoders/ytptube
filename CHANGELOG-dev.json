@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250609-b1bc399a",
-        "date": "2025-06-08T21:47:11+00:00",
+        "tag": "dev-20250609-7bae93a0",
+        "date": "2025-06-08T21:52:13+00:00",
         "commits": [
+            {
+                "sha": "7bae93a0",
+                "message": "re-enable caching for pip packages.",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:52:13+00:00",
+                "full_sha": "7bae93a04f5b1fbf955727ae6ca828de1d9cddce"
+            },
             {
                 "sha": "b1bc399a",
                 "message": "WiP: more changes to classes to support Path",
@@ -95,7 +102,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "b1bc399a0ccaa7e9e6c8d19c9480f80b6e7b9628"
+        "full_sha": "7bae93a04f5b1fbf955727ae6ca828de1d9cddce"
     },
     {
         "tag": "dev-20250605-f1f79afe",
