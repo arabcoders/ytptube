@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250608-1f1fbbac",
-        "date": "2025-06-08T20:45:00+00:00",
+        "tag": "dev-20250609-b1bc399a",
+        "date": "2025-06-08T21:47:11+00:00",
         "commits": [
+            {
+                "sha": "b1bc399a",
+                "message": "WiP: more changes to classes to support Path",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:47:11+00:00",
+                "full_sha": "b1bc399a0ccaa7e9e6c8d19c9480f80b6e7b9628"
+            },
+            {
+                "sha": "6a9beea8",
+                "message": "WIP: Migrated DownloadQueue to use Path",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:14:14+00:00",
+                "full_sha": "6a9beea89ec5648527735ccf79494d562d7ab7e8"
+            },
             {
                 "sha": "1f1fbbac",
                 "message": "WIP: more changes to support webview in the future.",
@@ -81,7 +95,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "1f1fbbac01d8ce5f923c810dca9d829b06eb4e2a"
+        "full_sha": "b1bc399a0ccaa7e9e6c8d19c9480f80b6e7b9628"
     },
     {
         "tag": "dev-20250605-f1f79afe",
