@@ -257,17 +257,15 @@ class Config:
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
         self.is_native = is_native
-        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or os.path.join(baseDefaultPath, "var", "tmp")
-        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or os.path.join(baseDefaultPath, "var", "config")
-        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or os.path.join(
-            baseDefaultPath, "var", "downloads"
+        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or str(Path(baseDefaultPath) / "var" / "tmp")
+        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
+        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
+            Path(baseDefaultPath) / "var" / "downloads"
         )
 
-        conf_store = str(Path(self.config_path).as_posix())
+        envFile: str = Path(self.config_path) / ".env"
 
-        envFile: str = os.path.join(self.config_path, ".env")
-
-        if os.path.exists(envFile):
+        if envFile.exists():
             logging.info(f"Loading environment variables from '{envFile}'.")
             load_dotenv(envFile)
 
@@ -334,8 +332,8 @@ class Config:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         ytdl_options = {}
-        opts_file: str = os.path.join(conf_store, "ytdlp.cli")
-        if os.path.exists(opts_file) and os.path.getsize(opts_file) > 2:
+        opts_file: Path = Path(self.config_path) / "ytdlp.cli"
+        if opts_file.exists() and opts_file.stat().st_size > 2:
             LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
@@ -365,25 +363,30 @@ class Config:
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
         if self.keep_archive:
-            LOG.info("keep archive option is enabled.")
-            archive_file: str = os.path.join(conf_store, "archive.log")
-            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file}"
+            archive_file: Path = Path(self.config_path) / "archive.log"
+            if not archive_file.exists():
+                LOG.info(f"Creating archive file '{archive_file}'.")
+                archive_file.touch(exist_ok=True)
+
+            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}'.")
+            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
 
         if cookies_file := ytdl_options.get("cookiefile", None):
-            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
+            cookies_file = Path(cookies_file)
+            if cookies_file.exists() and cookies_file.stat().st_size > 2:
                 LOG.info(f"Using cookies from '{cookies_file}'.")
                 load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
+                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file.as_posix()!s}"
             else:
                 LOG.warning(f"Invalid cookie file '{cookies_file}' specified.")
                 ytdl_options.pop("cookiefile", None)
 
         if not ytdl_options.get("cookiefile", None):
-            cookies_file: str = os.path.join(conf_store, "cookies.txt")
-            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
+            cookies_file: Path = Path(self.config_path) / "cookies.txt"
+            if cookies_file.exists() and cookies_file.stat().st_size > 2:
                 LOG.info(f"Using cookies from '{cookies_file}'.")
                 load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
+                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file.as_posix()!s}"
 
         if self.temp_keep:
             LOG.info("Keep temp files option is enabled.")
@@ -400,23 +403,24 @@ class Config:
                 msg = f"Invalid file log level '{self.log_level_file}' specified."
                 raise TypeError(msg)
 
-            loggingPath = os.path.join(conf_store, "logs")
-            if not os.path.exists(loggingPath):
-                os.makedirs(loggingPath, exist_ok=True)
+            loggingPath = Path(self.config_path) / "logs"
+            if not loggingPath.exists():
+                loggingPath.mkdir(parents=True, exist_ok=True)
 
             handler = TimedRotatingFileHandler(
-                filename=os.path.join(conf_store, "logs", "app.log"),
+                filename=loggingPath / "app.log",
                 when="midnight",
                 backupCount=3,
             )
+
             handler.setLevel(log_level_file)
             formatter = FileLogFormatter("%(asctime)s [%(levelname)s.%(name)s]: %(message)s")
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 
-        key_file: str = os.path.join(conf_store, "secret.key")
+        key_file: str = Path(self.config_path) / "secret.key"
 
-        if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
+        if key_file.exists() and key_file.stat().st_size > 2:
             with open(key_file, "rb") as f:
                 self.secret_key = f.read().strip()
         else:
@@ -465,8 +469,11 @@ class Config:
 
         ytdlp_args = self.get_ytdlp_args()
 
-        hasCookies = ytdlp_args.get("cookiefile", None)
-        data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
+        data["has_cookies"] = False
+
+        if cookie := ytdlp_args.get("cookiefile", None):
+            cookie_file = Path(cookie)
+            data["has_cookies"] = cookie_file.exists() and cookie_file.stat().st_size > 2
 
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
@@ -488,9 +495,9 @@ class Config:
         Updates the version of the application using git tags.
         This is used to set the version to the latest git tag.
         """
-        git_path: str = os.path.join(os.path.dirname(__file__), "..", "..", ".git")
-        if not os.path.exists(git_path):
-            logging.warning(f"Git directory '{git_path}' does not exist. Cannot determine version.")
+        git_path: Path = Path(__file__).parent / ".." / ".." / ".git"
+        if not git_path.exists():
+            logging.info(f"Git directory '{git_path}' does not exist. Cannot determine version.")
             return
 
         try:
@@ -498,7 +505,7 @@ class Config:
 
             branch_result = subprocess.run(  # noqa: S603
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
-                cwd=os.path.dirname(git_path),
+                cwd=git_path.parent,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -515,7 +522,7 @@ class Config:
 
             commit_result = subprocess.run(  # noqa: S603
                 ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
-                cwd=os.path.dirname(git_path),
+                cwd=git_path.parent,
                 capture_output=True,
                 text=True,
                 check=False,

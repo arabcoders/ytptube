@@ -1,7 +1,7 @@
-import json
-import os  # noqa: F401
+import os
 import platform
 import sys
+import tomllib
 
 block_cipher = None
 
@@ -21,11 +21,11 @@ elif sys.platform.startswith("win"):
     # Windows DLLs
     binaries = []
 
-with open("./Pipfile.lock") as f:
-    lock = json.load(f)
+with open("./uv.lock", "rb") as f:
+    lock = tomllib.load(f)
 
 hidden = [
-    *list(lock.get("default", {}).keys()),
+    *lock.get("dependencies", {}).keys(),
     "aiohttp",
     "socketio",
     "engineio",
@@ -36,8 +36,8 @@ hidden = [
 hidden = [f.replace("-", "_") for f in hidden]
 
 a = Analysis(  # noqa: F821 # type: ignore
-    ["app/native.py"],  # your entrypoint
-    pathex=["."],  # make sure PyInstaller can find your code
+    ["app/native.py"],
+    pathex=[os.getcwd()],
     binaries=binaries,
     datas=[
         ("ui/exported", "ui/exported"),
@@ -64,5 +64,5 @@ exe = EXE(  # type: ignore # noqa: F821
     strip=False,
     upx=True,
     console=False,
-    onefile=True,  # ← this makes it a single-file bundle
+    onefile=True,
 )

@@ -37,7 +37,6 @@ dependencies = [
 ]
 
 [tool.ruff]
-# Exclude a variety of commonly ignored directories.
 exclude = [
   ".bzr",
   ".direnv",
@@ -64,7 +63,6 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
-  ".venv",
 ]
 
 # Same as Black.
@@ -73,6 +71,16 @@ indent-width = 4
 
 # Assume Python 3.11
 target-version = "py311"
+
+[project.optional-dependencies]
+webview = [
+  #windows only
+  "qtpy; sys_platform == 'win32'",
+  "pyside6; sys_platform == 'win32'",
+  # all
+  "pywebview",
+  "pyinstaller",
+]
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -147,6 +155,7 @@ ignore = [
   "PLW2901",
   "ERA001",
   "S101",
+  "LOG015",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -185,3 +194,6 @@ docstring-code-line-length = "dynamic"
 
 [tool.autopep8]
 --max-line-length = 120
+
+[tool.uv]
+link-mode = "copy"

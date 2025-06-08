@@ -1,10 +1,12 @@
 import json
 import os
+import queue
 import socket
 import threading
 from pathlib import Path
 
 ready = threading.Event()
+exception_holder = queue.Queue()
 
 APP_NAME = "YTPTube"
 
@@ -47,7 +49,11 @@ def app_start(host: str, port: int) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    Main(is_native=True).start(host, port, cb=lambda: ready.set())
+    try:
+        Main(is_native=True).start(host, port, cb=lambda: ready.set())
+    except Exception as e:
+        exception_holder.put(e)
+        ready.set()
 
 
 if __name__ == "__main__":
@@ -72,10 +78,16 @@ if __name__ == "__main__":
         cfg_path.write_text(json.dumps({"port": port}))
 
     threading.Thread(target=app_start, args=(host, port), daemon=True).start()
+
     ready.wait()
+
+    if not exception_holder.empty():
+        raise exception_holder.get()
 
     create_kwargs = {**win_conf, "resizable": True}
 
+    webview.settings["ALLOW_DOWNLOADS"] = True
+    webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False
     window = webview.create_window(APP_NAME, f"http://{host}:{port}", **create_kwargs)
 
     def save_geometry():
@@ -91,9 +103,12 @@ if __name__ == "__main__":
     window.events.resized += lambda *_: save_geometry()
     window.events.moved += lambda *_: save_geometry()
 
+    gui = os.getenv("YTP_WV_GUI", None)
+    gui = "edgechromium" if os.name == "nt" else "qt"
+
     webview.start(
-        gui=str(os.getenv("YTP_WV_GUI", "qt")),  # e.g. "qt" or "gtk"
-        debug=os.getenv("YTP_WV_DEBUG", "false").lower() in ("true", "1", "yes"),
+        gui=gui,
+        debug=True,
         storage_path=str(Path(os.getenv("YTP_TEMP_PATH", os.getcwd())) / "webview"),
         private_mode=False,
     )
