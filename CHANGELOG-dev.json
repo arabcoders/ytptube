@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250608-fee8939c",
-        "date": "2025-06-08T18:59:44+00:00",
+        "tag": "dev-20250608-1f1fbbac",
+        "date": "2025-06-08T20:45:00+00:00",
         "commits": [
+            {
+                "sha": "1f1fbbac",
+                "message": "WIP: more changes to support webview in the future.",
+                "author": "arabcoders",
+                "date": "2025-06-08T20:45:00+00:00",
+                "full_sha": "1f1fbbac01d8ce5f923c810dca9d829b06eb4e2a"
+            },
             {
                 "sha": "fee8939c",
                 "message": "WIP more changes to support windows",
@@ -74,7 +81,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "fee8939c803d5bedaf3281cb8fb2f2e7a81a1dbd"
+        "full_sha": "1f1fbbac01d8ce5f923c810dca9d829b06eb4e2a"
     },
     {
         "tag": "dev-20250605-f1f79afe",
