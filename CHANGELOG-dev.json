@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250608-6d774a6d",
-        "date": "2025-06-08T17:45:12+00:00",
+        "tag": "dev-20250608-fee8939c",
+        "date": "2025-06-08T18:59:44+00:00",
         "commits": [
+            {
+                "sha": "fee8939c",
+                "message": "WIP more changes to support windows",
+                "author": "arabcoders",
+                "date": "2025-06-08T18:59:44+00:00",
+                "full_sha": "fee8939c803d5bedaf3281cb8fb2f2e7a81a1dbd"
+            },
             {
                 "sha": "6d774a6d",
                 "message": "switch to uv instead of pipenv, and partially fix the code to work on windows.",
@@ -67,7 +74,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "6d774a6d9cfe7ac2437e185d3b5d8bd627902969"
+        "full_sha": "fee8939c803d5bedaf3281cb8fb2f2e7a81a1dbd"
     },
     {
         "tag": "dev-20250605-f1f79afe",
