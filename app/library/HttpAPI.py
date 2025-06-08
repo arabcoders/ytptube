@@ -226,13 +226,14 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
-        staticDir = os.path.join(self.rootPath, "ui", "exported")
-        if not os.path.exists(staticDir):
-            staticDir = os.path.join(self.rootPath, "..", "ui", "exported")
-            if not os.path.exists(staticDir):
+        staticDir = Path(os.path.join(self.rootPath, "ui", "exported")).absolute()
+        if not staticDir.exists():
+            staticDir = Path(os.path.join(self.rootPath, "..", "ui", "exported")).absolute()
+            if not staticDir.exists():
                 msg = f"Could not find the frontend UI static assets. '{staticDir}'."
                 raise ValueError(msg)
 
+        staticDir = str(staticDir.as_posix())
         preloaded = 0
 
         base_path: str = self.config.base_path.rstrip("/")
@@ -242,7 +243,7 @@ class HttpAPI(Common):
                 if file.endswith(".map"):
                     continue
 
-                file = os.path.join(root, file)
+                file = str(Path(os.path.join(root, file)).as_posix())
                 urlPath: str = f"{base_path}/{file.replace(f'{staticDir}/', '')}"
 
                 with open(file, "rb") as f:
@@ -708,7 +709,7 @@ class HttpAPI(Common):
                     continue
 
                 tasks.append(
-                    asyncio.get_event_loop().run_in_executor(None, lambda id=id, url=url: info_wrapper(id=id, url=url))
+                    asyncio.get_event_loop().run_in_executor(None, lambda i=id, url=url: info_wrapper(id=i, url=url))
                 )
 
         if len(tasks) > 0:

@@ -20,6 +20,7 @@ const CONFIG_KEYS = {
     browser_enabled: false,
     ytdlp_cli: '',
     file_logging: false,
+    is_native: false,
   },
   presets: [
     {

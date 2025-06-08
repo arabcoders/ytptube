@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import sqlite3
+import sys
 from pathlib import Path
 
 import caribou
@@ -27,8 +28,8 @@ ROOT_PATH: Path = Path(__file__).parent.absolute()
 
 
 class Main:
-    def __init__(self):
-        self._config = Config.get_instance()
+    def __init__(self, is_native: bool = False):
+        self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
 
         self._check_folders()
@@ -118,7 +119,7 @@ class Main:
             self._app,
             host=host,
             port=port,
-            reuse_port=True,
+            reuse_port="win32" != sys.platform,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
             print=started,

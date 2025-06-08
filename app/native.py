@@ -47,7 +47,7 @@ def app_start(host: str, port: int) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    Main().start(host, port, cb=lambda: ready.set())
+    Main(is_native=True).start(host, port, cb=lambda: ready.set())
 
 
 if __name__ == "__main__":

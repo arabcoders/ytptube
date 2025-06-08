@@ -3,7 +3,6 @@ import errno
 import functools
 import logging
 import os
-import pty
 import shlex
 import time
 from datetime import UTC, datetime
@@ -121,23 +120,47 @@ class HttpSocket(Common):
                 }
             )
 
-            master_fd, slave_fd = pty.openpty()
+            try:
+                import pty
+
+                master_fd, slave_fd = pty.openpty()
+                stdin_arg = asyncio.subprocess.DEVNULL
+                stdout_arg = stderr_arg = slave_fd
+                use_pty = True
+            except ImportError:
+                use_pty = False
+                master_fd = slave_fd = None
+                stdin_arg = asyncio.subprocess.DEVNULL
+                stdout_arg = asyncio.subprocess.PIPE
+                stderr_arg = asyncio.subprocess.STDOUT
 
             proc = await asyncio.create_subprocess_exec(
                 *args,
                 cwd=self.config.download_path,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=slave_fd,
-                stderr=slave_fd,
+                stdin=stdin_arg,
+                stdout=stdout_arg,
+                stderr=stderr_arg,
                 env=_env,
             )
 
-            try:
-                os.close(slave_fd)
-            except Exception as e:
-                LOG.error(f"Error closing PTY. '{e!s}'.")
+            if use_pty:
+                try:
+                    os.close(slave_fd)
+                except Exception as e:
+                    LOG.error(f"Error closing PTY. '{e!s}'.")
 
-            async def read_pty(sid: str):
+            async def reader(sid: str):
+                if use_pty is False:
+                    assert proc.stdout is not None
+                    async for raw_line in proc.stdout:
+                        line = raw_line.rstrip(b"\n")
+                        await self._notify.emit(
+                            Events.CLI_OUTPUT,
+                            data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
+                            to=sid,
+                        )
+                    return
+
                 loop = asyncio.get_running_loop()
                 buffer = b""
                 while True:
@@ -172,7 +195,7 @@ class HttpSocket(Common):
                     LOG.error(f"Error closing PTY. '{e!s}'.")
 
             # Start reading output from PTY
-            read_task = asyncio.create_task(read_pty(sid=sid))
+            read_task = asyncio.create_task(reader(sid=sid))
 
             # Wait until process finishes
             returncode = await proc.wait()

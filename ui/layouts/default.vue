@@ -74,7 +74,7 @@
             </div>
           </div>
 
-          <div class="navbar-item is-hidden-mobile">
+          <div class="navbar-item is-hidden-mobile" v-if="false === config.app.is_native">
             <button class="button is-dark" @click="reloadPage">
               <span class="icon"><i class="fas fa-refresh" /></span>
             </button>

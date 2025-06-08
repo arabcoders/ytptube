@@ -152,6 +152,9 @@ class Config:
     _ytdlp_cli_mutable: str = ""
     """The command line options to use for yt-dlp."""
 
+    is_native: bool = False
+    "Is the application running in webview."
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -175,6 +178,7 @@ class Config:
         "started",
         "ytdlp_cli",
         "_ytdlp_cli_mutable",
+        "is_native",
     )
     "The variables that are immutable."
 
@@ -223,6 +227,7 @@ class Config:
         "ytdlp_cli",
         "file_logging",
         "base_path",
+        "is_native",
     )
     "The variables that are relevant to the frontend."
 
@@ -230,9 +235,9 @@ class Config:
     "The manager instance."
 
     @staticmethod
-    def get_instance():
+    def get_instance(is_native: bool = False) -> "Config":
         """Static access method."""
-        return Config() if not Config.__instance else Config.__instance
+        return Config(is_native) if not Config.__instance else Config.__instance
 
     @staticmethod
     def get_manager() -> SyncManager:
@@ -241,7 +246,7 @@ class Config:
 
         return Config._manager
 
-    def __init__(self):
+    def __init__(self, is_native: bool = False):
         """Virtually private constructor."""
         if Config.__instance is not None:
             msg = "This class is a singleton. Use Config.get_instance() instead."
@@ -251,11 +256,14 @@ class Config:
 
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
+        self.is_native = is_native
         self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or os.path.join(baseDefaultPath, "var", "tmp")
         self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or os.path.join(baseDefaultPath, "var", "config")
         self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or os.path.join(
             baseDefaultPath, "var", "downloads"
         )
+
+        conf_store = str(Path(self.config_path).as_posix())
 
         envFile: str = os.path.join(self.config_path, ".env")
 
@@ -326,7 +334,7 @@ class Config:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         ytdl_options = {}
-        opts_file: str = os.path.join(self.config_path, "ytdlp.cli")
+        opts_file: str = os.path.join(conf_store, "ytdlp.cli")
         if os.path.exists(opts_file) and os.path.getsize(opts_file) > 2:
             LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
             with open(opts_file) as f:
@@ -358,7 +366,7 @@ class Config:
 
         if self.keep_archive:
             LOG.info("keep archive option is enabled.")
-            archive_file: str = os.path.join(self.config_path, "archive.log")
+            archive_file: str = os.path.join(conf_store, "archive.log")
             self._ytdlp_cli_mutable += f"\n--download-archive {archive_file}"
 
         if cookies_file := ytdl_options.get("cookiefile", None):
@@ -371,7 +379,7 @@ class Config:
                 ytdl_options.pop("cookiefile", None)
 
         if not ytdl_options.get("cookiefile", None):
-            cookies_file: str = os.path.join(self.config_path, "cookies.txt")
+            cookies_file: str = os.path.join(conf_store, "cookies.txt")
             if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
                 LOG.info(f"Using cookies from '{cookies_file}'.")
                 load_cookies(cookies_file)
@@ -392,12 +400,12 @@ class Config:
                 msg = f"Invalid file log level '{self.log_level_file}' specified."
                 raise TypeError(msg)
 
-            loggingPath = os.path.join(self.config_path, "logs")
+            loggingPath = os.path.join(conf_store, "logs")
             if not os.path.exists(loggingPath):
                 os.makedirs(loggingPath, exist_ok=True)
 
             handler = TimedRotatingFileHandler(
-                filename=os.path.join(self.config_path, "logs", "app.log"),
+                filename=os.path.join(conf_store, "logs", "app.log"),
                 when="midnight",
                 backupCount=3,
             )
@@ -406,7 +414,7 @@ class Config:
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 
-        key_file: str = os.path.join(self.config_path, "secret.key")
+        key_file: str = os.path.join(conf_store, "secret.key")
 
         if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
             with open(key_file, "rb") as f:

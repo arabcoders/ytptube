@@ -14,15 +14,14 @@ ENV PYTHONFAULTHANDLER=1
 ENV PIP_NO_CACHE_DIR=off
 ENV PIP_CACHE_DIR=/root/.cache/pip
 
-# Use sed to strip carriage-return characters from the entrypoint script (in case building on Windows)
 # Install dependencies
-RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev curl make && pip install pipenv
+RUN apk add --update coreutils curl gcc g++ musl-dev libffi-dev openssl-dev curl make && pip install uv
 
-WORKDIR /app
+WORKDIR /opt/
 
-ARG PIPENV_FLAGS="--deploy"
-COPY ./Pipfile* .
-RUN --mount=type=cache,target=/root/.cache/pip PIPENV_VENV_IN_PROJECT=1 pipenv install ${PIPENV_FLAGS}
+COPY ./pyproject.toml ./uv.lock ./
+RUN --mount=type=cache,target=/root/.cache/pip uv --no-cache venv --system-site-packages --relocatable ./python && \
+  VIRTUAL_ENV=/opt/python uv sync --link-mode=copy --active
 
 FROM python:3.13-alpine
 
@@ -51,16 +50,13 @@ RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
 
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
-COPY --chown=app:app --from=python_builder /app/.venv /opt/python
+COPY --chown=app:app --from=python_builder /opt/python /opt/python
 COPY --chown=app:app --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/python/bin:$PATH"
 
-RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck && \
-  sed -i 's$#!\/app\/\.venv\/bin\/python$#!/opt/python/bin/python$' /opt/python/bin/* && \
-  sed -i "s%'\/app\/\.venv'%'/opt/python'%" /opt/python/bin/activate* && \
-  chmod +x /usr/bin/mp4box
+RUN chown -R app:app /config /downloads && chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box
 
 VOLUME /config
 VOLUME /downloads
