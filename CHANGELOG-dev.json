@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250609-7bae93a0",
-        "date": "2025-06-08T21:52:13+00:00",
+        "tag": "dev-20250610-6c8fd058",
+        "date": "2025-06-09T22:08:44+00:00",
         "commits": [
+            {
+                "sha": "6c8fd058",
+                "message": "WiP: More migration to Path",
+                "author": "arabcoders",
+                "date": "2025-06-09T22:08:44+00:00",
+                "full_sha": "6c8fd05886efea18b00b085815a18a4baa319a0a"
+            },
+            {
+                "sha": "93ff749d",
+                "message": "We no longer auto load cookies.txt from config path. it must be set via the ytdlp.cli or preset.",
+                "author": "arabcoders",
+                "date": "2025-06-09T20:19:52+00:00",
+                "full_sha": "93ff749dee89940d7f751ac65fc7071bfc237fd3"
+            },
+            {
+                "sha": "e251fba2",
+                "message": "Fix healthcheck when used with base_path",
+                "author": "arabcoders",
+                "date": "2025-06-09T17:18:45+00:00",
+                "full_sha": "e251fba26c5828720a5e4aeae86386692cad3d56"
+            },
             {
                 "sha": "7bae93a0",
                 "message": "re-enable caching for pip packages.",
@@ -102,7 +123,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "7bae93a04f5b1fbf955727ae6ca828de1d9cddce"
+        "full_sha": "6c8fd05886efea18b00b085815a18a4baa319a0a"
     },
     {
         "tag": "dev-20250605-f1f79afe",
