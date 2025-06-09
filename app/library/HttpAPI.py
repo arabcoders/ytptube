@@ -100,6 +100,7 @@ class HttpAPI(Common):
         self.routes = web.RouteTableDef()
         self.cache = Cache()
         self.app: web.Application | None = None
+        self.isRequestingBackground = False
 
         super().__init__(queue=self.queue, encoder=self.encoder, config=self.config)
 
@@ -1259,109 +1260,6 @@ class HttpAPI(Common):
 
         return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
 
-    @route("GET", "api/workers", "pool_list")
-    async def pool_list(self, _) -> Response:
-        """
-        Get the workers status.
-
-        Args:
-            _: The request object.
-
-        Returns:
-            Response: The response object.
-
-        """
-        if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
-
-        status = self.queue.pool.get_workers_status()
-
-        data = []
-
-        for worker in status:
-            worker_status = status.get(worker)
-            data.append(
-                {
-                    "id": worker,
-                    "data": {"status": "Waiting for download."} if worker_status is None else worker_status,
-                }
-            )
-
-        return web.json_response(
-            data={
-                "open": self.queue.pool.has_open_workers(),
-                "count": self.queue.pool.get_available_workers(),
-                "workers": data,
-            },
-            status=web.HTTPOk.status_code,
-            dumps=lambda obj: json.dumps(obj, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"),
-        )
-
-    @route("POST", "api/workers", "pool_start")
-    async def pool_restart(self, _) -> Response:
-        """
-        Restart the workers pool.
-
-        Args:
-            _: The request object.
-
-        Returns:
-            Response: The response object.
-
-        """
-        if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
-
-        self.queue.pool.start()
-
-        return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
-
-    @route("PATCH", "api/workers/{id}", "worker_restart")
-    async def worker_restart(self, request: Request) -> Response:
-        """
-        Restart a worker.
-
-        Args:
-            request (Request): The request object.
-
-        Returns:
-            Response: The response object
-
-        """
-        id: str = request.match_info.get("id")
-        if not id:
-            return web.json_response({"error": "worker id is required."}, status=web.HTTPBadRequest.status_code)
-
-        if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
-
-        status = await self.queue.pool.restart(id, "requested by user.")
-
-        return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
-
-    @route("DELETE", "api/workers/{id}", "worker_stop")
-    async def worker_stop(self, request: Request) -> Response:
-        """
-        Stop a worker.
-
-        Args:
-            request (Request): The request object.
-
-        Returns:
-            Response: The response object.
-
-        """
-        id: str = request.match_info.get("id")
-        if not id:
-            raise web.HTTPBadRequest(text="worker id is required.")
-
-        if self.queue.pool is None:
-            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
-
-        status = await self.queue.pool.stop(id, "requested by user.")
-
-        return web.json_response({"status": "stopped" if status else "in_error_state"}, status=web.HTTPOk.status_code)
-
     @route("GET", "api/player/playlist/{file:.*}.m3u8", "playlist")
     async def playlist(self, request: Request) -> Response:
         """
@@ -1399,7 +1297,9 @@ class HttpAPI(Common):
                 return web.json_response(data={"error": f"File '{file}' does not exist."}, status=status)
 
             return web.Response(
-                text=await Playlist(download_path=self.config.download_path, url=f"{base_path}/").make(file=realFile),
+                text=await Playlist(download_path=Path(self.config.download_path), url=f"{base_path}/").make(
+                    file=realFile
+                ),
                 headers={
                     "Content-Type": "application/x-mpegURL",
                     "Cache-Control": "no-cache",
@@ -1444,7 +1344,7 @@ class HttpAPI(Common):
         base_path: str = self.config.base_path.rstrip("/")
 
         try:
-            cls = M3u8(download_path=self.config.download_path, url=f"{base_path}/")
+            cls = M3u8(download_path=Path(self.config.download_path), url=f"{base_path}/")
 
             realFile, status = get_file(download_path=self.config.download_path, file=file)
             if web.HTTPFound.status_code == status:
@@ -1708,7 +1608,11 @@ class HttpAPI(Common):
         """
         backend = None
 
+        if self.isRequestingBackground:
+            return web.Response(status=web.HTTPTooManyRequests.status_code)
+
         try:
+            self.isRequestingBackground = True
             backend = random.choice(self.config.pictures_backends)  # noqa: S311
             CACHE_KEY_BING = "random_background_bing"
             CACHE_KEY = "random_background"
@@ -1776,6 +1680,8 @@ class HttpAPI(Common):
 
                 await self.cache.aset(key=CACHE_KEY, value=data, ttl=3600)
 
+                LOG.debug(f"Random background image from '{backend!s}' cached.")
+
                 return web.Response(
                     body=data.get("content"),
                     headers={
@@ -1791,6 +1697,8 @@ class HttpAPI(Common):
                 data={"error": "failed to retrieve the random background image."},
                 status=web.HTTPInternalServerError.status_code,
             )
+        finally:
+            self.isRequestingBackground = False
 
     @route("GET", "api/file/ffprobe/{file:.*}", "ffprobe")
     async def get_ffprobe(self, request: Request) -> Response:
@@ -2017,3 +1925,159 @@ class HttpAPI(Common):
         except OSError as e:
             LOG.exception(e)
             return web.json_response(data={"error": str(e)}, status=web.HTTPInternalServerError.status_code)
+
+    @route("GET", "api/dev/loop")
+    async def debug_asyncio(self, _: Request) -> Response:
+        if not self.config.is_dev():
+            return web.json_response(
+                data={"error": "This endpoint is only available in development mode."},
+                status=web.HTTPForbidden.status_code,
+            )
+
+        import traceback
+
+        tasks = []
+        for task in asyncio.all_tasks():
+            task_info = {"task": str(task), "stack": []}
+            for frame in task.get_stack():
+                formatted = traceback.format_stack(f=frame)
+                task_info["stack"].extend(formatted)
+
+            tasks.append(task_info)
+
+        return web.json_response(
+            data={
+                "total_tasks": len(tasks),
+                "loop": str(asyncio.get_event_loop()),
+                "tasks": tasks,
+            },
+            status=web.HTTPOk.status_code,
+            dumps=self.encoder.encode,
+        )
+
+    @route("GET", "api/dev/workers", "pool_list")
+    async def pool_list(self, _) -> Response:
+        """
+        Get the workers status.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.is_dev():
+            return web.json_response(
+                {"error": "This endpoint is only available in development mode."},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        if self.queue.pool is None:
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
+
+        status = self.queue.pool.get_workers_status()
+
+        data = []
+
+        for worker in status:
+            worker_status = status.get(worker)
+            data.append(
+                {
+                    "id": worker,
+                    "data": {"status": "Waiting for download."} if worker_status is None else worker_status,
+                }
+            )
+
+        return web.json_response(
+            data={
+                "open": self.queue.pool.has_open_workers(),
+                "count": self.queue.pool.get_available_workers(),
+                "workers": data,
+            },
+            status=web.HTTPOk.status_code,
+            dumps=lambda obj: json.dumps(obj, default=lambda o: f"<<non-serializable: {type(o).__qualname__}>>"),
+        )
+
+    @route("POST", "api/dev/workers", "pool_start")
+    async def pool_restart(self, _) -> Response:
+        """
+        Restart the workers pool.
+
+        Args:
+            _: The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.is_dev():
+            return web.json_response(
+                {"error": "This endpoint is only available in development mode."},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        if self.queue.pool is None:
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
+
+        self.queue.pool.start()
+
+        return web.json_response({"message": "Workers pool being restarted."}, status=web.HTTPOk.status_code)
+
+    @route("PATCH", "api/dev/workers/{id}", "worker_restart")
+    async def worker_restart(self, request: Request) -> Response:
+        """
+        Restart a worker.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object
+
+        """
+        if not self.config.is_dev():
+            return web.json_response(
+                {"error": "This endpoint is only available in development mode."},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        worker_id: str = request.match_info.get("id")
+        if not worker_id:
+            return web.json_response({"error": "worker id is required."}, status=web.HTTPBadRequest.status_code)
+
+        if self.queue.pool is None:
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
+
+        status = await self.queue.pool.restart(worker_id, "requested by user.")
+
+        return web.json_response({"status": "restarted" if status else "in_error_state"}, status=web.HTTPOk.status_code)
+
+    @route("DELETE", "api/dev/workers/{id}", "worker_stop")
+    async def worker_stop(self, request: Request) -> Response:
+        """
+        Stop a worker.
+
+        Args:
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        if not self.config.is_dev():
+            return web.json_response(
+                {"error": "This endpoint is only available in development mode."},
+                status=web.HTTPNotFound.status_code,
+            )
+
+        worker_id: str = request.match_info.get("id")
+        if not worker_id:
+            raise web.HTTPBadRequest(text="worker id is required.")
+
+        if self.queue.pool is None:
+            return web.json_response({"error": "Worker pool not initialized."}, status=web.HTTPNotFound.status_code)
+
+        status = await self.queue.pool.stop(worker_id, "requested by user.")
+
+        return web.json_response({"status": "stopped" if status else "in_error_state"}, status=web.HTTPOk.status_code)

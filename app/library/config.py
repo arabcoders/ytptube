@@ -16,6 +16,9 @@ from .version import APP_VERSION
 
 
 class Config:
+    app_env: str = "production"
+    """The application environment, can be 'production' or 'development'."""
+
     config_path: str = "."
     """The path to the configuration directory."""
 
@@ -228,6 +231,7 @@ class Config:
         "file_logging",
         "base_path",
         "is_native",
+        "app_env",
     )
     "The variables that are relevant to the frontend."
 
@@ -416,6 +420,13 @@ class Config:
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.INFO)
 
+        # check env
+        if self.app_env not in ("production", "development"):
+            msg: str = (
+                f"Invalid application environment '{self.app_env}' specified. Must be 'production' or 'development'."
+            )
+            raise ValueError(msg)
+
         if self.version == "dev-master":
             self._version_via_git()
 
@@ -432,6 +443,26 @@ class Config:
                 attrs[attribute] = value
 
         return attrs
+
+    def is_dev(self) -> bool:
+        """
+        Check if the application is running in development mode.
+
+        Returns:
+            bool: True if the application is in development mode, False otherwise.
+
+        """
+        return "development" == self.app_env
+
+    def is_prod(self) -> bool:
+        """
+        Check if the application is running in production mode.
+
+        Returns:
+            bool: True if the application is in production mode, False otherwise.
+
+        """
+        return "production" == self.app_env
 
     def get_ytdlp_args(self) -> dict:
         try:

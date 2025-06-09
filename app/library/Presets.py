@@ -1,8 +1,8 @@
 import json
 import logging
-import os
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -11,9 +11,50 @@ from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
-from .Utils import arg_converter, clean_item
+from .Utils import arg_converter, init_class
 
 LOG = logging.getLogger("presets")
+
+DEFAULT_PRESETS: list[dict[int, dict[str, str | bool]]] = [
+    {
+        "id": "3e163c6c-64eb-4448-924f-814b629b3810",
+        "name": "default",
+        "default": True,
+    },
+    {
+        "id": "5bf9c42b-8852-468a-99f5-915622dfba25",
+        "name": "Best video and audio",
+        "cli": "--format 'bv+ba/b'",
+        "default": True,
+    },
+    {
+        "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48b",
+        "name": "1080p H264/m4a or best available",
+        "cli": "-S vcodec:h264 --format 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
+        "default": True,
+    },
+    {
+        "id": "9719fcc3-4cf2-4d88-b1e4-74dff3dba00e",
+        "name": "720p h264/m4a or best available",
+        "cli": "-S vcodec:h264 --format 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
+        "default": True,
+    },
+    {
+        "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
+        "name": "Audio only",
+        "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
+        "default": True,
+    },
+    {
+        "id": "2ade2c28-cad4-4a06-b7eb-2439fdf46f60",
+        "name": "yt-dlp info reader plugin",
+        "description": 'This preset generate specific filename format and metadata to work with yt-dlp info reader plugins for jellyfin/emby and plex and to make play state sync work for WatchState.\n\nThere is one more step you need to do via Other > Terminal if you have it enabled or directly from container shell\n\nyt-dlp -I0 --write-info-json --write-thumbnail --convert-thumbnails jpg --paths /downloads/youtube -o "%(channel|Unknown_title)s [%(channel_id|Unknown_id)s]/%(title).180B [%(channel_id|Unknown_id)s].%(ext)s" -- https://www.youtube.com/channel/UCClfFsWcT3N2I7VTXXyt84A\n\nChange the url to the channel you want to download.\n\nFor more information please visit \nhttps://github.com/arabcoders/watchstate/blob/master/FAQ.md#how-to-get-watchstate-working-with-youtube-contentlibrary',
+        "folder": "youtube",
+        "template": "%(channel)s %(channel_id|Unknown_id)s/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(extractor)s-%(id)s].%(ext)s",
+        "cli": "--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
+        "default": True,
+    },
+]
 
 
 @dataclass(kw_only=True)
@@ -65,28 +106,26 @@ class Presets(metaclass=Singleton):
 
     _default: list[Preset] = []
 
-    def __init__(self, file: str | None = None, config: Config | None = None):
+    def __init__(self, file: str | Path | None = None, config: Config | None = None):
         Presets._instance = self
 
         config = config or Config.get_instance()
 
-        self._file: str = file or os.path.join(config.config_path, "presets.json")
+        self._file: Path = Path(file) if file else Path(config.config_path).joinpath("presets.json")
 
-        if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                os.chmod(self._file, 0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
-        default_file = os.path.join(os.path.dirname(__file__), "presets.json")
-        with open(default_file) as f:
-            for i, preset in enumerate(json.load(f)):
-                try:
-                    self.validate(preset)
-                    self._default.append(Preset(**preset))
-                except Exception as e:
-                    LOG.error(f"Failed to parse '{default_file}:{i}'. '{e!s}'.")
-                    continue
+        for i, preset in enumerate(DEFAULT_PRESETS):
+            try:
+                self.validate(preset)
+                self._default.append(init_class(Preset, preset))
+            except Exception as e:
+                LOG.error(f"Failed to parse default preset ':{i}'. '{e!s}'.")
+                continue
 
         def event_handler(_, __):
             msg = "Not implemented"
@@ -138,13 +177,12 @@ class Presets(metaclass=Singleton):
         """
         self.clear()
 
-        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+        if not self._file.exists() or self._file.stat().st_size < 10:
             return self
 
-        LOG.info(f"Loading '{self._file}'.")
         try:
-            with open(self._file) as f:
-                presets = json.load(f)
+            LOG.info(f"Loading '{self._file}'.")
+            presets: dict = json.loads(self._file.read_text())
         except Exception as e:
             LOG.error(f"Failed to parse '{self._file}'. '{e}'.")
             return self
@@ -160,7 +198,6 @@ class Presets(metaclass=Singleton):
                     preset["id"] = str(uuid.uuid4())
                     need_save = True
 
-                preset, preset_status = clean_item(preset, keys=("args", "postprocessors"))
                 if preset.get("format"):
                     if not preset.get("cli"):
                         preset.update({"cli": f"--format {preset['format']}"})
@@ -172,10 +209,7 @@ class Presets(metaclass=Singleton):
                     preset.pop("format")
                     need_save = True
 
-                preset = Preset(**preset)
-
-                if preset_status:
-                    need_save = True
+                preset: Preset = init_class(Preset, preset)
 
                 self._items.append(preset)
             except Exception as e:
@@ -183,7 +217,7 @@ class Presets(metaclass=Singleton):
                 continue
 
         if need_save:
-            LOG.info(f"Saving '{self._file}' due to changes.")
+            LOG.info(f"Saving '{self._file}'.")
             self.save(self._items)
 
         return self
@@ -255,7 +289,7 @@ class Presets(metaclass=Singleton):
         for i, preset in enumerate(items):
             try:
                 if not isinstance(preset, Preset):
-                    preset = Preset(**preset)
+                    preset: Preset = init_class(Preset, preset)
                     items[i] = preset
             except Exception as e:
                 LOG.error(f"Failed to save item '{i}' due to parsing error. '{e!s}'.")
@@ -268,8 +302,9 @@ class Presets(metaclass=Singleton):
                 continue
 
         try:
-            with open(self._file, "w") as f:
-                json.dump(obj=[preset.serialize() for preset in items if preset.default is False], fp=f, indent=4)
+            self._file.write_text(
+                json.dumps(obj=[preset.serialize() for preset in items if preset.default is False], indent=4)
+            )
 
             LOG.info(f"Saved '{self._file}'.")
         except Exception as e:

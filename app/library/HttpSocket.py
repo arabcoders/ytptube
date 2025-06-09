@@ -51,7 +51,16 @@ class HttpSocket(Common):
         self._notify = EventBus.get_instance()
 
         # logger=True, engineio_logger=True,
-        self.sio = sio or socketio.AsyncServer(async_mode="aiohttp", cors_allowed_origins="*")
+        self.sio = sio or socketio.AsyncServer(
+            async_handlers=True,
+            async_mode="aiohttp",
+            cors_allowed_origins=[],
+            transports=["websocket"],
+            logger=self.config.debug,
+            engineio_logger=self.config.debug,
+            ping_interval=10,
+            ping_timeout=5,
+        )
         encoder = encoder or Encoder()
 
         def emit(e: Event, _, **kwargs):
@@ -76,6 +85,12 @@ class HttpSocket(Common):
 
     async def on_shutdown(self, _: web.Application):
         LOG.debug("Shutting down socket server.")
+
+        for sid in self.sio.manager.get_participants("/", None):
+            LOG.debug(f"Disconnecting client '{sid}'.")
+            await self.sio.disconnect(sid[0], namespace="/")
+
+        LOG.debug("Socket server shutdown complete.")
 
     def attach(self, app: web.Application):
         self.sio.attach(app, socketio_path=f"{self.config.base_path.rstrip('/')}/socket.io")

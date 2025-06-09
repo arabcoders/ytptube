@@ -13,6 +13,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
+from typing import TypeVar
 
 import yt_dlp
 from Crypto.Cipher import AES
@@ -59,6 +60,8 @@ FILES_TYPE: list = [
 ]
 
 DATETIME_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
+
+T = TypeVar("T")
 
 
 class StreamingError(Exception):
@@ -1180,7 +1183,7 @@ def delete_dir(dir: Path) -> bool:
         return False
 
 
-def init_class(cls: type, data: dict):
+def init_class(cls: type[T], data: dict) -> T:
     """
     Initialize a class instance with data from a dictionary, filtering out keys not present in the class fields.
 
@@ -1189,7 +1192,7 @@ def init_class(cls: type, data: dict):
         data (dict): The data to use for initialization.
 
     Returns:
-        object: An instance of the class initialized with the provided data.
+        T: An instance of the class initialized with the provided data.
 
     """
     from dataclasses import fields

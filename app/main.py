@@ -31,6 +31,11 @@ class Main:
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
 
+        if self._config.debug:
+            loop = asyncio.get_event_loop()
+            loop.set_debug(True)
+            loop.slow_callback_duration = 0.05
+
         self._check_folders()
 
         caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")

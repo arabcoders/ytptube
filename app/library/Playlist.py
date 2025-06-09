@@ -8,12 +8,12 @@ from .Utils import StreamingError, get_file_sidecar
 class Playlist:
     _url: str = None
 
-    def __init__(self, download_path: str, url: str):
-        self.url = url
-        self.download_path = download_path
+    def __init__(self, download_path: Path, url: str):
+        self.url: str = url
+        self.download_path: Path = download_path
 
     async def make(self, file: Path) -> str:
-        ref = str(file).replace(self.download_path, "").strip("/")
+        ref: str = Path(str(file.relative_to(self.download_path)).strip("/"))
 
         try:
             ff = await ffprobe(file)
@@ -24,19 +24,19 @@ class Playlist:
             msg = f"Unable to get '{ref}' duration."
             raise StreamingError(msg)
 
-        playlist = []
+        playlist: list[str] = []
         playlist.append("#EXTM3U")
 
-        subs = ""
+        subs: str = ""
 
         duration: float = float(ff.metadata.get("duration"))
         for sub_file in get_file_sidecar(file).get("subtitle", []):
-            lang = sub_file["lang"]
-            item = Path(sub_file["file"])
-            name = sub_file["name"]
+            lang: str = sub_file["lang"]
+            item: Path = sub_file["file"]
+            name: str = sub_file["name"]
 
             subs = ',SUBTITLES="subs"'
-            url = f"{self.url}api/player/m3u8/subtitle/{quote(str(Path(ref).with_name(item.name)))}.m3u8?duration={duration}"
+            url = f"{self.url}api/player/m3u8/subtitle/{quote(str(ref.with_name(item.name)))}.m3u8?duration={duration}"
             playlist.append(
                 f'#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="{name}",DEFAULT=NO,AUTOSELECT=NO,FORCED=NO,LANGUAGE="{lang}",URI="{url}"'
             )
