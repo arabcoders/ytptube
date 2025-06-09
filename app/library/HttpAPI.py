@@ -4,7 +4,6 @@ import functools
 import hmac
 import json
 import logging
-import os
 import random
 import time
 import uuid
@@ -18,6 +17,7 @@ import httpx
 import magic
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+from library.ag_utils import ag
 from yt_dlp.cookies import LenientSimpleCookie
 
 from .cache import Cache
@@ -227,46 +227,48 @@ class HttpAPI(Common):
             HttpAPI: The instance of the HttpAPI.
 
         """
-        staticDir = Path(os.path.join(self.rootPath, "ui", "exported")).absolute()
+        staticDir = (Path(self.rootPath) / "ui" / "exported").absolute()
         if not staticDir.exists():
-            staticDir = Path(os.path.join(self.rootPath, "..", "ui", "exported")).absolute()
+            staticDir = (Path(self.rootPath).parent / "ui" / "exported").absolute()
             if not staticDir.exists():
                 msg = f"Could not find the frontend UI static assets. '{staticDir}'."
                 raise ValueError(msg)
 
-        staticDir = str(staticDir.as_posix())
         preloaded = 0
 
-        base_path: str = self.config.base_path.rstrip("/")
+        base_path: str = str(Path(self.config.base_path).as_posix()).rstrip("/")
 
-        for root, _, files in os.walk(staticDir):
-            for file in files:
-                if file.endswith(".map"):
-                    continue
+        for file in staticDir.rglob("*.*"):
+            if ".map" == file.suffix:
+                continue
 
-                file = str(Path(os.path.join(root, file)).as_posix())
-                urlPath: str = f"{base_path}/{file.replace(f'{staticDir}/', '')}"
+            urlPath: str = f"{base_path}/{str(file.as_posix()).replace(f'{staticDir.as_posix()!s}/', '')}"
 
-                with open(file, "rb") as f:
-                    content = f.read()
+            with open(file, "rb") as f:
+                content = f.read()
 
-                contentType = self._ext_to_mime.get(os.path.splitext(file)[1], MIME.from_file(file))
+            contentType = self._ext_to_mime.get(file.suffix, MIME.from_file(file))
 
-                self._static_holder[urlPath] = {"content": content, "content_type": contentType}
-                LOG.debug(f"Preloading '{urlPath}'.")
-                app.router.add_get(urlPath, self._static_file)
+            self._static_holder[urlPath] = {"content": content, "content_type": contentType}
+            LOG.debug(f"Preloading static '{urlPath}'.")
+            app.router.add_get(urlPath, self._static_file)
+            preloaded += 1
+
+        if "/index.html" in self._static_holder:
+            for path in self._frontend_routes:
+                path: str = f"{base_path}/{path.lstrip('/')}"
+                self._static_holder[path] = self._static_holder["/index.html"]
+                app.router.add_get(path, self._static_file)
+                if "{" not in path:
+                    self._static_holder[path + "/"] = self._static_holder["/index.html"]
+                    app.router.add_get(path + "/", self._static_file)
+                LOG.debug(f"Preloading static route '{path}'.")
                 preloaded += 1
 
-                if urlPath.endswith("/index.html"):
-                    for path in self._frontend_routes:
-                        path: str = f"{base_path}/{path.lstrip('/')}"
-                        self._static_holder[path] = {"content": content, "content_type": contentType}
-                        app.router.add_get(path, self._static_file)
-                        if "{" not in path:
-                            self._static_holder[path + "/"] = {"content": content, "content_type": contentType}
-                            app.router.add_get(path + "/", self._static_file)
-                        LOG.debug(f"Preloading '{path}'.")
-                        preloaded += 1
+        if "/" != self.config.base_path:
+            LOG.debug(f"adding base_path folder '{base_path}' to routes.")
+            app.router.add_get(base_path, self._static_file, name="_base_path")
+            app.router.add_get(f"{base_path}/", self._static_file, name="_base_path_slash")
 
         if preloaded < 1:
             message = f"Failed to find any static files in '{staticDir}'."
@@ -277,13 +279,6 @@ class HttpAPI(Common):
             raise ValueError(message)
 
         LOG.info(f"Preloaded '{preloaded}' static files.")
-
-        if "/" != self.config.base_path:
-            LOG.debug(f"adding base_path folder '{self.config.base_path}' to routes.")
-            app.router.add_get(self.config.base_path.rstrip("/"), self._static_file, name="base_path_static")
-            app.router.add_get(
-                f"{self.config.base_path.rstrip('/')}/", self._static_file, name="base_path_static_slash"
-            )
 
         return self
 
@@ -313,7 +308,7 @@ class HttpAPI(Common):
                 if hasattr(method, "_http_name") and method._http_name:
                     opts["name"] = method._http_name
 
-                LOG.debug(f"Registering route {method._http_method} {base_path}/{http_path}' {opts}.")
+                LOG.debug(f"Adding API route {method._http_method} {base_path}/{http_path}' {opts}.")
                 self.routes.route(method._http_method, f"{base_path}/{http_path}", **opts)(method)
 
                 if http_path in registered_options:
@@ -662,7 +657,8 @@ class HttpAPI(Common):
                 data={"error": "Manual archive is not enabled."}, status=web.HTTPNotFound.status_code
             )
 
-        if not os.path.exists(manual_archive):
+        manual_archive = Path(manual_archive)
+        if not manual_archive.exists():
             return web.json_response(
                 data={"error": "Manual archive file not found.", "file": manual_archive},
                 status=web.HTTPNotFound.status_code,
@@ -823,7 +819,7 @@ class HttpAPI(Common):
             limit = 50
 
         logs_data = await read_logfile(
-            file=os.path.join(self.config.config_path, "logs", "app.log"),
+            file=Path(self.config.config_path) / "logs" / "app.log",
             offset=offset,
             limit=limit,
         )
@@ -1714,6 +1710,7 @@ class HttpAPI(Common):
 
         try:
             backend = random.choice(self.config.pictures_backends)  # noqa: S311
+            CACHE_KEY_BING = "random_background_bing"
             CACHE_KEY = "random_background"
 
             if self.cache.has(CACHE_KEY) and not request.query.get("force", False):
@@ -1737,6 +1734,29 @@ class HttpAPI(Common):
             }
 
             async with httpx.AsyncClient(**opts) as client:
+                if backend.startswith("https://www.bing.com/HPImageArchive.aspx"):
+                    if not self.cache.has(CACHE_KEY_BING):
+                        response = await client.request(method="GET", url=backend)
+                        if response.status_code != web.HTTPOk.status_code:
+                            return web.json_response(
+                                data={"error": "failed to retrieve the random background image."},
+                                status=web.HTTPInternalServerError.status_code,
+                            )
+
+                        img_url: str | None = ag(response.json(), "images.0.url")
+                        if not img_url:
+                            return web.json_response(
+                                data={"error": "failed to retrieve the random background image."},
+                                status=web.HTTPInternalServerError.status_code,
+                            )
+
+                        backend = f"https://www.bing.com{img_url}"
+                        await self.cache.aset(key=CACHE_KEY_BING, value=backend, ttl=3600 * 24)
+                    else:
+                        backend: str = await self.cache.aget(CACHE_KEY_BING)
+
+                LOG.debug(f"Requesting random picture from '{backend!s}'.")
+
                 response = await client.request(method="GET", url=backend, follow_redirects=True)
 
                 if response.status_code != web.HTTPOk.status_code:
@@ -1796,7 +1816,7 @@ class HttpAPI(Common):
                     headers={
                         "Location": str(
                             self.app.router["ffprobe"].url_for(
-                                file=str(realFile).replace(self.config.download_path, "").strip("/")
+                                file=str(realFile.relative_to(self.config.download_path).as_posix()).strip("/")
                             )
                         ),
                     },
@@ -1835,7 +1855,7 @@ class HttpAPI(Common):
                     headers={
                         "Location": str(
                             self.app.router["file_info"].url_for(
-                                file=str(realFile).replace(self.config.download_path, "").strip("/")
+                                file=str(realFile.relative_to(self.config.download_path).as_posix()).strip("/")
                             )
                         ),
                     },
@@ -1847,7 +1867,7 @@ class HttpAPI(Common):
             ff_info = await ffprobe(realFile)
 
             response = {
-                "title": str(Path(realFile).stem),
+                "title": realFile.stem,
                 "ffprobe": ff_info,
                 "mimetype": get_mime_type(ff_info.get("metadata", {}), realFile),
                 "sidecar": get_file_sidecar(realFile),
@@ -1855,11 +1875,9 @@ class HttpAPI(Common):
 
             for key in response["sidecar"]:
                 for i, f in enumerate(response["sidecar"][key]):
-                    response["sidecar"][key][i]["file"] = (
-                        str(Path(realFile).with_name(Path(f["file"]).name))
-                        .replace(self.config.download_path, "")
-                        .strip("/")
-                    )
+                    response["sidecar"][key][i]["file"] = str(
+                        realFile.with_name(f["file"].name).relative_to(self.config.download_path)
+                    ).strip("/")
 
             return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=self.encoder.encode)
         except Exception as e:
@@ -1930,9 +1948,6 @@ class HttpAPI(Common):
             targets.append(ins.make_target(item))
 
         try:
-            if len(targets) < 1:
-                ins.clear()
-
             ins.save(targets=targets)
             ins.load()
         except Exception as e:
@@ -1976,20 +1991,25 @@ class HttpAPI(Common):
         if not self.config.browser_enabled:
             return web.json_response(data={"error": "File browser is disabled."}, status=web.HTTPForbidden.status_code)
 
-        path = request.match_info.get("path")
-        path = "/" if not path else unquote_plus(path)
+        req_path: str = request.match_info.get("path")
+        req_path: str = "/" if not req_path else unquote_plus(req_path)
 
-        test = os.path.realpath(os.path.join(self.config.download_path, path))
-        if not os.path.exists(test):
+        test: Path = Path(self.config.download_path).joinpath(req_path)
+        if not test.exists():
             return web.json_response(
-                data={"error": f"path '{path}' does not exist."}, status=web.HTTPNotFound.status_code
+                data={"error": f"path '{req_path}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        if not test.is_dir() and not test.is_symlink():
+            return web.json_response(
+                data={"error": f"path '{req_path}' is not a directory."}, status=web.HTTPBadRequest.status_code
             )
 
         try:
             return web.json_response(
                 data={
-                    "path": path,
-                    "contents": get_files(base_path=self.config.download_path, dir=path),
+                    "path": req_path,
+                    "contents": get_files(base_path=Path(self.config.download_path), dir=req_path),
                 },
                 status=web.HTTPOk.status_code,
                 dumps=self.encoder.encode,

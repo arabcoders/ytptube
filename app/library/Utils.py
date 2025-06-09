@@ -5,7 +5,6 @@ import ipaddress
 import json
 import logging
 import os
-import pathlib
 import re
 import shlex
 import socket
@@ -13,6 +12,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
+from pathlib import Path
 
 import yt_dlp
 from Crypto.Cipher import AES
@@ -70,7 +70,7 @@ class FileLogFormatter(logging.Formatter):
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
 
-def calc_download_path(base_path: str, folder: str | None = None, create_path: bool = True) -> str:
+def calc_download_path(base_path: str | Path, folder: str | None = None, create_path: bool = True) -> str:
     """
     Calculates download path and prevents folder traversal.
 
@@ -83,18 +83,27 @@ def calc_download_path(base_path: str, folder: str | None = None, create_path: b
         Download path with base folder factored in.
 
     """
+    if not isinstance(base_path, Path):
+        base_path = Path(base_path)
+
     if not folder:
-        return base_path
+        return str(base_path)
 
     if folder.startswith("/"):
         folder = folder[1:]
 
-    realBasePath = pathlib.Path(base_path).absolute()
-    download_path = pathlib.Path(realBasePath / folder).absolute()
+    realBasePath = base_path.resolve()
+    download_path = Path(realBasePath).joinpath(folder).resolve(strict=False)
 
     if not str(download_path).startswith(str(realBasePath)):
         msg = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
         raise Exception(msg)
+
+    try:
+        download_path.relative_to(realBasePath)
+    except ValueError as e:
+        msg = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
+        raise Exception(msg) from e
 
     if not download_path.is_dir() and create_path:
         download_path.mkdir(parents=True, exist_ok=True)
@@ -248,7 +257,10 @@ def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, s
     """
     idDict = {"id": None, "ie_key": None, "archive_id": None}
 
-    if not url or not archive_file or not os.path.exists(archive_file):
+    if not url or not archive_file:
+        return (False, idDict)
+
+    if not Path(archive_file).exists():
         return (False, idDict)
 
     idDict = get_archive_id(url=url)
@@ -301,13 +313,13 @@ def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
                 return ({}, False, f"{e}")
 
 
-def check_id(file: pathlib.Path) -> bool | str:
+def check_id(file: Path) -> bool | str:
     """
     Check if we are able to get an id from the file name.
     if so check if any video file with the same id exists.
 
     Args:
-        file (pathlib.Path): File to check.
+        file (Path): File to check.
 
     Returns:
         bool|str: False if no file found, else the file path.
@@ -477,12 +489,12 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
         return False
 
 
-def get_file_sidecar(file: pathlib.Path) -> list[dict]:
+def get_file_sidecar(file: Path) -> list[dict]:
     """
     Get sidecar files for the given file.
 
     Args:
-        file (pathlib.Path): The video file.
+        file (Path): The video file.
 
     Returns:
         list: List of sidecar files.
@@ -531,7 +543,7 @@ def get_file_sidecar(file: pathlib.Path) -> list[dict]:
 def get_possible_images(dir: str) -> list[dict]:
     images = []
 
-    path_loc = pathlib.Path(dir, "test.jpg")
+    path_loc = Path(dir, "test.jpg")
 
     for filename in ["poster", "thumbnail", "artwork", "cover", "fanart"]:
         for ext in [".jpg", ".jpeg", ".png", ".webp"]:
@@ -542,7 +554,7 @@ def get_possible_images(dir: str) -> list[dict]:
     return images
 
 
-def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
+def get_mime_type(metadata: dict, file_path: Path) -> str:
     """
     Determine the correct MIME type for a video file based on ffprobe metadata.
 
@@ -587,32 +599,35 @@ def get_mime_type(metadata: dict, file_path: pathlib.Path) -> str:
     return "application/octet-stream"
 
 
-def get_file(download_path: str, file: str | pathlib.Path) -> tuple[pathlib.Path, int]:
+def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
     """
     Get the real file path.
 
     Args:
-        download_path (str): Base download path.
-        file (str|pathlib.Path): File path.
+        download_path (str|Path): Base download path.
+        file (str|Path): File path.
 
     Returns:
-        pathlib.Path: Real file path.
+        Path: Real file path.
         int: http status code.
 
     """
-    file_path: str = os.path.normpath(os.path.join(download_path, str(file)))
-    if not file_path.startswith(download_path):
-        return (pathlib.Path(file_path), 404)
+    if not isinstance(download_path, Path):
+        download_path = Path(download_path)
 
-    realFile: str = pathlib.Path(calc_download_path(base_path=str(download_path), folder=str(file), create_path=False))
-    if realFile.exists():
-        return (realFile, 200)
+    try:
+        realFile: str = Path(calc_download_path(base_path=download_path, folder=str(file), create_path=False))
+        if realFile.exists():
+            return (realFile, 200)
+    except Exception as e:
+        LOG.error(f"Error calculating download path. {e!s}")
+        return (Path(file), 404)
 
     possibleFile = check_id(file=realFile)
     if not possibleFile:
         return (realFile, 404)
 
-    return (pathlib.Path(possibleFile), 302)
+    return (Path(possibleFile), 302)
 
 
 def encrypt_data(data: str, key: bytes) -> str:
@@ -736,12 +751,12 @@ def get(
     return data
 
 
-def get_files(base_path: str, dir: str | None = None):
+def get_files(base_path: Path | str, dir: str | None = None):
     """
     Get directory contents.
 
     Args:
-        base_path (str): Base download path.
+        base_path (Path|str): Base download path.
         dir (str): Directory to check.
 
     Returns:
@@ -751,31 +766,33 @@ def get_files(base_path: str, dir: str | None = None):
         OSError: If the directory is invalid or not a directory.
 
     """
+    if not isinstance(base_path, Path):
+        base_path = Path(base_path)
+
+    base_path = base_path.resolve()
+
+    dir_path = base_path
     if dir and dir != "/":
-        path = os.path.normpath(os.path.join(base_path, str(dir)))
-        if not path.startswith(base_path):
-            msg = f"Invalid path: '{dir}' - '{path}' - must be inside '{base_path}'."
-            raise OSError(msg)
-        dir_path = os.path.realpath(path)
-    else:
-        dir_path = base_path
+        dir_path: Path = base_path.joinpath(dir)
 
-    dir_path = pathlib.Path(dir_path)
-    if dir_path.is_symlink():
-        try:
-            dir_path = dir_path.resolve()
-        except OSError as e:
-            LOG.warning(f"Skipping broken symlink: {dir_path} - {e}")
-            return []
+    try:
+        dir_path = dir_path.resolve()
+    except OSError as e:
+        LOG.warning(f"Failed to resolve '{dir}' - {e}")
+        return []
 
-    if not str(dir_path).startswith(base_path):
-        msg = f"Invalid path: '{dir_path}' - must be inside '{base_path}'."
-        LOG.warning(msg)
+    try:
+        dir_path.relative_to(base_path)
+    except ValueError:
+        LOG.warning(f"Invalid path: '{dir_path}' - must be inside '{base_path}'.")
+        return []
+
+    if not str(dir_path).startswith(str(base_path)):
+        LOG.warning(f"Invalid path: '{dir_path}' - must be inside '{base_path}'.")
         return []
 
     if not dir_path.is_dir():
-        msg = f"Invalid path: '{dir_path}' - must be a directory."
-        LOG.warning(msg)
+        LOG.warning(f"Invalid path: '{dir_path}' - must be a directory.")
         return []
 
     contents: list = []
@@ -785,11 +802,14 @@ def get_files(base_path: str, dir: str | None = None):
 
         if file.is_symlink():
             try:
-                test: pathlib.Path = file.resolve()
-                if not str(test).startswith(base_path):
-                    msg = f"Invalid symlink: '{file}' - must resolve inside '{base_path}'."
-                    LOG.warning(msg)
+                test: Path = file.resolve()
+                test.relative_to(base_path)
+                if not str(test).startswith(str(base_path)):
+                    LOG.warning(f"Invalid symlink: '{file}' - must resolve inside '{base_path}'.")
                     continue
+            except ValueError:
+                LOG.warning(f"Invalid symlink: '{file}' - must resolve inside '{base_path}'.")
+                continue
             except OSError:
                 LOG.warning(f"Skipping broken symlink: {file}")
                 continue
@@ -813,7 +833,7 @@ def get_files(base_path: str, dir: str | None = None):
                 "type": "file" if file.is_file() else "dir",
                 "content_type": content_type,
                 "name": file.name,
-                "path": str(file).replace(base_path, "").strip("/"),
+                "path": str(file.relative_to(base_path)).strip("/"),
                 "size": stat.st_size,
                 "mime": get_mime_type({}, file) if file.is_file() else "directory",
                 "mtime": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
@@ -883,12 +903,12 @@ def strip_newline(string: str) -> str:
     return res.strip() if res else ""
 
 
-async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
+async def read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
     """
     Read a log file and return a set of log lines along with pagination metadata.
 
     Args:
-        file (str): The log file path.
+        file (Path): The log file path.
         offset (int): Number of lines to skip from the end (newer entries).
         limit (int): Number of lines to return.
 
@@ -903,7 +923,7 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
 
     from anyio import open_file
 
-    if not pathlib.Path(file).exists():
+    if not file.exists():
         return {"logs": [], "next_offset": None, "end_is_reached": True}
 
     result = []
@@ -951,7 +971,7 @@ async def read_logfile(file: str, offset: int = 0, limit: int = 50) -> dict:
         return {"logs": [], "next_offset": None, "end_is_reached": True}
 
 
-async def tail_log(file: pathlib.Path, emitter: callable, sleep_time: float = 0.5):
+async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
     """
     Continuously read a log file and emit new lines.
 
@@ -1133,7 +1153,7 @@ def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) 
     return list(dict.fromkeys(matched))
 
 
-def delete_dir(dir: pathlib.Path) -> bool:
+def delete_dir(dir: Path) -> bool:
     """
     Delete a directory and all its contents.
 

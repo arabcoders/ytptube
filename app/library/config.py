@@ -11,7 +11,7 @@ from pathlib import Path
 import coloredlogs
 from dotenv import load_dotenv
 
-from .Utils import FileLogFormatter, arg_converter, load_cookies
+from .Utils import FileLogFormatter, arg_converter
 from .version import APP_VERSION
 
 
@@ -158,7 +158,7 @@ class Config:
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
-        "https://placedog.net/1920/1080",
+        "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US",
     ]
     "The list of picture backends to use for the background."
 
@@ -371,23 +371,6 @@ class Config:
             LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}'.")
             self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
 
-        if cookies_file := ytdl_options.get("cookiefile", None):
-            cookies_file = Path(cookies_file)
-            if cookies_file.exists() and cookies_file.stat().st_size > 2:
-                LOG.info(f"Using cookies from '{cookies_file}'.")
-                load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file.as_posix()!s}"
-            else:
-                LOG.warning(f"Invalid cookie file '{cookies_file}' specified.")
-                ytdl_options.pop("cookiefile", None)
-
-        if not ytdl_options.get("cookiefile", None):
-            cookies_file: Path = Path(self.config_path) / "cookies.txt"
-            if cookies_file.exists() and cookies_file.stat().st_size > 2:
-                LOG.info(f"Using cookies from '{cookies_file}'.")
-                load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file.as_posix()!s}"
-
         if self.temp_keep:
             LOG.info("Keep temp files option is enabled.")
 
@@ -468,12 +451,6 @@ class Config:
         data = {k: getattr(self, k) for k in self._frontend_vars}
 
         ytdlp_args = self.get_ytdlp_args()
-
-        data["has_cookies"] = False
-
-        if cookie := ytdlp_args.get("cookiefile", None):
-            cookie_file = Path(cookie)
-            data["has_cookies"] = cookie_file.exists() and cookie_file.stat().st_size > 2
 
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
