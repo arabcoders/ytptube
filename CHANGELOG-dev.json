@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250610-6c8fd058",
-        "date": "2025-06-09T22:08:44+00:00",
+        "tag": "dev-20250610-d3bdb558",
+        "date": "2025-06-10T08:17:40+00:00",
         "commits": [
+            {
+                "sha": "d3bdb558",
+                "message": "fix uv yt-dlp upgrader",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:17:40+00:00",
+                "full_sha": "d3bdb55886fe04533462f8797699880380a43f28"
+            },
+            {
+                "sha": "9e130aed",
+                "message": "re-added daily yt-dlp checker",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:13:20+00:00",
+                "full_sha": "9e130aed9943799a766a907f6bb2fd81aa1ae8b0"
+            },
             {
                 "sha": "6c8fd058",
                 "message": "WiP: More migration to Path",
@@ -123,7 +137,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "6c8fd05886efea18b00b085815a18a4baa319a0a"
+        "full_sha": "d3bdb55886fe04533462f8797699880380a43f28"
     },
     {
         "tag": "dev-20250605-f1f79afe",
