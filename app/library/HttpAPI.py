@@ -132,7 +132,7 @@ class HttpAPI(Common):
         return decorator
 
     async def on_shutdown(self, _: web.Application):
-        LOG.debug("Shutting down http API server.")
+        pass
 
     def attach(self, app: web.Application) -> "HttpAPI":
         """
@@ -598,7 +598,7 @@ class HttpAPI(Common):
             if ytdlp_proxy := self.config.get_ytdlp_args().get("proxy", None):
                 opts["proxy"] = ytdlp_proxy
 
-            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
+            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
 
             data = extract_info(
                 config=ytdlp_opts,
@@ -960,7 +960,7 @@ class HttpAPI(Common):
                 opts = {}
                 if ytdlp_proxy := self.config.get_ytdlp_args().get("proxy", None):
                     opts["proxy"] = ytdlp_proxy
-                ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset, with_cookies=True).add(opts).get_all()
+                ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
 
                 data = extract_info(
                     config=ytdlp_opts,
@@ -1145,7 +1145,7 @@ class HttpAPI(Common):
                 item["cli"] = ""
 
             try:
-                ins.validate(item)
+                Tasks.validate(item)
             except ValueError as e:
                 return web.json_response(
                     {"error": f"Failed to validate task '{item.get('name')}'. '{e!s}'"},
@@ -1497,7 +1497,7 @@ class HttpAPI(Common):
             return web.Response(status=web.HTTPNotModified.status_code, headers={"Last-Modified": lastMod})
 
         return web.Response(
-            body=await Subtitle(download_path=self.config.download_path).make(file=realFile),
+            body=await Subtitle().make(file=realFile),
             headers={
                 "Content-Type": "text/vtt; charset=UTF-8",
                 "X-Accel-Buffering": "no",

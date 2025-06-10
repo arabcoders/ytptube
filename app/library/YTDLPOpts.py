@@ -2,11 +2,11 @@ import logging
 from pathlib import Path
 
 from .config import Config
-from .Presets import Presets
+from .Presets import Presets, Preset
 from .Singleton import Singleton
 from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, load_cookies, merge_dict
 
-LOG = logging.getLogger("YTDLPOpts")
+LOG: logging.Logger = logging.getLogger("YTDLPOpts")
 
 
 class YTDLPOpts(metaclass=Singleton):
@@ -79,11 +79,11 @@ class YTDLPOpts(metaclass=Singleton):
             YTDLPOpts: The instance of the class
 
         """
-        bad_options = {}
+        bad_options: dict = {}
         if from_user:
-            bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+            bad_options: dict[str, str] = {k: v for d in REMOVE_KEYS for k, v in d.items()}
 
-        removed_options = []
+        removed_options: list = []
 
         for key, value in config.items():
             if from_user and key in bad_options:
@@ -97,19 +97,18 @@ class YTDLPOpts(metaclass=Singleton):
 
         return self
 
-    def preset(self, name: str, with_cookies: bool = False) -> "YTDLPOpts":
+    def preset(self, name: str) -> "YTDLPOpts":
         """
         Add the preset options to the item options.
 
         Args:
             name (str): The name of the preset
-            with_cookies (bool): If the cookies should be added
 
         Returns:
             YTDLPOpts: The instance of the class
 
         """
-        preset = Presets.get_instance().get(name)
+        preset: Preset | None = Presets.get_instance().get(name)
         if not preset or "default" == name:
             return self
 
@@ -122,25 +121,26 @@ class YTDLPOpts(metaclass=Singleton):
                 msg = f"Invalid preset '{preset.name}' command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
 
-        if preset.cookies and with_cookies:
-            file = Path(self._config.config_path, "cookies", f"{preset.id}.txt")
+        if preset.cookies:
+            file: Path = Path(self._config.config_path) / "cookies" / f"{preset.id}.txt"
 
             if not file.parent.exists():
-                file.parent.mkdir(parents=True)
+                file.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(file, "w") as f:
-                f.write(preset.cookies)
+            file.write_text(preset.cookies)
 
-            load_cookies(str(file))
-
-            self._preset_opts["cookiefile"] = str(file)
+            try:
+                load_cookies(file)
+                self._preset_opts["cookiefile"] = str(file)
+            except ValueError as e:
+                LOG.error(str(e))
 
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
 
         if preset.folder:
             self._preset_opts["paths"] = {
-                "home": calc_download_path(base_path=self._config.download_path, folder=preset.folder),
+                "home": calc_download_path(base_path=Path(self._config.download_path), folder=preset.folder),
                 "temp": self._config.temp_path,
             }
 
@@ -157,7 +157,7 @@ class YTDLPOpts(metaclass=Singleton):
             dict: The options
 
         """
-        default_opts = {}
+        default_opts: dict = {}
         default_opts["paths"] = {"home": self._config.download_path, "temp": self._config.temp_path}
         default_opts["outtmpl"] = {
             "default": self._config.output_template,
@@ -167,7 +167,7 @@ class YTDLPOpts(metaclass=Singleton):
         if not isinstance(self._item_cli, list):
             self._item_cli = []
 
-        merge = []
+        merge: list[str] = []
         if self._config._ytdlp_cli_mutable and len(self._config._ytdlp_cli_mutable) > 1:
             merge.append(self._config._ytdlp_cli_mutable)
 
@@ -178,12 +178,16 @@ class YTDLPOpts(metaclass=Singleton):
             # prepend the yt-dlp command options to the list
             self._item_cli = merge + self._item_cli
 
-        user_cli = {}
+        user_cli: dict = {}
 
         if len(self._item_cli) > 0:
             try:
-                removed_options = []
-                user_cli = arg_converter(args="\n".join(self._item_cli), level=True, removed_options=removed_options)
+                removed_options: list = []
+                user_cli: dict = arg_converter(
+                    args="\n".join(self._item_cli),
+                    level=True,
+                    removed_options=removed_options,
+                )
 
                 if len(removed_options) > 0:
                     LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))

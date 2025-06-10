@@ -151,9 +151,9 @@ class Download:
 
     def _download(self):
         try:
-            params = (
+            params: dict = (
                 YTDLPOpts.get_instance()
-                .preset(self.preset, with_cookies=not self.info.cookies)
+                .preset(self.preset)
                 .add({"break_on_existing": True})
                 .add_cli(args=self.info.cli, from_user=True)
                 .add(

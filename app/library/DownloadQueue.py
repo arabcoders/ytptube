@@ -418,10 +418,7 @@ class DownloadQueue(metaclass=Singleton):
                     "level": logging.WARNING,
                     "name": "callback-logger",
                 },
-                **YTDLPOpts.get_instance()
-                .preset(name=item.preset, with_cookies=not item.cookies)
-                .add_cli(args=item.cli, from_user=True)
-                .get_all(),
+                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
             }
 
             if yt_conf.get("external_downloader"):
@@ -558,7 +555,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item = self.done.get(key=id)
+                item: Download = self.done.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -569,6 +566,10 @@ class DownloadQueue(metaclass=Singleton):
             removed_files = 0
             filename: str = ""
 
+            LOG.info(
+                f"{remove_file=} {itemRef} - Removing local files: {self.config.remove_files}, {item.info.status=}"
+            )
+
             if remove_file and self.config.remove_files and "finished" == item.info.status:
                 filename = str(item.info.filename)
                 if item.info.folder:
@@ -577,17 +578,22 @@ class DownloadQueue(metaclass=Singleton):
                 try:
                     rf = Path(
                         calc_download_path(
-                            base_path=self.config.download_path,
+                            base_path=Path(self.config.download_path),
                             folder=filename,
                             create_path=False,
                         )
                     )
-                    if rf.stem and rf.is_file() and rf.exists():
-                        for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
-                            if f.is_file() and f.exists() and not f.name.startswith("."):
-                                removed_files += 1
-                                LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
-                                f.unlink(missing_ok=True)
+                    if rf.is_file() and rf.exists():
+                        if rf.stem and rf.suffix:
+                            for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
+                                if f.is_file() and f.exists() and not f.name.startswith("."):
+                                    removed_files += 1
+                                    LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
+                                    f.unlink(missing_ok=True)
+                        else:
+                            LOG.debug(f"Removing '{itemRef}' local file '{rf.name}'.")
+                            rf.unlink(missing_ok=True)
+                            removed_files += 1
                     else:
                         LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
                 except Exception as e:
