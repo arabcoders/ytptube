@@ -1,0 +1,59 @@
+name: update-yt-dlp
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Log level"
+        required: true
+        default: "warning"
+        type: choice
+        options:
+          - info
+          - warning
+          - debug
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  update-yt-dlp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: "dev"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Sync dependencies
+        run: uv venv && . .venv/bin/activate && uv sync
+
+      - name: Check and update yt-dlp
+        id: ytdlp_update
+        run: |
+          . .venv/bin/activate
+          VER=$(uv pip list --outdated | awk '$1 == "yt-dlp" {print $3}')
+          if [ -n "$VER" ]; then
+            echo "YTLDLP_VER=${VER}" >> "$GITHUB_OUTPUT"
+            uv pip install --upgrade yt-dlp
+            UPDATED=true
+          else
+            UPDATED=false
+          fi
+          echo "UPDATED=${UPDATED}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Pull Request
+        if: steps.ytdlp_update.outputs.UPDATED == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          title: "[yt-dlp] automated update to ${{ steps.ytdlp_update.outputs.YTLDLP_VER }}"
+          commit-message: "Update yt-dlp to ${{ steps.ytdlp_update.outputs.YTLDLP_VER }}"
+          body: "This is an automated request to update yt-dlp dependency to ${{ steps.ytdlp_update.outputs.YTLDLP_VER }}"
+          delete-branch: true
