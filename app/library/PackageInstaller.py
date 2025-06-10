@@ -3,6 +3,7 @@ import logging
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 LOG = logging.getLogger("package_installer")
 
@@ -12,11 +13,15 @@ class Packages:
         from_env = env.split() if env else []
         from_file = []
 
-        if os.path.exists(file) and os.access(file, os.R_OK):
-            with open(file) as f:
-                from_file = [pkg.strip() for pkg in f if pkg.strip()]
+        if file:
+            file = Path(file)
+            if file.exists() and os.access(str(file), os.R_OK):
+                with open(file) as f:
+                    from_file: list[str] = [pkg.strip() for pkg in f if pkg.strip()]
+            else:
+                LOG.error(f"pip packages file '{file}' doesn't exist or is not readable.")
 
-        self.packages: list = list(set(from_env + from_file))
+        self.packages: list[str] = list(set(from_env + from_file))
         self.upgrade = bool(upgrade)
 
     def has_packages(self) -> bool:

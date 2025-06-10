@@ -1,8 +1,8 @@
 import json
 import logging
-import os
 import uuid
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -11,9 +11,9 @@ from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
-from .Utils import arg_converter
+from .Utils import arg_converter, init_class
 
-LOG = logging.getLogger("presets")
+LOG = logging.getLogger("conditions")
 
 
 @dataclass(kw_only=True)
@@ -51,16 +51,16 @@ class Conditions(metaclass=Singleton):
     _instance = None
     """The instance of the class."""
 
-    def __init__(self, file: str | None = None, config: Config | None = None):
+    def __init__(self, file: Path | str | None = None, config: Config | None = None):
         Conditions._instance = self
 
         config = config or Config.get_instance()
 
-        self._file: str = file or os.path.join(config.config_path, "conditions.json")
+        self._file: Path = Path(file) if file else Path(config.config_path) / "conditions.json"
 
-        if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                os.chmod(self._file, 0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
@@ -68,7 +68,7 @@ class Conditions(metaclass=Singleton):
             msg = "Not implemented"
             raise Exception(msg)
 
-        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.add")
+        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.save")
 
     @staticmethod
     def get_instance() -> "Conditions":
@@ -114,15 +114,15 @@ class Conditions(metaclass=Singleton):
         """
         self.clear()
 
-        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+        if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
-        LOG.info(f"Loading '{self._file}'.")
         try:
-            with open(self._file) as f:
-                items = json.load(f)
+            LOG.info(f"Loading '{self._file}'.")
+            items = json.loads(self._file.read_text())
         except Exception as e:
-            LOG.error(f"Failed to parse '{self._file}'. '{e}'.")
+            LOG.exception(e)
+            LOG.error(f"Error loading '{self._file}'. '{e}'.")
             return self
 
         if not items or len(items) < 1:
@@ -137,15 +137,15 @@ class Conditions(metaclass=Singleton):
                     item["id"] = str(uuid.uuid4())
                     need_save = True
 
-                item = Condition(**item)
+                item: Condition = init_class(Condition, item)
 
                 self._items.append(item)
             except Exception as e:
-                LOG.error(f"Failed to parse failure condition at list position '{i}'. '{e!s}'.")
+                LOG.error(f"Failed to parse condition at list position '{i}'. '{e!s}'.")
                 continue
 
         if need_save:
-            LOG.info("Saving failure conditions due to format, or id change.")
+            LOG.info("Saving conditions due to format, or id change.")
             self.save(self._items)
 
         return self
@@ -229,7 +229,7 @@ class Conditions(metaclass=Singleton):
         for i, item in enumerate(items):
             try:
                 if not isinstance(item, Condition):
-                    item = Condition(**item)
+                    item: Condition = init_class(Condition, item)
                     items[i] = item
             except Exception as e:
                 LOG.error(f"Failed to save '{i}' due to parsing error. '{e!s}'.")
@@ -242,12 +242,10 @@ class Conditions(metaclass=Singleton):
                 continue
 
         try:
-            with open(self._file, "w") as f:
-                json.dump(obj=[item.serialize() for item in items], fp=f, indent=4)
-
+            self._file.write_text(json.dumps(obj=[item.serialize() for item in items], indent=4))
             LOG.info(f"Updated '{self._file}'.")
         except Exception as e:
-            LOG.error(f"Failed to save '{self._file}'. '{e!s}'.")
+            LOG.error(f"Error saving '{self._file}'. '{e!s}'.")
 
         return self
 

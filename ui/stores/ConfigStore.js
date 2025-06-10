@@ -11,7 +11,6 @@ const CONFIG_KEYS = {
     ytdlp_version: '',
     max_workers: 1,
     version: '',
-    has_cookies: false,
     basic_mode: true,
     default_preset: 'default',
     instance_title: null,
@@ -20,6 +19,7 @@ const CONFIG_KEYS = {
     browser_enabled: false,
     ytdlp_cli: '',
     file_logging: false,
+    is_native: false,
   },
   presets: [
     {

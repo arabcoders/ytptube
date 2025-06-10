@@ -2,8 +2,8 @@
 
 import asyncio
 import logging
-import os
 import sqlite3
+import sys
 from pathlib import Path
 
 import caribou
@@ -23,16 +23,22 @@ from library.Tasks import Tasks
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
 
+ROOT_PATH: Path = Path(__file__).parent.absolute()
+
 
 class Main:
-    def __init__(self):
-        self._config = Config.get_instance()
-        self.rootPath = str(Path(__file__).parent.absolute())
+    def __init__(self, is_native: bool = False):
+        self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
+
+        if self._config.debug:
+            loop = asyncio.get_event_loop()
+            loop.set_debug(True)
+            loop.slow_callback_duration = 0.05
 
         self._check_folders()
 
-        caribou.upgrade(self._config.db_file, os.path.join(self.rootPath, "migrations"))
+        caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")
 
         connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
         connection.row_factory = sqlite3.Row
@@ -44,13 +50,14 @@ class Main:
             LOG.debug("Database connection closed.")
 
         try:
-            if "600" != oct(os.stat(self._config.db_file).st_mode)[-3:]:
-                os.chmod(self._config.db_file, 0o600)
+            db_file = Path(self._config.db_file)
+            if "600" != oct(db_file.stat().st_mode)[-3:]:
+                db_file.chmod(0o600)
         except Exception:
             pass
 
         self._queue = DownloadQueue(connection=connection)
-        self._http = HttpAPI(queue=self._queue)
+        self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
         self._socket = HttpSocket(queue=self._queue)
 
         self._app.on_cleanup.append(_close_connection)
@@ -60,31 +67,34 @@ class Main:
         folders = (self._config.download_path, self._config.temp_path, self._config.config_path)
 
         for folder in folders:
+            folder = Path(folder)
             try:
                 LOG.debug(f"Checking folder at '{folder}'.")
-                if not os.path.exists(folder):
+                if not folder.exists():
                     LOG.info(f"Creating folder at '{folder}'.")
-                    os.makedirs(folder, exist_ok=True)
+                    folder.mkdir(parents=True, exist_ok=True)
             except OSError:
                 LOG.error(f"Could not create folder at '{folder}'.")
                 raise
 
         try:
-            LOG.debug(f"Checking database file at '{self._config.db_file}'.")
-            if not os.path.exists(self._config.db_file):
-                LOG.info(f"Creating database file at '{self._config.db_file}'.")
-                with open(self._config.db_file, "w") as _:
-                    pass
-        except OSError:
-            LOG.error(f"Could not create database file at '{self._config.db_file}'.")
+            db_file = Path(self._config.db_file)
+            LOG.debug(f"Checking database file at '{db_file}'.")
+            if not db_file.exists():
+                LOG.info(f"Creating database file at '{db_file}'.")
+                db_file.touch(exist_ok=True)
+        except OSError as e:
+            LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
             raise
 
-    def start(self):
+    def start(self, host: str | None = None, port: int | None = None, cb=None):
         """
         Start the application.
         """
-        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
+        host = host or self._config.host
+        port = port or self._config.port
 
+        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
@@ -100,10 +110,10 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(
-                f"YTPTube v{self._config.version} - started on http://{self._config.host}:{self._config.port}{self._config.base_path}"
-            )
+            LOG.info(f"YTPTube v{self._config.version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
+            if cb:
+                cb()
 
         HTTP_LOGGER = None
         if self._config.access_log:
@@ -113,12 +123,13 @@ class Main:
 
         web.run_app(
             self._app,
-            host=self._config.host,
-            port=self._config.port,
-            reuse_port=True,
+            host=host,
+            port=port,
+            reuse_port="win32" != sys.platform,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
             print=started,
+            handle_signals=cb is None,
         )
 
 

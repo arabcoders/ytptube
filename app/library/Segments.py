@@ -1,7 +1,6 @@
 import asyncio
 import hashlib
 import logging
-import os
 import tempfile
 from pathlib import Path
 
@@ -33,13 +32,14 @@ class Segments:
         except UnicodeDecodeError:
             pass
 
-        tmpDir = tempfile.gettempdir()
-        tmpFile = os.path.join(tmpDir, f"ytptube_stream.{hashlib.sha256(str(file).encode()).hexdigest()}")
+        tmpFile = Path(tempfile.gettempdir()).joinpath(
+            f"ytptube_stream.{hashlib.sha256(str(file).encode()).hexdigest()}"
+        )
 
-        if not os.path.exists(tmpFile):
-            os.symlink(file, tmpFile)
+        if not tmpFile.exists():
+            tmpFile.symlink_to(file, target_is_directory=False)
 
-        startTime = f"{0:.6f}" if self.index == 0 else f"{self.duration * self.index:.6f}"
+        startTime: str = f"{0:.6f}" if self.index == 0 else f"{self.duration * self.index:.6f}"
 
         fargs = [
             "-xerror",
@@ -78,7 +78,7 @@ class Segments:
         return fargs
 
     async def stream(self, file: Path, resp: web.StreamResponse):
-        ffmpeg_args = await self.build_ffmpeg_args(file)
+        ffmpeg_args: list[str] = await self.build_ffmpeg_args(file)
 
         proc = await asyncio.create_subprocess_exec(
             "ffmpeg",
@@ -94,7 +94,7 @@ class Segments:
 
         try:
             while True:
-                chunk = await proc.stdout.read(1024 * 64)
+                chunk: bytes = await proc.stdout.read(1024 * 64)
                 if not chunk:
                     break
                 try:

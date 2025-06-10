@@ -1,10 +1,10 @@
 import asyncio
 import json
 import logging
-import os
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -17,7 +17,6 @@ from .Events import Event, EventBus, Events
 from .ItemDTO import ItemDTO
 from .Singleton import Singleton
 from .Utils import validate_uuid
-from .version import APP_VERSION
 
 LOG = logging.getLogger("notifications")
 
@@ -135,14 +134,14 @@ class Notification(metaclass=Singleton):
         config: Config = config or Config.get_instance()
 
         self._debug = config.debug
-        self._file: str = file or os.path.join(config.config_path, "notifications.json")
+        self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
+        self._version = config.version
 
-        if os.path.exists(self._file):
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                if "600" != oct(os.stat(self._file).st_mode)[-3:]:
-                    os.chmod(self._file, 0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
@@ -184,50 +183,45 @@ class Notification(metaclass=Singleton):
             Notification: The Notification instance.
 
         """
-        LOG.info(f"Saving notification targets to '{self._file}'.")
         try:
-            with open(self._file, "w") as f:
-                json.dump([t.serialize() for t in targets], fp=f, indent=4)
+            self._file.write_text(json.dumps([t.serialize() for t in targets], indent=4))
+            LOG.info(f"Updated '{self._file}'.")
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Error saving notification targets to '{self._file}'. '{e!s}'")
+            LOG.error(f"Error saving '{self._file}'. '{e!s}'")
 
         return self
 
     def load(self) -> "Notification":
         """Load or reload notification targets from the file."""
         if len(self._targets) > 0:
-            LOG.info("Clearing existing notification targets.")
             self.clear()
 
-        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+        if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
         targets = []
 
-        LOG.info(f"Loading notification targets from '{self._file}'.")
-
         try:
-            with open(self._file) as f:
-                targets = json.load(f)
+            LOG.info(f"Loading '{self._file}'.")
+            targets = json.loads(self._file.read_text())
         except Exception as e:
-            LOG.error(f"Error loading notification targets from '{self._file}'. '{e!s}'")
+            LOG.error(f"Error loading '{self._file}'. '{e!s}'")
 
         for target in targets:
             try:
                 try:
                     Notification.validate(target)
+                    target: Target = self.make_target(target)
                 except ValueError as e:
                     name = target.get("name") or target.get("id") or target.get("request", {}).get("url") or "unknown"
                     LOG.error(f"Invalid notification target '{name}'. '{e!s}'")
                     continue
 
-                target = self.make_target(target)
-
                 self._targets.append(target)
 
                 LOG.info(
-                    f"Will send {target.request.type} request on '{', '.join(target.on) if len(target.on) > 0 else 'all events'}' to '{target.name}'."
+                    f"Send '{target.request.type}' request on '{', '.join(target.on) if len(target.on) > 0 else 'all events'}' to '{target.name}'."
                 )
             except Exception as e:
                 LOG.error(f"Error loading notification target '{target}'. '{e!s}'")
@@ -360,7 +354,7 @@ class Notification(metaclass=Singleton):
                 "method": target.request.method.upper(),
                 "url": target.request.url,
                 "headers": {
-                    "User-Agent": f"YTPTube/{APP_VERSION}",
+                    "User-Agent": f"YTPTube/{self._version}",
                     "X-Event-Id": ev.id,
                     "X-Event": ev.event,
                     "Content-Type": "application/json"

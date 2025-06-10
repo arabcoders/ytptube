@@ -2,7 +2,6 @@ import asyncio
 import functools
 import glob
 import logging
-import os
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -10,7 +9,6 @@ from email.utils import formatdate, parsedate_to_datetime
 from pathlib import Path
 from sqlite3 import Connection
 
-import anyio
 import yt_dlp
 from aiohttp import web
 
@@ -399,7 +397,7 @@ class DownloadQueue(metaclass=Singleton):
                 item.template = _preset.template
 
         yt_conf = {}
-        cookie_file = os.path.join(self.config.temp_path, f"c_{uuid.uuid4().hex}.txt")
+        cookie_file = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
 
         LOG.info(f"Adding '{item.__repr__()}'.")
 
@@ -420,10 +418,7 @@ class DownloadQueue(metaclass=Singleton):
                     "level": logging.WARNING,
                     "name": "callback-logger",
                 },
-                **YTDLPOpts.get_instance()
-                .preset(name=item.preset, with_cookies=not item.cookies)
-                .add_cli(args=item.cli, from_user=True)
-                .get_all(),
+                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
             }
 
             if yt_conf.get("external_downloader"):
@@ -441,10 +436,8 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.cookies:
                 try:
-                    async with await anyio.open_file(cookie_file, "w") as f:
-                        await f.write(item.cookies)
-                        yt_conf["cookiefile"] = f.name
-
+                    cookie_file.write_text(item.cookies)
+                    yt_conf["cookiefile"] = str(cookie_file.as_posix())
                     load_cookies(cookie_file)
                 except Exception as e:
                     msg = f"Failed to create cookie file for '{item.url}'. '{e!s}'."
@@ -493,10 +486,10 @@ class DownloadQueue(metaclass=Singleton):
                 "msg": f"TimeoutError: {self.config.extract_info_timeout}s reached Unable to extract info.",
             }
         finally:
-            if cookie_file and os.path.exists(cookie_file):
+            if cookie_file and cookie_file.exists():
                 try:
-                    os.remove(cookie_file)
-                    del yt_conf["cookiefile"]
+                    cookie_file.unlink(missing_ok=True)
+                    yt_conf.pop("cookiefile", None)
                 except Exception as e:
                     LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
@@ -562,7 +555,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item = self.done.get(key=id)
+                item: Download = self.done.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -573,24 +566,34 @@ class DownloadQueue(metaclass=Singleton):
             removed_files = 0
             filename: str = ""
 
+            LOG.info(
+                f"{remove_file=} {itemRef} - Removing local files: {self.config.remove_files}, {item.info.status=}"
+            )
+
             if remove_file and self.config.remove_files and "finished" == item.info.status:
                 filename = str(item.info.filename)
                 if item.info.folder:
                     filename = f"{item.info.folder}/{item.info.filename}"
 
                 try:
-                    realFile: str = calc_download_path(
-                        base_path=self.config.download_path,
-                        folder=filename,
-                        create_path=False,
+                    rf = Path(
+                        calc_download_path(
+                            base_path=Path(self.config.download_path),
+                            folder=filename,
+                            create_path=False,
+                        )
                     )
-                    rf = Path(realFile)
                     if rf.is_file() and rf.exists():
-                        for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
-                            if f.is_file() and f.exists() and not f.name.startswith("."):
-                                removed_files += 1
-                                LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
-                                os.remove(f)
+                        if rf.stem and rf.suffix:
+                            for f in rf.parent.glob(f"{glob.escape(rf.stem)}.*"):
+                                if f.is_file() and f.exists() and not f.name.startswith("."):
+                                    removed_files += 1
+                                    LOG.debug(f"Removing '{itemRef}' local file '{f.name}'.")
+                                    f.unlink(missing_ok=True)
+                        else:
+                            LOG.debug(f"Removing '{itemRef}' local file '{rf.name}'.")
+                            rf.unlink(missing_ok=True)
+                            removed_files += 1
                     else:
                         LOG.warning(f"Failed to remove '{itemRef}' local file '{filename}'. File not found.")
                 except Exception as e:
@@ -701,22 +704,13 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         filePath = calc_download_path(base_path=self.config.download_path, folder=entry.info.folder)
-        LOG.info(
-            f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' to 'Folder: {filePath}'."
-        )
+        LOG.info(f"Downloading 'id: {id}', 'Title: {entry.info.title}', 'URL: {entry.info.url}' To '{filePath}'.")
 
         try:
             self._active[entry.info._id] = entry
             await entry.start()
 
             if "finished" != entry.info.status:
-                if entry.tmpfilename and os.path.isfile(entry.tmpfilename):
-                    try:
-                        os.remove(entry.tmpfilename)
-                        entry.tmpfilename = None
-                    except Exception:
-                        pass
-
                 entry.info.status = "error"
         finally:
             if entry.info._id in self._active:

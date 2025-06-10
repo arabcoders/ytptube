@@ -1,10 +1,10 @@
 import asyncio
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -15,7 +15,7 @@ from .encoder import Encoder
 from .Events import EventBus, Events, error, info, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import clean_item
+from .Utils import init_class
 
 LOG = logging.getLogger("tasks")
 
@@ -65,18 +65,18 @@ class Tasks(metaclass=Singleton):
 
         config = config or Config.get_instance()
 
-        self._debug = config.debug
-        self._default_preset = config.default_preset
-        self._file = file or os.path.join(config.config_path, "tasks.json")
-        self._client = client or httpx.AsyncClient()
-        self._encoder = encoder or Encoder()
-        self._loop = loop or asyncio.get_event_loop()
-        self._scheduler = scheduler or Scheduler.get_instance()
-        self._notify = EventBus.get_instance()
+        self._debug: bool = config.debug
+        self._default_preset: str = config.default_preset
+        self._file: Path = Path(file) if file else Path(config.config_path).joinpath("tasks.json")
+        self._client: httpx.AsyncClient = client or httpx.AsyncClient()
+        self._encoder: Encoder = encoder or Encoder()
+        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+        self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
+        self._notify: EventBus = EventBus.get_instance()
 
-        if os.path.exists(self._file) and "600" != oct(os.stat(self._file).st_mode)[-3:]:
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                os.chmod(self._file, 0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
@@ -126,29 +126,23 @@ class Tasks(metaclass=Singleton):
         """
         self.clear()
 
-        if not os.path.exists(self._file) or os.path.getsize(self._file) < 10:
+        if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
-        LOG.info(f"Loading tasks from '{self._file}'.")
         try:
-            with open(self._file) as f:
-                tasks = json.load(f)
+            LOG.info(f"Loading '{self._file}'.")
+            tasks = json.loads(self._file.read_text())
         except Exception as e:
-            LOG.error(f"Failed to parse tasks from '{self._file}'. '{e!s}'.")
+            LOG.error(f"Error loading '{self._file}'. '{e!s}'.")
             return self
 
         if not tasks or len(tasks) < 1:
-            LOG.info(f"No tasks were defined in '{self._file}'.")
             return self
 
-        need_save = False
         for i, task in enumerate(tasks):
             try:
-                task, task_status = clean_item(task, keys=("cookies", "config"))
-                self.validate(task)
-                task = Task(**task)
-                if task_status:
-                    need_save = True
+                Tasks.validate(task)
+                task: Task = init_class(Task, task)
             except Exception as e:
                 LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
                 continue
@@ -172,11 +166,7 @@ class Tasks(metaclass=Singleton):
                 LOG.info(f"Task '{i}: {task.name}' queued to be executed '{schedule_time}'.")
             except Exception as e:
                 LOG.exception(e)
-                LOG.error(f"Failed to queue task '{i}: {task.name}'. '{e!s}'.")
-
-        if need_save:
-            LOG.info("Updating tasks file to remove old keys.")
-            self.save(self.get_all())
+                LOG.error(f"Failed to queue '{i}: {task.name}'. '{e!s}'.")
 
         return self
 
@@ -193,18 +183,19 @@ class Tasks(metaclass=Singleton):
 
         for task in self._tasks:
             try:
-                LOG.info(f"Stopping task '{task.id}: {task.name}'.")
+                LOG.info(f"Stopping '{task.id}: {task.name}'.")
                 self._scheduler.remove(task.id)
             except Exception as e:
                 if not shutdown:
                     LOG.exception(e)
-                    LOG.error(f"Failed to stop task '{task.id}: {task.name}'. '{e!s}'.")
+                    LOG.error(f"Failed to stop '{task.id}: {task.name}'. '{e!s}'.")
 
         self._tasks.clear()
 
         return self
 
-    def validate(self, task: Task | dict) -> bool:
+    @staticmethod
+    def validate(task: Task | dict) -> bool:
         """
         Validate the task.
 
@@ -263,30 +254,27 @@ class Tasks(metaclass=Singleton):
         """
         for i, task in enumerate(tasks):
             try:
-                if not isinstance(task, Task):
-                    task = Task(**task)
-                    tasks[i] = task
-            except Exception as e:
-                LOG.error(f"Failed to save task '{i}' unable to parse task. '{e!s}'.")
-                continue
-
-            try:
                 self.validate(task)
+
+                if not isinstance(task, Task):
+                    task: Task = init_class(Task, task)
+                    tasks[i] = task
             except ValueError as e:
-                LOG.error(f"Failed to add task '{i}: {task.name}'. '{e}'.")
+                LOG.error(f"Failed to validate item '{i}: {task.name}'. '{e}'.")
+                continue
+            except Exception as e:
+                LOG.error(f"Failed to save task '{i}'. '{e!s}'.")
                 continue
 
         try:
-            with open(self._file, "w") as f:
-                json.dump(obj=[task.serialize() for task in tasks], fp=f, indent=4)
-
-            LOG.info(f"Tasks saved to '{self._file}'.")
+            self._file.write_text(json.dumps([i.serialize() for i in tasks], indent=4))
+            LOG.info(f"Updated '{self._file}'.")
         except Exception as e:
-            LOG.error(f"Failed to save tasks to '{self._file}'. '{e!s}'.")
+            LOG.error(f"Error saving '{self._file}'. '{e!s}'.")
 
         return self
 
-    async def _runner(self, task: Task):
+    async def _runner(self, task: Task) -> None:
         """
         Run the task.
 
@@ -297,11 +285,11 @@ class Tasks(metaclass=Singleton):
             None
 
         """
+        timeNow: str = datetime.now(UTC).isoformat()
         try:
-            timeNow = datetime.now(UTC).isoformat()
-            started = time.time()
+            started: float = time.time()
             if not task.url:
-                LOG.error(f"Failed to dispatch task '{task.id}: {task.name}'. No URL found.")
+                LOG.error(f"Failed to dispatch '{task.id}: {task.name}'. No URL found.")
                 return
 
             preset: str = str(task.preset or self._default_preset)
@@ -309,13 +297,10 @@ class Tasks(metaclass=Singleton):
             template: str = task.template if task.template else ""
             cli: str = task.cli if task.cli else ""
 
-            LOG.info(f"Task '{task.id}: {task.name}' dispatched at '{timeNow}'.")
+            LOG.info(f"Dispatched '{task.id}: {task.name}' at '{timeNow}'.")
 
-            tasks = []
-            tasks.append(
-                self._notify.emit(Events.LOG_INFO, data=info(f"Task '{task.name}' dispatched at '{timeNow}'."))
-            )
-            tasks.append(
+            tasks: list = [
+                self._notify.emit(Events.LOG_INFO, data=info(f"Dispatched '{task.name}' at '{timeNow}'.")),
                 self._notify.emit(
                     Events.ADD_URL,
                     data={
@@ -327,22 +312,21 @@ class Tasks(metaclass=Singleton):
                     },
                     id=task.id,
                 ),
-            )
+            ]
 
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
 
             timeNow = datetime.now(UTC).isoformat()
 
-            ended = time.time()
-            LOG.info(f"Task '{task.id}: {task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
+            ended: float = time.time()
+            LOG.info(f"Completed '{task.id}: {task.name}' at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
             await self._notify.emit(
                 Events.LOG_SUCCESS,
-                data=success(f"Task '{task.name}' completed in '{ended - started:.2f}' seconds."),
+                data=success(f"Completed '{task.name}' in '{ended - started:.2f}' seconds."),
             )
         except Exception as e:
-            timeNow = datetime.now(UTC).isoformat()
-            LOG.error(f"Task '{task.id}: {task.name}' has failed to execute at '{timeNow}'. '{e!s}'.")
+            LOG.error(f"Failed to execute '{task.id}: {task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
-                Events.ERROR, data=error(f"Task '{task.name}' failed to execute at '{timeNow}'. '{e!s}'.")
+                Events.ERROR, data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             )

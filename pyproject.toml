@@ -1,5 +1,42 @@
+[project]
+name = "ytptube"
+version = "1.0.0"
+description = "A WebUI for yt-dlp with concurrent downloads support, presets and scheduled tasks and many more."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Abdulmohsen", email = "contact@arabcoders.org" }]
+dependencies = [
+  # Windows‐only
+  "tzdata; sys_platform == 'win32'",
+  "python-magic-bin; sys_platform == 'win32'",
+  # Non‐Windows
+  "python-magic>=0.4.27; sys_platform != 'win32'",
+
+  # Cross‐platform
+  "python-socketio>=5.11.1",
+  "aiohttp>=3.9.3",
+  "caribou>=0.3.0",
+  "coloredlogs>=15.0.1",
+  "aiocron>=1.8",
+  "python-dotenv>=1.0.1",
+  "debugpy>=1.8.1",
+  "httpx",
+  "async-timeout",
+  "pyjson5",
+  "curl_cffi==0.7.1",
+  "pysubs2",
+  "regex",
+  "mutagen",
+  "brotli",
+  "brotlicffi",
+  "anyio",
+  "pycryptodome",
+  "yt-dlp",
+  "platformdirs",
+]
+
 [tool.ruff]
-# Exclude a variety of commonly ignored directories.
 exclude = [
   ".bzr",
   ".direnv",
@@ -26,7 +63,6 @@ exclude = [
   "node_modules",
   "site-packages",
   "venv",
-  ".venv",
 ]
 
 # Same as Black.
@@ -35,6 +71,16 @@ indent-width = 4
 
 # Assume Python 3.11
 target-version = "py311"
+
+[project.optional-dependencies]
+webview = [
+  #windows only
+  "qtpy; sys_platform == 'win32'",
+  "pyside6; sys_platform == 'win32'",
+  # all
+  "pywebview",
+  "pyinstaller",
+]
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -109,6 +155,7 @@ ignore = [
   "PLW2901",
   "ERA001",
   "S101",
+  "LOG015",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -147,3 +194,6 @@ docstring-code-line-length = "dynamic"
 
 [tool.autopep8]
 --max-line-length = 120
+
+[tool.uv]
+link-mode = "copy"

@@ -11,7 +11,10 @@ export const useSocketStore = defineStore('socket', () => {
   const isConnected = ref(false)
 
   const connect = () => {
-    let opts = { withCredentials: true }
+    let opts = {
+      transports: ['websocket'],
+      withCredentials: true,
+    }
 
     let url = runtimeConfig.public.wss
 

@@ -3,10 +3,10 @@ import errno
 import functools
 import logging
 import os
-import pty
 import shlex
 import time
 from datetime import UTC, datetime
+from pathlib import Path
 
 import anyio
 import socketio
@@ -50,8 +50,17 @@ class HttpSocket(Common):
         self.queue = queue or DownloadQueue.get_instance()
         self._notify = EventBus.get_instance()
 
-        #logger=True, engineio_logger=True,
-        self.sio = sio or socketio.AsyncServer(cors_allowed_origins="*")
+        # logger=True, engineio_logger=True,
+        self.sio = sio or socketio.AsyncServer(
+            async_handlers=True,
+            async_mode="aiohttp",
+            cors_allowed_origins=[],
+            transports=["websocket"],
+            logger=self.config.debug,
+            engineio_logger=self.config.debug,
+            ping_interval=10,
+            ping_timeout=5,
+        )
         encoder = encoder or Encoder()
 
         def emit(e: Event, _, **kwargs):
@@ -76,6 +85,12 @@ class HttpSocket(Common):
 
     async def on_shutdown(self, _: web.Application):
         LOG.debug("Shutting down socket server.")
+
+        for sid in self.sio.manager.get_participants("/", None):
+            LOG.debug(f"Disconnecting client '{sid}'.")
+            await self.sio.disconnect(sid[0], namespace="/")
+
+        LOG.debug("Socket server shutdown complete.")
 
     def attach(self, app: web.Application):
         self.sio.attach(app, socketio_path=f"{self.config.base_path.rstrip('/')}/socket.io")
@@ -121,23 +136,47 @@ class HttpSocket(Common):
                 }
             )
 
-            master_fd, slave_fd = pty.openpty()
+            try:
+                import pty
+
+                master_fd, slave_fd = pty.openpty()
+                stdin_arg = asyncio.subprocess.DEVNULL
+                stdout_arg = stderr_arg = slave_fd
+                use_pty = True
+            except ImportError:
+                use_pty = False
+                master_fd = slave_fd = None
+                stdin_arg = asyncio.subprocess.DEVNULL
+                stdout_arg = asyncio.subprocess.PIPE
+                stderr_arg = asyncio.subprocess.STDOUT
 
             proc = await asyncio.create_subprocess_exec(
                 *args,
                 cwd=self.config.download_path,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=slave_fd,
-                stderr=slave_fd,
+                stdin=stdin_arg,
+                stdout=stdout_arg,
+                stderr=stderr_arg,
                 env=_env,
             )
 
-            try:
-                os.close(slave_fd)
-            except Exception as e:
-                LOG.error(f"Error closing PTY. '{e!s}'.")
+            if use_pty:
+                try:
+                    os.close(slave_fd)
+                except Exception as e:
+                    LOG.error(f"Error closing PTY. '{e!s}'.")
 
-            async def read_pty(sid: str):
+            async def reader(sid: str):
+                if use_pty is False:
+                    assert proc.stdout is not None
+                    async for raw_line in proc.stdout:
+                        line = raw_line.rstrip(b"\n")
+                        await self._notify.emit(
+                            Events.CLI_OUTPUT,
+                            data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
+                            to=sid,
+                        )
+                    return
+
                 loop = asyncio.get_running_loop()
                 buffer = b""
                 while True:
@@ -172,7 +211,7 @@ class HttpSocket(Common):
                     LOG.error(f"Error closing PTY. '{e!s}'.")
 
             # Start reading output from PTY
-            read_task = asyncio.create_task(read_pty(sid=sid))
+            read_task = asyncio.create_task(reader(sid=sid))
 
             # Wait until process finishes
             returncode = await proc.wait()
@@ -266,13 +305,17 @@ class HttpSocket(Common):
 
         manual_archive = self.config.manual_archive
         if manual_archive:
+            manual_archive = Path(manual_archive)
+
+            if not manual_archive.exists():
+                manual_archive.touch(exist_ok=True)
+
             previouslyArchived = False
-            if os.path.exists(manual_archive):
-                async with await anyio.open_file(manual_archive) as f:
-                    async for line in f:
-                        if idDict["archive_id"] in line:
-                            previouslyArchived = True
-                            break
+            async with await anyio.open_file(manual_archive) as f:
+                async for line in f:
+                    if idDict["archive_id"] in line:
+                        previouslyArchived = True
+                        break
 
             if not previouslyArchived:
                 async with await anyio.open_file(manual_archive, "a") as f:
@@ -290,9 +333,7 @@ class HttpSocket(Common):
             "paused": self.queue.is_paused(),
         }
 
-        # get download folder listing.
-        downloadPath: str = self.config.download_path
-        data["folders"] = [name for name in os.listdir(downloadPath) if os.path.isdir(os.path.join(downloadPath, name))]
+        data["folders"] = [folder.name for folder in Path(self.config.download_path).iterdir() if folder.is_dir()]
 
         await self._notify.emit(Events.INITIAL_DATA, data=data, to=sid)
 
@@ -332,10 +373,11 @@ class HttpSocket(Common):
             await self.subscribe_emit(event=event, data=data)
 
         if "log_lines" == event and self.log_task is None:
-            LOG.debug("Starting log tailing task.")
+            log_file = Path(self.config.config_path) / "logs" / "app.log"
+            LOG.debug(f"Starting tailing '{log_file!s}'.")
             self.log_task = asyncio.create_task(
                 tail_log(
-                    file=os.path.join(self.config.config_path, "logs", "app.log"),
+                    file=log_file,
                     emitter=emit_logs,
                 ),
                 name="tail_log",

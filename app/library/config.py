@@ -11,11 +11,14 @@ from pathlib import Path
 import coloredlogs
 from dotenv import load_dotenv
 
-from .Utils import FileLogFormatter, arg_converter, load_cookies
+from .Utils import FileLogFormatter, arg_converter
 from .version import APP_VERSION
 
 
 class Config:
+    app_env: str = "production"
+    """The application environment, can be 'production' or 'development'."""
+
     config_path: str = "."
     """The path to the configuration directory."""
 
@@ -152,10 +155,13 @@ class Config:
     _ytdlp_cli_mutable: str = ""
     """The command line options to use for yt-dlp."""
 
+    is_native: bool = False
+    "Is the application running in webview."
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
-        "https://placedog.net/1920/1080",
+        "https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US",
     ]
     "The list of picture backends to use for the background."
 
@@ -175,6 +181,7 @@ class Config:
         "started",
         "ytdlp_cli",
         "_ytdlp_cli_mutable",
+        "is_native",
     )
     "The variables that are immutable."
 
@@ -223,6 +230,8 @@ class Config:
         "ytdlp_cli",
         "file_logging",
         "base_path",
+        "is_native",
+        "app_env",
     )
     "The variables that are relevant to the frontend."
 
@@ -230,9 +239,9 @@ class Config:
     "The manager instance."
 
     @staticmethod
-    def get_instance():
+    def get_instance(is_native: bool = False) -> "Config":
         """Static access method."""
-        return Config() if not Config.__instance else Config.__instance
+        return Config(is_native) if not Config.__instance else Config.__instance
 
     @staticmethod
     def get_manager() -> SyncManager:
@@ -241,7 +250,7 @@ class Config:
 
         return Config._manager
 
-    def __init__(self):
+    def __init__(self, is_native: bool = False):
         """Virtually private constructor."""
         if Config.__instance is not None:
             msg = "This class is a singleton. Use Config.get_instance() instead."
@@ -251,15 +260,16 @@ class Config:
 
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
-        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or os.path.join(baseDefaultPath, "var", "tmp")
-        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or os.path.join(baseDefaultPath, "var", "config")
-        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or os.path.join(
-            baseDefaultPath, "var", "downloads"
+        self.is_native = is_native
+        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or str(Path(baseDefaultPath) / "var" / "tmp")
+        self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
+        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
+            Path(baseDefaultPath) / "var" / "downloads"
         )
 
-        envFile: str = os.path.join(self.config_path, ".env")
+        envFile: str = Path(self.config_path) / ".env"
 
-        if os.path.exists(envFile):
+        if envFile.exists():
             logging.info(f"Loading environment variables from '{envFile}'.")
             load_dotenv(envFile)
 
@@ -326,8 +336,8 @@ class Config:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
         ytdl_options = {}
-        opts_file: str = os.path.join(self.config_path, "ytdlp.cli")
-        if os.path.exists(opts_file) and os.path.getsize(opts_file) > 2:
+        opts_file: Path = Path(self.config_path) / "ytdlp.cli"
+        if opts_file.exists() and opts_file.stat().st_size > 2:
             LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
@@ -357,25 +367,13 @@ class Config:
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
         if self.keep_archive:
-            LOG.info("keep archive option is enabled.")
-            archive_file: str = os.path.join(self.config_path, "archive.log")
-            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file}"
+            archive_file: Path = Path(self.config_path) / "archive.log"
+            if not archive_file.exists():
+                LOG.info(f"Creating archive file '{archive_file}'.")
+                archive_file.touch(exist_ok=True)
 
-        if cookies_file := ytdl_options.get("cookiefile", None):
-            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
-                LOG.info(f"Using cookies from '{cookies_file}'.")
-                load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
-            else:
-                LOG.warning(f"Invalid cookie file '{cookies_file}' specified.")
-                ytdl_options.pop("cookiefile", None)
-
-        if not ytdl_options.get("cookiefile", None):
-            cookies_file: str = os.path.join(self.config_path, "cookies.txt")
-            if os.path.exists(cookies_file) and os.path.getsize(cookies_file) > 2:
-                LOG.info(f"Using cookies from '{cookies_file}'.")
-                load_cookies(cookies_file)
-                self._ytdlp_cli_mutable += f"\n--cookies {cookies_file}"
+            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}'.")
+            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
 
         if self.temp_keep:
             LOG.info("Keep temp files option is enabled.")
@@ -392,23 +390,24 @@ class Config:
                 msg = f"Invalid file log level '{self.log_level_file}' specified."
                 raise TypeError(msg)
 
-            loggingPath = os.path.join(self.config_path, "logs")
-            if not os.path.exists(loggingPath):
-                os.makedirs(loggingPath, exist_ok=True)
+            loggingPath = Path(self.config_path) / "logs"
+            if not loggingPath.exists():
+                loggingPath.mkdir(parents=True, exist_ok=True)
 
             handler = TimedRotatingFileHandler(
-                filename=os.path.join(self.config_path, "logs", "app.log"),
+                filename=loggingPath / "app.log",
                 when="midnight",
                 backupCount=3,
             )
+
             handler.setLevel(log_level_file)
             formatter = FileLogFormatter("%(asctime)s [%(levelname)s.%(name)s]: %(message)s")
             handler.setFormatter(formatter)
             logging.getLogger().addHandler(handler)
 
-        key_file: str = os.path.join(self.config_path, "secret.key")
+        key_file: str = Path(self.config_path) / "secret.key"
 
-        if os.path.exists(key_file) and os.path.getsize(key_file) > 5:
+        if key_file.exists() and key_file.stat().st_size > 2:
             with open(key_file, "rb") as f:
                 self.secret_key = f.read().strip()
         else:
@@ -420,6 +419,16 @@ class Config:
 
         logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.INFO)
+
+        # check env
+        if self.app_env not in ("production", "development"):
+            msg: str = (
+                f"Invalid application environment '{self.app_env}' specified. Must be 'production' or 'development'."
+            )
+            raise ValueError(msg)
+
+        if self.version == "dev-master":
+            self._version_via_git()
 
     def _get_attributes(self) -> dict:
         attrs: dict = {}
@@ -434,6 +443,26 @@ class Config:
                 attrs[attribute] = value
 
         return attrs
+
+    def is_dev(self) -> bool:
+        """
+        Check if the application is running in development mode.
+
+        Returns:
+            bool: True if the application is in development mode, False otherwise.
+
+        """
+        return "development" == self.app_env
+
+    def is_prod(self) -> bool:
+        """
+        Check if the application is running in production mode.
+
+        Returns:
+            bool: True if the application is in production mode, False otherwise.
+
+        """
+        return "production" == self.app_env
 
     def get_ytdlp_args(self) -> dict:
         try:
@@ -454,9 +483,6 @@ class Config:
 
         ytdlp_args = self.get_ytdlp_args()
 
-        hasCookies = ytdlp_args.get("cookiefile", None)
-        data["has_cookies"] = hasCookies is not None and os.path.exists(hasCookies)
-
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
 
@@ -471,3 +497,59 @@ class Config:
             return YTDLP_VERSION
         except ImportError:
             return "0.0.0"
+
+    def _version_via_git(self):
+        """
+        Updates the version of the application using git tags.
+        This is used to set the version to the latest git tag.
+        """
+        git_path: Path = Path(__file__).parent / ".." / ".." / ".git"
+        if not git_path.exists():
+            logging.info(f"Git directory '{git_path}' does not exist. Cannot determine version.")
+            return
+
+        try:
+            import subprocess
+
+            branch_result = subprocess.run(  # noqa: S603
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
+                cwd=git_path.parent,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != branch_result.returncode:
+                logging.error(f"Git rev-parse failed: {branch_result.stderr.strip()}")
+                return
+
+            branch_name: str = branch_result.stdout.strip()
+            if not branch_name:
+                logging.warning("Git branch name is empty.")
+                return
+
+            commit_result = subprocess.run(  # noqa: S603
+                ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
+                cwd=git_path.parent,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != commit_result.returncode:
+                logging.error(f"Git log failed: {commit_result.stderr.strip()}")
+                return
+
+            commit_info: str = commit_result.stdout.strip()
+            if not commit_info:
+                logging.warning("Git commit info is empty.")
+                return
+
+            commit_date, commit_sha = commit_info.split("_", 1)
+            commit_date = time.strftime("%Y%m%d", time.localtime(int(commit_date)))
+            commit_sha = commit_sha[:8]
+
+            self.version = f"{branch_name}-{commit_date}-{commit_sha}"
+            logging.info(f"Application version set to '{self.version}' based on git data.")
+        except Exception as e:
+            logging.error(f"Error while getting git version: {e!s}")

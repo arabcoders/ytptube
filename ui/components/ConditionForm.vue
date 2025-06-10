@@ -71,6 +71,11 @@
                   <label class="label is-inline" for="filter">
                     <span class="icon"><i class="fa-solid fa-filter" /></span>
                     Condition Filter
+                    <template v-if="!addInProgress || form.filter">
+                      - <NuxtLink @click="test_data.show = true" class="is-bold">
+                        Test filter logic
+                      </NuxtLink>
+                    </template>
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
@@ -78,13 +83,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
-                      The yt-dlp <code>[--match-filters]</code> filter logic.
-                      <NuxtLink @click="test_data.show = true" :disabled="addInProgress || !form.filter"
-                        class="is-bold">
-                        Test filter logic
-                      </NuxtLink>
-                    </span>
+                    <span>yt-dlp <code>[--match-filters]</code> logic.</span>
                   </span>
                 </div>
               </div>

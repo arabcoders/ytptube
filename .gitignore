@@ -33,3 +33,5 @@ var/*
 __pycache__
 .venv
 .idea
+dist
+build

@@ -22,9 +22,6 @@ SubstationFormat.ms_to_timestamp = ms_to_timestamp
 
 
 class Subtitle:
-    def __init__(self, download_path: str):
-        self.download_path = download_path
-
     async def make(self, file: Path) -> str:
         if file.suffix not in ALLOWED_SUBS_EXTENSIONS:
             msg = f"File '{file}' subtitle type is not supported."
@@ -34,7 +31,7 @@ class Subtitle:
             async with await anyio.open_file(file) as f:
                 return await f.read()
 
-        subs = pysubs2.load(path=str(file))
+        subs: pysubs2.SSAFile = pysubs2.load(path=str(file))
 
         if len(subs.events) < 1:
             msg = f"No subtitle events were found in '{file}'."
@@ -43,7 +40,10 @@ class Subtitle:
         if len(subs.events) < 2:
             return subs.to_string("vtt")
 
-        if subs.events[0].end == subs.events[len(subs.events) - 1].end:
-            subs.events.pop(0)
+        try:
+            if subs.events[0].end == subs.events[len(subs.events) - 1].end:
+                subs.events.pop(0)
+        except Exception:
+            pass
 
         return subs.to_string("vtt")

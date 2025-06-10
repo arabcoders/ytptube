@@ -247,4 +247,5 @@ class ItemDTO:
             "output_template",
             "output_template_chapter",
             "config",
+            "temp_path"
         )

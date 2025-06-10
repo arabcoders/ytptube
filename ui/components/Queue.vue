@@ -66,6 +66,9 @@
                   </label>
                 </td>
                 <td class="is-text-overflow is-vcentered">
+                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes">
+                    <span class="tag">{{ formatBytes(item.downloaded_bytes) }}</span>
+                  </div>
                   <div v-if="showThumbnails && item.extras?.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
@@ -179,6 +182,10 @@
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
                   v-rtime="item.datetime" />
+              </div>
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
+                v-if="item.downloaded_bytes">
+                {{ formatBytes(item.downloaded_bytes) }}
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <label class="checkbox is-block">

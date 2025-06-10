@@ -12,9 +12,9 @@ class M3u8:
     ok_vcodecs: tuple = ("h264", "x264", "avc")
     ok_acodecs: tuple = ("aac", "m4a", "mp3")
 
-    def __init__(self, download_path: str, url: str, segment_duration: float | None = None):
+    def __init__(self, download_path: Path, url: str, segment_duration: float | None = None):
         self.url = url
-        self.download_path = download_path
+        self.download_path: Path = download_path
         self.duration = float(segment_duration) if segment_duration is not None else self.duration
 
     async def make_stream(self, file: Path) -> str:
@@ -23,7 +23,7 @@ class M3u8:
         except UnicodeDecodeError:
             pass
 
-        file = str(file).replace(self.download_path, "").strip("/")
+        urlPath: str = str(file.relative_to(self.download_path).as_posix()).strip("/")
 
         if "duration" not in ff.metadata:
             error = f"Unable to get '{file}' play duration."
@@ -31,7 +31,7 @@ class M3u8:
 
         duration: float = float(ff.metadata.get("duration"))
 
-        m3u8 = []
+        m3u8: list = []
 
         m3u8.append("#EXTM3U")
         m3u8.append("#EXT-X-VERSION:3")
@@ -57,7 +57,7 @@ class M3u8:
 
             m3u8.append(f"#EXTINF:{segmentSize},")
 
-            url = f"{self.url}api/player/segments/{i}/{quote(file)}.ts"
+            url = f"{self.url}api/player/segments/{i}/{quote(urlPath)}.ts"
             if len(segmentParams) > 0:
                 url += "?" + "&".join([f"{key}={value}" for key, value in segmentParams.items()])
 
@@ -70,13 +70,15 @@ class M3u8:
     async def make_subtitle(self, file: Path, duration: float) -> str:
         m3u8 = []
 
+        urlPath: str = str(file.relative_to(self.download_path).as_posix()).strip("/")
+
         m3u8.append("#EXTM3U")
         m3u8.append("#EXT-X-VERSION:3")
         m3u8.append(f"#EXT-X-TARGETDURATION:{int(self.duration)}")
         m3u8.append("#EXT-X-MEDIA-SEQUENCE:0")
         m3u8.append("#EXT-X-PLAYLIST-TYPE:VOD")
         m3u8.append(f"#EXTINF:{duration},")
-        m3u8.append(f"{self.url}api/player/subtitle/{quote(str(file).replace(self.download_path, '').strip('/'))}.vtt")
+        m3u8.append(f"{self.url}api/player/subtitle/{quote(urlPath)}.vtt")
         m3u8.append("#EXT-X-ENDLIST")
 
         return "\n".join(m3u8)
