@@ -1016,7 +1016,7 @@ async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
         return
 
 
-def load_cookies(file: str) -> tuple[bool, MozillaCookieJar]:
+def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
     """
     Validate and load a cookie file.
 
@@ -1030,7 +1030,7 @@ def load_cookies(file: str) -> tuple[bool, MozillaCookieJar]:
     try:
         from http.cookiejar import MozillaCookieJar
 
-        cookies = MozillaCookieJar(file, None, None)
+        cookies = MozillaCookieJar(str(file), None, None)
         cookies.load()
 
         return (True, cookies)

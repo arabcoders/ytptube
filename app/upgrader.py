@@ -12,30 +12,17 @@ LOG = logging.getLogger("upgrader")
 
 class Upgrader:
     def __init__(self):
-        import argparse
+        config_path: Path = Path(__file__).parent.parent / "var" / "config"
+        if env_path := os.environ.get("YTP_CONFIG_PATH", None):
+            config_path = Path(env_path)
 
-        parser = argparse.ArgumentParser(
-            prog="upgrader.py",
-            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            description="Upgrade packages and run the application.",
-            epilog="Example: upgrader.py --run",
-        )
-
-        parser.add_argument(
-            "-r", "--run", action="store_true", help="Run the application after upgrading the packages."
-        )
-
-        args, _ = parser.parse_known_args()
-
-        rootPath = str(Path(__file__).parent.parent.absolute())
-        config_path = os.environ.get("YTP_CONFIG_PATH", None) or os.path.join(rootPath, "var", "config")
-        if not Path(config_path).exists():
+        if config_path.exists():
+            envFile: Path = config_path / ".env"
+            if envFile.exists():
+                LOG.debug(f"loading environment variables from '{envFile}'.")
+                load_dotenv(str(envFile))
+        else:
             LOG.error(f"config path '{config_path}' doesn't exists.")
-
-        envFile = Path(config_path, ".env")
-        if envFile.exists():
-            LOG.debug(f"loading environment variables from '{envFile}'.")
-            load_dotenv(str(envFile))
 
         pkg_installer = PackageInstaller()
 
@@ -64,11 +51,6 @@ class Upgrader:
         except Exception as e:
             LOG.exception(e)
             LOG.error(f"Failed to check for packages. '{e!s}'.")
-
-        if args.run:
-            from main import Main
-
-            Main().start()
 
 
 if __name__ == "__main__":

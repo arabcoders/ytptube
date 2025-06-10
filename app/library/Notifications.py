@@ -134,15 +134,14 @@ class Notification(metaclass=Singleton):
         config: Config = config or Config.get_instance()
 
         self._debug = config.debug
-        self._file: Path = Path(file) if file else (Path(config.config_path) / "notifications.json")
+        self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
         self._version = config.version
 
-        if self._file.exists():
+        if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
-                if "600" != self._file.stat().st_mode:
-                    self._file.chmod(0o600)
+                self._file.chmod(0o600)
             except Exception:
                 pass
 
@@ -213,12 +212,11 @@ class Notification(metaclass=Singleton):
             try:
                 try:
                     Notification.validate(target)
+                    target: Target = self.make_target(target)
                 except ValueError as e:
                     name = target.get("name") or target.get("id") or target.get("request", {}).get("url") or "unknown"
                     LOG.error(f"Invalid notification target '{name}'. '{e!s}'")
                     continue
-
-                target = self.make_target(target)
 
                 self._targets.append(target)
 
