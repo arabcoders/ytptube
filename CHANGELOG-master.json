@@ -1,5 +1,166 @@
 [
     {
+        "tag": "master-20250610-670c9951",
+        "date": "2025-06-10T10:44:17+00:00",
+        "commits": [
+            {
+                "sha": "294ec31e",
+                "message": "completed path migration",
+                "author": "arabcoders",
+                "date": "2025-06-10T09:29:21+00:00",
+                "full_sha": "294ec31e94d3ee70148c77b2c96cb218cae6ce0f"
+            },
+            {
+                "sha": "e42af751",
+                "message": "load preset cookies in all cases.",
+                "author": "arabcoders",
+                "date": "2025-06-10T09:27:12+00:00",
+                "full_sha": "e42af75137b544465c1a7133ee1f51d40acfdb76"
+            },
+            {
+                "sha": "49fd5986",
+                "message": "update dependencies",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:20:21+00:00",
+                "full_sha": "49fd598647b463827532b8556d3cc62a197f40da"
+            },
+            {
+                "sha": "d3bdb558",
+                "message": "fix uv yt-dlp upgrader",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:17:40+00:00",
+                "full_sha": "d3bdb55886fe04533462f8797699880380a43f28"
+            },
+            {
+                "sha": "9e130aed",
+                "message": "re-added daily yt-dlp checker",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:13:20+00:00",
+                "full_sha": "9e130aed9943799a766a907f6bb2fd81aa1ae8b0"
+            },
+            {
+                "sha": "6c8fd058",
+                "message": "WiP: More migration to Path",
+                "author": "arabcoders",
+                "date": "2025-06-09T22:08:44+00:00",
+                "full_sha": "6c8fd05886efea18b00b085815a18a4baa319a0a"
+            },
+            {
+                "sha": "93ff749d",
+                "message": "We no longer auto load cookies.txt from config path. it must be set via the ytdlp.cli or preset.",
+                "author": "arabcoders",
+                "date": "2025-06-09T20:19:52+00:00",
+                "full_sha": "93ff749dee89940d7f751ac65fc7071bfc237fd3"
+            },
+            {
+                "sha": "e251fba2",
+                "message": "Fix healthcheck when used with base_path",
+                "author": "arabcoders",
+                "date": "2025-06-09T17:18:45+00:00",
+                "full_sha": "e251fba26c5828720a5e4aeae86386692cad3d56"
+            },
+            {
+                "sha": "7bae93a0",
+                "message": "re-enable caching for pip packages.",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:52:13+00:00",
+                "full_sha": "7bae93a04f5b1fbf955727ae6ca828de1d9cddce"
+            },
+            {
+                "sha": "b1bc399a",
+                "message": "WiP: more changes to classes to support Path",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:47:11+00:00",
+                "full_sha": "b1bc399a0ccaa7e9e6c8d19c9480f80b6e7b9628"
+            },
+            {
+                "sha": "6a9beea8",
+                "message": "WIP: Migrated DownloadQueue to use Path",
+                "author": "arabcoders",
+                "date": "2025-06-08T21:14:14+00:00",
+                "full_sha": "6a9beea89ec5648527735ccf79494d562d7ab7e8"
+            },
+            {
+                "sha": "1f1fbbac",
+                "message": "WIP: more changes to support webview in the future.",
+                "author": "arabcoders",
+                "date": "2025-06-08T20:45:00+00:00",
+                "full_sha": "1f1fbbac01d8ce5f923c810dca9d829b06eb4e2a"
+            },
+            {
+                "sha": "fee8939c",
+                "message": "WIP more changes to support windows",
+                "author": "arabcoders",
+                "date": "2025-06-08T18:59:44+00:00",
+                "full_sha": "fee8939c803d5bedaf3281cb8fb2f2e7a81a1dbd"
+            },
+            {
+                "sha": "6d774a6d",
+                "message": "switch to uv instead of pipenv, and partially fix the code to work on windows.",
+                "author": "arabcoders",
+                "date": "2025-06-08T17:45:12+00:00",
+                "full_sha": "6d774a6d9cfe7ac2437e185d3b5d8bd627902969"
+            },
+            {
+                "sha": "e7256e65",
+                "message": "wip",
+                "author": "arabcoders",
+                "date": "2025-06-07T21:58:04+00:00",
+                "full_sha": "e7256e65ac20c122f2a3234e30b9d999b27821c8"
+            },
+            {
+                "sha": "e4668570",
+                "message": "WIP",
+                "author": "arabcoders",
+                "date": "2025-06-07T21:29:12+00:00",
+                "full_sha": "e466857046d01e8018a272dbd8d74a5911f9d952"
+            },
+            {
+                "sha": "68fc75c0",
+                "message": "WIP",
+                "author": "arabcoders",
+                "date": "2025-06-07T21:04:31+00:00",
+                "full_sha": "68fc75c08760e801698467370c044abe76bb805a"
+            },
+            {
+                "sha": "2676ed09",
+                "message": "support pywebview",
+                "author": "arabcoders",
+                "date": "2025-06-07T20:40:59+00:00",
+                "full_sha": "2676ed099db74baf470b5f69a7486561b326e6e4"
+            },
+            {
+                "sha": "6e7684cc",
+                "message": "app.spec",
+                "author": "arabcoders",
+                "date": "2025-06-07T16:14:08+00:00",
+                "full_sha": "6e7684cc8aaf8ffbb077433b1ecfc9b12faf54c1"
+            },
+            {
+                "sha": "700fe41c",
+                "message": "plans for native app",
+                "author": "arabcoders",
+                "date": "2025-06-07T14:51:00+00:00",
+                "full_sha": "700fe41c1541a48ec03cfd39ccdf7f22c66fd3f4"
+            },
+            {
+                "sha": "9419e15a",
+                "message": "minor changes to changelog page",
+                "author": "arabcoders",
+                "date": "2025-06-05T22:33:29+00:00",
+                "full_sha": "9419e15a4f5bdc3aeed8dd494f4c8824a5cf33a8"
+            },
+            {
+                "sha": "517f60f4",
+                "message": "Added ts implementation of yt-dlp match_str",
+                "author": "arabcoders",
+                "date": "2025-06-05T20:47:00+00:00",
+                "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
+            }
+        ],
+        "full_sha": "670c99510e845b8ca4dbdab84bf7b1b183090272"
+    },
+    {
         "tag": "master-20250605-f1f79afe",
         "date": "2025-06-05T19:52:13+00:00",
         "commits": [
