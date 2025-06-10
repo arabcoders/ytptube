@@ -43,6 +43,7 @@ jobs:
           if [ -n "$VER" ]; then
             echo "YTLDLP_VER=${VER}" >> "$GITHUB_OUTPUT"
             uv pip install --upgrade yt-dlp
+            uv sync --upgrade
             UPDATED=true
           else
             UPDATED=false
