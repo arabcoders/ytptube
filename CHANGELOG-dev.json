@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250610-d3bdb558",
-        "date": "2025-06-10T08:17:40+00:00",
+        "tag": "dev-20250610-294ec31e",
+        "date": "2025-06-10T09:29:21+00:00",
         "commits": [
+            {
+                "sha": "294ec31e",
+                "message": "completed path migration",
+                "author": "arabcoders",
+                "date": "2025-06-10T09:29:21+00:00",
+                "full_sha": "294ec31e94d3ee70148c77b2c96cb218cae6ce0f"
+            },
+            {
+                "sha": "e42af751",
+                "message": "load preset cookies in all cases.",
+                "author": "arabcoders",
+                "date": "2025-06-10T09:27:12+00:00",
+                "full_sha": "e42af75137b544465c1a7133ee1f51d40acfdb76"
+            },
+            {
+                "sha": "49fd5986",
+                "message": "update dependencies",
+                "author": "arabcoders",
+                "date": "2025-06-10T08:20:21+00:00",
+                "full_sha": "49fd598647b463827532b8556d3cc62a197f40da"
+            },
             {
                 "sha": "d3bdb558",
                 "message": "fix uv yt-dlp upgrader",
@@ -137,7 +158,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "d3bdb55886fe04533462f8797699880380a43f28"
+        "full_sha": "294ec31e94d3ee70148c77b2c96cb218cae6ce0f"
     },
     {
         "tag": "dev-20250605-f1f79afe",
