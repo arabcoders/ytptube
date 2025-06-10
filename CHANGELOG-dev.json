@@ -1,7 +1,21 @@
 [
     {
-        "tag": "dev-20250610-294ec31e",
-        "date": "2025-06-10T09:29:21+00:00",
+        "tag": "dev-20250610-698791b7",
+        "date": "2025-06-10T10:58:18+00:00",
+        "commits": [
+            {
+                "sha": "698791b7",
+                "message": "minor design update for index page.",
+                "author": "arabcoders",
+                "date": "2025-06-10T10:58:18+00:00",
+                "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
+            }
+        ],
+        "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
+    },
+    {
+        "tag": "dev-20250610-670c9951",
+        "date": "2025-06-10T10:44:17+00:00",
         "commits": [
             {
                 "sha": "294ec31e",
@@ -158,7 +172,7 @@
                 "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614"
             }
         ],
-        "full_sha": "294ec31e94d3ee70148c77b2c96cb218cae6ce0f"
+        "full_sha": "670c99510e845b8ca4dbdab84bf7b1b183090272"
     },
     {
         "tag": "dev-20250605-f1f79afe",
