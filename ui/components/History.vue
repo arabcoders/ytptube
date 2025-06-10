@@ -336,23 +336,13 @@
       </LateLoader>
     </div>
 
-    <div class="content has-text-centered" v-if="!hasItems">
-      <p v-if="socket.isConnected">
-        <span class="icon-text">
-          <span class="icon has-text-success">
-            <i class="fa-solid fa-circle-check" />
-          </span>
-          <span>No records.</span>
-        </span>
-      </p>
-      <p v-else>
-        <span class="icon-text">
-          <span class="icon">
-            <i class="fa-solid fa-spinner fa-spin" />
-          </span>
-          <span>Connecting...</span>
-        </span>
-      </p>
+    <div class="columns is-multiline" v-if="!hasItems">
+      <div class="column is-12">
+        <Message message_class="has-background-success-90 has-text-dark" title="No records in history."
+          icon="fas fa-circle-check" v-if="socket.isConnected" />
+        <Message message_class="has-background-info-90 has-text-dark" title="Connecting.." icon="fas fa-spinner fa-spin"
+          v-else />
+      </div>
     </div>
 
     <div class="modal is-active" v-if="video_item">

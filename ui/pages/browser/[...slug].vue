@@ -27,8 +27,7 @@
             </div>
 
             <div class="control">
-              <button class="button is-danger is-light" @click="toggleFilter"
-                v-tooltip.bottom="'Filter content'">
+              <button class="button is-danger is-light" @click="toggleFilter" v-tooltip.bottom="'Filter content'">
                 <span class="icon"><i class="fas fa-filter" /></span>
               </button>
             </div>
@@ -94,7 +93,8 @@
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
                     <div class="control is-text-overflow is-expanded">
-                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.type" @click.prevent="handleClick(item)">
+                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.type"
+                        @click.prevent="handleClick(item)">
                         {{ item.name }}
                       </a>
                       <a :href="makeDownload({}, { filename: item.path, folder: '' })"
@@ -126,7 +126,8 @@
         </div>
       </div>
       <div class="column is-12" v-else>
-        <Message title="Loading content" class="is-background-info-80" icon="fas fa-refresh fa-spin" v-if="isLoading">
+        <Message title="Loading content" class="has-background-info-90 has-text-dark" icon="fas fa-refresh fa-spin"
+          v-if="isLoading">
           Loading file browser contents...
         </Message>
         <Message v-else title="No Content" class="is-background-warning-80 has-text-dark"

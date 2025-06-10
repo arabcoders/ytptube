@@ -2,7 +2,7 @@ import path from "path";
 
 let extraNitro = {}
 try {
-  const API_URL = import.meta.env.NUXT_API_URL;
+  const API_URL = process.env.NUXT_API_URL;
   if (API_URL) {
     extraNitro = {
       devProxy: {
@@ -31,7 +31,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       APP_ENV: process.env.APP_ENV || "production",
-      wss: process.env.VUE_APP_BASE_URL ?? '',
+      wss: process.env.NUXT_PUBLIC_WSS ?? '',
       sentry: process.env.NUXT_PUBLIC_SENTRY_DSN ?? '',
     }
   },
@@ -67,7 +67,7 @@ export default defineNuxtConfig({
 
   nitro: {
     output: {
-      publicDir: path.join(__dirname, 'dev' == process.env.APP_ENV ? 'dist' : 'exported')
+      publicDir: path.join(__dirname, 'dev' === process.env.APP_ENV ? 'dist' : 'exported')
     },
     ...extraNitro,
   },

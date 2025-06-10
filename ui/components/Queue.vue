@@ -1,5 +1,5 @@
 <template>
-  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue">
+  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue" v-if="hasQueuedItems">
     <span class="icon-text title is-4">
       <span class="icon">
         <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
@@ -218,24 +218,6 @@
       </LateLoader>
     </div>
 
-    <div class="content has-text-centered" v-if="!hasQueuedItems">
-      <p v-if="socket.isConnected">
-        <span class="icon-text">
-          <span class="icon has-text-success">
-            <i class="fa-solid fa-circle-check" />
-          </span>
-          <span>No queued items.</span>
-        </span>
-      </p>
-      <p v-else>
-        <span class="icon-text">
-          <span class="icon">
-            <i class="fa-solid fa-spinner fa-spin" />
-          </span>
-          <span>Connecting...</span>
-        </span>
-      </p>
-    </div>
 
     <div class="modal is-active" v-if="embed_url">
       <div class="modal-background" @click="embed_url = ''"></div>

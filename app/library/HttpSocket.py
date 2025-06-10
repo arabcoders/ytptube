@@ -55,7 +55,7 @@ class HttpSocket(Common):
             async_handlers=True,
             async_mode="aiohttp",
             cors_allowed_origins=[],
-            transports=["websocket"],
+            transports=["websocket", "polling"],
             logger=self.config.debug,
             engineio_logger=self.config.debug,
             ping_interval=10,

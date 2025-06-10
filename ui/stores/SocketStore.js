@@ -12,7 +12,7 @@ export const useSocketStore = defineStore('socket', () => {
 
   const connect = () => {
     let opts = {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
     }
 
