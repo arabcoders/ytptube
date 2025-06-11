@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250610-698791b7",
-        "date": "2025-06-10T10:58:18+00:00",
+        "tag": "dev-20250612-400cf7be",
+        "date": "2025-06-11T21:57:37+00:00",
         "commits": [
+            {
+                "sha": "400cf7be",
+                "message": "completely refactored HttpAPI into more manageable routes.",
+                "author": "arabcoders",
+                "date": "2025-06-11T21:57:37+00:00",
+                "full_sha": "400cf7bec303385766b44a98af5ab1328a5a8b36"
+            },
             {
                 "sha": "698791b7",
                 "message": "minor design update for index page.",
@@ -11,7 +18,7 @@
                 "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
             }
         ],
-        "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
+        "full_sha": "400cf7bec303385766b44a98af5ab1328a5a8b36"
     },
     {
         "tag": "dev-20250610-670c9951",
