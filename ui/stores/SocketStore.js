@@ -18,7 +18,7 @@ export const useSocketStore = defineStore('socket', () => {
 
     let url = runtimeConfig.public.wss
 
-    if ('dev' !== runtimeConfig.public.APP_ENV) {
+    if ('development' !== runtimeConfig.public?.APP_ENV) {
       url = window.origin;
       opts.path = `${runtimeConfig.app.baseURL.replace(/\/$/, '')}/socket.io`;
     }

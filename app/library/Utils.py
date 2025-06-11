@@ -20,7 +20,7 @@ from Crypto.Cipher import AES
 
 from .LogWrapper import LogWrapper
 
-LOG = logging.getLogger("Utils")
+LOG: logging.Logger = logging.getLogger("Utils")
 
 REMOVE_KEYS: list = [
     {
@@ -803,7 +803,8 @@ def get_files(base_path: Path | str, dir: str | None = None):
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
 
-        if file.is_symlink():
+        is_symlink: bool = file.is_symlink()
+        if is_symlink:
             try:
                 test: Path = file.resolve()
                 test.relative_to(base_path)
@@ -831,9 +832,10 @@ def get_files(base_path: Path | str, dir: str | None = None):
             content_type = "download"
 
         stat = file.stat()
+
         contents.append(
             {
-                "type": "file" if file.is_file() else "dir",
+                "type": "file" if file.is_file() else "link" if is_symlink else "dir",
                 "content_type": content_type,
                 "name": file.name,
                 "path": str(file.relative_to(base_path)).strip("/"),
@@ -843,6 +845,7 @@ def get_files(base_path: Path | str, dir: str | None = None):
                 "ctime": datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
                 "is_dir": file.is_dir(),
                 "is_file": file.is_file(),
+                "is_symlink": is_symlink,
             }
         )
 

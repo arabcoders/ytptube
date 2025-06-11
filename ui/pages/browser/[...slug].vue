@@ -93,7 +93,7 @@
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
                     <div class="control is-text-overflow is-expanded">
-                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.type"
+                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
                         @click.prevent="handleClick(item)">
                         {{ item.name }}
                       </a>
@@ -113,7 +113,7 @@
                   </div>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
-                  {{ 'file' === item.type ? formatBytes(item.size) : 'Dir' }}
+                  {{ 'file' === item.type ? formatBytes(item.size) : ucFirst(item.type) }}
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('MMMM Do YYYY, h:mm:ss a')">
@@ -401,6 +401,9 @@ watch(model_item, v => {
 })
 
 const setIcon = item => {
+  if ('link' === item.type) {
+    return 'fa-link'
+  }
   if ('dir' === item.content_type) {
     return 'fa-folder'
   }

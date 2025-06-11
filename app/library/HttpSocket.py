@@ -12,7 +12,6 @@ import anyio
 import socketio
 from aiohttp import web
 
-from .common import Common
 from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
@@ -24,7 +23,7 @@ from .Utils import is_downloaded, tail_log
 LOG = logging.getLogger("socket_api")
 
 
-class HttpSocket(Common):
+class HttpSocket:
     """
     This class is used to handle WebSocket events.
     """
@@ -68,8 +67,6 @@ class HttpSocket(Common):
 
         self._notify.subscribe("frontend", emit, f"{__class__.__name__}.emit")
 
-        super().__init__(queue=queue, encoder=encoder, config=config)
-
     @staticmethod
     def ws_event(func):  # type: ignore
         """
@@ -102,7 +99,7 @@ class HttpSocket(Common):
 
         self._notify.subscribe(
             Events.ADD_URL,
-            lambda data, _, **kwargs: self.add(item=Item.format(data.data)),  # noqa: ARG005
+            lambda data, _, **kwargs: self.queue.add(item=Item.format(data.data)),  # noqa: ARG005
             f"{__class__.__name__}.add",
         )
 
@@ -237,7 +234,7 @@ class HttpSocket(Common):
         try:
             await self._notify.emit(
                 event=Events.STATUS,
-                data=await self.add(item=Item.format(data)),
+                data=await self.queue.add(item=Item.format(data)),
                 to=sid,
             )
         except ValueError as e:

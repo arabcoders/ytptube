@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+APP_ROOT = str((Path(__file__).parent / "..").resolve())
+if APP_ROOT not in sys.path:
+    sys.path.insert(0, APP_ROOT)
 
 import logging
 import os

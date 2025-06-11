@@ -20,11 +20,10 @@ class Common:
         config: Config | None = None,
     ):
         super().__init__()
-        self.queue = queue or DownloadQueue.get_instance()
-        self.encoder = encoder or Encoder()
-
-        config = config or Config.get_instance()
-        self.default_preset = config.default_preset
+        self.queue: DownloadQueue = queue or DownloadQueue.get_instance()
+        self.encoder: Encoder = encoder or Encoder()
+        config: Config = config or Config.get_instance()
+        self.default_preset: str = config.default_preset
 
     async def add(self, item: Item) -> dict[str, str]:
         """

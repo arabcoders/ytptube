@@ -9,7 +9,7 @@
         <div v-else>
           <div class="p-0 m-0" style="position: relative">
             <div class="content" style="white-space: pre;">
-              <code class="p-4 is-block" v-text="data" />
+              <code class="p-4 is-block" style="overflow: scroll;" v-text="data" />
               <button class="button is-small m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
                 style="position: absolute; top:0; right:0;">
                 <span class="icon"><i class="fas fa-copy"></i></span>

@@ -175,13 +175,14 @@ class Presets(metaclass=Singleton):
             Presets: The current instance.
 
         """
+        has: int = len(self._items)
         self.clear()
 
         if not self._file.exists() or self._file.stat().st_size < 10:
             return self
 
         try:
-            LOG.info(f"Loading '{self._file}'.")
+            LOG.info(f"{'Reloading' if has else 'Loading'} '{self._file}'.")
             presets: dict = json.loads(self._file.read_text())
         except Exception as e:
             LOG.error(f"Failed to parse '{self._file}'. '{e}'.")

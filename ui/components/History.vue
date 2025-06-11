@@ -705,4 +705,18 @@ const downloadSelected = () => {
 }
 
 const toggle_class = e => e.currentTarget.classList.toggle('is-text-overflow')
+
+const trigger_option = (event, item) => {
+  if (!event?.target?.value) {
+    return
+  }
+
+  const eventName = event.target.value
+  event.target.value = ''
+
+  if ('get_info' === eventName) {
+    emitter('getInfo', item.url)
+    return
+  }
+}
 </script>

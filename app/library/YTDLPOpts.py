@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from .config import Config
-from .Presets import Presets, Preset
+from .Presets import Preset, Presets
 from .Singleton import Singleton
 from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, load_cookies, merge_dict
 

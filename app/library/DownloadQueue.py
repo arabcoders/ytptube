@@ -63,6 +63,12 @@ class DownloadQueue(metaclass=Singleton):
     _instance = None
     """Instance of the DownloadQueue."""
 
+    queue: DataStore
+    """DataStore for the download queue."""
+
+    done: DataStore
+    """DataStore for the completed downloads."""
+
     def __init__(self, connection: Connection, config: Config | None = None):
         DownloadQueue._instance = self
 
@@ -566,7 +572,7 @@ class DownloadQueue(metaclass=Singleton):
             removed_files = 0
             filename: str = ""
 
-            LOG.info(
+            LOG.debug(
                 f"{remove_file=} {itemRef} - Removing local files: {self.config.remove_files}, {item.info.status=}"
             )
 

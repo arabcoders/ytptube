@@ -1,24 +1,31 @@
 #!/usr/bin/env python3
+import sys
+from pathlib import Path
+
+APP_ROOT = str((Path(__file__).parent / "..").resolve())
+if APP_ROOT not in sys.path:
+    sys.path.insert(0, APP_ROOT)
+
 
 import asyncio
 import logging
 import sqlite3
-import sys
 from pathlib import Path
 
 import caribou
 import magic
 from aiohttp import web
-from library.conditions import Conditions
-from library.config import Config
-from library.DownloadQueue import DownloadQueue
-from library.Events import EventBus, Events
-from library.HttpAPI import HttpAPI
-from library.HttpSocket import HttpSocket
-from library.Notifications import Notification
-from library.Presets import Presets
-from library.Scheduler import Scheduler
-from library.Tasks import Tasks
+
+from app.library.conditions import Conditions
+from app.library.config import Config
+from app.library.DownloadQueue import DownloadQueue
+from app.library.Events import EventBus, Events
+from app.library.HttpAPI import HttpAPI
+from app.library.HttpSocket import HttpSocket
+from app.library.Notifications import Notification
+from app.library.Presets import Presets
+from app.library.Scheduler import Scheduler
+from app.library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
@@ -117,7 +124,7 @@ class Main:
 
         HTTP_LOGGER = None
         if self._config.access_log:
-            from library.HttpAPI import LOG as HTTP_LOGGER
+            from app.library.HttpAPI import LOG as HTTP_LOGGER
 
             HTTP_LOGGER.addFilter(lambda record: f"GET {self._app.router['ping'].url_for()}" not in record.getMessage())
 
