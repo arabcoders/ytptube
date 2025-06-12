@@ -1201,3 +1201,30 @@ def init_class(cls: type[T], data: dict) -> T:
     from dataclasses import fields
 
     return cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)}})
+
+
+def load_modules(root_path: Path, directory: Path):
+    """
+    Load all modules from a given directory relative to the root path.
+
+    Args:
+        root_path (Path): The root path of the application.
+        directory (Path): The directory from which to load modules.
+
+    """
+    import importlib
+    import pkgutil
+
+    package_name: str = str(directory.relative_to(root_path)).replace("/", ".")
+
+    LOG.debug(f"Loading routes from '{directory}' with package name '{package_name}'.")
+
+    for _, name, _ in pkgutil.iter_modules([directory]):
+        full_name: str = f"{package_name}.{name}"
+        if name.startswith("_"):
+            continue
+        try:
+            LOG.debug(f"Loading module '{full_name}'.")
+            importlib.import_module(full_name)
+        except ImportError as e:
+            LOG.error(f"Failed to import module '{full_name}': {e}")
