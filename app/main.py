@@ -65,7 +65,7 @@ class Main:
 
         self._queue = DownloadQueue(connection=connection)
         self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
-        self._socket = HttpSocket(queue=self._queue)
+        self._socket = HttpSocket(root_path=ROOT_PATH, queue=self._queue)
 
         self._app.on_cleanup.append(_close_connection)
 

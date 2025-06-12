@@ -1,3 +1,9 @@
+<style>
+.terminal {
+  padding-left: 10px;
+}
+</style>
+
 <template>
   <div class="mt-1 columns is-multiline">
     <div class="column is-12 is-clearfix">

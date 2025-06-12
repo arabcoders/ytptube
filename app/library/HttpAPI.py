@@ -1,9 +1,7 @@
 import base64
 import hmac
-import importlib
 import inspect
 import logging
-import pkgutil
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -19,20 +17,20 @@ from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus
 from .ffprobe import ffprobe
-from .router import get_routes
-from .Utils import decrypt_data, encrypt_data, get_file, get_mime_type
+from .router import RouteType, get_routes
+from .Utils import decrypt_data, encrypt_data, get_file, get_mime_type, load_modules
 
 LOG: logging.Logger = logging.getLogger("http_api")
 
 
 class HttpAPI:
-    def __init__(self, root_path: str, queue: DownloadQueue):
+    def __init__(self, root_path: Path, queue: DownloadQueue):
         self.queue: DownloadQueue = queue or DownloadQueue.get_instance()
         self.encoder: Encoder = Encoder()
         self.config: Config = Config.get_instance()
         self._notify: EventBus = EventBus.get_instance()
 
-        self.rootPath: str = root_path
+        self.rootPath: Path = root_path
         self.cache = Cache()
         self.app: web.Application | None = None
 
@@ -97,21 +95,20 @@ class HttpAPI:
         registered_options: list = []
 
         base_path: str = self.config.base_path.rstrip("/")
-        from app.routes._static import preload_static
+        from app.routes.api._static import preload_static
 
-        self._load_modules(Path(self.rootPath) / "routes")
+        load_modules(self.rootPath, self.rootPath / "routes" / "api")
         preload_static(self.rootPath, self.config)
 
         async def options_handler(_: Request) -> Response:
             return web.Response(status=204)
 
-        for route in get_routes().values():
+        for route in get_routes(RouteType.HTTP).values():
             routePath: str = f"/{route.path.lstrip('/')}"
 
             if self.config.base_path == route.path:
                 pass
             elif "" == base_path or not routePath.rstrip("/").startswith(base_path.rstrip("/")):
-                LOG.debug(f"Route path '{routePath}' does not start with base path '{base_path}'. Skipping.")
                 route.path = f"{base_path}/{route.path.lstrip('/')}"
 
             LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
@@ -297,16 +294,3 @@ class HttpAPI:
             return response
 
         return middleware_handler
-
-    def _load_modules(self, directory: Path):
-        package_name: str = str(directory.relative_to(Path(self.rootPath))).replace("/", ".")
-        LOG.debug(f"Loading modules from directory '{directory}' with package name '{package_name}'.")
-        for _, name, _ in pkgutil.iter_modules([directory]):
-            full_name: str = f"{package_name}.{name}"
-            if name.startswith("_"):
-                continue
-            try:
-                LOG.debug(f"Loading module '{full_name}'.")
-                importlib.import_module(full_name)
-            except ImportError as e:
-                LOG.error(f"Failed to import module '{full_name}': {e}")
