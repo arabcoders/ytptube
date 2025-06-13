@@ -10,8 +10,8 @@
 </style>
 <template>
   <div v-if="infoLoaded">
-    <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls crossorigin="anonymous"
-      preload="auto" autoplay>
+    <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls
+      crossorigin="anonymous" preload="auto" autoplay>
       <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
         :type="source.type" />
       <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
@@ -25,11 +25,35 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import { onMounted, onUpdated, ref, onUnmounted } from 'vue'
 import Hls from 'hls.js'
 import { makeDownload } from '~/utils/index'
+
+type video_track_element = {
+  file: string,
+  kind: string,
+  label: string,
+  lang: string,
+}
+
+type video_source_element = {
+  src: string,
+  type: string,
+  onerror: (e: Event) => void,
+}
+
+type file_info = {
+  title: string,
+  mimetype: string,
+  sidecar?: {
+    image?: Array<{ file: string }>,
+    text?: Array<{ file: string }>,
+    subtitle?: Array<{ name: string, lang: string, file: string }>,
+  }
+  error?: string,
+}
+
 const config = useConfigStore()
 const toast = useNotification()
 
@@ -42,9 +66,9 @@ const props = defineProps({
 
 const emitter = defineEmits(['closeModel'])
 
-const video = ref(null)
-const tracks = ref([])
-const sources = ref([])
+const video = useTemplateRef<HTMLMediaElement>('video')
+const tracks = ref<Array<video_track_element>>([])
+const sources = ref<Array<video_source_element>>([])
 
 const thumbnail = ref('/images/placeholder.png')
 const artist = ref('')
@@ -54,19 +78,39 @@ const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 const volume = useStorage('player_volume', 1)
 const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
 const infoLoaded = ref(false)
+const destroyed = ref(false)
 
-let hls = null
+let hls: Hls | null = null
 
-const eventFunc = e => {
-  if ('Escape' === e.key) {
-    emitter('closeModel')
+const handle_event = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') {
+    return
   }
+  emitter('closeModel')
+}
+
+const volume_change_handler = () => {
+  if (!video.value) {
+    return
+  }
+
+  volume.value = video.value.volume
+
+  if (false === ("mediaSession" in navigator)) {
+    return
+  }
+
+  navigator.mediaSession.setPositionState({
+    duration: video.value.duration,
+    playbackRate: video.value.playbackRate,
+    position: video.value.currentTime,
+  })
 }
 
 onMounted(async () => {
   const req = await request(makeDownload(config, props.item, 'api/file/info'))
 
-  const response = await req.json()
+  const response: file_info = await req.json()
 
   if (!req.ok) {
     toast.error(`Failed to fetch video info. ${response?.error}`)
@@ -91,13 +135,13 @@ onMounted(async () => {
     sources.value.push({
       src: makeDownload(config, props.item, allowedCodec ? 'api/download' : 'm3u8'),
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
-      onerror: e => src_error(e),
+      onerror: (e: Event) => src_error(),
     })
   } else {
     sources.value.push({
       src: makeDownload(config, props.item, 'api/download'),
       type: response.mimetype,
-      onerror: e => src_error(e),
+      onerror: e => src_error(),
     })
   }
 
@@ -122,7 +166,7 @@ onMounted(async () => {
     isAudio.value = true
   }
 
-  response?.sidecar?.subtitle?.forEach((cap, id) => {
+  response.sidecar?.subtitle?.forEach((cap, _) => {
     tracks.value.push({
       kind: "captions",
       label: cap.name,
@@ -139,30 +183,35 @@ onMounted(async () => {
   await nextTick()
 
   prepareVideoPlayer()
-  window.addEventListener('keydown', eventFunc)
+  document.addEventListener('keydown', handle_event)
 })
 
 onUpdated(() => prepareVideoPlayer())
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   if (hls) {
     hls.destroy()
   }
 
-  window.removeEventListener('keydown', eventFunc)
+  document.removeEventListener('keydown', handle_event)
 
   if (title.value) {
     window.document.title = 'YTPTube'
   }
-  if (video.value) {
-    try {
-      video.value.pause()
-      video.value.querySelectorAll("source").forEach(source => source.removeAttribute("src"))
-      video.value.load()
-    }
-    catch (e) {
-      console.error(e)
-    }
+
+  if (!video.value) {
+    return
+  }
+  destroyed.value = true
+
+  try {
+    video.value.pause()
+    video.value.querySelectorAll("source").forEach(source => source.removeAttribute("src"))
+    video.value.removeEventListener('volumechange', volume_change_handler)
+    video.value.load()
+  }
+  catch (e) {
+    console.error(e)
   }
 })
 
@@ -175,9 +224,7 @@ const prepareVideoPlayer = () => {
     return
   }
 
-  let mediaMetadata = {
-    title: title.value,
-  }
+  let mediaMetadata: MediaMetadataInit = { title: title.value }
 
   if (thumbnail.value) {
     mediaMetadata.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }]
@@ -192,22 +239,31 @@ const prepareVideoPlayer = () => {
     window.document.title = `YTPTube - Playing: ${title.value}`
   }
 
-  video.value.volume = volume.value
+  if (!video.value) {
+    return
+  }
 
-  video.value.addEventListener('volumechange', () => {
-    volume.value = video.value.volume
-  })
+  video.value.volume = volume.value
+  video.value.addEventListener('volumechange', volume_change_handler)
 }
 
-const src_error = () => {
+const src_error = async () => {
   if (hls) {
+    return
+  }
+  await nextTick()
+  if (destroyed.value) {
     return
   }
   console.warn('Direct play failed, trying HLS.')
   attach_hls(makeDownload(config, props.item, 'm3u8'))
 }
 
-const attach_hls = link => {
+const attach_hls = (link: string) => {
+  if (!video.value) {
+    return
+  }
+
   hls = new Hls({
     debug: false,
     enableWorker: true,

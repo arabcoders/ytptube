@@ -10,11 +10,11 @@
       <h1 class="title is-4">
         <span class="icon-text">
           <span class="icon"><i class="fa-solid fa-terminal" /></span>
-          <span>Terminal</span>
+          <span>Console</span>
         </span>
       </h1>
       <div class="subtitle is-6 is-unselectable">
-        You can use this terminal window to execute non-interactive commands. The interface is jailed to the
+        You can use this console window to execute non-interactive commands. The interface is jailed to the
         <code>yt-dlp</code>
       </div>
     </div>
@@ -25,8 +25,9 @@
             <span class="icon"><i class="fa-solid fa-terminal" /></span> Console Output
           </p>
           <p class="card-header-icon">
-            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput">
-              <i class="fa-solid fa-broom" /></span>
+            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput()">
+              <i class="fa-solid fa-broom" />
+            </span>
           </p>
         </header>
         <section class="card-content p-0 m-0">
@@ -34,12 +35,6 @@
         </section>
         <section class="card-content p-1 m-1">
           <div class="field is-grouped">
-            <div class="control">
-              <span class="icon-text input is-unselectable">
-                <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                <span>yt-dlp</span>
-              </span>
-            </div>
             <div class="control is-expanded">
               <input type="text" class="input" v-model="command" placeholder="--help" autocomplete="off"
                 ref="command_input" @keydown.enter="runCommand" :disabled="isLoading" id="command">
@@ -60,22 +55,24 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import "@xterm/xterm/css/xterm.css"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { useStorage } from '@vueuse/core'
 
-const terminal = ref()
-const terminalFit = ref()
-const command = ref('')
-const terminal_window = ref()
-const command_input = ref()
-const isLoading = ref(false)
 const config = useConfigStore()
 const socket = useSocketStore()
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+
+const terminal = ref<Terminal>()
+const terminalFit = ref<FitAddon>()
+const command = ref<string>('')
+const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window')
+const command_input = useTemplateRef<HTMLInputElement>('command_input')
+const isLoading = ref<boolean>(false)
 
 watch(() => isLoading.value, async value => {
   if (value) {
@@ -100,11 +97,11 @@ watch(() => config.app.console_enabled, async () => {
   await navigateTo('/')
 })
 
-const reSizeTerminal = () => {
+const handle_event = () => {
   if (!terminal.value) {
     return
   }
-  terminalFit.value.fit()
+  terminalFit.value?.fit()
 }
 
 const runCommand = async () => {
@@ -128,13 +125,14 @@ const runCommand = async () => {
       cursorStyle: 'underline',
       cols: 108,
       rows: 10,
-      buffer: 1000,
       disableStdin: true,
       scrollback: 1000,
     })
     terminalFit.value = new FitAddon()
     terminal.value.loadAddon(terminalFit.value)
-    terminal.value.open(terminal_window.value)
+    if (terminal_window.value) {
+      terminal.value.open(terminal_window.value)
+    }
     terminalFit.value.fit();
   }
 
@@ -149,7 +147,7 @@ const runCommand = async () => {
   terminal.value.writeln(`$ yt-dlp ${command.value}`)
 }
 
-const clearOutput = async (withCommand = false) => {
+const clearOutput = async (withCommand: boolean = false) => {
   if (terminal.value) {
     terminal.value.clear()
   }
@@ -168,7 +166,7 @@ const focusInput = () => {
   command_input.value.focus()
 }
 
-const writer = s => {
+const writer = (s: string) => {
   if (!terminal.value) {
     return
   }
@@ -188,23 +186,23 @@ watch(() => config.app.basic_mode, async () => {
 })
 
 onMounted(async () => {
-  window.addEventListener('resize', reSizeTerminal);
+  document.addEventListener('resize', handle_event);
   focusInput()
   socket.off('cli_close', loader)
   socket.off('cli_output', writer)
   socket.on('cli_close', loader)
   socket.on('cli_output', writer)
   if (bg_enable.value) {
-    document.querySelector('body').setAttribute("style", `opacity: 1.0`)
+    document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
   }
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   socket.off('cli_close', loader)
   socket.off('cli_output', writer)
-  window.removeEventListener('resize', reSizeTerminal)
+  document.removeEventListener('resize', handle_event)
   if (bg_enable.value) {
-    document.querySelector('body').setAttribute("style", `opacity: ${bg_opacity.value}`)
+    document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
   }
 });
 </script>

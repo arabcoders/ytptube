@@ -340,7 +340,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
   }
 }
 
-const popstateHandler = e => {
+const event_handler = e => {
 
   if (!e.state) {
     return
@@ -358,12 +358,10 @@ onMounted(async () => {
     await reloadContent(path.value, true)
   }
 
-  window.addEventListener('popstate', popstateHandler)
+  document.addEventListener('popstate', event_handler)
 })
 
-onUnmounted(() => {
-  window.removeEventListener('popstate', popstateHandler)
-})
+onBeforeUnmount(() => document.removeEventListener('popstate', event_handler))
 
 const makeBreadCrumb = path => {
   const baseLink = '/'

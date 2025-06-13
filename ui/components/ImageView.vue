@@ -1,30 +1,31 @@
-<style>
-.is-image {
+<style scoped>
+img {
   max-width: 100%;
   max-height: 100%;
   margin: auto;
   display: block;
 }
 </style>
+
 <template>
   <div>
     <div style="font-size:30vh; width: 99%" class="has-text-centered" v-if="isLoading">
       <i class="fas fa-circle-notch fa-spin"></i>
     </div>
     <div v-else>
-      <img :src="image" class="is-image">
+      <img :src="image">
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { request } from '~/utils/index'
 
-const emitter = defineEmits(['closeModel'])
-const isLoading = ref(false)
-const data = ref({})
 const toast = useNotification()
-const image = ref('')
+const emitter = defineEmits(['closeModel'])
+
+const isLoading = ref<boolean>(false)
+const image = ref<string>('')
 
 const props = defineProps({
   link: {
@@ -33,15 +34,15 @@ const props = defineProps({
   },
 })
 
-const eventFunc = e => {
-  if ('Escape' === e.key) {
-    emitter('closeModel')
+const handle_event = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') {
+    return
   }
+  emitter('closeModel')
 }
 
 onMounted(async () => {
-  window.addEventListener('keydown', eventFunc)
-
+  document.addEventListener('keydown', handle_event)
 
   const url = props.link.startsWith('/') ? props.link : '/api/thumbnail?url=' + encodePath(props.link)
 
@@ -54,7 +55,7 @@ onMounted(async () => {
     }
 
     image.value = URL.createObjectURL(await imgRequest.blob())
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
   } finally {
@@ -62,5 +63,5 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => window.removeEventListener('keydown', eventFunc))
+onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
 </script>

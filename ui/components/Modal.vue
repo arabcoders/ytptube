@@ -2,19 +2,19 @@
   <div>
     <div class="modal is-active">
       <div class="model-title" v-if="title" />
-      <div class="modal-background" @click="closeModal"></div>
+      <div class="modal-background" @click="emitter('close')"></div>
       <div class="modal-content" style="width:70vw;">
         <slot />
       </div>
-      <button class="modal-close is-large" aria-label="close" @click="closeModal"></button>
+      <button class="modal-close is-large" aria-label="close" @click="emitter('close')"></button>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 const emitter = defineEmits(['close'])
 
-const props = defineProps({
+defineProps({
   title: {
     type: String,
     default: '',
@@ -22,14 +22,13 @@ const props = defineProps({
   },
 })
 
-const closeModal = () => emitter('close')
-
-const eventFunc = e => {
-  if (e.key === 'Escape') {
-    emitter('close')
+const handle_event = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') {
+    return
   }
+  emitter('close')
 }
 
-onMounted(() => window.addEventListener('keydown', eventFunc))
-onUnmounted(() => window.removeEventListener('keydown', eventFunc))
+onMounted(() => document.addEventListener('keydown', handle_event))
+onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
 </script>
