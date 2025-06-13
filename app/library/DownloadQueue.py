@@ -294,7 +294,7 @@ class DownloadQueue(metaclass=Singleton):
         if not item.extras.get("live_in") and live_in:
             item.extras["live_in"] = live_in
 
-        if not item.extras.get("live_in") and is_premiere:
+        if not item.extras.get("is_premiere") and is_premiere:
             item.extras["is_premiere"] = is_premiere
 
         dl = ItemDTO(

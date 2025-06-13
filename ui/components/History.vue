@@ -599,7 +599,7 @@ const setStatus = item => {
   }
 
   if ('not_live' === item.status) {
-    if (item.extras?.is_premiere){
+    if (item.extras?.is_premiere) {
       return 'Premiere'
     }
     return display_style.value === 'cards' ? 'Live Stream' : 'Live'
