@@ -537,6 +537,9 @@ const setIcon = item => {
     if (!item.filename) {
       return 'fa-solid fa-exclamation'
     }
+    if (item.extras?.is_premiere) {
+      return 'fa-solid fa-star'
+    }
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
 
@@ -549,7 +552,7 @@ const setIcon = item => {
   }
 
   if ('not_live' === item.status) {
-    return 'fa-solid fa-headset'
+    return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset'
   }
 
   return 'fa-solid fa-circle'
@@ -579,6 +582,11 @@ const setStatus = item => {
     if (!item.filename) {
       return 'Skipped?'
     }
+
+    if (item.extras?.is_premiere) {
+      return 'Premiere'
+    }
+
     return item.is_live ? 'Live Ended' : 'Completed'
   }
 
@@ -591,6 +599,9 @@ const setStatus = item => {
   }
 
   if ('not_live' === item.status) {
+    if (item.extras?.is_premiere){
+      return 'Premiere'
+    }
     return display_style.value === 'cards' ? 'Live Stream' : 'Live'
   }
 

@@ -17,6 +17,7 @@ from typing import TypeVar
 
 import yt_dlp
 from Crypto.Cipher import AES
+from yt_dlp.utils import match_str
 
 from .LogWrapper import LogWrapper
 
@@ -59,7 +60,8 @@ FILES_TYPE: list = [
     {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$", re.IGNORECASE), "type": "metadata"},
 ]
 
-DATETIME_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
+TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
+DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
 
 T = TypeVar("T")
 
@@ -203,6 +205,10 @@ def extract_info(
 
     if not data:
         return data
+
+    data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
+    if not data["is_premiere"]:
+        data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
 
     return yt_dlp.YoutubeDL.sanitize_info(data) if sanitize_info else data
 
@@ -963,7 +969,7 @@ async def read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
             for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
                 line_bytes = line if isinstance(line, bytes) else line.encode()
                 msg = line.decode(errors="replace")
-                dt_match = DATETIME_PATTERN.match(msg)
+                dt_match = DT_PATTERN.match(msg)
                 result.append(
                     {
                         "id": sha256(line_bytes).hexdigest(),
@@ -1005,7 +1011,7 @@ async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
                     continue
 
                 msg = line.decode(errors="replace")
-                dt_match = DATETIME_PATTERN.match(msg)
+                dt_match = DT_PATTERN.match(msg)
 
                 await emitter(
                     {
@@ -1228,3 +1234,25 @@ def load_modules(root_path: Path, directory: Path):
             importlib.import_module(full_name)
         except ImportError as e:
             LOG.error(f"Failed to import module '{full_name}': {e}")
+
+
+def parse_tags(text: str) -> tuple[str, dict[str, str | bool]]:
+    """
+    Parse tags from a string formatted with %{tag_name[:value]}c.
+
+    Args:
+        text (str): The input string containing tags.
+
+    Returns:
+        tuple[str, dict[str, str | bool]]: A tuple containing the string with tags removed and a dictionary of tags.
+
+    """
+    tags: dict[str, str | bool] = {}
+
+    def replacer(match: re.Match) -> str:
+        name = match.group(1)
+        value = match.group(2)
+        tags[name] = value if value is not None else True
+        return ""
+
+    return TAG_REGEX.sub(replacer, text).strip(), tags

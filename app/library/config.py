@@ -158,6 +158,9 @@ class Config:
     is_native: bool = False
     "Is the application running in webview."
 
+    prevent_live_premiere: bool = False
+    """Prevent downloading of the initial premiere live broadcast."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -209,6 +212,7 @@ class Config:
         "console_enabled",
         "browser_enabled",
         "ytdlp_auto_update",
+        "prevent_premiere_live",
     )
     "The variables that are booleans."
 
