@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250613-a478e8e5",
-        "date": "2025-06-13T18:22:55+00:00",
+        "tag": "dev-20250614-bb41eadd",
+        "date": "2025-06-13T21:59:57+00:00",
         "commits": [
+            {
+                "sha": "bb41eadd",
+                "message": "add the ability to prevent downloading youtube premiere initial stream.",
+                "author": "arabcoders",
+                "date": "2025-06-13T21:59:57+00:00",
+                "full_sha": "bb41eadde7ae2320617d207bf679f276d6401b17"
+            },
             {
                 "sha": "a478e8e5",
                 "message": "minor design update",
@@ -46,7 +53,7 @@
                 "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
             }
         ],
-        "full_sha": "a478e8e58d920a70072d2ce30ed58eca1ef141ff"
+        "full_sha": "bb41eadde7ae2320617d207bf679f276d6401b17"
     },
     {
         "tag": "dev-20250610-670c9951",
