@@ -1,46 +1,49 @@
 <template>
   <div>
     <div class="modal is-active" v-if="false === externalModel">
-      <div class="modal-background" @click="closeModal"></div>
+      <div class="modal-background" @click="emitter('closeModel')"></div>
       <div class="modal-content" style="width:60vw;">
         <div style="font-size:30vh; width: 99%" class="has-text-centered" v-if="isLoading">
           <i class="fas fa-circle-notch fa-spin"></i>
         </div>
         <div v-else>
-          <div class="p-0 m-0" style="position: relative">
-            <div class="content" style="white-space: pre;">
-              <code class="p-4 is-block" v-text="data" />
-              <button class="button is-small m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
+          <div class="content p-0 m-0" style="position: relative">
+            <pre><code class="p-4 is-block" v-text="data" />
+              <button class="button m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
                 style="position: absolute; top:0; right:0;">
                 <span class="icon"><i class="fas fa-copy"></i></span>
               </button>
-            </div>
+            </pre>
           </div>
         </div>
       </div>
-      <button class="modal-close is-large" aria-label="close" @click="closeModal"></button>
+      <button class="modal-close is-large" aria-label="close" @click="emitter('closeModel')"></button>
     </div>
     <div style="width:70vw; height: 80vh;" v-else>
-      <div class="p-0 m-0" style="position: relative">
-        <div class="content" style="white-space: pre;">
-          <code class="p-4 is-block" v-text="data" />
-          <button class="button is-small m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
-            style="position: absolute; top:0; right:0;">
-            <span class="icon"><i class="fas fa-copy"></i></span>
-          </button>
-        </div>
+      <div class="content p-0 m-0" style="position: relative">
+        <pre><code class="p-4 is-block" v-text="data" /></pre>
+        <button class="button m-4" @click="() => copyText(JSON.stringify(data, null, 4))"
+          style="position: absolute; top:0; right:0;">
+          <span class="icon"><i class="fas fa-copy"></i></span>
+        </button>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<style scoped>
+code {
+  color: var(--bulma-code) !important
+}
+</style>
+<script setup lang="ts">
 import { request } from '~/utils/index'
 
-const emitter = defineEmits(['closeModel'])
-const isLoading = ref(false)
-const data = ref({})
 const toast = useNotification()
+
+const emitter = defineEmits(['closeModel'])
+const isLoading = ref<Boolean>(false)
+const data = ref<any>({})
 
 const props = defineProps({
   link: {
@@ -60,16 +63,15 @@ const props = defineProps({
   },
 })
 
-const closeModal = () => emitter('closeModel')
-
-const eventFunc = e => {
-  if (e.key === 'Escape') {
-    emitter('closeModel')
+const handle_event = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') {
+    return
   }
+  emitter('closeModel')
 }
 
 onMounted(async () => {
-  window.addEventListener('keydown', eventFunc)
+  document.addEventListener('keydown', handle_event)
 
   const url = props.useUrl ? props.link : '/api/yt-dlp/url/info?url=' + encodePath(props.link)
 
@@ -84,7 +86,7 @@ onMounted(async () => {
       data.value = body
     }
 
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
   } finally {
@@ -92,5 +94,5 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => window.removeEventListener('keydown', eventFunc))
+onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
 </script>

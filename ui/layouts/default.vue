@@ -60,16 +60,16 @@
             </a>
 
             <div class="navbar-dropdown">
-              <NuxtLink class="navbar-item" to="/console" @click.native="e => changeRoute(e)"
-                v-if="config.app.console_enabled">
-                <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                <span>Terminal</span>
-              </NuxtLink>
-
               <NuxtLink class="navbar-item" to="/logs" @click.native="e => changeRoute(e)"
                 v-if="config.app.file_logging">
                 <span class="icon"><i class="fa-solid fa-file-lines" /></span>
                 <span>Logs</span>
+              </NuxtLink>
+
+              <NuxtLink class="navbar-item" to="/console" @click.native="e => changeRoute(e)"
+                v-if="config.app.console_enabled">
+                <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                <span>Console</span>
               </NuxtLink>
             </div>
           </div>

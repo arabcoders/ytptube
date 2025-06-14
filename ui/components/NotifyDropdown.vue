@@ -32,7 +32,7 @@
         <hr class="navbar-divider">
       </template>
       <div class="notification-list">
-        <div v-for="n in store.notifications" :key="n.id" class="navbar-item is-flex is-align-items-start"
+        <div v-for="n in store.notifications" :key="n.id" class="pr-1 pl-1 navbar-item is-flex is-align-items-start"
           :class="['notification-item', 'notification-' + n.level]">
           <div class="is-flex-grow-1">
             <p class="is-size-7 mb-1 notification-message" :class="{ expanded: expandedId === n.id }"

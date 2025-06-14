@@ -76,7 +76,7 @@
 
     <div class="columns is-multiline" v-if="'list' === display_style">
       <div class="column is-12" v-if="hasItems">
-        <div class="table-container">
+        <div :class="{ 'table-container': table_container }">
           <table class="table is-striped is-hoverable is-fullwidth is-bordered"
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
@@ -106,7 +106,12 @@
                       :id="'checkbox-' + item._id" :value="item._id">
                   </label>
                 </td>
-                <td class="is-vcentered">
+                <td class="is-text-overflow is-vcentered">
+                   <div class="is-inline is-pulled-right" v-if="item.extras?.duration">
+                    <span class="tag is-info" v-if="item.extras?.duration">
+                      {{ formatTime(item.extras.duration) }}
+                    </span>
+                  </div>
                   <div v-if="showThumbnails && item.extras.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
@@ -164,29 +169,50 @@
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                       </button>
                     </div>
-                    <div class="control" v-if="config.app?.keep_archive && item.status != 'finished'">
-                      <button class="button is-danger is-light is-fullwidth is-small" v-tooltip="'Add link to archive'"
-                        @click="archiveItem(item)">
-                        <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                      </button>
-                    </div>
                     <div class="control" v-if="item.filename && item.status === 'finished'">
                       <a class="button is-link is-fullwidth is-small" :href="makeDownload(config, item)"
                         v-tooltip="'Download video'" :download="item.filename?.split('/').reverse()[0]">
                         <span class="icon"><i class="fa-solid fa-download" /></span>
                       </a>
                     </div>
-                    <div class="control" v-if="item.url && !config.app.basic_mode">
-                      <button class="button is-info is-fullwidth is-small" @click="emitter('getInfo', item.url)"
-                        v-tooltip="'Show video information'">
-                        <span class="icon"><i class="fa-solid fa-info" /></span>
-                      </button>
-                    </div>
                     <div class="control">
                       <button class="button is-danger is-fullwidth is-small" @click="removeItem(item)"
                         v-tooltip="'Remove video'">
                         <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                       </button>
+                    </div>
+                    <div class="control" v-if="item.url && !config.app.basic_mode">
+                      <Dropdown icons="fa-solid fa-cogs" label="" @open_state="s => table_container = !s"
+                        :button_classes="'is-small'">
+                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
+                          <span class="icon"><i class="fa-solid fa-info" /></span>
+                          <span>Information</span>
+                        </NuxtLink>
+
+                        <template v-if="item.status != 'finished' || !item.filename">
+                          <hr class="dropdown-divider" />
+                          <NuxtLink class="dropdown-item" @click="reQueueItem(item, true)">
+                            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                            <span>Add to download form</span>
+                          </NuxtLink>
+                        </template>
+
+                        <template v-if="'finished' !== item.status && config.app?.keep_archive">
+                          <hr class="dropdown-divider" />
+                          <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
+                            <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                            <span>Archive Item</span>
+                          </NuxtLink>
+                        </template>
+
+                        <template v-if="'finished' === item.status && item.filename && config.app?.keep_archive">
+                          <hr class="dropdown-divider" />
+                          <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                            <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                            <span>Remove from archive</span>
+                          </NuxtLink>
+                        </template>
+                      </Dropdown>
                     </div>
                   </div>
                 </td>
@@ -202,12 +228,16 @@
         v-for="item in sortCompleted" :key="item._id">
         <div class="card is-flex is-full-height is-flex-direction-column"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
-          <header class="card-header ">
+          <header class="card-header">
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-              <NuxtLink target="_blank" :href="item.url" class="has-tooltip">{{ item.title }}</NuxtLink>
+              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
 
             <div class="card-header-icon">
+              <span class="tag is-info" v-if="item.extras?.duration">
+                {{ formatTime(item.extras.duration) }}
+              </span>
+
               <span v-if="!showThumbnails">
                 <a v-if="'finished' === item.status && item.filename" href="#" @click.prevent="playVideo(item)"
                   v-tooltip="'Play video.'">
@@ -305,14 +335,7 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-half-mobile" v-if="config.app?.keep_archive && item.status != 'finished'">
-                <a class="button is-danger is-light is-fullwidth" @click="archiveItem(item)">
-                  <span class="icon-text is-block">
-                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span>Archive</span>
-                  </span>
-                </a>
-              </div>
+
               <div class="column is-half-mobile" v-if="item.filename && item.status === 'finished'">
                 <a class="button is-link is-fullwidth" :href="makeDownload(config, item)"
                   :download="item.filename?.split('/').reverse()[0]">
@@ -323,12 +346,36 @@
                 </a>
               </div>
               <div class="column is-half-mobile" v-if="item.url && !config.app.basic_mode">
-                <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
-                  <span class="icon-text is-block">
+                <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Information</span>
-                  </span>
-                </button>
+                  </NuxtLink>
+
+                  <template v-if="item.status != 'finished' || !item.filename">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item" @click="reQueueItem(item, true)">
+                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                      <span>Add to download form</span>
+                    </NuxtLink>
+                  </template>
+
+                  <template v-if="'finished' !== item.status && config.app?.keep_archive">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
+                      <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                      <span>Archive Item</span>
+                    </NuxtLink>
+                  </template>
+
+                  <template v-if="'finished' === item.status && item.filename && config.app?.keep_archive">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                      <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                      <span>Remove from archive</span>
+                    </NuxtLink>
+                  </template>
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -336,23 +383,13 @@
       </LateLoader>
     </div>
 
-    <div class="content has-text-centered" v-if="!hasItems">
-      <p v-if="socket.isConnected">
-        <span class="icon-text">
-          <span class="icon has-text-success">
-            <i class="fa-solid fa-circle-check" />
-          </span>
-          <span>No records.</span>
-        </span>
-      </p>
-      <p v-else>
-        <span class="icon-text">
-          <span class="icon">
-            <i class="fa-solid fa-spinner fa-spin" />
-          </span>
-          <span>Connecting...</span>
-        </span>
-      </p>
+    <div class="columns is-multiline" v-if="!hasItems">
+      <div class="column is-12">
+        <Message message_class="has-background-success-90 has-text-dark" title="No records in history."
+          icon="fas fa-circle-check" v-if="socket.isConnected" />
+        <Message message_class="has-background-info-90 has-text-dark" title="Connecting.." icon="fas fa-spinner fa-spin"
+          v-else />
+      </div>
     </div>
 
     <div class="modal is-active" v-if="video_item">
@@ -371,6 +408,10 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
     </div>
+
+    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
+      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
+      @cancel="() => dialog_confirm.visible = false" />
   </div>
 </template>
 
@@ -379,6 +420,8 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { makeDownload, formatBytes, uri } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
+import Dropdown from './Dropdown.vue'
+import { NuxtLink } from '#components'
 
 const emitter = defineEmits(['getInfo', 'add_new'])
 
@@ -401,9 +444,20 @@ const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 const display_style = useStorage('display_style', 'cards')
+const table_container = ref(false)
 
 const embed_url = ref('')
 const video_item = ref(null)
+
+const dialog_confirm = ref({
+  visible: false,
+  title: 'Confirm Action',
+  confirm: (opts) => { },
+  message: '',
+  options: [
+    { key: 'remove_history', label: 'Also, Remove from history.' },
+  ],
+})
 
 const playVideo = item => video_item.value = item
 const closeVideo = () => video_item.value = null
@@ -547,6 +601,9 @@ const setIcon = item => {
     if (!item.filename) {
       return 'fa-solid fa-exclamation'
     }
+    if (item.extras?.is_premiere) {
+      return 'fa-solid fa-star'
+    }
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
 
@@ -559,7 +616,7 @@ const setIcon = item => {
   }
 
   if ('not_live' === item.status) {
-    return 'fa-solid fa-headset'
+    return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset'
   }
 
   return 'fa-solid fa-circle'
@@ -589,6 +646,11 @@ const setStatus = item => {
     if (!item.filename) {
       return 'Skipped?'
     }
+
+    if (item.extras?.is_premiere) {
+      return 'Premiere'
+    }
+
     return item.is_live ? 'Live Ended' : 'Completed'
   }
 
@@ -601,6 +663,9 @@ const setStatus = item => {
   }
 
   if ('not_live' === item.status) {
+    if (item.extras?.is_premiere) {
+      return 'Premiere'
+    }
     return display_style.value === 'cards' ? 'Live Stream' : 'Live'
   }
 
@@ -621,11 +686,39 @@ const requeueIncomplete = () => {
   }
 }
 
-const archiveItem = item => {
-  if (!box.confirm(`Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`)) {
+const addArchiveDialog = (item) => {
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Archive Item'
+  dialog_confirm.value.message = `Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`
+  dialog_confirm.value.confirm = opts => archiveItem(item, opts)
+}
+
+const archiveItem = async (item, opts = {}) => {
+  try {
+
+    const req = await request(`/api/archive/${item._id}`, {
+      credentials: 'include',
+      method: 'POST',
+    })
+
+    const data = await req.json()
+
+    dialog_confirm.value.visible = false
+
+    if (!req.ok) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success(data.message ?? `Archived '${item.title ?? item.id ?? item.url ?? '??'}'.`)
+  } catch (e) {
+    console.error(e)
+  }
+
+  if (!opts?.remove_history) {
     return
   }
-  socket.emit('archive_item', item)
+
   socket.emit('item_delete', { id: item._id, remove_file: false })
 }
 
@@ -644,7 +737,7 @@ const removeItem = item => {
   })
 }
 
-const reQueueItem = (item, event = null) => {
+const reQueueItem = (item, re_add = false) => {
   const item_req = {
     url: item.url,
     preset: item.preset,
@@ -657,7 +750,7 @@ const reQueueItem = (item, event = null) => {
 
   socket.emit('item_delete', { id: item._id, remove_file: false })
 
-  if (event && (event?.altKey && true === event?.altKey)) {
+  if (true === re_add) {
     toast.info('Removed the item from history, and added it to the new download form.')
     emitter('add_new', item_req)
     return
@@ -715,4 +808,38 @@ const downloadSelected = () => {
 }
 
 const toggle_class = e => e.currentTarget.classList.toggle('is-text-overflow')
+
+const removeFromArchiveDialog = (item) => {
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Remove from Archive'
+  dialog_confirm.value.message = `Remove '${item.title ?? item.id ?? item.url ?? '??'}' from archive?`
+  dialog_confirm.value.confirm = () => removeFromArchive(item)
+}
+
+const removeFromArchive = async (item, opts) => {
+  try {
+    const req = await request(`/api/archive/${item._id}`, {
+      credentials: 'include',
+      method: 'DELETE',
+    })
+
+    const data = await req.json()
+
+    if (!req.ok) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success(data.message ?? `Removed '${item.title ?? item.id ?? item.url ?? '??'}' from archive.`)
+  } catch (e) {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+  } finally {
+    dialog_confirm.value.visible = false
+  }
+
+  if (opts?.remove_history) {
+    socket.emit('item_delete', { id: item._id, remove_file: false })
+  }
+}
 </script>

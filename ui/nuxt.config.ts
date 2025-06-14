@@ -2,7 +2,7 @@ import path from "path";
 
 let extraNitro = {}
 try {
-  const API_URL = import.meta.env.NUXT_API_URL;
+  const API_URL = process.env.NUXT_API_URL;
   if (API_URL) {
     extraNitro = {
       devProxy: {
@@ -20,7 +20,6 @@ catch (e) {
 export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
-
   devServer: {
     port: 8082,
     host: "0.0.0.0",
@@ -30,8 +29,8 @@ export default defineNuxtConfig({
   ],
   runtimeConfig: {
     public: {
-      APP_ENV: process.env.APP_ENV || "production",
-      wss: process.env.VUE_APP_BASE_URL ?? '',
+      APP_ENV: process.env.NODE_ENV,
+      wss: process.env.NUXT_PUBLIC_WSS ?? '',
       sentry: process.env.NUXT_PUBLIC_SENTRY_DSN ?? '',
     }
   },
@@ -39,7 +38,7 @@ export default defineNuxtConfig({
     transpile: ['vue-toastification'],
   },
   app: {
-    baseURL: 'dev' == process.env.APP_ENV ? '/' : '',
+    baseURL: 'production' == process.env.NODE_ENV ? '' : '/',
     buildAssetsDir: "assets",
     head: {
       "meta": [
@@ -67,7 +66,7 @@ export default defineNuxtConfig({
 
   nitro: {
     output: {
-      publicDir: path.join(__dirname, 'dev' == process.env.APP_ENV ? 'dist' : 'exported')
+      publicDir: path.join(__dirname, 'production' === process.env.NODE_ENV ? 'exported' : 'dist')
     },
     ...extraNitro,
   },

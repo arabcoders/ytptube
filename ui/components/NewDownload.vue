@@ -172,16 +172,27 @@
                 </span>
               </div>
             </div>
-            <div class="column is-6-tablet is-4-mobile has-text-left">
-              <button type="button" class="button is-info" @click="emitter('getInfo', form.url)"
-                :class="{ 'is-loading': !socket.isConnected }"
-                :disabled="!socket.isConnected || addInProgress || !form?.url">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Information</span>
-              </button>
-            </div>
-            <div class="column is-6-tablet is-6-mobile has-text-right">
+            <div class="column is-12">
               <div class="field is-grouped is-justify-self-end">
+
+                <div class="control">
+                  <button type="button" class="button is-info" @click="emitter('getInfo', form.url)"
+                    :class="{ 'is-loading': !socket.isConnected }"
+                    :disabled="!socket.isConnected || addInProgress || !form?.url">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Information</span>
+                  </button>
+                </div>
+
+                <div class="control">
+                  <button type="button" class="button is-warning" @click="removeFromArchive(form.url)"
+                    :class="{ 'is-loading': !socket.isConnected }"
+                    :disabled="!socket.isConnected || addInProgress || !form?.url">
+                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                    <span>Remove from archive</span>
+                  </button>
+                </div>
+
                 <div class="control">
                   <button type="button" class="button is-danger" @click="resetConfig"
                     :disabled="!socket.isConnected || form?.id" v-tooltip="'Reset local settings'">
@@ -212,7 +223,7 @@ const props = defineProps({
   },
 })
 
-const emitter = defineEmits(['getInfo', 'clear_form'])
+const emitter = defineEmits(['getInfo', 'clear_form', 'remove_archive'])
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
@@ -327,6 +338,7 @@ const resetConfig = () => {
   }
 
   showAdvanced.value = false
+  separator.value = separators[0].value
 
   toast.success('Local configuration has been reset.')
 }
@@ -370,13 +382,17 @@ onMounted(async () => {
     })
     emitter('clear_form');
   }
+
+  await nextTick()
+  if (!separators.some(s => s.value === separator.value)) {
+    separator.value = separators[0].value
+  }
 })
 
 const hasFormatInConfig = computed(() => {
-  if (!form?.value?.value) {
+  if (!form.value?.cli) {
     return false
   }
-
   return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.value.cli)
 })
 
@@ -384,4 +400,25 @@ const filter_presets = (flag = true) => config.presets.filter(item => item.defau
 const get_preset = name => config.presets.find(item => item.name === name)
 const expand_description = e => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
 
+
+const removeFromArchive = async url => {
+  try {
+    const req = await request(`/api/archive/0`, {
+      credentials: 'include',
+      method: 'DELETE',
+      body: JSON.stringify({ url }),
+    })
+
+    const data = await req.json()
+
+    if (!req.ok) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success(data.message ?? `Removed item from archive.`)
+  } catch (e) {
+    toast.error(`Error: ${e.message}`)
+  }
+}
 </script>

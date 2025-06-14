@@ -18,6 +18,7 @@ from .config import Config
 from .DataStore import DataStore
 from .Download import Download
 from .Events import EventBus, Events
+from .Events import info as event_info
 from .Events import warning as event_warning
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
@@ -62,6 +63,12 @@ class DownloadQueue(metaclass=Singleton):
 
     _instance = None
     """Instance of the DownloadQueue."""
+
+    queue: DataStore
+    """DataStore for the download queue."""
+
+    done: DataStore
+    """DataStore for the completed downloads."""
 
     def __init__(self, connection: Connection, config: Config | None = None):
         DownloadQueue._instance = self
@@ -233,6 +240,7 @@ class DownloadQueue(metaclass=Singleton):
         options: dict = {}
         error: str | None = None
         live_in: str | None = None
+        is_premiere: bool = bool(entry.get("is_premiere", False))
 
         # check if the video is live stream.
         if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
@@ -240,7 +248,7 @@ class DownloadQueue(metaclass=Singleton):
                 live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
                 item.extras.update({"live_in": live_in})
             else:
-                error = "Live stream not yet started. And no date is set."
+                error = f"No start time is set for {'premiere' if is_premiere else 'live stream'}."
         else:
             error = entry.get("msg")
 
@@ -268,7 +276,7 @@ class DownloadQueue(metaclass=Singleton):
         is_live = bool(entry.get("is_live") or live_in or entry.get("live_status") in live_status)
 
         try:
-            download_dir = calc_download_path(base_path=self.config.download_path, folder=item.folder)
+            download_dir: str = calc_download_path(base_path=self.config.download_path, folder=item.folder)
         except Exception as e:
             LOG.exception(e)
             return {"status": "error", "msg": str(e)}
@@ -280,6 +288,14 @@ class DownloadQueue(metaclass=Singleton):
         for key in entry:
             if isinstance(key, str) and key.startswith("playlist") and entry.get(key):
                 item.extras[key] = entry.get(key)
+
+        item.extras["duration"] = entry.get("duration", item.extras.get("duration"))
+
+        if not item.extras.get("live_in") and live_in:
+            item.extras["live_in"] = live_in
+
+        if not item.extras.get("is_premiere") and is_premiere:
+            item.extras["is_premiere"] = is_premiere
 
         dl = ItemDTO(
             id=str(entry.get("id")),
@@ -304,18 +320,20 @@ class DownloadQueue(metaclass=Singleton):
         try:
             dlInfo: Download = Download(info=dl, info_dict=entry, logs=logs)
 
-            text_logs = ""
+            text_logs: str = ""
             if filtered_logs := extract_ytdlp_logs(logs):
                 text_logs = f" Logs: {', '.join(filtered_logs)}"
 
             if live_in or "is_upcoming" == entry.get("live_status"):
                 NotifyEvent = Events.COMPLETED
                 dlInfo.info.status = "not_live"
-                dlInfo.info.msg = "Stream is not live yet." + text_logs
-                itemDownload = self.done.put(dlInfo)
+                dlInfo.info.msg = (
+                    f"{'Premiere video' if is_premiere else 'Live Stream' } is not available yet." + text_logs
+                )
+                itemDownload: Download = self.done.put(dlInfo)
             elif len(entry.get("formats", [])) < 1:
-                availability = entry.get("availability", "public")
-                msg = "No formats found."
+                availability: str = entry.get("availability", "public")
+                msg: str = "No formats found."
                 if availability and availability not in ("public",):
                     msg += f" Availability is set for '{availability}'."
 
@@ -323,7 +341,27 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo.info.status = "error"
                 itemDownload = self.done.put(dlInfo)
                 NotifyEvent = Events.COMPLETED
-                await self._notify.emit(Events.LOG_WARNING, data=event_warning(msg))
+                await self._notify.emit(Events.LOG_WARNING, data=event_warning(f"No formats found for '{dl.title}'."))
+            elif is_premiere and self.config.prevent_live_premiere:
+                dlInfo.info.error = (
+                    f"Premiering right now. Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
+                )
+                _live_in = live_in or item.extras.get("live_in", None)
+                if _live_in:
+                    starts_in = parsedate_to_datetime(live_in)
+                    starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
+                    starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
+                    dlInfo.info.error += f" Starts in {starts_in.isoformat()}."
+
+                dlInfo.info.status = "not_live"
+                itemDownload = self.done.put(dlInfo)
+                NotifyEvent = Events.COMPLETED
+                await self._notify.emit(
+                    Events.LOG_INFO,
+                    data=event_info(
+                        f"'{dl.title}' is premiering. Download delayed by '{300+dl.extras.get('duration')}'s."
+                    ),
+                )
             else:
                 NotifyEvent = Events.ADDED
                 itemDownload = self.queue.put(dlInfo)
@@ -464,12 +502,10 @@ class DownloadQueue(metaclass=Singleton):
             if not entry:
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
-            if not item.requeued:
-                condition = Conditions.get_instance().match(info=entry)
-                if condition is not None:
-                    already.pop()
-                    LOG.info(f"Condition '{condition}' matched for '{item.url}'.")
-                    return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
+            if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
+                already.pop()
+                LOG.info(f"Condition '{condition.name}' matched for '{item.url}'.")
+                return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
             end_time = time.perf_counter() - started
             LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
@@ -566,7 +602,7 @@ class DownloadQueue(metaclass=Singleton):
             removed_files = 0
             filename: str = ""
 
-            LOG.info(
+            LOG.debug(
                 f"{remove_file=} {itemRef} - Removing local files: {self.config.remove_files}, {item.info.status=}"
             )
 
@@ -827,31 +863,43 @@ class DownloadQueue(metaclass=Singleton):
         if self.is_paused() or self.done.empty():
             return
 
-        LOG.debug("Checking for live stream items in the history queue.")
+        LOG.debug("Checking history queue for queued live stream links.")
 
         time_now = datetime.now(tz=UTC)
 
-        status = ["not_live", "is_upcoming", "is_live"]
+        status: list[str] = ["not_live", "is_upcoming", "is_live"]
 
         for id, item in list(self.done.items()):
             if item.info.status not in status:
                 continue
 
-            item_ref = f"{id=} {item.info.id=} {item.info.title=}"
+            item_ref: str = f"{id=} {item.info.id=} {item.info.title=}"
             if not item.is_live:
                 LOG.debug(f"Item '{item_ref}' is not a live stream.")
                 continue
 
-            if not item.info.live_in:
+            live_in: str | None = item.info.live_in or item.info.extras.get("live_in", None)
+            if not live_in:
                 LOG.debug(f"Item '{item_ref}' marked as live stream, but no date is set.")
                 continue
 
-            starts_in = parsedate_to_datetime(item.info.live_in)
+            starts_in = parsedate_to_datetime(live_in)
             starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
 
             if time_now < (starts_in + timedelta(minutes=1)):
                 LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
                 continue
+
+            duration: int | None = item.info.extras.get("duration", None)
+            is_premiere: bool = item.info.extras.get("is_premiere", False)
+
+            if is_premiere and duration and self.config.prevent_live_premiere:
+                premiere_ends: datetime = starts_in + timedelta(minutes=5, seconds=duration)
+                if time_now < premiere_ends:
+                    LOG.debug(
+                        f"Item '{item_ref}' is premiering and download is delayed by '{300+duration}' seconds. Will start at '{premiere_ends.isoformat()}'"
+                    )
+                    continue
 
             LOG.info(f"Re-queuing item '{item_ref} {item.info.extras=}' for download.")
 
@@ -862,17 +910,18 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             try:
-                info = item.info
-                new_queue = Item(
-                    url=info.url,
-                    preset=info.preset,
-                    folder=info.folder,
-                    cookies=info.cookies,
-                    template=info.template,
-                    cli=item.info.cli,
-                    extras=item.info.extras,
+                await self.add(
+                    item=Item(
+                        url=item.info.url,
+                        preset=item.info.preset,
+                        folder=item.info.folder,
+                        cookies=item.info.cookies,
+                        template=item.info.template,
+                        cli=item.info.cli,
+                        extras=item.info.extras,
+                    )
                 )
-                await self.add(item=new_queue)
             except Exception as e:
-                LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")
+                self.done.put(item)
                 LOG.exception(e)
+                LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")

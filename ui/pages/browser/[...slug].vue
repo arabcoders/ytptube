@@ -27,8 +27,7 @@
             </div>
 
             <div class="control">
-              <button class="button is-danger is-light" @click="toggleFilter"
-                v-tooltip.bottom="'Filter content'">
+              <button class="button is-danger is-light" @click="toggleFilter" v-tooltip.bottom="'Filter content'">
                 <span class="icon"><i class="fas fa-filter" /></span>
               </button>
             </div>
@@ -94,7 +93,8 @@
                 <td class="is-text-overflow is-vcentered">
                   <div class="field is-grouped">
                     <div class="control is-text-overflow is-expanded">
-                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.type" @click.prevent="handleClick(item)">
+                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
+                        @click.prevent="handleClick(item)">
                         {{ item.name }}
                       </a>
                       <a :href="makeDownload({}, { filename: item.path, folder: '' })"
@@ -113,7 +113,7 @@
                   </div>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
-                  {{ 'file' === item.type ? formatBytes(item.size) : 'Dir' }}
+                  {{ 'file' === item.type ? formatBytes(item.size) : ucFirst(item.type) }}
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
                   <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('MMMM Do YYYY, h:mm:ss a')">
@@ -126,7 +126,8 @@
         </div>
       </div>
       <div class="column is-12" v-else>
-        <Message title="Loading content" class="is-background-info-80" icon="fas fa-refresh fa-spin" v-if="isLoading">
+        <Message title="Loading content" class="has-background-info-90 has-text-dark" icon="fas fa-refresh fa-spin"
+          v-if="isLoading">
           Loading file browser contents...
         </Message>
         <Message v-else title="No Content" class="is-background-warning-80 has-text-dark"
@@ -339,7 +340,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
   }
 }
 
-const popstateHandler = e => {
+const event_handler = e => {
 
   if (!e.state) {
     return
@@ -357,12 +358,10 @@ onMounted(async () => {
     await reloadContent(path.value, true)
   }
 
-  window.addEventListener('popstate', popstateHandler)
+  document.addEventListener('popstate', event_handler)
 })
 
-onUnmounted(() => {
-  window.removeEventListener('popstate', popstateHandler)
-})
+onBeforeUnmount(() => document.removeEventListener('popstate', event_handler))
 
 const makeBreadCrumb = path => {
   const baseLink = '/'
@@ -400,6 +399,9 @@ watch(model_item, v => {
 })
 
 const setIcon = item => {
+  if ('link' === item.type) {
+    return 'fa-link'
+  }
   if ('dir' === item.content_type) {
     return 'fa-folder'
   }

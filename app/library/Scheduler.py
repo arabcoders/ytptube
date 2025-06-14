@@ -103,7 +103,7 @@ class Scheduler(metaclass=Singleton):
 
         self._jobs[job_id] = job
 
-        LOG.debug(f"Added job '{job_id}' to the schedule.")
+        LOG.debug(f"Added '{job_id}' to the scheduler.")
 
         return job_id
 

@@ -7,6 +7,7 @@
   width: 80vw;
 }
 </style>
+
 <template>
   <div class="content">
     <h1 class="has-text-white">Not downloaded yet.</h1>
@@ -14,10 +15,8 @@
   </div>
 </template>
 
-<script setup>
-import { onMounted, onUnmounted } from 'vue'
-
-const props = defineProps({
+<script setup lang="ts">
+defineProps({
   url: {
     type: String,
     required: true,
@@ -26,12 +25,13 @@ const props = defineProps({
 
 const emitter = defineEmits(['closeModel'])
 
-const eventFunc = e => {
-  if (e.key === 'Escape') {
-    emitter('closeModel')
+const handle_event = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') {
+    return
   }
+  emitter('closeModel')
 }
 
-onMounted(async () => window.addEventListener('keydown', eventFunc))
-onUnmounted(() => window.removeEventListener('keydown', eventFunc))
+onMounted(() => document.addEventListener('keydown', handle_event))
+onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
 </script>

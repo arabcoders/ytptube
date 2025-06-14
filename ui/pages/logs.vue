@@ -89,19 +89,19 @@ code {
             </span>
             <span v-for="log in filteredItems" :key="log.id" class="is-block">
               <template v-if="log?.datetime">[<span class="has-tooltip" :title="log.datetime">{{ moment(log.datetime).format('HH:mm:ss') }}</span>]</template>
-              {{ log.line }}
-            </span>
-            <span class="is-block" v-if="filteredItems.length < 1">
-                <span class="is-block m-0 notification is-warning is-dark has-text-centered" v-if="query">
-                  <span class="notification-title is-danger">
-                    <span class="icon"><i class="fas fa-filter"/></span>
-                    No logs match this query: <u>{{ query }}</u>
-                  </span>
-                </span>
-                <span v-else>
-                  <span class="has-text-danger">No logs available</span></span>
-              </span>
-          </code>
+{{ log.line }}
+</span>
+<span class="is-block" v-if="filteredItems.length < 1">
+  <span class="is-block m-0 notification is-warning is-dark has-text-centered" v-if="query">
+    <span class="notification-title is-danger">
+      <span class="icon"><i class="fas fa-filter" /></span>
+      No logs match this query: <u>{{ query }}</u>
+    </span>
+  </span>
+  <span v-else>
+    <span class="has-text-danger">No logs available</span></span>
+</span>
+</code>
           <div ref="bottomMarker"></div>
         </div>
       </div>
@@ -109,30 +109,45 @@ code {
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
 import { request } from '~/utils/index'
 import { ref, onMounted, nextTick } from 'vue'
 import { useStorage } from '@vueuse/core'
+import type { log_line } from '~/@types/logs'
 
-let scrollTimeout = null
+let scrollTimeout: NodeJS.Timeout | null = null
 
 const toast = useNotification()
 const socket = useSocketStore()
 const config = useConfigStore()
+const route = useRoute()
 
-const logs = ref([])
-const offset = ref(0)
-const loading = ref(false)
-const logContainer = ref(null)
-const bottomMarker = ref(null)
-const autoScroll = ref(true)
-const textWrap = ref(true)
-const reachedEnd = ref(false)
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const logs = ref<Array<log_line>>([])
+const offset = ref<number>(0)
+const loading = ref<boolean>(false)
+const logContainer = useTemplateRef<HTMLDivElement>('logContainer')
+const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker')
+const autoScroll = ref<boolean>(true)
+const textWrap = ref<boolean>(true)
+const reachedEnd = ref<boolean>(false)
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
 
-const query = ref(useRoute().query.filter ?? '')
+const query = ref<string>((() => {
+  const filter = route.query.filter ?? ''
+  if (!filter) {
+    return ''
+  }
+  if (typeof filter === 'string') {
+    return filter.trim()
+  }
+  if (Array.isArray(filter) && filter.length > 0) {
+    return filter[0]?.trim() ?? ''
+  }
+  return ''
+})())
+
 const toggleFilter = ref(false)
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -161,9 +176,11 @@ const filteredItems = computed(() => {
   const context = contextMatch ? parseInt(contextMatch[1], 10) : 0
   const searchTerm = raw.replace(/context:\d+/, '').trim()
 
-  if (!searchTerm) return logs.value
+  if (!searchTerm) {
+    return logs.value
+  }
 
-  const result = []
+  const result: Array<log_line> = []
   const matchedIndexes = new Set()
 
   logs.value.forEach((log, i) => {
@@ -174,7 +191,7 @@ const filteredItems = computed(() => {
     }
   })
 
-  Array.from(matchedIndexes).sort((a, b) => a - b).forEach(index => {
+  Array.from(matchedIndexes).sort((a: any, b: any) => a - b).forEach((index: any) => {
     result.push(logs.value[index])
   })
 
@@ -251,11 +268,11 @@ const handleScroll = () => {
   }
 }
 
-const scrollToBottom = (fast=false) => {
+const scrollToBottom = (fast = false) => {
   autoScroll.value = true
   nextTick(() => {
     if (bottomMarker.value) {
-      bottomMarker.value.scrollIntoView({ behavior: fast ? 'auto': 'smooth' })
+      bottomMarker.value.scrollIntoView({ behavior: fast ? 'auto' : 'smooth' })
     }
   })
 }
@@ -263,7 +280,8 @@ const scrollToBottom = (fast=false) => {
 onMounted(async () => {
   await fetchLogs()
   socket.emit('subscribe', 'log_lines')
-  socket.on('log_lines', data => {
+
+  socket.on('log_lines', (data: any) => {
     logs.value.push(data)
 
     nextTick(() => {
@@ -271,17 +289,19 @@ onMounted(async () => {
         bottomMarker.value.scrollIntoView({ behavior: 'smooth' })
       }
     })
+
   })
+
   if (bg_enable.value) {
-    document.querySelector('body').setAttribute("style", `opacity: 1.0`)
+    document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
   }
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   socket.emit('unsubscribe', 'log_lines')
   socket.off('log_lines')
   if (bg_enable.value) {
-    document.querySelector('body').setAttribute("style", `opacity: ${bg_opacity.value}`)
+    document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
   }
 })
 

@@ -48,7 +48,7 @@
     </div>
 
     <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
-      @clear_form="item_form = {}" />
+      @clear_form="item_form = {}" @remove_archive="" />
     <Queue @getInfo="url => get_info = url" :thumbnails="show_thumbnail" />
     <History @getInfo="url => get_info = url" @add_new="item => toNewDownload(item)" :thumbnails="show_thumbnail" />
     <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
@@ -58,7 +58,6 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 
-const emitter = defineEmits(['getInfo'])
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()

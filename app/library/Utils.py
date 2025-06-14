@@ -17,10 +17,11 @@ from typing import TypeVar
 
 import yt_dlp
 from Crypto.Cipher import AES
+from yt_dlp.utils import match_str
 
 from .LogWrapper import LogWrapper
 
-LOG = logging.getLogger("Utils")
+LOG: logging.Logger = logging.getLogger("Utils")
 
 REMOVE_KEYS: list = [
     {
@@ -59,7 +60,8 @@ FILES_TYPE: list = [
     {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$", re.IGNORECASE), "type": "metadata"},
 ]
 
-DATETIME_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
+TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
+DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
 
 T = TypeVar("T")
 
@@ -204,6 +206,10 @@ def extract_info(
     if not data:
         return data
 
+    data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
+    if not data["is_premiere"]:
+        data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
+
     return yt_dlp.YoutubeDL.sanitize_info(data) if sanitize_info else data
 
 
@@ -275,6 +281,41 @@ def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, s
                     return (True, idDict)
 
     return (False, idDict)
+
+
+def remove_from_archive(archive_file: str | Path, url: str) -> bool:
+    """
+    Remove the downloaded video record from the archive file.
+
+    Args:
+        archive_file (str): Archive file path.
+        url (str): URL to check and remove.
+
+    Returns:
+        bool: True if the record removed, False otherwise.
+
+    """
+    if not url or not archive_file:
+        return False
+
+    archive_path: Path = Path(archive_file) if not isinstance(archive_file, Path) else archive_file
+    if not archive_path.exists():
+        return False
+
+    idDict = get_archive_id(url=url)
+    archive_id: str | None = idDict.get("archive_id")
+
+    if not archive_id:
+        return False
+
+    lines: list[str] = archive_path.read_text(encoding="utf-8").splitlines()
+    new_lines: list[str] = [line for line in lines if archive_id not in line]
+
+    if len(lines) == len(new_lines):
+        return False
+
+    archive_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    return True
 
 
 def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
@@ -803,7 +844,8 @@ def get_files(base_path: Path | str, dir: str | None = None):
         if file.name.startswith(".") or file.name.startswith("_"):
             continue
 
-        if file.is_symlink():
+        is_symlink: bool = file.is_symlink()
+        if is_symlink:
             try:
                 test: Path = file.resolve()
                 test.relative_to(base_path)
@@ -831,9 +873,10 @@ def get_files(base_path: Path | str, dir: str | None = None):
             content_type = "download"
 
         stat = file.stat()
+
         contents.append(
             {
-                "type": "file" if file.is_file() else "dir",
+                "type": "file" if file.is_file() else "link" if is_symlink else "dir",
                 "content_type": content_type,
                 "name": file.name,
                 "path": str(file.relative_to(base_path)).strip("/"),
@@ -843,6 +886,7 @@ def get_files(base_path: Path | str, dir: str | None = None):
                 "ctime": datetime.fromtimestamp(stat.st_ctime, tz=UTC).isoformat(),
                 "is_dir": file.is_dir(),
                 "is_file": file.is_file(),
+                "is_symlink": is_symlink,
             }
         )
 
@@ -960,7 +1004,7 @@ async def read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
             for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
                 line_bytes = line if isinstance(line, bytes) else line.encode()
                 msg = line.decode(errors="replace")
-                dt_match = DATETIME_PATTERN.match(msg)
+                dt_match = DT_PATTERN.match(msg)
                 result.append(
                     {
                         "id": sha256(line_bytes).hexdigest(),
@@ -1002,7 +1046,7 @@ async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
                     continue
 
                 msg = line.decode(errors="replace")
-                dt_match = DATETIME_PATTERN.match(msg)
+                dt_match = DT_PATTERN.match(msg)
 
                 await emitter(
                     {
@@ -1198,3 +1242,52 @@ def init_class(cls: type[T], data: dict) -> T:
     from dataclasses import fields
 
     return cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)}})
+
+
+def load_modules(root_path: Path, directory: Path):
+    """
+    Load all modules from a given directory relative to the root path.
+
+    Args:
+        root_path (Path): The root path of the application.
+        directory (Path): The directory from which to load modules.
+
+    """
+    import importlib
+    import pkgutil
+
+    package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
+
+    LOG.debug(f"Loading routes from '{directory}' with package name '{package_name}'.")
+
+    for _, name, _ in pkgutil.iter_modules([directory]):
+        full_name: str = f"{package_name}.{name}"
+        if name.startswith("_"):
+            continue
+        try:
+            LOG.debug(f"Loading module '{full_name}'.")
+            importlib.import_module(full_name)
+        except ImportError as e:
+            LOG.error(f"Failed to import module '{full_name}': {e}")
+
+
+def parse_tags(text: str) -> tuple[str, dict[str, str | bool]]:
+    """
+    Parse tags from a string formatted with %{tag_name[:value]}c.
+
+    Args:
+        text (str): The input string containing tags.
+
+    Returns:
+        tuple[str, dict[str, str | bool]]: A tuple containing the string with tags removed and a dictionary of tags.
+
+    """
+    tags: dict[str, str | bool] = {}
+
+    def replacer(match: re.Match) -> str:
+        name = match.group(1)
+        value = match.group(2)
+        tags[name] = value if value is not None else True
+        return ""
+
+    return TAG_REGEX.sub(replacer, text).strip(), tags

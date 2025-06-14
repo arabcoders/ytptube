@@ -1,5 +1,5 @@
 <template>
-  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue">
+  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue" v-if="hasQueuedItems">
     <span class="icon-text title is-4">
       <span class="icon">
         <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
@@ -66,8 +66,11 @@
                   </label>
                 </td>
                 <td class="is-text-overflow is-vcentered">
-                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes">
-                    <span class="tag">{{ formatBytes(item.downloaded_bytes) }}</span>
+                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || item.extras?.duration">
+                    <span class="tag" v-if="item.downloaded_bytes">{{ formatBytes(item.downloaded_bytes) }}</span>
+                    <span class="tag is-info" v-if="item.extras?.duration">
+                      {{ formatTime(item.extras.duration) }}
+                    </span>
                   </div>
                   <div v-if="showThumbnails && item.extras?.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
@@ -139,6 +142,10 @@
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
             <div class="card-header-icon">
+              <span class="tag is-info" v-if="item.extras?.duration">
+                {{ formatTime(item.extras.duration) }}
+              </span>
+
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
@@ -218,24 +225,6 @@
       </LateLoader>
     </div>
 
-    <div class="content has-text-centered" v-if="!hasQueuedItems">
-      <p v-if="socket.isConnected">
-        <span class="icon-text">
-          <span class="icon has-text-success">
-            <i class="fa-solid fa-circle-check" />
-          </span>
-          <span>No queued items.</span>
-        </span>
-      </p>
-      <p v-else>
-        <span class="icon-text">
-          <span class="icon">
-            <i class="fa-solid fa-spinner fa-spin" />
-          </span>
-          <span>Connecting...</span>
-        </span>
-      </p>
-    </div>
 
     <div class="modal is-active" v-if="embed_url">
       <div class="modal-background" @click="embed_url = ''"></div>

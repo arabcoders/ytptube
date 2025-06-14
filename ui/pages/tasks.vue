@@ -36,7 +36,7 @@ div.is-centered {
             </p>
 
             <p class="control">
-              <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
+              <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="tasks && tasks.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
               </button>
@@ -97,9 +97,8 @@ div.is-centered {
                     <span v-if="item.timer" class="has-tooltip" v-tooltip="item.timer">
                       {{ tryParse(item.timer) }}
                     </span>
-                    <span v-else class="has-text-danger">
-                      <span class="icon"><i class="fa-solid fa-exclamation-triangle" /></span>
-                      <span>No timer is set</span>
+                    <span v-else class="has-text-warning">
+                      No timer is set
                     </span>
                   </td>
                   <td class="is-vcentered is-items-center">
@@ -155,9 +154,16 @@ div.is-centered {
             <div class="card-content is-flex-grow-1">
               <div class="content">
                 <p class="is-text-overflow">
-                  <span class="icon"><i class="fa-solid fa-clock" /></span>
-                  <span v-if="item.timer">{{ tryParse(item.timer) }} - {{ item.timer }}</span>
-                  <span v-else>No timer is set</span>
+                  <span class="icon">
+                    <i class="fa-solid"
+                      :class="{ 'fa-clock': item.timer, 'has-text-danger fa-exclamation-triangle': !item.timer }" />
+                  </span>
+                  <span v-if="item.timer">
+                    <NuxtLink target="_blank" :to="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`">
+                      {{ item.timer }} - {{ tryParse(item.timer) }}
+                    </NuxtLink>
+                  </span>
+                  <span class="has-text-warning" v-else>No timer is set</span>
                 </p>
                 <p class="is-text-overflow" v-if="item.folder">
                   <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -214,25 +220,26 @@ div.is-centered {
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
+import type { task_item, exported_task, error_response } from '~/@types/tasks'
 
+const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
-const box = useConfirm()
 
-const tasks = ref([])
-const task = ref({})
-const taskRef = ref('')
-const toggleForm = ref(false)
-const isLoading = ref(true)
-const initialLoad = ref(true)
-const addInProgress = ref(false)
-const display_style = useStorage("tasks_display_style", "cards")
+const tasks = ref<Array<task_item>>([])
+const task = ref<task_item | Object>({})
+const taskRef = ref<string>('')
+const toggleForm = ref<boolean>(false)
+const isLoading = ref<boolean>(true)
+const initialLoad = ref<boolean>(true)
+const addInProgress = ref<boolean>(false)
+const display_style = useStorage<string>("tasks_display_style", "cards")
 const remove_keys = ['in_progress']
 
 watch(() => config.app.basic_mode, async () => {
@@ -250,7 +257,7 @@ watch(() => socket.isConnected, async () => {
   }
 })
 
-const reloadContent = async (fromMounted = false) => {
+const reloadContent = async (fromMounted: boolean = false) => {
   try {
     isLoading.value = true
     const response = await request('/api/tasks')
@@ -276,18 +283,16 @@ const reloadContent = async (fromMounted = false) => {
   }
 }
 
-const resetForm = (closeForm = false) => {
+const resetForm = (closeForm: boolean = false) => {
   task.value = {}
-  taskRef.value = null
+  taskRef.value = ''
   addInProgress.value = false
   if (closeForm) {
     toggleForm.value = false
   }
 }
 
-const updateTasks = async items => {
-  let data = {}
-
+const updateTasks = async (items: Array<task_item>) => {
   try {
     addInProgress.value = true
 
@@ -299,24 +304,24 @@ const updateTasks = async items => {
       body: JSON.stringify(items.map(item => cleanObject(toRaw(item), remove_keys))),
     })
 
-    data = await response.json()
+    const data: Array<task_item> | error_response = await response.json()
 
-    if (200 !== response.status) {
-      toast.error(`Failed to update task. ${data.error}`);
+    if ("error" in data) {
+      toast.error(`Failed to update tasks. ${data.error}`);
       return false
     }
 
     tasks.value = data
     resetForm(true)
     return true
-  } catch (e) {
-    toast.error(`Failed to update task. ${data?.error ?? e.message}`);
+  } catch (e: any) {
+    toast.error(`Failed to update tasks. ${e.message}`);
   } finally {
     addInProgress.value = false
   }
 }
 
-const deleteItem = async item => {
+const deleteItem = async (item: task_item) => {
   if (true !== box.confirm(`Delete '${item.name}' task?`, true)) {
     return
   }
@@ -338,7 +343,7 @@ const deleteItem = async item => {
   toast.success('Task deleted.')
 }
 
-const updateItem = async ({ reference, task }) => {
+const updateItem = async ({ reference, task }: { reference?: string, task: task_item }) => {
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)
@@ -354,17 +359,17 @@ const updateItem = async ({ reference, task }) => {
     return
   }
 
-  toast.success('Task updated')
+  toast.success('Task updated.')
   resetForm(true)
 }
 
-const editItem = item => {
+const editItem = (item: task_item) => {
   task.value = item
   taskRef.value = item.id
   toggleForm.value = true
 }
 
-const calcPath = path => {
+const calcPath = (path: string) => {
   const loc = config.app.download_path || '/downloads'
 
   if (path) {
@@ -382,7 +387,7 @@ onMounted(async () => {
   await reloadContent(true)
 });
 
-const tryParse = expression => {
+const tryParse = (expression: string) => {
   try {
     return moment(CronExpressionParser.parse(expression).next().toISOString()).fromNow()
   } catch (e) {
@@ -390,7 +395,7 @@ const tryParse = expression => {
   }
 }
 
-const runNow = async item => {
+const runNow = async (item: task_item) => {
   if (true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
     return
   }
@@ -400,7 +405,7 @@ const runNow = async item => {
   let data = {
     url: item.url,
     preset: item.preset,
-  }
+  } as task_item
 
   if (item.folder) {
     data.folder = item.folder
@@ -422,9 +427,9 @@ const runNow = async item => {
   }, 500)
 }
 
-onUnmounted(() => socket.off('status', statusHandler))
+onBeforeUnmount(() => socket.off('status', statusHandler))
 
-const statusHandler = async stream => {
+const statusHandler = async (stream: string) => {
   const { status, msg } = JSON.parse(stream)
 
   if ('error' === status) {
@@ -433,7 +438,7 @@ const statusHandler = async stream => {
   }
 }
 
-const exportItem = async item => {
+const exportItem = async (item: task_item) => {
   const info = JSON.parse(JSON.stringify(item))
 
   let data = {
@@ -442,7 +447,7 @@ const exportItem = async item => {
     preset: info.preset,
     timer: info.timer,
     folder: info.folder,
-  }
+  } as exported_task
 
   if (info.template) {
     data.template = info.template
@@ -452,8 +457,8 @@ const exportItem = async item => {
     data.cli = info.cli
   }
 
-  data['_type'] = 'task'
-  data['_version'] = '2.0'
+  data._type = 'task'
+  data._version = '2.0'
 
   return copyText(base64UrlEncode(JSON.stringify(data)));
 }

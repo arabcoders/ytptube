@@ -17,7 +17,7 @@ from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import init_class
 
-LOG = logging.getLogger("tasks")
+LOG: logging.Logger = logging.getLogger("tasks")
 
 
 @dataclass(kw_only=True)
@@ -124,13 +124,14 @@ class Tasks(metaclass=Singleton):
             Tasks: The current instance.
 
         """
+        has_tasks: bool = len(self._tasks) > 0
         self.clear()
 
         if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
         try:
-            LOG.info(f"Loading '{self._file}'.")
+            LOG.info(f"{'Reloading' if has_tasks else 'Loading'} '{self._file}'.")
             tasks = json.loads(self._file.read_text())
         except Exception as e:
             LOG.error(f"Error loading '{self._file}'. '{e!s}'.")

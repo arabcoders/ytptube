@@ -94,6 +94,9 @@ class Config:
     db_file: str = "{config_path}/ytptube.db"
     """The path to the database file."""
 
+    archive_file: str = "{config_path}/archive.log"
+    """The path to the download archive file."""
+
     manual_archive: str = "{config_path}/archive.manual.log"
     """The path to the manual archive file."""
 
@@ -158,6 +161,9 @@ class Config:
     is_native: bool = False
     "Is the application running in webview."
 
+    prevent_live_premiere: bool = False
+    """Prevent downloading of the initial premiere live broadcast."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -209,6 +215,7 @@ class Config:
         "console_enabled",
         "browser_enabled",
         "ytdlp_auto_update",
+        "prevent_premiere_live",
     )
     "The variables that are booleans."
 
@@ -367,7 +374,7 @@ class Config:
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
         if self.keep_archive:
-            archive_file: Path = Path(self.config_path) / "archive.log"
+            archive_file: Path = Path(self.archive_file)
             if not archive_file.exists():
                 LOG.info(f"Creating archive file '{archive_file}'.")
                 archive_file.touch(exist_ok=True)
