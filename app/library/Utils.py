@@ -283,6 +283,41 @@ def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, s
     return (False, idDict)
 
 
+def remove_from_archive(archive_file: str | Path, url: str) -> bool:
+    """
+    Remove the downloaded video record from the archive file.
+
+    Args:
+        archive_file (str): Archive file path.
+        url (str): URL to check and remove.
+
+    Returns:
+        bool: True if the record removed, False otherwise.
+
+    """
+    if not url or not archive_file:
+        return False
+
+    archive_path: Path = Path(archive_file) if not isinstance(archive_file, Path) else archive_file
+    if not archive_path.exists():
+        return False
+
+    idDict = get_archive_id(url=url)
+    archive_id: str | None = idDict.get("archive_id")
+
+    if not archive_id:
+        return False
+
+    lines: list[str] = archive_path.read_text(encoding="utf-8").splitlines()
+    new_lines: list[str] = [line for line in lines if archive_id not in line]
+
+    if len(lines) == len(new_lines):
+        return False
+
+    archive_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    return True
+
+
 def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
     """
     Load a JSON or JSON5 file and return the contents as a dictionary
@@ -1221,7 +1256,7 @@ def load_modules(root_path: Path, directory: Path):
     import importlib
     import pkgutil
 
-    package_name: str = str(directory.relative_to(root_path)).replace("/", ".")
+    package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
 
     LOG.debug(f"Loading routes from '{directory}' with package name '{package_name}'.")
 

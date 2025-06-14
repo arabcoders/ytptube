@@ -240,6 +240,7 @@ class HttpAPI:
                 "cache": this.cache,
                 "app": app,
                 "http_api": this,
+                "root_path": this.rootPath,
             }
 
             try:

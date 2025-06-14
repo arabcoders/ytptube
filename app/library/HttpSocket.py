@@ -63,6 +63,7 @@ class HttpSocket:
             "sio": self.sio,
             "encoder": encoder,
             "notify": self._notify,
+            "root_path": self.rootPath,
         }
 
         self._notify.subscribe("frontend", emit, f"{__class__.__name__}.emit")

@@ -66,8 +66,11 @@
                   </label>
                 </td>
                 <td class="is-text-overflow is-vcentered">
-                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes">
-                    <span class="tag">{{ formatBytes(item.downloaded_bytes) }}</span>
+                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || item.extras?.duration">
+                    <span class="tag" v-if="item.downloaded_bytes">{{ formatBytes(item.downloaded_bytes) }}</span>
+                    <span class="tag is-info" v-if="item.extras?.duration">
+                      {{ formatTime(item.extras.duration) }}
+                    </span>
                   </div>
                   <div v-if="showThumbnails && item.extras?.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
@@ -139,6 +142,10 @@
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
             <div class="card-header-icon">
+              <span class="tag is-info" v-if="item.extras?.duration">
+                {{ formatTime(item.extras.duration) }}
+              </span>
+
               <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
                 <span class="icon"><i class="fa-solid fa-copy" /></span>
               </a>
