@@ -1,5 +1,75 @@
 [
     {
+        "tag": "master-20250614-2eab819e",
+        "date": "2025-06-14T19:14:04+00:00",
+        "commits": [
+            {
+                "sha": "4367fb09",
+                "message": "Add option to remove item from archive, and minor ui updates.",
+                "author": "arabcoders",
+                "date": "2025-06-14T18:29:25+00:00",
+                "full_sha": "4367fb0937607e21b1db7ce44a24ac01b1d576e6"
+            },
+            {
+                "sha": "1c8de32e",
+                "message": "tag premiere video correctly.",
+                "author": "arabcoders",
+                "date": "2025-06-13T22:07:01+00:00",
+                "full_sha": "1c8de32e724aca93352bb679cb65f79f7614d2f7"
+            },
+            {
+                "sha": "bb41eadd",
+                "message": "add the ability to prevent downloading youtube premiere initial stream.",
+                "author": "arabcoders",
+                "date": "2025-06-13T21:59:57+00:00",
+                "full_sha": "bb41eadde7ae2320617d207bf679f276d6401b17"
+            },
+            {
+                "sha": "a478e8e5",
+                "message": "minor design update",
+                "author": "arabcoders",
+                "date": "2025-06-13T18:22:55+00:00",
+                "full_sha": "a478e8e58d920a70072d2ce30ed58eca1ef141ff"
+            },
+            {
+                "sha": "fb51fc3b",
+                "message": "upgrade packages",
+                "author": "arabcoders",
+                "date": "2025-06-12T22:05:57+00:00",
+                "full_sha": "fb51fc3b1fa3b42bdd61876c54a2e73600d32fdd"
+            },
+            {
+                "sha": "5212dfee",
+                "message": "Refactor HttpSocket to be more manageable and more modular.",
+                "author": "arabcoders",
+                "date": "2025-06-12T22:02:31+00:00",
+                "full_sha": "5212dfeeaabdf93bf0ba9cd209a6b58b1281364c"
+            },
+            {
+                "sha": "c1f8fd5f",
+                "message": "rename api namespace",
+                "author": "arabcoders",
+                "date": "2025-06-12T21:45:46+00:00",
+                "full_sha": "c1f8fd5f58ab0fefa1624d801c8f35a539d10616"
+            },
+            {
+                "sha": "400cf7be",
+                "message": "completely refactored HttpAPI into more manageable routes.",
+                "author": "arabcoders",
+                "date": "2025-06-11T21:57:37+00:00",
+                "full_sha": "400cf7bec303385766b44a98af5ab1328a5a8b36"
+            },
+            {
+                "sha": "698791b7",
+                "message": "minor design update for index page.",
+                "author": "arabcoders",
+                "date": "2025-06-10T10:58:18+00:00",
+                "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
+            }
+        ],
+        "full_sha": "2eab819e875a5d747b83d76869ec06b4a4e2998a"
+    },
+    {
         "tag": "master-20250610-670c9951",
         "date": "2025-06-10T10:44:17+00:00",
         "commits": [
