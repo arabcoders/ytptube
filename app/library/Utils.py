@@ -1291,3 +1291,36 @@ def parse_tags(text: str) -> tuple[str, dict[str, str | bool]]:
         return ""
 
     return TAG_REGEX.sub(replacer, text).strip(), tags
+
+
+def str_to_dt(time_str: str, now=None) -> datetime:
+    """
+    Convert a string representation of time into a datetime object.
+
+    Args:
+        time_str (str): The string representation of time.
+        now (datetime, optional): The base datetime to use for relative times. Defaults to None, which uses the current UTC time.
+
+    Returns:
+        datetime: A datetime object representing the parsed time.
+
+    Raises:
+        ValueError: If the time string cannot be parsed.
+
+    """
+    from dateparser import parse as _parse
+
+    dt = _parse(
+        time_str,
+        settings={
+            "RELATIVE_BASE": now or datetime.now(tz=UTC),
+            "RETURN_AS_TIMEZONE_AWARE": True,
+            "TO_TIMEZONE": "UTC",
+        },
+    )
+
+    if dt is None:
+        msg = f"Couldn't parse date: {time_str!r}"
+        raise ValueError(msg)
+
+    return dt
