@@ -2,6 +2,7 @@ import functools
 import inspect
 import logging
 from pathlib import Path
+from typing import Any
 
 import socketio
 from aiohttp import web
@@ -26,7 +27,7 @@ class HttpSocket:
     config: Config
     sio: socketio.AsyncServer
     queue: DownloadQueue
-    di_context: dict[str, object] = {}
+    di_context: dict[str, Any] = {}
 
     def __init__(
         self,
