@@ -1,7 +1,21 @@
 [
     {
-        "tag": "dev-20250614-4367fb09",
-        "date": "2025-06-14T18:29:25+00:00",
+        "tag": "dev-20250615-367d4a1a",
+        "date": "2025-06-15T13:37:31+00:00",
+        "commits": [
+            {
+                "sha": "367d4a1a",
+                "message": "Fixed bug in auth handler.",
+                "author": "arabcoders",
+                "date": "2025-06-15T13:37:31+00:00",
+                "full_sha": "367d4a1aeb5cc61939460abade74cbdb4d0d56b9"
+            }
+        ],
+        "full_sha": "367d4a1aeb5cc61939460abade74cbdb4d0d56b9"
+    },
+    {
+        "tag": "dev-20250614-2eab819e",
+        "date": "2025-06-14T19:14:04+00:00",
         "commits": [
             {
                 "sha": "4367fb09",
@@ -67,7 +81,7 @@
                 "full_sha": "698791b7fc35f2877f15161790c08696f715b731"
             }
         ],
-        "full_sha": "4367fb0937607e21b1db7ce44a24ac01b1d576e6"
+        "full_sha": "2eab819e875a5d747b83d76869ec06b4a4e2998a"
     },
     {
         "tag": "dev-20250610-670c9951",
