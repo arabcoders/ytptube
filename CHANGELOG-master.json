@@ -1,5 +1,33 @@
 [
     {
+        "tag": "master-20250615-4c76aa71",
+        "date": "2025-06-15T17:00:15+00:00",
+        "commits": [
+            {
+                "sha": "38dc9c1e",
+                "message": "spin the icon if the item is queued.",
+                "author": "arabcoders",
+                "date": "2025-06-15T16:55:06+00:00",
+                "full_sha": "38dc9c1ec6fb5bbad85bf00310733f8cea007b5b"
+            },
+            {
+                "sha": "ffcae45d",
+                "message": "the ability to mark notification as low priority to bypass the toast",
+                "author": "arabcoders",
+                "date": "2025-06-15T16:35:57+00:00",
+                "full_sha": "ffcae45d9b10bbb8a3d58b0dcf1403963bf12171"
+            },
+            {
+                "sha": "784671cb",
+                "message": "Fix premiere re-queue.",
+                "author": "arabcoders",
+                "date": "2025-06-15T15:45:18+00:00",
+                "full_sha": "784671cb2463c721b79c3b80332ae3cadd642c35"
+            }
+        ],
+        "full_sha": "4c76aa7123bca0a306ba870edcbafc01ff2c3d90"
+    },
+    {
         "tag": "master-20250615-b65008b6",
         "date": "2025-06-15T13:41:24+00:00",
         "commits": [
