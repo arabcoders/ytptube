@@ -12,7 +12,6 @@ dependencies = [
   "python-magic-bin; sys_platform == 'win32'",
   # Non‐Windows
   "python-magic>=0.4.27; sys_platform != 'win32'",
-
   # Cross‐platform
   "python-socketio>=5.11.1",
   "aiohttp>=3.9.3",
@@ -34,6 +33,7 @@ dependencies = [
   "pycryptodome",
   "yt-dlp",
   "platformdirs",
+  "dateparser>=1.2.1",
 ]
 
 [tool.ruff]

@@ -5,12 +5,14 @@ import logging
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
-from email.utils import formatdate, parsedate_to_datetime
+from email.utils import formatdate
 from pathlib import Path
 from sqlite3 import Connection
 
 import yt_dlp
 from aiohttp import web
+
+from app.library.ag_utils import ag
 
 from .AsyncPool import AsyncPool
 from .conditions import Conditions
@@ -32,6 +34,7 @@ from .Utils import (
     extract_ytdlp_logs,
     is_downloaded,
     load_cookies,
+    str_to_dt,
 )
 from .YTDLPOpts import YTDLPOpts
 
@@ -109,14 +112,14 @@ class DownloadQueue(metaclass=Singleton):
 
         Scheduler.get_instance().add(
             timer="* * * * *",
-            func=self.monitor_stale,
-            id=f"{__class__.__name__}.{__class__.monitor_stale.__name__}",
+            func=self._check_for_stale,
+            id=f"{__class__.__name__}.{__class__._check_for_stale.__name__}",
         )
 
         Scheduler.get_instance().add(
             timer="* * * * *",
-            func=self.monitor_queue_live,
-            id=f"{__class__.__name__}.{__class__.monitor_queue_live.__name__}",
+            func=self._check_live,
+            id=f"{__class__.__name__}.{__class__._check_live.__name__}",
         )
         # app.on_shutdown.append(self.on_shutdown)
 
@@ -242,11 +245,16 @@ class DownloadQueue(metaclass=Singleton):
         live_in: str | None = None
         is_premiere: bool = bool(entry.get("is_premiere", False))
 
+        release_in: str | None = None
+        if entry.get("release_timestamp"):
+            release_in = formatdate(entry.get("release_timestamp"), usegmt=True)
+            item.extras["release_in"] = release_in
+
         # check if the video is live stream.
-        if "live_status" in entry and "is_upcoming" == entry.get("live_status"):
-            if entry.get("release_timestamp"):
-                live_in = formatdate(entry.get("release_timestamp"), usegmt=True)
-                item.extras.update({"live_in": live_in})
+        if "is_upcoming" == entry.get("live_status"):
+            if release_in:
+                live_in = release_in
+                item.extras["live_in"] = live_in
             else:
                 error = f"No start time is set for {'premiere' if is_premiere else 'live stream'}."
         else:
@@ -324,12 +332,11 @@ class DownloadQueue(metaclass=Singleton):
             if filtered_logs := extract_ytdlp_logs(logs):
                 text_logs = f" Logs: {', '.join(filtered_logs)}"
 
-            if live_in or "is_upcoming" == entry.get("live_status"):
+            if "is_upcoming" == entry.get("live_status"):
                 NotifyEvent = Events.COMPLETED
                 dlInfo.info.status = "not_live"
-                dlInfo.info.msg = (
-                    f"{'Premiere video' if is_premiere else 'Live Stream' } is not available yet." + text_logs
-                )
+                dlInfo.info.msg = f"{'Premiere video' if is_premiere else 'Stream' } is not available yet." + text_logs
+                await self._notify.emit(Events.LOG_INFO, data=event_info(dlInfo.info.msg, {"lowPriority": True}))
                 itemDownload: Download = self.done.put(dlInfo)
             elif len(entry.get("formats", [])) < 1:
                 availability: str = entry.get("availability", "public")
@@ -343,25 +350,36 @@ class DownloadQueue(metaclass=Singleton):
                 NotifyEvent = Events.COMPLETED
                 await self._notify.emit(Events.LOG_WARNING, data=event_warning(f"No formats found for '{dl.title}'."))
             elif is_premiere and self.config.prevent_live_premiere:
-                dlInfo.info.error = (
-                    f"Premiering right now. Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
-                )
-                _live_in = live_in or item.extras.get("live_in", None)
-                if _live_in:
-                    starts_in = parsedate_to_datetime(live_in)
-                    starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
-                    starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
-                    dlInfo.info.error += f" Starts in {starts_in.isoformat()}."
+                dlInfo.info.error = "Premiering right now."
 
-                dlInfo.info.status = "not_live"
-                itemDownload = self.done.put(dlInfo)
-                NotifyEvent = Events.COMPLETED
-                await self._notify.emit(
-                    Events.LOG_INFO,
-                    data=event_info(
-                        f"'{dl.title}' is premiering. Download delayed by '{300+dl.extras.get('duration')}'s."
-                    ),
-                )
+                _requeue = True
+                if release_in:
+                    try:
+                        starts_in = str_to_dt(release_in)
+                        starts_in = (
+                            starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
+                        )
+                        starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
+                        dlInfo.info.error += f" Download will start at {starts_in.isoformat()}."
+                        _requeue = False
+                    except Exception as e:
+                        LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
+                        dlInfo.info.error += f" Failed to parse live_in date '{release_in}'."
+                else:
+                    dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
+
+                if _requeue:
+                    NotifyEvent = Events.ADDED
+                    itemDownload = self.queue.put(dlInfo)
+                    self.event.set()
+                else:
+                    dlInfo.info.status = "not_live"
+                    itemDownload = self.done.put(dlInfo)
+                    NotifyEvent = Events.COMPLETED
+                    await self._notify.emit(
+                        Events.LOG_INFO,
+                        data=event_info(f"'{dl.title}' is {dlInfo.info.error}.", {"lowPriority": True}),
+                    )
             else:
                 NotifyEvent = Events.ADDED
                 itemDownload = self.queue.put(dlInfo)
@@ -788,9 +806,9 @@ class DownloadQueue(metaclass=Singleton):
 
         return is_downloaded(file, url)
 
-    async def monitor_stale(self):
+    async def _check_for_stale(self):
         """
-        Monitor the queue and pool for stale downloads and cancel them if needed.
+        Monitor pool for stale downloads and cancel them if needed.
         """
         if self.is_paused():
             return
@@ -856,7 +874,7 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(f"Failed to cancel staled item '{item_ref}' from worker pool. {e!s}")
                     LOG.exception(e)
 
-    async def monitor_queue_live(self):
+    async def _check_live(self):
         """
         Monitor the queue for items marked as live events and queue them when time is reached.
         """
@@ -878,26 +896,28 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.debug(f"Item '{item_ref}' is not a live stream.")
                 continue
 
-            live_in: str | None = item.info.live_in or item.info.extras.get("live_in", None)
-            if not live_in:
-                LOG.debug(f"Item '{item_ref}' marked as live stream, but no date is set.")
-                continue
-
-            starts_in = parsedate_to_datetime(live_in)
-            starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
-
-            if time_now < (starts_in + timedelta(minutes=1)):
-                LOG.debug(f"Item '{item_ref}' is not yet live. will start in '{dt_delta(starts_in-time_now)}'.")
-                continue
-
             duration: int | None = item.info.extras.get("duration", None)
             is_premiere: bool = item.info.extras.get("is_premiere", False)
 
-            if is_premiere and duration and self.config.prevent_live_premiere:
+            live_in: str | None = item.info.live_in or ag(item.info.extras, ["live_in", "release_in"], None)
+            if not live_in:
+                LOG.debug(
+                    f"Item '{item_ref}' marked as {'premiere video' if is_premiere else 'live stream'}, but no date is set."
+                )
+                continue
+
+            starts_in = str_to_dt(live_in)
+            starts_in = starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
+
+            if time_now < (starts_in + timedelta(minutes=1)):
+                LOG.debug(f"Item '{item_ref}' is not yet live. will start at '{dt_delta(starts_in - time_now)}'.")
+                continue
+
+            if self.config.prevent_live_premiere and is_premiere and duration:
                 premiere_ends: datetime = starts_in + timedelta(minutes=5, seconds=duration)
                 if time_now < premiere_ends:
                     LOG.debug(
-                        f"Item '{item_ref}' is premiering and download is delayed by '{300+duration}' seconds. Will start at '{premiere_ends.isoformat()}'"
+                        f"Item '{item_ref}' is premiering, download will start in '{(starts_in.astimezone() + timedelta(minutes=5, seconds=duration)).isoformat()}'"
                     )
                     continue
 

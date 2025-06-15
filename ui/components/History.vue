@@ -107,7 +107,7 @@
                   </label>
                 </td>
                 <td class="is-text-overflow is-vcentered">
-                   <div class="is-inline is-pulled-right" v-if="item.extras?.duration">
+                  <div class="is-inline is-pulled-right" v-if="item.extras?.duration">
                     <span class="tag is-info" v-if="item.extras?.duration">
                       {{ formatTime(item.extras.duration) }}
                     </span>
@@ -134,7 +134,8 @@
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
                   <span class="icon-text">
-                    <span class="icon" :class="setIconColor(item)"><i :class="setIcon(item)" /></span>
+                    <span class="icon" :class="setIconColor(item)"><i
+                        :class="[setIcon(item), is_queued(item)]" /></span>
                     <span>{{ setStatus(item) }}</span>
                   </span>
                 </td>
@@ -292,7 +293,7 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon-text">
-                  <span class="icon" :class="setIconColor(item)"><i :class="setIcon(item)" /></span>
+                  <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
                   <span>{{ setStatus(item) }}</span>
                 </span>
               </div>
@@ -841,5 +842,13 @@ const removeFromArchive = async (item, opts) => {
   if (opts?.remove_history) {
     socket.emit('item_delete', { id: item._id, remove_file: false })
   }
+}
+
+const is_queued = item => {
+  if (!item?.status || 'not_live' !== item.status) {
+    return ''
+  }
+
+  return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin' : ''
 }
 </script>
