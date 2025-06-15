@@ -51,27 +51,27 @@ export const useSocketStore = defineStore('socket', () => {
 
     socket.value.on('error', stream => {
       const json = JSON.parse(stream);
-      toast.error(`${json.data?.id ?? json?.type}: ${json?.message}`);
+      toast.error(`${json.data?.id ?? json?.type}: ${json?.message}`, json.data || {});
     });
 
     socket.value.on('log_info', stream => {
       const json = JSON.parse(stream);
-      toast.info(json?.message);
+      toast.info(json?.message, json.data || {});
     });
 
     socket.value.on('log_success', stream => {
       const json = JSON.parse(stream);
-      toast.success(json?.message);
+      toast.success(json?.message, json.data || {});
     });
 
     socket.value.on('log_warning', stream => {
       const json = JSON.parse(stream);
-      toast.warning(json?.message);
+      toast.warning(json?.message, json.data || {});
     });
 
     socket.value.on('log_error', stream => {
       const json = JSON.parse(stream);
-      toast.error(json?.message);
+      toast.error(json?.message, json.data || {});
     });
 
     socket.value.on('completed', stream => {

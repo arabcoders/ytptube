@@ -335,9 +335,8 @@ class DownloadQueue(metaclass=Singleton):
             if "is_upcoming" == entry.get("live_status"):
                 NotifyEvent = Events.COMPLETED
                 dlInfo.info.status = "not_live"
-                dlInfo.info.msg = (
-                    f"{'Premiere video' if is_premiere else 'Stream' } is not available yet." + text_logs
-                )
+                dlInfo.info.msg = f"{'Premiere video' if is_premiere else 'Stream' } is not available yet." + text_logs
+                await self._notify.emit(Events.LOG_INFO, data=event_info(dlInfo.info.msg, {"lowPriority": True}))
                 itemDownload: Download = self.done.put(dlInfo)
             elif len(entry.get("formats", [])) < 1:
                 availability: str = entry.get("availability", "public")
@@ -379,9 +378,7 @@ class DownloadQueue(metaclass=Singleton):
                     NotifyEvent = Events.COMPLETED
                     await self._notify.emit(
                         Events.LOG_INFO,
-                        data=event_info(
-                            f"'{dl.title}' is premiering. Download delayed by '{300+dl.extras.get('duration')}'s."
-                        ),
+                        data=event_info(f"'{dl.title}' is {dlInfo.info.error}.", {"lowPriority": True}),
                     )
             else:
                 NotifyEvent = Events.ADDED
