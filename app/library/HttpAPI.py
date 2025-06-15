@@ -24,6 +24,8 @@ LOG: logging.Logger = logging.getLogger("http_api")
 
 
 class HttpAPI:
+    di_context: dict[str, Any] = {}
+
     def __init__(self, root_path: Path, queue: DownloadQueue):
         self.queue: DownloadQueue = queue or DownloadQueue.get_instance()
         self.encoder: Encoder = Encoder()
@@ -33,6 +35,16 @@ class HttpAPI:
         self.rootPath: Path = root_path
         self.cache = Cache()
         self.app: web.Application | None = None
+        self.di_context: dict[str, Any] = {
+            "queue": self.queue,
+            "encoder": self.encoder,
+            "config": self.config,
+            "notify": self._notify,
+            "cache": self.cache,
+            "app": self.app,
+            "http_api": self,
+            "root_path": self.rootPath,
+        }
 
     async def on_shutdown(self, _: web.Application):
         pass
@@ -55,7 +67,6 @@ class HttpAPI:
                 app=app,
                 base_path=self.config.base_path.rstrip("/"),
                 download_path=self.config.download_path,
-                this=self,
             )
         )
 
@@ -103,6 +114,12 @@ class HttpAPI:
         async def options_handler(_: Request) -> Response:
             return web.Response(status=204)
 
+        def _handle(handler):
+            async def wrapped(request):
+                return await self._handle(handler, request)
+
+            return wrapped
+
         for route in get_routes(RouteType.HTTP).values():
             routePath: str = f"/{route.path.lstrip('/')}"
 
@@ -113,7 +130,7 @@ class HttpAPI:
 
             LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
 
-            app.router.add_route(route.method, route.path, handler=route.handler, name=route.name)
+            app.router.add_route(route.method, route.path, handler=_handle(route.handler), name=route.name)
 
             if route.path in registered_options:
                 continue
@@ -131,6 +148,7 @@ class HttpAPI:
         Args:
             username (str): The username.
             password (str): The password.
+            this (HttpAPI): The instance of the HttpAPI.
 
         Returns:
             Awaitable: The middleware handler.
@@ -138,9 +156,9 @@ class HttpAPI:
         """
 
         @web.middleware
-        async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
+        async def auth_handler(request: Request, handler: RequestHandler) -> Response:
             # if OPTIONS request, skip auth
-            if request.method == "OPTIONS":
+            if "OPTIONS" == request.method:
                 return await handler(request)
 
             auth_header = request.headers.get("Authorization")
@@ -183,10 +201,15 @@ class HttpAPI:
 
             if not (user_match and pass_match):
                 return web.json_response(
-                    data={"error": "Unauthorized (Invalid credentials)."}, status=web.HTTPUnauthorized.status_code
+                    data={"error": "Unauthorized (Invalid credentials)."},
+                    status=web.HTTPUnauthorized.status_code,
+                    headers={
+                        "WWW-Authenticate": 'Basic realm="Authorization Required."',
+                    },
                 )
 
             response = await handler(request)
+
             if request.path != "/":
                 return response
 
@@ -207,10 +230,10 @@ class HttpAPI:
 
             return response
 
-        return middleware_handler
+        return auth_handler
 
     @staticmethod
-    def middle_wares(app: web.Application, base_path: str, download_path: str, this: "HttpAPI") -> Awaitable:
+    def middle_wares(app: web.Application, base_path: str, download_path: str) -> Awaitable:
         @web.middleware
         async def middleware_handler(request: Request, handler: RequestHandler) -> Response:
             static_path = str(app.router["download_static"].url_for(filename=""))
@@ -231,41 +254,7 @@ class HttpAPI:
                         },
                     )
 
-            kwargs: dict[str, Any] = {
-                "request": request,
-                "queue": this.queue,
-                "encoder": this.encoder,
-                "config": this.config,
-                "notify": this._notify,
-                "cache": this.cache,
-                "app": app,
-                "http_api": this,
-                "root_path": this.rootPath,
-            }
-
-            try:
-                sig = inspect.signature(handler)
-                expected_args = sig.parameters.keys()
-
-                try:
-                    if 1 == len(expected_args) and "request" in expected_args:
-                        response = await handler(request)
-                    else:
-                        filtered = {k: v for k, v in kwargs.items() if k in expected_args}
-                        response = await handler(**filtered)
-                except TypeError as te:
-                    if "missing 1 required positional argument" in str(te) and "request" in str(te):
-                        response = await handler(request)
-                    else:
-                        raise
-            except web.HTTPException as e:
-                return web.json_response(data={"error": str(e)}, status=e.status_code)
-            except Exception as e:
-                LOG.exception(e)
-                response = web.json_response(
-                    data={"error": "Internal Server Error"},
-                    status=web.HTTPInternalServerError.status_code,
-                )
+            response = await handler(request)
 
             contentType: str | None = response.headers.get("content-type", None)
             if contentType and "/" != base_path and contentType.startswith("text/html"):
@@ -295,3 +284,44 @@ class HttpAPI:
             return response
 
         return middleware_handler
+
+    async def _handle(self, handler: RequestHandler, request: Request) -> Response:
+        """
+        Call the handler with the request and return the response.
+
+        Args:
+            handler (RequestHandler): The handler to call.
+            request (Request): The request object.
+
+        Returns:
+            Response: The response object.
+
+        """
+        context = {**self.di_context.copy(), "request": request}
+
+        try:
+            sig = inspect.signature(handler)
+            expected_args = sig.parameters.keys()
+
+            try:
+                if 1 == len(expected_args) and "request" in expected_args:
+                    response = await handler(request)
+                else:
+                    filtered = {k: v for k, v in context.items() if k in expected_args}
+                    response = await handler(**filtered)
+            except TypeError as te:
+                LOG.exception(te)
+                if "missing 1 required positional argument" in str(te) and "request" in str(te):
+                    response = await handler(request)
+                else:
+                    raise
+        except web.HTTPException as e:
+            return web.json_response(data={"error": str(e)}, status=e.status_code)
+        except Exception as e:
+            LOG.exception(e)
+            response = web.json_response(
+                data={"error": "Internal Server Error"},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        return response
