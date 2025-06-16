@@ -649,10 +649,10 @@ const setStatus = item => {
     }
 
     if (item.extras?.is_premiere) {
-      return 'Premiere'
+      return 'Premiered'
     }
 
-    return item.is_live ? 'Live Ended' : 'Completed'
+    return item.is_live ? 'Streamed' : 'Completed'
   }
 
   if ('error' === item.status) {
@@ -660,14 +660,14 @@ const setStatus = item => {
   }
 
   if ('cancelled' === item.status) {
-    return display_style.value === 'cards' ? 'User Cancelled' : 'Cancelled'
+    return 'Cancelled'
   }
 
   if ('not_live' === item.status) {
     if (item.extras?.is_premiere) {
       return 'Premiere'
     }
-    return display_style.value === 'cards' ? 'Live Stream' : 'Live'
+    return display_style.value === 'cards' ? 'Stream' : 'Live'
   }
 
   return item.status

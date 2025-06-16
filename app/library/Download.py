@@ -469,6 +469,8 @@ class Download:
                     ff = await ffprobe(status.get("filename"))
                     self.info.extras["is_video"] = ff.has_video()
                     self.info.extras["is_audio"] = ff.has_audio()
+                    if ff.has_video():
+                        self.info.extras["duration"] = ff.video[0].duration_seconds()
                 except Exception as e:
                     self.info.extras["is_video"] = True
                     self.info.extras["is_audio"] = True

@@ -310,15 +310,15 @@ const setStatus = item => {
   }
 
   if ('downloading' === item.status && item.is_live) {
-    return 'Live Streaming'
+    return 'Streaming'
   }
 
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External DL' : 'Preparing..';
+    return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..';
   }
 
   if (!item.status) {
-    return 'Unknown..'
+    return 'Unknown...'
   }
 
   return ucFirst(item.status)
