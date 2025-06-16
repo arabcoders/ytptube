@@ -28,7 +28,7 @@
                   <div class="field">
                     <label class="label is-inline" for="import_string">
                       <span class="icon"><i class="fa-solid fa-file-import" /></span>
-                      Import form pre-existing preset
+                      Import from pre-existing preset
                     </label>
                     <div class="control is-expanded">
                       <div class="select is-fullwidth">

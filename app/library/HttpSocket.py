@@ -1,5 +1,4 @@
 import functools
-import inspect
 import logging
 from pathlib import Path
 from typing import Any
@@ -8,6 +7,7 @@ import socketio
 from aiohttp import web
 
 from app.library.router import RouteType, get_routes
+from app.library.Services import Services
 from app.library.Utils import load_modules
 
 from .config import Config
@@ -41,7 +41,6 @@ class HttpSocket:
         self.queue = queue or DownloadQueue.get_instance()
         self._notify = EventBus.get_instance()
 
-        # logger=True, engineio_logger=True,
         self.sio = sio or socketio.AsyncServer(
             async_handlers=True,
             async_mode="aiohttp",
@@ -58,14 +57,21 @@ class HttpSocket:
         def emit(e: Event, _, **kwargs):
             return self.sio.emit(event=e.event, data=encoder.encode(e.data), **kwargs)
 
-        self.di_context = {
-            "config": self.config,
-            "queue": self.queue,
-            "sio": self.sio,
-            "encoder": encoder,
-            "notify": self._notify,
-            "root_path": self.rootPath,
-        }
+        services = Services.get_instance()
+        services.add_all(
+            {
+                k: v
+                for k, v in {
+                    "config": self.config,
+                    "queue": self.queue,
+                    "sio": self.sio,
+                    "encoder": encoder,
+                    "notify": self._notify,
+                    "root_path": self.rootPath,
+                }.items()
+                if not services.has(k)
+            }
+        )
 
         self._notify.subscribe("frontend", emit, f"{__class__.__name__}.emit")
 
@@ -107,23 +113,11 @@ class HttpSocket:
             LOG.debug(
                 f"Add ({route.name}) {route.method.value if isinstance(route.method,RouteType) else route.method}: {route.path}."
             )
-            self.sio.on(route.path)(HttpSocket._injector(route.handler, route.path, self.di_context))
+            self.sio.on(route.path)(HttpSocket._injector(route.handler, route.path))
 
     @staticmethod
-    def _injector(func, event: str, container: dict):
-        sig: inspect.Signature = inspect.signature(func)
-
+    def _injector(func, event: str):
         async def wrapper(sid, data, **kwargs):
-            args = {}
-
-            merged = {**container, "sid": sid, "data": data, "event_name": event}
-            if isinstance(kwargs, dict):
-                merged.update(kwargs)
-
-            for name in sig.parameters:
-                if name in merged:
-                    args[name] = merged[name]
-
-            return await func(**args)
+            return await Services.get_instance().handle_async(func, sid=sid, data=data, event=event, **kwargs)
 
         return wrapper

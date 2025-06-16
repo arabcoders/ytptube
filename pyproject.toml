@@ -34,6 +34,7 @@ dependencies = [
   "yt-dlp",
   "platformdirs",
   "dateparser>=1.2.1",
+  "defusedxml>=0.7.1",
 ]
 
 [tool.ruff]

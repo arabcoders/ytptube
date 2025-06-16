@@ -1,14 +1,17 @@
 import asyncio
+import inspect
 import json
 import logging
+import pkgutil
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import httpx
 from aiohttp import web
+
+from app.library.Services import Services
 
 from .config import Config
 from .encoder import Encoder
@@ -58,7 +61,6 @@ class Tasks(metaclass=Singleton):
         loop: asyncio.AbstractEventLoop | None = None,
         config: Config | None = None,
         encoder: Encoder | None = None,
-        client: httpx.AsyncClient | None = None,
         scheduler: Scheduler | None = None,
     ):
         Tasks._instance = self
@@ -68,11 +70,11 @@ class Tasks(metaclass=Singleton):
         self._debug: bool = config.debug
         self._default_preset: str = config.default_preset
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("tasks.json")
-        self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         self._notify: EventBus = EventBus.get_instance()
+        self._task_handler = HandleTask(self._scheduler, self)
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -301,7 +303,9 @@ class Tasks(metaclass=Singleton):
             LOG.info(f"Dispatched '{task.id}: {task.name}' at '{timeNow}'.")
 
             tasks: list = [
-                self._notify.emit(Events.LOG_INFO, data=info(f"Dispatched '{task.name}' at '{timeNow}'.")),
+                self._notify.emit(
+                    Events.LOG_INFO, data=info(f"Dispatched '{task.name}' at '{timeNow}'.", data={"lowPriority": True})
+                ),
                 self._notify.emit(
                     Events.ADD_URL,
                     data={
@@ -324,10 +328,89 @@ class Tasks(metaclass=Singleton):
 
             await self._notify.emit(
                 Events.LOG_SUCCESS,
-                data=success(f"Completed '{task.name}' in '{ended - started:.2f}' seconds."),
+                data=success(
+                    f"Completed '{task.name}' in '{ended - started:.2f}' seconds.", data={"lowPriority": True}
+                ),
             )
         except Exception as e:
             LOG.error(f"Failed to execute '{task.id}: {task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
                 Events.ERROR, data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             )
+
+
+class HandleTask:
+    _tasks: Tasks
+
+    def __init__(self, scheduler: Scheduler, tasks: Tasks) -> None:
+        self._tasks = tasks
+        self._handlers: list[type] = self._discover()
+
+        scheduler.add(
+            timer="15 */1 * * *",
+            func=self._dispatcher,
+            id=f"{__class__.__name__}._dispatcher",
+        )
+
+    def _dispatcher(self):
+        for task in self._tasks.get_all():
+            if not task.timer or "[no_handler]" in task.name:
+                continue
+
+            try:
+                handler = self._find_handler(task)
+                if handler is None:
+                    continue
+
+                asyncio.create_task(self.dispatch(task, handler=handler), name=f"task-{task.id}")
+            except Exception as e:
+                LOG.error(f"Failed to handle task '{task.id}: {task.name}'. '{e!s}'.")
+
+    def _find_handler(self, task: Task) -> type | None:
+        for cls in self._handlers:
+            try:
+                if Services.get_instance().handle_sync(handler=cls.can_handle, task=task):
+                    return cls
+            except Exception as e:
+                LOG.exception(e)
+                continue
+
+        return None
+
+    async def dispatch(self, task: Task, handler: type | None = None, **kwargs) -> Any | None:
+        """
+        Dispatch a task to the appropriate handler.
+
+        Args:
+            task (Task): The task to dispatch.
+            handler (type|None): Optional specific handler to use instead of finding one.
+            **kwargs: Additional context to pass to the handler.
+
+        Returns:
+            Any|None: The result of the handler's execution, or None if no handler found.
+
+        """
+        if not handler:
+            handler = self._find_handler(task)
+            if handler is None:
+                return None
+
+        return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
+
+    def _discover(self) -> list[type]:
+        import importlib
+
+        import app.library.task_handlers as handlers_pkg
+
+        handlers: list[type] = []
+
+        for _, module_name, _ in pkgutil.iter_modules(handlers_pkg.__path__):
+            module = importlib.import_module(f"{handlers_pkg.__name__}.{module_name}")
+            for _, cls in inspect.getmembers(module, inspect.isclass):
+                if cls.__module__ != module.__name__:
+                    continue
+
+                if callable(getattr(cls, "can_handle", None)) and callable(getattr(cls, "handle", None)):
+                    handlers.append(cls)
+
+        return handlers

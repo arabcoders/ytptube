@@ -1,5 +1,22 @@
 <template>
   <main class="columns mt-2 is-multiline">
+    <div class="column is-12" v-if="form?.url && is_yt_handle(form.url)">
+      <Message title="Warning" class="is-background-warning-80 has-text-dark" icon="fas fa-info-circle">
+        <span>
+          <ul>
+            <li>You are using a YouTube link with handle instead of channel_id. To activate RSS feed support for
+              channel, you need to use
+              the channel ID. For example, <code>https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg</code>
+            </li>
+            <li>
+              To get youtube channel_id simply visit the page, click on <b>more about this channel</b>, scroll down to
+              <b>share
+                channel</b>, click on <code>Copy channel id</code>.
+            </li>
+          </ul>
+        </span>
+      </Message>
+    </div>
     <div class="column is-12">
       <form autocomplete="off" id="taskForm" @submit.prevent="checkInfo()">
         <div class="card">
@@ -79,7 +96,10 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The channel or playlist URL.</span>
+                    <span>The channel or playlist URL. For youtube there is rss feed support if you use URL with
+                      channel_id or playlist_id. For example, https://www.youtube.com/<span
+                        class="has-text-danger">channel/UCUi3_cffYenmMTuWEsLHzqg</span>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -127,7 +147,7 @@
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="timer" v-model="form.timer" :disabled="addInProgress"
-                    placeholder="0 12 * * 5">
+                      placeholder="0 12 * * 5">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -218,6 +238,28 @@
         </div>
       </form>
     </div>
+
+    <div class="column is-12">
+      <Message title="Tips" class="is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+        <span>
+          <ul>
+            <li>To enable YouTube RSS feed monitoring, The task URL must include a <code>channel_id</code> or
+              <code>playlist_id</code>. Other link types won’t work.
+            </li>
+            <li>RSS monitoring runs every hour alongside the actual task execution. It checks each feed for new videos
+              and automatically queues any you haven’t downloaded yet.</li>
+            <li>To opt out of RSS monitoring for a specific task, append <code>[no_handler]</code> to that task’s name.
+            </li>
+            <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in command options
+              for ytdlp.cli, preset or task.</li>
+            <li>If you don't have <code>--download-archive</code> set but <code>YTP_KEEP_ARCHIVE</code> environment
+              option is set to <code>true</code> which is the default, It will also work.
+            </li>
+          </ul>
+        </span>
+      </Message>
+    </div>
+
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
@@ -227,13 +269,6 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
-
-const emitter = defineEmits(['cancel', 'submit'])
-const toast = useNotification()
-const config = useConfigStore()
-const showImport = useStorage('showImport', false)
-const import_string = ref('')
-const box = useConfirm()
 
 const props = defineProps({
   reference: {
@@ -251,6 +286,17 @@ const props = defineProps({
     default: false,
   },
 })
+
+const emitter = defineEmits(['cancel', 'submit'])
+
+const toast = useNotification()
+const config = useConfigStore()
+const box = useConfirm()
+const showImport = useStorage('showImport', false)
+
+const import_string = ref('')
+
+const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))\/?$/;
 
 const form = reactive(props.task)
 
@@ -419,5 +465,16 @@ const get_output_template = () => {
     }
   }
   return config.app.output_template || '%(title)s.%(ext)s'
+}
+
+function is_yt_handle(url) {
+  let m = url.match(CHANNEL_REGEX);
+  if (m?.groups) {
+    if (m.groups?.channelId) {
+      return false
+    }
+    return true
+  }
+  return false
 }
 </script>

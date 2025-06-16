@@ -28,6 +28,7 @@
     "daterange",
     "dotenv",
     "edgechromium",
+    "engineio",
     "euuo",
     "finaldir",
     "flac",

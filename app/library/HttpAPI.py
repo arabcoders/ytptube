@@ -5,11 +5,12 @@ import logging
 from collections.abc import Awaitable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
 
 import anyio
 from aiohttp import web
 from aiohttp.web import Request, RequestHandler, Response
+
+from app.library.Services import Services
 
 from .cache import Cache
 from .config import Config
@@ -24,27 +25,32 @@ LOG: logging.Logger = logging.getLogger("http_api")
 
 
 class HttpAPI:
-    di_context: dict[str, Any] = {}
-
     def __init__(self, root_path: Path, queue: DownloadQueue):
         self.queue: DownloadQueue = queue or DownloadQueue.get_instance()
         self.encoder: Encoder = Encoder()
         self.config: Config = Config.get_instance()
         self._notify: EventBus = EventBus.get_instance()
-
         self.rootPath: Path = root_path
         self.cache = Cache()
         self.app: web.Application | None = None
-        self.di_context: dict[str, Any] = {
-            "queue": self.queue,
-            "encoder": self.encoder,
-            "config": self.config,
-            "notify": self._notify,
-            "cache": self.cache,
-            "app": self.app,
-            "http_api": self,
-            "root_path": self.rootPath,
-        }
+
+        services = Services.get_instance()
+        services.add_all(
+            {
+                k: v
+                for k, v in {
+                    "queue": self.queue,
+                    "encoder": self.encoder,
+                    "config": self.config,
+                    "notify": self._notify,
+                    "cache": self.cache,
+                    "app": self.app,
+                    "http_api": self,
+                    "root_path": self.rootPath,
+                }.items()
+                if not services.has(k)
+            }
+        )
 
     async def on_shutdown(self, _: web.Application):
         pass
@@ -297,8 +303,6 @@ class HttpAPI:
             Response: The response object.
 
         """
-        context = {**self.di_context.copy(), "request": request}
-
         try:
             sig = inspect.signature(handler)
             expected_args = sig.parameters.keys()
@@ -307,8 +311,7 @@ class HttpAPI:
                 if 1 == len(expected_args) and "request" in expected_args:
                     response = await handler(request)
                 else:
-                    filtered = {k: v for k, v in context.items() if k in expected_args}
-                    response = await handler(**filtered)
+                    response = await Services.get_instance().handle_async(handler, request=request)
             except TypeError as te:
                 LOG.exception(te)
                 if "missing 1 required positional argument" in str(te) and "request" in str(te):
