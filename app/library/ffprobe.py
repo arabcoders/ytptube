@@ -234,7 +234,7 @@ class FFProbeResult:
     def __repr__(self):
         return "<FFprobe: {metadata}, {video}, {audio}, {subtitle}, {attachment}>".format(**vars(self))
 
-    def unserialize(self, data: dict):
+    def deserialize(self, data: dict):
         self.metadata = data.get("metadata", {})
         self.video = [FFStream(v) for v in data.get("video", [])]
         self.audio = [FFStream(a) for a in data.get("audio", [])]
