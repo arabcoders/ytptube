@@ -25,6 +25,7 @@ from app.library.HttpSocket import HttpSocket
 from app.library.Notifications import Notification
 from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
+from app.library.Services import Services
 from app.library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
@@ -37,6 +38,8 @@ class Main:
     def __init__(self, is_native: bool = False):
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
+
+        Services.get_instance().add("app", self._app)
 
         if self._config.debug:
             loop = asyncio.get_event_loop()

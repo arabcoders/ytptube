@@ -152,7 +152,7 @@ class Tasks(metaclass=Singleton):
 
             self._tasks.append(task)
 
-            if not task.timer:
+            if not task.timer or "[only_handler]" in task.name:
                 continue
 
             try:

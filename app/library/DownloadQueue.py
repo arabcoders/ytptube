@@ -360,7 +360,7 @@ class DownloadQueue(metaclass=Singleton):
                             starts_in.replace(tzinfo=UTC) if starts_in.tzinfo is None else starts_in.astimezone(UTC)
                         )
                         starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
-                        dlInfo.info.error += f" Download will start at {starts_in.isoformat()}."
+                        dlInfo.info.error += f" Download will start at {starts_in.astimezone().isoformat()}."
                         _requeue = False
                     except Exception as e:
                         LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
@@ -917,7 +917,7 @@ class DownloadQueue(metaclass=Singleton):
                 premiere_ends: datetime = starts_in + timedelta(minutes=5, seconds=duration)
                 if time_now < premiere_ends:
                     LOG.debug(
-                        f"Item '{item_ref}' is premiering, download will start in '{(starts_in.astimezone() + timedelta(minutes=5, seconds=duration)).isoformat()}'"
+                        f"Item '{item_ref}' is premiering, download will start in '{(starts_in + timedelta(minutes=5, seconds=duration)).astimezone().isoformat()}'"
                     )
                     continue
 

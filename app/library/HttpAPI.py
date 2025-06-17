@@ -44,7 +44,6 @@ class HttpAPI:
                     "config": self.config,
                     "notify": self._notify,
                     "cache": self.cache,
-                    "app": self.app,
                     "http_api": self,
                     "root_path": self.rootPath,
                 }.items()
