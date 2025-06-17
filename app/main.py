@@ -129,7 +129,9 @@ class Main:
         if self._config.access_log:
             from app.library.HttpAPI import LOG as HTTP_LOGGER
 
-            HTTP_LOGGER.addFilter(lambda record: f"GET {self._app.router['ping'].url_for()}" not in record.getMessage())
+            HTTP_LOGGER.addFilter(
+                lambda record: f"GET {str(self._app.router['ping'].url_for()).rstrip('/')}" not in record.getMessage()
+            )
 
         web.run_app(
             self._app,
