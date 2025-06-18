@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250618-20b0e41a",
-        "date": "2025-06-18T14:27:09+00:00",
+        "tag": "dev-20250618-690ecf83",
+        "date": "2025-06-18T15:26:10+00:00",
         "commits": [
+            {
+                "sha": "690ecf83",
+                "message": "reduce youtube task handler logging",
+                "author": "arabcoders",
+                "date": "2025-06-18T15:26:10+00:00",
+                "full_sha": "690ecf834f3333e8ba184c05e6f13d60613c6d24"
+            },
+            {
+                "sha": "5065d4ee",
+                "message": "fixed segments_stream redirection",
+                "author": "arabcoders",
+                "date": "2025-06-18T14:46:02+00:00",
+                "full_sha": "5065d4ee621fe6e53105885ecdebee553f25694f"
+            },
             {
                 "sha": "20b0e41a",
                 "message": "update the tips on how to mark task as rss feed only.",
@@ -46,7 +60,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "20b0e41aaa47b4704b856d741629794f99b1d66f"
+        "full_sha": "690ecf834f3333e8ba184c05e6f13d60613c6d24"
     },
     {
         "tag": "dev-20250616-c07465a6",
