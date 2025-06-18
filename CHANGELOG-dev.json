@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250617-0345da64",
-        "date": "2025-06-17T17:00:03+00:00",
+        "tag": "dev-20250618-888ab30b",
+        "date": "2025-06-18T14:03:30+00:00",
         "commits": [
+            {
+                "sha": "888ab30b",
+                "message": "Allow task handler to work even if no timer is set.",
+                "author": "arabcoders",
+                "date": "2025-06-18T14:03:30+00:00",
+                "full_sha": "888ab30bfcab2af3c7b5c7a919fed03beeb8de77"
+            },
             {
                 "sha": "0345da64",
                 "message": "handle ping endpoint logging better",
@@ -18,7 +25,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0345da6468351f73f15ae11640429d94b23a0a54"
+        "full_sha": "888ab30bfcab2af3c7b5c7a919fed03beeb8de77"
     },
     {
         "tag": "dev-20250616-c07465a6",
