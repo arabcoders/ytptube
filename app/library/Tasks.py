@@ -354,7 +354,10 @@ class HandleTask:
 
     def _dispatcher(self):
         for task in self._tasks.get_all():
-            if not task.timer or "[no_handler]" in task.name:
+            if "[no_handler]" in task.name:
+                continue
+
+            if not task.timer and "[only_handler]" not in task.name:
                 continue
 
             try:
