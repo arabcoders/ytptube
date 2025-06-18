@@ -202,7 +202,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
     async def _process_playlist(self, entry: dict, item: Item, already=None):
-        LOG.info(f"Processing playlist '{entry.get('id')}: {entry.get('title')}'.")
+        LOG.info(f"Playlist '{entry.get('id')}: {entry.get('title')}' processing.")
         entries = entry.get("entries", [])
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
@@ -227,6 +227,10 @@ class DownloadQueue(metaclass=Singleton):
                     already=already,
                 )
             )
+
+        LOG.info(
+            f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
+        )
 
         if any("error" == res["status"] for res in results):
             return {
