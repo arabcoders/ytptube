@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250618-8a3673bc",
-        "date": "2025-06-18T16:58:58+00:00",
+        "tag": "dev-20250618-f5070885",
+        "date": "2025-06-18T19:08:11+00:00",
         "commits": [
+            {
+                "sha": "f5070885",
+                "message": "As we no longer need to update each time yt-dlp updates, we going to use simver",
+                "author": "arabcoders",
+                "date": "2025-06-18T19:08:11+00:00",
+                "full_sha": "f50708852a06e3593f1cdc52281a2e7f4e18774d"
+            },
             {
                 "sha": "8a3673bc",
                 "message": "added playlist items concurrency support.",
@@ -74,7 +81,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8a3673bc072630084b5b51c001efb72da8ed5c9d"
+        "full_sha": "f50708852a06e3593f1cdc52281a2e7f4e18774d"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -1,5 +1,89 @@
 [
   {
+    "tag": "v0.1.1",
+    "full_sha": "6e05efb1468b61d2d326049cea76bdee6486fd95",
+    "date": "2025-06-18T19:19:43+00:00",
+    "commits": [
+      {
+        "sha": "f5070885",
+        "full_sha": "f50708852a06e3593f1cdc52281a2e7f4e18774d",
+        "message": "As we no longer need to update each time yt-dlp updates, we going to use simver",
+        "author": "arabcoders",
+        "date": "2025-06-18T19:08:11+00:00"
+      },
+      {
+        "sha": "8a3673bc",
+        "full_sha": "8a3673bc072630084b5b51c001efb72da8ed5c9d",
+        "message": "added playlist items concurrency support.",
+        "author": "arabcoders",
+        "date": "2025-06-18T16:58:58+00:00"
+      },
+      {
+        "sha": "872d85c4",
+        "full_sha": "872d85c458650716bf3ac3270c3905661acf2bf1",
+        "message": "add log entry when playlist processing is completed.",
+        "author": "arabcoders",
+        "date": "2025-06-18T15:36:55+00:00"
+      },
+      {
+        "sha": "690ecf83",
+        "full_sha": "690ecf834f3333e8ba184c05e6f13d60613c6d24",
+        "message": "reduce youtube task handler logging",
+        "author": "arabcoders",
+        "date": "2025-06-18T15:26:10+00:00"
+      },
+      {
+        "sha": "5065d4ee",
+        "full_sha": "5065d4ee621fe6e53105885ecdebee553f25694f",
+        "message": "fixed segments_stream redirection",
+        "author": "arabcoders",
+        "date": "2025-06-18T14:46:02+00:00"
+      },
+      {
+        "sha": "20b0e41a",
+        "full_sha": "20b0e41aaa47b4704b856d741629794f99b1d66f",
+        "message": "update the tips on how to mark task as rss feed only.",
+        "author": "arabcoders",
+        "date": "2025-06-18T14:27:09+00:00"
+      },
+      {
+        "sha": "cf647cb8",
+        "full_sha": "cf647cb8bf8db73345a2e939aa743da6cf65f5d2",
+        "message": "Fix missing parameter",
+        "author": "arabcoders",
+        "date": "2025-06-18T14:25:27+00:00"
+      },
+      {
+        "sha": "f6c44245",
+        "full_sha": "f6c44245f633b0937b27934f8f5970881a7c7a9e",
+        "message": "make the task handler timer configurable",
+        "author": "arabcoders",
+        "date": "2025-06-18T14:23:42+00:00"
+      },
+      {
+        "sha": "888ab30b",
+        "full_sha": "888ab30bfcab2af3c7b5c7a919fed03beeb8de77",
+        "message": "Allow task handler to work even if no timer is set.",
+        "author": "arabcoders",
+        "date": "2025-06-18T14:03:30+00:00"
+      },
+      {
+        "sha": "0345da64",
+        "full_sha": "0345da6468351f73f15ae11640429d94b23a0a54",
+        "message": "handle ping endpoint logging better",
+        "author": "arabcoders",
+        "date": "2025-06-17T17:00:03+00:00"
+      },
+      {
+        "sha": "8694e829",
+        "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173",
+        "message": "minor design update",
+        "author": "arabcoders",
+        "date": "2025-06-17T14:24:52+00:00"
+      }
+    ]
+  },
+  {
     "tag": "master-20250616-c07465a",
     "full_sha": "c07465a676adb9af7cc0c9c56d9deb8bd12c9782",
     "date": "2025-06-16T19:19:11+00:00",
