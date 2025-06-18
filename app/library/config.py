@@ -167,6 +167,9 @@ class Config:
     prevent_live_premiere: bool = False
     """Prevent downloading of the initial premiere live broadcast."""
 
+    playlist_items_concurrency: int = 1
+    """The number of concurrent playlist items to be processed at same time."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -199,6 +202,7 @@ class Config:
         "socket_timeout",
         "extract_info_timeout",
         "debugpy_port",
+        "playlist_items_concurrency",
     )
     "The variables that are integers."
 
