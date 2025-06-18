@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250618-690ecf83",
-        "date": "2025-06-18T15:26:10+00:00",
+        "tag": "dev-20250618-872d85c4",
+        "date": "2025-06-18T15:36:55+00:00",
         "commits": [
+            {
+                "sha": "872d85c4",
+                "message": "add log entry when playlist processing is completed.",
+                "author": "arabcoders",
+                "date": "2025-06-18T15:36:55+00:00",
+                "full_sha": "872d85c458650716bf3ac3270c3905661acf2bf1"
+            },
             {
                 "sha": "690ecf83",
                 "message": "reduce youtube task handler logging",
@@ -60,7 +67,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "690ecf834f3333e8ba184c05e6f13d60613c6d24"
+        "full_sha": "872d85c458650716bf3ac3270c3905661acf2bf1"
     },
     {
         "tag": "dev-20250616-c07465a6",
