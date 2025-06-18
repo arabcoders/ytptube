@@ -22,17 +22,16 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="hasDownloaded">
-        <button type="button" class="button is-fullwidth is-link" :disabled="!hasSelected" @click="downloadSelected">
+      <div class="column is-half-mobile" v-if="hasDownloaded && hasSelected">
+        <button type="button" class="button is-fullwidth is-link" @click="downloadSelected">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-download" /></span>
             <span>Download</span>
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected"
-          @click="deleteSelectedItems">
+      <div class="column is-half-mobile" v-if="hasSelected">
+        <button type="button" class="button is-fullwidth is-danger" @click="deleteSelectedItems">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
             <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
@@ -154,16 +153,6 @@
                 </td>
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
-                    <div class="control" v-if="('finished' === item.status && item.filename) || isEmbedable(item.url)">
-                      <button v-if="'finished' === item.status && item.filename" @click="playVideo(item)"
-                        v-tooltip="'Play video'" class="button is-danger is-light is-small">
-                        <span class="icon"><i class="fa-solid fa-play" /></span>
-                      </button>
-                      <button v-else @click="embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
-                        class="button is-danger is-small">
-                        <span class="icon"><i class="fa-solid fa-play" /></span>
-                      </button>
-                    </div>
                     <div class="control" v-if="item.status != 'finished' || !item.filename">
                       <button class="button is-warning is-fullwidth is-small" v-tooltip="'Re-queue video'"
                         @click="(event) => reQueueItem(item, event)">
@@ -182,9 +171,23 @@
                         <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                       </button>
                     </div>
-                    <div class="control" v-if="item.url && !config.app.basic_mode">
-                      <Dropdown icons="fa-solid fa-cogs" label="" @open_state="s => table_container = !s"
-                        :button_classes="'is-small'">
+                    <div class="control is-expanded" v-if="item.url && !config.app.basic_mode">
+                      <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
+                        :button_classes="'is-small'" label="Actions">
+                        <template v-if="'finished' === item.status && item.filename">
+                          <NuxtLink @click="playVideo(item)" class="dropdown-item">
+                            <span class="icon"><i class="fa-solid fa-play" /></span>
+                            <span>Play video</span>
+                          </NuxtLink>
+                          <hr class="dropdown-divider" />
+                        </template>
+                        <template v-else-if="isEmbedable(item.url)">
+                          <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                            <span class="icon"><i class="fa-solid fa-play" /></span>
+                            <span>Play video</span>
+                          </NuxtLink>
+                          <hr class="dropdown-divider" />
+                        </template>
                         <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>Information</span>
@@ -235,27 +238,26 @@
             </div>
 
             <div class="card-header-icon">
-              <span class="tag is-info" v-if="item.extras?.duration">
-                {{ formatTime(item.extras.duration) }}
-              </span>
+              <div class="field is-grouped">
+                <div class="control">
+                  <span class="tag is-info" v-if="item.extras?.duration">
+                    {{ formatTime(item.extras.duration) }}
+                  </span>
+                </div>
+                <div class="control">
+                  <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
+                    <span class="icon"><i class="fa-solid"
+                        :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
+                  </button>
+                </div>
+                <div class="control">
+                  <label class="checkbox is-block">
+                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
+                      :id="'checkbox-' + item._id" :value="item._id">
+                  </label>
+                </div>
 
-              <span v-if="!showThumbnails">
-                <a v-if="'finished' === item.status && item.filename" href="#" @click.prevent="playVideo(item)"
-                  v-tooltip="'Play video.'">
-                  <span class="icon"><i class="fa-solid fa-play" /></span>
-                </a>
-                <a v-else-if="isEmbedable(item.url)" href="#" @click.prevent="embed_url = getEmbedable(item.url)"
-                  v-tooltip="'Play video.'" class="has-text-danger">
-                  <span class="icon"><i class="fa-solid fa-play" /></span>
-                </a>
-              </span>
-              <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
-                <span class="icon"><i class="fa-solid fa-copy" /></span>
-              </a>
-              <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
-              </button>
+              </div>
             </div>
           </header>
           <div v-if="showThumbnails" class="card-image">
@@ -298,10 +300,10 @@
                 </span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
-                v-if="item.live_in && 'not_live' === item.status">
-                <span :date-datetime="item.live_in" class="user-hint"
-                  v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
-                  v-rtime="item.live_in" />
+                v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)">
+                <span :date-datetime="item.live_in || item.extras?.release_in" class="user-hint"
+                  v-tooltip="'Will be downloaded at: ' + moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')"
+                  v-rtime="item.live_in || item.extras?.release_in" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="user-hint" :date-datetime="item.datetime"
@@ -310,13 +312,6 @@
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.file_size">
                 {{ formatBytes(item.file_size) }}
-              </div>
-              <div class="column is-half-mobile has-text-centered is-unselectable">
-                <label class="checkbox is-block">
-                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
-                    :value="item._id">
-                  Select
-                </label>
               </div>
             </div>
             <div class="columns is-mobile is-multiline">
@@ -346,8 +341,24 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-half-mobile" v-if="item.url && !config.app.basic_mode">
+              <div class="column" v-if="item.url && !config.app.basic_mode">
                 <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                  <template v-if="'finished' === item.status && item.filename">
+                    <NuxtLink @click="playVideo(item)" class="dropdown-item">
+                      <span class="icon"><i class="fa-solid fa-play" /></span>
+                      <span>Play video</span>
+                    </NuxtLink>
+                    <hr class="dropdown-divider" />
+                  </template>
+
+                  <template v-else-if="isEmbedable(item.url)">
+                    <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                      <span class="icon"><i class="fa-solid fa-play" /></span>
+                      <span>Play video</span>
+                    </NuxtLink>
+                    <hr class="dropdown-divider" />
+                  </template>
+
                   <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Information</span>
@@ -417,12 +428,12 @@
 </template>
 
 <script setup>
-import moment from 'moment'
-import { useStorage } from '@vueuse/core'
-import { makeDownload, formatBytes, uri } from '~/utils/index'
-import { isEmbedable, getEmbedable } from '~/utils/embedable'
-import Dropdown from './Dropdown.vue'
 import { NuxtLink } from '#components'
+import { useStorage } from '@vueuse/core'
+import moment from 'moment'
+import { getEmbedable, isEmbedable } from '~/utils/embedable'
+import { formatBytes, makeDownload, uri } from '~/utils/index'
+import Dropdown from './Dropdown.vue'
 
 const emitter = defineEmits(['getInfo', 'add_new'])
 
@@ -849,6 +860,6 @@ const is_queued = item => {
     return ''
   }
 
-  return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin' : ''
+  return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin fa-spin-10' : ''
 }
 </script>

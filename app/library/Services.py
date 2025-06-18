@@ -1,9 +1,11 @@
 import inspect
+import logging
 from typing import Any, TypeVar
 
 from app.library.Singleton import Singleton
 
 T = TypeVar("T")
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Services(metaclass=Singleton):
@@ -50,6 +52,10 @@ class Services(metaclass=Singleton):
         sig = inspect.signature(handler)
         expected_args = sig.parameters.keys()
         filtered = {k: v for k, v in context.items() if k in expected_args}
+
+        if missing_args := expected_args - filtered.keys():
+            LOG.error(f"Missing arguments for handler '{handler.__name__}': {missing_args}")
+
         return await handler(**filtered)
 
     def handle_sync(self, handler: callable, **kwargs) -> Any:
@@ -58,4 +64,8 @@ class Services(metaclass=Singleton):
         sig = inspect.signature(handler)
         expected_args = sig.parameters.keys()
         filtered = {k: v for k, v in context.items() if k in expected_args}
+
+        if missing_args := expected_args - filtered.keys():
+            LOG.error(f"Missing arguments for handler '{handler.__name__}': {missing_args}")
+
         return handler(**filtered)

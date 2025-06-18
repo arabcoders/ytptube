@@ -27,7 +27,7 @@
             <div class="content p-0 m-0">
               <h1 class="is-4">
                 <span class="icon"><i class="fas fa-code-branch" /></span>
-                {{ formatTag(log) }} <span class="tag has-text-success" v-if="isInstalled(log)">Installed</span>
+                {{ log.tag }} <span class="tag has-text-success" v-if="isInstalled(log)">Installed</span>
               </h1>
               <hr>
               <ul>
@@ -61,7 +61,7 @@ useHead({ title: 'CHANGELOG' })
 
 const PROJECT = 'ytptube'
 const REPO = `https://github.com/arabcoders/${PROJECT}`
-const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG-{branch}.json?version={version}`
+const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`
 
 const logs = ref([])
 const api_version = ref('')
@@ -72,18 +72,6 @@ const branch = computed(() => {
   const branch = String(api_version.value).split('-')[0] ?? 'master'
   return ['master', 'dev'].includes(branch) ? branch : 'master'
 })
-
-const formatTag = log => {
-  const parts = log.tag.split('-')
-  if (parts.length < 3) {
-    return log.tag
-  }
-
-  const branch = parts[0]
-  const date = parts[1]
-  const shortSha = log.full_sha.substring(0, hashLength.value)
-  return `${ucFirst(branch)}: ${moment(date, 'YYYYMMDD').format('YYYY-MM-DD')} - ${shortSha}`
-}
 
 watch(() => config.app.version, async value => {
   if (!value) {
@@ -104,8 +92,24 @@ const loadContent = async () => {
 
   isLoading.value = true
   try {
-    const changes = await fetch(REPO_URL.replace('{branch}', branch.value).replace('{version}', api_version.value))
-    logs.value = await changes.json()
+    try{
+      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json()
+    }catch(e){
+      console.error(e)
+      const changes = await fetch(REPO_URL.replace('{branch}', branch.value).replace('{version}', api_version.value))
+      logs.value = await changes.json()
+    }
+    await nextTick()
+
+    logs.value = logs.value.slice(0, 10).map(log => {
+      log.commits = log.commits.map(commit => {
+        commit.full_sha = commit.sha.padEnd(hashLength.value, '0')
+        return commit
+      })
+      log.full_sha = log.tag.padEnd(hashLength.value, '0')
+      return log
+    })
+
   } catch (e) {
     console.error(e)
     toast.error('error', 'Error', `Failed to fetch changelog. ${e.message}`)

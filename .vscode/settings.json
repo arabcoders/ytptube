@@ -76,6 +76,7 @@
     "socketio",
     "timespec",
     "tmpfilename",
+    "ungroup",
     "upgrader",
     "urandom",
     "urlsafe",

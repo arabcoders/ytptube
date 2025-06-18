@@ -25,6 +25,7 @@ from app.library.HttpSocket import HttpSocket
 from app.library.Notifications import Notification
 from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
+from app.library.Services import Services
 from app.library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
@@ -37,6 +38,8 @@ class Main:
     def __init__(self, is_native: bool = False):
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
+
+        Services.get_instance().add("app", self._app)
 
         if self._config.debug:
             loop = asyncio.get_event_loop()
@@ -117,7 +120,7 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube v{self._config.version} - started on http://{host}:{port}{self._config.base_path}")
+            LOG.info(f"YTPTube {self._config.version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
             if cb:
                 cb()
@@ -126,7 +129,9 @@ class Main:
         if self._config.access_log:
             from app.library.HttpAPI import LOG as HTTP_LOGGER
 
-            HTTP_LOGGER.addFilter(lambda record: f"GET {self._app.router['ping'].url_for()}" not in record.getMessage())
+            HTTP_LOGGER.addFilter(
+                lambda record: f"GET {str(self._app.router['ping'].url_for()).rstrip('/')}" not in record.getMessage()
+            )
 
         web.run_app(
             self._app,

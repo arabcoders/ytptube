@@ -74,7 +74,7 @@ class Tasks(metaclass=Singleton):
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         self._notify: EventBus = EventBus.get_instance()
-        self._task_handler = HandleTask(self._scheduler, self)
+        self._task_handler = HandleTask(self._scheduler, self, config)
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -152,7 +152,7 @@ class Tasks(metaclass=Singleton):
 
             self._tasks.append(task)
 
-            if not task.timer:
+            if not task.timer or "[only_handler]" in task.name:
                 continue
 
             try:
@@ -342,19 +342,31 @@ class Tasks(metaclass=Singleton):
 class HandleTask:
     _tasks: Tasks
 
-    def __init__(self, scheduler: Scheduler, tasks: Tasks) -> None:
+    def __init__(self, scheduler: Scheduler, tasks: Tasks, config: Config) -> None:
         self._tasks = tasks
         self._handlers: list[type] = self._discover()
 
+        timer = config.tasks_handler_timer
+        try:
+            from cronsim import CronSim
+
+            CronSim(timer, datetime.now(UTC))
+        except Exception as e:
+            timer = "15 */1 * * *"
+            LOG.error(f"Invalid timer format. '{e!s}'. Defaulting to '{timer}'.")
+
         scheduler.add(
-            timer="15 */1 * * *",
+            timer=timer,
             func=self._dispatcher,
             id=f"{__class__.__name__}._dispatcher",
         )
 
     def _dispatcher(self):
         for task in self._tasks.get_all():
-            if not task.timer or "[no_handler]" in task.name:
+            if "[no_handler]" in task.name:
+                continue
+
+            if not task.timer and "[only_handler]" not in task.name:
                 continue
 
             try:

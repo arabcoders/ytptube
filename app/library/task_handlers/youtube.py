@@ -3,7 +3,6 @@ import logging
 import re
 from pathlib import Path
 
-from app.library.cache import Cache
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
@@ -17,7 +16,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class YoutubeHandler:
     queued_ids: set[str] = set()
 
-    FEED_CHANNEL = "https://www.youtube.com/feeds/videos.xml?channel_id={id}"
+    FEED = "https://www.youtube.com/feeds/videos.xml?{type}={id}"
     FEED_PLAYLIST = "https://www.youtube.com/feeds/videos.xml?playlist_id={id}"
 
     CHANNEL_REGEX = re.compile(r"^https?://(?:www\.)?youtube\.com/(?:channel/(?P<id>UC[0-9A-Za-z_-]{22})|)/?$")
@@ -35,14 +34,13 @@ class YoutubeHandler:
         return YoutubeHandler.parse(task.url) is not None
 
     @staticmethod
-    async def handle(task: Task, cache: Cache, notify: EventBus, config: Config, queue: DownloadQueue):
+    async def handle(task: Task, notify: EventBus, config: Config, queue: DownloadQueue):
         """
         Fetch the Atom feed for a YouTube channel or playlist, parse entries,
         and return a list of videos with metadata.
 
         Args:
             task (Task): The task containing the YouTube URL.
-            cache (Cache): The cache instance for storing feed data.
             notify (EventBus): The event bus for notifications.
             config (Config): The configuration instance.
             queue (DownloadQueue): The download queue instance.
@@ -58,57 +56,46 @@ class YoutubeHandler:
 
         parsed = YoutubeHandler.parse(task.url)
         if not parsed:
-            LOG.error(f"Cannot parse URL: {task.url}")
+            LOG.error(f"Cannot parse '{task.id}: {task.name}' URL: {task.url}")
             return
 
-        feed_id = parsed["id"]
-        feed_type = parsed["type"]
+        feed_url = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
 
-        if "channel" == feed_type:
-            feed_url = YoutubeHandler.FEED_CHANNEL.format(id=feed_id)
-        else:
-            feed_url = YoutubeHandler.FEED_PLAYLIST.format(id=feed_id)
+        LOG.debug(f"Fetching '{task.id}: {task.name}' feed.")
+        opts = {
+            "proxy": params.get("proxy", None),
+            "headers": {
+                "User-Agent": params.get(
+                    "user_agent",
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+                )
+            },
+        }
 
-        cache_key = f"youtube_feed_{feed_id}"
-        data = cache.get(cache_key)
-        if not data:
-            LOG.info(f"Fetching '{task.id}: {task.name}' feed.")
-            opts = {
-                "proxy": params.get("proxy", None),
-                "headers": {
-                    "User-Agent": params.get(
-                        "user_agent",
-                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
-                    )
-                },
-            }
-            async with httpx.AsyncClient(**opts) as client:
-                response = await client.request(method="GET", url=feed_url, timeout=60)
-                response.raise_for_status()
-                data = response.text
-                cache.set(cache_key, data, ttl=3600)
-        else:
-            LOG.info(f"Using cached '{task.id}: {task.name}' feed.")
-
-        root = fromstring(data)
-        ns = {"atom": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
         items = []
 
-        for entry in root.findall("atom:entry", ns):
-            vid_elem = entry.find("yt:videoId", ns)
-            title_elem = entry.find("atom:title", ns)
-            pub_elem = entry.find("atom:published", ns)
-            vid = vid_elem.text if vid_elem is not None else ""
-            title = title_elem.text if title_elem is not None else ""
-            published = pub_elem.text if pub_elem is not None else ""
-            items.append(
-                {
-                    "id": vid,
-                    "url": f"https://www.youtube.com/watch?v={vid}",
-                    "title": title,
-                    "published": published,
-                }
-            )
+        async with httpx.AsyncClient(**opts) as client:
+            response = await client.request(method="GET", url=feed_url, timeout=120)
+            response.raise_for_status()
+
+            root = fromstring(response.text)
+            ns = {"atom": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
+
+            for entry in root.findall("atom:entry", ns):
+                vid_elem = entry.find("yt:videoId", ns)
+                title_elem = entry.find("atom:title", ns)
+                pub_elem = entry.find("atom:published", ns)
+                vid = vid_elem.text if vid_elem is not None else ""
+                title = title_elem.text if title_elem is not None else ""
+                published = pub_elem.text if pub_elem is not None else ""
+                items.append(
+                    {
+                        "id": vid,
+                        "url": f"https://www.youtube.com/watch?v={vid}",
+                        "title": title,
+                        "published": published,
+                    }
+                )
 
         if len(items) < 1:
             LOG.warning(f"No entries found in '{task.id}: {task.name}' feed. URL: {feed_url}")
@@ -129,7 +116,7 @@ class YoutubeHandler:
             filtered.append(item)
 
         if len(filtered) < 1:
-            LOG.info(f"No new items found in '{task.id}: {task.name}' feed.")
+            LOG.debug(f"No new items found in '{task.id}: {task.name}' feed.")
             return
 
         LOG.info(f"Found '{len(filtered)}' new items from '{task.id}: {task.name}' feed.")
@@ -152,7 +139,7 @@ class YoutubeHandler:
         try:
             await queued
         except Exception as e:
-            LOG.error(f"Error while adding items to the queue: {e!s}")
+            LOG.error(f"Error while adding items from '{task.id}: {task.name}'. {e!s}")
             return
 
     @staticmethod
@@ -194,10 +181,10 @@ class YoutubeHandler:
 
         """
         if m := YoutubeHandler.CHANNEL_REGEX.match(url):
-            return {"type": "channel", "id": m.group("id")}
+            return {"type": "channel_id", "id": m.group("id")}
 
         if m := YoutubeHandler.PLAYLIST_REGEX.match(url):
-            return {"type": "playlist", "id": m.group("id")}
+            return {"type": "playlist_id", "id": m.group("id")}
 
         return None
 

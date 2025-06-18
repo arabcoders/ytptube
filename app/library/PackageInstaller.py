@@ -18,8 +18,6 @@ class Packages:
             if file.exists() and os.access(str(file), os.R_OK):
                 with open(file) as f:
                     from_file: list[str] = [pkg.strip() for pkg in f if pkg.strip()]
-            else:
-                LOG.error(f"pip packages file '{file}' doesn't exist or is not readable.")
 
         self.packages: list[str] = list(set(from_env + from_file))
         self.upgrade = bool(upgrade)

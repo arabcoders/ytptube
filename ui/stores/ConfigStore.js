@@ -20,6 +20,9 @@ const CONFIG_KEYS = {
     ytdlp_cli: '',
     file_logging: false,
     is_native: false,
+    app_version: '',
+    app_commit_sha: '',
+    app_build_date: '',
   },
   presets: [
     {

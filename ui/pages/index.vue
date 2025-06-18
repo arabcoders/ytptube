@@ -23,7 +23,7 @@
             </p>
 
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
-              <button v-tooltip.bottom="'Toggle new download form'" class="button is-primary has-tooltip-bottom"
+              <button v-tooltip.bottom="'Toggle download form'" class="button is-primary has-tooltip-bottom"
                 @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
               </button>

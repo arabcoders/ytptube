@@ -332,3 +332,7 @@ hr {
 .is-bold {
   font-weight: bold;
 }
+
+.fa-spin-10 {
+  --fa-animation-iteration-count: 10;
+}

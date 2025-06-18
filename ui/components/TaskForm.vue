@@ -250,6 +250,8 @@
               and automatically queues any you haven’t downloaded yet.</li>
             <li>To opt out of RSS monitoring for a specific task, append <code>[no_handler]</code> to that task’s name.
             </li>
+            <li>To have the task only monitor RSS feed, do not set timer and add <code>[only_handler]</code> to that
+              task’s name.</li>
             <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in command options
               for ytdlp.cli, preset or task.</li>
             <li>If you don't have <code>--download-archive</code> set but <code>YTP_KEEP_ARCHIVE</code> environment

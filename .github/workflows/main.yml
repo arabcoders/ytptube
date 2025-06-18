@@ -22,16 +22,13 @@ on:
         required: false
         default: false
         type: boolean
-      create_release:
-        description: "Create Release (requires build)"
-        required: false
-        default: false
-        type: boolean
 
   push:
     branches:
       - dev
       - master
+    tags:
+      - "v*"
     paths-ignore:
       - "**.md"
       - ".github/**"
@@ -96,11 +93,13 @@ jobs:
       packages: write
       contents: write
     env:
-      PLATFORMS: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+      PLATFORMS: ${{ startsWith(github.ref, 'refs/tags/v') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -120,13 +119,30 @@ jobs:
           pnpm install --production --prefer-offline --frozen-lockfile
           pnpm run generate
 
-      - name: Update Version File
-        uses: ArabCoders/write-version-to-file@master
-        with:
-          filename: "/app/library/version.py"
-          placeholder: "dev-master"
-          with_date: "true"
-          with_branch: "true"
+      - name: Install GitPython
+        run: pip install gitpython
+
+      - name: Generate CHANGELOG.json
+        run: |
+          python3 .github/scripts/generate_changelog.py -p . -f ./ui/exported/CHANGELOG.json
+
+      - name: Update app/library/version.py
+        run: |
+          VERSION="${GITHUB_REF##*/}"
+          SHA=$(git rev-parse HEAD)
+          DATE=$(date -u +"%Y%m%d")
+
+          echo "Current version: ${VERSION}, SHA: ${SHA}, Date: ${DATE}"
+
+          echo "APP_VERSION=${VERSION}" >> $"$GITHUB_ENV"
+          echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
+          echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
+
+          sed -i \
+            -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
+            -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
+            -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
+            app/library/version.py
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -142,10 +158,9 @@ jobs:
             ${{ env.DOCKERHUB_SLUG }}
             ${{ env.GHCR_SLUG }}
           tags: |
-            type=raw,value=latest,enable=${{ endsWith(github.ref, github.event.repository.default_branch) }}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=ref,event=branch
             type=ref,event=tag
-            type=raw,value={{branch}}{{base_ref}}-{{date 'YYYYMMDD'}}-{{sha}}
           flavor: |
             latest=false
 
@@ -173,13 +188,49 @@ jobs:
           cache-from: type=gha, scope=${{ github.workflow }}
           cache-to: type=gha, mode=max, scope=${{ github.workflow }}
 
-      - name: Version tag
-        uses: arabcoders/action-python-autotagger@master
+      - name: Overwrite GitHub release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/github-script@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repo_name: arabcoders/ytptube
-          path: app/library/version.py
-          regex: 'APP_VERSION\s=\s\"(.+)\"'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const tag = context.ref.replace('refs/tags/', '');
+
+            const latestRelease = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+
+            const release = latestRelease.data.find(r => r.tag_name === tag);
+            if (!release) {
+              core.setFailed(`Release with tag ${tag} not found`);
+              return;
+            }
+
+            const { data: commits } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: latestRelease.data[1]?.tag_name || '', // fallback to second latest tag
+              head: tag,
+            });
+
+            const changelog = commits.commits.map(
+              c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]} by ${c.commit.author.name}`
+            ).join('\n');
+
+            if (!changelog) {
+              core.setFailed('No commits found for the changelog');
+              return;
+            }
+
+            console.log(`Changelog for ${tag}:\n${changelog}`);
+
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              body: changelog
+            });
 
   dockerhub-sync-readme:
     runs-on: ubuntu-latest

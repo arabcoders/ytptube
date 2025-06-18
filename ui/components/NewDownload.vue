@@ -89,7 +89,7 @@
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field">
                 <label class="label is-inline is-unselectable">
-                  <span class="icon"><i class="fa-solid fa-comment" /></span>
+                  <span class="icon"><i class="fa-solid fa-object-ungroup" /></span>
                   <span>URLs Separator</span>
                 </label>
                 <div class="control">
@@ -103,7 +103,7 @@
                 </div>
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use this separate multiple URLs in the input field.</span>
+                  <span>Use this to separate multiple URLs in the input field.</span>
                 </span>
               </div>
             </div>

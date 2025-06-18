@@ -142,17 +142,31 @@
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
             </div>
             <div class="card-header-icon">
-              <span class="tag is-info" v-if="item.extras?.duration">
-                {{ formatTime(item.extras.duration) }}
-              </span>
+              <div class="field is-grouped">
 
-              <a :href="item.url" class="has-text-primary" v-tooltip="'Copy url.'" @click.prevent="copyText(item.url)">
-                <span class="icon"><i class="fa-solid fa-copy" /></span>
-              </a>
-              <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail, }" /></span>
-              </button>
+                <div class="control">
+                  <span class="tag is-info" v-if="item.extras?.duration">
+                    {{ formatTime(item.extras.duration) }}
+                  </span>
+                </div>
+                <div class="control" v-if="!showThumbnails && isEmbedable(item.url)">
+                  <NuxtLink @click="embed_url = getEmbedable(item.url)" v-tooltip="'Play video'">
+                    <span class="icon has-text-danger"><i class="fa-solid fa-play" /></span>
+                  </NuxtLink>
+                </div>
+                <div class="control">
+                  <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
+                    <span class="icon"><i class="fa-solid"
+                        :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail }" /></span>
+                  </button>
+                </div>
+                <div class="control">
+                  <label class="checkbox is-block">
+                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
+                      :id="'checkbox-' + item._id" :value="item._id">
+                  </label>
+                </div>
+              </div>
             </div>
           </header>
           <div v-if="showThumbnails" class="card-image">
@@ -194,29 +208,19 @@
                 v-if="item.downloaded_bytes">
                 {{ formatBytes(item.downloaded_bytes) }}
               </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <label class="checkbox is-block">
-                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
-                    :value="item._id">
-                  Select
-                </label>
-              </div>
+
             </div>
             <div class="columns is-multiline is-mobile">
               <div class="column is-half-mobile">
                 <button class="button is-warning is-fullwidth" @click="confirmCancel(item);">
-                  <span class="icon-text is-block">
-                    <span class="icon"><i class="fa-solid fa-eject" /></span>
-                    <span>Cancel</span>
-                  </span>
+                  <span class="icon"><i class="fa-solid fa-eject" /></span>
+                  <span>Cancel</span>
                 </button>
               </div>
               <div class="column is-half-mobile" v-if="item.url && !config.app.basic_mode">
                 <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
-                  <span class="icon-text is-block">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Information</span>
-                  </span>
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Information</span>
                 </button>
               </div>
             </div>
