@@ -120,7 +120,7 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube v{self._config.version} - started on http://{host}:{port}{self._config.base_path}")
+            LOG.info(f"YTPTube {self._config.version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
             if cb:
                 cb()

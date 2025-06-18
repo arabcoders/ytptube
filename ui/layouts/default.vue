@@ -107,6 +107,7 @@
 
     <div>
       <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+      <NuxtLoadingIndicator />
       <NuxtPage />
     </div>
 
@@ -114,7 +115,9 @@
       <div class="column is-8-mobile">
         <div class="has-text-left" v-if="config.app?.version">
           © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-          <span class="is-hidden-mobile">&nbsp;({{ config?.app?.version || 'unknown' }})</span>
+          <span class="is-hidden-mobile"
+            v-tooltip="`Build Date: ${config.app?.app_build_date}, commit: ${config.app?.app_commit_sha}`">
+            &nbsp;({{ config?.app?.version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
           <span class="is-hidden-mobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
           - <NuxtLink :to="`/changelog?version=${config?.app?.version || 'unknown'}`">CHANGELOG</NuxtLink>

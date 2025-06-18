@@ -1,6 +1,7 @@
 # compiled output
 /frontend/dist
 /ui/dist
+/ui/exported/CHANGELOG.json
 
 # dependencies
 **/node_modules/*
