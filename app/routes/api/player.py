@@ -173,7 +173,7 @@ async def segments_stream(request: Request, config: Config, app: web.Application
             status=status,
             headers={
                 "Location": str(
-                    app.router["segments"].url_for(
+                    app.router["segments_stream"].url_for(
                         segment=segment,
                         file=str(realFile).replace(config.download_path, "").strip("/"),
                     )
