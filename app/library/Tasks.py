@@ -74,7 +74,7 @@ class Tasks(metaclass=Singleton):
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         self._notify: EventBus = EventBus.get_instance()
-        self._task_handler = HandleTask(self._scheduler, self)
+        self._task_handler = HandleTask(self._scheduler, self, config)
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
