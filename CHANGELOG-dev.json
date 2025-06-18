@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250618-872d85c4",
-        "date": "2025-06-18T15:36:55+00:00",
+        "tag": "dev-20250618-8a3673bc",
+        "date": "2025-06-18T16:58:58+00:00",
         "commits": [
+            {
+                "sha": "8a3673bc",
+                "message": "added playlist items concurrency support.",
+                "author": "arabcoders",
+                "date": "2025-06-18T16:58:58+00:00",
+                "full_sha": "8a3673bc072630084b5b51c001efb72da8ed5c9d"
+            },
             {
                 "sha": "872d85c4",
                 "message": "add log entry when playlist processing is completed.",
@@ -67,7 +74,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "872d85c458650716bf3ac3270c3905661acf2bf1"
+        "full_sha": "8a3673bc072630084b5b51c001efb72da8ed5c9d"
     },
     {
         "tag": "dev-20250616-c07465a6",
