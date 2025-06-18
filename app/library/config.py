@@ -143,6 +143,9 @@ class Config:
     secret_key: str
     "The secret key to use for the application."
 
+    tasks_handler_timer: str = "15 */1 * * *"
+    """The cron expression for the tasks timer."""
+
     console_enabled: bool = False
     "Enable direct access to yt-dlp console."
 
@@ -182,7 +185,6 @@ class Config:
         "version",
         "__instance",
         "ytdl_options",
-        "tasks",
         "new_version_available",
         "started",
         "ytdlp_cli",
@@ -239,6 +241,7 @@ class Config:
         "base_path",
         "is_native",
         "app_env",
+        "tasks_handler_timer",
     )
     "The variables that are relevant to the frontend."
 

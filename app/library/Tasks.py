@@ -342,12 +342,21 @@ class Tasks(metaclass=Singleton):
 class HandleTask:
     _tasks: Tasks
 
-    def __init__(self, scheduler: Scheduler, tasks: Tasks) -> None:
+    def __init__(self, scheduler: Scheduler, tasks: Tasks, config: Config) -> None:
         self._tasks = tasks
         self._handlers: list[type] = self._discover()
 
+        timer = config.tasks_handler_timer
+        try:
+            from cronsim import CronSim
+
+            CronSim(timer, datetime.now(UTC))
+        except Exception as e:
+            timer = "15 */1 * * *"
+            LOG.error(f"Invalid timer format. '{e!s}'. Defaulting to '{timer}'.")
+
         scheduler.add(
-            timer="15 */1 * * *",
+            timer=timer,
             func=self._dispatcher,
             id=f"{__class__.__name__}._dispatcher",
         )
