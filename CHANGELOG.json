@@ -1,0 +1,4783 @@
+[
+  {
+    "tag": "master-20250616-c07465a",
+    "full_sha": "c07465a676adb9af7cc0c9c56d9deb8bd12c9782",
+    "date": "2025-06-16T19:19:11+00:00",
+    "commits": [
+      {
+        "sha": "249bb43c",
+        "full_sha": "249bb43c15852a52ad1145b4cbefe2ff728dd265",
+        "message": "RSS feed support for youtube channel/playlist.",
+        "author": "arabcoders",
+        "date": "2025-06-16T17:03:04+00:00"
+      },
+      {
+        "sha": "4ee0a996",
+        "full_sha": "4ee0a9962b6f7cde7cee44d8a2ded373e64554db",
+        "message": "Add new service for dependency injection.",
+        "author": "arabcoders",
+        "date": "2025-06-16T16:45:59+00:00"
+      },
+      {
+        "sha": "ba650fe2",
+        "full_sha": "ba650fe2bca6500fcbb3e6125bac1d09e5b72cec",
+        "message": "minor changes",
+        "author": "arabcoders",
+        "date": "2025-06-16T16:45:02+00:00"
+      },
+      {
+        "sha": "1d8fc51d",
+        "full_sha": "1d8fc51db88006524d43ff0497c7d1074035dea5",
+        "message": "upgrade packages.",
+        "author": "arabcoders",
+        "date": "2025-06-16T16:44:25+00:00"
+      },
+      {
+        "sha": "37087344",
+        "full_sha": "3708734428cd2bee51c27adaa3729b75b0e92d47",
+        "message": "minor status name changes",
+        "author": "arabcoders",
+        "date": "2025-06-16T12:50:24+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250615-4c76aa7",
+    "full_sha": "4c76aa7123bca0a306ba870edcbafc01ff2c3d90",
+    "date": "2025-06-15T17:00:15+00:00",
+    "commits": [
+      {
+        "sha": "38dc9c1e",
+        "full_sha": "38dc9c1ec6fb5bbad85bf00310733f8cea007b5b",
+        "message": "spin the icon if the item is queued.",
+        "author": "arabcoders",
+        "date": "2025-06-15T16:55:06+00:00"
+      },
+      {
+        "sha": "ffcae45d",
+        "full_sha": "ffcae45d9b10bbb8a3d58b0dcf1403963bf12171",
+        "message": "the ability to mark notification as low priority to bypass the toast",
+        "author": "arabcoders",
+        "date": "2025-06-15T16:35:57+00:00"
+      },
+      {
+        "sha": "784671cb",
+        "full_sha": "784671cb2463c721b79c3b80332ae3cadd642c35",
+        "message": "Fix premiere re-queue.",
+        "author": "arabcoders",
+        "date": "2025-06-15T15:45:18+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250615-b65008b",
+    "full_sha": "b65008b6286cb2176c402805d39c9f77128c799e",
+    "date": "2025-06-15T13:41:24+00:00",
+    "commits": [
+      {
+        "sha": "367d4a1a",
+        "full_sha": "367d4a1aeb5cc61939460abade74cbdb4d0d56b9",
+        "message": "Fixed bug in auth handler.",
+        "author": "arabcoders",
+        "date": "2025-06-15T13:37:31+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250614-2eab819",
+    "full_sha": "2eab819e875a5d747b83d76869ec06b4a4e2998a",
+    "date": "2025-06-14T19:14:04+00:00",
+    "commits": [
+      {
+        "sha": "4367fb09",
+        "full_sha": "4367fb0937607e21b1db7ce44a24ac01b1d576e6",
+        "message": "Add option to remove item from archive, and minor ui updates.",
+        "author": "arabcoders",
+        "date": "2025-06-14T18:29:25+00:00"
+      },
+      {
+        "sha": "1c8de32e",
+        "full_sha": "1c8de32e724aca93352bb679cb65f79f7614d2f7",
+        "message": "tag premiere video correctly.",
+        "author": "arabcoders",
+        "date": "2025-06-13T22:07:01+00:00"
+      },
+      {
+        "sha": "bb41eadd",
+        "full_sha": "bb41eadde7ae2320617d207bf679f276d6401b17",
+        "message": "add the ability to prevent downloading youtube premiere initial stream.",
+        "author": "arabcoders",
+        "date": "2025-06-13T21:59:57+00:00"
+      },
+      {
+        "sha": "a478e8e5",
+        "full_sha": "a478e8e58d920a70072d2ce30ed58eca1ef141ff",
+        "message": "minor design update",
+        "author": "arabcoders",
+        "date": "2025-06-13T18:22:55+00:00"
+      },
+      {
+        "sha": "fb51fc3b",
+        "full_sha": "fb51fc3b1fa3b42bdd61876c54a2e73600d32fdd",
+        "message": "upgrade packages",
+        "author": "arabcoders",
+        "date": "2025-06-12T22:05:57+00:00"
+      },
+      {
+        "sha": "5212dfee",
+        "full_sha": "5212dfeeaabdf93bf0ba9cd209a6b58b1281364c",
+        "message": "Refactor HttpSocket to be more manageable and more modular.",
+        "author": "arabcoders",
+        "date": "2025-06-12T22:02:31+00:00"
+      },
+      {
+        "sha": "c1f8fd5f",
+        "full_sha": "c1f8fd5f58ab0fefa1624d801c8f35a539d10616",
+        "message": "rename api namespace",
+        "author": "arabcoders",
+        "date": "2025-06-12T21:45:46+00:00"
+      },
+      {
+        "sha": "400cf7be",
+        "full_sha": "400cf7bec303385766b44a98af5ab1328a5a8b36",
+        "message": "completely refactored HttpAPI into more manageable routes.",
+        "author": "arabcoders",
+        "date": "2025-06-11T21:57:37+00:00"
+      },
+      {
+        "sha": "698791b7",
+        "full_sha": "698791b7fc35f2877f15161790c08696f715b731",
+        "message": "minor design update for index page.",
+        "author": "arabcoders",
+        "date": "2025-06-10T10:58:18+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250610-670c995",
+    "full_sha": "670c99510e845b8ca4dbdab84bf7b1b183090272",
+    "date": "2025-06-10T10:44:17+00:00",
+    "commits": [
+      {
+        "sha": "294ec31e",
+        "full_sha": "294ec31e94d3ee70148c77b2c96cb218cae6ce0f",
+        "message": "completed path migration",
+        "author": "arabcoders",
+        "date": "2025-06-10T09:29:21+00:00"
+      },
+      {
+        "sha": "e42af751",
+        "full_sha": "e42af75137b544465c1a7133ee1f51d40acfdb76",
+        "message": "load preset cookies in all cases.",
+        "author": "arabcoders",
+        "date": "2025-06-10T09:27:12+00:00"
+      },
+      {
+        "sha": "49fd5986",
+        "full_sha": "49fd598647b463827532b8556d3cc62a197f40da",
+        "message": "update dependencies",
+        "author": "arabcoders",
+        "date": "2025-06-10T08:20:21+00:00"
+      },
+      {
+        "sha": "d3bdb558",
+        "full_sha": "d3bdb55886fe04533462f8797699880380a43f28",
+        "message": "fix uv yt-dlp upgrader",
+        "author": "arabcoders",
+        "date": "2025-06-10T08:17:40+00:00"
+      },
+      {
+        "sha": "9e130aed",
+        "full_sha": "9e130aed9943799a766a907f6bb2fd81aa1ae8b0",
+        "message": "re-added daily yt-dlp checker",
+        "author": "arabcoders",
+        "date": "2025-06-10T08:13:20+00:00"
+      },
+      {
+        "sha": "6c8fd058",
+        "full_sha": "6c8fd05886efea18b00b085815a18a4baa319a0a",
+        "message": "WiP: More migration to Path",
+        "author": "arabcoders",
+        "date": "2025-06-09T22:08:44+00:00"
+      },
+      {
+        "sha": "93ff749d",
+        "full_sha": "93ff749dee89940d7f751ac65fc7071bfc237fd3",
+        "message": "We no longer auto load cookies.txt from config path. it must be set via the ytdlp.cli or preset.",
+        "author": "arabcoders",
+        "date": "2025-06-09T20:19:52+00:00"
+      },
+      {
+        "sha": "e251fba2",
+        "full_sha": "e251fba26c5828720a5e4aeae86386692cad3d56",
+        "message": "Fix healthcheck when used with base_path",
+        "author": "arabcoders",
+        "date": "2025-06-09T17:18:45+00:00"
+      },
+      {
+        "sha": "7bae93a0",
+        "full_sha": "7bae93a04f5b1fbf955727ae6ca828de1d9cddce",
+        "message": "re-enable caching for pip packages.",
+        "author": "arabcoders",
+        "date": "2025-06-08T21:52:13+00:00"
+      },
+      {
+        "sha": "b1bc399a",
+        "full_sha": "b1bc399a0ccaa7e9e6c8d19c9480f80b6e7b9628",
+        "message": "WiP: more changes to classes to support Path",
+        "author": "arabcoders",
+        "date": "2025-06-08T21:47:11+00:00"
+      },
+      {
+        "sha": "6a9beea8",
+        "full_sha": "6a9beea89ec5648527735ccf79494d562d7ab7e8",
+        "message": "WIP: Migrated DownloadQueue to use Path",
+        "author": "arabcoders",
+        "date": "2025-06-08T21:14:14+00:00"
+      },
+      {
+        "sha": "1f1fbbac",
+        "full_sha": "1f1fbbac01d8ce5f923c810dca9d829b06eb4e2a",
+        "message": "WIP: more changes to support webview in the future.",
+        "author": "arabcoders",
+        "date": "2025-06-08T20:45:00+00:00"
+      },
+      {
+        "sha": "fee8939c",
+        "full_sha": "fee8939c803d5bedaf3281cb8fb2f2e7a81a1dbd",
+        "message": "WIP more changes to support windows",
+        "author": "arabcoders",
+        "date": "2025-06-08T18:59:44+00:00"
+      },
+      {
+        "sha": "6d774a6d",
+        "full_sha": "6d774a6d9cfe7ac2437e185d3b5d8bd627902969",
+        "message": "switch to uv instead of pipenv, and partially fix the code to work on windows.",
+        "author": "arabcoders",
+        "date": "2025-06-08T17:45:12+00:00"
+      },
+      {
+        "sha": "e7256e65",
+        "full_sha": "e7256e65ac20c122f2a3234e30b9d999b27821c8",
+        "message": "wip",
+        "author": "arabcoders",
+        "date": "2025-06-07T21:58:04+00:00"
+      },
+      {
+        "sha": "e4668570",
+        "full_sha": "e466857046d01e8018a272dbd8d74a5911f9d952",
+        "message": "WIP",
+        "author": "arabcoders",
+        "date": "2025-06-07T21:29:12+00:00"
+      },
+      {
+        "sha": "68fc75c0",
+        "full_sha": "68fc75c08760e801698467370c044abe76bb805a",
+        "message": "WIP",
+        "author": "arabcoders",
+        "date": "2025-06-07T21:04:31+00:00"
+      },
+      {
+        "sha": "2676ed09",
+        "full_sha": "2676ed099db74baf470b5f69a7486561b326e6e4",
+        "message": "support pywebview",
+        "author": "arabcoders",
+        "date": "2025-06-07T20:40:59+00:00"
+      },
+      {
+        "sha": "6e7684cc",
+        "full_sha": "6e7684cc8aaf8ffbb077433b1ecfc9b12faf54c1",
+        "message": "app.spec",
+        "author": "arabcoders",
+        "date": "2025-06-07T16:14:08+00:00"
+      },
+      {
+        "sha": "700fe41c",
+        "full_sha": "700fe41c1541a48ec03cfd39ccdf7f22c66fd3f4",
+        "message": "plans for native app",
+        "author": "arabcoders",
+        "date": "2025-06-07T14:51:00+00:00"
+      },
+      {
+        "sha": "9419e15a",
+        "full_sha": "9419e15a4f5bdc3aeed8dd494f4c8824a5cf33a8",
+        "message": "minor changes to changelog page",
+        "author": "arabcoders",
+        "date": "2025-06-05T22:33:29+00:00"
+      },
+      {
+        "sha": "517f60f4",
+        "full_sha": "517f60f49d7ff2907bea47a124ca5ef256853614",
+        "message": "Added ts implementation of yt-dlp match_str",
+        "author": "arabcoders",
+        "date": "2025-06-05T20:47:00+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250605-f1f79af",
+    "full_sha": "f1f79afea103d00b9d298cd4dd5fdf7e500a0edf",
+    "date": "2025-06-05T19:52:13+00:00",
+    "commits": [
+      {
+        "sha": "cfb600b6",
+        "full_sha": "cfb600b6bc09fdd6acad816cae97f9fce1af2cab",
+        "message": "minor README text update",
+        "author": "arabcoders",
+        "date": "2025-06-05T18:51:06+00:00"
+      },
+      {
+        "sha": "8b0b744d",
+        "full_sha": "8b0b744d98fe754d9cf7ed913da45fecd385d644",
+        "message": "Add option to completely disable videos thumbnail.",
+        "author": "arabcoders",
+        "date": "2025-06-05T18:36:52+00:00"
+      },
+      {
+        "sha": "0f0dd51a",
+        "full_sha": "0f0dd51a41f0f91294ce8ca1972412a56c2fb8c7",
+        "message": "Add support for running YTPTube from sub-directory. Fix #295",
+        "author": "arabcoders",
+        "date": "2025-06-05T18:04:00+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250604-38d99c0",
+    "full_sha": "38d99c0e1e1b918b2540a43d50d158c040985d63",
+    "date": "2025-06-04T19:49:13+00:00",
+    "commits": [
+      {
+        "sha": "18dea307",
+        "full_sha": "18dea30719e26efd32e93ccab7d05d29d6a307b1",
+        "message": "Make sure to build linux/arm64 for default branch",
+        "author": "arabcoders",
+        "date": "2025-06-04T19:48:45+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250604-4a26dc1",
+    "full_sha": "4a26dc1a7f27eccdc7c98baf0f849f63c0600868",
+    "date": "2025-06-04T19:42:10+00:00",
+    "commits": [
+      {
+        "sha": "ca106405",
+        "full_sha": "ca106405066a8a32b1b8aeb34e8474845f4018ba",
+        "message": "Minor improvements to notification dropdown",
+        "author": "arabcoders",
+        "date": "2025-06-04T19:38:38+00:00"
+      },
+      {
+        "sha": "e2e66195",
+        "full_sha": "e2e661953474bfe6e7e7f6c828597ba7cb0838ff",
+        "message": "fixed bug in default URL separator selector.",
+        "author": "arabcoders",
+        "date": "2025-06-04T19:33:05+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250604-3bbb150",
+    "full_sha": "3bbb1509e2a5c0bc336a015475a02475ba4a6772",
+    "date": "2025-06-04T19:23:56+00:00",
+    "commits": [
+      {
+        "sha": "5075571c",
+        "full_sha": "5075571c1c99a55af1c2ff94128b1f3affc2d52c",
+        "message": "Disable linux/arm64 builds for non-default branch",
+        "author": "arabcoders",
+        "date": "2025-06-04T19:15:00+00:00"
+      },
+      {
+        "sha": "5543c68e",
+        "full_sha": "5543c68e61fb8903ec6fa1d74f779bbde205ae65",
+        "message": "Update README for clarity and improve installation instructions for podman and unraid.",
+        "author": "arabcoders",
+        "date": "2025-06-04T19:08:52+00:00"
+      },
+      {
+        "sha": "4294070b",
+        "full_sha": "4294070b1ecdebfcf29a9f975c0244b189d5dc6b",
+        "message": "Make the URLs separator user configurable",
+        "author": "arabcoders",
+        "date": "2025-06-04T18:55:47+00:00"
+      },
+      {
+        "sha": "4ad9ee53",
+        "full_sha": "4ad9ee533b28d5b0460aa78ddaa718f584841f96",
+        "message": "Refactor terminology from \"CLI arguments\" to \"command options for yt-dlp\" across multiple files for consistency and clarity.",
+        "author": "arabcoders",
+        "date": "2025-06-04T18:54:53+00:00"
+      },
+      {
+        "sha": "1a48a3ee",
+        "full_sha": "1a48a3eea998e51fd0f4151885c0f9c0143b5f45",
+        "message": "improve the build process",
+        "author": "arabcoders",
+        "date": "2025-06-04T16:53:55+00:00"
+      },
+      {
+        "sha": "36475959",
+        "full_sha": "36475959e5f06923514b0e61d5b3d006f529e2be",
+        "message": "Make it possible to import data from pre-existing preset.",
+        "author": "arabcoders",
+        "date": "2025-06-04T16:31:39+00:00"
+      },
+      {
+        "sha": "e8a52509",
+        "full_sha": "e8a52509b30b6c4bed557562d1920e7cbbbeeda3",
+        "message": "Implemented notification center. Closes #290",
+        "author": "arabcoders",
+        "date": "2025-06-04T16:11:55+00:00"
+      },
+      {
+        "sha": "73161496",
+        "full_sha": "731614961e05f86f7bfd347e1db4b510c6438c15",
+        "message": "Incorrect message of deleting file is showing even though the option to delete file is disabled.",
+        "author": "arabcoders",
+        "date": "2025-06-03T21:59:53+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250603-cf2fb5f",
+    "full_sha": "cf2fb5fac8fd25abbf2dfdb24725e2e995869625",
+    "date": "2025-06-03T21:45:25+00:00",
+    "commits": [
+      {
+        "sha": "46b57e06",
+        "full_sha": "46b57e06e7b095a1218b192e76991290aef6d5c1",
+        "message": "Add list view for tasks.",
+        "author": "arabcoders",
+        "date": "2025-06-03T21:35:36+00:00"
+      },
+      {
+        "sha": "f57f1d39",
+        "full_sha": "f57f1d3916a0463f2967fdf0bd48abc34479ad2a",
+        "message": "Fix symlinks in file browser. Fixes #288",
+        "author": "arabcoders",
+        "date": "2025-06-03T21:33:45+00:00"
+      },
+      {
+        "sha": "a795429c",
+        "full_sha": "a795429cb90698250159b3dead8e6e453ac8ba5d",
+        "message": "Add list view for presets.",
+        "author": "arabcoders",
+        "date": "2025-06-03T20:52:35+00:00"
+      },
+      {
+        "sha": "1af17552",
+        "full_sha": "1af17552f9e96f3bef38ad2c458b98dffc9a9c63",
+        "message": "Enhance UI layout and loading state for changelog page",
+        "author": "arabcoders",
+        "date": "2025-06-03T20:46:29+00:00"
+      },
+      {
+        "sha": "1de2de97",
+        "full_sha": "1de2de9750e82384a31db8d0b16cac0b0cfe49f4",
+        "message": "Give more control over the toasts.",
+        "author": "arabcoders",
+        "date": "2025-06-03T19:37:21+00:00"
+      },
+      {
+        "sha": "38bf6af1",
+        "full_sha": "38bf6af1fc526b9b783d6c481fc6f39dbba196a9",
+        "message": "Improved the testing logic for conditions filter.",
+        "author": "arabcoders",
+        "date": "2025-06-03T19:15:06+00:00"
+      },
+      {
+        "sha": "55b2e3e7",
+        "full_sha": "55b2e3e7f245c7a269b90205917c56e513d0918b",
+        "message": "Add test button for conditions",
+        "author": "arabcoders",
+        "date": "2025-06-03T17:05:13+00:00"
+      },
+      {
+        "sha": "bdf50d0e",
+        "full_sha": "bdf50d0ed86f9027dd799d55829dfe71001bb5b3",
+        "message": "Make it possible to create tasks without timer.",
+        "author": "arabcoders",
+        "date": "2025-06-03T16:11:55+00:00"
+      },
+      {
+        "sha": "23c74d84",
+        "full_sha": "23c74d8447a45d1eead81e4c3e7e6f0d1a92bc7f",
+        "message": "improve task page information display.",
+        "author": "arabcoders",
+        "date": "2025-06-03T15:32:13+00:00"
+      },
+      {
+        "sha": "0156052a",
+        "full_sha": "0156052ab94ae818d852b21b2db8ecd751fe7aae",
+        "message": "Reduce confirmation box usage with optional WebUI flag.",
+        "author": "arabcoders",
+        "date": "2025-06-03T15:03:23+00:00"
+      },
+      {
+        "sha": "c13c4427",
+        "full_sha": "c13c4427a7b772ff59e261649d7965554b19b83c",
+        "message": "Proxy our toast usage via our own methods to be able to control enabling/disabling it.",
+        "author": "arabcoders",
+        "date": "2025-06-03T14:44:23+00:00"
+      },
+      {
+        "sha": "0306f9e6",
+        "full_sha": "0306f9e61908f80751148017a20fda4982c819fd",
+        "message": "Add try catch block for url decoding. Fix #287",
+        "author": "arabcoders",
+        "date": "2025-06-03T14:01:38+00:00"
+      },
+      {
+        "sha": "5af46554",
+        "full_sha": "5af46554297e66cfcd9dd31d3b602eceb9b82438",
+        "message": "Fix not being able to add --sponsorblock-mark",
+        "author": "arabcoders",
+        "date": "2025-06-03T13:40:51+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250603-2a60a84",
+    "full_sha": "2a60a848d6f82f2b6ea6df421f79117254adc0e6",
+    "date": "2025-06-03T00:15:42+00:00",
+    "commits": [
+      {
+        "sha": "8f61c6e8",
+        "full_sha": "8f61c6e8f1f5221ec0bc3bea3bfffa145496c6bd",
+        "message": "minor UI and text update.",
+        "author": "arabcoders",
+        "date": "2025-06-03T00:09:54+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250601-a434e3a",
+    "full_sha": "a434e3a6aad2a58d496b230a96b276f7bca726f5",
+    "date": "2025-06-01T16:21:01+00:00",
+    "commits": [
+      {
+        "sha": "d6aa7116",
+        "full_sha": "d6aa7116674f39e5af1e646f70fbc58c9fb1e67b",
+        "message": "Refactor streaming logic to be more efficient",
+        "author": "arabcoders",
+        "date": "2025-06-01T15:22:19+00:00"
+      },
+      {
+        "sha": "890f2e99",
+        "full_sha": "890f2e99efa7e803a349359f427555cef8cc592a",
+        "message": "packages update",
+        "author": "arabcoders",
+        "date": "2025-06-01T15:21:47+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250528-8dfdf7f",
+    "full_sha": "8dfdf7f61535a260534d285ec1f467ef559f38d0",
+    "date": "2025-05-28T15:24:50+00:00",
+    "commits": [
+      {
+        "sha": "c636ea5e",
+        "full_sha": "c636ea5ea8efa48e104024407779e1214d201f14",
+        "message": "Update API documentation",
+        "author": "arabcoders",
+        "date": "2025-05-28T14:51:16+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250527-fd27ae9",
+    "full_sha": "fd27ae924e40f15534f1ac446b21368c4463b3ae",
+    "date": "2025-05-27T19:26:20+00:00",
+    "commits": [
+      {
+        "sha": "ba152fcb",
+        "full_sha": "ba152fcb4f66f2921a187b5d1be399246ef1c98e",
+        "message": "packages update.",
+        "author": "arabcoders",
+        "date": "2025-05-27T18:59:16+00:00"
+      },
+      {
+        "sha": "f8405147",
+        "full_sha": "f8405147b8975fb93135b9c8a85c020fb8261838",
+        "message": "update /api/history docs",
+        "author": "arabcoders",
+        "date": "2025-05-27T16:55:45+00:00"
+      },
+      {
+        "sha": "bb52513c",
+        "full_sha": "bb52513cb2b14f2ffa9a12c8e9f6e4f48476a50b",
+        "message": "disable generate_release_notes",
+        "author": "arabcoders",
+        "date": "2025-05-23T15:44:00+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250523-adb191b",
+    "full_sha": "adb191bb6d0e297724dd9e97ba99108aab270d16",
+    "date": "2025-05-23T15:31:36+00:00",
+    "commits": [
+      {
+        "sha": "647acc48",
+        "full_sha": "647acc488d91c01a9458a67aa598d968bac4eb5e",
+        "message": "Fix problem with processing playlist",
+        "author": "arabcoders",
+        "date": "2025-05-23T15:20:35+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250522-4398b30",
+    "full_sha": "4398b30b3854eb91a928ca27a69f3c7b32e8522f",
+    "date": "2025-05-22T23:08:13+00:00",
+    "commits": [
+      {
+        "sha": "41370795",
+        "full_sha": "413707950ebdff58f71587e2d55a29b919735470",
+        "message": "Remove global cookie checking",
+        "author": "arabcoders",
+        "date": "2025-05-22T21:24:11+00:00"
+      },
+      {
+        "sha": "59b8c629",
+        "full_sha": "59b8c629d7aabd7d5107160c583113a2a7fa9f8f",
+        "message": "ci #6",
+        "author": "arabcoders",
+        "date": "2025-05-22T21:15:09+00:00"
+      },
+      {
+        "sha": "2c711a22",
+        "full_sha": "2c711a22045fefb532dc63872393e10db9dab276",
+        "message": "ci #5",
+        "author": "arabcoders",
+        "date": "2025-05-22T21:03:34+00:00"
+      },
+      {
+        "sha": "a4778df2",
+        "full_sha": "a4778df2a126ec0796879898cdf6cf6de5fe8893",
+        "message": "ci #4",
+        "author": "arabcoders",
+        "date": "2025-05-22T21:00:02+00:00"
+      },
+      {
+        "sha": "24b67c88",
+        "full_sha": "24b67c883884b7d07402aa02ea7a2be5d845a3ac",
+        "message": "ci #3",
+        "author": "arabcoders",
+        "date": "2025-05-22T20:59:04+00:00"
+      },
+      {
+        "sha": "5e236989",
+        "full_sha": "5e2369897adf92058c4985deae93911294ea5625",
+        "message": "fix ci",
+        "author": "arabcoders",
+        "date": "2025-05-22T20:54:51+00:00"
+      },
+      {
+        "sha": "1c39d42a",
+        "full_sha": "1c39d42a466032d4b7c06df7bb99ec1435cc6843",
+        "message": "switch to pnpm",
+        "author": "arabcoders",
+        "date": "2025-05-22T20:49:02+00:00"
+      },
+      {
+        "sha": "870a2a88",
+        "full_sha": "870a2a881866814a82c4b7103b255c2987cf87a3",
+        "message": "update yt-dlp",
+        "author": "arabcoders",
+        "date": "2025-05-22T20:48:55+00:00"
+      },
+      {
+        "sha": "a077c816",
+        "full_sha": "a077c816e2932b1a04dca24fd9ed144c828e8adb",
+        "message": "minor embedable content update",
+        "author": "arabcoders",
+        "date": "2025-05-22T20:20:19+00:00"
+      },
+      {
+        "sha": "198e80ad",
+        "full_sha": "198e80ad81234a864771e8c0b2ede968362a640e",
+        "message": "Minor changes to preset to include descriptions.",
+        "author": "arabcoders",
+        "date": "2025-05-20T16:02:44+00:00"
+      },
+      {
+        "sha": "4ba5e9bd",
+        "full_sha": "4ba5e9bd24b44ff83263155d54c5f0bd1910fb82",
+        "message": "turn YTP_YTDLP_AUTO_UPDATE on by default",
+        "author": "arabcoders",
+        "date": "2025-05-16T18:47:39+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250513-f7f5ef0",
+    "full_sha": "f7f5ef0e59eaac689a91427c0eb288e1738a70a1",
+    "date": "2025-05-13T13:33:46+00:00",
+    "commits": [
+      {
+        "sha": "bba03702",
+        "full_sha": "bba03702a13a2d74c37accaf768ae3a3fe4df84e",
+        "message": "Fix healthcheck when user:pass are set.",
+        "author": "arabcoders",
+        "date": "2025-05-13T13:22:19+00:00"
+      },
+      {
+        "sha": "8c308c1c",
+        "full_sha": "8c308c1ce925052589e72bf617742efb72c3a28e",
+        "message": "Hide floating image for mobile in list mode.",
+        "author": "arabcoders",
+        "date": "2025-05-12T15:55:29+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250512-cbc6277",
+    "full_sha": "cbc6277dc6d9241b2893157aac63223a5379b5b7",
+    "date": "2025-05-12T15:21:51+00:00",
+    "commits": [
+      {
+        "sha": "28287375",
+        "full_sha": "2828737562bfb9eb92df9e123e7197a35ea13bc7",
+        "message": "skip auth for OPTIONS request",
+        "author": "arabcoders",
+        "date": "2025-05-12T14:15:21+00:00"
+      },
+      {
+        "sha": "9aed6d18",
+        "full_sha": "9aed6d183709a772f8019d2d4d6fc2ce96cf780f",
+        "message": "Fix CORS issue with extensions",
+        "author": "arabcoders",
+        "date": "2025-05-12T14:02:08+00:00"
+      },
+      {
+        "sha": "802ec99c",
+        "full_sha": "802ec99cf87b24d5e09824a0c403f524edda2d2e",
+        "message": "Make check cookie more user customizable.",
+        "author": "arabcoders",
+        "date": "2025-05-11T14:40:35+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250510-853a443",
+    "full_sha": "853a443b88cce71557ccfb0084080f3caa1d0eda",
+    "date": "2025-05-10T16:54:07+00:00",
+    "commits": [
+      {
+        "sha": "45f43827",
+        "full_sha": "45f438276222530e12da2e00165f3b6a8528976a",
+        "message": "minor fixes",
+        "author": "arabcoders",
+        "date": "2025-05-10T16:38:36+00:00"
+      },
+      {
+        "sha": "1a59926c",
+        "full_sha": "1a59926c8a06f742d32749d0c1a1a42c3331a3f7",
+        "message": "fixes",
+        "author": "arabcoders",
+        "date": "2025-05-10T15:26:43+00:00"
+      },
+      {
+        "sha": "f62b01b3",
+        "full_sha": "f62b01b36128de843c4f3552f456a220788180e9",
+        "message": "Enable floating image for list view.",
+        "author": "arabcoders",
+        "date": "2025-05-10T15:13:40+00:00"
+      },
+      {
+        "sha": "5a76f1d6",
+        "full_sha": "5a76f1d68ac290174787c0a73bff51b4a5ae9c5d",
+        "message": "Fold  preset --format into the cli args",
+        "author": "arabcoders",
+        "date": "2025-05-10T14:54:04+00:00"
+      },
+      {
+        "sha": "f7abca8d",
+        "full_sha": "f7abca8d1022a703e35a45710be00de49b92f63c",
+        "message": "minor design update",
+        "author": "arabcoders",
+        "date": "2025-05-07T18:56:27+00:00"
+      },
+      {
+        "sha": "815bd3c0",
+        "full_sha": "815bd3c0cf692b8764a25dd66e99f5adbf87c648",
+        "message": "improved menubar",
+        "author": "arabcoders",
+        "date": "2025-05-07T16:56:28+00:00"
+      },
+      {
+        "sha": "b5a3ed1a",
+        "full_sha": "b5a3ed1ab454fc18a410abafa992773758211827",
+        "message": "Added info dict condition checker",
+        "author": "arabcoders",
+        "date": "2025-05-07T14:58:33+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250502-12b4b12",
+    "full_sha": "12b4b123444b36a64e00de58f8bfdac175dbe15c",
+    "date": "2025-05-02T18:20:42+00:00",
+    "commits": [
+      {
+        "sha": "999dbf35",
+        "full_sha": "999dbf35c04fb92420e71f120f41cbefd38c18e7",
+        "message": "it works!",
+        "author": "arabcoders",
+        "date": "2025-05-02T18:12:00+00:00"
+      },
+      {
+        "sha": "99a2f60a",
+        "full_sha": "99a2f60ad7cbc836ec22c39b5a901ece93e70366",
+        "message": "another attempt at fixing mpd streams",
+        "author": "arabcoders",
+        "date": "2025-05-02T16:49:13+00:00"
+      },
+      {
+        "sha": "1754841d",
+        "full_sha": "1754841df01322246f9ec64eaa2b21598cb9241b",
+        "message": "Another attempt at fixing live_from_start",
+        "author": "arabcoders",
+        "date": "2025-05-02T14:43:05+00:00"
+      },
+      {
+        "sha": "f1a04aca",
+        "full_sha": "f1a04acaaf63ba23a5b634a281184c1fb6464020",
+        "message": "Fixes to live_from_start",
+        "author": "arabcoders",
+        "date": "2025-05-02T10:18:14+00:00"
+      },
+      {
+        "sha": "28ea6c6a",
+        "full_sha": "28ea6c6aa9c1c4b03355eea6c57b2dc8ec5b3ea8",
+        "message": "truncate oveflowing error text with option to display all on click",
+        "author": "arabcoders",
+        "date": "2025-05-01T15:51:23+00:00"
+      },
+      {
+        "sha": "cc65b4b3",
+        "full_sha": "cc65b4b3aee15cc7e949061017249f9ff645d842",
+        "message": "Communicate more error logs to user when yt-dlp throws them.",
+        "author": "arabcoders",
+        "date": "2025-05-01T15:28:12+00:00"
+      },
+      {
+        "sha": "fb70f0b2",
+        "full_sha": "fb70f0b2cecd19b58057aeb1c3fa7a2e26d1b907",
+        "message": "attempt at fixing yt-dlp youtube live_from_start for premiere",
+        "author": "arabcoders",
+        "date": "2025-05-01T14:08:28+00:00"
+      },
+      {
+        "sha": "7292d75f",
+        "full_sha": "7292d75f057704dbb6d49da84fcbf507ceb59943",
+        "message": "Made the built-in yt-dlp upgrader actually work.",
+        "author": "arabcoders",
+        "date": "2025-05-01T14:08:08+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250501-1deba05",
+    "full_sha": "1deba059022dd6e1768b82c537b1868ac38be6e2",
+    "date": "2025-05-01T00:40:42+00:00",
+    "commits": [
+      {
+        "sha": "54c70692",
+        "full_sha": "54c706920e1538ca3f134976f7ecf24681169110",
+        "message": "Update yt-dlp to 2025.4.30",
+        "author": "ArabCoders",
+        "date": "2025-05-01T00:27:36+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250428-9f0d883",
+    "full_sha": "9f0d88375f5a010a7417105b8431f1e45008402f",
+    "date": "2025-04-28T16:24:37+00:00",
+    "commits": [
+      {
+        "sha": "d8959043",
+        "full_sha": "d89590434b84d2dc8be9ad78141eaeec2f634e30",
+        "message": "Switched newDownload form to use HttpAPI for easier unlocking of download button.",
+        "author": "arabcoders",
+        "date": "2025-04-28T15:40:23+00:00"
+      },
+      {
+        "sha": "d4ca763a",
+        "full_sha": "d4ca763adbd78ce6c83bf937556432de30022869",
+        "message": "reverted some changes to logging",
+        "author": "arabcoders",
+        "date": "2025-04-28T15:15:11+00:00"
+      },
+      {
+        "sha": "2d86aaef",
+        "full_sha": "2d86aaefacdf09a91cc12fa7a3804540da7184b8",
+        "message": "attempt at fixing duplicate logging",
+        "author": "arabcoders",
+        "date": "2025-04-27T16:44:44+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250426-d385e41",
+    "full_sha": "d385e41f6acef2038e87cca57c196598af8d136c",
+    "date": "2025-04-26T16:58:34+00:00",
+    "commits": [
+      {
+        "sha": "2fa52188",
+        "full_sha": "2fa521889c0c9247038c1c10faecb75689020b03",
+        "message": "upgrade external packages.",
+        "author": "arabcoders",
+        "date": "2025-04-26T16:51:42+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250426-1bbaf46",
+    "full_sha": "1bbaf461b2b73bdf15279f0412676c6d6229a048",
+    "date": "2025-04-26T16:34:31+00:00",
+    "commits": [
+      {
+        "sha": "ae9b30d0",
+        "full_sha": "ae9b30d030d0a56a7b9736fa7fca9325bc5c4bec",
+        "message": "removed imageipsum as background source.",
+        "author": "arabcoders",
+        "date": "2025-04-26T15:51:33+00:00"
+      },
+      {
+        "sha": "7a01a840",
+        "full_sha": "7a01a84063d5778d8c0e89593f0ba92256890358",
+        "message": "Add missing None check",
+        "author": "arabcoders",
+        "date": "2025-04-26T15:51:07+00:00"
+      },
+      {
+        "sha": "ca10ce28",
+        "full_sha": "ca10ce281bed083f25f749195621cb007387771d",
+        "message": "Import ag_utils",
+        "author": "arabcoders",
+        "date": "2025-04-26T14:56:01+00:00"
+      },
+      {
+        "sha": "0f69ec04",
+        "full_sha": "0f69ec047ce89a4f63e548df201dee1c9f983a0a",
+        "message": "fixes",
+        "author": "arabcoders",
+        "date": "2025-04-26T14:22:59+00:00"
+      },
+      {
+        "sha": "68a0d6b5",
+        "full_sha": "68a0d6b57117b099c6c8ad191223bdd9e4bddf61",
+        "message": "Added more protection to workers pool being stuck in preparing state.",
+        "author": "arabcoders",
+        "date": "2025-04-26T14:08:13+00:00"
+      },
+      {
+        "sha": "4f819441",
+        "full_sha": "4f8194417d3dd8ab90006dedff45e63cb03ea877",
+        "message": "ensure info_dict contains formats before passing to yt-dlp",
+        "author": "arabcoders",
+        "date": "2025-04-24T12:57:10+00:00"
+      },
+      {
+        "sha": "e59ed7c2",
+        "full_sha": "e59ed7c200e09b53779118106af6c2259c1d55a8",
+        "message": "fix timezone issue in monitor live streams",
+        "author": "arabcoders",
+        "date": "2025-04-24T12:44:51+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250422-b29dc00",
+    "full_sha": "b29dc00bd82b9c7f9a170199f5dd8765dc2b4551",
+    "date": "2025-04-22T16:10:33+00:00",
+    "commits": [
+      {
+        "sha": "eebfb2ab",
+        "full_sha": "eebfb2abcf524f6f528f9fc468818b773c05aa28",
+        "message": "Fix re-adding the item after live_in kicks in",
+        "author": "arabcoders",
+        "date": "2025-04-22T16:06:43+00:00"
+      },
+      {
+        "sha": "f0c04e12",
+        "full_sha": "f0c04e121b3659d41e5ceedaccacba9fc5255bff",
+        "message": "retain live_in value cross re-queue, as sometimes the queue happens and the stream not yet live.",
+        "author": "arabcoders",
+        "date": "2025-04-22T15:13:49+00:00"
+      },
+      {
+        "sha": "d3c65175",
+        "full_sha": "d3c651752aaf1f7207b727b24af21da400dc713a",
+        "message": "typo update",
+        "author": "arabcoders",
+        "date": "2025-04-22T14:38:32+00:00"
+      },
+      {
+        "sha": "4f0e5d55",
+        "full_sha": "4f0e5d5549f9eb0cd1d27a94173ddcb46395d886",
+        "message": "minor fixes",
+        "author": "arabcoders",
+        "date": "2025-04-22T14:38:05+00:00"
+      },
+      {
+        "sha": "3d99247c",
+        "full_sha": "3d99247c012a2b35062c24faf7b3dd2f8139c091",
+        "message": "make the date update dynamic",
+        "author": "arabcoders",
+        "date": "2025-04-22T14:24:48+00:00"
+      },
+      {
+        "sha": "bfe30bc5",
+        "full_sha": "bfe30bc5af475ebc5000b002ca556aff1cdd2c9c",
+        "message": "update README",
+        "author": "arabcoders",
+        "date": "2025-04-22T13:54:31+00:00"
+      },
+      {
+        "sha": "0b79b6f6",
+        "full_sha": "0b79b6f6aae7a8b8a791929aab8359041d9ccf30",
+        "message": "Automatically re-queue upcoming live streams in history.",
+        "author": "arabcoders",
+        "date": "2025-04-22T13:52:52+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250421-53d3b3c",
+    "full_sha": "53d3b3c81de4384e17f469c4f5645ceae4ae30e9",
+    "date": "2025-04-21T17:53:59+00:00",
+    "commits": [
+      {
+        "sha": "cdcb5d61",
+        "full_sha": "cdcb5d61be084824a01947426629af27fcc5f787",
+        "message": "update README",
+        "author": "arabcoders",
+        "date": "2025-04-21T17:53:45+00:00"
+      },
+      {
+        "sha": "62703f3c",
+        "full_sha": "62703f3cb748cfcae0ba1297d793a491a7254b19",
+        "message": "add event warning about adding url saved to archive",
+        "author": "arabcoders",
+        "date": "2025-04-21T15:40:00+00:00"
+      },
+      {
+        "sha": "9ba7b348",
+        "full_sha": "9ba7b3480303ff3501c8e6241caac9dc4be65a32",
+        "message": "Add more events",
+        "author": "arabcoders",
+        "date": "2025-04-21T15:21:29+00:00"
+      },
+      {
+        "sha": "5172742e",
+        "full_sha": "5172742e968da924b83fdb8bbeca08d65cdd4487",
+        "message": "Only display availability when it's set",
+        "author": "arabcoders",
+        "date": "2025-04-21T14:40:36+00:00"
+      },
+      {
+        "sha": "f6c7d823",
+        "full_sha": "f6c7d8233b5c62f307cb911e6d74582bd796f030",
+        "message": "restore message about live stream not being live yet.",
+        "author": "arabcoders",
+        "date": "2025-04-20T17:07:18+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250420-a2f8cb5",
+    "full_sha": "a2f8cb55234412e38601e7047126e6f6e5ff0188",
+    "date": "2025-04-20T14:00:39+00:00",
+    "commits": [
+      {
+        "sha": "bcd6df3e",
+        "full_sha": "bcd6df3e8425d4dfe2802e0b42d5f02efb6cc3fc",
+        "message": "Display better desorption when there are no formats available.",
+        "author": "arabcoders",
+        "date": "2025-04-20T13:48:50+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250419-3425657",
+    "full_sha": "3425657dbf529e8f32a7689f088963afb87f3832",
+    "date": "2025-04-19T14:56:31+00:00",
+    "commits": [
+      {
+        "sha": "f8b18ded",
+        "full_sha": "f8b18ded00186c3ba0b39775bbab587bb39232d8",
+        "message": "wrap cancel in try catch to avoid possible problems.",
+        "author": "arabcoders",
+        "date": "2025-04-19T14:49:38+00:00"
+      },
+      {
+        "sha": "7755f3c4",
+        "full_sha": "7755f3c4e22b6d05a80a905a47331f4886adc930",
+        "message": "added some protection aganist staled download blocking the download queue.",
+        "author": "arabcoders",
+        "date": "2025-04-19T14:44:09+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250412-fb2aa73",
+    "full_sha": "fb2aa7396beeb86b41ebc246b84440367d7fd66a",
+    "date": "2025-04-12T15:49:53+00:00",
+    "commits": [
+      {
+        "sha": "fa3d9502",
+        "full_sha": "fa3d9502d0220d11fca255f2d4c399d5c0dc7da0",
+        "message": "Minor refactor for is_downloaded function and updated dependencies",
+        "author": "arabcoders",
+        "date": "2025-04-12T15:44:10+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250409-2beb6a6",
+    "full_sha": "2beb6a6b082c46846f04a2c565dc47323f136ba5",
+    "date": "2025-04-09T23:52:40+00:00",
+    "commits": [
+      {
+        "sha": "bcdc4ee0",
+        "full_sha": "bcdc4ee06e770e28c8af0c863ae0b6578745de34",
+        "message": "Increase log retrieval limit and enhance log pagination metadata",
+        "author": "arabcoders",
+        "date": "2025-04-09T23:32:38+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250409-53da40b",
+    "full_sha": "53da40b5f5060fc2bc9197307912ead74b65ec63",
+    "date": "2025-04-09T22:38:01+00:00",
+    "commits": [
+      {
+        "sha": "17dd007f",
+        "full_sha": "17dd007ff03987cbd4445d026a6ef5e611a10cf7",
+        "message": "Show that a external dl is being used if we are stuck in preparing stage as yt-dlp doesn't trigger progress_hook",
+        "author": "arabcoders",
+        "date": "2025-04-09T22:32:32+00:00"
+      },
+      {
+        "sha": "4a21592e",
+        "full_sha": "4a21592e12447f2be11f1472d31861907ab0ba41",
+        "message": "raise an error if item was using invalid preset.",
+        "author": "arabcoders",
+        "date": "2025-04-09T21:59:52+00:00"
+      },
+      {
+        "sha": "ee2fd3f3",
+        "full_sha": "ee2fd3f398ac15045c0bf8bebca4dcf518e92cc4",
+        "message": "Only show notification target, id or url incase of error loading the target.",
+        "author": "arabcoders",
+        "date": "2025-04-09T16:41:54+00:00"
+      },
+      {
+        "sha": "c2fa0666",
+        "full_sha": "c2fa0666692cd61b2b3e3d145306f76d2bb5fc35",
+        "message": "set default data_key for notification targets if not provided",
+        "author": "arabcoders",
+        "date": "2025-04-09T16:36:49+00:00"
+      },
+      {
+        "sha": "88163cad",
+        "full_sha": "88163cad42d240d06d2658704bb688b9debc7844",
+        "message": "make it possible to change notification data field key name",
+        "author": "arabcoders",
+        "date": "2025-04-09T14:35:11+00:00"
+      },
+      {
+        "sha": "817e7d2e",
+        "full_sha": "817e7d2e37d982250ed871ce256d9afd037756a2",
+        "message": "minor ui change",
+        "author": "arabcoders",
+        "date": "2025-04-08T20:30:08+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250406-31f64e6",
+    "full_sha": "31f64e67da02e66cf3bdde6785728cccab115535",
+    "date": "2025-04-06T23:31:21+00:00",
+    "commits": [
+      {
+        "sha": "33397db6",
+        "full_sha": "33397db6aec0a6c0574afa09f61ebe25090f81c4",
+        "message": "go with blacklist approach for blocking yt-dlp options.",
+        "author": "arabcoders",
+        "date": "2025-04-06T13:14:31+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250405-ec1f2f4",
+    "full_sha": "ec1f2f448a5c373a98bf40ba01dd7ce3ab9019ea",
+    "date": "2025-04-05T23:31:30+00:00",
+    "commits": [
+      {
+        "sha": "ce1d4991",
+        "full_sha": "ce1d4991d7c05fb68f4d70ddede2418315411be5",
+        "message": "minor fixes to how we handle preset cookies",
+        "author": "arabcoders",
+        "date": "2025-04-05T23:17:00+00:00"
+      },
+      {
+        "sha": "4966461c",
+        "full_sha": "4966461cb48fccdee6c869cc9c6f68fde6171cfc",
+        "message": "minor log messages update",
+        "author": "arabcoders",
+        "date": "2025-04-05T22:50:18+00:00"
+      },
+      {
+        "sha": "2fedc6d0",
+        "full_sha": "2fedc6d0182b19179cd1b85152ddf2e94be48f9d",
+        "message": "update console/logs page opacity",
+        "author": "arabcoders",
+        "date": "2025-04-05T22:21:34+00:00"
+      },
+      {
+        "sha": "0881fce2",
+        "full_sha": "0881fce2ab9db64e33127c14fe92476cc811bfd5",
+        "message": "allow --cookies",
+        "author": "arabcoders",
+        "date": "2025-04-05T22:14:44+00:00"
+      },
+      {
+        "sha": "d6ab18ec",
+        "full_sha": "d6ab18ec22ff5be942476652c65efa508f6aecc3",
+        "message": "migrate the entire app to use cli options for ytdlp and make it behave as close to cli options parsing as possible.",
+        "author": "arabcoders",
+        "date": "2025-04-05T22:03:17+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250404-c118522",
+    "full_sha": "c118522fa280ffe4b771083c8b85675d0eab8676",
+    "date": "2025-04-04T20:40:01+00:00",
+    "commits": [
+      {
+        "sha": "44b14527",
+        "full_sha": "44b145270f9048dc8df155190708f65b5eaabd45",
+        "message": "remove debug statements.",
+        "author": "arabcoders",
+        "date": "2025-04-04T20:17:07+00:00"
+      },
+      {
+        "sha": "b08be6f8",
+        "full_sha": "b08be6f8f022883273259d612f9a685042524851",
+        "message": "retain extras data when re-queueing via alt+click",
+        "author": "arabcoders",
+        "date": "2025-04-04T20:05:26+00:00"
+      },
+      {
+        "sha": "260901cf",
+        "full_sha": "260901cfa909ef30f33475e12372386cd27f1df7",
+        "message": "minor changes to newDownload form",
+        "author": "arabcoders",
+        "date": "2025-04-04T19:53:21+00:00"
+      },
+      {
+        "sha": "93e830f0",
+        "full_sha": "93e830f029cfa3853638a4b45c945f36973402cb",
+        "message": "in some specific cases, users were unable to delete items from history",
+        "author": "arabcoders",
+        "date": "2025-04-04T19:09:58+00:00"
+      },
+      {
+        "sha": "737b923a",
+        "full_sha": "737b923a97ff7c94d1a9addcac6cfe106c6302c2",
+        "message": "remove debug statement",
+        "author": "arabcoders",
+        "date": "2025-04-04T17:21:40+00:00"
+      },
+      {
+        "sha": "48e388b0",
+        "full_sha": "48e388b0fec47d09902c15e3e7cbc2084f1a1d91",
+        "message": "Add logs viewing and enable file logging by default",
+        "author": "arabcoders",
+        "date": "2025-04-04T17:18:03+00:00"
+      },
+      {
+        "sha": "f17a27d3",
+        "full_sha": "f17a27d35c918c9107364eb54c2511c10dd0e0ae",
+        "message": "fixed bug preventing the user from importing a preset",
+        "author": "arabcoders",
+        "date": "2025-04-03T23:08:11+00:00"
+      },
+      {
+        "sha": "d03e04db",
+        "full_sha": "d03e04db19d86001999d313d84acc205892baac2",
+        "message": "minor changes to webui display",
+        "author": "arabcoders",
+        "date": "2025-04-03T23:07:56+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250403-62b41bf",
+    "full_sha": "62b41bfdfa5d926b4c764d95089b7f5357b8d662",
+    "date": "2025-04-03T20:31:18+00:00",
+    "commits": [
+      {
+        "sha": "04e78f4c",
+        "full_sha": "04e78f4c10989d80a1d51d33ed206849d144eb80",
+        "message": "minor fixes",
+        "author": "arabcoders",
+        "date": "2025-04-03T20:16:47+00:00"
+      },
+      {
+        "sha": "245a3e7f",
+        "full_sha": "245a3e7f98d32101a9d09e27494905a14188a8bb",
+        "message": "added new env variable to auto upgrade yt-dlp on container startup",
+        "author": "arabcoders",
+        "date": "2025-04-03T16:37:44+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250401-e79d182",
+    "full_sha": "e79d182daa9491e534f4d4a776fd9a38848ecc1e",
+    "date": "2025-04-01T22:51:46+00:00",
+    "commits": [
+      {
+        "sha": "a3ef44a5",
+        "full_sha": "a3ef44a573cf114a32337039123ec2407f6b7b3d",
+        "message": "Fix re-queuing existing item.",
+        "author": "arabcoders",
+        "date": "2025-04-01T22:27:10+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250401-18fe540",
+    "full_sha": "18fe5409ce6b0bf638135a1efe543d74e0a2ed88",
+    "date": "2025-04-01T21:49:10+00:00",
+    "commits": [
+      {
+        "sha": "d7d461c7",
+        "full_sha": "d7d461c75a793695fbb1162eb36c2b99eb4bbdd1",
+        "message": "update settings page.",
+        "author": "arabcoders",
+        "date": "2025-04-01T21:41:54+00:00"
+      },
+      {
+        "sha": "eac74d07",
+        "full_sha": "eac74d07515e19098cdf2d0edd0f99e33a527dd4",
+        "message": "trim __repr__ double space",
+        "author": "arabcoders",
+        "date": "2025-04-01T20:44:14+00:00"
+      },
+      {
+        "sha": "d8b4afc4",
+        "full_sha": "d8b4afc4c0166db4b717b9b22d8dd76c3a25fd4b",
+        "message": "upgrade dependencies",
+        "author": "arabcoders",
+        "date": "2025-04-01T20:33:37+00:00"
+      },
+      {
+        "sha": "6cbb8eea",
+        "full_sha": "6cbb8eea5051835b5f9bb14e6095f545d331925b",
+        "message": "Fix argument name in YTDLP options and enhance video cleanup on unmount",
+        "author": "arabcoders",
+        "date": "2025-04-01T20:27:14+00:00"
+      },
+      {
+        "sha": "3219408a",
+        "full_sha": "3219408a57c81b603857f310bec30479835e7af7",
+        "message": "Removed last reference for ytdlp JSON config in DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-04-01T20:19:17+00:00"
+      },
+      {
+        "sha": "3fe0a90a",
+        "full_sha": "3fe0a90a7a5c7b48b7e727e81a7b3ab80a41cacb",
+        "message": "Only load notification targets when load is called",
+        "author": "arabcoders",
+        "date": "2025-04-01T20:13:10+00:00"
+      },
+      {
+        "sha": "f7101f6a",
+        "full_sha": "f7101f6a38208516da8ce94e647c60254501c8cf",
+        "message": "simplified the codebase and removed all backwards compat flags and checks.",
+        "author": "arabcoders",
+        "date": "2025-04-01T19:56:28+00:00"
+      },
+      {
+        "sha": "9b4d8604",
+        "full_sha": "9b4d86041a1aca8f757ab7a0b59998e18cdd54de",
+        "message": "Make task run time in log more human readable.",
+        "author": "arabcoders",
+        "date": "2025-04-01T19:47:04+00:00"
+      },
+      {
+        "sha": "47305835",
+        "full_sha": "473058351066f2ffd4b064080198692aeec98641",
+        "message": "update newDownload template",
+        "author": "arabcoders",
+        "date": "2025-04-01T17:34:14+00:00"
+      },
+      {
+        "sha": "fa9c0843",
+        "full_sha": "fa9c084397507c09efe6216683b07459958b6b7b",
+        "message": "remove presets v1.0",
+        "author": "arabcoders",
+        "date": "2025-04-01T17:05:35+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250401-2ed0bde",
+    "full_sha": "2ed0bde90afd54241a8b6cfedbbfc6d7b22197e7",
+    "date": "2025-04-01T16:06:23+00:00",
+    "commits": [
+      {
+        "sha": "bde3ae63",
+        "full_sha": "bde3ae637a7ca8fdeb501a5895e250ff5e010c8b",
+        "message": "Update yt-dlp to 2025.3.31",
+        "author": "ArabCoders",
+        "date": "2025-04-01T00:27:09+00:00"
+      },
+      {
+        "sha": "8385ec7b",
+        "full_sha": "8385ec7b0a4554101136bc2e29323c7abdcf53ae",
+        "message": "restore opacity on queue embeded content play",
+        "author": "arabcoders",
+        "date": "2025-03-31T22:58:53+00:00"
+      },
+      {
+        "sha": "899b2a36",
+        "full_sha": "899b2a36cdebf3f4607d594f9746672cce7358d1",
+        "message": "make the embeded player button red in queue",
+        "author": "arabcoders",
+        "date": "2025-03-31T22:52:26+00:00"
+      },
+      {
+        "sha": "271fd8af",
+        "full_sha": "271fd8afdf1c1c0ca4140d8fcc23b0f2a12ee287",
+        "message": "when failing to send notification do not span console with exception messages.",
+        "author": "arabcoders",
+        "date": "2025-03-31T21:29:21+00:00"
+      },
+      {
+        "sha": "6fa9741b",
+        "full_sha": "6fa9741b869b4e225b01c3c1205ee93f17163750",
+        "message": "added youtube short links for embedding",
+        "author": "arabcoders",
+        "date": "2025-03-31T21:02:07+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250331-6cf0b91",
+    "full_sha": "6cf0b9120edf17e4cc89ce1d8db4eac8c5764976",
+    "date": "2025-03-31T20:26:01+00:00",
+    "commits": [
+      {
+        "sha": "8ad5a2ff",
+        "full_sha": "8ad5a2ffc8f25d1a49a73be499f0785ab358d051",
+        "message": "hidden default format in preset page.",
+        "author": "arabcoders",
+        "date": "2025-03-31T20:09:52+00:00"
+      },
+      {
+        "sha": "b09bf14a",
+        "full_sha": "b09bf14acdf6ad6740aa78afd8c5e92470530fbf",
+        "message": "complete the migration to yt-dlp cli instead of JSON config",
+        "author": "arabcoders",
+        "date": "2025-03-31T19:47:54+00:00"
+      },
+      {
+        "sha": "77de3060",
+        "full_sha": "77de30609b1875d4e2683a2c6cbe06d2976f92f0",
+        "message": "updated the conversion process of cli to config",
+        "author": "arabcoders",
+        "date": "2025-03-31T17:46:55+00:00"
+      },
+      {
+        "sha": "cbc158f4",
+        "full_sha": "cbc158f4779b24d6272376d737623cd9970ddf2b",
+        "message": "Fix preset import output template",
+        "author": "arabcoders",
+        "date": "2025-03-31T00:10:41+00:00"
+      },
+      {
+        "sha": "23b1b409",
+        "full_sha": "23b1b409f4ad1d69b8e8c2b12ee2e94cc7f3b151",
+        "message": "deprecate JSON yt-dlp config & Post-Processors in presets and recommand cli options.",
+        "author": "arabcoders",
+        "date": "2025-03-30T23:13:33+00:00"
+      },
+      {
+        "sha": "ac119db6",
+        "full_sha": "ac119db6448442afc89e849442066696844746b2",
+        "message": "remove json config use in add new download. rely on cli options.",
+        "author": "arabcoders",
+        "date": "2025-03-30T21:28:01+00:00"
+      },
+      {
+        "sha": "1bda1893",
+        "full_sha": "1bda1893e4d1c20804a51e460143c1c4705de64b",
+        "message": "Convert json config in tasks to use cli arguments.",
+        "author": "arabcoders",
+        "date": "2025-03-30T21:12:35+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250329-8305518",
+    "full_sha": "8305518a01fd19b1060df5b650e0cde5767e0649",
+    "date": "2025-03-29T22:47:34+00:00",
+    "commits": [
+      {
+        "sha": "8f313d7f",
+        "full_sha": "8f313d7f58c12be8359d1eb0e65c78677f7a24a0",
+        "message": "add support for --match-filter",
+        "author": "arabcoders",
+        "date": "2025-03-29T22:43:31+00:00"
+      },
+      {
+        "sha": "0b3cf653",
+        "full_sha": "0b3cf653f5fa04f4c8be01e4d89c93bdd8ec9402",
+        "message": "improved the file browser by including searching and sorting",
+        "author": "arabcoders",
+        "date": "2025-03-29T18:32:43+00:00"
+      },
+      {
+        "sha": "0f4c7ced",
+        "full_sha": "0f4c7cedb16ea2587ad35ab6067829fb6cb79e34",
+        "message": "minor file browser design update",
+        "author": "arabcoders",
+        "date": "2025-03-29T17:23:27+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250328-80737f7",
+    "full_sha": "80737f7d90cc401cb28626a80729ba9f6f44c4ef",
+    "date": "2025-03-28T20:35:50+00:00",
+    "commits": [
+      {
+        "sha": "43f4e85d",
+        "full_sha": "43f4e85d7ed68f02471d9fe7e5364ff88487df1b",
+        "message": "Add case-insensitive regex for file type detection in Utils.py",
+        "author": "arabcoders",
+        "date": "2025-03-28T20:23:43+00:00"
+      },
+      {
+        "sha": "3b9c9acd",
+        "full_sha": "3b9c9acdeb5825ba3a1ab60143c6bdeb552c7923",
+        "message": "extends the improvements to download page.",
+        "author": "arabcoders",
+        "date": "2025-03-28T19:44:05+00:00"
+      },
+      {
+        "sha": "37fc7a76",
+        "full_sha": "37fc7a760438570e58718e2979b92bb01b1632b2",
+        "message": "set opacity when model is active in file browser.",
+        "author": "arabcoders",
+        "date": "2025-03-28T19:21:03+00:00"
+      },
+      {
+        "sha": "6b6cfc9d",
+        "full_sha": "6b6cfc9d4cb999c7dd5ff0f0a1ddf9433af01ef9",
+        "message": "small improvements to file browser.",
+        "author": "arabcoders",
+        "date": "2025-03-28T19:17:38+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250328-dc3c2b4",
+    "full_sha": "dc3c2b41e3dd22db5b6ad07980487c185bb90242",
+    "date": "2025-03-28T00:29:39+00:00",
+    "commits": [
+      {
+        "sha": "8723b832",
+        "full_sha": "8723b8329d4131390d6eb75d248167b42597f2be",
+        "message": "Update yt-dlp to 2025.3.27",
+        "author": "ArabCoders",
+        "date": "2025-03-28T00:23:17+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250327-5bac7b8",
+    "full_sha": "5bac7b8d206f9cce25c11a0981e95ac55421b007",
+    "date": "2025-03-27T23:27:31+00:00",
+    "commits": [
+      {
+        "sha": "729f8a1f",
+        "full_sha": "729f8a1f6f6a56c1bd637b33548c0f80c5194fba",
+        "message": "Nested browser frontend page was not loading correctly.",
+        "author": "arabcoders",
+        "date": "2025-03-27T23:22:38+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250327-daad775",
+    "full_sha": "daad7752b3fdc918b5dcb6a2a6d850e53fb84cad",
+    "date": "2025-03-27T23:12:41+00:00",
+    "commits": [
+      {
+        "sha": "bdaf07df",
+        "full_sha": "bdaf07dff3984ee1278c8f64350db3084988637c",
+        "message": "added browser to static paths",
+        "author": "arabcoders",
+        "date": "2025-03-27T23:07:55+00:00"
+      },
+      {
+        "sha": "21e5dea5",
+        "full_sha": "21e5dea5bf3bc0eab6a3f357aafcee38f06e7bdf",
+        "message": "Added simple file browser",
+        "author": "arabcoders",
+        "date": "2025-03-27T22:58:22+00:00"
+      },
+      {
+        "sha": "fa73e817",
+        "full_sha": "fa73e817a63a5cc4fc1cfc67efbffdc68a612cc6",
+        "message": "Make it possible to override the pictures backends urls.",
+        "author": "arabcoders",
+        "date": "2025-03-26T22:13:52+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250326-15e4232",
+    "full_sha": "15e4232fc82c03fdc73de294596496fa26712837",
+    "date": "2025-03-26T21:55:40+00:00",
+    "commits": [
+      {
+        "sha": "581442d2",
+        "full_sha": "581442d235648057ac676e3b02f06f19883d1e3a",
+        "message": "minor update to list view, and added download selected items.",
+        "author": "arabcoders",
+        "date": "2025-03-26T21:48:26+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250326-6d77de7",
+    "full_sha": "6d77de76cd7234c43b7954d3bee09b5cb6da4cf8",
+    "date": "2025-03-26T19:12:28+00:00",
+    "commits": [
+      {
+        "sha": "3d9d0e22",
+        "full_sha": "3d9d0e222a4aa00d8f01fce040b9bcdd9cc30740",
+        "message": "Only show list when there are items.",
+        "author": "arabcoders",
+        "date": "2025-03-26T19:07:52+00:00"
+      },
+      {
+        "sha": "edcecc62",
+        "full_sha": "edcecc62907efea057a75a253587b0631f62a17c",
+        "message": "Added list disable for downloads.",
+        "author": "arabcoders",
+        "date": "2025-03-26T18:52:44+00:00"
+      },
+      {
+        "sha": "ed1ec6fc",
+        "full_sha": "ed1ec6fc6c4b592e244f2228d359707666e619fa",
+        "message": "Merge theme selector into the settings page.",
+        "author": "arabcoders",
+        "date": "2025-03-26T16:17:04+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250326-5f7bbb5",
+    "full_sha": "5f7bbb5ebacc154f63ec4559c00299da95b057d1",
+    "date": "2025-03-26T01:00:50+00:00",
+    "commits": [
+      {
+        "sha": "5ac0bbc0",
+        "full_sha": "5ac0bbc067f2b7397d09f035898a3935aa37fab1",
+        "message": "Update yt-dlp to 2025.3.26",
+        "author": "ArabCoders",
+        "date": "2025-03-26T00:23:24+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250325-df699dd",
+    "full_sha": "df699dd0c583b65149ce4f0430f1923dae015839",
+    "date": "2025-03-25T22:04:58+00:00",
+    "commits": [
+      {
+        "sha": "aa353891",
+        "full_sha": "aa3538917fb4fbff2c9c3091a969733ea5a105fb",
+        "message": "Maintain playlist keys. Fixes #227",
+        "author": "arabcoders",
+        "date": "2025-03-25T21:54:46+00:00"
+      },
+      {
+        "sha": "7542a9a0",
+        "full_sha": "7542a9a0a48a36f30c9598d3bd7b3185cb1d9fc6",
+        "message": "Restore opacity on get_info",
+        "author": "arabcoders",
+        "date": "2025-03-25T17:51:50+00:00"
+      },
+      {
+        "sha": "2b666517",
+        "full_sha": "2b666517a5ac05ad1f70432fe6c900a6d7c3f227",
+        "message": "add sanitize_info for get url info",
+        "author": "arabcoders",
+        "date": "2025-03-25T17:42:09+00:00"
+      },
+      {
+        "sha": "b0ff4f41",
+        "full_sha": "b0ff4f41d0b9eee66340a4e127dc93050789b249",
+        "message": "update dependencies",
+        "author": "arabcoders",
+        "date": "2025-03-25T17:41:32+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250325-fd93472",
+    "full_sha": "fd93472bd08d8afedc773a22f8354df955e3408d",
+    "date": "2025-03-25T01:03:22+00:00",
+    "commits": [
+      {
+        "sha": "af1537d4",
+        "full_sha": "af1537d43d1581ee0c2e96c953751b2352afe235",
+        "message": "Update yt-dlp to 2025.3.25",
+        "author": "ArabCoders",
+        "date": "2025-03-25T00:23:45+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250324-810a63d",
+    "full_sha": "810a63d485da0cdf6de1ae74d463ad72282a5a97",
+    "date": "2025-03-24T23:08:38+00:00",
+    "commits": [
+      {
+        "sha": "fad709b4",
+        "full_sha": "fad709b42bea574cb8abdf25e3783d7a809ec55d",
+        "message": "restore opacity if the video is playing.",
+        "author": "arabcoders",
+        "date": "2025-03-24T23:03:44+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250324-68473a1",
+    "full_sha": "68473a1b0d8dbcde71b8fe1c8d9258b3b2349342",
+    "date": "2025-03-24T22:56:18+00:00",
+    "commits": [
+      {
+        "sha": "55b3c34e",
+        "full_sha": "55b3c34e68f20c4bb5ea9f3d5577b70904e7c930",
+        "message": "updated README.md",
+        "author": "arabcoders",
+        "date": "2025-03-24T22:47:49+00:00"
+      },
+      {
+        "sha": "c81f50a4",
+        "full_sha": "c81f50a4aea1b11439d6dd90bdea72b88dd6834a",
+        "message": "minor change to add random background to the WebUI.",
+        "author": "arabcoders",
+        "date": "2025-03-24T22:38:59+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250322-28d902b",
+    "full_sha": "28d902b2a960617aebcdc8441f46420e4a811969",
+    "date": "2025-03-22T21:55:16+00:00",
+    "commits": [
+      {
+        "sha": "37ef9314",
+        "full_sha": "37ef9314cbaa84b6e0449bee135585ed88b07129",
+        "message": "fix notification.emit return to return coro incase we don't have any targets.",
+        "author": "ArabCoders",
+        "date": "2025-03-22T21:46:24+00:00"
+      },
+      {
+        "sha": "c46aa1cf",
+        "full_sha": "c46aa1cfe4bbcc248ea82ce9433360c680873c59",
+        "message": "minor fix to EventBus, and trim all preset form fields.",
+        "author": "ArabCoders",
+        "date": "2025-03-22T21:22:33+00:00"
+      },
+      {
+        "sha": "706dba92",
+        "full_sha": "706dba9205fccfe7c93ec67ed071ddd84c66f77c",
+        "message": "README update",
+        "author": "ArabCoders",
+        "date": "2025-03-22T19:48:01+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250322-00f3f27",
+    "full_sha": "00f3f27b8b8f749de63770561fb4ceef7efd0b80",
+    "date": "2025-03-22T17:43:51+00:00",
+    "commits": [
+      {
+        "sha": "450ca3e1",
+        "full_sha": "450ca3e1b791d4e06f5e50369944f43ee36ad75e",
+        "message": "Updated yt-dlp to 2025.3.21",
+        "author": "ArabCoders",
+        "date": "2025-03-22T15:35:37+00:00"
+      },
+      {
+        "sha": "4ed7c26b",
+        "full_sha": "4ed7c26bb45ebc07a306ba8cb596dde4c6885af6",
+        "message": "migrated all our emitter usage to EventBus",
+        "author": "ArabCoders",
+        "date": "2025-03-21T23:05:52+00:00"
+      },
+      {
+        "sha": "07fc8656",
+        "full_sha": "07fc86565aada43e52fa47b8e1ce1bf407d293ec",
+        "message": "updated the app to use EventBus",
+        "author": "ArabCoders",
+        "date": "2025-03-21T20:56:02+00:00"
+      },
+      {
+        "sha": "a973ce8b",
+        "full_sha": "a973ce8bcf0c045dcfa34b397c2beebd72e10973",
+        "message": "Finalize EventBus design",
+        "author": "ArabCoders",
+        "date": "2025-03-21T18:54:28+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250319-25da932",
+    "full_sha": "25da932d2117e59655d24e0ddd712c8365f475b2",
+    "date": "2025-03-19T22:04:48+00:00",
+    "commits": [
+      {
+        "sha": "b7ded323",
+        "full_sha": "b7ded32344276570931523e663cff17dba639825",
+        "message": "bump curl_cffi=0.7.1",
+        "author": "ArabCoders",
+        "date": "2025-03-19T21:40:24+00:00"
+      },
+      {
+        "sha": "5b9f085e",
+        "full_sha": "5b9f085ee8052c0b5371b6d808320423a91534d2",
+        "message": "hard lock curl_cffi to 0.5.10 for yt-dlp support",
+        "author": "ArabCoders",
+        "date": "2025-03-19T19:01:44+00:00"
+      },
+      {
+        "sha": "44fa844c",
+        "full_sha": "44fa844c87d0b3747b2681cb32838f77b3ae9fab",
+        "message": "pull mp4box from external source to reduce build time",
+        "author": "ArabCoders",
+        "date": "2025-03-17T22:34:43+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250317-87e93a5",
+    "full_sha": "87e93a5df657e7ca0d7461d50332b55260b02711",
+    "date": "2025-03-17T21:24:48+00:00",
+    "commits": [
+      {
+        "sha": "fee44403",
+        "full_sha": "fee4440382b6c53a90d25d285f6378c4d5d3172c",
+        "message": "Update README.md",
+        "author": "ArabCoders",
+        "date": "2025-03-17T21:10:20+00:00"
+      },
+      {
+        "sha": "b6fd560a",
+        "full_sha": "b6fd560a644d58afe328a550d8cb5bd9b11347a0",
+        "message": "update external packages",
+        "author": "ArabCoders",
+        "date": "2025-03-17T20:55:05+00:00"
+      },
+      {
+        "sha": "c287c557",
+        "full_sha": "c287c55773c698145baa5a1969720c651393aeba",
+        "message": "potential fix for #217",
+        "author": "ArabCoders",
+        "date": "2025-03-17T20:35:18+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250317-9445e3e",
+    "full_sha": "9445e3ef86813b228d3acf341592f3b13660e94c",
+    "date": "2025-03-17T16:52:45+00:00",
+    "commits": [
+      {
+        "sha": "6f71c5ce",
+        "full_sha": "6f71c5ceda7a5f4ebcaa2dfe023df8e6f95b0cfb",
+        "message": "added /changelogs to static path",
+        "author": "ArabCoders",
+        "date": "2025-03-16T21:37:09+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250316-0ed8aa5",
+    "full_sha": "0ed8aa5a30f6948af39c1be71c0cc836a4db5147",
+    "date": "2025-03-16T21:12:13+00:00",
+    "commits": [
+      {
+        "sha": "8ce19b5a",
+        "full_sha": "8ce19b5a4bbe2dfb604335a52976e03282df87e7",
+        "message": "Add changeslog page to WebUI",
+        "author": "ArabCoders",
+        "date": "2025-03-16T20:18:49+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250316-3161fc0",
+    "full_sha": "3161fc0bb83dcf7b05c0a904af72b8c8fe7c7318",
+    "date": "2025-03-16T18:32:25+00:00",
+    "commits": [
+      {
+        "sha": "ca00aff9",
+        "full_sha": "ca00aff9e31a661e852e51775b5e1baf21939778",
+        "message": "fix params Impersonate target",
+        "author": "ArabCoders",
+        "date": "2025-03-16T18:24:00+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250316-98970da",
+    "full_sha": "98970da6632f2ba29d4391c3e754ca0a6642e910",
+    "date": "2025-03-16T18:13:29+00:00",
+    "commits": [
+      {
+        "sha": "1e794a62",
+        "full_sha": "1e794a62cdfecd44ff819ca4e33f1c07a5380cfa",
+        "message": "updated README",
+        "author": "ArabCoders",
+        "date": "2025-03-16T18:06:07+00:00"
+      },
+      {
+        "sha": "b116d48d",
+        "full_sha": "b116d48da61f482cf9f862e7c2b4e569bd656754",
+        "message": "added converter for date range objects param",
+        "author": "ArabCoders",
+        "date": "2025-03-16T17:12:18+00:00"
+      },
+      {
+        "sha": "2e9c76a1",
+        "full_sha": "2e9c76a1f7f83da15f699d0bfa2c317732dbc4ea",
+        "message": "bundle mp4box into the image",
+        "author": "ArabCoders",
+        "date": "2025-03-15T23:03:43+00:00"
+      },
+      {
+        "sha": "095bca9e",
+        "full_sha": "095bca9e88849734d8a737c654846322f9d3a92c",
+        "message": "more fit approch to handle yt-dlp logging messages.",
+        "author": "ArabCoders",
+        "date": "2025-03-15T19:29:05+00:00"
+      },
+      {
+        "sha": "1b57e41e",
+        "full_sha": "1b57e41e1b5b4bd4bc59251f2073514f037c229f",
+        "message": "try to differentiate yt-dlp logs for each download.",
+        "author": "ArabCoders",
+        "date": "2025-03-15T17:10:28+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250314-19bdd84",
+    "full_sha": "19bdd84dd59561d8d674d9394b85a21ea41f0101",
+    "date": "2025-03-14T22:33:55+00:00",
+    "commits": [
+      {
+        "sha": "d94f004e",
+        "full_sha": "d94f004eedd0027b9f0de386f3185b7e1124b305",
+        "message": "if the url is video with playlist, follow redirect and queue all videos in the playlist.",
+        "author": "ArabCoders",
+        "date": "2025-03-14T22:29:58+00:00"
+      },
+      {
+        "sha": "7849eb87",
+        "full_sha": "7849eb8735c8e31fc2289c0aaaaedfcf27db0f9e",
+        "message": "make break_on_existing optional and overridable by user.",
+        "author": "ArabCoders",
+        "date": "2025-03-14T22:00:27+00:00"
+      },
+      {
+        "sha": "8dd7c7de",
+        "full_sha": "8dd7c7de1ea631ff91f765101e61754f428db780",
+        "message": "Added indicator in the WebUI for when post-processing are running.",
+        "author": "ArabCoders",
+        "date": "2025-03-14T21:06:13+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250314-9adb6ef",
+    "full_sha": "9adb6efbc5eb256e4609aab5013563fa68d71fbc",
+    "date": "2025-03-14T20:18:44+00:00",
+    "commits": [
+      {
+        "sha": "bce84163",
+        "full_sha": "bce84163f717f9f979e13c2c6427eb011d99d4eb",
+        "message": "make sure task preset format isn't default",
+        "author": "ArabCoders",
+        "date": "2025-03-14T20:14:58+00:00"
+      },
+      {
+        "sha": "83152f0e",
+        "full_sha": "83152f0e0033ca3eae44124109b2ee603ac4aaff",
+        "message": "minor fixes to not export default format",
+        "author": "ArabCoders",
+        "date": "2025-03-14T20:06:09+00:00"
+      },
+      {
+        "sha": "fc696b6a",
+        "full_sha": "fc696b6afabe9df73ab6516f6035d96e57e57c45",
+        "message": "standardize the form design, and update packages to latest version.",
+        "author": "ArabCoders",
+        "date": "2025-03-14T19:46:31+00:00"
+      },
+      {
+        "sha": "b5803f94",
+        "full_sha": "b5803f94b1e2cd6fa623b9a524ac72cbd5b359cf",
+        "message": "added export to tasks.",
+        "author": "ArabCoders",
+        "date": "2025-03-14T18:30:29+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250313-674c538",
+    "full_sha": "674c53893f67594abe8e27a55aa5dc0dd189a990",
+    "date": "2025-03-13T20:16:12+00:00",
+    "commits": [
+      {
+        "sha": "ada7b5db",
+        "full_sha": "ada7b5db9785f4a78396fa8502ca92be5b5f54b4",
+        "message": "Update presets to use safe url base64 for exported string.",
+        "author": "ArabCoders",
+        "date": "2025-03-13T18:47:01+00:00"
+      },
+      {
+        "sha": "cc96879a",
+        "full_sha": "cc96879a1d15ff1aed6306dfd5da5ce5477e6ea8",
+        "message": "show play icon if hideThumbnail is set and content is embedable",
+        "author": "ArabCoders",
+        "date": "2025-03-11T18:31:59+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250311-d5efb99",
+    "full_sha": "d5efb994ecd60fda6f4015b2e9dc12628e94504c",
+    "date": "2025-03-11T18:10:27+00:00",
+    "commits": [
+      {
+        "sha": "15969542",
+        "full_sha": "15969542abaf0ca411045c86a50c4d8a239bbf90",
+        "message": "restore check for format in preset compiling for YTDLPOpts",
+        "author": "ArabCoders",
+        "date": "2025-03-11T18:06:29+00:00"
+      },
+      {
+        "sha": "608b0128",
+        "full_sha": "608b0128b80a0dc55cf3ee87b63df6c816ef9516",
+        "message": "Made it possible to not use format in preset",
+        "author": "ArabCoders",
+        "date": "2025-03-11T17:59:08+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250310-10aeff4",
+    "full_sha": "10aeff4bfa5bad92ed5f52ce5b2ec78066016c54",
+    "date": "2025-03-10T23:23:11+00:00",
+    "commits": [
+      {
+        "sha": "6b38c5fc",
+        "full_sha": "6b38c5fcd6198c3df657063b87711a6984df1f49",
+        "message": "add advanced iOS shortcut",
+        "author": "ArabCoders",
+        "date": "2025-03-10T23:19:57+00:00"
+      },
+      {
+        "sha": "1aeb8efa",
+        "full_sha": "1aeb8efa1ec17eb7ef277015fc1b17e411d5d8e6",
+        "message": "updated yt-dlp/url/info to give cookies in valid way.",
+        "author": "ArabCoders",
+        "date": "2025-03-10T23:08:13+00:00"
+      },
+      {
+        "sha": "cd977ea2",
+        "full_sha": "cd977ea28da65b85cc3fc5478307a5f64d562e11",
+        "message": "minor updates to webui",
+        "author": "ArabCoders",
+        "date": "2025-03-10T23:07:56+00:00"
+      },
+      {
+        "sha": "c1939144",
+        "full_sha": "c1939144c9b562bf647c41ebb850dbcb51c5b584",
+        "message": "parse yt-dlp header cookie for yt-dlp/url/info",
+        "author": "ArabCoders",
+        "date": "2025-03-10T21:08:24+00:00"
+      },
+      {
+        "sha": "72bac24f",
+        "full_sha": "72bac24f46e897b8e75f3632f6bcfc8ac1227768",
+        "message": "minor updates to extract_info",
+        "author": "ArabCoders",
+        "date": "2025-03-10T20:12:08+00:00"
+      },
+      {
+        "sha": "643688bf",
+        "full_sha": "643688bf97a7c0bd0df7288bbbd8308a8108ec2b",
+        "message": "support sending presets with api/yt-dlp/url/info",
+        "author": "ArabCoders",
+        "date": "2025-03-10T00:56:10+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250309-9427f7b",
+    "full_sha": "9427f7b2a0deeddd871d0a3cad6e935be39411bd",
+    "date": "2025-03-09T22:48:30+00:00",
+    "commits": [
+      {
+        "sha": "dcab2530",
+        "full_sha": "dcab2530ec8ed7a7f7ac6b53c19180194ee7972a",
+        "message": "Improve history status display and added button to play the video incase thumbnail is hidden.",
+        "author": "ArabCoders",
+        "date": "2025-03-09T21:53:04+00:00"
+      },
+      {
+        "sha": "329a8f51",
+        "full_sha": "329a8f51b1aefb8244ebe5099e1bb1698dbf057f",
+        "message": "add reference to the iOS shortcut.",
+        "author": "ArabCoders",
+        "date": "2025-03-09T21:52:42+00:00"
+      },
+      {
+        "sha": "3a8b67ff",
+        "full_sha": "3a8b67ff82d79f499f78d5cedfadb43a86101983",
+        "message": "normalize return response for api/history/add",
+        "author": "ArabCoders",
+        "date": "2025-03-09T02:22:16+00:00"
+      },
+      {
+        "sha": "68228294",
+        "full_sha": "68228294b0948d918dca3b03ef376795468295b8",
+        "message": "made api/history/add easier to script",
+        "author": "ArabCoders",
+        "date": "2025-03-09T02:09:26+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250308-7a2dc8a",
+    "full_sha": "7a2dc8a452e0414e92c79e4aea48a4cb86436cf6",
+    "date": "2025-03-08T22:20:58+00:00",
+    "commits": [
+      {
+        "sha": "20ddbb1a",
+        "full_sha": "20ddbb1a1f42849fd560e768f540e178c2d49172",
+        "message": "typo",
+        "author": "ArabCoders",
+        "date": "2025-03-08T22:15:30+00:00"
+      },
+      {
+        "sha": "c7ace294",
+        "full_sha": "c7ace294a9998165bd893b95a7d43681c28cbe61",
+        "message": "updated README with bookmarklets and updated the favicon.",
+        "author": "ArabCoders",
+        "date": "2025-03-08T22:15:00+00:00"
+      },
+      {
+        "sha": "bb507c62",
+        "full_sha": "bb507c62b31bda36eed06c2f3e43b65114e1d257",
+        "message": "added filter to presets, so we can reduce data usage when creating a iOS shortcut",
+        "author": "ArabCoders",
+        "date": "2025-03-08T17:20:54+00:00"
+      },
+      {
+        "sha": "65e7d3e6",
+        "full_sha": "65e7d3e6fc086e8a87829b0c5327f91b415777b4",
+        "message": "reduce log spam",
+        "author": "ArabCoders",
+        "date": "2025-03-08T16:56:55+00:00"
+      },
+      {
+        "sha": "e4794eda",
+        "full_sha": "e4794eda7cde5f6768428b126c9d1fee14d59150",
+        "message": "Updated the worker pool to be dynamic, and make it so that live stream downloading doesn't count towards the worker pool limit.",
+        "author": "ArabCoders",
+        "date": "2025-03-08T16:53:15+00:00"
+      },
+      {
+        "sha": "fbdeec6a",
+        "full_sha": "fbdeec6a9980270f2d9958b8f8fd75e46cb10e91",
+        "message": "add different icon for embeded content",
+        "author": "ArabCoders",
+        "date": "2025-03-08T15:22:50+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250307-243d455",
+    "full_sha": "243d4554d79b24c2558a9c969c3b7eb7cf5785bd",
+    "date": "2025-03-07T17:45:37+00:00",
+    "commits": [
+      {
+        "sha": "64c84e5c",
+        "full_sha": "64c84e5c3a3db4a2b0bb716bb62107f3e5f5d31e",
+        "message": "Make it possible to embed content if the content is being downloaded or yet to complete.",
+        "author": "ArabCoders",
+        "date": "2025-03-07T17:40:31+00:00"
+      },
+      {
+        "sha": "f89e7266",
+        "full_sha": "f89e72666b7964c22073ecc5a2f57b2ad9089fcb",
+        "message": "make to possible to specify the preset when adding via /api/history/add",
+        "author": "ArabCoders",
+        "date": "2025-03-07T17:16:19+00:00"
+      },
+      {
+        "sha": "89684ac4",
+        "full_sha": "89684ac494677a09441b6c07830d7e45c515bde0",
+        "message": "add the new variable to enable yt-dlp console access to README",
+        "author": "ArabCoders",
+        "date": "2025-03-07T17:13:39+00:00"
+      },
+      {
+        "sha": "e0e63d61",
+        "full_sha": "e0e63d61c4ded37ea1f4936ae769f4798c82a8ec",
+        "message": "for some reason, people were exposing ytptube directly to internet without any authentication. therefore, we have disabled the console access by default.",
+        "author": "ArabCoders",
+        "date": "2025-03-07T17:11:21+00:00"
+      },
+      {
+        "sha": "04efb1c2",
+        "full_sha": "04efb1c2121264763fde3fe2b95cff9aa6f965f1",
+        "message": "when video info fail to load raise error and close the modal",
+        "author": "ArabCoders",
+        "date": "2025-03-07T17:10:35+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250307-7b395d7",
+    "full_sha": "7b395d717d4ba0b37aabac2fc064aca053582f95",
+    "date": "2025-03-07T16:01:07+00:00",
+    "commits": [
+      {
+        "sha": "7fd0e1ed",
+        "full_sha": "7fd0e1edf397cd31ce1f70ca45a6869c0c0b1e72",
+        "message": "make releases manual process",
+        "author": "ArabCoders",
+        "date": "2025-03-07T15:44:54+00:00"
+      },
+      {
+        "sha": "981405a4",
+        "full_sha": "981405a44d7ade2a05d36782482de4f95dd70eb0",
+        "message": "make URL options have higher proirity than preset and default options",
+        "author": "ArabCoders",
+        "date": "2025-03-07T15:44:44+00:00"
+      },
+      {
+        "sha": "414b52de",
+        "full_sha": "414b52de9bc1f6942d16c2f08ffface4fab03f8c",
+        "message": "removed dead code",
+        "author": "ArabCoders",
+        "date": "2025-03-06T23:20:46+00:00"
+      },
+      {
+        "sha": "cc21a93c",
+        "full_sha": "cc21a93cb5eebfea70f81a19322dbe539a03eccc",
+        "message": "Make presets more powerful",
+        "author": "ArabCoders",
+        "date": "2025-03-06T23:14:10+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250306-c944c36",
+    "full_sha": "c944c360282c6d7e6a20c9e7d7892945a7946a4b",
+    "date": "2025-03-06T22:27:25+00:00",
+    "commits": [
+      {
+        "sha": "61fd6d45",
+        "full_sha": "61fd6d45f645154adeb58b81f6a2cc6c83eeacb8",
+        "message": "remove debug statement",
+        "author": "ArabCoders",
+        "date": "2025-03-06T22:14:05+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250306-e52bef3",
+    "full_sha": "e52bef378129c5da8936439eb29443138b780dab",
+    "date": "2025-03-06T22:05:05+00:00",
+    "commits": [
+      {
+        "sha": "6e52b3c3",
+        "full_sha": "6e52b3c356f3a96881e7edbde61ba31fb6ab9542",
+        "message": "for basic auth rely on cookies and not just the Authorization header",
+        "author": "ArabCoders",
+        "date": "2025-03-06T22:01:05+00:00"
+      },
+      {
+        "sha": "0b04f098",
+        "full_sha": "0b04f098de6c113a9abece540f45983568057df4",
+        "message": "preload all pages.",
+        "author": "ArabCoders",
+        "date": "2025-03-05T23:06:53+00:00"
+      },
+      {
+        "sha": "241efc8d",
+        "full_sha": "241efc8d5fc866151e7860f875261af192c2cf07",
+        "message": "added autoplay",
+        "author": "ArabCoders",
+        "date": "2025-03-05T22:48:37+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250305-73f97b8",
+    "full_sha": "73f97b80f3fb01445f174987c55d3c3ee235bc5a",
+    "date": "2025-03-05T19:18:35+00:00",
+    "commits": [
+      {
+        "sha": "2106ea29",
+        "full_sha": "2106ea29b74bb29d0ca20d2f4057788801131516",
+        "message": "disable default subtitle track for firefox as it has problem when we switch sources.",
+        "author": "ArabCoders",
+        "date": "2025-03-05T18:50:54+00:00"
+      },
+      {
+        "sha": "931ad0c5",
+        "full_sha": "931ad0c5c54e05ced03124218b970342903dfe5e",
+        "message": "no longer rely on plyr for playing videos instead use native video element",
+        "author": "ArabCoders",
+        "date": "2025-03-05T18:07:49+00:00"
+      },
+      {
+        "sha": "dcc5cd0a",
+        "full_sha": "dcc5cd0a0b137f2d29fbb4192746f080b19b9771",
+        "message": "fixed the icon not showing up correctly.",
+        "author": "ArabCoders",
+        "date": "2025-03-04T23:57:48+00:00"
+      },
+      {
+        "sha": "d6e2a5f7",
+        "full_sha": "d6e2a5f713e9cfd3d44db51e3d6c9f8b1a169cb4",
+        "message": "mostly text and logo update.",
+        "author": "ArabCoders",
+        "date": "2025-03-04T23:40:54+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250304-327136b",
+    "full_sha": "327136bf09ed55baa064bda989182aa3ceafa07c",
+    "date": "2025-03-04T18:25:12+00:00",
+    "commits": [
+      {
+        "sha": "4036dcac",
+        "full_sha": "4036dcacc4fee82229310c8b1a21cae31d2bf91d",
+        "message": "updated readme with new changes",
+        "author": "ArabCoders",
+        "date": "2025-03-04T18:08:08+00:00"
+      },
+      {
+        "sha": "c58faa28",
+        "full_sha": "c58faa28c9b580b7dc596d8c20e7eed5056982f1",
+        "message": "added button to run task now",
+        "author": "ArabCoders",
+        "date": "2025-03-04T17:27:26+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250303-48c849d",
+    "full_sha": "48c849da5a41fc3d973b934d8065ee26ce33b09a",
+    "date": "2025-03-03T23:18:46+00:00",
+    "commits": [
+      {
+        "sha": "49bc28ed",
+        "full_sha": "49bc28edc0dd93cd7d2a13371bdd086558a8cdda",
+        "message": "Make it possible to manage presets via webui",
+        "author": "ArabCoders",
+        "date": "2025-03-03T23:11:17+00:00"
+      },
+      {
+        "sha": "d88ee150",
+        "full_sha": "d88ee150604801146c1640c3d9e5976040767616",
+        "message": "separated the scheduler from tasks, to allow us to schedule non add url tasks in the future",
+        "author": "ArabCoders",
+        "date": "2025-03-02T18:49:52+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250301-a608d02",
+    "full_sha": "a608d02d67fc02b1027541c9e863e3f1f99cabf2",
+    "date": "2025-03-01T17:15:40+00:00",
+    "commits": [
+      {
+        "sha": "ea985629",
+        "full_sha": "ea985629445f9dc99c2794ce750e981ed49a1daf",
+        "message": "better fallback if file was renamed and retains the same ID",
+        "author": "ArabCoders",
+        "date": "2025-03-01T17:04:28+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250227-65dbfc7",
+    "full_sha": "65dbfc775e23ec869cf2e902d420bfcc241e795a",
+    "date": "2025-02-27T22:53:32+00:00",
+    "commits": [
+      {
+        "sha": "f0836ddd",
+        "full_sha": "f0836ddd7754ddd1e3bd06b9efb222d4dc019d21",
+        "message": "apple like to be snowflake.",
+        "author": "ArabCoders",
+        "date": "2025-02-27T22:21:45+00:00"
+      },
+      {
+        "sha": "e847fea2",
+        "full_sha": "e847fea2dd0faa8bcc4da585fbefc8408df0ca3e",
+        "message": "for iOS devices fallback directly to m3u8",
+        "author": "ArabCoders",
+        "date": "2025-02-27T22:06:58+00:00"
+      },
+      {
+        "sha": "1fa4c523",
+        "full_sha": "1fa4c523bbbd3bd16a28b6edb1353eb7aeca09f1",
+        "message": "intercept file response and add correct mime-type",
+        "author": "ArabCoders",
+        "date": "2025-02-27T21:44:02+00:00"
+      },
+      {
+        "sha": "689ce421",
+        "full_sha": "689ce421e910a2d7f31ff3c639e2e8abf3e6e95b",
+        "message": "add sentry for webui error reporting",
+        "author": "ArabCoders",
+        "date": "2025-02-27T20:54:49+00:00"
+      },
+      {
+        "sha": "3a964a6a",
+        "full_sha": "3a964a6ac3a78e8f4091effc88bd531de24badc2",
+        "message": "add mimetype to source list",
+        "author": "ArabCoders",
+        "date": "2025-02-27T16:19:32+00:00"
+      },
+      {
+        "sha": "63a9a15e",
+        "full_sha": "63a9a15e67e6b956b78b7c9369e505fe454970f4",
+        "message": "do not consider 0 byte files.",
+        "author": "ArabCoders",
+        "date": "2025-02-27T15:42:35+00:00"
+      },
+      {
+        "sha": "b7b72cf2",
+        "full_sha": "b7b72cf21e19c84faecea28b32c58a186f7866d4",
+        "message": "try to direct play video first and fallback to hls if we encounter error.",
+        "author": "ArabCoders",
+        "date": "2025-02-27T15:31:17+00:00"
+      },
+      {
+        "sha": "259eae25",
+        "full_sha": "259eae251a7c1d051a00580d95ce133d50ea067f",
+        "message": "initial work to support adding/deleting presets from api",
+        "author": "ArabCoders",
+        "date": "2025-02-27T12:30:52+00:00"
+      },
+      {
+        "sha": "c5924b02",
+        "full_sha": "c5924b02cc316e171e0abc46beaba5ddf9d48cb6",
+        "message": "support format key in ytdlp.json, using the key will ignore the selected preset.",
+        "author": "ArabCoders",
+        "date": "2025-02-27T11:58:06+00:00"
+      },
+      {
+        "sha": "0cb90645",
+        "full_sha": "0cb90645cd16f7559762c8677b5516475a0604e0",
+        "message": "display portrait image in more clean way",
+        "author": "ArabCoders",
+        "date": "2025-02-27T11:09:11+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250226-ad561f7",
+    "full_sha": "ad561f7e73e56e94ebbb6c9dd503d8051d2031ab",
+    "date": "2025-02-26T21:45:51+00:00",
+    "commits": [
+      {
+        "sha": "96260301",
+        "full_sha": "96260301beff449a3d9166ef8bb42e73c2150b16",
+        "message": "we no longer use json cookies, instead rely on netescape cookies and recommend what yt-dlp recommend as well.",
+        "author": "ArabCoders",
+        "date": "2025-02-26T21:39:18+00:00"
+      },
+      {
+        "sha": "1934815a",
+        "full_sha": "1934815a410cb73f16106bcf0121754df50e0960",
+        "message": "show extract_info logs via notification",
+        "author": "ArabCoders",
+        "date": "2025-02-26T21:38:39+00:00"
+      },
+      {
+        "sha": "7bdd5483",
+        "full_sha": "7bdd548358cb180be88be4d67390fd388516d953",
+        "message": "don't show merge commits",
+        "author": "ArabCoders",
+        "date": "2025-02-26T21:38:08+00:00"
+      },
+      {
+        "sha": "e0058d96",
+        "full_sha": "e0058d969f7675fb2cc6ff4260fbd6ac7627ea91",
+        "message": "added file logging and automatically load config/cookies.txt if non is given via ytdlp.json file.",
+        "author": "ArabCoders",
+        "date": "2025-02-26T21:37:59+00:00"
+      },
+      {
+        "sha": "ccd5b060",
+        "full_sha": "ccd5b0607e86a5d97cc9bf5ecf8d95641068182c",
+        "message": "updated dependencies",
+        "author": "ArabCoders",
+        "date": "2025-02-26T21:35:53+00:00"
+      },
+      {
+        "sha": "8e97cba4",
+        "full_sha": "8e97cba43b051c15c5de26360cfe27bc6e81b65e",
+        "message": "update dependencies",
+        "author": "ArabCoders",
+        "date": "2025-02-23T16:32:39+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250220-806b795",
+    "full_sha": "806b795b381be1b28d6c684aa2e965de98c81ca2",
+    "date": "2025-02-20T14:32:03+00:00",
+    "commits": [
+      {
+        "sha": "f340a4c6",
+        "full_sha": "f340a4c67fbc1f5dc5284ebf7a1b74806762f685",
+        "message": "updated dependencies",
+        "author": "ArabCoders",
+        "date": "2025-02-20T14:06:17+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250130-a1f8245",
+    "full_sha": "a1f82450864a4e420a2241301997f79a419220b8",
+    "date": "2025-01-30T15:23:46+00:00",
+    "commits": [
+      {
+        "sha": "50630990",
+        "full_sha": "50630990024246b82732ce94b0c89b70af52a54e",
+        "message": "Added YTP_INSTANCE_TITLE",
+        "author": "ArabCoders",
+        "date": "2025-01-30T13:18:29+00:00"
+      },
+      {
+        "sha": "67543e60",
+        "full_sha": "67543e604455b74a9e9bd9e0087f8586391cefb5",
+        "message": "revert changes to theme switch button.",
+        "author": "ArabCoders",
+        "date": "2025-01-29T13:32:53+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250129-d135de5",
+    "full_sha": "d135de508865f3ab8dceeea085c6e995898dd87d",
+    "date": "2025-01-29T10:29:17+00:00",
+    "commits": [
+      {
+        "sha": "0d8d9bb1",
+        "full_sha": "0d8d9bb13f43fb6014f6abdfd8cfd6eb4d3e504c",
+        "message": "fixed bug preventing get_info from working, and added auto theme.",
+        "author": "ArabCoders",
+        "date": "2025-01-29T10:09:07+00:00"
+      },
+      {
+        "sha": "45878965",
+        "full_sha": "45878965f462b957f0351a0106db4640d082725d",
+        "message": "fixed linting problems",
+        "author": "ArabCoders",
+        "date": "2025-01-28T20:05:59+00:00"
+      },
+      {
+        "sha": "fdec16e8",
+        "full_sha": "fdec16e895be0e92baf3e06e294bd7542ccd5247",
+        "message": "mostly linter fixes.",
+        "author": "ArabCoders",
+        "date": "2025-01-28T16:43:51+00:00"
+      },
+      {
+        "sha": "2b84aad8",
+        "full_sha": "2b84aad836d7dce0fc6e2939cb9ee4e69616e6c2",
+        "message": "change default umask to 0002 to allow group users to act on files and folders.",
+        "author": "ArabCoders",
+        "date": "2025-01-28T14:18:54+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250127-f554871",
+    "full_sha": "f554871b9f171a55671e02ea78504ed7ab8891fe",
+    "date": "2025-01-27T21:18:41+00:00",
+    "commits": [
+      {
+        "sha": "d063cf0f",
+        "full_sha": "d063cf0f52e2614320b88ac19efb53571fe0c176",
+        "message": "use same name cross client and server for variables and config files.",
+        "author": "ArabCoders",
+        "date": "2025-01-27T21:09:46+00:00"
+      },
+      {
+        "sha": "41ddc14a",
+        "full_sha": "41ddc14af54f03598c3194551a9f1779315f7dd3",
+        "message": "Updated README.md",
+        "author": "ArabCoders",
+        "date": "2025-01-27T19:30:19+00:00"
+      },
+      {
+        "sha": "6a92cf9e",
+        "full_sha": "6a92cf9ec9b5b66e4d8f75eca94988367246e6bf",
+        "message": "added timeout param for wait_for",
+        "author": "ArabCoders",
+        "date": "2025-01-27T18:23:57+00:00"
+      },
+      {
+        "sha": "cda863b0",
+        "full_sha": "cda863b0bc47f25018f39907283c6e5e610f0b0b",
+        "message": "missed a bug fix",
+        "author": "ArabCoders",
+        "date": "2025-01-27T18:19:09+00:00"
+      },
+      {
+        "sha": "f62ba220",
+        "full_sha": "f62ba22047c523a5e168c6300d8676c94ff4e6ed",
+        "message": "move format_item to common class, and update methods to use it",
+        "author": "ArabCoders",
+        "date": "2025-01-27T18:14:01+00:00"
+      },
+      {
+        "sha": "1187badc",
+        "full_sha": "1187badc2dcb228bb763187f796a45cf39c1ea41",
+        "message": "fixed bug preventing adding items via /api/history endpoint",
+        "author": "ArabCoders",
+        "date": "2025-01-27T18:10:53+00:00"
+      },
+      {
+        "sha": "d3d6665e",
+        "full_sha": "d3d6665e565c795126271e896db9b2d84e19eee6",
+        "message": "updated dependencies",
+        "author": "ArabCoders",
+        "date": "2025-01-27T17:43:29+00:00"
+      },
+      {
+        "sha": "90224476",
+        "full_sha": "902244769a440424a7cfbf8117702eb2c2886f62",
+        "message": "Major code changes.",
+        "author": "ArabCoders",
+        "date": "2025-01-27T16:53:59+00:00"
+      },
+      {
+        "sha": "94f60e01",
+        "full_sha": "94f60e010da41e54c2a9d88937a31f5c0dbfe086",
+        "message": "added Intellisense support for css in vue files.",
+        "author": "ArabCoders",
+        "date": "2025-01-25T20:30:49+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250125-f790257",
+    "full_sha": "f790257b4fecf76abd4d46a3dd8e9ad4fb3d862f",
+    "date": "2025-01-25T19:56:30+00:00",
+    "commits": [
+      {
+        "sha": "dbee7cf2",
+        "full_sha": "dbee7cf2face681571630a4bd8c5dd4a2ce4f9e8",
+        "message": "standardize more events.",
+        "author": "ArabCoders",
+        "date": "2025-01-25T19:46:33+00:00"
+      },
+      {
+        "sha": "ddc216cc",
+        "full_sha": "ddc216ccb668b42755f126d5ffcf07f834879574",
+        "message": "revamped the notification system",
+        "author": "ArabCoders",
+        "date": "2025-01-25T19:24:13+00:00"
+      },
+      {
+        "sha": "922d194d",
+        "full_sha": "922d194d7a2e7cd50af960bb30606d4db40c022c",
+        "message": "simplify API calls.",
+        "author": "ArabCoders",
+        "date": "2025-01-25T14:25:58+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250124-f0ac16c",
+    "full_sha": "f0ac16cea7db809613bc275874288b3591b339ed",
+    "date": "2025-01-24T20:29:46+00:00",
+    "commits": [
+      {
+        "sha": "e5f2a09c",
+        "full_sha": "e5f2a09cc75b3bceb5b4531547c173704193de1c",
+        "message": "Added backward compatibility fix.",
+        "author": "ArabCoders",
+        "date": "2025-01-24T20:25:03+00:00"
+      },
+      {
+        "sha": "a4827202",
+        "full_sha": "a4827202d8faa32c8ac7edc3262cc8bfcade634e",
+        "message": "overhauled the tasks page to support adding/editing/deleting tasks from the WebUI directly instead of relying on tasks.json file.",
+        "author": "ArabCoders",
+        "date": "2025-01-24T20:13:53+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250123-ff540ad",
+    "full_sha": "ff540addffba5c5d2f88d3101d592ec9568d5ede",
+    "date": "2025-01-23T15:30:03+00:00",
+    "commits": [
+      {
+        "sha": "96c79be7",
+        "full_sha": "96c79be786fb180c79b7c2883d4d65467e312611",
+        "message": "Build arm64 images only on master builds, as it's quite slow.",
+        "author": "ArabCoders",
+        "date": "2025-01-23T15:21:23+00:00"
+      },
+      {
+        "sha": "4eb94578",
+        "full_sha": "4eb945786d33138250282bfd04863e485a03135e",
+        "message": "update job name",
+        "author": "ArabCoders",
+        "date": "2025-01-23T15:04:26+00:00"
+      },
+      {
+        "sha": "2ea407b6",
+        "full_sha": "2ea407b64a0d8ff027642c93913f150b1dcd8d9c",
+        "message": "improve build process include linux/arm64",
+        "author": "ArabCoders",
+        "date": "2025-01-23T15:03:24+00:00"
+      },
+      {
+        "sha": "cb735cbb",
+        "full_sha": "cb735cbb976dc1c60fc8450c86b97ddc0f9d257a",
+        "message": "Added new feature to parse yt-dlp CLI arguments in yt-dlp JSON config box",
+        "author": "ArabCoders",
+        "date": "2025-01-23T14:35:03+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "dev-20250123-cb735cb",
+    "full_sha": "82d1401c272995606ce1fe4dba80ec2d312636e6",
+    "date": "2025-01-19T20:55:47+00:00",
+    "commits": [
+      {
+        "sha": "a02233a8",
+        "full_sha": "a02233a8dd6b044b8ba0d208f7b138cd064e712c",
+        "message": "separate PR and push workflow",
+        "author": "ArabCoders",
+        "date": "2025-01-19T19:45:12+00:00"
+      },
+      {
+        "sha": "3e51b7a7",
+        "full_sha": "3e51b7a7d0da9a3ed98bc063ed86fc7a611a37c6",
+        "message": "updated version tagger",
+        "author": "ArabCoders",
+        "date": "2025-01-19T19:26:02+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250119-c54e910",
+    "full_sha": "c54e9107b3f3329cc32ec2af2d7e4e3d7b1277c2",
+    "date": "2025-01-19T18:40:30+00:00",
+    "commits": [
+      {
+        "sha": "00c165e0",
+        "full_sha": "00c165e0dc7adb5aedc33cf475a741e910547a96",
+        "message": "updated how we tag releases and builds",
+        "author": "ArabCoders",
+        "date": "2025-01-19T18:36:40+00:00"
+      },
+      {
+        "sha": "cc9a4702",
+        "full_sha": "cc9a470213d3c3af689263ac0ee3106ded5f66f4",
+        "message": "add branch name to app version",
+        "author": "ArabCoders",
+        "date": "2025-01-19T17:16:13+00:00"
+      },
+      {
+        "sha": "2b8e79c1",
+        "full_sha": "2b8e79c1c42a33f11c9b854791dfe5cd0b56a210",
+        "message": "Switch to single Manager instead of one manager per download",
+        "author": "ArabCoders",
+        "date": "2025-01-19T17:01:46+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "master-20250119-bcf5593",
+    "full_sha": "bcf559352339ec917fd48365026ee95c4a4dbfda",
+    "date": "2025-01-19T15:27:31+00:00",
+    "commits": [
+      {
+        "sha": "2147a21a",
+        "full_sha": "2147a21aa417b5d4fe280fd3061735e8dfcc9b98",
+        "message": "auto publish releases",
+        "author": "ArabCoders",
+        "date": "2025-01-19T15:23:48+00:00"
+      },
+      {
+        "sha": "843d5fd7",
+        "full_sha": "843d5fd7264c9c35294b86bd8f19dcc37319a435",
+        "message": "Fixed type casting for some elements when adding items.",
+        "author": "ArabCoders",
+        "date": "2025-01-19T15:12:11+00:00"
+      },
+      {
+        "sha": "e7cc746e",
+        "full_sha": "e7cc746ee90cd27a1a51705889f7208c4e67a1c7",
+        "message": "Fixed bug preventing the Queue UI from being updated with file progress.",
+        "author": "ArabCoders",
+        "date": "2025-01-19T15:11:25+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250119-843d5fd",
+    "full_sha": "9ab357983b4ae0659975e8ba2ecc9ff644318a13",
+    "date": "2025-01-18T18:14:06+00:00",
+    "commits": [
+      {
+        "sha": "0d9f0ded",
+        "full_sha": "0d9f0ded88ac7a8d6016d6de590dacb25af6c077",
+        "message": "Another attempt at fixing #173",
+        "author": "ArabCoders",
+        "date": "2025-01-18T17:57:23+00:00"
+      },
+      {
+        "sha": "35421540",
+        "full_sha": "35421540d7fe0f003331deae7c7d17e8754715a9",
+        "message": "another attempt to fix multi-processing #173",
+        "author": "ArabCoders",
+        "date": "2025-01-18T16:09:48+00:00"
+      },
+      {
+        "sha": "3f2b9feb",
+        "full_sha": "3f2b9feb7da1fc1c2337f89467c803ebeb399a3f",
+        "message": "Cancel the status update if exception happens during await update_task",
+        "author": "ArabCoders",
+        "date": "2025-01-18T15:27:30+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250118-501e97a",
+    "full_sha": "501e97aabd419bd3e00b82e93c0a15e696c6f58f",
+    "date": "2025-01-18T14:56:15+00:00",
+    "commits": [
+      {
+        "sha": "2fddadf3",
+        "full_sha": "2fddadf363312404303fb06c837cf2633ecae99c",
+        "message": "Potential fix for #173",
+        "author": "ArabCoders",
+        "date": "2025-01-18T14:47:55+00:00"
+      },
+      {
+        "sha": "44440aa5",
+        "full_sha": "44440aa546d60822c504ee5ba466f80964335f9a",
+        "message": "prevent loading keys which sometimes breaks ytptube",
+        "author": "ArabCoders",
+        "date": "2025-01-18T14:47:33+00:00"
+      },
+      {
+        "sha": "1319c3e1",
+        "full_sha": "1319c3e1abe65fec2883e10da51acd48e2a95b59",
+        "message": "ignore /api/ping access log",
+        "author": "ArabCoders",
+        "date": "2025-01-18T14:47:03+00:00"
+      },
+      {
+        "sha": "fef60f03",
+        "full_sha": "fef60f03954066ff825f4c5c2889a7a61a782f8f",
+        "message": "wrap file access into exception handler.",
+        "author": "ArabCoders",
+        "date": "2025-01-17T20:44:27+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250118-2fddadf",
+    "full_sha": "084def9346d1fc49624e394d1e3c8c3e46ae2373",
+    "date": "2025-01-17T12:55:51+00:00",
+    "commits": [
+      {
+        "sha": "cd0118e9",
+        "full_sha": "cd0118e96108577557fbedb029538a500a6c617d",
+        "message": "Remove reset config in basic mode.",
+        "author": "ArabCoders",
+        "date": "2025-01-17T12:40:15+00:00"
+      },
+      {
+        "sha": "e8feace7",
+        "full_sha": "e8feace7ed66ab624696489baaec04c8e919ca1c",
+        "message": "Update README",
+        "author": "ArabCoders",
+        "date": "2025-01-16T23:14:24+00:00"
+      },
+      {
+        "sha": "2b3d1419",
+        "full_sha": "2b3d1419e27cb75538cc41a177a8de278a9fbafe",
+        "message": "Added entry to explain the basic mode.",
+        "author": "ArabCoders",
+        "date": "2025-01-16T23:10:21+00:00"
+      },
+      {
+        "sha": "4e9546ca",
+        "full_sha": "4e9546ca0ba078ebf2ced8a25b64ef8b744beb1b",
+        "message": "removed dev vars from launch",
+        "author": "ArabCoders",
+        "date": "2025-01-16T23:04:30+00:00"
+      },
+      {
+        "sha": "b1388eff",
+        "full_sha": "b1388eff6b0713e1d00635968265901be450f9ba",
+        "message": "Added Basic mode for WebUI & added new env var for selecting default preset.",
+        "author": "ArabCoders",
+        "date": "2025-01-16T23:03:58+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250117-cd0118e",
+    "full_sha": "5be33c6a9ad4cecf1e3c5db74ba0bd50c77a9298",
+    "date": "2025-01-16T16:11:13+00:00",
+    "commits": [
+      {
+        "sha": "93b864ab",
+        "full_sha": "93b864abc6f1e4e032021afc8052b8bca85877a2",
+        "message": "Update yt-dlp to 2025.1.15",
+        "author": "ArabCoders",
+        "date": "2025-01-16T00:21:50+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250116-bd06569",
+    "full_sha": "5b72e4543258f678916af6c7f8e0cfbdf4a33df7",
+    "date": "2025-01-13T15:38:38+00:00",
+    "commits": [
+      {
+        "sha": "6296bc9b",
+        "full_sha": "6296bc9ba5ba58666dadb3e3474f53b3d42115c5",
+        "message": "Updated packages",
+        "author": "ArabCoders",
+        "date": "2025-01-13T15:05:19+00:00"
+      },
+      {
+        "sha": "cac1c55a",
+        "full_sha": "cac1c55abf9268b21b3989545ee18e236c6c6189",
+        "message": "Update datetime when status changed to finish",
+        "author": "ArabCoders",
+        "date": "2025-01-13T15:02:04+00:00"
+      },
+      {
+        "sha": "fd320979",
+        "full_sha": "fd32097982d962be9788b23b531cb2eb6956ba19",
+        "message": "Added view url information in history and queue",
+        "author": "ArabCoders",
+        "date": "2025-01-13T14:15:04+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250113-cac1c55",
+    "full_sha": "0614a09231f2f09851ac06d32a6f14e3e6819343",
+    "date": "2025-01-11T18:10:05+00:00",
+    "commits": [
+      {
+        "sha": "a473e19e",
+        "full_sha": "a473e19ead40b4280e320cbb595b5843883427cf",
+        "message": "Fix",
+        "author": "ArabCoders",
+        "date": "2025-01-11T18:04:32+00:00"
+      },
+      {
+        "sha": "c20fdca0",
+        "full_sha": "c20fdca09bc230c901d1b7c8cac73200e9e96eef",
+        "message": "Added way to check for youtube cookies status",
+        "author": "ArabCoders",
+        "date": "2025-01-11T17:57:39+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250111-c20fdca",
+    "full_sha": "1cc4d730511ff4c9091cc79281ac00f56fe6f3b2",
+    "date": "2025-01-11T14:13:11+00:00",
+    "commits": [
+      {
+        "sha": "b86f13f2",
+        "full_sha": "b86f13f2d8eaf96c257d07e4ae9d73ea107cc551",
+        "message": "Added new option to view url info",
+        "author": "ArabCoders",
+        "date": "2025-01-11T13:39:24+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250111-b86f13f",
+    "full_sha": "ec8cd6b88a6bb77788e1c149002df8f7f6bcf9c1",
+    "date": "2025-01-10T16:20:41+00:00",
+    "commits": [
+      {
+        "sha": "b7d2a2a2",
+        "full_sha": "b7d2a2a2826f223c833c1a6a44daba35e7839dfe",
+        "message": "fixed typo in README and updated dependencies",
+        "author": "ArabCoders",
+        "date": "2025-01-10T16:10:55+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250110-b7d2a2a",
+    "full_sha": "2e99ff1f5e31e002a81ce8634eef1bf808e7374c",
+    "date": "2025-01-10T16:05:47+00:00",
+    "commits": [
+      {
+        "sha": "593c0fc6",
+        "full_sha": "593c0fc6759c9d552589001aed0836e4da43ac80",
+        "message": "Fix and document presets.json",
+        "author": "ArabCoders",
+        "date": "2025-01-10T15:54:07+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250110-593c0fc",
+    "full_sha": "9adf48e404602d9f4140478204bea7da554a5187",
+    "date": "2025-01-03T17:41:03+00:00",
+    "commits": [
+      {
+        "sha": "7a2a4a52",
+        "full_sha": "7a2a4a52691a9029c60d7d8aa6828b239ecc8a44",
+        "message": "more face lifting",
+        "author": "ArabCoders",
+        "date": "2025-01-03T17:34:18+00:00"
+      },
+      {
+        "sha": "b25ee6da",
+        "full_sha": "b25ee6dad85df38c95e33af3a72e961e7559fa14",
+        "message": "some facelift",
+        "author": "ArabCoders",
+        "date": "2025-01-03T17:02:19+00:00"
+      },
+      {
+        "sha": "812e92cf",
+        "full_sha": "812e92cf23d052bad91ad721cee1786f4685ad70",
+        "message": "updates API endpoints, fix webhooks not firing due to an error.",
+        "author": "ArabCoders",
+        "date": "2025-01-03T16:49:45+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250103-b25ee6d",
+    "full_sha": "fa2fd2970a6480652f83a737d5bbef9c1b7445a6",
+    "date": "2025-01-02T21:48:41+00:00",
+    "commits": [
+      {
+        "sha": "7633f8ff",
+        "full_sha": "7633f8ffe2ae494ff9d8214cd84e907646a58b4e",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2025-01-02T21:44:02+00:00"
+      },
+      {
+        "sha": "2a79ac68",
+        "full_sha": "2a79ac6849b1b1b3b365042f492bd2cabfad7d57",
+        "message": "Fix #160",
+        "author": "ArabCoders",
+        "date": "2025-01-02T21:24:21+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250102-7633f8f",
+    "full_sha": "4094e98feb5f64af8b2696048d4fa0a13d3b7a03",
+    "date": "2025-01-02T18:37:47+00:00",
+    "commits": [
+      {
+        "sha": "ee8151ed",
+        "full_sha": "ee8151ed64cd454d1c477b4b8d19eb37db0e0f26",
+        "message": "added debug logging for postprocessor_hook",
+        "author": "ArabCoders",
+        "date": "2025-01-02T17:20:15+00:00"
+      },
+      {
+        "sha": "d9b905fb",
+        "full_sha": "d9b905fbde0f5cb886c865b71e012d5d923f6109",
+        "message": "when adding playlist, yt-dlp doesn't include thumbnail in the list",
+        "author": "ArabCoders",
+        "date": "2025-01-02T16:51:36+00:00"
+      },
+      {
+        "sha": "df69e91d",
+        "full_sha": "df69e91d418dda9fd1454cee36786f015450bed2",
+        "message": "fix cancelling selected items.",
+        "author": "ArabCoders",
+        "date": "2025-01-02T16:51:03+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250102-ee8151e",
+    "full_sha": "5301e134ce525c83d4ec4f8252b2d67e4df2b05c",
+    "date": "2025-01-02T16:16:26+00:00",
+    "commits": [
+      {
+        "sha": "9dd7e3c3",
+        "full_sha": "9dd7e3c35286b8fc35df10fce137ef1ec7aeb6a6",
+        "message": "removed no longer used imports",
+        "author": "ArabCoders",
+        "date": "2025-01-02T16:11:56+00:00"
+      },
+      {
+        "sha": "d8f73a61",
+        "full_sha": "d8f73a618aa09956b2d5267ebfb1e76a5aeade9d",
+        "message": "Fixed audio only streaming",
+        "author": "ArabCoders",
+        "date": "2025-01-02T16:11:22+00:00"
+      },
+      {
+        "sha": "62c457df",
+        "full_sha": "62c457df6592090ac898bcfa3230bee2466137a7",
+        "message": "embeded optional yt-dlp packages",
+        "author": "ArabCoders",
+        "date": "2025-01-02T15:20:09+00:00"
+      },
+      {
+        "sha": "531ffc7e",
+        "full_sha": "531ffc7eb65b9c53cfb260577e45791a0e3a4296",
+        "message": "added env variable and file to be able to install python packages on start\n\na better approach for installing packages.",
+        "author": "ArabCoders",
+        "date": "2025-01-02T14:57:49+00:00"
+      },
+      {
+        "sha": "f4668aab",
+        "full_sha": "f4668aab60538e179ccfd6f8e738bb21ea7cc2a8",
+        "message": "Fixed webhook not firing",
+        "author": "ArabCoders",
+        "date": "2025-01-01T20:25:58+00:00"
+      },
+      {
+        "sha": "9399c515",
+        "full_sha": "9399c515c41d6ae0c23df7040917ea2aa9bf2ae3",
+        "message": "fixe yt-dlp Impersonate Target",
+        "author": "ArabCoders",
+        "date": "2025-01-01T14:09:51+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250102-d8f73a6",
+    "full_sha": "02ba97b8ab757b63227616cf6f20898cc3c3942f",
+    "date": "2025-01-01T13:53:33+00:00",
+    "commits": [
+      {
+        "sha": "5983141d",
+        "full_sha": "5983141dcb19cf7a629ec6bccd796c2bc1a5f3f0",
+        "message": "added confirm to pause download pool",
+        "author": "ArabCoders",
+        "date": "2025-01-01T13:33:25+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20250101-5983141",
+    "full_sha": "e415edd761d1c167255a58d0d417e5faa0dcf5e8",
+    "date": "2024-12-31T15:26:28+00:00",
+    "commits": [
+      {
+        "sha": "d4023713",
+        "full_sha": "d40237134c57106cba6a6cb9de0eaa578ddc3ba3",
+        "message": "minor fixes",
+        "author": "ArabCoders",
+        "date": "2024-12-30T18:58:01+00:00"
+      },
+      {
+        "sha": "ed02c3ec",
+        "full_sha": "ed02c3ec01bdcac0f156890e6456fa06858c645e",
+        "message": "Added the ability to pause download pool",
+        "author": "ArabCoders",
+        "date": "2024-12-30T18:39:24+00:00"
+      },
+      {
+        "sha": "0359eafb",
+        "full_sha": "0359eafbec93802afbd963ec8830f2e4bc9f191b",
+        "message": "fix updating max_workers in UI",
+        "author": "ArabCoders",
+        "date": "2024-12-30T08:03:01+00:00"
+      },
+      {
+        "sha": "448a145e",
+        "full_sha": "448a145ed0bbd71b83e69b9034ff9797d734d964",
+        "message": "Added maxWorkers to title",
+        "author": "ArabCoders",
+        "date": "2024-12-30T07:51:14+00:00"
+      },
+      {
+        "sha": "1bcad666",
+        "full_sha": "1bcad666be9ac1a23a27d897459fa02c4115b4d1",
+        "message": "another attempt at fixing title update",
+        "author": "ArabCoders",
+        "date": "2024-12-30T07:42:02+00:00"
+      },
+      {
+        "sha": "2528d3df",
+        "full_sha": "2528d3df25bcb2d039408cc632036ca9b7246f25",
+        "message": "attempt to fix title update",
+        "author": "ArabCoders",
+        "date": "2024-12-30T07:33:06+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241230-ed02c3e",
+    "full_sha": "0682f9d4433f045e2678bd83427408568b49bf73",
+    "date": "2024-12-29T19:07:31+00:00",
+    "commits": [
+      {
+        "sha": "aca10d32",
+        "full_sha": "aca10d328fa0dd58534a4683bd88f8826b70bc81",
+        "message": "remove debug statements.",
+        "author": "ArabCoders",
+        "date": "2024-12-29T18:57:46+00:00"
+      },
+      {
+        "sha": "359d866a",
+        "full_sha": "359d866a993751e5e41348c8ecbee45d75d19fe3",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2024-12-29T18:39:51+00:00"
+      },
+      {
+        "sha": "1f2db7ad",
+        "full_sha": "1f2db7ad5ec8f9f3b9d0aeba94d42533ef7b8986",
+        "message": "Added option to update page title with stats.",
+        "author": "ArabCoders",
+        "date": "2024-12-29T18:17:17+00:00"
+      },
+      {
+        "sha": "6b930bb3",
+        "full_sha": "6b930bb3881f2588a315e4caed888b83fef90f27",
+        "message": "added more info to media Metadata, and cleaned up itemDTO object.",
+        "author": "ArabCoders",
+        "date": "2024-12-27T16:58:21+00:00"
+      },
+      {
+        "sha": "6851e1d9",
+        "full_sha": "6851e1d911cceb61dbc989ade7d7aebfda4b45ce",
+        "message": "prevent logging ping requests",
+        "author": "ArabCoders",
+        "date": "2024-12-27T16:07:08+00:00"
+      },
+      {
+        "sha": "eee66840",
+        "full_sha": "eee668400516b9dd17b534e2ebab62d11dd2f982",
+        "message": "added small play button overlay",
+        "author": "ArabCoders",
+        "date": "2024-12-27T15:38:27+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241229-aca10d3",
+    "full_sha": "0230f00a8c621e0a2012c66313a899086efe0260",
+    "date": "2024-12-25T16:56:03+00:00",
+    "commits": [
+      {
+        "sha": "7420138c",
+        "full_sha": "7420138ce0ce64bea8dea0b090aeb3378bc9166b",
+        "message": "Document env variables and added remove_files env option.",
+        "author": "ArabCoders",
+        "date": "2024-12-25T16:16:15+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241225-7420138",
+    "full_sha": "14d598eb108d99878b8b9f5152d7335956e9e649",
+    "date": "2024-12-25T07:26:52+00:00",
+    "commits": [
+      {
+        "sha": "17ab1f70",
+        "full_sha": "17ab1f7038ed2371a979f35a26c0c648d78c70ca",
+        "message": "Nuxt was intercepting the download link. Fixes #150",
+        "author": "ArabCoders",
+        "date": "2024-12-25T07:21:06+00:00"
+      },
+      {
+        "sha": "adf3b539",
+        "full_sha": "adf3b5392907ba0bfdc0606fe2840c6cd75019f0",
+        "message": "Update yt-dlp to 2024.12.23",
+        "author": "ArabCoders",
+        "date": "2024-12-24T00:21:58+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241225-17ab1f7",
+    "full_sha": "7d2828734b062f4a3ed820f29d21fddf57433ae0",
+    "date": "2024-12-20T19:16:28+00:00",
+    "commits": [
+      {
+        "sha": "2d70de20",
+        "full_sha": "2d70de20320b75f66538bd7b28037d1424f2fa25",
+        "message": "updating python code to be little more clean and implements more type checks.",
+        "author": "ArabCoders",
+        "date": "2024-12-20T18:20:51+00:00"
+      },
+      {
+        "sha": "1b9a4e52",
+        "full_sha": "1b9a4e528b531f1e2a679f324527cae76fa00e61",
+        "message": "reverted change to regex for player segments",
+        "author": "ArabCoders",
+        "date": "2024-12-19T20:26:26+00:00"
+      },
+      {
+        "sha": "df86cc00",
+        "full_sha": "df86cc0001ca2b4665856d77d1ac036d166b2db4",
+        "message": "updated some type checks",
+        "author": "ArabCoders",
+        "date": "2024-12-19T19:58:33+00:00"
+      },
+      {
+        "sha": "252970f6",
+        "full_sha": "252970f66f15b10ba06982b71d7a190c6c67ae72",
+        "message": "Separate toggle for thumbnail",
+        "author": "ArabCoders",
+        "date": "2024-12-19T05:35:20+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241220-2d70de2",
+    "full_sha": "ee9f18d3c43acbb87d28ba5d9da7777f426603ad",
+    "date": "2024-12-18T18:29:16+00:00",
+    "commits": [
+      {
+        "sha": "ee9f18d3",
+        "full_sha": "ee9f18d3c43acbb87d28ba5d9da7777f426603ad",
+        "message": "updated gitignore.",
+        "author": "Abdulmohsen B. A. A.",
+        "date": "2024-12-18T18:29:16+00:00"
+      },
+      {
+        "sha": "0b4216c0",
+        "full_sha": "0b4216c0b03b91ebcc5c865b150217049c4b3c3c",
+        "message": "Prep for dev release",
+        "author": "ArabCoders",
+        "date": "2024-12-18T18:15:15+00:00"
+      },
+      {
+        "sha": "2782ee56",
+        "full_sha": "2782ee568d66178cee7a6dbda835677622381686",
+        "message": "Added support to queue many urls separated by comma",
+        "author": "ArabCoders",
+        "date": "2024-12-17T17:43:58+00:00"
+      },
+      {
+        "sha": "9f00a8cd",
+        "full_sha": "9f00a8cdc34cc5af78f6b69c6532d304532072a5",
+        "message": "fixed naming conflict",
+        "author": "ArabCoders",
+        "date": "2024-12-17T17:11:31+00:00"
+      },
+      {
+        "sha": "88ecfbb5",
+        "full_sha": "88ecfbb5167c3536b21e34d7cb5b11d705d7028a",
+        "message": "added missing static assets",
+        "author": "ArabCoders",
+        "date": "2024-12-17T16:47:12+00:00"
+      },
+      {
+        "sha": "daea07c6",
+        "full_sha": "daea07c67815675ecdbfa2fe7116bd87066581b1",
+        "message": "dont hardcode the wss url",
+        "author": "ArabCoders",
+        "date": "2024-12-17T16:06:18+00:00"
+      },
+      {
+        "sha": "fcb2eda4",
+        "full_sha": "fcb2eda4ba5bdf732339e6df306868b3a989854b",
+        "message": "Fixes for default preset.",
+        "author": "ArabCoders",
+        "date": "2024-12-17T15:43:09+00:00"
+      },
+      {
+        "sha": "45227be6",
+        "full_sha": "45227be6bfd240530d3649034bf2ba0a46538e35",
+        "message": "added LFI protection for thumbnails",
+        "author": "ArabCoders",
+        "date": "2024-12-17T14:25:16+00:00"
+      },
+      {
+        "sha": "c727ab34",
+        "full_sha": "c727ab3446d33f1854361f8ecdfd97373e403642",
+        "message": "Finalizing migration to nuxt3",
+        "author": "ArabCoders",
+        "date": "2024-12-17T14:07:52+00:00"
+      },
+      {
+        "sha": "f614dbc2",
+        "full_sha": "f614dbc217d6d1bd3261f26d7dd7cf536f011b8f",
+        "message": "updates",
+        "author": "ArabCoders",
+        "date": "2024-12-16T19:06:54+00:00"
+      },
+      {
+        "sha": "4787579d",
+        "full_sha": "4787579d670616b0c582b31776089ca2b0653d01",
+        "message": "update path to version.py",
+        "author": "ArabCoders",
+        "date": "2024-12-15T18:37:16+00:00"
+      },
+      {
+        "sha": "70eb2729",
+        "full_sha": "70eb27291f2532f9cafd7806c0cb1cf9a87f46df",
+        "message": "fixes for the massive changes we did to the app source code.",
+        "author": "ArabCoders",
+        "date": "2024-12-15T18:34:28+00:00"
+      },
+      {
+        "sha": "51024c2a",
+        "full_sha": "51024c2a9b8eb74cff10d60a9e83acf3d0bedbb3",
+        "message": "some minor app changes =)",
+        "author": "ArabCoders",
+        "date": "2024-12-15T18:28:37+00:00"
+      },
+      {
+        "sha": "f7f5e72a",
+        "full_sha": "f7f5e72aeb22b1279ed418ac9e771014a6731339",
+        "message": "limit the sent configuration variables to the frontend.",
+        "author": "ArabCoders",
+        "date": "2024-12-14T17:29:15+00:00"
+      },
+      {
+        "sha": "4b322a6f",
+        "full_sha": "4b322a6f5a42ec574ed086529441d0c61fb71660",
+        "message": "make docker build uses the next UI",
+        "author": "ArabCoders",
+        "date": "2024-12-14T17:14:58+00:00"
+      },
+      {
+        "sha": "0239e509",
+        "full_sha": "0239e509defee7b31cc876aed54e0d912c2f19c8",
+        "message": "sweeping changes to internals",
+        "author": "ArabCoders",
+        "date": "2024-12-14T16:27:13+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241218-ee9f18d",
+    "full_sha": "438e96b37d0e22c66af5dfa8d3afd225e07866ee",
+    "date": "2024-12-14T16:27:57+00:00",
+    "commits": [
+      {
+        "sha": "e24467a6",
+        "full_sha": "e24467a66d7782e60e50f410c3dad03d16ebdaa8",
+        "message": "fix",
+        "author": "ArabCoders",
+        "date": "2024-12-14T14:01:29+00:00"
+      },
+      {
+        "sha": "92a2969d",
+        "full_sha": "92a2969d0f578f0618753b9f7b95e806abeaad99",
+        "message": "we going to start new ui build on separate branch",
+        "author": "ArabCoders",
+        "date": "2024-12-14T13:59:13+00:00"
+      },
+      {
+        "sha": "ec6b8ec8",
+        "full_sha": "ec6b8ec85fa2471cf773313bd7286c8e60ed79d8",
+        "message": "sticking with pure vue for now.",
+        "author": "ArabCoders",
+        "date": "2024-12-14T13:43:27+00:00"
+      },
+      {
+        "sha": "cf8f9717",
+        "full_sha": "cf8f9717859f50f7bac85c9b3795088d32e2a176",
+        "message": "updates",
+        "author": "ArabCoders",
+        "date": "2024-12-14T13:42:31+00:00"
+      },
+      {
+        "sha": "c61fd133",
+        "full_sha": "c61fd133d8fc03d9589150a99f9cf296b4c7ed37",
+        "message": "more updates for new UI",
+        "author": "ArabCoders",
+        "date": "2024-12-14T11:57:23+00:00"
+      },
+      {
+        "sha": "6c2e42fc",
+        "full_sha": "6c2e42fcc500f609455ac2479a58c6b0358840a3",
+        "message": "Update yt-dlp to 2024.12.13",
+        "author": "ArabCoders",
+        "date": "2024-12-14T00:23:01+00:00"
+      },
+      {
+        "sha": "06042776",
+        "full_sha": "06042776e6eb2a6ff4533906f37c61d0272c5bda",
+        "message": "migrating more code to new UI",
+        "author": "ArabCoders",
+        "date": "2024-12-13T17:55:10+00:00"
+      },
+      {
+        "sha": "f7b61043",
+        "full_sha": "f7b610434f3eb061d961e094d494174e93af3876",
+        "message": "migrating some state to pinia stores.",
+        "author": "ArabCoders",
+        "date": "2024-12-13T17:15:05+00:00"
+      },
+      {
+        "sha": "62d5d29b",
+        "full_sha": "62d5d29bfc5d5ce2e69e1a25407cc4a59b70b3e7",
+        "message": "initial nuxtjs ui skeleton",
+        "author": "ArabCoders",
+        "date": "2024-12-13T15:31:07+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241214-ec6b8ec",
+    "full_sha": "df29f2d3d459a52c0476a9d69e50f2aae7c255da",
+    "date": "2024-12-12T15:57:14+00:00",
+    "commits": [
+      {
+        "sha": "3ecb3c86",
+        "full_sha": "3ecb3c8690e2832f3f024ec8d21285abca766a1e",
+        "message": "allow adding format via ytdlp.json",
+        "author": "ArabCoders",
+        "date": "2024-12-12T15:32:23+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241212-3ecb3c8",
+    "full_sha": "4688f60a05be4c73df081c5929b8cc45f591db7f",
+    "date": "2024-12-11T18:15:54+00:00",
+    "commits": [
+      {
+        "sha": "82f59676",
+        "full_sha": "82f59676c7060c34ca45d5e519fa8ba00371652e",
+        "message": "support color output in console",
+        "author": "ArabCoders",
+        "date": "2024-12-11T17:50:49+00:00"
+      },
+      {
+        "sha": "3b7338eb",
+        "full_sha": "3b7338eb794ecfe4487370e768571a0c02084e28",
+        "message": "fixed small bug in console",
+        "author": "ArabCoders",
+        "date": "2024-12-11T16:49:30+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241211-82f5967",
+    "full_sha": "66f84e257158cc09693deccfd7247f9a2889fcf6",
+    "date": "2024-12-10T05:49:24+00:00",
+    "commits": [
+      {
+        "sha": "782fbfab",
+        "full_sha": "782fbfab73efd5f65e56b9c9c5a2123669f1a12f",
+        "message": "Update yt-dlp to 2024.12.6",
+        "author": "ArabCoders",
+        "date": "2024-12-07T00:23:28+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241210-48abede",
+    "full_sha": "3ee538ebb249b111dda4cb880fac099485c8e35f",
+    "date": "2024-12-05T20:03:48+00:00",
+    "commits": [
+      {
+        "sha": "6fb69f7d",
+        "full_sha": "6fb69f7dac18ae9c754a5e943048b2d19d24acc2",
+        "message": "Update dependencies & Fixes #137",
+        "author": "ArabCoders",
+        "date": "2024-12-05T20:00:03+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241205-6fb69f7",
+    "full_sha": "7c27680564cd0012f405fe999fe85a00a3bd3cc5",
+    "date": "2024-11-07T15:43:28+00:00",
+    "commits": [
+      {
+        "sha": "c41ace85",
+        "full_sha": "c41ace85c4fd6aa88d34e4c09ea0182badb9c15f",
+        "message": "Update yt-dlp to 2024.11.4",
+        "author": "ArabCoders",
+        "date": "2024-11-05T00:21:33+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241107-b9e16d9",
+    "full_sha": "2515f4edd67458cc265c90c397c7c0c64ab0475e",
+    "date": "2024-11-03T19:26:55+00:00",
+    "commits": [
+      {
+        "sha": "8b85a391",
+        "full_sha": "8b85a39180b66910d5e4daecd603f0891df446bd",
+        "message": "Added video title to window title if it was present.",
+        "author": "ArabCoders",
+        "date": "2024-11-03T15:40:48+00:00"
+      },
+      {
+        "sha": "a672d273",
+        "full_sha": "a672d273d7ec15a76adc811fa32a5d95ed8b03bb",
+        "message": "Stringify path for replacement.",
+        "author": "ArabCoders",
+        "date": "2024-11-03T15:23:00+00:00"
+      },
+      {
+        "sha": "91c067ac",
+        "full_sha": "91c067acb30f6618cdd2b2d8772cf5e67726d50e",
+        "message": "Bug fixes.",
+        "author": "ArabCoders",
+        "date": "2024-11-03T15:12:54+00:00"
+      },
+      {
+        "sha": "7a5a0621",
+        "full_sha": "7a5a06219cb4f80917c3b30e7dbbd690823044df",
+        "message": "Added possible fallback for playlist incase filename got changed.",
+        "author": "ArabCoders",
+        "date": "2024-11-03T14:56:12+00:00"
+      },
+      {
+        "sha": "0cd36ea4",
+        "full_sha": "0cd36ea4be5997d8fe7614b9500a6420c1278592",
+        "message": "validating user supplied filename.",
+        "author": "ArabCoders",
+        "date": "2024-11-03T14:23:56+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241103-a672d27",
+    "full_sha": "40d2f83b65b8f271bf2e477cd906abe79b2c89eb",
+    "date": "2024-10-31T20:57:39+00:00",
+    "commits": [
+      {
+        "sha": "d837fb7d",
+        "full_sha": "d837fb7d1bed01e285cc69a474b74589284c3cd7",
+        "message": "check for file existence before attempting to read the contents.",
+        "author": "ArabCoders",
+        "date": "2024-10-31T20:46:08+00:00"
+      },
+      {
+        "sha": "f76e9b8f",
+        "full_sha": "f76e9b8f77f4342c6ffc6f5c656287e5987928ad",
+        "message": "added archive.manual.log",
+        "author": "ArabCoders",
+        "date": "2024-10-31T20:35:26+00:00"
+      },
+      {
+        "sha": "d0198ccd",
+        "full_sha": "d0198ccd781fcbe2488bb91c169b255d16373b6c",
+        "message": "dependencies update",
+        "author": "ArabCoders",
+        "date": "2024-10-31T20:35:19+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241031-f76e9b8",
+    "full_sha": "d8c21ad0fe5ceb7918a32d9f5d678d6c7f4be0eb",
+    "date": "2024-10-23T12:06:02+00:00",
+    "commits": [
+      {
+        "sha": "06b8b919",
+        "full_sha": "06b8b919cd42ad28d572b74897ec28970a2657b6",
+        "message": "Update yt-dlp to 2024.10.22",
+        "author": "ArabCoders",
+        "date": "2024-10-23T00:21:44+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241023-56de2b0",
+    "full_sha": "ded3d3fc184cfd9e20f272bab79f8c707b9860d1",
+    "date": "2024-10-08T03:30:57+00:00",
+    "commits": [
+      {
+        "sha": "8a830413",
+        "full_sha": "8a8304138458779c4984cc29a2ec684d2ac03160",
+        "message": "updated frontend dependencies",
+        "author": "ArabCoders",
+        "date": "2024-10-08T03:27:30+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241008-8a83041",
+    "full_sha": "635731f89f6c81ef163fe056ba776a9b163a74e7",
+    "date": "2024-10-08T02:02:05+00:00",
+    "commits": [
+      {
+        "sha": "1077de6a",
+        "full_sha": "1077de6a8cb41d0f88b354cd1674abdfb7c7c210",
+        "message": "Update yt-dlp to 2024.10.7",
+        "author": "ArabCoders",
+        "date": "2024-10-08T00:21:17+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241008-a65fafb",
+    "full_sha": "b93789345ac4f2bcffac9fab0c124c0b2af57c1c",
+    "date": "2024-10-01T16:20:30+00:00",
+    "commits": [
+      {
+        "sha": "0f847f1a",
+        "full_sha": "0f847f1a38d3e54559d4954fd5de8e1d3e944f7b",
+        "message": "updated dependencies",
+        "author": "ArabCoders",
+        "date": "2024-10-01T16:16:54+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20241001-0f847f1",
+    "full_sha": "f2a902f7a496bcdf6f37d4c0b198531e51071954",
+    "date": "2024-09-28T16:38:14+00:00",
+    "commits": [
+      {
+        "sha": "f600bd49",
+        "full_sha": "f600bd499bea87a836d4666eeb75865efb647d84",
+        "message": "Fixes",
+        "author": "ArabCoders",
+        "date": "2024-09-28T16:31:33+00:00"
+      },
+      {
+        "sha": "7ef6c35b",
+        "full_sha": "7ef6c35b4b0eb8273970248c0ef13762ce1252b0",
+        "message": "Update yt-dlp to 2024.9.27",
+        "author": "ArabCoders",
+        "date": "2024-09-28T00:21:07+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240928-f600bd4",
+    "full_sha": "a165296972231bb54fa6fbfbee8c1a7f61482c27",
+    "date": "2024-09-14T17:31:39+00:00",
+    "commits": [
+      {
+        "sha": "98fe1278",
+        "full_sha": "98fe1278c5d759b4fbf9a0665d2ba811ca3627f4",
+        "message": "Fix playing deep linked item.",
+        "author": "ArabCoders",
+        "date": "2024-09-14T17:24:49+00:00"
+      },
+      {
+        "sha": "e75a7db6",
+        "full_sha": "e75a7db6ccf522bf8c0941b77ec68cb82ec1441f",
+        "message": "updated video play to support playsinline & updated external dependencies",
+        "author": "ArabCoders",
+        "date": "2024-09-14T16:44:14+00:00"
+      },
+      {
+        "sha": "6a40d7ec",
+        "full_sha": "6a40d7ec48cc972793940fa7eb9c2bddbd8e3ff1",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2024-08-07T13:52:26+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240914-e75a7db",
+    "full_sha": "5bd5e75bbdd1d126532c8b224e60cbfdefb59570",
+    "date": "2024-08-07T08:16:02+00:00",
+    "commits": [
+      {
+        "sha": "bb676b94",
+        "full_sha": "bb676b9415244ff1ea11d53f9005664882caba09",
+        "message": "Update yt-dlp to 2024.8.6",
+        "author": "ArabCoders",
+        "date": "2024-08-07T00:19:13+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240807-3014e19",
+    "full_sha": "ca4945c5c7b5f6fa1287f536d4bf418e22ee15dd",
+    "date": "2024-08-01T23:25:53+00:00",
+    "commits": [
+      {
+        "sha": "cdbcc96b",
+        "full_sha": "cdbcc96b9ffff8b0c26872f969c6ba2a139a0636",
+        "message": "Update yt-dlp to 2024.8.1",
+        "author": "arabcoders",
+        "date": "2024-08-01T23:10:57+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240801-25a73f0",
+    "full_sha": "3bfba23c3bdb943dbbef9e114748b82bfefd86c9",
+    "date": "2024-07-31T21:31:45+00:00",
+    "commits": [
+      {
+        "sha": "f014809e",
+        "full_sha": "f014809e9a2c40a664268185177713d74a520f08",
+        "message": "use pysubs2 instead ffmpeg to convert subtitles.",
+        "author": "ArabCoders",
+        "date": "2024-07-31T18:34:11+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240731-f014809",
+    "full_sha": "524a11b00081778469e3d99adad2f39f612ff6d5",
+    "date": "2024-07-31T16:51:02+00:00",
+    "commits": [
+      {
+        "sha": "5ad3eb25",
+        "full_sha": "5ad3eb25279343508b2746f15732e97e5c9508cb",
+        "message": "Improved player to support sidecar external subtitles",
+        "author": "ArabCoders",
+        "date": "2024-07-31T16:34:14+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240731-5ad3eb2",
+    "full_sha": "726b9a929c5acd9b4c766e41d7d7989c21757848",
+    "date": "2024-07-29T10:37:41+00:00",
+    "commits": [
+      {
+        "sha": "fe803d66",
+        "full_sha": "fe803d66af7047f9d2ceb4feeabdf534b7860e25",
+        "message": "Fixes #115",
+        "author": "ArabCoders",
+        "date": "2024-07-29T10:31:40+00:00"
+      },
+      {
+        "sha": "4d0c88ce",
+        "full_sha": "4d0c88ce51545c0a0802a0eda0e07bfb78a4ad80",
+        "message": "Minor style changes",
+        "author": "ArabCoders",
+        "date": "2024-07-29T10:30:30+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240729-fe803d6",
+    "full_sha": "76cfc130f3e90b043ec2b0564f3bbbeca4475fa2",
+    "date": "2024-07-26T10:43:28+00:00",
+    "commits": [
+      {
+        "sha": "d32ffee9",
+        "full_sha": "d32ffee98052ca01a32d03ec728fc7334f57b82f",
+        "message": "some minor design changes",
+        "author": "ArabCoders",
+        "date": "2024-07-26T10:39:35+00:00"
+      },
+      {
+        "sha": "a706bb57",
+        "full_sha": "a706bb57bb722f862dc7297a858e39a8f5f044a6",
+        "message": "Update yt-dlp to 2024.7.25",
+        "author": "ArabCoders",
+        "date": "2024-07-26T00:18:34+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240726-d32ffee",
+    "full_sha": "1286bb0d84e1596035eef5263d2e51d33e18d1a0",
+    "date": "2024-07-18T13:08:25+00:00",
+    "commits": [
+      {
+        "sha": "87823276",
+        "full_sha": "87823276aed57738f577d4c66ad946d4b92437d4",
+        "message": "added curl_cffi for yt-dlp",
+        "author": "ArabCoders",
+        "date": "2024-07-18T13:04:41+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240718-fb06977",
+    "full_sha": "fb069770112e07ad93b515d1d57e53ab8005614c",
+    "date": "2024-07-18T12:49:13+00:00",
+    "commits": [
+      {
+        "sha": "eb7441cf",
+        "full_sha": "eb7441cfa5081249baea41f5764e41fd48835756",
+        "message": "typo",
+        "author": "ArabCoders",
+        "date": "2024-07-18T12:46:37+00:00"
+      },
+      {
+        "sha": "be68cf13",
+        "full_sha": "be68cf13e5054da53d3e968a4c3b74910177d64e",
+        "message": "Added basic authentication",
+        "author": "ArabCoders",
+        "date": "2024-07-18T12:43:32+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240718-be68cf1",
+    "full_sha": "ba5091b10243846d9183fa32567ec9b24641e186",
+    "date": "2024-07-17T14:09:58+00:00",
+    "commits": [
+      {
+        "sha": "e2318898",
+        "full_sha": "e23188982991a5a55037265029bdbfd3acdefd3b",
+        "message": "Update yt-dlp to 2024.7.16",
+        "author": "ArabCoders",
+        "date": "2024-07-17T00:19:01+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240717-b5673b9",
+    "full_sha": "7d34eeb3a9cab41911a47c36f57ea00cddfa1ca5",
+    "date": "2024-07-11T11:58:49+00:00",
+    "commits": [
+      {
+        "sha": "41749976",
+        "full_sha": "4174997600bc2282fa483e9479ae08e9b8e9ff27",
+        "message": "Fixed deleting item after archiving it.",
+        "author": "ArabCoders",
+        "date": "2024-07-11T10:48:31+00:00"
+      },
+      {
+        "sha": "736b588b",
+        "full_sha": "736b588b8ad73803d59f3deaf3b2206df8615502",
+        "message": "Added option to archive failing download from WebUI",
+        "author": "ArabCoders",
+        "date": "2024-07-11T10:38:53+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240711-736b588",
+    "full_sha": "948235a0e5fbc792f75d2bf7a530ceab954271ec",
+    "date": "2024-07-09T22:58:08+00:00",
+    "commits": [
+      {
+        "sha": "81bb0d9e",
+        "full_sha": "81bb0d9ee37b809afe11aac08b567ac0fe9418ec",
+        "message": "fixes.",
+        "author": "ArabCoders",
+        "date": "2024-07-09T22:51:18+00:00"
+      },
+      {
+        "sha": "ae14ac14",
+        "full_sha": "ae14ac145d38607a9be20835614f5db38f16b516",
+        "message": "Updated terminal window",
+        "author": "ArabCoders",
+        "date": "2024-07-09T20:40:44+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240709-81bb0d9",
+    "full_sha": "b24dc898224c780c35580016ca233dc4ee4af6a4",
+    "date": "2024-07-06T16:35:03+00:00",
+    "commits": [
+      {
+        "sha": "3447f293",
+        "full_sha": "3447f293bd1593b0dc57bfee629651f62194b456",
+        "message": "Fixed parsing custom yt-dlp config.",
+        "author": "ArabCoders",
+        "date": "2024-07-06T16:09:47+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240706-3447f29",
+    "full_sha": "d08c1e64abcf44994ff6c82f2260892231acc156",
+    "date": "2024-07-03T03:24:32+00:00",
+    "commits": [
+      {
+        "sha": "ad6301b3",
+        "full_sha": "ad6301b38fe094896819a473462c81f2240737d7",
+        "message": "Update yt-dlp to 2024.7.2",
+        "author": "ArabCoders",
+        "date": "2024-07-03T00:19:01+00:00"
+      },
+      {
+        "sha": "f368f2de",
+        "full_sha": "f368f2de7de95bbebc7e195350c1c3bb384d3075",
+        "message": "updated yt-dlp and added lazy-loader component.",
+        "author": "ArabCoders",
+        "date": "2024-07-02T19:34:37+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240703-2b74bba",
+    "full_sha": "381d6d50d7f863c439ae1bbb41602cd7f0850e18",
+    "date": "2024-06-16T13:30:07+00:00",
+    "commits": [
+      {
+        "sha": "2229e76a",
+        "full_sha": "2229e76abd17793bafd0e1b018f392156440c616",
+        "message": "Updated dependencies & added data list for download path to ease path selection.",
+        "author": "ArabCoders",
+        "date": "2024-06-16T13:27:52+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240616-2229e76",
+    "full_sha": "32e67274529f3784c70b8d44125b1ad2f325382a",
+    "date": "2024-05-27T14:59:26+00:00",
+    "commits": [
+      {
+        "sha": "4b0ba9e8",
+        "full_sha": "4b0ba9e8f9d8f9a2a3f304b044cecf601b70a570",
+        "message": "Update yt-dlp to 2024.5.26",
+        "author": "ArabCoders",
+        "date": "2024-05-27T00:18:22+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240527-55d249b",
+    "full_sha": "99f5af8754d43103db4f02b6c28e57b081f3781b",
+    "date": "2024-05-16T13:47:23+00:00",
+    "commits": [
+      {
+        "sha": "cfc9a256",
+        "full_sha": "cfc9a256b70d730a3b261e3e56fd0fc7ee225da5",
+        "message": "Update README",
+        "author": "ArabCoders",
+        "date": "2024-05-16T13:16:12+00:00"
+      },
+      {
+        "sha": "39fb97d7",
+        "full_sha": "39fb97d71ca33278dd6783dfed3ae527adc1762e",
+        "message": "Add rtmpdump",
+        "author": "ArabCoders",
+        "date": "2024-05-16T13:14:08+00:00"
+      },
+      {
+        "sha": "0f95ea40",
+        "full_sha": "0f95ea405c880d79e3bf7a66e369fb78ba99a94c",
+        "message": "Added Console view for yt-dlp command.",
+        "author": "ArabCoders",
+        "date": "2024-05-16T13:12:08+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240516-39fb97d",
+    "full_sha": "a7633c07a5cea29e0e88cf8bd415c7e2b254d089",
+    "date": "2024-05-14T09:49:48+00:00",
+    "commits": [
+      {
+        "sha": "7a519bf1",
+        "full_sha": "7a519bf16c2d7fccb3b22d2893958c315b53d2a5",
+        "message": "support jsonc in tasks/webhooks/ytdlp json files.",
+        "author": "ArabCoders",
+        "date": "2024-05-14T09:41:36+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240514-7a519bf",
+    "full_sha": "047bbfbe06e5bebe7b68b5cca1c7b5304393b563",
+    "date": "2024-05-14T09:00:50+00:00",
+    "commits": [
+      {
+        "sha": "74c82731",
+        "full_sha": "74c82731e2eb074eaf426721e3cf2badac6b16c0",
+        "message": "updated README and updated Failed text to incomplete",
+        "author": "ArabCoders",
+        "date": "2024-05-14T08:21:28+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240514-74c8273",
+    "full_sha": "f1e2f57ac8904b8e322c83ac48c410cb6dc96054",
+    "date": "2024-05-01T10:19:36+00:00",
+    "commits": [
+      {
+        "sha": "f59875a7",
+        "full_sha": "f59875a76b3f31c6b4153eeffdef5da03510c9cd",
+        "message": "use classes for progress bar",
+        "author": "ArabCoders",
+        "date": "2024-05-01T09:56:07+00:00"
+      },
+      {
+        "sha": "348f125c",
+        "full_sha": "348f125c2b2e2161c5823518df4db940b7660843",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2024-05-01T09:51:31+00:00"
+      },
+      {
+        "sha": "7aa58e4b",
+        "full_sha": "7aa58e4b8607851a8c68d3ec7cd712de92c088b5",
+        "message": "Fixed progress bar style issue.",
+        "author": "ArabCoders",
+        "date": "2024-05-01T09:30:28+00:00"
+      },
+      {
+        "sha": "f03652b9",
+        "full_sha": "f03652b9099d121757c921c603850d2cc2ef9766",
+        "message": "Updated dependencies and made it possible to close video player by clicking escape key.",
+        "author": "ArabCoders",
+        "date": "2024-04-30T13:09:13+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240501-f59875a",
+    "full_sha": "d639762001be50bdab99d6e1491fe0f28698aa0f",
+    "date": "2024-04-20T21:06:07+00:00",
+    "commits": [
+      {
+        "sha": "da1f35ec",
+        "full_sha": "da1f35ec4b25624fddfd5e9d1f0a15085c68bd33",
+        "message": "add caching to the segment responses.",
+        "author": "ArabCoders",
+        "date": "2024-04-20T20:57:37+00:00"
+      },
+      {
+        "sha": "a0e24ea5",
+        "full_sha": "a0e24ea5ad041d19209d11510eece20314f25206",
+        "message": "use alpine ffmpeg as it was upgraded to 6.1.1+",
+        "author": "ArabCoders",
+        "date": "2024-04-15T19:21:02+00:00"
+      },
+      {
+        "sha": "48ad2323",
+        "full_sha": "48ad232393f751bfe869d7437eff787906868bac",
+        "message": "Made it possible to switch streamer used codecs",
+        "author": "ArabCoders",
+        "date": "2024-04-15T19:06:14+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240420-da1f35e",
+    "full_sha": "edc3d3e126ba5b2ef7a7cb7c4eeafe6f36c004e3",
+    "date": "2024-04-15T08:43:34+00:00",
+    "commits": [
+      {
+        "sha": "1881df6c",
+        "full_sha": "1881df6c5c8faea7d101420f5c66db5e7f6fd6ee",
+        "message": "updated packages",
+        "author": "ArabCoders",
+        "date": "2024-04-15T08:38:02+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240415-1881df6",
+    "full_sha": "82e746019f38e9502198a5509c787a5abf6d78af",
+    "date": "2024-04-05T23:02:46+00:00",
+    "commits": [
+      {
+        "sha": "e7af9ba9",
+        "full_sha": "e7af9ba9721cc6ef66bfd1d4a11ae284a8afed8d",
+        "message": "multi-downloads are now fully working",
+        "author": "ArabCoders",
+        "date": "2024-04-05T21:45:45+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240405-e7af9ba",
+    "full_sha": "f5ee0bbbb50f0dfca825e7cd81927ec53b1540ff",
+    "date": "2024-03-31T20:05:29+00:00",
+    "commits": [
+      {
+        "sha": "476d369b",
+        "full_sha": "476d369bd172f4dc9e927221df9ec2c72967c80a",
+        "message": "Fixes",
+        "author": "ArabCoders",
+        "date": "2024-03-31T00:49:57+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240331-476d369",
+    "full_sha": "38febbfe57ecc4a7630846d8b9ba7e9ccbd8c083",
+    "date": "2024-03-29T19:03:52+00:00",
+    "commits": [
+      {
+        "sha": "ae12a75c",
+        "full_sha": "ae12a75ce996101291e64b1858c575f3ebacb89c",
+        "message": "Cleanup after download finish.",
+        "author": "ArabCoders",
+        "date": "2024-03-29T18:57:05+00:00"
+      },
+      {
+        "sha": "f0dec94a",
+        "full_sha": "f0dec94a60fe4ea392f655878880af801eac6c09",
+        "message": "Fixes",
+        "author": "ArabCoders",
+        "date": "2024-03-29T18:05:26+00:00"
+      },
+      {
+        "sha": "050012a1",
+        "full_sha": "050012a1b2dbfdd6e445d27d3a4a2a09fbff4e5f",
+        "message": "some fixes to downloader.",
+        "author": "ArabCoders",
+        "date": "2024-03-28T21:56:09+00:00"
+      },
+      {
+        "sha": "3c84741e",
+        "full_sha": "3c84741e8abc25a2fbe99d9c7eae81e23e195656",
+        "message": "terminate if process still alive after kill",
+        "author": "ArabCoders",
+        "date": "2024-03-28T21:42:38+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240329-ae12a75",
+    "full_sha": "33931a8660a8fa7b372bd8577038a1fdd5d65de1",
+    "date": "2024-03-28T21:18:05+00:00",
+    "commits": [
+      {
+        "sha": "39e594c3",
+        "full_sha": "39e594c394b59babaf131e5df8637f908c767b53",
+        "message": "upgrade webhooks to support both form and json request.",
+        "author": "ArabCoders",
+        "date": "2024-03-28T21:08:16+00:00"
+      },
+      {
+        "sha": "5d57ae25",
+        "full_sha": "5d57ae25abe567839e077b73a9ff188be70f79fb",
+        "message": "Fixes",
+        "author": "ArabCoders",
+        "date": "2024-03-28T19:55:24+00:00"
+      },
+      {
+        "sha": "46e7d28f",
+        "full_sha": "46e7d28fc878044dfb66968589124b2e46ce13d7",
+        "message": "Cleanup the video player.",
+        "author": "ArabCoders",
+        "date": "2024-03-25T21:16:00+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240328-5d57ae2",
+    "full_sha": "97a9cd0751add4737bfa7e91bad2526f7d9fa109",
+    "date": "2024-03-25T20:48:09+00:00",
+    "commits": [
+      {
+        "sha": "70cff702",
+        "full_sha": "70cff70247a02bca43da9825379f577ecf2eb052",
+        "message": "Converted the video player to be async",
+        "author": "ArabCoders",
+        "date": "2024-03-25T20:15:37+00:00"
+      },
+      {
+        "sha": "f9bb34fc",
+        "full_sha": "f9bb34fce7f2f5e4615f1c5cfcb550b32aacb8dd",
+        "message": "Fixes",
+        "author": "ArabCoders",
+        "date": "2024-03-24T17:32:41+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240325-70cff70",
+    "full_sha": "fbaa013cff537f39b5298e71146fde5a79fb4b72",
+    "date": "2024-03-22T23:14:31+00:00",
+    "commits": [
+      {
+        "sha": "a1aa7b02",
+        "full_sha": "a1aa7b02ba569912ca208b120bb603d89a22f1d2",
+        "message": "wrap notifier in timeout call, and expose pool operations via API",
+        "author": "ArabCoders",
+        "date": "2024-03-22T22:02:53+00:00"
+      },
+      {
+        "sha": "2493d412",
+        "full_sha": "2493d41271455cf697881578971c040ca13b35c2",
+        "message": "update the format for the workers output.",
+        "author": "ArabCoders",
+        "date": "2024-03-20T20:27:09+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240322-a1aa7b0",
+    "full_sha": "64758206799096f6ba6883c8be627d93a06d5571",
+    "date": "2024-03-20T20:16:03+00:00",
+    "commits": [
+      {
+        "sha": "5bba32cd",
+        "full_sha": "5bba32cd0678e4ead7ad1f5670bf9a49517120be",
+        "message": "Added endpoint to expose worker status",
+        "author": "ArabCoders",
+        "date": "2024-03-20T20:13:05+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240320-5bba32c",
+    "full_sha": "2630bdbeba5c1c5581240b85833815dd0f9458bf",
+    "date": "2024-03-19T21:27:51+00:00",
+    "commits": [
+      {
+        "sha": "cccb8efb",
+        "full_sha": "cccb8efb68203f440d3efbed38539cbe8445324b",
+        "message": "Added an endpoint to update completed item data.",
+        "author": "ArabCoders",
+        "date": "2024-03-19T20:57:46+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240319-cccb8ef",
+    "full_sha": "88ee6bec457349358abc61f992bb6a9efb9df263",
+    "date": "2024-03-15T22:26:31+00:00",
+    "commits": [
+      {
+        "sha": "b56351cd",
+        "full_sha": "b56351cd055425f8eafa4db017841d8a0f5cd1ad",
+        "message": "Reduce extract_info calls.",
+        "author": "ArabCoders",
+        "date": "2024-03-15T22:22:07+00:00"
+      },
+      {
+        "sha": "9560d0f7",
+        "full_sha": "9560d0f7b6c9e6542a16cb8fddd5eea2da0e5e8e",
+        "message": "Fixes is_upcoming in frontend",
+        "author": "ArabCoders",
+        "date": "2024-03-14T22:32:33+00:00"
+      },
+      {
+        "sha": "38ec713f",
+        "full_sha": "38ec713f153d61812ccd1beff52731f81f71bd97",
+        "message": "fix",
+        "author": "ArabCoders",
+        "date": "2024-03-14T22:16:11+00:00"
+      },
+      {
+        "sha": "b0f100c1",
+        "full_sha": "b0f100c1937a9157cf3f8914f1358b0903c3bd93",
+        "message": "update packages.",
+        "author": "ArabCoders",
+        "date": "2024-03-14T21:10:02+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240315-b56351c",
+    "full_sha": "6e6150c9d19161cc5d7794d20814277a3ab9a1f0",
+    "date": "2024-03-13T21:21:43+00:00",
+    "commits": [
+      {
+        "sha": "439cc55b",
+        "full_sha": "439cc55b2a3e9a452d9b7e20925302f88f435ed3",
+        "message": "updated dockerfile",
+        "author": "ArabCoders",
+        "date": "2024-03-13T20:37:07+00:00"
+      },
+      {
+        "sha": "50982441",
+        "full_sha": "5098244193ce42b32c571e899d8b5f8961903194",
+        "message": "fix",
+        "author": "ArabCoders",
+        "date": "2024-03-13T19:49:40+00:00"
+      },
+      {
+        "sha": "d24a2415",
+        "full_sha": "d24a24157982292db7f17b55e667dbe8a16d087a",
+        "message": "Cleanup code.",
+        "author": "ArabCoders",
+        "date": "2024-03-13T19:41:39+00:00"
+      },
+      {
+        "sha": "8042f5ac",
+        "full_sha": "8042f5ac45e99becababb4599c7706f05acfc2fd",
+        "message": "Serve static content from memory.",
+        "author": "ArabCoders",
+        "date": "2024-03-11T16:45:51+00:00"
+      },
+      {
+        "sha": "708e058b",
+        "full_sha": "708e058b01493d392188447f6d05fbed3c3e0bf0",
+        "message": "Added socket_timeout.",
+        "author": "ArabCoders",
+        "date": "2024-03-11T16:39:32+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240313-d24a241",
+    "full_sha": "b50265ef2d4c299f482368cb0eb91c6973558702",
+    "date": "2024-03-11T16:23:04+00:00",
+    "commits": [
+      {
+        "sha": "68ff625a",
+        "full_sha": "68ff625a473ae74f531862d94be47f6eb2c980f6",
+        "message": "Update yt-dlp branch target",
+        "author": "ArabCoders",
+        "date": "2024-03-11T16:18:44+00:00"
+      },
+      {
+        "sha": "29bff397",
+        "full_sha": "29bff397b34c5a10f7a77b8f815ff2e1a6fc5eaa",
+        "message": "updated yt-dlp to pre-version",
+        "author": "ArabCoders",
+        "date": "2024-03-09T15:31:49+00:00"
+      },
+      {
+        "sha": "9719ac86",
+        "full_sha": "9719ac863f314ef8af89d39b3f2ed248b29834f5",
+        "message": "Added yt-dlp version to footer.",
+        "author": "ArabCoders",
+        "date": "2024-03-09T15:22:18+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240311-68ff625",
+    "full_sha": "66c64b3cab42eca119f62a31c4f6449647361da7",
+    "date": "2024-03-11T00:20:59+00:00",
+    "commits": [
+      {
+        "sha": "bca4b69a",
+        "full_sha": "bca4b69ad114cf6f9e3d9cf01bfb58e91146fd96",
+        "message": "Update yt-dlp to 2024.3.10",
+        "author": "ArabCoders",
+        "date": "2024-03-11T00:17:15+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240309-9719ac8",
+    "full_sha": "8b7be3a36664697d71a72d2a3846b5b4be063cdb",
+    "date": "2024-03-08T13:57:36+00:00",
+    "commits": [
+      {
+        "sha": "7b299790",
+        "full_sha": "7b29979021d98e77cba94341f2aeadc7c8b90e52",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2024-03-08T13:46:49+00:00"
+      },
+      {
+        "sha": "ef4fcf9d",
+        "full_sha": "ef4fcf9db31791d989ad3eca453e29c1348685bf",
+        "message": "Locally check the id instead fo requesting extract_info twice.",
+        "author": "ArabCoders",
+        "date": "2024-03-08T13:46:08+00:00"
+      },
+      {
+        "sha": "1b07a421",
+        "full_sha": "1b07a421e62234484c53833d43dcb954f8a7333a",
+        "message": "updating downloadQueue log messages.",
+        "author": "ArabCoders",
+        "date": "2024-03-07T14:47:22+00:00"
+      },
+      {
+        "sha": "31e6ed87",
+        "full_sha": "31e6ed87e42831e2e875cc80fbca8ede0fa0924b",
+        "message": "Fixed bug in 2nd asyncio.wait_for",
+        "author": "ArabCoders",
+        "date": "2024-03-05T17:06:26+00:00"
+      },
+      {
+        "sha": "f0a538da",
+        "full_sha": "f0a538dad2e9ba1867f4f1fb806bde6fb909238b",
+        "message": "Added reload button.",
+        "author": "ArabCoders",
+        "date": "2024-03-05T12:25:30+00:00"
+      },
+      {
+        "sha": "9ff44f32",
+        "full_sha": "9ff44f323455d272b92d7f9c3198900a7a515031",
+        "message": "added timeout limit to extract_info",
+        "author": "ArabCoders",
+        "date": "2024-03-05T11:45:22+00:00"
+      },
+      {
+        "sha": "abe5971f",
+        "full_sha": "abe5971f8cd9b6f5baa3977449c57a2617cac9a8",
+        "message": "fix",
+        "author": "ArabCoders",
+        "date": "2024-03-05T11:13:00+00:00"
+      },
+      {
+        "sha": "e0d686f2",
+        "full_sha": "e0d686f22729c6702909155d2462ad955308fdaa",
+        "message": "Changed theme icon.",
+        "author": "ArabCoders",
+        "date": "2024-03-04T19:47:43+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240308-ef4fcf9",
+    "full_sha": "53e48c207baa8d3e8092ed03c8c980687560f57e",
+    "date": "2024-03-04T16:24:16+00:00",
+    "commits": [
+      {
+        "sha": "3ca1c981",
+        "full_sha": "3ca1c981d2c8d9d5fa5afe08712de4b3cf520b8c",
+        "message": "Do not log the entire extract_info data while in debug mode.",
+        "author": "ArabCoders",
+        "date": "2024-03-04T13:12:51+00:00"
+      },
+      {
+        "sha": "fb2d8fb4",
+        "full_sha": "fb2d8fb4423326e2f8f040d5f137e78f3ab31a08",
+        "message": "Fixed path issue for container debugger.",
+        "author": "ArabCoders",
+        "date": "2024-02-27T14:49:45+00:00"
+      },
+      {
+        "sha": "e2b7a279",
+        "full_sha": "e2b7a27928f3b1472c4669d03afac667d8ed74e0",
+        "message": "disable warning about frozen frozen_modules",
+        "author": "ArabCoders",
+        "date": "2024-02-27T14:40:37+00:00"
+      },
+      {
+        "sha": "ec08dcf1",
+        "full_sha": "ec08dcf11891ece2dcf26452717637e7ed9623f3",
+        "message": "Added debugpy to container.",
+        "author": "ArabCoders",
+        "date": "2024-02-27T14:33:07+00:00"
+      },
+      {
+        "sha": "45c35fee",
+        "full_sha": "45c35feec3308874ff0d529fb41bdc6dc9b0cf8b",
+        "message": "followup",
+        "author": "ArabCoders",
+        "date": "2024-02-27T14:18:36+00:00"
+      },
+      {
+        "sha": "f689b4b7",
+        "full_sha": "f689b4b7eb551ff94de4602e848a979788c91b96",
+        "message": "mark the main process to make it easier to pick process for debug",
+        "author": "ArabCoders",
+        "date": "2024-02-27T14:17:58+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240304-3ca1c98",
+    "full_sha": "0dbbd6a2a58c62175fcee97ee0f2dbebfb536084",
+    "date": "2024-02-27T14:05:36+00:00",
+    "commits": [
+      {
+        "sha": "0548e5e7",
+        "full_sha": "0548e5e73a0e0e7eb3d6d95e398acfbbb8bde9bb",
+        "message": "changed logging_level to LOG_LEVEL",
+        "author": "ArabCoders",
+        "date": "2024-02-26T14:36:49+00:00"
+      },
+      {
+        "sha": "e20365a8",
+        "full_sha": "e20365a8e6ee5c6870e96621e19d7642d6d51f98",
+        "message": "added debug statements.",
+        "author": "ArabCoders",
+        "date": "2024-02-26T14:15:39+00:00"
+      },
+      {
+        "sha": "966e847b",
+        "full_sha": "966e847bbda1ab1a732e9f72dd786434233615c0",
+        "message": "use thread for extract_info",
+        "author": "ArabCoders",
+        "date": "2024-02-23T15:40:52+00:00"
+      },
+      {
+        "sha": "9dd4063f",
+        "full_sha": "9dd4063ff4dfd945851c8a47713a7e760cc675c8",
+        "message": "updated screenshots",
+        "author": "ArabCoders",
+        "date": "2024-02-23T14:15:54+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240226-e20365a",
+    "full_sha": "4cf4b72c47bcb6740842beceb29217178563b010",
+    "date": "2024-02-19T18:56:20+00:00",
+    "commits": [
+      {
+        "sha": "a6339d93",
+        "full_sha": "a6339d93f85fd0a028bd1e0b2fb6f50b81a467da",
+        "message": "added missing libmagic",
+        "author": "ArabCoders",
+        "date": "2024-02-19T18:53:48+00:00"
+      },
+      {
+        "sha": "30f3e2c2",
+        "full_sha": "30f3e2c2e75d93098715c06b2e487c34f85c0184",
+        "message": "Another attempt at fixing static files hang.",
+        "author": "ArabCoders",
+        "date": "2024-02-19T18:45:31+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240219-f5ff712",
+    "full_sha": "022eb86deabd6acc4b08cf19e2f85008baab3a18",
+    "date": "2024-02-16T13:12:04+00:00",
+    "commits": [
+      {
+        "sha": "620caf9c",
+        "full_sha": "620caf9caa7e642028779db5548a6b358183efec",
+        "message": "Attempt at fix for response hang when the app has been running for long time.",
+        "author": "ArabCoders",
+        "date": "2024-02-16T13:07:20+00:00"
+      },
+      {
+        "sha": "86a52862",
+        "full_sha": "86a52862da441fd726c5558fb043dfe7f52613bb",
+        "message": "Changed completed ui name to history.",
+        "author": "ArabCoders",
+        "date": "2024-02-03T16:04:49+00:00"
+      },
+      {
+        "sha": "8685c019",
+        "full_sha": "8685c01969837a66711c81a34ab581beb9ec3e92",
+        "message": "fix",
+        "author": "ArabCoders",
+        "date": "2024-02-03T13:19:47+00:00"
+      },
+      {
+        "sha": "18526bad",
+        "full_sha": "18526bad3894ebc9fa85a555fb4ba74a705a12f4",
+        "message": "Fixes for is_live flag.",
+        "author": "ArabCoders",
+        "date": "2024-02-03T13:18:55+00:00"
+      },
+      {
+        "sha": "cd712b4c",
+        "full_sha": "cd712b4c5a71b65632bded8104ff2aae2b65ab2d",
+        "message": "parse webhook response body.",
+        "author": "ArabCoders",
+        "date": "2024-02-02T21:39:05+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240216-620caf9",
+    "full_sha": "126e59bd7a733108bdd8a9ec52145214323e1095",
+    "date": "2024-02-02T15:31:44+00:00",
+    "commits": [
+      {
+        "sha": "3b4c10f3",
+        "full_sha": "3b4c10f32ff3db6e143af0cbe38ceb64c4310037",
+        "message": "fixed logging formatter",
+        "author": "ArabCoders",
+        "date": "2024-02-02T15:19:01+00:00"
+      },
+      {
+        "sha": "0cd3e15f",
+        "full_sha": "0cd3e15f34e527d1333372bcb8a4d36ad483793e",
+        "message": "mostly code cleanup",
+        "author": "ArabCoders",
+        "date": "2024-02-02T15:07:24+00:00"
+      },
+      {
+        "sha": "b1022679",
+        "full_sha": "b1022679833b348937c33ee0f5837323c0f9a83b",
+        "message": "removed log for playlist.",
+        "author": "ArabCoders",
+        "date": "2024-01-31T18:56:46+00:00"
+      },
+      {
+        "sha": "e257f15f",
+        "full_sha": "e257f15fcf437d3ddc61569655ce0cbf6880389f",
+        "message": "added log event for webhook response.",
+        "author": "ArabCoders",
+        "date": "2024-01-31T18:53:57+00:00"
+      },
+      {
+        "sha": "228d494c",
+        "full_sha": "228d494c1a60d2e0b3e94a359c67051baf42ef21",
+        "message": "Added health check to container.",
+        "author": "ArabCoders",
+        "date": "2024-01-31T11:38:20+00:00"
+      }
+    ]
+  },
+  {
+    "tag": "20240202-3b4c10f",
+    "full_sha": "96dc93a66305ac9989f90248d31921da9cb04aca",
+    "date": "2024-01-20T21:16:18+00:00",
+    "commits": [
+      {
+        "sha": "c8b6cc39",
+        "full_sha": "c8b6cc39ac4e921f852d2479208a8b9fdff7eab0",
+        "message": "initial work to add version checker.",
+        "author": "ArabCoders",
+        "date": "2024-01-20T21:12:53+00:00"
+      },
+      {
+        "sha": "f4ddfb55",
+        "full_sha": "f4ddfb552a5893f63c58eb4c9a3baad7dfae9456",
+        "message": "attempt #3",
+        "author": "ArabCoders",
+        "date": "2024-01-20T20:57:12+00:00"
+      },
+      {
+        "sha": "c7e0c542",
+        "full_sha": "c7e0c542976d4fc192ca2c81c1bbb90a44c9e07c",
+        "message": "attempt to fix version tagging",
+        "author": "ArabCoders",
+        "date": "2024-01-20T20:46:13+00:00"
+      },
+      {
+        "sha": "0174a1f5",
+        "full_sha": "0174a1f5d0b8435a51d714da1a445b3ccdd14242",
+        "message": "fixes",
+        "author": "ArabCoders",
+        "date": "2024-01-20T20:21:33+00:00"
+      }
+    ]
+  }
+]
