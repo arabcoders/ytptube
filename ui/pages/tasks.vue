@@ -243,6 +243,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import { request } from '~/utils/index'
+import { encode } from '~/utils/importer'
 import type { task_item, exported_task, error_response } from '~/@types/tasks'
 
 const box = useConfirm()
@@ -496,8 +497,7 @@ const exportItem = async (item: task_item) => {
   data._type = 'task'
   data._version = '2.0'
 
-  return copyText(base64UrlEncode(JSON.stringify(data)));
+  return copyText(encode(data));
 }
-
 
 </script>

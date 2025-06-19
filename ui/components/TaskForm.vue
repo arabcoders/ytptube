@@ -271,6 +271,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
+import { decode } from '~/utils/importer'
 
 const props = defineProps({
   reference: {
@@ -352,18 +353,8 @@ const importItem = async () => {
     return
   }
 
-  if (false === val.startsWith('{')) {
-    try {
-      val = base64UrlDecode(val)
-    } catch (e) {
-      console.error(e)
-      toast.error(`Failed to decode string. ${e.message}`)
-      return
-    }
-  }
-
   try {
-    const item = JSON.parse(val)
+    const item = decode(val)
 
     if ('task' !== item._type) {
       toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`)

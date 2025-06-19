@@ -139,6 +139,7 @@ div.is-centered {
 
 <script setup>
 import { request } from '~/utils/index'
+import { encode } from '~/utils/importer'
 
 const toast = useNotification()
 const config = useConfigStore()
@@ -337,6 +338,6 @@ const exportItem = async item => {
   data['_type'] = 'notification'
   data['_version'] = '1.0'
 
-  return copyText(base64UrlEncode(JSON.stringify(data)))
+  return copyText(encode(data))
 }
 </script>

@@ -267,6 +267,8 @@
 
 <script setup>
 import { useStorage } from '@vueuse/core'
+import { decode } from '~/utils/importer'
+
 const emitter = defineEmits(['cancel', 'submit']);
 const toast = useNotification();
 const props = defineProps({
@@ -339,18 +341,8 @@ const importItem = async () => {
     return
   }
 
-  if (false === val.startsWith('{')) {
-    try {
-      val = base64UrlDecode(val)
-    } catch (e) {
-      console.error(e)
-      toast.error(`Failed to decode string. ${e.message}`)
-      return
-    }
-  }
-
   try {
-    const item = JSON.parse(val)
+    const item = decode(val)
 
     if ('notification' !== item._type) {
       toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`)
