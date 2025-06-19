@@ -312,6 +312,6 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
-| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer.                   | `*15 */1 * * *`                    |
+| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer.                   | `15 */1 * * *`                     |
 | YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time.         | `1`                                |
 

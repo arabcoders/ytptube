@@ -20,6 +20,19 @@ div.is-centered {
         </span>
         <div class="is-pulled-right">
           <div class="field is-grouped">
+            <p class="control has-icons-left" v-if="toggleFilter && tasks && tasks.length > 0">
+              <input type="search" v-model.lazy="query" class="input" id="filter"
+                placeholder="Filter displayed content">
+              <span class="icon is-left"><i class="fas fa-filter" /></span>
+            </p>
+
+            <p class="control" v-if="tasks && tasks.length > 0">
+              <button class="button is-danger is-light" v-tooltip.bottom="'Filter'"
+                @click="toggleFilter = !toggleFilter">
+                <span class="icon"><i class="fas fa-filter" /></span>
+              </button>
+            </p>
+
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm"
                 v-tooltip.bottom="'Toggle Add form'">
@@ -58,7 +71,7 @@ div.is-centered {
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="!isLoading && !toggleForm && tasks && tasks.length > 0">
+    <div class="columns is-multiline" v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <template v-if="'list' === display_style">
         <div class="column is-12">
           <div class="table-container">
@@ -81,7 +94,7 @@ div.is-centered {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in tasks" :key="item.id">
+                <tr v-for="item in filteredTasks" :key="item.id">
                   <td class="is-vcentered">
                     <div class="is-text-overflow">
                       <NuxtLink target="_blank" :href="item.url" class="is-bold">
@@ -139,7 +152,7 @@ div.is-centered {
       </template>
 
       <template v-else>
-        <div class="column is-6" v-for="item in tasks" :key="item.id">
+        <div class="column is-6" v-for="item in filteredTasks" :key="item.id">
           <div class="card is-flex is-full-height is-flex-direction-column">
             <header class="card-header">
               <div class="card-header-title is-text-overflow is-block">
@@ -209,10 +222,15 @@ div.is-centered {
       </template>
     </div>
 
-    <div class="columns is-multiline" v-if="!tasks || tasks.length < 1">
+    <div class="columns is-multiline" v-if="!filteredTasks || filteredTasks.length < 1">
       <div class="column is-12">
         <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
           message="Loading data. Please wait..." v-if="isLoading" />
+        <Message title="No Results" class="is-background-warning-80 has-text-dark" icon="fas fa-search"
+          v-else-if="query" :useClose="true" @close="query = ''">
+          <p>No results found for the query: <strong>{{ query }}</strong>.</p>
+          <p>Please try a different search term.</p>
+        </Message>
         <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
           icon="fas fa-exclamation-circle" v-else />
       </div>
@@ -241,6 +259,15 @@ const initialLoad = ref<boolean>(true)
 const addInProgress = ref<boolean>(false)
 const display_style = useStorage<string>("tasks_display_style", "cards")
 const remove_keys = ['in_progress']
+const query = ref()
+const toggleFilter = ref(false)
+
+watch(toggleFilter, () => {
+  if (!toggleFilter.value) {
+    query.value = ''
+  }
+});
+
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -256,6 +283,15 @@ watch(() => socket.isConnected, async () => {
     initialLoad.value = false
   }
 })
+
+const filteredTasks = computed<task_item[]>(() => {
+  const q = query.value?.toLowerCase();
+  if (!q) return tasks.value;
+
+  return tasks.value.filter(
+    task => Object.values(task).some(value => typeof value === 'string' && value.toLowerCase().includes(q))
+  );
+});
 
 const reloadContent = async (fromMounted: boolean = false) => {
   try {
