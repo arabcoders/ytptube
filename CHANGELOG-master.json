@@ -1,8 +1,43 @@
 [
     {
-        "tag": "master-20250618-6e05efb1",
-        "date": "2025-06-18T19:19:43+00:00",
+        "tag": "master-20250619-4bf65f08",
+        "date": "2025-06-19T16:11:24+00:00",
         "commits": [
+            {
+                "sha": "c3b2e257",
+                "message": "For youtube handler, if item_error events received, remove the item from queued ids.",
+                "author": "arabcoders",
+                "date": "2025-06-19T16:03:40+00:00",
+                "full_sha": "c3b2e257c9dee811bfde253795a6922cfe9fdd68"
+            },
+            {
+                "sha": "44226c9a",
+                "message": "when item download fails, trigger item_error event",
+                "author": "arabcoders",
+                "date": "2025-06-19T16:02:44+00:00",
+                "full_sha": "44226c9a04f0d5ceaef1930616ab2124153bf688"
+            },
+            {
+                "sha": "86da6c2b",
+                "message": "improve the import/export process to allow for non-ascii characters.",
+                "author": "arabcoders",
+                "date": "2025-06-19T15:11:19+00:00",
+                "full_sha": "86da6c2b06460c210a587223054c2ada7b2268dd"
+            },
+            {
+                "sha": "746b4902",
+                "message": "Added filter displayed items in tasks page.",
+                "author": "arabcoders",
+                "date": "2025-06-19T09:31:19+00:00",
+                "full_sha": "746b49021608649644e822bb6a7fb05f94fe2b9b"
+            },
+            {
+                "sha": "69de66c0",
+                "message": "update docker hub read me on tag",
+                "author": "arabcoders",
+                "date": "2025-06-18T19:27:06+00:00",
+                "full_sha": "69de66c036c7de5ed6800cd07c61af8ed4342427"
+            },
             {
                 "sha": "f5070885",
                 "message": "As we no longer need to update each time yt-dlp updates, we going to use simver",
@@ -81,7 +116,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6e05efb1468b61d2d326049cea76bdee6486fd95"
+        "full_sha": "4bf65f08c471bb8be2abb40348383d7b4dbc75a1"
     },
     {
         "tag": "master-20250616-c07465a6",
