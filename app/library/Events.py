@@ -109,6 +109,7 @@ class Events:
     INITIAL_DATA = "initial_data"
     ITEM_DELETE = "item_delete"
     ITEM_CANCEL = "item_cancel"
+    ITEM_ERROR = "item_error"
     STATUS = "status"
     CLI_CLOSE = "cli_close"
     CLI_OUTPUT = "cli_output"

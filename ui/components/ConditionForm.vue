@@ -209,6 +209,7 @@
 <script setup>
 import { useStorage } from '@vueuse/core'
 const emitter = defineEmits(['cancel', 'submit'])
+import { decode } from '~/utils/importer'
 
 const props = defineProps({
   reference: {
@@ -321,18 +322,8 @@ const importItem = async () => {
     return
   }
 
-  if (false === val.startsWith('{')) {
-    try {
-      val = base64UrlDecode(val)
-    } catch (e) {
-      console.error(e)
-      toast.error(`Failed to decode string. ${e.message}`)
-      return
-    }
-  }
-
   try {
-    const item = JSON.parse(val)
+    const item = decode(val)
 
     if (!item?._type || 'condition' !== item._type) {
       toast.error(`Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`)

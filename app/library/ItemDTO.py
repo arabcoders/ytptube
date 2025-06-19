@@ -235,6 +235,9 @@ class ItemDTO:
     def get_id(self) -> str:
         return self._id
 
+    def name(self) -> str:
+        return f'id="{self.id}",  title="{self.title}"'
+
     @staticmethod
     def removed_fields() -> tuple:
         """Fields that once existed but are no longer used."""
@@ -247,5 +250,5 @@ class ItemDTO:
             "output_template",
             "output_template_chapter",
             "config",
-            "temp_path"
+            "temp_path",
         )

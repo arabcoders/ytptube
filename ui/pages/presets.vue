@@ -213,6 +213,7 @@ div.is-centered {
 <script setup>
 import { useStorage } from '@vueuse/core'
 import { request } from '~/utils/index'
+import { encode } from '~/utils/importer'
 
 const toast = useNotification()
 const config = useConfigStore()
@@ -400,7 +401,7 @@ const exportItem = item => {
   userData['_type'] = 'preset'
   userData['_version'] = '2.5'
 
-  return copyText(base64UrlEncode(JSON.stringify(userData)))
+  return copyText(encode(userData))
 }
 
 const calcPath = (path) => {

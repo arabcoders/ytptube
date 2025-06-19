@@ -1,3 +1,4 @@
+import asyncio
 import copy
 import json
 import logging
@@ -54,7 +55,7 @@ class DataStore:
             if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
                 return self.dict[i]
 
-        msg = f"{key=} or {url=} not found."
+        msg: str = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
     def get_by_id(self, id: str) -> Download | None:
@@ -82,6 +83,11 @@ class DataStore:
         return items
 
     def put(self, value: Download) -> Download:
+        if "error" == value.info.status:
+            from app.library.Events import EventBus, Events
+
+            asyncio.create_task(EventBus.get_instance().emit(Events.ITEM_ERROR, value.info), name="emit_item_error")
+
         self.dict.update({value.info._id: value})
         self._update_store_item(self.type, value.info)
 
@@ -121,7 +127,7 @@ class DataStore:
         ON CONFLICT DO UPDATE SET "type" = ?, "url" = ?, "data" = ?, created_at = ?
         """
 
-        stored = copy.deepcopy(item)
+        stored: ItemDTO = copy.deepcopy(item)
 
         if hasattr(stored, "datetime"):
             try:
