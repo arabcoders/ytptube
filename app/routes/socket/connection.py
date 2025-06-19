@@ -34,11 +34,12 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
 
 
 @route(RouteType.SOCKET, "disconnect", "socket_disconnect")
-async def disconnect(sid: str, data: str = None):
+async def disconnect(sio: socketio.AsyncServer, sid: str, data: str = None):
     """
     Handle client disconnection.
 
     Args:
+        sio (socketio.AsyncServer): The Socket.IO server instance.
         sid (str): The session ID of the client.
         data (str): The reason for disconnection.
 
@@ -47,7 +48,7 @@ async def disconnect(sid: str, data: str = None):
 
     for event in _Data.subscribers:
         if sid in _Data.subscribers[event]:
-            await unsubscribe(sid=sid, data=event)
+            await unsubscribe(sio=sio, sid=sid, data=event)
 
 
 @route(RouteType.SOCKET, "subscribe", "socket_subscribe")

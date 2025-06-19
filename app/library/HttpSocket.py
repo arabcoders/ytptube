@@ -117,7 +117,9 @@ class HttpSocket:
 
     @staticmethod
     def _injector(func, event: str):
-        async def wrapper(sid, data, **kwargs):
+        async def wrapper(sid, data=None, **kwargs):
+            if not data:
+                data = {}
             return await Services.get_instance().handle_async(func, sid=sid, data=data, event=event, **kwargs)
 
         return wrapper
