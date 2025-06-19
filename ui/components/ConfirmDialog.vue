@@ -8,7 +8,8 @@
       </header>
 
       <section class="modal-card-body">
-        <p class="mb-3 title is-5">{{ message }}</p>
+        <p class="mb-3 title is-5" v-if="!html_message">{{ message }}</p>
+        <div class="content" v-if="html_message" v-html="html_message" style="max-height: 40vh; overflow: auto;" />
 
         <div v-if="options?.length">
           <hr class="">
@@ -50,6 +51,10 @@ const props = defineProps({
   message: {
     type: String,
     default: 'Are you sure?'
+  },
+  html_message: {
+    type: String,
+    default: ''
   },
   options: {
     type: Array as () => Array<{ key: string; label: string, checked?: boolean }>,
