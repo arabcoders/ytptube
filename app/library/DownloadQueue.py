@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from pathlib import Path
 from sqlite3 import Connection
+from typing import TYPE_CHECKING
 
 import yt_dlp
 from aiohttp import web
@@ -37,6 +38,9 @@ from .Utils import (
     str_to_dt,
 )
 from .YTDLPOpts import YTDLPOpts
+
+if TYPE_CHECKING:
+    from app.library.Presets import Preset
 
 LOG = logging.getLogger("DownloadQueue")
 
@@ -490,7 +494,7 @@ class DownloadQueue(metaclass=Singleton):
             { "status": "text" }
 
         """
-        _preset = Presets.get_instance().get(item.preset)
+        _preset: Preset | None = Presets.get_instance().get(item.preset)
 
         if item.has_cli():
             try:
@@ -520,9 +524,9 @@ class DownloadQueue(metaclass=Singleton):
         already.add(item.url)
 
         try:
-            logs = []
+            logs: list = []
 
-            yt_conf = {
+            yt_conf: dict = {
                 "callback": {
                     "func": lambda _, msg: logs.append(msg),
                     "level": logging.WARNING,
@@ -542,7 +546,7 @@ class DownloadQueue(metaclass=Singleton):
                 await self._notify.emit(Events.LOG_WARNING, data=event_warning(message))
                 return {"status": "error", "msg": message}
 
-            started = time.perf_counter()
+            started: float = time.perf_counter()
 
             if item.cookies:
                 try:
