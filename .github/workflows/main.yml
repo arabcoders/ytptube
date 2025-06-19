@@ -234,6 +234,8 @@ jobs:
 
   dockerhub-sync-readme:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) || (github.event_name == 'workflow_dispatch' && github.event.inputs.update_readme == 'true')
     steps:
       - name: Sync README

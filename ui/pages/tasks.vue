@@ -71,6 +71,42 @@ div.is-centered {
       </div>
     </div>
 
+
+    <div class="columns is-multiline is-mobile" v-if="filteredTasks && filteredTasks.length > 0">
+      <div class="column" v-if="'list' !== display_style">
+        <button type="button" class="button is-fullwidth is-ghost is-inverted"
+          @click="masterSelectAll = !masterSelectAll">
+          <span class="icon-text is-block">
+            <span class="icon">
+              <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
+            </span>
+            <span v-if="!masterSelectAll">Select All</span>
+            <span v-else>Unselect All</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="column">
+        <button class="button is-purple is-fullwidth" @click="runConfirm()"
+          :disabled="selectedElms.length < 1 || massRun" :class="{ 'is-loading': massRun }">
+          <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+          <span>Run Selected</span>
+        </button>
+      </div>
+
+      <div class="column">
+        <button type="button" class="button is-fullwidth is-danger" @click="deleteConfirm()"
+          :disabled="selectedElms.length < 1 || massDelete" :class="{ 'is-loading': massDelete }">
+          <span class="icon-text is-block">
+            <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+            <span>Remove Selected</span>
+          </span>
+        </button>
+      </div>
+
+    </div>
+
+
     <div class="columns is-multiline" v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <template v-if="'list' === display_style">
         <div class="column is-12">
@@ -79,6 +115,11 @@ div.is-centered {
               style="min-width: 850px; table-layout: fixed;">
               <thead>
                 <tr class="has-text-centered is-unselectable">
+                  <th width="5%">
+                    <label class="checkbox is-block">
+                      <input class="completed-checkbox" type="checkbox" v-model="masterSelectAll">
+                    </label>
+                  </th>
                   <th width="50%">
                     <span class="icon"><i class="fa-solid fa-tasks" /></span>
                     <span>Task</span>
@@ -95,10 +136,20 @@ div.is-centered {
               </thead>
               <tbody>
                 <tr v-for="item in filteredTasks" :key="item.id">
-                  <td class="is-vcentered">
-                    <div class="is-text-overflow">
+                  <td class="is-vcentered has-text-centered">
+                    <label class="checkbox is-block">
+                      <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :value="item.id">
+                    </label>
+                  </td>
+                  <td class="is-text-overflow is-vcentered">
+                    <div class="is-inline is-pulled-right">
+                      <span v-for="(tag, index) in get_tags(item.name)" :key="index" class="tag is-info">
+                        {{ tag }}
+                      </span>
+                    </div>
+                    <div>
                       <NuxtLink target="_blank" :href="item.url" class="is-bold">
-                        {{ item.name }}
+                        {{ remove_tags(item.name) }}
                       </NuxtLink>
                     </div>
                     <div v-if="item.preset">
@@ -156,12 +207,29 @@ div.is-centered {
           <div class="card is-flex is-full-height is-flex-direction-column">
             <header class="card-header">
               <div class="card-header-title is-text-overflow is-block">
-                <NuxtLink target="_blank" :href="item.url">{{ item.name }}</NuxtLink>
+                <NuxtLink target="_blank" :href="item.url">
+                  {{ remove_tags(item.name) }}
+                </NuxtLink>
               </div>
               <div class="card-header-icon">
-                <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
-                  <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                </a>
+                <div class="field is-grouped">
+                  <div class="control" v-for="(tag, index) in get_tags(item.name)" :key="index">
+                    <span class="tag is-info">
+                      {{ tag }}
+                    </span>
+                  </div>
+
+                  <div class="control">
+                    <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                      <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                    </a>
+                  </div>
+                  <div class="control">
+                    <label class="checkbox is-block">
+                      <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :value="item.id">
+                    </label>
+                  </div>
+                </div>
               </div>
             </header>
             <div class="card-content is-flex-grow-1">
@@ -235,6 +303,10 @@ div.is-centered {
           icon="fas fa-exclamation-circle" v-else />
       </div>
     </div>
+
+    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
+      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
+      :html_message="dialog_confirm.html_message" @cancel="dialog_confirm = reset_dialog()" />
   </main>
 </template>
 
@@ -242,7 +314,7 @@ div.is-centered {
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
-import { request } from '~/utils/index'
+import { request, sleep } from '~/utils/index'
 import { encode } from '~/utils/importer'
 import type { task_item, exported_task, error_response } from '~/@types/tasks'
 
@@ -250,6 +322,7 @@ const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const display_style = useStorage<string>("tasks_display_style", "cards")
 
 const tasks = ref<Array<task_item>>([])
 const task = ref<task_item | Object>({})
@@ -258,8 +331,24 @@ const toggleForm = ref<boolean>(false)
 const isLoading = ref<boolean>(true)
 const initialLoad = ref<boolean>(true)
 const addInProgress = ref<boolean>(false)
-const display_style = useStorage<string>("tasks_display_style", "cards")
+const selectedElms = ref<Array<string>>([])
+const masterSelectAll = ref(false)
+const massRun = ref<boolean>(false)
+const massDelete = ref<boolean>(false)
+
+const reset_dialog = () => ({
+  visible: false,
+  title: 'Confirm Action',
+  confirm: (opts: any) => { },
+  message: '',
+  html_message: '',
+  options: [],
+});
+
+const dialog_confirm = ref(reset_dialog())
+
 const remove_keys = ['in_progress']
+
 const query = ref()
 const toggleFilter = ref(false)
 
@@ -269,6 +358,21 @@ watch(toggleFilter, () => {
   }
 });
 
+watch(query, () => {
+  masterSelectAll.value = false
+  selectedElms.value = []
+})
+
+watch(masterSelectAll, (value) => {
+  for (const key in filteredTasks.value) {
+    const element = filteredTasks.value[key]
+    if (value) {
+      selectedElms.value.push(element.id)
+    } else {
+      selectedElms.value = []
+    }
+  }
+})
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -358,6 +462,54 @@ const updateTasks = async (items: Array<task_item>) => {
   }
 }
 
+const deleteConfirm = () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No tasks selected.')
+    return
+  }
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Delete Selected Tasks'
+  dialog_confirm.value.message = `Delete ${selectedElms.value.length} task/s?`
+  dialog_confirm.value.confirm = async () => await deleteSelected()
+}
+
+const deleteSelected = async () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No tasks selected.')
+    return
+  }
+
+  massDelete.value = true
+  dialog_confirm.value = reset_dialog()
+
+  const itemsToDelete = tasks.value.filter(t => selectedElms.value.includes(t.id))
+  if (itemsToDelete.length < 1) {
+    toast.error('No tasks found to delete.')
+    return
+  }
+
+  for (const item of itemsToDelete) {
+    const index = tasks.value.findIndex(t => t?.id === item.id)
+    if (index > -1) {
+      tasks.value.splice(index, 1)
+    }
+  }
+
+  await nextTick()
+  const status = await updateTasks(tasks.value)
+  selectedElms.value = []
+
+  if (!status) {
+    return
+  }
+
+  toast.success('Tasks deleted.')
+  setTimeout(async () => {
+    await nextTick()
+    massDelete.value = false
+  }, 500)
+}
+
 const deleteItem = async (item: task_item) => {
   if (true !== box.confirm(`Delete '${item.name}' task?`, true)) {
     return
@@ -432,12 +584,57 @@ const tryParse = (expression: string) => {
   }
 }
 
-const runNow = async (item: task_item) => {
-  if (true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
+const runConfirm = () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No tasks selected.')
+    return
+  }
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Run Selected Tasks'
+
+  dialog_confirm.value.html_message = `Run the following tasks?<ul>` + selectedElms.value.map(id => {
+    const item = tasks.value.find(t => t.id === id)
+    return item ? `<li>${item.name}</li>` : ''
+  }).join('') + `</ul>`
+
+  dialog_confirm.value.confirm = async () => await runSelected()
+}
+
+const runSelected = async () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No tasks selected.')
     return
   }
 
-  item.in_progress = true
+  dialog_confirm.value = reset_dialog()
+
+  massRun.value = true
+
+  for (const id of selectedElms.value) {
+    const item = tasks.value.find(t => t.id === id)
+    if (!item) {
+      continue
+
+    }
+    await runNow(item, true)
+  }
+
+  selectedElms.value = []
+  toast.success('Dispatched selected tasks.')
+  setTimeout(async () => {
+    await nextTick()
+    massRun.value = false
+  }, 500)
+}
+
+const runNow = async (item: task_item, mass: boolean = false) => {
+  if (!mass && true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
+    return
+  }
+
+  if (false === mass) {
+    item.in_progress = true
+  }
 
   let data = {
     url: item.url,
@@ -457,6 +654,10 @@ const runNow = async (item: task_item) => {
   }
 
   socket.emit('add_url', data)
+
+  if (true === mass) {
+    return
+  }
 
   setTimeout(async () => {
     await nextTick()
@@ -500,4 +701,11 @@ const exportItem = async (item: task_item) => {
   return copyText(encode(data));
 }
 
+const get_tags = (name: string): Array<string> => {
+  const regex = /\[(.*?)\]/g;
+  const matches = name.match(regex);
+  return !matches ? [] : matches.map(tag => tag.replace(/[\[\]]/g, '').trim());
+}
+
+const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
 </script>

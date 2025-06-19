@@ -46,7 +46,7 @@ class DataStore:
 
         return any((key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url) for i in self.dict)
 
-    def get(self, key: str, url: str | None = None) -> Download:
+    def get(self, key: str | None = None, url: str | None = None) -> Download:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
