@@ -2,19 +2,31 @@ import asyncio
 import logging
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
+from app.library.ItemDTO import ItemDTO
 from app.library.Tasks import Task
 from app.library.Utils import is_downloaded
 from app.library.YTDLPOpts import YTDLPOpts
 
+if TYPE_CHECKING:
+    from app.library.Download import Download
+
 LOG: logging.Logger = logging.getLogger(__name__)
+
+EventBus.get_instance().subscribe(
+    Events.ITEM_ERROR,
+    lambda data, _, **__: YoutubeHandler.on_error(data.data),
+    f"{__name__}.on_error",
+)
 
 
 class YoutubeHandler:
     queued_ids: set[str] = set()
+    failure_count: dict[str, int] = {}
 
     FEED = "https://www.youtube.com/feeds/videos.xml?{type}={id}"
     FEED_PLAYLIST = "https://www.youtube.com/feeds/videos.xml?playlist_id={id}"
@@ -72,7 +84,7 @@ class YoutubeHandler:
             },
         }
 
-        items = []
+        items: list = []
 
         async with httpx.AsyncClient(**opts) as client:
             response = await client.request(method="GET", url=feed_url, timeout=120)
@@ -101,16 +113,25 @@ class YoutubeHandler:
             LOG.warning(f"No entries found in '{task.id}: {task.name}' feed. URL: {feed_url}")
             return
 
-        filtered = []
+        filtered: list = []
         for item in items:
             status, _ = is_downloaded(archive_file, url=item["url"])
             if status is True or item["id"] in YoutubeHandler.queued_ids:
                 continue
 
-            if queue.done.exists(url=item["url"]) or queue.queue.exists(url=item["url"]):
-                LOG.debug(f"Item '{item['id']}' already exists in the queue or download history.")
+            if queue.queue.exists(url=item["url"]):
+                LOG.debug(f"Item '{item['id']}' exists in the queue.")
                 YoutubeHandler.queued_ids.add(item["id"])
                 continue
+
+            try:
+                done: Download = queue.done.get(url=item["url"])
+                if "error" != done.info.status:
+                    LOG.debug(f"Item '{item['id']}' exists in the download history.")
+                    YoutubeHandler.queued_ids.add(item["id"])
+                    continue
+            except KeyError:
+                pass
 
             YoutubeHandler.queued_ids.add(item["id"])
             filtered.append(item)
@@ -187,6 +208,31 @@ class YoutubeHandler:
             return {"type": "playlist_id", "id": m.group("id")}
 
         return None
+
+    @staticmethod
+    async def on_error(item: ItemDTO) -> None:
+        """
+        Handle errors by logging them and removing the queued ID if it exists.
+
+        Args:
+            item (ItemDTO): The error data containing the URL and other information.
+
+        """
+        cls = YoutubeHandler
+        if not item or not isinstance(item, ItemDTO):
+            return
+
+        cls.queued_ids.add(item.id)
+
+        if item.id not in cls.queued_ids:
+            return
+
+        currentFailureCount: int = cls.failure_count.get(item.id, 0)
+
+        LOG.info(f"Removing '{item.name()}' from queued IDs due to error. Failure count: '{currentFailureCount + 1}'.")
+        cls.queued_ids.remove(item.id)
+
+        cls.failure_count[item.id] = cls.failure_count.get(item.id, 0) + 1
 
     @staticmethod
     def tests() -> list[str]:
