@@ -69,6 +69,32 @@ async def item_delete(request: Request, queue: DownloadQueue, encoder: Encoder) 
     )
 
 
+@route("GET", "api/history/{id}", "item_view")
+async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Update an item in the history.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+        notify (EventBus): The event bus instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    id: str = request.match_info.get("id")
+    if not id:
+        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+
+    item: Download | None = queue.done.get_by_id(id) or queue.queue.get_by_id(id)
+    if not item:
+        return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
+
+    return web.json_response(data=item.info, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
 @route("POST", "api/history/{id}", "item_update")
 async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, notify: EventBus) -> Response:
     """
