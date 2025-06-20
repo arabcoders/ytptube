@@ -166,7 +166,7 @@ class Tasks(metaclass=Singleton):
                 except Exception:
                     schedule_time = task.timer
 
-                LOG.info(f"Task '{i}: {task.name}' queued to be executed '{schedule_time}'.")
+                LOG.info(f"Task '{task.name}' queued to be executed '{schedule_time}'.")
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue '{i}: {task.name}'. '{e!s}'.")
@@ -186,12 +186,12 @@ class Tasks(metaclass=Singleton):
 
         for task in self._tasks:
             try:
-                LOG.info(f"Stopping '{task.id}: {task.name}'.")
+                LOG.info(f"Stopping '{task.name}'.")
                 self._scheduler.remove(task.id)
             except Exception as e:
                 if not shutdown:
                     LOG.exception(e)
-                    LOG.error(f"Failed to stop '{task.id}: {task.name}'. '{e!s}'.")
+                    LOG.error(f"Failed to stop '{task.name}'. '{e!s}'.")
 
         self._tasks.clear()
 
@@ -292,7 +292,7 @@ class Tasks(metaclass=Singleton):
         try:
             started: float = time.time()
             if not task.url:
-                LOG.error(f"Failed to dispatch '{task.id}: {task.name}'. No URL found.")
+                LOG.error(f"Failed to dispatch '{task.name}'. No URL found.")
                 return
 
             preset: str = str(task.preset or self._default_preset)
@@ -300,7 +300,7 @@ class Tasks(metaclass=Singleton):
             template: str = task.template if task.template else ""
             cli: str = task.cli if task.cli else ""
 
-            LOG.info(f"Dispatched '{task.id}: {task.name}' at '{timeNow}'.")
+            LOG.info(f"Dispatched '{task.name}' at '{timeNow}'.")
 
             tasks: list = [
                 self._notify.emit(
@@ -324,16 +324,16 @@ class Tasks(metaclass=Singleton):
             timeNow = datetime.now(UTC).isoformat()
 
             ended: float = time.time()
-            LOG.info(f"Completed '{task.id}: {task.name}' at '{timeNow}' took '{ended - started:.2f}' seconds.")
+            LOG.info(f"Task '{task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
             await self._notify.emit(
                 Events.LOG_SUCCESS,
                 data=success(
-                    f"Completed '{task.name}' in '{ended - started:.2f}' seconds.", data={"lowPriority": True}
+                    f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.", data={"lowPriority": True}
                 ),
             )
         except Exception as e:
-            LOG.error(f"Failed to execute '{task.id}: {task.name}' at '{timeNow}'. '{e!s}'.")
+            LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
                 Events.ERROR, data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             )
@@ -376,7 +376,7 @@ class HandleTask:
 
                 asyncio.create_task(self.dispatch(task, handler=handler), name=f"task-{task.id}")
             except Exception as e:
-                LOG.error(f"Failed to handle task '{task.id}: {task.name}'. '{e!s}'.")
+                LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
 
     def _find_handler(self, task: Task) -> type | None:
         for cls in self._handlers:
