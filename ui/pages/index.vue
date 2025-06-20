@@ -49,13 +49,15 @@
 
     <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
       @clear_form="item_form = {}" @remove_archive="" />
-    <Queue @getInfo="url => get_info = url" :thumbnails="show_thumbnail" />
-    <History @getInfo="url => get_info = url" @add_new="item => toNewDownload(item)" :thumbnails="show_thumbnail" />
-    <GetInfo v-if="get_info" :link="get_info" @closeModel="get_info = ''" />
+    <Queue @getInfo="(url: string) => view_info(url, false)" :thumbnails="show_thumbnail"
+      @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" />
+    <History @getInfo="(url: string) => view_info(url, false)" @add_new="item => toNewDownload(item)"
+      :thumbnails="show_thumbnail" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" />
+    <GetInfo v-if="get_info" :link="get_info" :useUrl="get_info_use_url" @closeModel="close_info()" />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 
 const config = useConfigStore()
@@ -63,11 +65,12 @@ const stateStore = useStateStore()
 const socket = useSocketStore()
 const box = useConfirm()
 
-const get_info = ref('')
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
-const display_style = useStorage('display_style', 'cards')
-const show_thumbnail = useStorage('show_thumbnail', true)
+const get_info = ref<string>('')
+const get_info_use_url = ref<boolean>(false)
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+const display_style = useStorage<string>('display_style', 'cards')
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
 const item_form = ref({})
 
@@ -101,17 +104,27 @@ const pauseDownload = () => {
   socket.emit('pause', {})
 }
 
+const close_info = () => {
+  get_info.value = ''
+  get_info_use_url.value = false
+}
+
+const view_info = (url: string, useUrl: boolean = false) => {
+  get_info.value = url
+  get_info_use_url.value = useUrl
+}
+
 watch(get_info, v => {
   if (!bg_enable.value) {
     return
   }
 
-  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
 const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
 
-const toNewDownload = async (item) => {
+const toNewDownload = async (item: any) => {
   if (!item) {
     return
   }
