@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from email.utils import formatdate
 from typing import Any
 
+from app.library.Utils import clean_item
+
 LOG = logging.getLogger("ItemDTO")
 
 
@@ -224,7 +226,8 @@ class ItemDTO:
     eta: str | None = None
 
     def serialize(self) -> dict:
-        return self.__dict__.copy()
+        item, _ = clean_item(self.__dict__.copy(), ItemDTO.removed_fields())
+        return item
 
     def json(self) -> str:
         return json.dumps(self.serialize(), default=lambda o: o.__dict__, sort_keys=True, indent=4)
