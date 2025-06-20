@@ -190,7 +190,12 @@
                         </template>
                         <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
-                          <span>Information</span>
+                          <span>yt-dlp Information</span>
+                        </NuxtLink>
+
+                        <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                          <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                          <span>Local Information</span>
                         </NuxtLink>
 
                         <template v-if="item.status != 'finished' || !item.filename">
@@ -311,7 +316,8 @@
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="item.file_size">
-                {{ formatBytes(item.file_size) }}
+                <span class="has-tooltip" v-tooltip="`Path: ${makePath(item)}`">{{
+                  formatBytes(item.file_size) }}</span>
               </div>
             </div>
             <div class="columns is-mobile is-multiline">
@@ -361,7 +367,12 @@
 
                   <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Information</span>
+                    <span>yt-dlp Information</span>
+                  </NuxtLink>
+
+                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                    <span>Local Information</span>
                   </NuxtLink>
 
                   <template v-if="item.status != 'finished' || !item.filename">
@@ -435,7 +446,7 @@ import { getEmbedable, isEmbedable } from '~/utils/embedable'
 import { formatBytes, makeDownload, uri } from '~/utils/index'
 import Dropdown from './Dropdown.vue'
 
-const emitter = defineEmits(['getInfo', 'add_new'])
+const emitter = defineEmits(['getInfo', 'add_new', 'getItemInfo'])
 
 const props = defineProps({
   thumbnails: {
@@ -861,5 +872,15 @@ const is_queued = item => {
   }
 
   return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin fa-spin-10' : ''
+}
+
+const makePath = item => {
+  if (!item?.filename) {
+    return ''
+  }
+
+  const real_path = eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/')
+
+  return real_path.replace(config.app.download_path, '').replace(/^\//, '')
 }
 </script>

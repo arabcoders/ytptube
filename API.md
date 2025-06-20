@@ -23,6 +23,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history](#post-apihistory)
     - [DELETE /api/history](#delete-apihistory)
     - [POST /api/history/{id}](#post-apihistoryid)
+    - [GET /api/history/{id}](#get-apihistoryid)
     - [GET /api/history](#get-apihistory)
     - [GET /api/tasks](#get-apitasks)
     - [PUT /api/tasks](#put-apitasks)
@@ -293,6 +294,34 @@ or an error:
 - `304 Not Modified` if nothing changed.
 - `404 Not Found` if the item doesn’t exist.
 - `400 Bad Request` if id is missing or the body is empty.
+
+---
+
+### GET /api/history/{id}
+**Purpose**: View details of a specific item in the database.
+
+**Path Parameter**:
+- `id` = Unique item ID.
+
+**Response**:
+```json
+{
+  "_id": "<uuid>",
+  "title": "Video Title",
+  "url": "https://youtube.com/watch?v=...",
+  ....
+}
+```
+or an error:
+```json
+{
+  "error": "text"
+}
+```
+
+- `200 OK` If the item exists and is returned.
+- `404 Not Found` if the item doesn’t exist.
+- `400 Bad Request` if id is missing.
 
 ---
 
