@@ -4,12 +4,12 @@
       <span class="icon">
         <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Queue <span v-if="hasQueuedItems">({{ stateStore.count('queue') }})</span></span>
+      <span>Queue <span v-if="hasQueuedItems">({{ filteredItems.length }})</span></span>
     </span>
   </h1>
 
   <div v-if="showQueue">
-    <div class="columns is-multiline is-mobile has-text-centered" v-if="hasQueuedItems">
+    <div class="columns is-multiline is-mobile has-text-centered" v-if="filteredItems.length > 0">
       <div class="column is-half-mobile" v-if="'cards' === display_style">
         <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
@@ -34,8 +34,8 @@
     </div>
 
     <div class="columns is-multiline" v-if="'list' === display_style">
-      <div class="column is-12" v-if="hasQueuedItems">
-        <div class="table-container is-responsive">
+      <div class="column is-12" v-if="filteredItems.length > 0">
+        <div :class="{ 'table-container': table_container }">
           <table class="table is-striped is-hoverable is-fullwidth is-bordered"
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
@@ -58,7 +58,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in stateStore.queue" :key="item._id">
+              <tr v-for="item in filteredItems" :key="item._id">
                 <td class="has-text-centered is-vcentered">
                   <label class="checkbox is-block">
                     <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
@@ -105,26 +105,34 @@
                     :data-datetime="item.datetime" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered is-items-center">
-                  <div class="field is-grouped is-grouped-centered">
-                    <div class="control" v-if="isEmbedable(item.url)">
-                      <button @click="() => embed_url = getEmbedable(item.url)" v-tooltip="'Play video'"
-                        class="button is-danger is-small">
+                  <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
+                    :button_classes="'is-small'" label="Actions">
+                    <template v-if="isEmbedable(item.url)">
+                      <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
-                      </button>
-                    </div>
-                    <div class="control">
-                      <button class="button is-warning is-small" @click="confirmCancel(item);"
-                        v-tooltip="'Cancel download'">
-                        <span class="icon"><i class="fa-solid fa-eject" /></span>
-                      </button>
-                    </div>
-                    <div class="control" v-if="item.url && !config.app.basic_mode">
-                      <button class="button is-info is-small" @click="emitter('getInfo', item.url)"
-                        v-tooltip="'Show video information'">
-                        <span class="icon"><i class="fa-solid fa-info" /></span>
-                      </button>
-                    </div>
-                  </div>
+                        <span>Play video</span>
+                      </NuxtLink>
+                      <hr class="dropdown-divider" />
+                    </template>
+
+                    <NuxtLink class="dropdown-item has-text-warning" @click="confirmCancel(item);">
+                      <span class="icon"><i class="fa-solid fa-eject" /></span>
+                      <span>Cancel Item</span>
+                    </NuxtLink>
+
+                    <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
+
+                    <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
+                      <span class="icon"><i class="fa-solid fa-info" /></span>
+                      <span>yt-dlp Information</span>
+                    </NuxtLink>
+
+                    <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
+                      v-if="!config.app.basic_mode">
+                      <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                      <span>Local Information</span>
+                    </NuxtLink>
+                  </Dropdown>
                 </td>
               </tr>
             </tbody>
@@ -135,8 +143,8 @@
 
     <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="showThumbnails ? 475 : 265" class="column is-6"
-        v-for="item in stateStore.queue" :key="item._id">
-        <div class="card is-flex is-full-height is-flex-direction-column">
+        v-for="item in filteredItems" :key="item._id">
+        <div class="card">
           <header class="card-header">
             <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
               <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -148,11 +156,6 @@
                   <span class="tag is-info" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
-                </div>
-                <div class="control" v-if="!showThumbnails && isEmbedable(item.url)">
-                  <NuxtLink @click="embed_url = getEmbedable(item.url)" v-tooltip="'Play video'">
-                    <span class="icon has-text-danger"><i class="fa-solid fa-play" /></span>
-                  </NuxtLink>
                 </div>
                 <div class="control">
                   <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
@@ -184,7 +187,7 @@
               </template>
             </figure>
           </div>
-          <div class="card-content is-flex-grow-1">
+          <div class="card-content">
             <div class="columns is-multiline is-mobile">
               <div class="column is-12">
                 <div class="progress-bar is-unselectable">
@@ -217,11 +220,27 @@
                   <span>Cancel</span>
                 </button>
               </div>
-              <div class="column is-half-mobile" v-if="item.url && !config.app.basic_mode">
-                <button class="button is-info is-fullwidth" @click="emitter('getInfo', item.url)">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Information</span>
-                </button>
+              <div class="column is-half-mobile">
+                <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
+                  <template v-if="isEmbedable(item.url)">
+                    <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                      <span class="icon"><i class="fa-solid fa-play" /></span>
+                      <span>Play video</span>
+                    </NuxtLink>
+                    <hr class="dropdown-divider" />
+                  </template>
+
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>yt-dlp Information</span>
+                  </NuxtLink>
+
+                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
+                    v-if="!config.app.basic_mode">
+                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                    <span>Local Information</span>
+                  </NuxtLink>
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -229,6 +248,14 @@
       </LateLoader>
     </div>
 
+    <div class="columns is-multiline" v-if="hasQueuedItems && filteredItems.length < 1 && query">
+      <div class="column is-12">
+        <Message message_class="has-background-warning-90 has-text-dark" title="No results for queued items"
+          icon="fas fa-search" :useClose="true" @close="() => emitter('clear_search')" v-if="query">
+          <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+        </Message>
+      </div>
+    </div>
 
     <div class="modal is-active" v-if="embed_url">
       <div class="modal-background" @click="embed_url = ''"></div>
@@ -246,11 +273,16 @@ import { useStorage } from '@vueuse/core'
 import { ucFirst } from '~/utils/index'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 
-const emitter = defineEmits(['getInfo'])
+const emitter = defineEmits(['getInfo', 'clear_search', 'getItemInfo'])
 const props = defineProps({
   thumbnails: {
     type: Boolean,
     default: true
+  },
+  query: {
+    type: String,
+    required: false,
+    default: ''
   }
 })
 const config = useConfigStore()
@@ -258,17 +290,18 @@ const stateStore = useStateStore()
 const socket = useSocketStore()
 const box = useConfirm()
 
-const selectedElms = ref([])
-const masterSelectAll = ref(false)
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'cards')
-const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
-
-const embed_url = ref('')
-
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.85)
+
+const selectedElms = ref([])
+const masterSelectAll = ref(false)
+const embed_url = ref('')
+const table_container = ref(false)
+
+const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.queue) {
@@ -280,6 +313,14 @@ watch(masterSelectAll, (value) => {
     }
   }
 })
+
+const filteredItems = computed(() => {
+  const q = props.query?.toLowerCase();
+  if (!q) {
+    return Object.values(stateStore.queue)
+  }
+  return Object.values(stateStore.queue).filter(i => Object.values(i).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
+});
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
