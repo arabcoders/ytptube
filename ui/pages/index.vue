@@ -11,6 +11,19 @@
 
         <div class="is-pulled-right" v-if="socket.isConnected">
           <div class="field is-grouped">
+            <p class="control has-icons-left" v-if="toggleFilter">
+              <input type="search" v-model.lazy="query" class="input" id="filter"
+                placeholder="Filter displayed content">
+              <span class="icon is-left"><i class="fas fa-filter" /></span>
+            </p>
+
+            <p class="control">
+              <button class="button is-danger is-light" v-tooltip.bottom="'Filter'"
+                @click="toggleFilter = !toggleFilter">
+                <span class="icon"><i class="fas fa-filter" /></span>
+              </button>
+            </p>
+
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
               <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused"
                 v-tooltip.bottom="'Pause non-active downloads.'">
@@ -49,10 +62,11 @@
 
     <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
       @clear_form="item_form = {}" @remove_archive="" />
-    <Queue @getInfo="(url: string) => view_info(url, false)" :thumbnails="show_thumbnail"
-      @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" />
-    <History @getInfo="(url: string) => view_info(url, false)" @add_new="item => toNewDownload(item)"
-      :thumbnails="show_thumbnail" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" />
+    <Queue @getInfo="(url: string) => view_info(url, false)" :thumbnails="show_thumbnail" :query="query"
+      @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+    <History @getInfo="(url: string) => view_info(url, false)" @add_new="item => toNewDownload(item)" :query="query"
+      :thumbnails="show_thumbnail" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+      @clear_search="query = ''" />
     <GetInfo v-if="get_info" :link="get_info" :useUrl="get_info_use_url" @closeModel="close_info()" />
   </div>
 </template>
@@ -64,15 +78,22 @@ const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
 const box = useConfirm()
-
-const get_info = ref<string>('')
-const get_info_use_url = ref<boolean>(false)
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
 const display_style = useStorage<string>('display_style', 'cards')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
+const get_info = ref<string>('')
+const get_info_use_url = ref<boolean>(false)
 const item_form = ref({})
+const query = ref()
+const toggleFilter = ref(false)
+
+watch(toggleFilter, () => {
+  if (!toggleFilter.value) {
+    query.value = ''
+  }
+});
 
 onMounted(() => {
   if (!config.app.ui_update_title) {

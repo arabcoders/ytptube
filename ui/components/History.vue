@@ -234,7 +234,7 @@
 
     <div class="columns is-multiline" v-else>
       <LateLoader :unrender="true" :min-height="showThumbnails ? 410 : 210" class="column is-6"
-        v-for="item in sortCompleted" :key="item._id">
+        v-for="item in filteredItems(sortCompleted)" :key="item._id">
         <div class="card is-flex is-full-height is-flex-direction-column"
           :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
           <header class="card-header">
@@ -286,18 +286,8 @@
               </template>
             </figure>
           </div>
-          <div class="card-content is-flex-grow-1">
+          <div class="card-content">
             <div class="columns is-mobile is-multiline">
-              <div class="column is-12" v-if="item.error">
-                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
-                  <span class="has-text-danger">{{ item.error }}</span>
-                </div>
-              </div>
-              <div class="column is-12" v-if="showMessage(item)">
-                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
-                  <span class="has-text-danger">{{ item.msg }}</span>
-                </div>
-              </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon-text">
                   <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
@@ -329,14 +319,6 @@
                   </span>
                 </a>
               </div>
-              <div class="column is-half-mobile">
-                <a class="button is-danger is-fullwidth" @click="removeItem(item)">
-                  <span class="icon-text is-block">
-                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-                    <span>Remove</span>
-                  </span>
-                </a>
-              </div>
 
               <div class="column is-half-mobile" v-if="item.filename && item.status === 'finished'">
                 <a class="button is-link is-fullwidth" :href="makeDownload(config, item)"
@@ -347,7 +329,17 @@
                   </span>
                 </a>
               </div>
-              <div class="column" v-if="item.url && !config.app.basic_mode">
+
+              <div class="column is-half-mobile">
+                <a class="button is-danger is-fullwidth" @click="removeItem(item)">
+                  <span class="icon-text is-block">
+                    <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                    <span>Remove</span>
+                  </span>
+                </a>
+              </div>
+
+              <div class="column">
                 <Dropdown icons="fa-solid fa-cogs" label="Actions">
                   <template v-if="'finished' === item.status && item.filename">
                     <NuxtLink @click="playVideo(item)" class="dropdown-item">
@@ -365,12 +357,13 @@
                     <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
                   </NuxtLink>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
+                    v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info-circle" /></span>
                     <span>Local Information</span>
                   </NuxtLink>
@@ -383,7 +376,7 @@
                     </NuxtLink>
                   </template>
 
-                  <template v-if="'finished' !== item.status && config.app?.keep_archive">
+                  <template v-if="'finished' !== item.status && config.app?.keep_archive && !config.app.basic_mode">
                     <hr class="dropdown-divider" />
                     <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
@@ -391,7 +384,8 @@
                     </NuxtLink>
                   </template>
 
-                  <template v-if="'finished' === item.status && item.filename && config.app?.keep_archive">
+                  <template
+                    v-if="'finished' === item.status && item.filename && config.app?.keep_archive && !config.app.basic_mode">
                     <hr class="dropdown-divider" />
                     <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
@@ -399,6 +393,19 @@
                     </NuxtLink>
                   </template>
                 </Dropdown>
+              </div>
+
+            </div>
+            <div class="columns is-mobile is-multiline" v-if="item.error || showMessage(item)">
+              <div class="column is-12" v-if="item.error">
+                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
+                  <span class="has-text-danger">{{ item.error }}</span>
+                </div>
+              </div>
+              <div class="column is-12" v-if="showMessage(item)">
+                <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
+                  <span class="has-text-danger">{{ item.msg }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -408,8 +415,12 @@
 
     <div class="columns is-multiline" v-if="!hasItems">
       <div class="column is-12">
+        <Message message_class="has-background-warning-90 has-text-dark" title="No results for downloaded items."
+          icon="fas fa-search" :useClose="true" @close="() => emitter('clear_search')" v-if="query">
+          <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+        </Message>
         <Message message_class="has-background-success-90 has-text-dark" title="No records in history."
-          icon="fas fa-circle-check" v-if="socket.isConnected" />
+          icon="fas fa-circle-check" v-else-if="socket.isConnected" />
         <Message message_class="has-background-info-90 has-text-dark" title="Connecting.." icon="fas fa-spinner fa-spin"
           v-else />
       </div>
@@ -446,12 +457,17 @@ import { getEmbedable, isEmbedable } from '~/utils/embedable'
 import { formatBytes, makeDownload, uri } from '~/utils/index'
 import Dropdown from './Dropdown.vue'
 
-const emitter = defineEmits(['getInfo', 'add_new', 'getItemInfo'])
+const emitter = defineEmits(['getInfo', 'add_new', 'getItemInfo', 'clear_search'])
 
 const props = defineProps({
   thumbnails: {
     type: Boolean,
     default: true
+  },
+  query: {
+    type: String,
+    required: false,
+    default: '',
   }
 })
 
@@ -461,34 +477,42 @@ const socket = useSocketStore()
 const toast = useNotification()
 const box = useConfirm()
 
-const selectedElms = ref([])
-const masterSelectAll = ref(false)
 const showCompleted = useStorage('showCompleted', true)
 const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 const display_style = useStorage('display_style', 'cards')
-const table_container = ref(false)
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
 
+const selectedElms = ref([])
+const masterSelectAll = ref(false)
+const table_container = ref(false)
 const embed_url = ref('')
 const video_item = ref(null)
-
 const dialog_confirm = ref({
   visible: false,
   title: 'Confirm Action',
-  confirm: (opts) => { },
+  confirm: () => { },
   message: '',
   options: [
     { key: 'remove_history', label: 'Also, Remove from history.' },
   ],
 })
 
+const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
+
 const playVideo = item => video_item.value = item
 const closeVideo = () => video_item.value = null
 
-const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
+const filteredItems = items => !props.query ? items : items.filter(filterItem)
 
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const filterItem = item => {
+  const q = props.query?.toLowerCase()
+  if (!q) {
+    return true
+  }
+  return Object.values(item).some(v => typeof v === 'string' && v.toLowerCase().includes(q))
+}
 
 watch(masterSelectAll, (value) => {
   for (const key in stateStore.history) {
@@ -512,7 +536,7 @@ const sortCompleted = computed(() => {
 })
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasItems = computed(() => stateStore.count('history') > 0)
+const hasItems = computed(() => filteredItems(sortCompleted.value).length > 0)
 
 const showMessage = (item) => {
   if (!item?.msg || item.msg === item?.error) {
