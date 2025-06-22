@@ -38,7 +38,7 @@ class Main:
     def __init__(self, is_native: bool = False):
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
         self._app.on_shutdown.append(self.on_shutdown)
 
         Services.get_instance().add("app", self._app)
