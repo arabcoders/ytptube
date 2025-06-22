@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250621-a2f5c770",
-        "date": "2025-06-21T17:47:18+00:00",
+        "tag": "dev-20250622-bd695e70",
+        "date": "2025-06-22T16:24:42+00:00",
         "commits": [
+            {
+                "sha": "bd695e70",
+                "message": "Remove the redundant usage of AsyncPool and replace it with asyncio semaphore",
+                "author": "arabcoders",
+                "date": "2025-06-22T16:24:42+00:00",
+                "full_sha": "bd695e7067eb6b2cc5631569f9444491fced6067"
+            },
+            {
+                "sha": "a81ee127",
+                "message": "Improved playlist handling",
+                "author": "arabcoders",
+                "date": "2025-06-22T15:32:56+00:00",
+                "full_sha": "a81ee127e9dd291c86414c650c36a890082ef6db"
+            },
+            {
+                "sha": "d0630f74",
+                "message": "Change re-queue text to retry",
+                "author": "arabcoders",
+                "date": "2025-06-22T15:03:12+00:00",
+                "full_sha": "d0630f7415d7cef2e51f2571ddd2de3e537e6590"
+            },
             {
                 "sha": "a2f5c770",
                 "message": "minor design update for index page.",
@@ -186,7 +207,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a2f5c770c6bd9f7a7bbf460eac2b7e08e5294769"
+        "full_sha": "bd695e7067eb6b2cc5631569f9444491fced6067"
     },
     {
         "tag": "dev-20250616-c07465a6",
