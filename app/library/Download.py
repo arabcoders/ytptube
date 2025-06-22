@@ -11,13 +11,16 @@ from pathlib import Path
 
 import yt_dlp
 
-from .AsyncPool import Terminator
 from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
 from .YTDLPOpts import YTDLPOpts
+
+
+class Terminator:
+    pass
 
 
 class NestedLogger:
