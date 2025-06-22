@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "bd695e7067eb6b2cc5631569f9444491fced6067",
+    "date": "2025-06-22T16:24:42+00:00",
+    "commits": [
+      {
+        "sha": "bd695e70",
+        "full_sha": "bd695e7067eb6b2cc5631569f9444491fced6067",
+        "message": "Remove the redundant usage of AsyncPool and replace it with asyncio semaphore",
+        "author": "arabcoders",
+        "date": "2025-06-22T16:24:42+00:00"
+      },
+      {
+        "sha": "a81ee127",
+        "full_sha": "a81ee127e9dd291c86414c650c36a890082ef6db",
+        "message": "Improved playlist handling",
+        "author": "arabcoders",
+        "date": "2025-06-22T15:32:56+00:00"
+      },
+      {
+        "sha": "d0630f74",
+        "full_sha": "d0630f7415d7cef2e51f2571ddd2de3e537e6590",
+        "message": "Change re-queue text to retry",
+        "author": "arabcoders",
+        "date": "2025-06-22T15:03:12+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.1.3",
     "full_sha": "de4b88eef378e67e692c950c457e898db0fb405d",
     "date": "2025-06-21T17:58:01+00:00",
