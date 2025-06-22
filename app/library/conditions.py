@@ -28,7 +28,7 @@ class Condition:
     """The filter to run on info dict."""
 
     cli: str
-    """If matched append this to the download request and re-queue."""
+    """If matched append this to the download request and retry."""
 
     def serialize(self) -> dict:
         return self.__dict__

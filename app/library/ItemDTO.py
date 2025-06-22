@@ -39,7 +39,7 @@ class Item:
     """Extra data to be added to the download."""
 
     requeued: bool = False
-    """If the item has been re-queued already via conditions."""
+    """If the item has been retried already via conditions."""
 
     def serialize(self) -> dict:
         return self.__dict__.copy()

@@ -1002,4 +1002,4 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 self.done.put(item)
                 LOG.exception(e)
-                LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")
+                LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
