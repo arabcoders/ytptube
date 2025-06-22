@@ -12,7 +12,7 @@ import coloredlogs
 from dotenv import load_dotenv
 
 from .Utils import FileLogFormatter, arg_converter
-from .version import APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
+from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 
 class Config:
@@ -122,6 +122,9 @@ class Config:
     app_build_date: str = APP_BUILD_DATE
     "The build date of the application."
 
+    app_branch: str = APP_BRANCH
+    "The branch of the application."
+
     __instance = None
     "The instance of the class."
 
@@ -201,6 +204,7 @@ class Config:
         "app_version",
         "app_commit_sha",
         "app_build_date",
+        "app_branch",
     )
     "The variables that are immutable."
 
@@ -257,6 +261,7 @@ class Config:
         "app_version",
         "app_commit_sha",
         "app_build_date",
+        "app_branch",
     )
     "The variables that are relevant to the frontend."
 

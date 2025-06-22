@@ -11,3 +11,6 @@ APP_COMMIT_SHA = "unknown"
 
 APP_BUILD_DATE = "unknown"
 "Build date of the application"
+
+APP_BRANCH = "unknown"
+"Branch of the application"
