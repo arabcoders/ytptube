@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250622-bd695e70",
-        "date": "2025-06-22T16:24:42+00:00",
+        "tag": "dev-20250622-b37d614e",
+        "date": "2025-06-22T18:49:07+00:00",
         "commits": [
+            {
+                "sha": "b37d614e",
+                "message": "Migrate configStore to ts",
+                "author": "arabcoders",
+                "date": "2025-06-22T18:49:07+00:00",
+                "full_sha": "b37d614e2701cd656f566268e6c59df285ae7e98"
+            },
             {
                 "sha": "bd695e70",
                 "message": "Remove the redundant usage of AsyncPool and replace it with asyncio semaphore",
@@ -207,7 +214,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "bd695e7067eb6b2cc5631569f9444491fced6067"
+        "full_sha": "b37d614e2701cd656f566268e6c59df285ae7e98"
     },
     {
         "tag": "dev-20250616-c07465a6",
