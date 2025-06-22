@@ -1,8 +1,78 @@
 [
     {
-        "tag": "master-20250619-4bf65f08",
-        "date": "2025-06-19T16:11:24+00:00",
+        "tag": "master-20250621-de4b88ee",
+        "date": "2025-06-21T17:58:01+00:00",
         "commits": [
+            {
+                "sha": "a2f5c770",
+                "message": "minor design update for index page.",
+                "author": "arabcoders",
+                "date": "2025-06-21T17:47:18+00:00",
+                "full_sha": "a2f5c770c6bd9f7a7bbf460eac2b7e08e5294769"
+            },
+            {
+                "sha": "a188c200",
+                "message": "packages update",
+                "author": "arabcoders",
+                "date": "2025-06-21T17:47:09+00:00",
+                "full_sha": "a188c2009976ea0a8da717fbc57316a5d7b9fad7"
+            },
+            {
+                "sha": "291c4659",
+                "message": "improve task logging",
+                "author": "arabcoders",
+                "date": "2025-06-20T19:16:38+00:00",
+                "full_sha": "291c46592f2c5ad2fe272e242104cf8892af8507"
+            },
+            {
+                "sha": "c8dbd93e",
+                "message": "make it possible to view local item info",
+                "author": "arabcoders",
+                "date": "2025-06-20T17:36:22+00:00",
+                "full_sha": "c8dbd93efb4311b84e027f74ab15cdbdd6a16279"
+            },
+            {
+                "sha": "7dca15a5",
+                "message": "clean up item object",
+                "author": "arabcoders",
+                "date": "2025-06-20T17:36:10+00:00",
+                "full_sha": "7dca15a5aa2024502d6068b9b5b9947d64d5edf6"
+            },
+            {
+                "sha": "875d4887",
+                "message": "add api/item/{id} endpoint",
+                "author": "arabcoders",
+                "date": "2025-06-20T17:35:46+00:00",
+                "full_sha": "875d48870b007d2f8f9879755e9d9ab9128020e0"
+            },
+            {
+                "sha": "e77ed11a",
+                "message": "fix",
+                "author": "arabcoders",
+                "date": "2025-06-19T21:27:00+00:00",
+                "full_sha": "e77ed11a09cca040fd14ac463d43f3de709863b9"
+            },
+            {
+                "sha": "e02fedfe",
+                "message": "Improve tasks page for mass operations.",
+                "author": "arabcoders",
+                "date": "2025-06-19T21:21:02+00:00",
+                "full_sha": "e02fedfe39be46242ad3e9953b4fa79293cee0be"
+            },
+            {
+                "sha": "c4b8bf51",
+                "message": "Fix sio disconnect event",
+                "author": "arabcoders",
+                "date": "2025-06-19T20:07:29+00:00",
+                "full_sha": "c4b8bf51d5c4767d10f03b5e562316b019a01378"
+            },
+            {
+                "sha": "47484c2d",
+                "message": "make datastore.get key optional.",
+                "author": "arabcoders",
+                "date": "2025-06-19T17:40:51+00:00",
+                "full_sha": "47484c2d35d1e31f11385c690259f393267e0016"
+            },
             {
                 "sha": "c3b2e257",
                 "message": "For youtube handler, if item_error events received, remove the item from queued ids.",
@@ -116,7 +186,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4bf65f08c471bb8be2abb40348383d7b4dbc75a1"
+        "full_sha": "de4b88eef378e67e692c950c457e898db0fb405d"
     },
     {
         "tag": "master-20250616-c07465a6",
