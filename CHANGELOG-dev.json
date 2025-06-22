@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250623-f6e3c944",
-        "date": "2025-06-22T22:00:36+00:00",
+        "tag": "dev-20250623-8c82d1b9",
+        "date": "2025-06-22T22:13:17+00:00",
         "commits": [
+            {
+                "sha": "8c82d1b9",
+                "message": "create new loop in main thread",
+                "author": "arabcoders",
+                "date": "2025-06-22T22:13:17+00:00",
+                "full_sha": "8c82d1b99c02bc4cf328d84b88f37ac3a86142a4"
+            },
+            {
+                "sha": "74699680",
+                "message": "minor logs update",
+                "author": "arabcoders",
+                "date": "2025-06-22T22:07:50+00:00",
+                "full_sha": "74699680eaa0a586071b34623fa0ebe172b5a296"
+            },
             {
                 "sha": "f6e3c944",
                 "message": "minor changes to the event bus dispatcher",
@@ -221,7 +235,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f6e3c944327853ae751890291b6c2fee73f37bc8"
+        "full_sha": "8c82d1b99c02bc4cf328d84b88f37ac3a86142a4"
     },
     {
         "tag": "dev-20250616-c07465a6",
