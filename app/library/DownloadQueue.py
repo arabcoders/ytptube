@@ -108,15 +108,17 @@ class DownloadQueue(metaclass=Singleton):
 
         return DownloadQueue._instance
 
-    def attach(self, app: web.Application):
+    def attach(self, _: web.Application):
         """
         Attach the download queue to the application.
 
         Args:
-            app (web.Application): The application to attach the download queue to.
+            _ (web.Application): The application to attach the download queue to.
 
         """
-        app.on_startup.append(lambda _: self.initialize())
+        self._notify.subscribe(
+            Events.STARTED, lambda _, __: self.initialize(), f"{__class__.__name__}.{__class__.__name__}.initialize"
+        )
 
         Scheduler.get_instance().add(
             timer="* * * * *",

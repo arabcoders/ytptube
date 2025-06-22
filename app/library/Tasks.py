@@ -162,11 +162,12 @@ class Tasks(metaclass=Singleton):
                     from cronsim import CronSim
 
                     cs = CronSim(task.timer, datetime.now(UTC))
-                    schedule_time = cs.explain()
+                    schedule_time: str = cs.explain()
                 except Exception:
                     schedule_time = task.timer
 
-                LOG.info(f"Task '{task.name}' queued to be executed '{schedule_time}'.")
+                if not has_tasks:
+                    LOG.info(f"Task '{task.name}' queued to be executed '{schedule_time}'.")
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue '{i}: {task.name}'. '{e!s}'.")
@@ -185,8 +186,11 @@ class Tasks(metaclass=Singleton):
             return self
 
         for task in self._tasks:
+            if not self._scheduler.has(task.id):
+                continue
+
             try:
-                LOG.info(f"Stopping '{task.name}'.")
+                LOG.debug(f"Stopping '{task.name}'.")
                 self._scheduler.remove(task.id)
             except Exception as e:
                 if not shutdown:

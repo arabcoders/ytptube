@@ -38,13 +38,14 @@ class Main:
     def __init__(self, is_native: bool = False):
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
+        self.loop = asyncio.get_event_loop()
+        self._app.on_shutdown.append(self.on_shutdown)
 
         Services.get_instance().add("app", self._app)
 
         if self._config.debug:
-            loop = asyncio.get_event_loop()
-            loop.set_debug(True)
-            loop.slow_callback_duration = 0.05
+            self.loop.set_debug(True)
+            self.loop.slow_callback_duration = 0.05
 
         self._check_folders()
 
@@ -97,6 +98,9 @@ class Main:
             LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
             raise
 
+    async def on_shutdown(self, _: web.Application):
+        await EventBus.get_instance().emit(Events.SHUTDOWN, data={"app": self._app})
+
     def start(self, host: str | None = None, port: int | None = None, cb=None):
         """
         Start the application.
@@ -122,6 +126,9 @@ class Main:
             LOG.info("=" * 40)
             LOG.info(f"YTPTube {self._config.version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
+
+            EventBus.get_instance().sync_emit(Events.STARTED, data={"app": self._app}, loop=self.loop, wait=False)
+
             if cb:
                 cb()
 
@@ -138,7 +145,7 @@ class Main:
             host=host,
             port=port,
             reuse_port="win32" != sys.platform,
-            loop=asyncio.get_event_loop(),
+            loop=self.loop,
             access_log=HTTP_LOGGER,
             print=started,
             handle_signals=cb is None,
