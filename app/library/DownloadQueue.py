@@ -206,11 +206,10 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
     async def _process_playlist(self, entry: dict, item: Item, already=None):
-        if 1 == self.config.playlist_items_concurrency:
-            return await self._process_playlist_old(entry=entry, item=item, already=already)
-
-        LOG.info(f"Playlist '{entry.get('id')}: {entry.get('title')}' processing.")
         entries = entry.get("entries", [])
+
+        LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')}' Playlist.")
+
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
 
@@ -227,60 +226,17 @@ class DownloadQueue(metaclass=Singleton):
                 if property in entry:
                     extras[f"playlist_{property}"] = entry.get(property)
 
-            LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
-
             if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
                 extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
 
             async with semaphore:
+                LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
                 return await self.add(
                     item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
                     already=already,
                 )
 
-        tasks = [process_entry(i, etr) for i, etr in enumerate(entries, start=1)]
-        results = await asyncio.gather(*tasks)
-
-        LOG.info(
-            f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
-        )
-
-        if any("error" == res["status"] for res in results):
-            return {
-                "status": "error",
-                "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
-            }
-
-        return {"status": "ok"}
-
-    async def _process_playlist_old(self, entry: dict, item: Item, already=None):
-        LOG.info(f"Playlist '{entry.get('id')}: {entry.get('title')}' processing.")
-        entries = entry.get("entries", [])
-        playlistCount = int(entry.get("playlist_count", len(entries)))
-        results = []
-
-        for i, etr in enumerate(entries, start=1):
-            extras = {
-                "playlist": entry.get("id"),
-                "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                "playlist_autonumber": i,
-            }
-
-            for property in ("id", "title", "uploader", "uploader_id"):
-                if property in entry:
-                    extras[f"playlist_{property}"] = entry.get(property)
-
-            if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
-
-            LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
-
-            results.append(
-                await self.add(
-                    item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
-                    already=already,
-                )
-            )
+        results = await asyncio.gather(*(process_entry(i, etr) for i, etr in enumerate(entries, start=1)))
 
         LOG.info(
             f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."

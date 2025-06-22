@@ -15,7 +15,7 @@ from app.library.Services import Services
 
 from .config import Config
 from .encoder import Encoder
-from .Events import EventBus, Events, error, info, success
+from .Events import EventBus, Events, error, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import init_class
@@ -300,26 +300,17 @@ class Tasks(metaclass=Singleton):
             template: str = task.template if task.template else ""
             cli: str = task.cli if task.cli else ""
 
-            LOG.info(f"Dispatched '{task.name}' at '{timeNow}'.")
-
-            tasks: list = [
-                self._notify.emit(
-                    Events.LOG_INFO, data=info(f"Dispatched '{task.name}' at '{timeNow}'.", data={"lowPriority": True})
-                ),
-                self._notify.emit(
-                    Events.ADD_URL,
-                    data={
-                        "url": task.url,
-                        "preset": preset,
-                        "folder": folder,
-                        "template": template,
-                        "cli": cli,
-                    },
-                    id=task.id,
-                ),
-            ]
-
-            await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
+            await self._notify.emit(
+                Events.ADD_URL,
+                data={
+                    "url": task.url,
+                    "preset": preset,
+                    "folder": folder,
+                    "template": template,
+                    "cli": cli,
+                },
+                id=task.id,
+            )
 
             timeNow = datetime.now(UTC).isoformat()
 
