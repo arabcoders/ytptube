@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250622-b37d614e",
-        "date": "2025-06-22T18:49:07+00:00",
+        "tag": "dev-20250623-f6e3c944",
+        "date": "2025-06-22T22:00:36+00:00",
         "commits": [
+            {
+                "sha": "f6e3c944",
+                "message": "minor changes to the event bus dispatcher",
+                "author": "arabcoders",
+                "date": "2025-06-22T22:00:36+00:00",
+                "full_sha": "f6e3c944327853ae751890291b6c2fee73f37bc8"
+            },
             {
                 "sha": "b37d614e",
                 "message": "Migrate configStore to ts",
@@ -214,7 +221,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b37d614e2701cd656f566268e6c59df285ae7e98"
+        "full_sha": "f6e3c944327853ae751890291b6c2fee73f37bc8"
     },
     {
         "tag": "dev-20250616-c07465a6",
