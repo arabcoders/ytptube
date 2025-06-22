@@ -325,6 +325,8 @@ class EventBus(metaclass=Singleton):
 
             self._listeners[e][name] = EventListener(name, callback)
 
+        LOG.debug(f"'{name}' subscribed to '{event}'.")
+
         return self
 
     def unsubscribe(self, event: str | list | tuple, name: str) -> "EventBus":
@@ -342,9 +344,14 @@ class EventBus(metaclass=Singleton):
         if isinstance(event, str):
             event = [event]
 
+        events = []
         for e in event:
             if e in self._listeners and name in self._listeners[e]:
+                events.append(e)
                 del self._listeners[e][name]
+
+        if len(events) > 0:
+            LOG.debug(f"'{name}' unsubscribed from '{events}'.")
 
         return self
 

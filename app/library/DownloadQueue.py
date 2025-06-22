@@ -117,7 +117,7 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         self._notify.subscribe(
-            Events.STARTED, lambda _, __: self.initialize(), f"{__class__.__name__}.{__class__.__name__}.initialize"
+            Events.STARTED, lambda _, __: self.initialize(), f"{__class__.__name__}.{__class__.initialize.__name__}"
         )
 
         Scheduler.get_instance().add(
