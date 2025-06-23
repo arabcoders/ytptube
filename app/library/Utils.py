@@ -398,12 +398,13 @@ def is_private_address(hostname: str) -> bool:
         return True
 
 
-def validate_url(url: str) -> bool:
+def validate_url(url: str, allow_internal: bool = False) -> bool:
     """
     Validate if the url is valid and allowed.
 
     Args:
         url (str): URL to validate.
+        allow_internal (bool): If True, allow internal URLs or private networks.
 
     Returns:
         bool: True if the URL is valid and allowed.
@@ -429,8 +430,8 @@ def validate_url(url: str) -> bool:
         msg = "Invalid scheme usage. Only HTTP or HTTPS allowed."
         raise ValueError(msg)
 
-    hostname = parsed_url.host
-    if not hostname or is_private_address(hostname):
+    hostname: str | None = parsed_url.host
+    if allow_internal is False and (not hostname or is_private_address(hostname)):
         msg = "Access to internal urls or private networks is not allowed."
         raise ValueError(msg)
 

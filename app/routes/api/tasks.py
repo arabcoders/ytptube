@@ -75,7 +75,7 @@ async def tasks_add(request: Request, encoder: Encoder) -> Response:
             Tasks.validate(item)
         except ValueError as e:
             return web.json_response(
-                {"error": f"Failed to validate task '{item.get('name')}'. '{e!s}'"},
+                {"error": f"Failed to validate task '{item.get('name', '??')}'. '{e!s}'"},
                 status=web.HTTPBadRequest.status_code,
             )
 

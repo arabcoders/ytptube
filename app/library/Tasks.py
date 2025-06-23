@@ -18,7 +18,7 @@ from .encoder import Encoder
 from .Events import EventBus, Events, error, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import init_class
+from .Utils import init_class, validate_url
 
 LOG: logging.Logger = logging.getLogger("tasks")
 
@@ -223,16 +223,26 @@ class Tasks(metaclass=Singleton):
         if not task.get("name"):
             msg = "No name found."
             raise ValueError(msg)
+        else:
+            task["name"] = task["name"].strip()
 
         if not task.get("url"):
             msg = "No URL found."
             raise ValueError(msg)
+        else:
+            task["url"] = task["url"].strip()
+            try:
+                validate_url(task["url"], allow_internal=True)
+            except ValueError as e:
+                msg = f"Invalid URL format. '{e!s}'."
+                raise ValueError(msg) from e
 
         if task.get("timer"):
             try:
                 from cronsim import CronSim
 
                 CronSim(task.get("timer"), datetime.now(UTC))
+                task["timer"] = str(task["timer"]).strip()
             except Exception as e:
                 msg = f"Invalid timer format. '{e!s}'."
                 raise ValueError(msg) from e
@@ -242,6 +252,7 @@ class Tasks(metaclass=Singleton):
                 from .Utils import arg_converter
 
                 arg_converter(args=task.get("cli"))
+                task["cli"] = str(task["cli"]).strip()
             except Exception as e:
                 msg = f"Invalid command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
