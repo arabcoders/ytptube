@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250623-8c82d1b9",
-        "date": "2025-06-22T22:13:17+00:00",
+        "tag": "dev-20250623-fdec2356",
+        "date": "2025-06-23T09:56:00+00:00",
         "commits": [
+            {
+                "sha": "fdec2356",
+                "message": "Fix tasks not dispatching",
+                "author": "arabcoders",
+                "date": "2025-06-23T09:56:00+00:00",
+                "full_sha": "fdec2356f9cba29a9cc11a1f20c699db416943aa"
+            },
+            {
+                "sha": "3e00ebd0",
+                "message": "fix big in tailing log",
+                "author": "arabcoders",
+                "date": "2025-06-23T09:55:49+00:00",
+                "full_sha": "3e00ebd067f48ba8c81115260127d938d23a2dd3"
+            },
             {
                 "sha": "8c82d1b9",
                 "message": "create new loop in main thread",
@@ -235,7 +249,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8c82d1b99c02bc4cf328d84b88f37ac3a86142a4"
+        "full_sha": "fdec2356f9cba29a9cc11a1f20c699db416943aa"
     },
     {
         "tag": "dev-20250616-c07465a6",
