@@ -870,7 +870,7 @@ class DownloadQueue(metaclass=Singleton):
                     )
                     continue
 
-            LOG.info(f"Re-queuing item '{item_ref} {item.info.extras=}' for download.")
+            LOG.info(f"Retrying item '{item_ref} {item.info.extras=}' for download.")
 
             try:
                 await self.clear([item.info._id], remove_file=False)

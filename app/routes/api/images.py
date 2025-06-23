@@ -47,7 +47,7 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
             "proxy": ytdlp_args.get("proxy", None),
             "headers": {
                 "User-Agent": ytdlp_args.get(
-                    "user_agent", request.headers.get("User-Agent", f"YTPTube/{config.version}")
+                    "user_agent", request.headers.get("User-Agent", f"YTPTube/{config.app_version}")
                 ),
             },
         }
@@ -118,7 +118,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
         opts = {
             "proxy": ytdlp_args.get("proxy", None),
             "headers": {
-                "User-Agent": ytdlp_args.get("user_agent", f"YTPTube/{config.version}"),
+                "User-Agent": ytdlp_args.get("user_agent", f"YTPTube/{config.app_version}"),
             },
         }
 

@@ -115,7 +115,7 @@
       <div class="column is-8-mobile">
         <div class="has-text-left" v-if="config.app?.app_version">
           © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-          <span class="is-hidden-mobile"
+          <span class="is-hidden-mobile has-tooltip"
             v-tooltip="`Build Date: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, commit: ${config.app?.app_commit_sha}`">
             &nbsp;({{ config?.app?.app_version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>

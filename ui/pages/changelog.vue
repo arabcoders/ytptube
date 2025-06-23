@@ -47,13 +47,17 @@ hr {
               <hr>
               <ul>
                 <li v-for="commit in log.commits" :key="commit.sha">
-                  <strong>{{ ucFirst(commit.message).replace(/\.$/, "") }}.</strong> -
+                  <strong>
+                    {{ ucFirst(commit.message).replace(/\.$/, "") }}.
+                  </strong> -
                   <small>
                     <NuxtLink :to="`${REPO}/commit/${commit.full_sha}`" target="_blank">
                       <span class="has-tooltip" v-tooltip="`SHA: ${commit.full_sha} - Date: ${commit.date}`">
                         {{ moment(commit.date).fromNow() }}
                       </span>
                     </NuxtLink>
+                    <span v-tooltip="'Code is at this commit.'" v-if="commit.full_sha === app_sha" class="icon has-text-success"><i
+                        class="fas fa-check" /></span>
                   </small>
                 </li>
               </ul>
@@ -80,19 +84,19 @@ const REPO = `https://github.com/arabcoders/${PROJECT}`
 const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`
 
 const logs = ref<changelogs>([])
-const api_version = ref('')
-const api_branch = ref('')
-const api_sha = ref('')
+const app_version = ref('')
+const app_branch = ref('')
+const app_sha = ref('')
 const isLoading = ref(true)
 
 const loadContent = async () => {
-  if ('' === api_version.value || logs.value.length > 0) {
+  if ('' === app_version.value || logs.value.length > 0) {
     return
   }
 
   try {
     try {
-      const changes = await fetch(REPO_URL.replace('{branch}', api_branch.value).replace('{version}', api_version.value))
+      const changes = await fetch(REPO_URL.replace('{branch}', app_branch.value).replace('{version}', app_version.value))
       logs.value = await changes.json()
     } catch (e) {
       console.error(e)
@@ -110,7 +114,7 @@ const loadContent = async () => {
 }
 
 const isInstalled = (log: changeset) => {
-  const installed = String(api_sha.value)
+  const installed = String(app_sha.value)
 
   if (log.full_sha.startsWith(installed)) {
     return true
@@ -127,9 +131,9 @@ const isInstalled = (log: changeset) => {
 
 onMounted(async () => {
   await awaiter(config.isLoaded)
-  api_branch.value = config.app.app_branch
-  api_version.value = config.app.app_version
-  api_sha.value = config.app.app_commit_sha
+  app_branch.value = config.app.app_branch
+  app_version.value = config.app.app_version
+  app_sha.value = config.app.app_commit_sha
   loadContent()
 })
 </script>
