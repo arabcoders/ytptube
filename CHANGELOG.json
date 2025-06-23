@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c367b7a5d3901156936d8d28d37594906865f6ce",
-    "date": "2025-06-23T10:37:41+00:00",
+    "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d",
+    "date": "2025-06-23T13:26:27+00:00",
     "commits": [
+      {
+        "sha": "43aef86e",
+        "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d",
+        "message": "switch from config.version to config.app_version",
+        "author": "arabcoders",
+        "date": "2025-06-23T13:26:27+00:00"
+      },
+      {
+        "sha": "8dc17071",
+        "full_sha": "8dc17071cec1e5bb0ce13c8ea7be336c4c77e54e",
+        "message": "print progress hook data if we are running in debug mode.",
+        "author": "arabcoders",
+        "date": "2025-06-23T11:00:49+00:00"
+      },
       {
         "sha": "c367b7a5",
         "full_sha": "c367b7a5d3901156936d8d28d37594906865f6ce",

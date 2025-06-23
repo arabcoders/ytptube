@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250623-c367b7a5",
-        "date": "2025-06-23T10:37:41+00:00",
+        "tag": "dev-20250623-43aef86e",
+        "date": "2025-06-23T13:26:27+00:00",
         "commits": [
+            {
+                "sha": "43aef86e",
+                "message": "switch from config.version to config.app_version",
+                "author": "arabcoders",
+                "date": "2025-06-23T13:26:27+00:00",
+                "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d"
+            },
+            {
+                "sha": "8dc17071",
+                "message": "print progress hook data if we are running in debug mode.",
+                "author": "arabcoders",
+                "date": "2025-06-23T11:00:49+00:00",
+                "full_sha": "8dc17071cec1e5bb0ce13c8ea7be336c4c77e54e"
+            },
             {
                 "sha": "c367b7a5",
                 "message": "strip leading/ending whitespace from task data.",
@@ -256,7 +270,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c367b7a5d3901156936d8d28d37594906865f6ce"
+        "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d"
     },
     {
         "tag": "dev-20250616-c07465a6",
