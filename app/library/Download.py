@@ -123,6 +123,15 @@ class Download:
         self.logs = logs if logs else []
 
     def _progress_hook(self, data: dict):
+        if self.debug:
+            from copy import deepcopy
+
+            d_copy = deepcopy(data)
+            for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
+                d_copy["info_dict"].pop(k, None)
+
+            self.logger.debug(f"Progress hook: {d_copy}")
+
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
         if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
