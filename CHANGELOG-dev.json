@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250623-fdec2356",
-        "date": "2025-06-23T09:56:00+00:00",
+        "tag": "dev-20250623-c367b7a5",
+        "date": "2025-06-23T10:37:41+00:00",
         "commits": [
+            {
+                "sha": "c367b7a5",
+                "message": "strip leading/ending whitespace from task data.",
+                "author": "arabcoders",
+                "date": "2025-06-23T10:37:41+00:00",
+                "full_sha": "c367b7a5d3901156936d8d28d37594906865f6ce"
+            },
             {
                 "sha": "fdec2356",
                 "message": "Fix tasks not dispatching",
@@ -249,7 +256,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fdec2356f9cba29a9cc11a1f20c699db416943aa"
+        "full_sha": "c367b7a5d3901156936d8d28d37594906865f6ce"
     },
     {
         "tag": "dev-20250616-c07465a6",
