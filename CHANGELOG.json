@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "6ba37faf49a0369016bcae71161c372f4c5f0fb5",
-    "date": "2025-06-24T14:59:28+00:00",
+    "full_sha": "ccb5b3767f73ad8f63e85722096aad679a793012",
+    "date": "2025-06-24T19:02:59+00:00",
     "commits": [
+      {
+        "sha": "ccb5b376",
+        "full_sha": "ccb5b3767f73ad8f63e85722096aad679a793012",
+        "message": "Fix playlist_autonumber",
+        "author": "arabcoders",
+        "date": "2025-06-24T19:02:59+00:00"
+      },
+      {
+        "sha": "9dd71302",
+        "full_sha": "9dd71302f352c43f58a07f49cfb9a9b6c3ff5a98",
+        "message": "implements real throttle for playlist processor.",
+        "author": "arabcoders",
+        "date": "2025-06-24T18:59:58+00:00"
+      },
       {
         "sha": "6ba37faf",
         "full_sha": "6ba37faf49a0369016bcae71161c372f4c5f0fb5",
