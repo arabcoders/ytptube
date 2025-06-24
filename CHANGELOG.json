@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ccb5b3767f73ad8f63e85722096aad679a793012",
-    "date": "2025-06-24T19:02:59+00:00",
+    "full_sha": "da8ecd2722934158417a57bf2ea571ca0898083a",
+    "date": "2025-06-24T19:07:33+00:00",
     "commits": [
+      {
+        "sha": "da8ecd27",
+        "full_sha": "da8ecd2722934158417a57bf2ea571ca0898083a",
+        "message": "Added missing playlist_ keys",
+        "author": "arabcoders",
+        "date": "2025-06-24T19:07:33+00:00"
+      },
       {
         "sha": "ccb5b376",
         "full_sha": "ccb5b3767f73ad8f63e85722096aad679a793012",
