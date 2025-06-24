@@ -1,10 +1,10 @@
 import asyncio
 import datetime
 import logging
-from typing import Any
 import uuid
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
+from typing import Any
 
 from .Singleton import Singleton
 
@@ -371,6 +371,7 @@ class EventBus(metaclass=Singleton):
                   the exception is caught and logged. If event does not exist, an empty list is returned.
                   If wait is False, a list of asyncio.Task objects is returned instead if we are in a running event loop,
                   or the result of the coroutine if we are not in a running event loop.
+
         """
         if event not in self._listeners:
             return []
