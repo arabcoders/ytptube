@@ -493,9 +493,8 @@ class DownloadQueue(metaclass=Singleton):
 
             downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
             if downloaded is True and id_dict:
-                message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
-                LOG.info(message)
-                await self._notify.emit(Events.LOG_WARNING, data=event_warning(message))
+                message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
+                LOG.error(message)
                 return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
@@ -528,6 +527,7 @@ class DownloadQueue(metaclass=Singleton):
             )
 
             if not entry:
+                LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
@@ -759,7 +759,7 @@ class DownloadQueue(metaclass=Singleton):
             self._active[entry.info._id] = entry
             await entry.start()
 
-            if "finished" != entry.info.status:
+            if entry.info.status not in ("finished", "skip"):
                 entry.info.status = "error"
         finally:
             if entry.info._id in self._active:

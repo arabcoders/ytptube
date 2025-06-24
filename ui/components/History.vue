@@ -666,6 +666,10 @@ const setIcon = item => {
     return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset'
   }
 
+  if ('skip' === item.status) {
+    return 'fa-solid fa-ban'
+  }
+
   return 'fa-solid fa-circle'
 }
 
@@ -681,7 +685,7 @@ const setIconColor = item => {
     return 'has-text-info'
   }
 
-  if ('cancelled' === item.status) {
+  if ('cancelled' === item.status || "skipped" === item.status) {
     return 'has-text-warning'
   }
 
@@ -690,10 +694,6 @@ const setIconColor = item => {
 
 const setStatus = item => {
   if ('finished' === item.status) {
-    if (!item.filename) {
-      return 'Skipped?'
-    }
-
     if (item.extras?.is_premiere) {
       return 'Premiered'
     }
@@ -714,6 +714,10 @@ const setStatus = item => {
       return 'Premiere'
     }
     return display_style.value === 'cards' ? 'Stream' : 'Live'
+  }
+
+  if ('skip' === item.status) {
+    return 'Skipped'
   }
 
   return item.status
