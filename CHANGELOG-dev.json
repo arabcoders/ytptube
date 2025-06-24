@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250624-de304005",
-        "date": "2025-06-24T14:26:03+00:00",
+        "tag": "dev-20250624-388ed0bf",
+        "date": "2025-06-24T14:38:11+00:00",
         "commits": [
+            {
+                "sha": "388ed0bf",
+                "message": "Handle Download queue task exceptions",
+                "author": "arabcoders",
+                "date": "2025-06-24T14:38:11+00:00",
+                "full_sha": "388ed0bf9d57451de98ff8d42137105eb1a729a4"
+            },
             {
                 "sha": "de304005",
                 "message": "make it more clear when item has already been downloaded.",
@@ -291,7 +298,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "de304005da79b851a4de5e1b2f72f199dd6db5e7"
+        "full_sha": "388ed0bf9d57451de98ff8d42137105eb1a729a4"
     },
     {
         "tag": "dev-20250616-c07465a6",

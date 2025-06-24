@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "de304005da79b851a4de5e1b2f72f199dd6db5e7",
-    "date": "2025-06-24T14:26:03+00:00",
+    "full_sha": "388ed0bf9d57451de98ff8d42137105eb1a729a4",
+    "date": "2025-06-24T14:38:11+00:00",
     "commits": [
+      {
+        "sha": "388ed0bf",
+        "full_sha": "388ed0bf9d57451de98ff8d42137105eb1a729a4",
+        "message": "Handle Download queue task exceptions",
+        "author": "arabcoders",
+        "date": "2025-06-24T14:38:11+00:00"
+      },
       {
         "sha": "de304005",
         "full_sha": "de304005da79b851a4de5e1b2f72f199dd6db5e7",
