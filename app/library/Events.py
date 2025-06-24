@@ -247,7 +247,7 @@ class EventListener:
         if self.is_coroutine:
             return self.call_back(event, self.name, **kwargs)
 
-        return asyncio.create_task(self.call_back(event, self.name, **kwargs))
+        return asyncio.create_task(self.call_back(event, self.name, **kwargs), name=f"EL-{self.name}-{event.id}")
 
 
 class EventBus(metaclass=Singleton):

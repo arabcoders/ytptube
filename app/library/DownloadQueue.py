@@ -721,12 +721,12 @@ class DownloadQueue(metaclass=Singleton):
                     continue
 
                 if entry.is_live:
-                    task = asyncio.create_task(self._download_live(_id, entry))
+                    task = asyncio.create_task(self._download_live(_id, entry), name=f"download_live_{_id}")
                     task.add_done_callback(self._handle_task_exception)
                 else:
                     await self.workers.acquire()
 
-                    task = asyncio.create_task(self._download_file(_id, entry))
+                    task = asyncio.create_task(self._download_file(_id, entry), name=f"download_file_{_id}")
 
                     def _release_semaphore(t: asyncio.Task):
                         self.workers.release()

@@ -119,7 +119,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
             except Exception as e:
                 LOG.error(f"Error closing PTY. '{e!s}'.")
 
-        read_task: Task = asyncio.create_task(reader(sid=sid))
+        read_task: Task = asyncio.create_task(reader(sid=sid), name=f"cli_reader_{sid}")
 
         returncode: int = await proc.wait()
 
