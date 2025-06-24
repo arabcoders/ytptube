@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250624-7e29e7b4",
-        "date": "2025-06-24T13:26:56+00:00",
+        "tag": "dev-20250624-de304005",
+        "date": "2025-06-24T14:26:03+00:00",
         "commits": [
+            {
+                "sha": "de304005",
+                "message": "make it more clear when item has already been downloaded.",
+                "author": "arabcoders",
+                "date": "2025-06-24T14:26:03+00:00",
+                "full_sha": "de304005da79b851a4de5e1b2f72f199dd6db5e7"
+            },
             {
                 "sha": "7e29e7b4",
                 "message": "Handle tasks exception",
@@ -284,7 +291,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7e29e7b48cae52795099357168100233c916cfc3"
+        "full_sha": "de304005da79b851a4de5e1b2f72f199dd6db5e7"
     },
     {
         "tag": "dev-20250616-c07465a6",
