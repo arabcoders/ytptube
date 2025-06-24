@@ -153,7 +153,6 @@ class HttpAPI:
         Args:
             username (str): The username.
             password (str): The password.
-            this (HttpAPI): The instance of the HttpAPI.
 
         Returns:
             Awaitable: The middleware handler.
@@ -213,9 +212,10 @@ class HttpAPI:
                     },
                 )
 
-            response = await handler(request)
+            response: Response = await handler(request)
 
-            if request.path != "/":
+            contentType: str | None = response.headers.get("content-type", None)
+            if contentType and not contentType.startswith("text/html"):
                 return response
 
             try:
@@ -226,7 +226,7 @@ class HttpAPI:
                         key=Config.get_instance().secret_key,
                     ),
                     max_age=60 * 60 * 24 * 7,
-                    expires=datetime.now(UTC) + timedelta(days=7),
+                    expires=(datetime.now(UTC) + timedelta(days=7)).strftime("%a, %d %b %Y %H:%M:%S GMT"),
                     httponly=True,
                     samesite="Strict",
                 )
@@ -259,7 +259,7 @@ class HttpAPI:
                         },
                     )
 
-            response = await handler(request)
+            response: Response = await handler(request)
 
             contentType: str | None = response.headers.get("content-type", None)
             if contentType and "/" != base_path and contentType.startswith("text/html"):
@@ -272,11 +272,8 @@ class HttpAPI:
                         .replace('baseURL:""', f'baseURL:"{rewrite_path}/"')
                     )
 
-                return web.Response(
-                    body=content.encode("utf-8"),
-                    status=response.status,
-                    headers=response.headers,
-                )
+                response.body = content.encode("utf-8")
+                return response
 
             if request.path.startswith(static_path) and isinstance(response, web.FileResponse):
                 try:
