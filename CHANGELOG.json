@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d",
-    "date": "2025-06-23T13:26:27+00:00",
+    "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e",
+    "date": "2025-06-24T13:08:55+00:00",
     "commits": [
+      {
+        "sha": "a9cb8160",
+        "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e",
+        "message": "Fix login cookie not being set correctly. Closes #310",
+        "author": "arabcoders",
+        "date": "2025-06-24T13:08:55+00:00"
+      },
       {
         "sha": "43aef86e",
         "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d",

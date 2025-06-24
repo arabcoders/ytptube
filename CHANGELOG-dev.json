@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250623-43aef86e",
-        "date": "2025-06-23T13:26:27+00:00",
+        "tag": "dev-20250624-a9cb8160",
+        "date": "2025-06-24T13:08:55+00:00",
         "commits": [
+            {
+                "sha": "a9cb8160",
+                "message": "Fix login cookie not being set correctly. Closes #310",
+                "author": "arabcoders",
+                "date": "2025-06-24T13:08:55+00:00",
+                "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e"
+            },
             {
                 "sha": "43aef86e",
                 "message": "switch from config.version to config.app_version",
@@ -270,7 +277,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "43aef86e7ee1b2571f2f295fb4d0f1256889f05d"
+        "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e"
     },
     {
         "tag": "dev-20250616-c07465a6",
