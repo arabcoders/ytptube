@@ -720,17 +720,23 @@ class DownloadQueue(metaclass=Singleton):
                 if entry.started() or entry.is_cancelled():
                     continue
 
-                asyncio.create_task(
-                    self._download_temp(_id, entry) if entry.is_live else self._download(_id, entry)
-                ).add_done_callback(self._handle_task_exception)
+                if entry.is_live:
+                    task = asyncio.create_task(self._download_live(_id, entry))
+                    task.add_done_callback(self._handle_task_exception)
+                else:
+                    await self.workers.acquire()
+
+                    task = asyncio.create_task(self._download_file(_id, entry))
+
+                    def _release_semaphore(t: asyncio.Task):
+                        self.workers.release()
+                        self._handle_task_exception(t)
+
+                    task.add_done_callback(_release_semaphore)
 
                 await asyncio.sleep(0.5)
 
-    async def _download(self, _id: str, entry: Download) -> None:
-        async with self.workers:
-            await self._download_file(_id, entry)
-
-    async def _download_temp(self, _id: str, entry: Download) -> None:
+    async def _download_live(self, _id: str, entry: Download) -> None:
         LOG.info(f"Creating temporary worker for entry '{entry.info.name()}'.")
 
         try:
