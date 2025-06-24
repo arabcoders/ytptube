@@ -720,11 +720,9 @@ class DownloadQueue(metaclass=Singleton):
                 if entry.started() or entry.is_cancelled():
                     continue
 
-                # Bypass semaphore for temporary workers
-                if entry.is_live:
-                    asyncio.create_task(self._download_temp(_id, entry))
-                else:
-                    asyncio.create_task(self._download(_id, entry))
+                asyncio.create_task(
+                    self._download_temp(_id, entry) if entry.is_live else self._download(_id, entry)
+                ).add_done_callback(self._handle_task_exception)
 
                 await asyncio.sleep(0.5)
 
@@ -894,3 +892,10 @@ class DownloadQueue(metaclass=Singleton):
                 self.done.put(item)
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
+
+    def _handle_task_exception(self, task: asyncio.Task):
+        if task.cancelled():
+            return
+
+        if exc := task.exception():
+            LOG.error(f"Unhandled exception in background task: {exc!s}")
