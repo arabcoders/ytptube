@@ -211,28 +211,41 @@ class DownloadQueue(metaclass=Singleton):
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
 
-        async def process_entry(i, etr):
-            extras = {
-                "playlist": entry.get("id"),
-                "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                "playlist_autonumber": i,
-            }
-
-            for property in ("id", "title", "uploader", "uploader_id"):
-                if property in entry:
-                    extras[f"playlist_{property}"] = entry.get(property)
-
-            if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
-
-            async with self.processors:
+        async def playlist_processor(i: int, etr: dict):
+            await self.processors.acquire()
+            try:
                 LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
+
+                extras = {
+                    "playlist": entry.get("id"),
+                    "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
+                    "playlist_autonumber": i,
+                }
+
+                for property in ("id", "title", "uploader", "uploader_id"):
+                    if property in entry:
+                        extras[f"playlist_{property}"] = entry.get(property)
+
+                if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
+                    extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
+
                 return await self.add(
                     item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
                     already=already,
                 )
+            finally:
+                self.processors.release()
 
-        results = await asyncio.gather(*(process_entry(i, etr) for i, etr in enumerate(entries, start=1)))
+        tasks: list[asyncio.Task] = []
+        for i, etr in enumerate(entries, start=1):
+            task = asyncio.create_task(
+                playlist_processor(i, etr),
+                name=f"playlist_processor_{etr.get('id')}_{i}",
+            )
+            task.add_done_callback(self._handle_task_exception)
+            tasks.append(task)
+
+        results: list[dict] = await asyncio.gather(*tasks)
 
         LOG.info(
             f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
