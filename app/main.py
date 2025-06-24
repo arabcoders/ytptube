@@ -38,13 +38,9 @@ class Main:
     def __init__(self, is_native: bool = False):
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
+        self._app.on_shutdown.append(self.on_shutdown)
 
         Services.get_instance().add("app", self._app)
-
-        if self._config.debug:
-            loop = asyncio.get_event_loop()
-            loop.set_debug(True)
-            loop.slow_callback_duration = 0.05
 
         self._check_folders()
 
@@ -97,6 +93,9 @@ class Main:
             LOG.error(f"Could not create database file at '{self._config.db_file}'. {e!s}")
             raise
 
+    async def on_shutdown(self, _: web.Application):
+        await EventBus.get_instance().emit(Events.SHUTDOWN, data={"app": self._app})
+
     def start(self, host: str | None = None, port: int | None = None, cb=None):
         """
         Start the application.
@@ -120,8 +119,17 @@ class Main:
 
         def started(_):
             LOG.info("=" * 40)
-            LOG.info(f"YTPTube {self._config.version} - started on http://{host}:{port}{self._config.base_path}")
+            LOG.info(f"YTPTube {self._config.app_version} - started on http://{host}:{port}{self._config.base_path}")
             LOG.info("=" * 40)
+
+            loop = asyncio.get_event_loop()
+
+            EventBus.get_instance().sync_emit(Events.STARTED, data={"app": self._app}, loop=loop, wait=False)
+
+            if loop and self._config.debug:
+                loop.set_debug(True)
+                loop.slow_callback_duration = 0.05
+
             if cb:
                 cb()
 

@@ -1,3 +1,18 @@
+<style scoped>
+.logs-container {
+  padding: 1rem;
+  min-width: 100%;
+  max-height: 73vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+hr {
+  background-color: unset;
+  border-bottom: 1px solid var(--bulma-grey-light) !important
+}
+</style>
+
 <template>
   <main>
     <div class="mt-1 columns is-multiline">
@@ -32,13 +47,17 @@
               <hr>
               <ul>
                 <li v-for="commit in log.commits" :key="commit.sha">
-                  <strong>{{ ucFirst(commit.message).replace(/\.$/, "") }}.</strong> -
+                  <strong>
+                    {{ ucFirst(commit.message).replace(/\.$/, "") }}.
+                  </strong> -
                   <small>
                     <NuxtLink :to="`${REPO}/commit/${commit.full_sha}`" target="_blank">
                       <span class="has-tooltip" v-tooltip="`SHA: ${commit.full_sha} - Date: ${commit.date}`">
                         {{ moment(commit.date).fromNow() }}
                       </span>
                     </NuxtLink>
+                    <span v-tooltip="'Code is at this commit.'" v-if="commit.full_sha === app_sha" class="icon has-text-success"><i
+                        class="fas fa-check" /></span>
                   </small>
                 </li>
               </ul>
@@ -51,8 +70,9 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
+import type { changelogs, changeset } from '~/@types/changelogs'
 
 const toast = useNotification()
 const config = useConfigStore()
@@ -63,63 +83,38 @@ const PROJECT = 'ytptube'
 const REPO = `https://github.com/arabcoders/${PROJECT}`
 const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`
 
-const logs = ref([])
-const api_version = ref('')
-const isLoading = ref(false)
-const hashLength = ref(7)
-
-const branch = computed(() => {
-  const branch = String(api_version.value).split('-')[0] ?? 'master'
-  return ['master', 'dev'].includes(branch) ? branch : 'master'
-})
-
-watch(() => config.app.version, async value => {
-  if (!value) {
-    return
-  }
-
-  api_version.value = value
-  hashLength.value = value.split('-').pop().length
-
-  await nextTick()
-  await loadContent()
-}, { immediate: true })
+const logs = ref<changelogs>([])
+const app_version = ref('')
+const app_branch = ref('')
+const app_sha = ref('')
+const isLoading = ref(true)
 
 const loadContent = async () => {
-  if ('' === api_version.value) {
+  if ('' === app_version.value || logs.value.length > 0) {
     return
   }
 
-  isLoading.value = true
   try {
-    try{
-      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json()
-    }catch(e){
-      console.error(e)
-      const changes = await fetch(REPO_URL.replace('{branch}', branch.value).replace('{version}', api_version.value))
+    try {
+      const changes = await fetch(REPO_URL.replace('{branch}', app_branch.value).replace('{version}', app_version.value))
       logs.value = await changes.json()
+    } catch (e) {
+      console.error(e)
+      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json()
     }
+
     await nextTick()
-
-    logs.value = logs.value.slice(0, 10).map(log => {
-      log.commits = log.commits.map(commit => {
-        commit.full_sha = commit.sha.padEnd(hashLength.value, '0')
-        return commit
-      })
-      log.full_sha = log.tag.padEnd(hashLength.value, '0')
-      return log
-    })
-
-  } catch (e) {
+    logs.value = logs.value.slice(0, 10)
+  } catch (e: any) {
     console.error(e)
-    toast.error('error', 'Error', `Failed to fetch changelog. ${e.message}`)
+    toast.error(`Failed to fetch changelog. ${e.message}`)
   } finally {
     isLoading.value = false
   }
 }
 
-const isInstalled = log => {
-  const installed = String(api_version.value).split('-').pop()
+const isInstalled = (log: changeset) => {
+  const installed = String(app_sha.value)
 
   if (log.full_sha.startsWith(installed)) {
     return true
@@ -134,20 +129,11 @@ const isInstalled = log => {
   return false
 }
 
-onMounted(() => loadContent())
+onMounted(async () => {
+  await awaiter(config.isLoaded)
+  app_branch.value = config.app.app_branch
+  app_version.value = config.app.app_version
+  app_sha.value = config.app.app_commit_sha
+  loadContent()
+})
 </script>
-
-<style scoped>
-.logs-container {
-  padding: 1rem;
-  min-width: 100%;
-  max-height: 73vh;
-  overflow-y: auto;
-  overflow-x: auto;
-}
-
-hr {
-  background-color: unset;
-  border-bottom: 1px solid var(--bulma-grey-light) !important
-}
-</style>

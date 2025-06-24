@@ -123,16 +123,17 @@ const socket = useSocketStore()
 const config = useConfigStore()
 const route = useRoute()
 
+const logContainer = useTemplateRef<HTMLDivElement>('logContainer')
+const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker')
+const textWrap = useStorage<boolean>('logs_wrap', true)
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+
 const logs = ref<Array<log_line>>([])
 const offset = ref<number>(0)
 const loading = ref<boolean>(false)
-const logContainer = useTemplateRef<HTMLDivElement>('logContainer')
-const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker')
 const autoScroll = ref<boolean>(true)
-const textWrap = ref<boolean>(true)
 const reachedEnd = ref<boolean>(false)
-const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
 
 const query = ref<string>((() => {
   const filter = route.query.filter ?? ''

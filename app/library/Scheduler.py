@@ -74,8 +74,30 @@ class Scheduler(metaclass=Singleton):
         return self._jobs
 
     def get(self, id: str) -> Cron | None:
-        """Return the job by id."""
+        """
+        Get a job by its id.
+
+        Args:
+            id (str): The id of the job.
+
+        Returns:
+            Cron | None: The job if it exists, None otherwise
+
+        """
         return self._jobs.get(id)
+
+    def has(self, id: str) -> bool:
+        """
+        Check if a job with the given id exists.
+
+        Args:
+            id (str): The id of the job.
+
+        Returns:
+            bool: True if the job exists, False otherwise
+
+        """
+        return id in self._jobs
 
     def add(
         self, timer: str, func: callable, args: tuple = (), kwargs: dict | None = None, id: str | None = None

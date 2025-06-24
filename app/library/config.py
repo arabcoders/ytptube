@@ -12,7 +12,7 @@ import coloredlogs
 from dotenv import load_dotenv
 
 from .Utils import FileLogFormatter, arg_converter
-from .version import APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
+from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 
 class Config:
@@ -109,10 +109,6 @@ class Config:
     pip_ignore_updates: bool = False
     """Ignore pip package updates."""
 
-    # immutable config vars.
-    version: str = APP_VERSION
-    "The version of the application."
-
     app_version: str = APP_VERSION
     "The version of the application, same as `version`."
 
@@ -121,6 +117,9 @@ class Config:
 
     app_build_date: str = APP_BUILD_DATE
     "The build date of the application."
+
+    app_branch: str = APP_BRANCH
+    "The branch of the application."
 
     __instance = None
     "The instance of the class."
@@ -191,7 +190,6 @@ class Config:
     "The variables that are set manually."
 
     _immutable: tuple = (
-        "version",
         "__instance",
         "ytdl_options",
         "started",
@@ -201,6 +199,7 @@ class Config:
         "app_version",
         "app_commit_sha",
         "app_build_date",
+        "app_branch",
     )
     "The variables that are immutable."
 
@@ -237,7 +236,6 @@ class Config:
         "download_path",
         "keep_archive",
         "output_template",
-        "version",
         "started",
         "remove_files",
         "ui_update_title",
@@ -257,6 +255,7 @@ class Config:
         "app_version",
         "app_commit_sha",
         "app_build_date",
+        "app_branch",
     )
     "The variables that are relevant to the frontend."
 
@@ -452,6 +451,9 @@ class Config:
             )
             raise ValueError(msg)
 
+        if "dev-master" == self.app_version:
+            self._version_via_git()
+
     def _get_attributes(self) -> dict:
         attrs: dict = {}
         vClass: str = self.__class__
@@ -519,3 +521,66 @@ class Config:
             return YTDLP_VERSION
         except ImportError:
             return "0.0.0"
+
+    def _version_via_git(self):
+        """
+        Updates the version of the application using git tags.
+        This is used to set the version to the latest git tag.
+        """
+        git_path: str = Path(__file__).parent / ".." / ".." / ".git"
+        if not git_path.exists():
+            return
+
+        try:
+            import subprocess
+
+            branch_result = subprocess.run(  # noqa: S603
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
+                cwd=os.path.dirname(git_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != branch_result.returncode:
+                logging.error(f"Git rev-parse failed: {branch_result.stderr.strip()}")
+                return
+
+            branch_name: str = branch_result.stdout.strip()
+            if not branch_name:
+                logging.warning("Git branch name is empty.")
+                return
+
+            commit_result = subprocess.run(  # noqa: S603
+                ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
+                cwd=os.path.dirname(git_path),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            if 0 != commit_result.returncode:
+                logging.error(f"Git log failed: {commit_result.stderr.strip()}")
+                return
+
+            commit_info: str = commit_result.stdout.strip()
+            if not commit_info:
+                logging.warning("Git commit info is empty.")
+                return
+
+            commit_date, commit_sha = commit_info.split("_", 1)
+            commit_date = time.strftime("%Y%m%d", time.localtime(int(commit_date)))
+
+            self.app_version = f"{branch_name}-{commit_date}-{commit_sha[:8]}"
+            self.app_branch = branch_name
+            self.app_commit_sha = commit_sha
+            self.app_build_date = commit_date
+            version_data = {
+                "version": self.app_version,
+                "branch": self.app_branch,
+                "commit": self.app_commit_sha,
+                "build_date": self.app_build_date,
+            }
+            logging.info(f"Application version info set to '{version_data}'")
+        except Exception as e:
+            logging.error(f"Error while getting git version: {e!s}")

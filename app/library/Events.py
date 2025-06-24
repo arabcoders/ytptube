@@ -4,6 +4,7 @@ import logging
 import uuid
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
+from typing import Any
 
 from .Singleton import Singleton
 
@@ -93,6 +94,7 @@ class Events:
 
     STARTUP = "startup"
     LOADED = "loaded"
+    STARTED = "started"
     SHUTDOWN = "shutdown"
 
     ADDED = "added"
@@ -245,7 +247,7 @@ class EventListener:
         if self.is_coroutine:
             return self.call_back(event, self.name, **kwargs)
 
-        return asyncio.create_task(self.call_back(event, self.name, **kwargs))
+        return asyncio.create_task(self.call_back(event, self.name, **kwargs), name=f"EL-{self.name}-{event.id}")
 
 
 class EventBus(metaclass=Singleton):
@@ -323,6 +325,8 @@ class EventBus(metaclass=Singleton):
 
             self._listeners[e][name] = EventListener(name, callback)
 
+        LOG.debug(f"'{name}' subscribed to '{event}'.")
+
         return self
 
     def unsubscribe(self, event: str | list | tuple, name: str) -> "EventBus":
@@ -340,50 +344,83 @@ class EventBus(metaclass=Singleton):
         if isinstance(event, str):
             event = [event]
 
+        events = []
         for e in event:
             if e in self._listeners and name in self._listeners[e]:
+                events.append(e)
                 del self._listeners[e][name]
+
+        if len(events) > 0:
+            LOG.debug(f"'{name}' unsubscribed from '{events}'.")
 
         return self
 
-    def sync_emit(self, event: str, data: any, **kwargs) -> list:
+    def sync_emit(self, event: str, data: Any, loop=None, wait: bool = True, **kwargs):
         """
-        Emit an event synchronously.
+        Emit event and (optionally) wait for results.
 
         Args:
             event (str): The event to emit.
-            data (any): The data to pass to the event.
-            **kwargs: The keyword arguments to pass to the event.
+            data (Any): The data to pass to the event.
+            loop (asyncio.AbstractEventLoop | None): The event loop to use. If None, the current running loop is used.
+            wait (bool): Whether to wait for the results of the event handlers. Defaults to True.
+            **kwargs: Additional keyword arguments to pass to the event
 
         Returns:
             list: The results are the return values of the coroutines. If the coroutine raises an exception,
                   the exception is caught and logged. If event does not exist, an empty list is returned.
+                  If wait is False, a list of asyncio.Task objects is returned instead if we are in a running event loop,
+                  or the result of the coroutine if we are not in a running event loop.
 
         """
         if event not in self._listeners:
             return []
 
-        ev = Event(event=event, data=data)
-        LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
+        async def emit_all():
+            ev = Event(event=event, data=data)
+            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
-        results = []
+            res: list = []
 
-        for handler in self._listeners[event].values():
-            try:
-                results.append(asyncio.get_event_loop().run_until_complete(handler.handle(ev, **kwargs)))
-            except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to emit event '{event}' to '{handler.name}'. Error message '{e!s}'.")
+            for h in self._listeners[event].values():
+                try:
+                    res.append(await h.handle(ev, **kwargs))
+                except Exception as e:
+                    LOG.exception(e)
+                    LOG.error(f"Failed to emit event '{event}' to '{h.name}'. Error message '{e!s}'.")
 
-        return results
+            return res
 
-    async def emit(self, event: str, data: any, **kwargs) -> Awaitable:
+        try:
+            loop = loop or asyncio.get_running_loop()
+            in_same_loop: bool = asyncio.get_running_loop() is loop
+        except RuntimeError:
+            loop = None
+            in_same_loop = False
+
+        if loop is None or not loop.is_running():
+            return asyncio.run(emit_all())
+
+        if in_same_loop:
+            if wait:
+                msg = (
+                    "Calling EventsBus.sync_emit(...,wait=True) from within the running event loop would cause dead-lock. "
+                    "Use `await EventsBus.emit(...)` or `EventsBus.sync_emit(..., wait=False)`."
+                )
+                raise RuntimeError(msg)
+
+            return loop.create_task(emit_all())
+
+        fut = asyncio.run_coroutine_threadsafe(emit_all(), loop)
+        return fut.result() if wait else fut
+
+    async def emit(self, event: str, data: Any, **kwargs) -> Awaitable:
         """
         Emit an event.
 
         Args:
             event (str): The event to emit.
-            data (any): The data to pass to the event.
+            data (Any): The data to pass to the event.
             **kwargs: The keyword arguments to pass to the event.
 
         Returns:

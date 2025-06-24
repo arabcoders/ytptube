@@ -77,7 +77,7 @@ async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer,
         await sio.emit(Events.SUBSCRIBED, data={"event": data}, to=sid)
 
     async def emit_logs(data: dict):
-        await subscribe_emit(sio=sio, event=data, data=data)
+        await subscribe_emit(sio=sio, event="log_lines", data=data)
 
     if "log_lines" == data and _Data.log_task is None:
         log_file = Path(config.config_path) / "logs" / "app.log"

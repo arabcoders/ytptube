@@ -55,10 +55,10 @@
         </button>
       </div>
       <div class="column is-half-mobile" v-if="hasIncomplete">
-        <button type="button" class="button is-fullwidth is-warning is-inverted" @click="requeueIncomplete">
+        <button type="button" class="button is-fullwidth is-warning is-inverted" @click="retryIncomplete">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-            <span>Re-queue Incomplete</span>
+            <span>Retry Incomplete</span>
           </span>
         </button>
       </div>
@@ -145,7 +145,7 @@
                 <td class="is-vcentered has-text-centered is-unselectable"
                   v-if="item.live_in && 'not_live' === item.status">
                   <span :date-datetime="item.live_in" class="user-hint"
-                    v-tooltip="'Will automatically be requeued at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
+                    v-tooltip="'Will automatically be retried at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
                     v-rtime="item.live_in" />
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable" v-else>
@@ -154,8 +154,8 @@
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
                     <div class="control" v-if="item.status != 'finished' || !item.filename">
-                      <button class="button is-warning is-fullwidth is-small" v-tooltip="'Re-queue video'"
-                        @click="(event) => reQueueItem(item, event)">
+                      <button class="button is-warning is-fullwidth is-small" v-tooltip="'Retry download'"
+                        @click="(event) => retryItem(item, event)">
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                       </button>
                     </div>
@@ -200,7 +200,7 @@
 
                         <template v-if="item.status != 'finished' || !item.filename">
                           <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item" @click="reQueueItem(item, true)">
+                          <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
                             <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                             <span>Add to download form</span>
                           </NuxtLink>
@@ -312,10 +312,10 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
-                <a class="button is-warning is-fullwidth" @click="(event) => reQueueItem(item, event)">
+                <a class="button is-warning is-fullwidth" @click="(event) => retryItem(item, event)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                    <span>Re-queue</span>
+                    <span>Retry</span>
                   </span>
                 </a>
               </div>
@@ -370,7 +370,7 @@
 
                   <template v-if="item.status != 'finished' || !item.filename">
                     <hr class="dropdown-divider" />
-                    <NuxtLink class="dropdown-item" @click="reQueueItem(item, true)">
+                    <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
                       <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                       <span>Add to download form</span>
                     </NuxtLink>
@@ -666,6 +666,10 @@ const setIcon = item => {
     return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset'
   }
 
+  if ('skip' === item.status) {
+    return 'fa-solid fa-ban'
+  }
+
   return 'fa-solid fa-circle'
 }
 
@@ -681,7 +685,7 @@ const setIconColor = item => {
     return 'has-text-info'
   }
 
-  if ('cancelled' === item.status) {
+  if ('cancelled' === item.status || "skipped" === item.status) {
     return 'has-text-warning'
   }
 
@@ -690,10 +694,6 @@ const setIconColor = item => {
 
 const setStatus = item => {
   if ('finished' === item.status) {
-    if (!item.filename) {
-      return 'Skipped?'
-    }
-
     if (item.extras?.is_premiere) {
       return 'Premiered'
     }
@@ -716,11 +716,15 @@ const setStatus = item => {
     return display_style.value === 'cards' ? 'Stream' : 'Live'
   }
 
+  if ('skip' === item.status) {
+    return 'Skipped'
+  }
+
   return item.status
 }
 
-const requeueIncomplete = () => {
-  if (false === box.confirm('Are you sure you want to re-queue all incomplete downloads?')) {
+const retryIncomplete = () => {
+  if (false === box.confirm('Are you sure you want to retry all incomplete downloads?')) {
     return false
   }
 
@@ -729,7 +733,7 @@ const requeueIncomplete = () => {
     if ('finished' === item.status) {
       continue
     }
-    reQueueItem(item)
+    retryItem(item)
   }
 }
 
@@ -784,7 +788,7 @@ const removeItem = item => {
   })
 }
 
-const reQueueItem = (item, re_add = false) => {
+const retryItem = (item, re_add = false) => {
   const item_req = {
     url: item.url,
     preset: item.preset,

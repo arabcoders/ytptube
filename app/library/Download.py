@@ -11,13 +11,16 @@ from pathlib import Path
 
 import yt_dlp
 
-from .AsyncPool import Terminator
 from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
 from .YTDLPOpts import YTDLPOpts
+
+
+class Terminator:
+    pass
 
 
 class NestedLogger:
@@ -120,6 +123,15 @@ class Download:
         self.logs = logs if logs else []
 
     def _progress_hook(self, data: dict):
+        if self.debug:
+            from copy import deepcopy
+
+            d_copy = deepcopy(data)
+            for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
+                d_copy["info_dict"].pop(k, None)
+
+            self.logger.debug(f"Progress hook: {d_copy}")
+
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
 
         if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
@@ -269,9 +281,15 @@ class Download:
                 ret = cls.download(url_list=[self.info.url])
 
             self.status_queue.put({"id": self.id, "status": "finished" if ret == 0 else "error"})
+        except yt_dlp.utils.ExistingVideoReached as exc:
+            self.logger.error(exc)
+            self.status_queue.put({"id": self.id, "status": "skip", "msg": "Item has already been downloaded."})
         except Exception as exc:
             self.logger.exception(exc)
+            self.logger.error(exc)
             self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
+        finally:
+            self.status_queue.put(Terminator())
 
         self.logger.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 

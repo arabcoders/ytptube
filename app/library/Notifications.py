@@ -137,7 +137,7 @@ class Notification(metaclass=Singleton):
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
-        self._version = config.version
+        self._version = config.app_version
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:

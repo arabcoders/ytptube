@@ -15,7 +15,6 @@ from aiohttp import web
 
 from app.library.ag_utils import ag
 
-from .AsyncPool import AsyncPool
 from .conditions import Conditions
 from .config import Config
 from .DataStore import DataStore
@@ -62,9 +61,6 @@ class DownloadQueue(metaclass=Singleton):
     event: asyncio.Event
     """Event to signal the download queue to start downloading."""
 
-    pool: AsyncPool | None = None
-    """Pool of workers to download the files."""
-
     _active: dict[str, Download] = {}
     """Dictionary of active downloads."""
 
@@ -76,6 +72,12 @@ class DownloadQueue(metaclass=Singleton):
 
     done: DataStore
     """DataStore for the completed downloads."""
+
+    workers: asyncio.Semaphore
+    """Semaphore to limit the number of concurrent downloads."""
+
+    processors: asyncio.Semaphore
+    """Semaphore to limit the number of concurrent processors."""
 
     def __init__(self, connection: Connection, config: Config | None = None):
         DownloadQueue._instance = self
@@ -89,6 +91,8 @@ class DownloadQueue(metaclass=Singleton):
         self.paused = asyncio.Event()
         self.paused.set()
         self.event = asyncio.Event()
+        self.workers = asyncio.Semaphore(self.config.max_workers)
+        self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
 
     @staticmethod
     def get_instance():
@@ -104,15 +108,17 @@ class DownloadQueue(metaclass=Singleton):
 
         return DownloadQueue._instance
 
-    def attach(self, app: web.Application):
+    def attach(self, _: web.Application):
         """
         Attach the download queue to the application.
 
         Args:
-            app (web.Application): The application to attach the download queue to.
+            _ (web.Application): The application to attach the download queue to.
 
         """
-        app.on_startup.append(lambda _: self.initialize())
+        self._notify.subscribe(
+            Events.STARTED, lambda _, __: self.initialize(), f"{__class__.__name__}.{__class__.initialize.__name__}"
+        )
 
         Scheduler.get_instance().add(
             timer="* * * * *",
@@ -126,14 +132,6 @@ class DownloadQueue(metaclass=Singleton):
             id=f"{__class__.__name__}.{__class__._check_live.__name__}",
         )
         # app.on_shutdown.append(self.on_shutdown)
-
-        # async def close_pool(_: web.Application):
-        #     try:
-        #         await self.pool.on_shutdown(_)
-        #     except Exception as e:
-        #         LOG.error(f"Failed to cleanup download pool. {e!s}")
-
-        # app.on_cleanup.append(close_pool)
 
     async def test(self) -> bool:
         """
@@ -206,81 +204,56 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
     async def _process_playlist(self, entry: dict, item: Item, already=None):
-        if 1 == self.config.playlist_items_concurrency:
-            return await self._process_playlist_old(entry=entry, item=item, already=already)
-
-        LOG.info(f"Playlist '{entry.get('id')}: {entry.get('title')}' processing.")
         entries = entry.get("entries", [])
+
+        LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')}' Playlist.")
+
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
 
-        semaphore = asyncio.Semaphore(self.config.playlist_items_concurrency)
+        async def playlist_processor(i: int, etr: dict):
+            await self.processors.acquire()
+            try:
+                LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
 
-        async def process_entry(i, etr):
-            extras = {
-                "playlist": entry.get("id"),
-                "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                "playlist_autonumber": i,
-            }
+                extras = {
+                    "playlist": entry.get("title") or entry.get("id"),
+                    "playlist_count": playlistCount,
+                    "playlist_id": entry.get("id"),
+                    "playlist_title": entry.get("title"),
+                    "playlist_uploader": entry.get("uploader"),
+                    "playlist_uploader_id": entry.get("uploader_id"),
+                    "playlist_channel": entry.get("channel"),
+                    "playlist_channel_id": entry.get("channel_id"),
+                    "playlist_webpage_url": entry.get("webpage_url"),
+                    "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
+                    "playlist_autonumber": i + 1,
+                }
 
-            for property in ("id", "title", "uploader", "uploader_id"):
-                if property in entry:
-                    extras[f"playlist_{property}"] = entry.get(property)
+                for property in ("id", "title", "uploader", "uploader_id"):
+                    if property in entry:
+                        extras[f"playlist_{property}"] = entry.get(property)
 
-            LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
+                if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
+                    extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
 
-            if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
-
-            async with semaphore:
                 return await self.add(
                     item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
                     already=already,
                 )
+            finally:
+                self.processors.release()
 
-        tasks = [process_entry(i, etr) for i, etr in enumerate(entries, start=1)]
-        results = await asyncio.gather(*tasks)
-
-        LOG.info(
-            f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
-        )
-
-        if any("error" == res["status"] for res in results):
-            return {
-                "status": "error",
-                "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
-            }
-
-        return {"status": "ok"}
-
-    async def _process_playlist_old(self, entry: dict, item: Item, already=None):
-        LOG.info(f"Playlist '{entry.get('id')}: {entry.get('title')}' processing.")
-        entries = entry.get("entries", [])
-        playlistCount = int(entry.get("playlist_count", len(entries)))
-        results = []
-
+        tasks: list[asyncio.Task] = []
         for i, etr in enumerate(entries, start=1):
-            extras = {
-                "playlist": entry.get("id"),
-                "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                "playlist_autonumber": i,
-            }
-
-            for property in ("id", "title", "uploader", "uploader_id"):
-                if property in entry:
-                    extras[f"playlist_{property}"] = entry.get(property)
-
-            if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
-
-            LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
-
-            results.append(
-                await self.add(
-                    item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
-                    already=already,
-                )
+            task = asyncio.create_task(
+                playlist_processor(i, etr),
+                name=f"playlist_processor_{etr.get('id')}_{i}",
             )
+            task.add_done_callback(self._handle_task_exception)
+            tasks.append(task)
+
+        results: list[dict] = await asyncio.gather(*tasks)
 
         LOG.info(
             f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
@@ -541,9 +514,8 @@ class DownloadQueue(metaclass=Singleton):
 
             downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
             if downloaded is True and id_dict:
-                message = f"This url with ID '{id_dict.get('id')}' has been downloaded already and recorded in archive."
-                LOG.info(message)
-                await self._notify.emit(Events.LOG_WARNING, data=event_warning(message))
+                message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
+                LOG.error(message)
                 return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
@@ -576,6 +548,7 @@ class DownloadQueue(metaclass=Singleton):
             )
 
             if not entry:
+                LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
 
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
@@ -752,56 +725,45 @@ class DownloadQueue(metaclass=Singleton):
     async def _download_pool(self) -> None:
         """
         Create a pool of workers to download the files.
-
-        Returns:
-            None
-
         """
-        self.pool = AsyncPool(
-            loop=asyncio.get_running_loop(),
-            num_workers=self.config.max_workers,
-            worker_co=self._download_file,
-            name="download_pool",
-            logger=logging.getLogger("WorkerPool"),
-        )
-
-        self.pool.start()
-
-        lastLog = time.time()
-
         while True:
-            while True:
-                if self.pool.has_open_workers() is True:
-                    break
-                if self.config.max_workers > 1 and time.time() - lastLog > 600:
-                    lastLog = time.time()
-                    LOG.info("Waiting for worker to be free.", extra={"workers": self.pool.get_available_workers()})
-                await asyncio.sleep(1)
-
             while not self.queue.has_downloads():
-                LOG.info(f"Waiting for item to download. '{self.pool.get_available_workers()}' free workers.")
-                if self.event:
-                    await self.event.wait()
-                    self.event.clear()
-                    LOG.debug("Cleared wait event.")
+                LOG.info("Waiting for item to download.")
+                await self.event.wait()
+                self.event.clear()
 
-            if self.paused and isinstance(self.paused, asyncio.Event) and self.is_paused():
+            if self.is_paused():
                 LOG.info("Download pool is paused.")
                 await self.paused.wait()
                 LOG.info("Download pool resumed downloading.")
 
-            entry = self.queue.get_next_download()
-            await asyncio.sleep(0.2)
+            for _id, entry in list(self.queue.items()):
+                if entry.started() or entry.is_cancelled():
+                    continue
 
-            if entry is None:
-                continue
+                if entry.is_live:
+                    task = asyncio.create_task(self._download_live(_id, entry), name=f"download_live_{_id}")
+                    task.add_done_callback(self._handle_task_exception)
+                else:
+                    await self.workers.acquire()
 
-            LOG.debug(f"Pushing {entry=} to executor.")
+                    task = asyncio.create_task(self._download_file(_id, entry), name=f"download_file_{_id}")
 
-            if entry.started() is False and entry.is_cancelled() is False:
-                await self.pool.push(is_temp=entry.is_live, id=entry.info._id, entry=entry)
-                LOG.debug(f"Pushed {entry=} to executor.")
-                await asyncio.sleep(1)
+                    def _release_semaphore(t: asyncio.Task):
+                        self.workers.release()
+                        self._handle_task_exception(t)
+
+                    task.add_done_callback(_release_semaphore)
+
+                await asyncio.sleep(0.5)
+
+    async def _download_live(self, _id: str, entry: Download) -> None:
+        LOG.info(f"Creating temporary worker for entry '{entry.info.name()}'.")
+
+        try:
+            await self._download_file(_id, entry)
+        finally:
+            LOG.info(f"Temporary worker for '{entry.info.name()}' completed.")
 
     async def _download_file(self, id: str, entry: Download) -> None:
         """
@@ -822,7 +784,7 @@ class DownloadQueue(metaclass=Singleton):
             self._active[entry.info._id] = entry
             await entry.start()
 
-            if "finished" != entry.info.status:
+            if entry.info.status not in ("finished", "skip"):
                 entry.info.status = "error"
         finally:
             if entry.info._id in self._active:
@@ -886,52 +848,6 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
                     LOG.exception(e)
 
-        if self.pool:
-            time_now = datetime.now(tz=UTC)
-            workers = self.pool.get_workers_status()
-            if len(workers) > 0:
-                LOG.debug(f"Checking for stale workers. {len(workers)} workers found.")
-
-            for worker_id in workers:
-                worker = workers.get(worker_id, {})
-                if not worker:
-                    continue
-
-                started = worker.get("started", None)
-                if not started:
-                    LOG.debug(f"Worker '{worker_id}' not working yet.")
-                    continue
-
-                started = datetime.fromisoformat(started)
-
-                if time_now - started < timedelta(minutes=5):
-                    LOG.debug(f"Worker '{worker_id}' is not consider stale yet.")
-                    continue
-
-                data = worker.get("data", {})
-
-                status = data.get("status", None)
-                if "preparing" != status:
-                    LOG.debug(f"Worker '{worker_id}' not stuck. Status '{status}'.")
-                    continue
-
-                _id = data.get("data._id", None)
-                if not _id:
-                    LOG.debug(f"Worker '{worker_id}' has no id.")
-                    continue
-
-                id = data.get("id", None)
-                title = data.get("title", None)
-
-                item_ref = f"{_id=} {id=} {title=}"
-
-                LOG.warning(f"Cancelling staled item '{item_ref}' from worker pool.")
-                try:
-                    await self.cancel([_id])
-                except Exception as e:
-                    LOG.error(f"Failed to cancel staled item '{item_ref}' from worker pool. {e!s}")
-                    LOG.exception(e)
-
     async def _check_live(self):
         """
         Monitor the queue for items marked as live events and queue them when time is reached.
@@ -979,7 +895,7 @@ class DownloadQueue(metaclass=Singleton):
                     )
                     continue
 
-            LOG.info(f"Re-queuing item '{item_ref} {item.info.extras=}' for download.")
+            LOG.info(f"Retrying item '{item_ref} {item.info.extras=}' for download.")
 
             try:
                 await self.clear([item.info._id], remove_file=False)
@@ -1002,4 +918,11 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 self.done.put(item)
                 LOG.exception(e)
-                LOG.error(f"Failed to re-queue item '{item_ref}'. {e!s}")
+                LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
+
+    def _handle_task_exception(self, task: asyncio.Task):
+        if task.cancelled():
+            return
+
+        if exc := task.exception():
+            LOG.error(f"Unhandled exception in background task: {exc!s}")

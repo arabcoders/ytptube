@@ -15,10 +15,10 @@ from app.library.Services import Services
 
 from .config import Config
 from .encoder import Encoder
-from .Events import EventBus, Events, error, info, success
+from .Events import EventBus, Events, error, success
 from .Scheduler import Scheduler
 from .Singleton import Singleton
-from .Utils import init_class
+from .Utils import init_class, validate_url
 
 LOG: logging.Logger = logging.getLogger("tasks")
 
@@ -162,11 +162,12 @@ class Tasks(metaclass=Singleton):
                     from cronsim import CronSim
 
                     cs = CronSim(task.timer, datetime.now(UTC))
-                    schedule_time = cs.explain()
+                    schedule_time: str = cs.explain()
                 except Exception:
                     schedule_time = task.timer
 
-                LOG.info(f"Task '{task.name}' queued to be executed '{schedule_time}'.")
+                if not has_tasks:
+                    LOG.info(f"Task '{task.name}' queued to be executed '{schedule_time}'.")
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue '{i}: {task.name}'. '{e!s}'.")
@@ -185,8 +186,11 @@ class Tasks(metaclass=Singleton):
             return self
 
         for task in self._tasks:
+            if not self._scheduler.has(task.id):
+                continue
+
             try:
-                LOG.info(f"Stopping '{task.name}'.")
+                LOG.debug(f"Stopping '{task.name}'.")
                 self._scheduler.remove(task.id)
             except Exception as e:
                 if not shutdown:
@@ -220,15 +224,25 @@ class Tasks(metaclass=Singleton):
             msg = "No name found."
             raise ValueError(msg)
 
+        task["name"] = task["name"].strip()
+
         if not task.get("url"):
             msg = "No URL found."
             raise ValueError(msg)
+
+        task["url"] = task["url"].strip()
+        try:
+            validate_url(task["url"], allow_internal=True)
+        except ValueError as e:
+            msg = f"Invalid URL format. '{e!s}'."
+            raise ValueError(msg) from e
 
         if task.get("timer"):
             try:
                 from cronsim import CronSim
 
                 CronSim(task.get("timer"), datetime.now(UTC))
+                task["timer"] = str(task["timer"]).strip()
             except Exception as e:
                 msg = f"Invalid timer format. '{e!s}'."
                 raise ValueError(msg) from e
@@ -238,6 +252,7 @@ class Tasks(metaclass=Singleton):
                 from .Utils import arg_converter
 
                 arg_converter(args=task.get("cli"))
+                task["cli"] = str(task["cli"]).strip()
             except Exception as e:
                 msg = f"Invalid command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
@@ -300,26 +315,17 @@ class Tasks(metaclass=Singleton):
             template: str = task.template if task.template else ""
             cli: str = task.cli if task.cli else ""
 
-            LOG.info(f"Dispatched '{task.name}' at '{timeNow}'.")
-
-            tasks: list = [
-                self._notify.emit(
-                    Events.LOG_INFO, data=info(f"Dispatched '{task.name}' at '{timeNow}'.", data={"lowPriority": True})
-                ),
-                self._notify.emit(
-                    Events.ADD_URL,
-                    data={
-                        "url": task.url,
-                        "preset": preset,
-                        "folder": folder,
-                        "template": template,
-                        "cli": cli,
-                    },
-                    id=task.id,
-                ),
-            ]
-
-            await asyncio.wait_for(asyncio.gather(*tasks), timeout=None)
+            await self._notify.emit(
+                Events.ADD_URL,
+                data={
+                    "url": task.url,
+                    "preset": preset,
+                    "folder": folder,
+                    "template": template,
+                    "cli": cli,
+                },
+                id=task.id,
+            )
 
             timeNow = datetime.now(UTC).isoformat()
 
@@ -374,9 +380,18 @@ class HandleTask:
                 if handler is None:
                     continue
 
-                asyncio.create_task(self.dispatch(task, handler=handler), name=f"task-{task.id}")
+                coro = self.dispatch(task, handler=handler)
+                t = asyncio.create_task(coro, name=f"task-{task.id}")
+                t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
             except Exception as e:
                 LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
+
+    def _handle_exception(self, fut: asyncio.Task, task: Task) -> None:
+        if fut.cancelled():
+            return
+
+        if exc := fut.exception():
+            LOG.error(f"Exception while handling task '{task.name}': {exc}")
 
     def _find_handler(self, task: Task) -> type | None:
         for cls in self._handlers:
