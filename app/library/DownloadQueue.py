@@ -219,7 +219,7 @@ class DownloadQueue(metaclass=Singleton):
                 extras = {
                     "playlist": entry.get("id"),
                     "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                    "playlist_autonumber": i,
+                    "playlist_autonumber": i + 1,
                 }
 
                 for property in ("id", "title", "uploader", "uploader_id"):
