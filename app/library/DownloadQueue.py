@@ -217,7 +217,15 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
 
                 extras = {
-                    "playlist": entry.get("id"),
+                    "playlist": entry.get("title") or entry.get("id"),
+                    "playlist_count": playlistCount,
+                    "playlist_id": entry.get("id"),
+                    "playlist_title": entry.get("title"),
+                    "playlist_uploader": entry.get("uploader"),
+                    "playlist_uploader_id": entry.get("uploader_id"),
+                    "playlist_channel": entry.get("channel"),
+                    "playlist_channel_id": entry.get("channel_id"),
+                    "playlist_webpage_url": entry.get("webpage_url"),
                     "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
                     "playlist_autonumber": i + 1,
                 }
