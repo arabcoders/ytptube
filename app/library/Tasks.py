@@ -223,19 +223,19 @@ class Tasks(metaclass=Singleton):
         if not task.get("name"):
             msg = "No name found."
             raise ValueError(msg)
-        else:
-            task["name"] = task["name"].strip()
+
+        task["name"] = task["name"].strip()
 
         if not task.get("url"):
             msg = "No URL found."
             raise ValueError(msg)
-        else:
-            task["url"] = task["url"].strip()
-            try:
-                validate_url(task["url"], allow_internal=True)
-            except ValueError as e:
-                msg = f"Invalid URL format. '{e!s}'."
-                raise ValueError(msg) from e
+
+        task["url"] = task["url"].strip()
+        try:
+            validate_url(task["url"], allow_internal=True)
+        except ValueError as e:
+            msg = f"Invalid URL format. '{e!s}'."
+            raise ValueError(msg) from e
 
         if task.get("timer"):
             try:
@@ -380,9 +380,18 @@ class HandleTask:
                 if handler is None:
                     continue
 
-                asyncio.create_task(self.dispatch(task, handler=handler), name=f"task-{task.id}")
+                coro = self.dispatch(task, handler=handler)
+                t = asyncio.create_task(coro, name=f"task-{task.id}")
+                t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
             except Exception as e:
                 LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
+
+    def _handle_exception(self, fut: asyncio.Task, task: Task) -> None:
+        if fut.cancelled():
+            return
+
+        if exc := fut.exception():
+            LOG.error(f"Exception while handling task '{task.name}': {exc}")
 
     def _find_handler(self, task: Task) -> type | None:
         for cls in self._handlers:
