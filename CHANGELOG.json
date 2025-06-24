@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e",
-    "date": "2025-06-24T13:08:55+00:00",
+    "full_sha": "7e29e7b48cae52795099357168100233c916cfc3",
+    "date": "2025-06-24T13:26:56+00:00",
     "commits": [
+      {
+        "sha": "7e29e7b4",
+        "full_sha": "7e29e7b48cae52795099357168100233c916cfc3",
+        "message": "Handle tasks exception",
+        "author": "arabcoders",
+        "date": "2025-06-24T13:26:56+00:00"
+      },
       {
         "sha": "a9cb8160",
         "full_sha": "a9cb816050abb8c8fc907ff295cc85966097420e",
