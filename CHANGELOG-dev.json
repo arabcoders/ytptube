@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250627-25b7aad6",
-        "date": "2025-06-27T13:31:11+00:00",
+        "tag": "dev-20250627-ebb72990",
+        "date": "2025-06-27T17:12:32+00:00",
         "commits": [
+            {
+                "sha": "ebb72990",
+                "message": "Implements ytdlp filter logic to our own playlist processing.",
+                "author": "arabcoders",
+                "date": "2025-06-27T17:12:32+00:00",
+                "full_sha": "ebb729905337fa26a2365682024b224e88d55531"
+            },
             {
                 "sha": "25b7aad6",
                 "message": "Fix running in subpath again.",
@@ -361,7 +368,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "25b7aad6066904cd5aa9c92b2bd3b5f2ca450149"
+        "full_sha": "ebb729905337fa26a2365682024b224e88d55531"
     },
     {
         "tag": "dev-20250616-c07465a6",

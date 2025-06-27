@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ebb729905337fa26a2365682024b224e88d55531",
+    "date": "2025-06-27T17:12:32+00:00",
+    "commits": [
+      {
+        "sha": "ebb72990",
+        "full_sha": "ebb729905337fa26a2365682024b224e88d55531",
+        "message": "Implements ytdlp filter logic to our own playlist processing.",
+        "author": "arabcoders",
+        "date": "2025-06-27T17:12:32+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.1.5",
     "full_sha": "b5bb2a202caa5b3df71839e1f3bb9a8a855ed533",
     "date": "2025-06-27T13:36:27+00:00",
