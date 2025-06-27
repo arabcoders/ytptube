@@ -128,7 +128,7 @@ class HttpAPI:
         for route in get_routes(RouteType.HTTP).values():
             routePath: str = f"/{route.path.lstrip('/')}"
 
-            if self.config.base_path == route.path:
+            if route.path in (self.config.base_path, "/"):
                 pass
             elif "" == base_path or not routePath.rstrip("/").startswith(base_path.rstrip("/")):
                 route.path = f"{base_path}/{route.path.lstrip('/')}"
@@ -272,8 +272,26 @@ class HttpAPI:
                         .replace('baseURL:""', f'baseURL:"{rewrite_path}/"')
                     )
 
-                response.body = content.encode("utf-8")
-                return response
+                new_response = web.Response(text=content, content_type="text/html")
+
+                for k, v in response.headers.items():
+                    if k.lower() != "content-type":
+                        new_response.headers[k] = v
+
+                for morsel in response.cookies.values():
+                    new_response.set_cookie(
+                        morsel.key,
+                        morsel.value,
+                        expires=morsel["expires"],
+                        domain=morsel["domain"],
+                        max_age=morsel["max-age"],
+                        path=morsel["path"],
+                        secure=bool(morsel["secure"]),
+                        httponly=bool(morsel["httponly"]),
+                        samesite=morsel["samesite"] or None,
+                    )
+
+                return new_response
 
             if request.path.startswith(static_path) and isinstance(response, web.FileResponse):
                 try:
