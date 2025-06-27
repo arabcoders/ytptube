@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "77de10a1ad5733d057029498f647bbf75dc8e111",
-    "date": "2025-06-27T01:59:26+00:00",
+    "full_sha": "25b7aad6066904cd5aa9c92b2bd3b5f2ca450149",
+    "date": "2025-06-27T13:31:11+00:00",
     "commits": [
+      {
+        "sha": "25b7aad6",
+        "full_sha": "25b7aad6066904cd5aa9c92b2bd3b5f2ca450149",
+        "message": "Fix running in subpath again.",
+        "author": "arabcoders",
+        "date": "2025-06-27T13:31:11+00:00"
+      },
+      {
+        "sha": "312e3fdf",
+        "full_sha": "312e3fdf4b696127e5226aa61c1cc1b9fc44824c",
+        "message": "hardcode multidict to 6.5.1 to prevent a bug in aiohttp.",
+        "author": "arabcoders",
+        "date": "2025-06-27T13:30:56+00:00"
+      },
       {
         "sha": "3d11c63c",
         "full_sha": "3d11c63c0857087bce0a4596e4939b32114c1bd2",
