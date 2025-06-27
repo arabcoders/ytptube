@@ -35,6 +35,7 @@ from .Utils import (
     is_downloaded,
     load_cookies,
     str_to_dt,
+    ytdlp_reject,
 )
 from .YTDLPOpts import YTDLPOpts
 
@@ -203,7 +204,10 @@ class DownloadQueue(metaclass=Singleton):
             except Exception as e:
                 LOG.error(f"Failed to cancel downloads. {e!s}")
 
-    async def _process_playlist(self, entry: dict, item: Item, already=None):
+    async def _process_playlist(self, entry: dict, item: Item, already=None, yt_params: dict | None = None):
+        if not yt_params:
+            yt_params = {}
+
         entries = entry.get("entries", [])
 
         LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')}' Playlist.")
@@ -215,6 +219,11 @@ class DownloadQueue(metaclass=Singleton):
             await self.processors.acquire()
             try:
                 LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
+
+                _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
+                if not _status:
+                    LOG.debug(_msg)
+                    return {"status": "ok", "msg": _msg}
 
                 extras = {
                     "playlist": entry.get("title") or entry.get("id"),
@@ -424,7 +433,9 @@ class DownloadQueue(metaclass=Singleton):
             LOG.error(f"Failed to download item. '{e!s}'")
             return {"status": "error", "msg": str(e)}
 
-    async def _add_item(self, entry: dict, item: Item, already=None, logs: list | None = None):
+    async def _add_item(
+        self, entry: dict, item: Item, already=None, logs: list | None = None, yt_params: dict | None = None
+    ):
         """
         Add an entry to the download queue.
 
@@ -433,6 +444,7 @@ class DownloadQueue(metaclass=Singleton):
             item (Item): The item to add to the download queue.
             already (set): The set of already downloaded items.
             logs (list): The list of logs generated during information extraction.
+            yt_params (dict): The parameters for yt-dlp.
 
         Returns:
             dict: The status of the operation.
@@ -444,7 +456,7 @@ class DownloadQueue(metaclass=Singleton):
         event_type = entry.get("_type", "video")
 
         if event_type.startswith("playlist"):
-            return await self._process_playlist(entry=entry, item=item, already=already)
+            return await self._process_playlist(entry=entry, item=item, already=already, yt_params=yt_params)
 
         if event_type.startswith("url"):
             return await self.add(item=item.new_with(url=entry.get("url")), already=already)
@@ -556,6 +568,11 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.info(f"Condition '{condition.name}' matched for '{item.url}'.")
                 return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
+            _status, _msg = ytdlp_reject(entry=entry, yt_params=yt_conf)
+            if not _status:
+                LOG.debug(_msg)
+                return {"status": "ok", "msg": _msg}
+
             end_time = time.perf_counter() - started
             LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
         except yt_dlp.utils.ExistingVideoReached as exc:
@@ -578,7 +595,7 @@ class DownloadQueue(metaclass=Singleton):
                 except Exception as e:
                     LOG.error(f"Failed to remove cookie file '{yt_conf['cookiefile']}'. {e!s}")
 
-        return await self._add_item(entry=entry, item=item, already=already, logs=logs)
+        return await self._add_item(entry=entry, item=item, already=already, logs=logs, yt_params=yt_conf)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """
