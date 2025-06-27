@@ -17,7 +17,7 @@ from typing import TypeVar
 
 import yt_dlp
 from Crypto.Cipher import AES
-from yt_dlp.utils import match_str
+from yt_dlp.utils import age_restricted, match_str
 
 from .LogWrapper import LogWrapper
 
@@ -1325,3 +1325,50 @@ def str_to_dt(time_str: str, now=None) -> datetime:
         raise ValueError(msg)
 
     return dt
+
+
+def ytdlp_reject(entry: dict, yt_params: dict) -> tuple[bool, str]:
+    """
+    Implement yt-dlp reject filter logic.
+
+    Args:
+        entry (dict): The entry to check.
+        yt_params (dict): The yt-dlp parameters containing filters.
+
+    Returns:
+        tuple[bool, str]: A tuple where the first element is True if the entry passes the filters, or False if it does not,
+                          and the second element is a message explaining the reason for rejection or an empty string if it passes.
+
+    """
+    if title := entry.get("title"):
+        if (matchtitle := yt_params.get("matchtitle")) and not re.search(matchtitle, title, re.IGNORECASE):
+            return (False, f'"{title}" title did not match pattern "{matchtitle}". Skipping download.')
+
+        if (rejecttitle := yt_params.get("rejecttitle")) and re.search(rejecttitle, title, re.IGNORECASE):
+            return (False, f'"{title}" title matched reject pattern "{rejecttitle}". Skipping download.')
+
+    date = entry.get("upload_date")
+    date_range = yt_params.get("daterange")
+    if (date and date_range) and date not in date_range:
+        return (False, f"Upload date '{date}' is not in range '{date_range}'.")
+
+    view_count = entry.get("view_count")
+    if view_count is not None:
+        min_views = yt_params.get("min_views")
+        if min_views is not None and view_count < min_views:
+            return (
+                False,
+                f"Skipping {entry.get('title', 'video')}, because it has not reached minimum view count ({view_count}/{min_views}).",
+            )
+
+        max_views = yt_params.get("max_views")
+        if max_views is not None and view_count > max_views:
+            return (
+                False,
+                f"Skipping {entry.get('title', 'video')}, because it has exceeded maximum view count ({view_count}/{max_views}).",
+            )
+
+    if entry.get("age_limit") and age_restricted(entry.get("age_limit"), yt_params.get("age_limit")):
+        return (False, f'Video "{entry.get("title", "unknown")}" is age restricted.')
+
+    return (True, "")
