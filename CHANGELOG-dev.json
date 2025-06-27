@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250624-da8ecd27",
-        "date": "2025-06-24T19:07:33+00:00",
+        "tag": "dev-20250627-77de10a1",
+        "date": "2025-06-27T01:59:26+00:00",
         "commits": [
+            {
+                "sha": "3d11c63c",
+                "message": "Update yt-dlp to 2025.6.25",
+                "author": "ArabCoders",
+                "date": "2025-06-27T00:25:53+00:00",
+                "full_sha": "3d11c63c0857087bce0a4596e4939b32114c1bd2"
+            },
             {
                 "sha": "da8ecd27",
                 "message": "Added missing playlist_ keys",
@@ -340,7 +347,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "da8ecd2722934158417a57bf2ea571ca0898083a"
+        "full_sha": "77de10a1ad5733d057029498f647bbf75dc8e111"
     },
     {
         "tag": "dev-20250616-c07465a6",
