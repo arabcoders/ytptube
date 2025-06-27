@@ -33,6 +33,7 @@ dependencies = [
   "pycryptodome",
   "yt-dlp",
   "platformdirs",
+  "multidict==6.5.1",
   "dateparser>=1.2.1",
   "defusedxml>=0.7.1",
 ]
