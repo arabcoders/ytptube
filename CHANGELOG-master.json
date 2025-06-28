@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250627-3fe9188b",
-        "date": "2025-06-27T17:19:26+00:00",
+        "tag": "master-20250628-8e3e7dda",
+        "date": "2025-06-28T17:27:52+00:00",
         "commits": [
+            {
+                "sha": "ffefc3d9",
+                "message": "renamed presets and added optimized preset for mobile devices.",
+                "author": "arabcoders",
+                "date": "2025-06-28T17:15:29+00:00",
+                "full_sha": "ffefc3d9affc02362cb0b4d9828c245cc1bf4c6a"
+            },
+            {
+                "sha": "4f7da0b1",
+                "message": "support preset in yt-dlp/url/info endpoint.",
+                "author": "arabcoders",
+                "date": "2025-06-28T16:12:29+00:00",
+                "full_sha": "4f7da0b12521a32da710b5e5fcc3e3207c658fe1"
+            },
             {
                 "sha": "ebb72990",
                 "message": "Implements ytdlp filter logic to our own playlist processing.",
@@ -368,7 +382,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3fe9188b47d140970c82b16a5895f7073c73a0a7"
+        "full_sha": "8e3e7dda80b5a2e8b42c9cc6f24878ace0f6e856"
     },
     {
         "tag": "master-20250616-c07465a6",

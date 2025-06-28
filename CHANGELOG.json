@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (3fe9188b)",
-    "full_sha": "3fe9188b47d140970c82b16a5895f7073c73a0a7",
-    "date": "2025-06-27T17:19:26+00:00",
-    "commits": [
-      {
-        "sha": "ebb72990",
-        "full_sha": "ebb729905337fa26a2365682024b224e88d55531",
-        "message": "Implements ytdlp filter logic to our own playlist processing.",
-        "author": "arabcoders",
-        "date": "2025-06-27T17:12:32+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "ffefc3d9affc02362cb0b4d9828c245cc1bf4c6a",
-    "date": "2025-06-28T17:15:29+00:00",
+    "tag": "Unreleased (8e3e7dda)",
+    "full_sha": "8e3e7dda80b5a2e8b42c9cc6f24878ace0f6e856",
+    "date": "2025-06-28T17:27:52+00:00",
     "commits": [
       {
         "sha": "ffefc3d9",
@@ -31,6 +17,13 @@
         "message": "support preset in yt-dlp/url/info endpoint.",
         "author": "arabcoders",
         "date": "2025-06-28T16:12:29+00:00"
+      },
+      {
+        "sha": "ebb72990",
+        "full_sha": "ebb729905337fa26a2365682024b224e88d55531",
+        "message": "Implements ytdlp filter logic to our own playlist processing.",
+        "author": "arabcoders",
+        "date": "2025-06-27T17:12:32+00:00"
       }
     ]
   },
