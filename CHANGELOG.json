@@ -14,6 +14,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ffefc3d9affc02362cb0b4d9828c245cc1bf4c6a",
+    "date": "2025-06-28T17:15:29+00:00",
+    "commits": [
+      {
+        "sha": "ffefc3d9",
+        "full_sha": "ffefc3d9affc02362cb0b4d9828c245cc1bf4c6a",
+        "message": "renamed presets and added optimized preset for mobile devices.",
+        "author": "arabcoders",
+        "date": "2025-06-28T17:15:29+00:00"
+      },
+      {
+        "sha": "4f7da0b1",
+        "full_sha": "4f7da0b12521a32da710b5e5fcc3e3207c658fe1",
+        "message": "support preset in yt-dlp/url/info endpoint.",
+        "author": "arabcoders",
+        "date": "2025-06-28T16:12:29+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.1.5",
     "full_sha": "b5bb2a202caa5b3df71839e1f3bb9a8a855ed533",
     "date": "2025-06-27T13:36:27+00:00",
