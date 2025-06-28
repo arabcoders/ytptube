@@ -51,6 +51,11 @@ const props = defineProps({
     default: '',
     required: false,
   },
+  preset: {
+    type: String,
+    default: '',
+    required: false,
+  },
   useUrl: {
     type: Boolean,
     default: false,
@@ -73,7 +78,16 @@ const handle_event = (e: KeyboardEvent) => {
 onMounted(async () => {
   document.addEventListener('keydown', handle_event)
 
-  const url = props.useUrl ? props.link : '/api/yt-dlp/url/info?url=' + encodePath(props.link)
+  let url = props.useUrl ? props.link : '/api/yt-dlp/url/info';
+
+  if (!props.useUrl) {
+    let params = new URLSearchParams();
+    if (props.preset) {
+      params.append('preset', props.preset);
+    }
+    params.append('url', props.link);
+    url += '?' + params.toString();
+  }
 
   try {
     isLoading.value = true
