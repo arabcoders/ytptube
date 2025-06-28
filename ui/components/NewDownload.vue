@@ -172,11 +172,29 @@
                 </span>
               </div>
             </div>
-            <div class="column is-12">
-              <div class="field is-grouped is-justify-self-end">
+            <div class="column is-12 is-hidden-tablet">
+              <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                <NuxtLink class="dropdown-item" @click="emitter('getInfo', form.url, form.preset)">
+                  <span class="icon has-text-info"><i class="fa-solid fa-info" /></span>
+                  <span>yt-dlp Information</span>
+                </NuxtLink>
 
+                <NuxtLink class="dropdown-item" @click="removeFromArchive(form.url)">
+                  <span class="icon has-text-warning"><i class="fa-solid fa-box-archive" /></span>
+                  <span>Remove from archive</span>
+                </NuxtLink>
+
+                <hr class="dropdown-divider" />
+                <NuxtLink class="dropdown-item" @click="resetConfig">
+                  <span class="icon has-text-danger"><i class="fa-solid fa-rotate-left" /></span>
+                  <span>Reset local settings</span>
+                </NuxtLink>
+              </Dropdown>
+            </div>
+            <div class="column is-12">
+              <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
-                  <button type="button" class="button is-info" @click="emitter('getInfo', form.url)"
+                  <button type="button" class="button is-info" @click="emitter('getInfo', form.url, form.preset)"
                     :class="{ 'is-loading': !socket.isConnected }"
                     :disabled="!socket.isConnected || addInProgress || !form?.url">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -200,6 +218,7 @@
                     <span>Reset</span>
                   </button>
                 </div>
+
               </div>
             </div>
           </div>

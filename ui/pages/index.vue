@@ -60,14 +60,16 @@
       </div>
     </div>
 
-    <NewDownload v-if="config.showForm || config.app.basic_mode" @getInfo="url => get_info = url" :item="item_form"
+    <NewDownload v-if="config.showForm || config.app.basic_mode"
+      @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :item="item_form"
       @clear_form="item_form = {}" @remove_archive="" />
-    <Queue @getInfo="(url: string) => view_info(url, false)" :thumbnails="show_thumbnail" :query="query"
+    <Queue @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :thumbnails="show_thumbnail"
+      :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+    <History @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)"
+      @add_new="item => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
-    <History @getInfo="(url: string) => view_info(url, false)" @add_new="item => toNewDownload(item)" :query="query"
-      :thumbnails="show_thumbnail" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-      @clear_search="query = ''" />
-    <GetInfo v-if="get_info" :link="get_info" :useUrl="get_info_use_url" @closeModel="close_info()" />
+    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
+      @closeModel="close_info()" />
   </div>
 </template>
 
@@ -83,8 +85,11 @@ const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
 const display_style = useStorage<string>('display_style', 'cards')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
-const get_info = ref<string>('')
-const get_info_use_url = ref<boolean>(false)
+const info_view = ref({
+  url: '',
+  preset: '',
+  useUrl: false,
+}) as Ref<{ url: string, preset: string, useUrl: boolean }>
 const item_form = ref({})
 const query = ref()
 const toggleFilter = ref(false)
@@ -126,16 +131,18 @@ const pauseDownload = () => {
 }
 
 const close_info = () => {
-  get_info.value = ''
-  get_info_use_url.value = false
+  info_view.value.url = ''
+  info_view.value.preset = ''
+  info_view.value.useUrl = false
 }
 
-const view_info = (url: string, useUrl: boolean = false) => {
-  get_info.value = url
-  get_info_use_url.value = useUrl
+const view_info = (url: string, useUrl: boolean = false, preset: string = '') => {
+  info_view.value.url = url
+  info_view.value.useUrl = useUrl
+  info_view.value.preset = preset
 }
 
-watch(get_info, v => {
+watch(() => info_view.value.url, v => {
   if (!bg_enable.value) {
     return
   }

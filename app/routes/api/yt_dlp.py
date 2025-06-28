@@ -77,13 +77,14 @@ async def convert(request: Request) -> Response:
 
 
 @route("GET", "api/yt-dlp/url/info/", "get_info")
-async def get_info(request: Request, cache: Cache) -> Response:
+async def get_info(request: Request, cache: Cache, config: Config) -> Response:
     """
     Get the video info.
 
     Args:
         request (Request): The request object.
         cache (Cache): The cache instance.
+        config (Config): The config instance.
 
     Returns:
         Response: The response object
@@ -91,25 +92,27 @@ async def get_info(request: Request, cache: Cache) -> Response:
     """
     url: str | None = request.query.get("url")
     if not url:
-        return web.json_response(data={"error": "URL is required."}, status=web.HTTPBadRequest.status_code)
+        return web.json_response(
+            data={"status": False, "message": "URL is required.", "error": "URL is required."},
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         validate_url(url)
     except ValueError as e:
-        return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+        return web.json_response(
+            data={"status": False, "message": str(e), "error": str(e)},
+            status=web.HTTPBadRequest.status_code,
+        )
 
-    config = Config.get_instance()
-
-    preset = request.query.get("preset")
-    if preset:
-        exists: Preset | None = Presets.get_instance().get(preset)
-        if not exists:
-            return web.json_response(
-                data={"status": False, "message": f"Preset '{preset}' does not exist."},
-                status=web.HTTPBadRequest.status_code,
-            )
-    else:
-        preset: str = config.default_preset
+    preset: str = request.query.get("preset", config.default_preset)
+    exists: Preset | None = Presets.get_instance().get(preset)
+    if not exists:
+        msg: str = f"Preset '{preset}' does not exist."
+        return web.json_response(
+            data={"status": False, "message": msg, "error": msg},
+            status=web.HTTPBadRequest.status_code,
+        )
 
     try:
         key: str = cache.hash(f"{preset}:{url}")
@@ -118,6 +121,7 @@ async def get_info(request: Request, cache: Cache) -> Response:
             data: Any | None = cache.get(key)
             data["_cached"] = {
                 "status": "hit",
+                "preset": preset,
                 "key": key,
                 "ttl": data.get("_cached", {}).get("ttl", 300),
                 "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
@@ -130,7 +134,7 @@ async def get_info(request: Request, cache: Cache) -> Response:
         if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
             opts["proxy"] = ytdlp_proxy
 
-        ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
+        ytdlp_opts: dict = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
 
         data = extract_info(
             config=ytdlp_opts,
@@ -153,6 +157,7 @@ async def get_info(request: Request, cache: Cache) -> Response:
 
         data["_cached"] = {
             "status": "miss",
+            "preset": preset,
             "key": key,
             "ttl": 300,
             "ttl_left": 300,

@@ -188,7 +188,7 @@
                           </NuxtLink>
                           <hr class="dropdown-divider" />
                         </template>
-                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)">
+                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>yt-dlp Information</span>
                         </NuxtLink>
@@ -357,7 +357,8 @@
                     <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                    v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
                   </NuxtLink>

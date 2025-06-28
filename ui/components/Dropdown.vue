@@ -1,7 +1,7 @@
 <template>
   <div class="dropdown" :class="{ 'is-active': isOpen, 'drop-up': dropUp }" ref="dropdown">
     <div class="dropdown-trigger">
-      <button class="button is-fullwidth is-justify-content-space-between" aria-haspopup="true"
+      <button class="button is-fullwidth is-justify-content-space-between" aria-haspopup="true" type="button"
         aria-controls="dropdown-menu" @click="toggle" :class="button_classes">
         <span class="icon" v-if="icons"><i :class="icons" /></span>
         <span>{{ label }}</span>

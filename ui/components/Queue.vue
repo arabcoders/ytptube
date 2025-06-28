@@ -120,18 +120,19 @@
                       <span>Cancel Item</span>
                     </NuxtLink>
 
-                    <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
+                    <template v-if="!config.app.basic_mode">
+                      <hr class="dropdown-divider" />
 
-                    <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
-                      <span class="icon"><i class="fa-solid fa-info" /></span>
-                      <span>yt-dlp Information</span>
-                    </NuxtLink>
+                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
+                        <span class="icon"><i class="fa-solid fa-info" /></span>
+                        <span>yt-dlp Information</span>
+                      </NuxtLink>
 
-                    <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
-                      v-if="!config.app.basic_mode">
-                      <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                      <span>Local Information</span>
-                    </NuxtLink>
+                      <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                        <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                        <span>Local Information</span>
+                      </NuxtLink>
+                    </template>
                   </Dropdown>
                 </td>
               </tr>
@@ -227,10 +228,11 @@
                       <span class="icon"><i class="fa-solid fa-play" /></span>
                       <span>Play video</span>
                     </NuxtLink>
-                    <hr class="dropdown-divider" />
+                    <hr class="dropdown-divider" v-if="!config.app.basic_mode"/>
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url)" v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                    v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
                   </NuxtLink>
