@@ -134,7 +134,16 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
             opts["proxy"] = ytdlp_proxy
 
-        ytdlp_opts: dict = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
+        logs: list = []
+
+        ytdlp_opts: dict = {
+            "callback": {
+                "func": lambda _, msg: logs.append(msg),
+                "level": logging.WARNING,
+                "name": "callback-logger",
+            },
+            **YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all(),
+        }
 
         data = extract_info(
             config=ytdlp_opts,
@@ -145,7 +154,17 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             sanitize_info=True,
         )
 
-        if "formats" in data:
+        if not data or not isinstance(data, dict):
+            return web.json_response(
+                data={
+                    "status": False,
+                    "error": f"Failed to extract video info. {'. '.join(logs)}",
+                    "message": "Failed to extract video info.",
+                },
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        if data and "formats" in data:
             from yt_dlp.cookies import LenientSimpleCookie
 
             for index, item in enumerate(data["formats"]):
