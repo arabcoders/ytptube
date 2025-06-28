@@ -76,16 +76,16 @@
                 <span>Opts</span>
               </button>
             </div>
-          </div>
-          <div class="column is-12" v-if="get_preset(form.preset)?.description">
-            <div class="is-overflow-auto" style="max-height: 150px;">
-              <div class="is-ellipsis is-clickable" @click="expand_description">
-                <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}
+            <div class="column is-12" v-if="!hasFormatInConfig && get_preset(form.preset)?.description">
+              <div class="is-overflow-auto" style="max-height: 150px;">
+                <div class="is-ellipsis is-clickable" @click="expand_description">
+                  <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}
+                </div>
               </div>
             </div>
           </div>
-          <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
 
+          <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field">
                 <label class="label is-inline is-unselectable">
@@ -382,10 +382,26 @@ const convertOptions = async args => {
   return null;
 }
 
+onUpdated(async () => {
+  await nextTick()
+
+  if ('' === form.value?.preset) {
+    form.value.preset = config.app.default_preset
+  }
+
+  if (form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
+    form.value.preset = config.app.default_preset
+  }
+})
+
 onMounted(async () => {
   await nextTick()
 
   if ('' === form.value?.preset) {
+    form.value.preset = config.app.default_preset
+  }
+
+  if (form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
     form.value.preset = config.app.default_preset
   }
 
@@ -418,7 +434,6 @@ const hasFormatInConfig = computed(() => {
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 const get_preset = name => config.presets.find(item => item.name === name)
 const expand_description = e => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
-
 
 const removeFromArchive = async url => {
   try {
