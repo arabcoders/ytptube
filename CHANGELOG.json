@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (8e3e7dda)",
-    "full_sha": "8e3e7dda80b5a2e8b42c9cc6f24878ace0f6e856",
-    "date": "2025-06-28T17:27:52+00:00",
+    "tag": "v0.1.6",
+    "full_sha": "6c44c587c7d401f1510991eaab415805235d8f96",
+    "date": "2025-06-28T19:25:15+00:00",
     "commits": [
+      {
+        "sha": "d0ae46ba",
+        "full_sha": "d0ae46ba6d9e65e15773c49899230f26eadce9ff",
+        "message": "sometimes yt-dlp info extract doesn't return formats.",
+        "author": "arabcoders",
+        "date": "2025-06-28T18:37:33+00:00"
+      },
       {
         "sha": "ffefc3d9",
         "full_sha": "ffefc3d9affc02362cb0b4d9828c245cc1bf4c6a",
@@ -24,20 +31,6 @@
         "message": "Implements ytdlp filter logic to our own playlist processing.",
         "author": "arabcoders",
         "date": "2025-06-27T17:12:32+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "d0ae46ba6d9e65e15773c49899230f26eadce9ff",
-    "date": "2025-06-28T18:37:33+00:00",
-    "commits": [
-      {
-        "sha": "d0ae46ba",
-        "full_sha": "d0ae46ba6d9e65e15773c49899230f26eadce9ff",
-        "message": "sometimes yt-dlp info extract doesn't return formats.",
-        "author": "arabcoders",
-        "date": "2025-06-28T18:37:33+00:00"
       }
     ]
   },
