@@ -28,6 +28,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "d0ae46ba6d9e65e15773c49899230f26eadce9ff",
+    "date": "2025-06-28T18:37:33+00:00",
+    "commits": [
+      {
+        "sha": "d0ae46ba",
+        "full_sha": "d0ae46ba6d9e65e15773c49899230f26eadce9ff",
+        "message": "sometimes yt-dlp info extract doesn't return formats.",
+        "author": "arabcoders",
+        "date": "2025-06-28T18:37:33+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.1.5",
     "full_sha": "b5bb2a202caa5b3df71839e1f3bb9a8a855ed533",
     "date": "2025-06-27T13:36:27+00:00",
