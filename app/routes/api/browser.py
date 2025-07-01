@@ -175,7 +175,7 @@ async def path_action(request: Request, config: Config) -> Response:
 
     if not config.browser_control_enabled:
         return web.json_response(
-            data={"error": "File browser controls is disabled."}, status=web.HTTPForbidden.status_code
+            data={"error": "File browser actions is disabled."}, status=web.HTTPForbidden.status_code
         )
 
     rootPath: Path = Path(config.download_path)
