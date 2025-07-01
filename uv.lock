@@ -1370,11 +1370,11 @@ wheels = [
 
 [[package]]
 name = "yt-dlp"
-version = "2025.6.25"
+version = "2025.6.30"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/88/77/5e86a5345fe1cf5bad022a1b7323c9934c6a867e886fdc0cae44de8a0589/yt_dlp-2025.6.25.tar.gz", hash = "sha256:242b648e1a18ab04bdd4cc175a317fe8ec3ad7d0175eee9f981912624b3d6c8b", size = 3036249 }
+sdist = { url = "https://files.pythonhosted.org/packages/23/9c/ff64c2fed7909f43a9a0aedb7395c65404e71c2439198764685a6e3b3059/yt_dlp-2025.6.30.tar.gz", hash = "sha256:6d0ae855c0a55bfcc28dffba804ec8525b9b955d34a41191a1561a4cec03d8bd", size = 3034364 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/fc/cb3be70e9dd354d6f6ecb2200011a1d05a3a9c219e1adacfd5de77440d79/yt_dlp-2025.6.25-py3-none-any.whl", hash = "sha256:1eb31c9a47d56c7433be23a6ae084c640bd4e14961ad43076927ef05280871ea", size = 3282762 },
+    { url = "https://files.pythonhosted.org/packages/14/41/2f048ae3f6d0fa2e59223f08ba5049dbcdac628b0a9f9deac722dd9260a5/yt_dlp-2025.6.30-py3-none-any.whl", hash = "sha256:541becc29ed7b7b3a08751c0a66da4b7f8ee95cb81066221c78e83598bc3d1f3", size = 3279333 },
 ]
 
 [[package]]
