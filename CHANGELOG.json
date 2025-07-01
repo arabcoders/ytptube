@@ -1,5 +1,40 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b70cd473e79c2cbd7ef88506df6c71044b083de2",
+    "date": "2025-07-01T15:07:31+00:00",
+    "commits": [
+      {
+        "sha": "b70cd473",
+        "full_sha": "b70cd473e79c2cbd7ef88506df6c71044b083de2",
+        "message": "error message update",
+        "author": "arabcoders",
+        "date": "2025-07-01T15:07:31+00:00"
+      },
+      {
+        "sha": "31aa15ef",
+        "full_sha": "31aa15efbae7407c43cc93e859be16bb011d41ec",
+        "message": "Added file browser actions",
+        "author": "arabcoders",
+        "date": "2025-07-01T15:06:45+00:00"
+      },
+      {
+        "sha": "1d6f8104",
+        "full_sha": "1d6f8104539c17b6d2bc78cb2309c2d4f8b291d7",
+        "message": "updated frontend packages",
+        "author": "arabcoders",
+        "date": "2025-07-01T15:05:16+00:00"
+      },
+      {
+        "sha": "8db8e86b",
+        "full_sha": "8db8e86b14934b7790ffcd330f3b1f69727f68bb",
+        "message": "updated yt-dlp to 2025.06.30",
+        "author": "arabcoders",
+        "date": "2025-07-01T15:05:01+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.1.6",
     "full_sha": "6c44c587c7d401f1510991eaab415805235d8f96",
     "date": "2025-06-28T19:25:15+00:00",
