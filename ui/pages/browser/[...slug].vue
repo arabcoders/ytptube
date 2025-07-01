@@ -33,6 +33,13 @@
             </div>
 
             <p class="control">
+              <button class="button is-info is-light" @click="createDirectory(path)"
+                :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading"
+                v-tooltip.bottom="'Create new directory'" v-if="config.app.browser_control_enabled">
+                <span class="icon"><i class="fas fa-folder-plus" /></span>
+              </button>
+            </p>
+            <p class="control">
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading">
                 <span class="icon"><i class="fas fa-refresh" /></span>
@@ -48,12 +55,12 @@
 
     <div class="columns is-multiline">
       <div class="column is-12" v-if="items && items.length > 0">
-        <div class="table-container is-responsive">
+        <div :class="{ 'table-container': table_container }">
           <table class="table is-striped is-hoverable is-fullwidth is-bordered"
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
               <tr class="has-text-centered is-unselectable">
-                <th width="5%" @click="changeSort('type')">
+                <th width="6%" @click="changeSort('type')">
                   #
                   <span class="icon" v-if="'type' === sort_by">
                     <i class="fas"
@@ -82,6 +89,9 @@
                     <i class="fas"
                       :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
                   </span>
+                </th>
+                <th width="15%" v-if="config.app.browser_control_enabled">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -112,13 +122,45 @@
                     </div>
                   </div>
                 </td>
-                <td class="has-text-centered is-text-overflow is-unselectable">
+                <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
                   {{ 'file' === item.type ? formatBytes(item.size) : ucFirst(item.type) }}
                 </td>
-                <td class="has-text-centered is-text-overflow is-unselectable">
+                <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
                   <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('MMMM Do YYYY, h:mm:ss a')">
                     {{ moment(item.mtime).fromNow() }}
                   </span>
+                </td>
+                <td class="is-vcentered" v-if="config.app.browser_control_enabled">
+                  <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
+                    <template v-if="'file' === item.type">
+                      <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                        :download="item.name.split('/').reverse()[0]" class="dropdown-item">
+                        <span class="icon"><i class="fa-solid fa-download" /></span>
+                        <span>Download</span>
+                      </a>
+                      <hr class="dropdown-divider" />
+                    </template>
+
+                    <NuxtLink class="dropdown-item" @click="handleAction('rename', item)">
+                      <span class="icon"><i class="fa-solid fa-edit" /></span>
+                      <span>Rename</span>
+                    </NuxtLink>
+
+                    <hr class="dropdown-divider" />
+
+                    <NuxtLink class="dropdown-item" @click="handleAction('delete', item)">
+                      <span class="icon has-text-danger"><i class="fa-solid fa-trash" /></span>
+                      <span>Delete</span>
+                    </NuxtLink>
+
+                    <hr class="dropdown-divider" />
+
+                    <NuxtLink class="dropdown-item" @click="handleAction('move', item)">
+                      <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
+                      <span>Move</span>
+                    </NuxtLink>
+
+                  </Dropdown>
                 </td>
               </tr>
             </tbody>
@@ -160,17 +202,16 @@ const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 
+const bg_enable = useStorage('random_bg', true)
+const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const sort_by = useStorage('sort_by', 'name')
+const sort_order = useStorage('sort_order', 'asc')
+
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const items = ref([])
 const path = ref(`/${route.params.slug?.length > 0 ? route.params.slug?.join('/') : ''}`)
-
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
-
-const sort_by = useStorage('sort_by', 'name')
-const sort_order = useStorage('sort_order', 'asc')
-
+const table_container = ref(false)
 const search = ref('')
 const show_filter = ref(false)
 
@@ -219,7 +260,6 @@ const sortedItems = items => {
 
   return items
 }
-
 
 const model_item = ref()
 const closeModel = () => model_item.value = null
@@ -297,7 +337,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
       dir = '/'
     }
 
-    dir = sTrim(dir, '/')
+    dir = encodePath(sTrim(dir, '/'))
 
     const response = await request(`/api/file/browser/${sTrim(dir, '/')}`)
 
@@ -328,7 +368,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
       history.pushState({ path: dir, title: title }, title, stateUrl)
     }
 
-    useHead({ title: title })
+    useHead({ title: decodeURIComponent(title) })
   } catch (e) {
     if (fromMounted) {
       return
@@ -441,6 +481,121 @@ const toggleFilter = () => {
   }
 
   awaitElement('#search', e => e.focus())
+}
+
+const createDirectory = async (dir) => {
+  if (!config.app.browser_control_enabled) {
+    return
+  }
+
+  const newDir = prompt('Enter new directory name:', '')
+  if (!newDir) {
+    return
+  }
+
+  let new_dir = sTrim(newDir, '/')
+  if (!new_dir || new_dir === dir) {
+    return
+  }
+
+  await actionRequest({ path: dir }, 'directory', { new_dir: new_dir }, (item, action, data) => {
+    reloadContent(path.value, true)
+    toast.success(`Successfully created '${new_dir}'.`)
+  })
+}
+
+const handleAction = async (action, item) => {
+  if (!config.app.browser_control_enabled) {
+    return
+  }
+
+  if ('rename' === action) {
+    const newName = prompt('Enter new name for the item:', item.name)
+    if (!newName) {
+      return
+    }
+
+    let new_name = newName.trim()
+    if (!new_name || new_name === item.name) {
+      return
+    }
+
+    await actionRequest(item, 'rename', { new_name: new_name }, (item, action, data) => {
+      item.name = data.new_name
+      item.path = item.path.replace(/[^/]+$/, data.new_name)
+      toast.success(`Renamed '${item.name}'.`)
+    })
+    return
+  }
+
+  if ('delete' === action) {
+    const msg = item.is_dir ? `Delete '${item.name}' and all its contents?` : `Delete file '${item.name}'?`
+    if (false === confirm(msg)) {
+      return
+    }
+
+    await actionRequest(item, 'delete', {}, (item, action, data) => {
+      items.value = items.value.filter(i => i.path !== item.path)
+      toast.warning(`Deleted '${item.name}'.`)
+    })
+
+    return
+  }
+
+  if ('move' === action) {
+    const newPath = prompt('Enter new path:', item.path.replace(/[^/]+$/, ''))
+    if (!newPath) {
+      return
+    }
+
+    let new_path = sTrim(newPath, '/')
+    if (!new_path || new_path === item.path) {
+      return
+    }
+
+    await actionRequest(item, 'move', { new_path: new_path }, (item, action, data) => {
+      items.value = items.value.filter(i => i.path !== item.path)
+      toast.success(`Moved '${item.name}' to '${data.new_path}'.`)
+    })
+
+    return
+  }
+}
+
+const actionRequest = async (item, action, data, cb) => {
+  if (!config.app.browser_control_enabled) {
+    return
+  }
+
+  if (!item || !action || !data) {
+    return
+  }
+
+  try {
+    const response = await request(`/api/file/action/${encodePath(item.path)}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        path: item.path,
+        action: action,
+        ...data
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      toast.error(`Failed to perform action: ${error.error || 'Unknown error'}`)
+      return
+    }
+
+    if (cb && typeof cb === 'function') {
+      cb(item, action, data)
+    }
+
+    return response
+  } catch (error) {
+    console.error(error)
+    toast.error(`Failed to perform action: ${error.message}`)
+  }
 }
 
 </script>
