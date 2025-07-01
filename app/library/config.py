@@ -157,6 +157,9 @@ class Config:
     browser_enabled: bool = False
     "Enable file browser access."
 
+    browser_control_enabled: bool = False
+    "Enable file browser control access."
+
     ytdlp_auto_update: bool = True
     """Enable in-place auto update of yt-dlp package."""
 
@@ -227,6 +230,7 @@ class Config:
         "file_logging",
         "console_enabled",
         "browser_enabled",
+        "browser_control_enabled",
         "ytdlp_auto_update",
         "prevent_premiere_live",
     )
@@ -246,6 +250,7 @@ class Config:
         "sentry_dsn",
         "console_enabled",
         "browser_enabled",
+        "browser_control_enabled",
         "ytdlp_cli",
         "file_logging",
         "base_path",

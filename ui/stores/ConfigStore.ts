@@ -18,6 +18,7 @@ export const useConfigStore = defineStore('config', () => {
       sentry_dsn: null,
       console_enabled: false,
       browser_enabled: false,
+      browser_control_enabled: false,
       ytdlp_cli: '',
       file_logging: false,
       is_native: false,

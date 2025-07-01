@@ -26,6 +26,8 @@ type AppConfig = {
   console_enabled: boolean
   /** Indicates if the file browser is enabled */
   browser_enabled: boolean
+  /** Indicates if the file browser control is enabled */
+  browser_control_enabled: boolean
   /** Command options for yt-dlp */
   ytdlp_cli: string
   /** Indicates if file logging is enabled */

@@ -307,11 +307,12 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`                     |
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                            |
 | YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                            |
-| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use.                    | `empty string`                     |
+| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`                     |
 | YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                            |
+| YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                            |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
-| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer.                   | `15 */1 * * *`                     |
-| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time.         | `1`                                |
+| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |
+| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                                |
 
