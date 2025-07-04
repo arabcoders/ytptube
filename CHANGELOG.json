@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a5812a7d61a198711481f04ee82c2c12db4efd2d",
+    "date": "2025-07-04T16:18:40+00:00",
+    "commits": [
+      {
+        "sha": "a5812a7d",
+        "full_sha": "a5812a7d61a198711481f04ee82c2c12db4efd2d",
+        "message": "Download selected as archive when downloading multiple files. Implements #321, Update #310",
+        "author": "arabcoders",
+        "date": "2025-07-04T16:18:40+00:00"
+      },
+      {
+        "sha": "27476a39",
+        "full_sha": "27476a39eb37ce56ef5d8be9f163d0f6d702aa08",
+        "message": "wait until config is loaded to check for default preset. Fix #320",
+        "author": "arabcoders",
+        "date": "2025-07-04T16:17:04+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.0",
     "full_sha": "26455b62bf6cce5f7350ef5794927f6e9eb5aa00",
     "date": "2025-07-01T15:14:33+00:00",
