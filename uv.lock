@@ -1408,6 +1408,7 @@ dependencies = [
     { name = "regex" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "yt-dlp" },
+    { name = "zipstream-ng" },
 ]
 
 [package.optional-dependencies]
@@ -1450,5 +1451,15 @@ requires-dist = [
     { name = "regex" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "yt-dlp" },
+    { name = "zipstream-ng", specifier = ">=1.8.0" },
 ]
 provides-extras = ["webview"]
+
+[[package]]
+name = "zipstream-ng"
+version = "1.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/16/5d9224baf640214255c34a0a0e9528c8403d2b89e2ba7df9d7cada58beb1/zipstream_ng-1.8.0.tar.gz", hash = "sha256:b7129d2c15d26934b3e1cb22256593b6bdbd03c553c26f4199a5bf05110642bc", size = 35887 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/81/11ecdfd5370d6c383f0188a6f2fa2842499e1be617e678d1845f972c6821/zipstream_ng-1.8.0-py3-none-any.whl", hash = "sha256:e7196cb845cf924ed12e7a3b38404ef9e82a5a699801295f5f4cf601449e2bf6", size = 23082 },
+]

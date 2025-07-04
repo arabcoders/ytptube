@@ -389,7 +389,7 @@ onUpdated(async () => {
     form.value.preset = config.app.default_preset
   }
 
-  if (form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
+  if (config.isLoaded() && form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
     form.value.preset = config.app.default_preset
   }
 })
@@ -401,7 +401,7 @@ onMounted(async () => {
     form.value.preset = config.app.default_preset
   }
 
-  if (form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
+  if (config.isLoaded() && form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
     form.value.preset = config.app.default_preset
   }
 

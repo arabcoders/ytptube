@@ -1,10 +1,13 @@
+import asyncio
 import logging
 from pathlib import Path
+from typing import Any
 from urllib.parse import unquote_plus
 
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.ffprobe import ffprobe
@@ -309,3 +312,88 @@ async def path_action(request: Request, config: Config) -> Response:
             )
 
     return web.Response(status=web.HTTPOk.status_code)
+
+
+@route("POST", "api/file/download", "browser.download.prepare")
+async def prepare_zip_file(request: Request, config: Config, cache: Cache):
+    json = await request.json()
+    if not json or not isinstance(json, list):
+        return web.json_response({"error": "Invalid parameters."}, status=400)
+
+    files: list[str] = []
+    for f in json:
+        if not isinstance(f, str):
+            continue
+        ref, status = get_file(download_path=config.download_path, file=f)
+        if status == web.HTTPNotFound.status_code:
+            continue
+        files.append(ref)
+
+        sc: list[dict] = get_file_sidecar(ref)
+        if sc:
+            for side in sc:
+                for scf in sc[side]:
+                    if isinstance(scf, dict) and "file" in scf:
+                        files.append(scf["file"])  # noqa: PERF401
+
+    if not files:
+        return web.json_response({"error": "No valid files."}, status=400)
+
+    import uuid
+
+    token = str(uuid.uuid4())
+
+    cache.set(f"download:{token}", files, ttl=600)
+
+    return web.json_response(
+        data={"token": token, "files": [str(f.relative_to(config.download_path)) for f in files]},
+        status=web.HTTPOk.status_code,
+    )
+
+
+@route("GET", "api/file/download/{token}", "browser.download.stream")
+async def stream_zip_download(request: Request, config: Config, cache: Cache) -> Response | web.StreamResponse:
+    token: str | None = request.match_info.get("token")
+    if not token:
+        return web.json_response({"error": "Download token is required."}, status=web.HTTPBadRequest.status_code)
+
+    files: Any | None = cache.get(f"download:{token}")
+
+    if not files or not isinstance(files, list):
+        return web.json_response({"error": "Invalid or expired download token."}, status=web.HTTPBadRequest.status_code)
+
+    files: list[Path] = [p for p in files if p.is_file() and p.exists()]
+
+    if len(files) < 1:
+        return web.json_response({"error": "No valid files."}, status=web.HTTPBadRequest.status_code)
+
+    from zipstream import ZipStream
+
+    rootPath = Path(config.download_path).resolve()
+    zs = ZipStream()
+    for file in files:
+        zs.add_path(str(file), str(file.relative_to(rootPath)))
+
+    response = web.StreamResponse(
+        status=200,
+        headers={
+            "Content-Type": "application/zip",
+            "Content-Disposition": f'attachment; filename="{token}.zip"',
+        },
+    )
+    await response.prepare(request)
+
+    try:
+        LOG.info(f"Streaming zip download for token: '{token}', files: {len(files)}")
+        for chunk in zs:
+            if request.transport is None or request.transport.is_closing():
+                LOG.info("Client disconnected, aborting zip download.")
+                break
+            await response.write(chunk)
+        await response.write_eof()
+    except asyncio.CancelledError:
+        LOG.info("Download cancelled by client.")
+    except Exception as e:
+        LOG.error(f"Streaming zip download error. {type(e).__name__}: {e}")
+    finally:
+        return response  # noqa: B012
