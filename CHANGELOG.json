@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "3219517555391967ec5fdde684459345f54e7744",
+    "date": "2025-07-04T16:50:12+00:00",
+    "commits": [
+      {
+        "sha": "32195175",
+        "full_sha": "3219517555391967ec5fdde684459345f54e7744",
+        "message": "do not show merge commits when updating github release.",
+        "author": "arabcoders",
+        "date": "2025-07-04T16:50:12+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.1",
     "full_sha": "b3bd02afc8d4aa5fb99aa87a70bac29e4f5b53ec",
     "date": "2025-07-04T16:23:33+00:00",
