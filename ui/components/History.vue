@@ -4,7 +4,10 @@
       <span class="icon">
         <i :class="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>History <span v-if="hasItems">({{ stateStore.count('history') }})</span></span>
+      <span>
+        History <span v-if="hasItems">({{ stateStore.count('history') }})</span>
+        <span v-if="selectedElms.length > 0">&nbsp;- Selected: {{ selectedElms.length }}</span>
+      </span>
     </span>
   </h1>
 
@@ -22,16 +25,19 @@
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="hasDownloaded && hasSelected">
-        <button type="button" class="button is-fullwidth is-link" @click="downloadSelected">
+      <div class="column is-half-mobile">
+        <button type="button" class="button is-fullwidth is-link" @click="downloadSelected"
+          :disabled="!hasDownloaded || !hasSelected"
+          v-tooltip="!hasSelected || !hasDownloaded ? '' : 'Download items as zip'">
           <span class="icon-text is-block">
-            <span class="icon"><i class="fa-solid fa-download" /></span>
+            <span class="icon"><i class="fa-solid fa-compress-alt" /></span>
             <span>Download</span>
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="hasSelected">
-        <button type="button" class="button is-fullwidth is-danger" @click="deleteSelectedItems">
+      <div class="column is-half-mobile">
+        <button type="button" class="button is-fullwidth is-danger" @click="deleteSelectedItems"
+          :disabled="!hasSelected">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
             <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
@@ -829,33 +835,49 @@ watch(embed_url, v => {
   document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
-const downloadSelected = () => {
+const downloadSelected = async () => {
   if (selectedElms.value.length < 1) {
     toast.error('No items selected.')
     return
   }
 
-  const body = document.querySelector('body')
-
+  let files_list = []
   for (const key in selectedElms.value) {
     const item = stateStore.history[selectedElms.value[key]]
-    if ('finished' !== item.status) {
-      continue;
+    if ('finished' !== item.status || !item.filename) {
+      continue
     }
 
+    files_list.push(item.folder ? item.folder + '/' + item.filename : item.filename)
+  }
+
+  try {
+    const response = await request('/api/file/download', {
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify(files_list),
+    });
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      toast.error(json.error || 'Failed to start download.');
+      return
+    }
+
+    const token = json.token
+
+    const body = document.querySelector('body')
     const link = document.createElement('a');
-    link.href = makeDownload(config, item);
-
-    let name = item?.filename
-
-    if (name) {
-      link.setAttribute('download', name.split('/').reverse()[0]);
-    }
-
-    link.setAttribute('target', '_self');
+    link.href = uri(`/api/file/download/${token}`);
+    link.setAttribute('target', '_blank');
     body.appendChild(link);
     link.click();
     body.removeChild(link);
+  } catch (e) {
+    console.error(e);
+    toast.error(`Error: ${e.message}`);
+    return;
   }
 }
 

@@ -36,6 +36,7 @@ dependencies = [
   "multidict==6.5.1",
   "dateparser>=1.2.1",
   "defusedxml>=0.7.1",
+  "zipstream-ng>=1.8.0",
 ]
 
 [tool.ruff]

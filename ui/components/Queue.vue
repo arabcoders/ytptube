@@ -4,7 +4,9 @@
       <span class="icon">
         <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
-      <span>Queue <span v-if="hasQueuedItems">({{ filteredItems.length }})</span></span>
+      <span>Queue <span v-if="hasQueuedItems">({{ filteredItems.length }})</span>
+        <span v-if="selectedElms.length > 0">&nbsp;- Selected: {{ selectedElms.length }}</span>
+      </span>
     </span>
   </h1>
 
@@ -22,13 +24,9 @@
         </button>
       </div>
       <div class="column is-half-mobile" v-if="('cards' === display_style || hasSelected)">
-        <button type="button" class="button is-fullwidth is-danger" :disabled="!hasSelected" @click="cancelSelected">
-          <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fa-solid fa-trash-can" />
-            </span>
-            <span>Cancel Selected</span>
-          </span>
+        <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
+          <span class="icon"><i class="fa-solid fa-eject" /></span>
+          <span>Cancel</span>
         </button>
       </div>
     </div>
@@ -228,7 +226,7 @@
                       <span class="icon"><i class="fa-solid fa-play" /></span>
                       <span>Play video</span>
                     </NuxtLink>
-                    <hr class="dropdown-divider" v-if="!config.app.basic_mode"/>
+                    <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
                   </template>
 
                   <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
