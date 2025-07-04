@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250701-26455b62",
-        "date": "2025-07-01T15:14:33+00:00",
+        "tag": "master-20250704-b3bd02af",
+        "date": "2025-07-04T16:23:33+00:00",
         "commits": [
+            {
+                "sha": "a5812a7d",
+                "message": "Download selected as archive when downloading multiple files. Implements #321, Update #310",
+                "author": "arabcoders",
+                "date": "2025-07-04T16:18:40+00:00",
+                "full_sha": "a5812a7d61a198711481f04ee82c2c12db4efd2d"
+            },
+            {
+                "sha": "27476a39",
+                "message": "wait until config is loaded to check for default preset. Fix #320",
+                "author": "arabcoders",
+                "date": "2025-07-04T16:17:04+00:00",
+                "full_sha": "27476a39eb37ce56ef5d8be9f163d0f6d702aa08"
+            },
             {
                 "sha": "b70cd473",
                 "message": "error message update",
@@ -417,7 +431,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "26455b62bf6cce5f7350ef5794927f6e9eb5aa00"
+        "full_sha": "b3bd02afc8d4aa5fb99aa87a70bac29e4f5b53ec"
     },
     {
         "tag": "master-20250616-c07465a6",
