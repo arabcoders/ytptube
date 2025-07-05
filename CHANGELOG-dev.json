@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250704-32195175",
-        "date": "2025-07-04T16:50:12+00:00",
+        "tag": "dev-20250705-4849301c",
+        "date": "2025-07-05T14:54:01+00:00",
         "commits": [
+            {
+                "sha": "4849301c",
+                "message": "fix incorrect test display.",
+                "author": "arabcoders",
+                "date": "2025-07-05T14:54:01+00:00",
+                "full_sha": "4849301c5ac216a3d3aec81d6296120b83dd93d7"
+            },
             {
                 "sha": "32195175",
                 "message": "do not show merge commits when updating github release.",
@@ -438,7 +445,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3219517555391967ec5fdde684459345f54e7744"
+        "full_sha": "4849301c5ac216a3d3aec81d6296120b83dd93d7"
     },
     {
         "tag": "dev-20250616-c07465a6",
