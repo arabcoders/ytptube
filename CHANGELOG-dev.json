@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250705-24de1fc6",
-        "date": "2025-07-05T16:06:24+00:00",
+        "tag": "dev-20250705-4d194fec",
+        "date": "2025-07-05T17:14:44+00:00",
         "commits": [
+            {
+                "sha": "4d194fec",
+                "message": "update app.spec to include all uv packages.",
+                "author": "arabcoders",
+                "date": "2025-07-05T17:14:44+00:00",
+                "full_sha": "4d194fec00f7a35dbecad55b54299d6724fc7c64"
+            },
             {
                 "sha": "24de1fc6",
                 "message": "more changes for native builds",
@@ -473,7 +480,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "24de1fc6d50a98817306714121a5b5ae44284559"
+        "full_sha": "4d194fec00f7a35dbecad55b54299d6724fc7c64"
     },
     {
         "tag": "dev-20250616-c07465a6",

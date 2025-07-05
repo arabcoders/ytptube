@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "24de1fc6d50a98817306714121a5b5ae44284559",
-    "date": "2025-07-05T16:06:24+00:00",
+    "full_sha": "4d194fec00f7a35dbecad55b54299d6724fc7c64",
+    "date": "2025-07-05T17:14:44+00:00",
     "commits": [
+      {
+        "sha": "4d194fec",
+        "full_sha": "4d194fec00f7a35dbecad55b54299d6724fc7c64",
+        "message": "update app.spec to include all uv packages.",
+        "author": "arabcoders",
+        "date": "2025-07-05T17:14:44+00:00"
+      },
       {
         "sha": "24de1fc6",
         "full_sha": "24de1fc6d50a98817306714121a5b5ae44284559",
