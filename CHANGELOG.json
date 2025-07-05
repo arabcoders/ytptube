@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a448fc43ae07e1518b0a8b1d929b3a71e5bd820e",
-    "date": "2025-07-05T15:15:37+00:00",
+    "full_sha": "eb440dff36c90c9112fe1ce03dc522e801ff256b",
+    "date": "2025-07-05T15:32:14+00:00",
     "commits": [
+      {
+        "sha": "eb440dff",
+        "full_sha": "eb440dff36c90c9112fe1ce03dc522e801ff256b",
+        "message": "minor fixes for running on windows.",
+        "author": "arabcoders",
+        "date": "2025-07-05T15:32:14+00:00"
+      },
       {
         "sha": "a448fc43",
         "full_sha": "a448fc43ae07e1518b0a8b1d929b3a71e5bd820e",
