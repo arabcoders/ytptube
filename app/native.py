@@ -16,6 +16,8 @@ import queue
 import socket
 import threading
 
+import platformdirs
+
 ready = threading.Event()
 exception_holder = queue.Queue()
 
@@ -24,13 +26,14 @@ APP_NAME = "YTPTube"
 try:
     import webview  # type: ignore
 except ImportError as e:
-    msg = "Please run 'pipenv install pywebview[qt]' package to run YTPTube in native mode."
+    if "nt" == os.name:
+        msg = "Please run 'uv pip install pywebview[edgechromium]' package to run YTPTube in native mode."
+    else:
+        msg = "Please run 'uv pip install pywebview[qt]' package to run YTPTube in native mode."
     raise ImportError(msg) from e
 
 
 def set_env():
-    import platformdirs
-
     dct = {}
 
     if not os.getenv("YTP_CONFIG_PATH"):
