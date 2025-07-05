@@ -25,7 +25,7 @@ with open("./uv.lock", "rb") as f:
     lock = tomllib.load(f)
 
 hidden = [
-    *lock.get("dependencies", {}).keys(),
+    *{pkg["name"] for pkg in lock.get("package", [])},
     "aiohttp",
     "socketio",
     "engineio",
@@ -63,5 +63,6 @@ exe = EXE(  # type: ignore # noqa: F821
     strip=False,
     upx=True,
     console=False,
+    icon="ui/public/favicon.ico",
     onefile=True,
 )
