@@ -42,7 +42,6 @@ a = Analysis(  # noqa: F821 # type: ignore
     datas=[
         ("ui/exported", "ui/exported"),
         ("app/migrations", "migrations"),
-        ("app/library/presets.json", "library"),
     ],
     hiddenimports=hidden,
     hookspath=[],
