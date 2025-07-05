@@ -76,7 +76,8 @@
                 <span>Opts</span>
               </button>
             </div>
-            <div class="column is-12" v-if="!hasFormatInConfig && get_preset(form.preset)?.description">
+            <div class="column is-12"
+              v-if="!config.app.basic_mode && !hasFormatInConfig && get_preset(form.preset)?.description">
               <div class="is-overflow-auto" style="max-height: 150px;">
                 <div class="is-ellipsis is-clickable" @click="expand_description">
                   <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}

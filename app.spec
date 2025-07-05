@@ -31,6 +31,7 @@ hidden = [
     "engineio",
     "engineio.async_drivers.aiohttp",
     "socketio.async_drivers.aiohttp",
+    "app"
 ]
 
 hidden = [f.replace("-", "_") for f in hidden]
@@ -41,7 +42,7 @@ a = Analysis(  # noqa: F821 # type: ignore
     binaries=binaries,
     datas=[
         ("ui/exported", "ui/exported"),
-        ("app/migrations", "migrations"),
+        ("app/", "app/"),
     ],
     hiddenimports=hidden,
     hookspath=[],
@@ -62,7 +63,7 @@ exe = EXE(  # type: ignore # noqa: F821
     debug=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True, # Turn on to True if you want a console window for debugging.
     icon="ui/public/favicon.ico",
     onefile=True,
 )
