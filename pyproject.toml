@@ -159,6 +159,7 @@ ignore = [
   "ERA001",
   "S101",
   "LOG015",
+  "PLC0415",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

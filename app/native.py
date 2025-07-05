@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
+import io
+import os
 import sys
+
+os.environ["PYTHONUTF8"] = "1"
+
+if "utf-8" != sys.stdout.encoding.lower():
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
+
 from pathlib import Path
 
 APP_ROOT = str((Path(__file__).parent / "..").resolve())
@@ -8,7 +17,6 @@ if APP_ROOT not in sys.path:
 
 
 import json
-import os
 import queue
 import socket
 import threading
