@@ -63,7 +63,7 @@ exe = EXE(  # type: ignore # noqa: F821
     debug=False,
     strip=False,
     upx=True,
-    console=True, # Turn on to True if you want a console window for debugging.
+    console=False, # Turn on to True if you want a console window for debugging.
     icon="ui/public/favicon.ico",
     onefile=True,
 )
