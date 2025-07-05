@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e36552e3369f4b1ce8bf8d975ca8826dd8a1c4e5",
-    "date": "2025-07-05T18:03:48+00:00",
+    "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11",
+    "date": "2025-07-05T21:09:18+00:00",
     "commits": [
+      {
+        "sha": "8674b7ca",
+        "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11",
+        "message": "turn off console for prod builds",
+        "author": "arabcoders",
+        "date": "2025-07-05T21:09:18+00:00"
+      },
+      {
+        "sha": "ef2094f1",
+        "full_sha": "ef2094f140adb96a60ec04ddc608b569e356bf5d",
+        "message": "finalize changes for native apps.",
+        "author": "arabcoders",
+        "date": "2025-07-05T21:08:53+00:00"
+      },
       {
         "sha": "e36552e3",
         "full_sha": "e36552e3369f4b1ce8bf8d975ca8826dd8a1c4e5",

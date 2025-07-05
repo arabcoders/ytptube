@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250705-e36552e3",
-        "date": "2025-07-05T18:03:48+00:00",
+        "tag": "dev-20250706-8674b7ca",
+        "date": "2025-07-05T21:09:18+00:00",
         "commits": [
+            {
+                "sha": "8674b7ca",
+                "message": "turn off console for prod builds",
+                "author": "arabcoders",
+                "date": "2025-07-05T21:09:18+00:00",
+                "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11"
+            },
+            {
+                "sha": "ef2094f1",
+                "message": "finalize changes for native apps.",
+                "author": "arabcoders",
+                "date": "2025-07-05T21:08:53+00:00",
+                "full_sha": "ef2094f140adb96a60ec04ddc608b569e356bf5d"
+            },
             {
                 "sha": "e36552e3",
                 "message": "wip",
@@ -487,7 +501,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "e36552e3369f4b1ce8bf8d975ca8826dd8a1c4e5"
+        "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11"
     },
     {
         "tag": "dev-20250616-c07465a6",
