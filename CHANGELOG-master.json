@@ -1,8 +1,92 @@
 [
     {
-        "tag": "master-20250704-b3bd02af",
-        "date": "2025-07-04T16:23:33+00:00",
+        "tag": "master-20250706-6607a233",
+        "date": "2025-07-06T16:26:47+00:00",
         "commits": [
+            {
+                "sha": "9ef8f470",
+                "message": "add notice about webview wrappers",
+                "author": "arabcoders",
+                "date": "2025-07-06T16:23:43+00:00",
+                "full_sha": "9ef8f4707110027b9d19a643f3d033d7668b76fb"
+            },
+            {
+                "sha": "860fb818",
+                "message": "support running in linux qt webview",
+                "author": "arabcoders",
+                "date": "2025-07-06T14:34:10+00:00",
+                "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0"
+            },
+            {
+                "sha": "8674b7ca",
+                "message": "turn off console for prod builds",
+                "author": "arabcoders",
+                "date": "2025-07-05T21:09:18+00:00",
+                "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11"
+            },
+            {
+                "sha": "ef2094f1",
+                "message": "finalize changes for native apps.",
+                "author": "arabcoders",
+                "date": "2025-07-05T21:08:53+00:00",
+                "full_sha": "ef2094f140adb96a60ec04ddc608b569e356bf5d"
+            },
+            {
+                "sha": "e36552e3",
+                "message": "wip",
+                "author": "arabcoders",
+                "date": "2025-07-05T18:03:48+00:00",
+                "full_sha": "e36552e3369f4b1ce8bf8d975ca8826dd8a1c4e5"
+            },
+            {
+                "sha": "4d194fec",
+                "message": "update app.spec to include all uv packages.",
+                "author": "arabcoders",
+                "date": "2025-07-05T17:14:44+00:00",
+                "full_sha": "4d194fec00f7a35dbecad55b54299d6724fc7c64"
+            },
+            {
+                "sha": "24de1fc6",
+                "message": "more changes for native builds",
+                "author": "arabcoders",
+                "date": "2025-07-05T16:06:24+00:00",
+                "full_sha": "24de1fc6d50a98817306714121a5b5ae44284559"
+            },
+            {
+                "sha": "f8bbcc41",
+                "message": "removed no longer used file for native build",
+                "author": "arabcoders",
+                "date": "2025-07-05T15:56:56+00:00",
+                "full_sha": "f8bbcc418165f9ff50b9d4b910364a80c131b232"
+            },
+            {
+                "sha": "eb440dff",
+                "message": "minor fixes for running on windows.",
+                "author": "arabcoders",
+                "date": "2025-07-05T15:32:14+00:00",
+                "full_sha": "eb440dff36c90c9112fe1ce03dc522e801ff256b"
+            },
+            {
+                "sha": "a448fc43",
+                "message": "cast file to string for mimetype",
+                "author": "arabcoders",
+                "date": "2025-07-05T15:15:37+00:00",
+                "full_sha": "a448fc43ae07e1518b0a8b1d929b3a71e5bd820e"
+            },
+            {
+                "sha": "4849301c",
+                "message": "fix incorrect test display.",
+                "author": "arabcoders",
+                "date": "2025-07-05T14:54:01+00:00",
+                "full_sha": "4849301c5ac216a3d3aec81d6296120b83dd93d7"
+            },
+            {
+                "sha": "32195175",
+                "message": "do not show merge commits when updating github release.",
+                "author": "arabcoders",
+                "date": "2025-07-04T16:50:12+00:00",
+                "full_sha": "3219517555391967ec5fdde684459345f54e7744"
+            },
             {
                 "sha": "a5812a7d",
                 "message": "Download selected as archive when downloading multiple files. Implements #321, Update #310",
@@ -431,7 +515,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b3bd02afc8d4aa5fb99aa87a70bac29e4f5b53ec"
+        "full_sha": "6607a233c06d515a284325801e0dcd1d5f21e8ba"
     },
     {
         "tag": "master-20250616-c07465a6",
