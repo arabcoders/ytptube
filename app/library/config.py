@@ -539,7 +539,7 @@ class Config:
         try:
             import subprocess
 
-            branch_result = subprocess.run(  # noqa: S603
+            branch_result = subprocess.run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
                 cwd=os.path.dirname(git_path),
                 capture_output=True,
@@ -556,7 +556,7 @@ class Config:
                 logging.warning("Git branch name is empty.")
                 return
 
-            commit_result = subprocess.run(  # noqa: S603
+            commit_result = subprocess.run(
                 ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
                 cwd=os.path.dirname(git_path),
                 capture_output=True,

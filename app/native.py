@@ -1,77 +1,120 @@
 #!/usr/bin/env python3
+import asyncio
+import json
+import logging
+import os
+import queue
+import socket
 import sys
+import threading
+import traceback
 from pathlib import Path
 
+import platformdirs
+
+sys.path.insert(0, os.path.join(getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__))), "app"))
+
+APP_NAME = "YTPTube"
 APP_ROOT = str((Path(__file__).parent / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
-
-import json
-import os
-import queue
-import socket
-import threading
-
-ready = threading.Event()
-exception_holder = queue.Queue()
-
-APP_NAME = "YTPTube"
-
 try:
     import webview  # type: ignore
+
+    if "linux" in sys.platform:
+        os.environ.setdefault("LC_ALL", "C.UTF-8")
+        os.environ.setdefault("LANG", "C.UTF-8")
+        import webview.platforms.qt  # type: ignore
+
+        # monkey patch the download handler for pywebview to support qt6.
+        def on_download_requested(self, download):
+            from qtpy import QtCore  # type: ignore
+            from qtpy.QtWidgets import QFileDialog  # type: ignore
+
+            old_path = download.url().path()
+            suffix = QtCore.QFileInfo(old_path).suffix()
+            filename, _ = QFileDialog.getSaveFileName(
+                self, self.localization["global.saveFile"], old_path, "*." + suffix
+            )
+            if filename:
+                if hasattr(download, "setPath"):
+                    download.setPath(filename)
+                else:
+                    download.setDownloadDirectory(os.path.dirname(filename))
+                    download.setDownloadFileName(os.path.basename(filename))
+                    download.accept()
+            else:
+                download.cancel()
+
+        webview.platforms.qt.BrowserView.on_download_requested = on_download_requested
+
 except ImportError as e:
-    msg = "Please run 'pipenv install pywebview[qt]' package to run YTPTube in native mode."
+    pkgs = "pywebview[edgechromium]" if os.name == "nt" else "pywebview[qt]"
+    msg: str = f"Please run 'uv pip install {pkgs}' to run YTPTube in native mode."
     raise ImportError(msg) from e
 
 
+def error_window(exc: Exception | str) -> None:
+    trace: str = "\n".join(traceback.format_exception(exc)) if isinstance(exc, Exception) else exc
+    webview.create_window(
+        f"{APP_NAME} - Error",
+        html=f"<h1 style='color:red;'>An error occurred</h1><pre>{trace}</pre>",
+        width=600,
+        height=400,
+        resizable=True,
+    )
+    webview.start(
+        gui="edgechromium" if os.name == "nt" else "qt",
+        debug=False,
+        storage_path=str(Path(os.getenv("YTP_TEMP_PATH", os.getcwd())) / "webview"),
+        private_mode=False,
+    )
+    sys.exit(1)
+
+
 def set_env():
-    import platformdirs
+    defaults = {
+        "YTP_CONFIG_PATH": lambda: platformdirs.user_config_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True),
+        "YTP_TEMP_PATH": lambda: platformdirs.user_cache_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True),
+        "YTP_DOWNLOAD_PATH": lambda: platformdirs.user_downloads_dir(),
+        "YTP_ACCESS_LOG": "false",
+        "YTP_BROWSER_ENABLED": "true",
+        "YTP_BROWSER_CONTROL_ENABLED": "true",
+    }
 
-    dct = {}
+    for key, value in defaults.items():
+        if os.getenv(key) is not None:
+            continue
 
-    if not os.getenv("YTP_CONFIG_PATH"):
-        dct["YTP_CONFIG_PATH"] = platformdirs.user_config_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
-
-    if not os.getenv("YTP_TEMP_PATH"):
-        dct["YTP_TEMP_PATH"] = platformdirs.user_cache_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
-
-    if not os.getenv("YTP_DOWNLOAD_PATH"):
-        dct["YTP_DOWNLOAD_PATH"] = platformdirs.user_downloads_dir()
-
-    if os.getenv("YTP_ACCESS_LOG", None) is None:
-        dct["YTP_ACCESS_LOG"] = "false"
-
-    if dct:
-        os.environ.update(dct)
+        os.environ[key] = value() if callable(value) else value
 
 
-def app_start(host: str, port: int) -> None:
-    import asyncio
-
-    from main import Main
-
+def run_backend(host: str, port: int, ready_event: threading.Event, error_queue: queue.Queue):
     try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-    try:
-        Main(is_native=True).start(host, port, cb=lambda: ready.set())
+        from app.main import Main
+
+        Main(is_native=True).start(host, port, cb=lambda: ready_event.set())
     except Exception as e:
-        exception_holder.put(e)
-        ready.set()
+        logging.exception(e)
+        error_queue.put(e)
+        ready_event.set()
 
 
-if __name__ == "__main__":
+def main():
     host = "127.0.0.1"
     set_env()
 
     cfg_path: Path = Path(os.getenv("YTP_CONFIG_PATH")) / "webview.json"
-
     port = None
     win_conf: dict[str, int] = {}
+
     if cfg_path.exists():
         data = json.loads(cfg_path.read_text())
         port = data.get("port")
@@ -85,18 +128,21 @@ if __name__ == "__main__":
             port = s.getsockname()[1]
         cfg_path.write_text(json.dumps({"port": port}))
 
-    threading.Thread(target=app_start, args=(host, port), daemon=True).start()
+    ready = threading.Event()
+    errors: queue.Queue = queue.Queue()
+    threading.Thread(target=run_backend, args=(host, port, ready, errors), daemon=False).start()
 
-    ready.wait()
+    ready.wait(timeout=5)
 
-    if not exception_holder.empty():
-        raise exception_holder.get()
+    if not errors.empty():
+        error_window(errors.get())
+        return
 
+    from app.library.version import APP_VERSION
+
+    gui = "edgechromium" if os.name == "nt" else "qt"
     create_kwargs = {**win_conf, "resizable": True}
-
-    webview.settings["ALLOW_DOWNLOADS"] = True
-    webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False
-    window = webview.create_window(APP_NAME, f"http://{host}:{port}", **create_kwargs)
+    window = webview.create_window(f"{APP_NAME} - {APP_VERSION}", f"http://{host}:{port}", **create_kwargs)
 
     def save_geometry():
         cfg = {
@@ -110,13 +156,22 @@ if __name__ == "__main__":
 
     window.events.resized += lambda *_: save_geometry()
     window.events.moved += lambda *_: save_geometry()
+    window.events.closing += lambda *_: os._exit(0)
 
-    gui = os.getenv("YTP_WV_GUI", None)
-    gui = "edgechromium" if os.name == "nt" else "qt"
-
+    webview.settings["ALLOW_DOWNLOADS"] = True
+    webview.settings["OPEN_DEVTOOLS_IN_DEBUG"] = False
     webview.start(
         gui=gui,
         debug=True,
         storage_path=str(Path(os.getenv("YTP_TEMP_PATH", os.getcwd())) / "webview"),
         private_mode=False,
     )
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        logging.exception(e)
+        error_window(e)
+        os._exit(1)

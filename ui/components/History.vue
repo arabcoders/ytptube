@@ -173,7 +173,7 @@
                     </div>
                     <div class="control">
                       <button class="button is-danger is-fullwidth is-small" @click="removeItem(item)"
-                        v-tooltip="'Remove video'">
+                        v-tooltip="config.app.remove_files ? 'Remove video' : 'Clear video'">
                         <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                       </button>
                     </div>
@@ -340,7 +340,7 @@
                 <a class="button is-danger is-fullwidth" @click="removeItem(item)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-                    <span>Remove</span>
+                    <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
                   </span>
                 </a>
               </div>

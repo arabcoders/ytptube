@@ -94,8 +94,7 @@ def calc_download_path(base_path: str | Path, folder: str | None = None, create_
     if not folder:
         return str(base_path)
 
-    if folder.startswith("/"):
-        folder = folder[1:]
+    folder = folder.removeprefix("/")
 
     realBasePath = base_path.resolve()
     download_path = Path(realBasePath).joinpath(folder).resolve(strict=False)
@@ -179,8 +178,7 @@ def extract_info(
         else:
             log_wrapper.add_target(target=params["callback"], level=logging.ERROR, name="callback")
 
-    if "callback" in params:
-        del params["callback"]
+        params.pop("callback", None)
 
     if log_wrapper.has_targets():
         if "logger" in params:

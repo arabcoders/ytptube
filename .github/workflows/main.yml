@@ -210,15 +210,17 @@ jobs:
               return;
             }
 
-            const { data: commits } = await github.rest.repos.compareCommits({
+            const { data: comparison } = await github.rest.repos.compareCommits({
               owner: context.repo.owner,
               repo: context.repo.repo,
               base: latestRelease.data[1]?.tag_name || '', // fallback to second latest tag
               head: tag,
             });
 
+            const commits = comparison.commits.filter(c => 1 === c.parents.length);
+
             const changelog = commits.commits.map(
-              c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]} by ${c.commit.author.name}`
+              c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]} by @${c.commit.author.name}`
             ).join('\n');
 
             if (!changelog) {
