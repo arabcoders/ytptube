@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "8081eb60d43310310789fc947685a05a83b63c9f",
+    "date": "2025-07-06T16:39:49+00:00",
+    "commits": [
+      {
+        "sha": "8081eb60",
+        "full_sha": "8081eb60d43310310789fc947685a05a83b63c9f",
+        "message": "fix release updater",
+        "author": "arabcoders",
+        "date": "2025-07-06T16:39:49+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.2",
     "full_sha": "6607a233c06d515a284325801e0dcd1d5f21e8ba",
     "date": "2025-07-06T16:26:47+00:00",
