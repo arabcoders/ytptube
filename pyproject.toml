@@ -160,6 +160,7 @@ ignore = [
   "S101",
   "LOG015",
   "PLC0415",
+  "S603",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

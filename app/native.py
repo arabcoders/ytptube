@@ -21,6 +21,34 @@ if APP_ROOT not in sys.path:
 
 try:
     import webview  # type: ignore
+
+    if "linux" in sys.platform:
+        os.environ.setdefault("LC_ALL", "C.UTF-8")
+        os.environ.setdefault("LANG", "C.UTF-8")
+        import webview.platforms.qt  # type: ignore
+
+        # monkey patch the download handler for pywebview to support qt6.
+        def on_download_requested(self, download):
+            from qtpy import QtCore  # type: ignore
+            from qtpy.QtWidgets import QFileDialog  # type: ignore
+
+            old_path = download.url().path()
+            suffix = QtCore.QFileInfo(old_path).suffix()
+            filename, _ = QFileDialog.getSaveFileName(
+                self, self.localization["global.saveFile"], old_path, "*." + suffix
+            )
+            if filename:
+                if hasattr(download, "setPath"):
+                    download.setPath(filename)
+                else:
+                    download.setDownloadDirectory(os.path.dirname(filename))
+                    download.setDownloadFileName(os.path.basename(filename))
+                    download.accept()
+            else:
+                download.cancel()
+
+        webview.platforms.qt.BrowserView.on_download_requested = on_download_requested
+
 except ImportError as e:
     pkgs = "pywebview[edgechromium]" if os.name == "nt" else "pywebview[qt]"
     msg: str = f"Please run 'uv pip install {pkgs}' to run YTPTube in native mode."
@@ -46,22 +74,20 @@ def error_window(exc: Exception | str) -> None:
 
 
 def set_env():
-    dct = {}
+    defaults = {
+        "YTP_CONFIG_PATH": lambda: platformdirs.user_config_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True),
+        "YTP_TEMP_PATH": lambda: platformdirs.user_cache_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True),
+        "YTP_DOWNLOAD_PATH": lambda: platformdirs.user_downloads_dir(),
+        "YTP_ACCESS_LOG": "false",
+        "YTP_BROWSER_ENABLED": "true",
+        "YTP_BROWSER_CONTROL_ENABLED": "true",
+    }
 
-    if not os.getenv("YTP_CONFIG_PATH"):
-        dct["YTP_CONFIG_PATH"] = platformdirs.user_config_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
+    for key, value in defaults.items():
+        if os.getenv(key) is not None:
+            continue
 
-    if not os.getenv("YTP_TEMP_PATH"):
-        dct["YTP_TEMP_PATH"] = platformdirs.user_cache_dir(APP_NAME.lower(), "arabcoders", ensure_exists=True)
-
-    if not os.getenv("YTP_DOWNLOAD_PATH"):
-        dct["YTP_DOWNLOAD_PATH"] = platformdirs.user_downloads_dir()
-
-    if os.getenv("YTP_ACCESS_LOG", None) is None:
-        dct["YTP_ACCESS_LOG"] = "false"
-
-    if dct:
-        os.environ.update(dct)
+        os.environ[key] = value() if callable(value) else value
 
 
 def run_backend(host: str, port: int, ready_event: threading.Event, error_queue: queue.Queue):
