@@ -6,6 +6,9 @@ on:
       tag:
         required: true
         description: "Ref to build from (e.g. v1.0.0)"
+  push:
+    tags:
+      - "v*"
 
 env:
   PYTHON_VERSION: 3.11
@@ -101,7 +104,7 @@ jobs:
           path: dist/*
 
       - name: Upload to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.event.inputs.tag, 'v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
