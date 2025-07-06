@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250706-8081eb60",
-        "date": "2025-07-06T16:39:49+00:00",
+        "tag": "dev-20250706-9536e025",
+        "date": "2025-07-06T16:52:49+00:00",
         "commits": [
+            {
+                "sha": "9536e025",
+                "message": "correctly upload artifacts",
+                "author": "arabcoders",
+                "date": "2025-07-06T16:52:49+00:00",
+                "full_sha": "9536e025aa35b582243d4daf976b7e0e39190923"
+            },
             {
                 "sha": "8081eb60",
                 "message": "fix release updater",
@@ -522,7 +529,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8081eb60d43310310789fc947685a05a83b63c9f"
+        "full_sha": "9536e025aa35b582243d4daf976b7e0e39190923"
     },
     {
         "tag": "dev-20250616-c07465a6",
