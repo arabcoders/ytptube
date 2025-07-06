@@ -1,0 +1,110 @@
+name: Build WebView wrappers
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        required: true
+        description: "Ref to build from (e.g. v1.0.0)"
+
+env:
+  PYTHON_VERSION: 3.11
+  PNPM_VERSION: 10
+  NODE_VERSION: 20
+
+jobs:
+  build:
+    permissions:
+      packages: write
+      contents: write
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Cache Chocolatey packages
+        if: matrix.os == 'windows-latest'
+        uses: actions/cache@v4
+        with:
+          path: C:\ProgramData\chocolatey\lib
+          key: choco-${{ runner.os }}-qt6
+          restore-keys: |
+            choco-${{ runner.os }}-
+
+      - name: Install Qt (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install -y qt6-base-dev
+
+      - name: Cache Python venv
+        id: cache-python
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          architecture: "x64"
+
+      - name: Install Python dependencies
+        run: |
+          pip install uv
+          uv venv --system-site-packages --relocatable
+          uv sync --link-mode=copy --active
+
+      - name: Install PyInstaller + Qt backend (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          uv pip install pyinstaller pywebview QtPy PySide6
+
+      - name: Install PyInstaller + Qt backend (Other OSs)
+        if: matrix.os != 'windows-latest'
+        run: |
+          uv pip install pyinstaller pywebview[qt]
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: "ui/pnpm-lock.yaml"
+
+      - name: Build frontend
+        working-directory: ui
+        run: |
+          pnpm install --production --prefer-offline --frozen-lockfile
+          pnpm run generate
+
+      - name: Build native binary
+        run: |
+          uv run pyinstaller ./app.spec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ matrix.os }}-${{ github.event.inputs.tag }}
+          path: dist/*
+
+      - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -32,6 +32,13 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Apply `yt-dlp` options per custom defined conditions.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 
+### Side project
+
+We have a side project related to YTPTube, which takes YTPTube source code and build an executable for Windows, macOS and Linux.
+The project is in early stages, and might not even work yet. However keep an eye at [This build action](https://github.com/arabcoders/ytptube/actions/workflows/native-build.yml) for builds, simply select last successful build and download the executable for your platform. Help us test out the platforms
+and report any issues you might find. We only have windows/linux machines to test on, so we need your help to test it out on macOS.
+
+
 # Installation
 
 ## Run using docker command
