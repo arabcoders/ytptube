@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250706-eb3ac026",
-        "date": "2025-07-06T16:40:18+00:00",
+        "tag": "master-20250706-27e70b6d",
+        "date": "2025-07-06T17:07:31+00:00",
         "commits": [
+            {
+                "sha": "354a7b3e",
+                "message": "followup fix for webview builds",
+                "author": "arabcoders",
+                "date": "2025-07-06T17:03:31+00:00",
+                "full_sha": "354a7b3ed04b5c226fdb5faa0b618da4bd669884"
+            },
+            {
+                "sha": "9536e025",
+                "message": "correctly upload artifacts",
+                "author": "arabcoders",
+                "date": "2025-07-06T16:52:49+00:00",
+                "full_sha": "9536e025aa35b582243d4daf976b7e0e39190923"
+            },
             {
                 "sha": "8081eb60",
                 "message": "fix release updater",
@@ -522,7 +536,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "eb3ac026baf8e59f32adea64373b792e6d50086d"
+        "full_sha": "27e70b6df8bee38ae91c645774244955511f5e68"
     },
     {
         "tag": "master-20250616-c07465a6",
