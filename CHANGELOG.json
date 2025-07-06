@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11",
-    "date": "2025-07-05T21:09:18+00:00",
+    "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0",
+    "date": "2025-07-06T14:34:10+00:00",
     "commits": [
+      {
+        "sha": "860fb818",
+        "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0",
+        "message": "support running in linux qt webview",
+        "author": "arabcoders",
+        "date": "2025-07-06T14:34:10+00:00"
+      },
       {
         "sha": "8674b7ca",
         "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11",

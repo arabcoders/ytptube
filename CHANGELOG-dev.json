@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250706-8674b7ca",
-        "date": "2025-07-05T21:09:18+00:00",
+        "tag": "dev-20250706-860fb818",
+        "date": "2025-07-06T14:34:10+00:00",
         "commits": [
+            {
+                "sha": "860fb818",
+                "message": "support running in linux qt webview",
+                "author": "arabcoders",
+                "date": "2025-07-06T14:34:10+00:00",
+                "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0"
+            },
             {
                 "sha": "8674b7ca",
                 "message": "turn off console for prod builds",
@@ -501,7 +508,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8674b7caafe4588d8b93fd0e43ea337f94523b11"
+        "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0"
     },
     {
         "tag": "dev-20250616-c07465a6",
