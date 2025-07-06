@@ -10,26 +10,28 @@ on:
     tags:
       - "v*"
 
-env:
-  PYTHON_VERSION: 3.11
-  PNPM_VERSION: 10
-  NODE_VERSION: 20
-
 jobs:
   build:
-    permissions:
-      packages: write
-      contents: write
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+
+    permissions:
+      packages: write
+      contents: write
+
+    env:
+      PYTHON_VERSION: 3.11
+      PNPM_VERSION: 10
+      NODE_VERSION: 20
+      TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
 
     steps:
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ env.TAG_NAME }}
 
       - name: Cache Chocolatey packages
         if: matrix.os == 'windows-latest'
@@ -100,14 +102,14 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ matrix.os }}-${{ github.event.inputs.tag }}
+          name: app-${{ matrix.os }}-${{ env.TAG_NAME }}
           path: dist/*
 
       - name: Upload to GitHub Release
-        if: startsWith(github.event.inputs.tag, 'v')
+        if: startsWith(env.TAG_NAME, 'v')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag }}
+          tag_name: ${{ env.TAG_NAME }}
           files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
