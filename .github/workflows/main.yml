@@ -219,7 +219,7 @@ jobs:
 
             const commits = comparison.commits.filter(c => 1 === c.parents.length);
 
-            const changelog = commits.commits.map(
+            const changelog = commits.map(
               c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]} by @${c.commit.author.name}`
             ).join('\n');
 
