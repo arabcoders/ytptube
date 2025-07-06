@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250706-6607a233",
-        "date": "2025-07-06T16:26:47+00:00",
+        "tag": "master-20250706-eb3ac026",
+        "date": "2025-07-06T16:40:18+00:00",
         "commits": [
+            {
+                "sha": "8081eb60",
+                "message": "fix release updater",
+                "author": "arabcoders",
+                "date": "2025-07-06T16:39:49+00:00",
+                "full_sha": "8081eb60d43310310789fc947685a05a83b63c9f"
+            },
             {
                 "sha": "9ef8f470",
                 "message": "add notice about webview wrappers",
@@ -515,7 +522,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6607a233c06d515a284325801e0dcd1d5f21e8ba"
+        "full_sha": "eb3ac026baf8e59f32adea64373b792e6d50086d"
     },
     {
         "tag": "master-20250616-c07465a6",
