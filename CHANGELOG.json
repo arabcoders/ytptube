@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "9536e025aa35b582243d4daf976b7e0e39190923",
-    "date": "2025-07-06T16:52:49+00:00",
+    "full_sha": "354a7b3ed04b5c226fdb5faa0b618da4bd669884",
+    "date": "2025-07-06T17:03:31+00:00",
     "commits": [
+      {
+        "sha": "354a7b3e",
+        "full_sha": "354a7b3ed04b5c226fdb5faa0b618da4bd669884",
+        "message": "followup fix for webview builds",
+        "author": "arabcoders",
+        "date": "2025-07-06T17:03:31+00:00"
+      },
       {
         "sha": "9536e025",
         "full_sha": "9536e025aa35b582243d4daf976b7e0e39190923",
