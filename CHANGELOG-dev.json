@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250706-860fb818",
-        "date": "2025-07-06T14:34:10+00:00",
+        "tag": "dev-20250706-9ef8f470",
+        "date": "2025-07-06T16:23:43+00:00",
         "commits": [
+            {
+                "sha": "9ef8f470",
+                "message": "add notice about webview wrappers",
+                "author": "arabcoders",
+                "date": "2025-07-06T16:23:43+00:00",
+                "full_sha": "9ef8f4707110027b9d19a643f3d033d7668b76fb"
+            },
             {
                 "sha": "860fb818",
                 "message": "support running in linux qt webview",
@@ -508,7 +515,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "860fb8181e6211741f9f77b70d490e2d194a29b0"
+        "full_sha": "9ef8f4707110027b9d19a643f3d033d7668b76fb"
     },
     {
         "tag": "dev-20250616-c07465a6",
