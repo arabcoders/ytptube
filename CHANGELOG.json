@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (a324ed8f)",
-    "full_sha": "a324ed8ffdbf4bdd68a9a4c5e944cf97ab6c5d04",
-    "date": "2025-07-07T13:28:43+00:00",
+    "tag": "Unreleased (034ff25e)",
+    "full_sha": "034ff25e764ba822ccbf2268887d299ea4d90435",
+    "date": "2025-07-07T13:39:36+00:00",
     "commits": [
+      {
+        "sha": "7a557027",
+        "full_sha": "7a557027be2cf366bf3552a8e88cca07b49e102c",
+        "message": "split windows and nix oses packaging.",
+        "author": "arabcoders",
+        "date": "2025-07-07T13:39:05+00:00"
+      },
       {
         "sha": "2c473614",
         "full_sha": "2c473614e2e6afc260f22652b4597d09f0b0315f",
