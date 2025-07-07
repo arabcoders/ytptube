@@ -7,6 +7,7 @@ import functools
 import json
 import operator
 import os
+import subprocess
 from pathlib import Path
 
 import anyio
@@ -267,7 +268,13 @@ async def ffprobe(file: str) -> FFProbeResult:
     """
     try:
         async with await anyio.open_file(os.devnull, "w") as tempf:
-            await asyncio.create_subprocess_exec("ffprobe", "-h", stdout=tempf, stderr=tempf)
+            await asyncio.create_subprocess_exec(
+                "ffprobe",
+                "-h",
+                stdout=tempf,
+                stderr=tempf,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
     except FileNotFoundError as e:
         msg = "ffprobe not found."
         raise OSError(msg) from e
@@ -283,6 +290,7 @@ async def ffprobe(file: str) -> FFProbeResult:
         *args,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
     )
 
     exitCode = await p.wait()

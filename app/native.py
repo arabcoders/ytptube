@@ -107,26 +107,33 @@ def run_backend(host: str, port: int, ready_event: threading.Event, error_queue:
         ready_event.set()
 
 
+def get_usable_port(host: str = "127.0.0.1") -> int:
+    """
+    Get a usable port on the specified host.
+    If no port is available, it will raise an OSError.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, 0))
+        port = s.getsockname()[1]
+        s.close()
+
+    return port
+
+
 def main():
     host = "127.0.0.1"
     set_env()
 
     cfg_path: Path = Path(os.getenv("YTP_CONFIG_PATH")) / "webview.json"
-    port = None
     win_conf: dict[str, int] = {}
 
     if cfg_path.exists():
         data = json.loads(cfg_path.read_text())
-        port = data.get("port")
         for key in ("width", "height", "x", "y"):
             if key in data:
                 win_conf[key] = data[key]
 
-    if not port:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((host, 0))
-            port = s.getsockname()[1]
-        cfg_path.write_text(json.dumps({"port": port}))
+    port = get_usable_port(host)
 
     ready = threading.Event()
     errors: queue.Queue = queue.Queue()
@@ -170,6 +177,9 @@ def main():
 
 if __name__ == "__main__":
     try:
+        from multiprocessing import freeze_support
+
+        freeze_support()
         main()
     except Exception as e:
         logging.exception(e)

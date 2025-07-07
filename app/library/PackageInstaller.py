@@ -42,10 +42,18 @@ class PackageInstaller:
                 return
 
             LOG.info(f"'{pkg}' is already installed. Checking for upgrades...")
-            subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg], check=True)  # noqa: S603
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "--upgrade", pkg],
+                check=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
         except ImportError:
             LOG.info(f"'{pkg}' is not installed. Installing...")
-            subprocess.run([sys.executable, "-m", "pip", "install", pkg], check=True)  # noqa: S603
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", pkg],
+                check=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
 
     def check(self, pkgs: Packages):
         """
