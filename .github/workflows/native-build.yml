@@ -115,8 +115,8 @@ jobs:
           name: app-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}
           path: dist/*
 
-      - name: Package artifact
-        if: startsWith(env.TAG_NAME, 'v')
+      - name: Package artifact (Unix)
+        if: startsWith(env.TAG_NAME, 'v') && runner.os != 'Windows'
         run: |
           mkdir -p release
           ZIP_NAME="ytptube-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}.zip"
@@ -127,6 +127,20 @@ jobs:
           fi
 
           zip -r "release/${ZIP_NAME}" dist/
+
+      - name: Package artifact (Windows)
+        if: startsWith(env.TAG_NAME, 'v') && runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $zipName = "ytptube-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}.zip"
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+
+          if (!(Test-Path dist) -or !(Get-ChildItem -Path dist)) {
+            Write-Host "dist directory is empty, skipping packaging."
+            exit 1
+          }
+
+          Compress-Archive -Path dist\* -DestinationPath "release\$zipName"
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
