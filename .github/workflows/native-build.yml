@@ -26,6 +26,8 @@ jobs:
       PNPM_VERSION: 10
       NODE_VERSION: 20
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
+      TS_OS: $(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+      TS_ARCH: $(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 
     steps:
       - name: Checkout source repo
@@ -102,14 +104,20 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-${{ matrix.os }}-${{ env.TAG_NAME }}
+          name: app-${{ env.TS_OS }}-${{ env.TS_ARCH }}-${{ env.TAG_NAME }}
           path: dist/*
+
+      - name: Package artifact
+        if: startsWith(env.TAG_NAME, 'v')
+        run: |
+          mkdir -p release
+          zip -r "release/ytptube-${{ env.TS_OS }}-${{ env.TS_ARCH }}-${{ env.TAG_NAME }}.zip" dist/
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          files: dist/*
+          files: release/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
