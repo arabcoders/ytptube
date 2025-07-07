@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (27e70b6d)",
-    "full_sha": "27e70b6df8bee38ae91c645774244955511f5e68",
-    "date": "2025-07-06T17:07:31+00:00",
+    "tag": "Unreleased (0edac6c9)",
+    "full_sha": "0edac6c93e8b90494debf6c1dab5f04a66515575",
+    "date": "2025-07-07T12:55:45+00:00",
     "commits": [
+      {
+        "sha": "cdac8500",
+        "full_sha": "cdac8500c7a64bff49f630976e51b9cccdf6f31c",
+        "message": "fix artifact version tagging",
+        "author": "arabcoders",
+        "date": "2025-07-07T12:55:06+00:00"
+      },
       {
         "sha": "354a7b3e",
         "full_sha": "354a7b3ed04b5c226fdb5faa0b618da4bd669884",
