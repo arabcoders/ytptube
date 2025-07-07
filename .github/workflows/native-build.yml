@@ -15,7 +15,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: ubuntu-latest
+            arch: arm64
+          - os: macos-latest
+            arch: arm64
+          - os: windows-latest
+            arch: amd64
+          - os: windows-latest
+            arch: arm64
 
     permissions:
       packages: write
@@ -26,8 +36,6 @@ jobs:
       PNPM_VERSION: 10
       NODE_VERSION: 20
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
-      TS_OS: $(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
-      TS_ARCH: $(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
 
     steps:
       - name: Checkout source repo
@@ -35,14 +43,21 @@ jobs:
         with:
           ref: ${{ env.TAG_NAME }}
 
+      - name: set OS and arch
+        run: |
+          OS=$(echo "${{ runner.os }}" | tr '[:upper:]' '[:lower:]')
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          echo "TS_OS=${OS}" >> $GITHUB_ENV
+          echo "TS_ARCH=${ARCH}" >> $GITHUB_ENV
+
       - name: Cache Chocolatey packages
         if: matrix.os == 'windows-latest'
         uses: actions/cache@v4
         with:
           path: C:\ProgramData\chocolatey\lib
-          key: choco-${{ runner.os }}-qt6
+          key: choco-${{ runner.os }}-${{ matrix.arch }}-qt6
           restore-keys: |
-            choco-${{ runner.os }}-
+            choco-${{ runner.os }}-${{ matrix.arch }}-
 
       - name: Install Qt (Windows)
         if: matrix.os == 'windows-latest'
@@ -53,9 +68,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .venv
-          key: uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
+          key: uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            uv-${{ runner.os }}-${{ matrix.arch }}-${{ env.PYTHON_VERSION }}-
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -111,13 +126,23 @@ jobs:
         if: startsWith(env.TAG_NAME, 'v')
         run: |
           mkdir -p release
-          zip -r "release/ytptube-${{ env.TS_OS }}-${{ env.TS_ARCH }}-${{ env.TAG_NAME }}.zip" dist/
+          ZIP_NAME="ytptube-${{ env.TS_OS }}-${{ env.TS_ARCH }}-${{ env.TAG_NAME }}.zip"
+
+          if [ ! -d dist ] || [ -z "$(ls -A dist)" ]; then
+            echo "dist directory is empty, skipping packaging."
+            exit 1
+          fi
+
+          zip -r "release/${ZIP_NAME}" dist/
+          sha256sum "release/${ZIP_NAME}" > "release/${ZIP_NAME}.sha256"
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
         uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.TAG_NAME }}
-          files: release/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release/*.zip
+            release/*.sha256
