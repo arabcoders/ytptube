@@ -155,4 +155,7 @@ class Main:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    from multiprocessing import freeze_support
+
+    freeze_support()
     Main().start()

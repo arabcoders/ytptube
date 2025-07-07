@@ -348,7 +348,10 @@ class Config:
             raise TypeError(msg)
 
         coloredlogs.install(
-            level=numeric_level, fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s", datefmt="%H:%M:%S"
+            level=numeric_level,
+            fmt="%(asctime)s [%(name)s] [%(levelname)-5.5s] %(message)s",
+            datefmt="%H:%M:%S",
+            encoding="utf-8",
         )
 
         LOG = logging.getLogger("config")
@@ -427,6 +430,7 @@ class Config:
                 filename=loggingPath / "app.log",
                 when="midnight",
                 backupCount=3,
+                encoding="utf-8",
             )
 
             handler.setLevel(log_level_file)
@@ -545,6 +549,7 @@ class Config:
                 capture_output=True,
                 text=True,
                 check=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
 
             if 0 != branch_result.returncode:
@@ -562,6 +567,7 @@ class Config:
                 capture_output=True,
                 text=True,
                 check=False,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
 
             if 0 != commit_result.returncode:

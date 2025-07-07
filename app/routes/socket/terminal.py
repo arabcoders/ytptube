@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from app.library.config import Config
@@ -25,8 +26,8 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
 
     import asyncio
     import errno
-    import os
     import shlex
+    import subprocess  # ignore
 
     try:
         LOG.info(f"Cli command from client '{sid}'. '{data}'")
@@ -66,6 +67,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
             stdout=stdout_arg,
             stderr=stderr_arg,
             env=_env,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
 
         if use_pty:

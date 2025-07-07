@@ -1,6 +1,8 @@
 import asyncio
 import hashlib
 import logging
+import os
+import subprocess
 import tempfile
 from pathlib import Path
 
@@ -86,6 +88,7 @@ class Segments:
             stdin=asyncio.subprocess.DEVNULL,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
 
         client_disconnected = False
