@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250707-1169eea4",
-        "date": "2025-07-07T13:23:39+00:00",
+        "tag": "master-20250707-a324ed8f",
+        "date": "2025-07-07T13:28:43+00:00",
         "commits": [
+            {
+                "sha": "2c473614",
+                "message": "remove sha256sum generation",
+                "author": "arabcoders",
+                "date": "2025-07-07T13:28:14+00:00",
+                "full_sha": "2c473614e2e6afc260f22652b4597d09f0b0315f"
+            },
             {
                 "sha": "ea9c5473",
                 "message": "fix",
@@ -557,7 +564,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1169eea47b1d5f9e764d4e40a9c7659d105c6e9e"
+        "full_sha": "a324ed8ffdbf4bdd68a9a4c5e944cf97ab6c5d04"
     },
     {
         "tag": "master-20250616-c07465a6",

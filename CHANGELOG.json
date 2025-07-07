@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (1169eea4)",
-    "full_sha": "1169eea47b1d5f9e764d4e40a9c7659d105c6e9e",
-    "date": "2025-07-07T13:23:39+00:00",
+    "tag": "Unreleased (a324ed8f)",
+    "full_sha": "a324ed8ffdbf4bdd68a9a4c5e944cf97ab6c5d04",
+    "date": "2025-07-07T13:28:43+00:00",
     "commits": [
+      {
+        "sha": "2c473614",
+        "full_sha": "2c473614e2e6afc260f22652b4597d09f0b0315f",
+        "message": "remove sha256sum generation",
+        "author": "arabcoders",
+        "date": "2025-07-07T13:28:14+00:00"
+      },
       {
         "sha": "ea9c5473",
         "full_sha": "ea9c54738ebfbfbe1a71683c221a38666a531b17",
