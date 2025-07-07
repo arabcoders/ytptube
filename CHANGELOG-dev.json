@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250707-cdac8500",
-        "date": "2025-07-07T12:55:06+00:00",
+        "tag": "dev-20250707-69c4216b",
+        "date": "2025-07-07T13:16:10+00:00",
         "commits": [
+            {
+                "sha": "69c4216b",
+                "message": "followup fix for artifacts release",
+                "author": "arabcoders",
+                "date": "2025-07-07T13:16:10+00:00",
+                "full_sha": "69c4216b46b538abe55ce66eedf65146caeee794"
+            },
             {
                 "sha": "cdac8500",
                 "message": "fix artifact version tagging",
@@ -543,7 +550,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "cdac8500c7a64bff49f630976e51b9cccdf6f31c"
+        "full_sha": "69c4216b46b538abe55ce66eedf65146caeee794"
     },
     {
         "tag": "dev-20250616-c07465a6",
