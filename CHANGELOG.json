@@ -56,6 +56,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "37dab36fc9c5a37a49a0ce723bb6d86e843f8c91",
+    "date": "2025-07-07T15:37:11+00:00",
+    "commits": [
+      {
+        "sha": "37dab36f",
+        "full_sha": "37dab36fc9c5a37a49a0ce723bb6d86e843f8c91",
+        "message": "support running in pywebview in windows.",
+        "author": "arabcoders",
+        "date": "2025-07-07T15:37:11+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.3",
     "full_sha": "eb3ac026baf8e59f32adea64373b792e6d50086d",
     "date": "2025-07-06T16:40:18+00:00",
