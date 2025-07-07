@@ -127,7 +127,6 @@ jobs:
           fi
 
           zip -r "release/${ZIP_NAME}" dist/
-          sha256sum "release/${ZIP_NAME}" > "release/${ZIP_NAME}.sha256"
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
@@ -136,6 +135,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TAG_NAME }}
-          files: |
-            release/*.zip
-            release/*.sha256
+          files: release/*.zip
