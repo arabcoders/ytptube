@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "61cbd4aec8e30bd07a9facce449d4eb9d354ead8",
+    "date": "2025-07-08T13:42:02+00:00",
+    "commits": [
+      {
+        "sha": "61cbd4ae",
+        "full_sha": "61cbd4aec8e30bd07a9facce449d4eb9d354ead8",
+        "message": "update default.vue to use ts",
+        "author": "arabcoders",
+        "date": "2025-07-08T13:42:02+00:00"
+      },
+      {
+        "sha": "e7dad280",
+        "full_sha": "e7dad280cd4b8fc7c35a902d2ab5e18736438777",
+        "message": "change default opacity  to 0.95",
+        "author": "arabcoders",
+        "date": "2025-07-08T13:12:28+00:00"
+      },
+      {
+        "sha": "ed77a59b",
+        "full_sha": "ed77a59b4247756f3e3ac220201044b6f452debd",
+        "message": "clean up language usage.",
+        "author": "arabcoders",
+        "date": "2025-07-08T13:11:03+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.4",
     "full_sha": "49cce85cfe8ff21ab66c41585287257b1a86069b",
     "date": "2025-07-07T15:48:28+00:00",
