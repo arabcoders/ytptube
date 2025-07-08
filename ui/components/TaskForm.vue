@@ -195,6 +195,26 @@
                 </div>
               </div>
 
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="output_template">
+                    <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                    Auto Start
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="auto_start" type="checkbox" v-model="form.auto_start" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="auto_start" class="is-unselectable">
+                      {{ form.auto_start ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Whether to automatically start downloading or just queue them in paused state.</span>
+                  </span>
+                </div>
+              </div>
+
               <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
@@ -269,6 +289,7 @@
 </template>
 
 <script setup>
+import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import { decode } from '~/utils/importer'
@@ -391,6 +412,8 @@ const importItem = async () => {
     if (item.cli) {
       form.cli = item.cli
     }
+
+    form.auto_start = item?.auto_start ?? true
 
     if (item.preset) {
       //  -- check if the preset exists in config.presets

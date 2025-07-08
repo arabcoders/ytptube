@@ -128,3 +128,27 @@ async def archive_item(config: Config, data: dict):
             LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
     else:
         LOG.info(f"URL '{data['url']}' with id '{idDict['archive_id']}' already archived.")
+
+
+@route(RouteType.SOCKET, "item_start", "item_start")
+async def item_start(queue: DownloadQueue, notify: EventBus, sid: str, data: list | str) -> None:
+    if not data:
+        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        return
+
+    if isinstance(data, str):
+        data = [data]
+
+    await queue.start_items(data)
+
+
+@route(RouteType.SOCKET, "item_pause", "item_pause")
+async def item_pause(queue: DownloadQueue, notify: EventBus, sid: str, data: list | str) -> None:
+    if not data:
+        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        return
+
+    if isinstance(data, str):
+        data = [data]
+
+    await queue.pause_items(data)

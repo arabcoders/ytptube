@@ -41,6 +41,9 @@ class Item:
     requeued: bool = False
     """If the item has been retried already via conditions."""
 
+    auto_start: bool = True
+    """If the item should be started automatically."""
+
     def serialize(self) -> dict:
         return self.__dict__.copy()
 
@@ -95,7 +98,7 @@ class Item:
 
         data = {}
         for k, v in self.serialize().items():
-            if not v:
+            if not v and k not in ("auto_start"):
                 continue
 
             if k == "cli":
@@ -157,6 +160,10 @@ class Item:
         if item.get("template") and isinstance(item.get("template"), str):
             data["template"] = item.get("template")
 
+        if "auto_start" in item and isinstance(item.get("auto_start"), bool):
+            LOG.info("Item '%s' auto_start is set to %s.", url, item.get("auto_start"))
+            data["auto_start"] = bool(item.get("auto_start"))
+
         extras = item.get("extras")
         if extras and isinstance(extras, dict) and len(extras) > 0:
             data["extras"] = extras
@@ -213,6 +220,7 @@ class ItemDTO:
     options: dict = field(default_factory=dict)
     extras: dict = field(default_factory=dict)
     cli: str = ""
+    auto_start: bool = True
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
@@ -239,7 +247,7 @@ class ItemDTO:
         return self._id
 
     def name(self) -> str:
-        return f'id="{self.id}",  title="{self.title}"'
+        return f'id="{self.id}", title="{self.title}"'
 
     @staticmethod
     def removed_fields() -> tuple:

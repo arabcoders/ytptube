@@ -33,6 +33,7 @@ class Task:
     timer: str = ""
     template: str = ""
     cli: str = ""
+    auto_start: bool = True
 
     def serialize(self) -> dict:
         return self.__dict__

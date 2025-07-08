@@ -8,6 +8,7 @@ type task_item = {
   cli?: string,
   timer?: string,
   in_progress?: boolean,
+  auto_start?: boolean,
 }
 
 type exported_task = task_item & { _type: string, _version: string }

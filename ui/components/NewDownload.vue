@@ -9,11 +9,19 @@
                 <span class="icon"><i class="fa-solid fa-link" /></span>
                 URLs
               </label>
-              <div class="control">
-                <input type="text" class="input" id="url" placeholder="Video or playlist link"
-                  :disabled="!socket.isConnected || addInProgress" v-model="form.url">
+              <div class="field is-grouped">
+                <div class="control is-expanded">
+                  <input type="text" class="input" id="url" placeholder="Video or playlist link"
+                    :disabled="!socket.isConnected || addInProgress" v-model="form.url">
+                </div>
+                <div class="control is-align-content-space-around" v-if="!config.app.basic_mode"
+                v-tooltip="'Auto start the download after adding it.'">
+                  <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
+                    class="switch is-success" />
+                  <label for="auto_start" class="is-unselectable">Start</label>
+                </div>
               </div>
-              <span class="help is-bold">
+              <span class="help is-bold is-unselectable">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
                 <span>You can add multiple URLs separated by <code
                     class="is-bold">{{ getSeparatorsName(separator) }}</code>.</span>
@@ -233,6 +241,7 @@
 </template>
 
 <script setup>
+import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 
 const props = defineProps({
@@ -264,6 +273,7 @@ const getSeparatorsName = (value) => {
 
 const showAdvanced = useStorage('show_advanced', false)
 const separator = useStorage('url_separator', separators[0].value)
+const auto_start = useStorage('auto_start', true)
 
 const addInProgress = ref(false)
 
@@ -300,6 +310,7 @@ const addDownload = async () => {
       template: config.app.basic_mode ? null : form.value.template,
       cookies: config.app.basic_mode ? '' : form.value.cookies,
       cli: config.app.basic_mode ? null : form.value.cli,
+      auto_start: config.app.basic_mode ? true : auto_start.value
     }
 
     if (form.value?.extras && Object.keys(form.value.extras).length > 0) {

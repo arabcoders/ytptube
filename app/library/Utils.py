@@ -1131,6 +1131,7 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
             idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
             break
         except Exception as e:
+            LOG.exception(e)
             LOG.error(f"Error getting archive ID: {e}")
 
     return idDict

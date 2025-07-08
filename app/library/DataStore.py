@@ -147,12 +147,13 @@ class DataStore:
         if 0 == len(self._dict):
             return False
 
-        return any(self._dict[key].started() is False for key in self._dict)
+        return any(self._dict[key].info.auto_start and self._dict[key].started() is False for key in self._dict)
 
     def get_next_download(self) -> Download:
         for key in self._dict:
-            if self._dict[key].started() is False and self._dict[key].is_cancelled() is False:
-                return self._dict[key]
+            ref = self._dict[key]
+            if ref.info.auto_start and ref.started() is False and ref.is_cancelled() is False:
+                return ref
 
         return None
 
