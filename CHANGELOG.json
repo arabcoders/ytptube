@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "347f99adb607d2d1bdd3b199eda7e18220286e87",
+    "date": "2025-07-08T19:54:05+00:00",
+    "commits": [
+      {
+        "sha": "347f99ad",
+        "full_sha": "347f99adb607d2d1bdd3b199eda7e18220286e87",
+        "message": "Set default value for auto_start in TaskForm component",
+        "author": "arabcoders",
+        "date": "2025-07-08T19:54:05+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.5",
     "full_sha": "4c11e178b2318478e975fa2fd86f6342ebe7a247",
     "date": "2025-07-08T19:25:42+00:00",
