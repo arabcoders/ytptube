@@ -489,7 +489,7 @@ const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 const display_style = useStorage('display_style', 'cards')
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)
@@ -601,9 +601,9 @@ const deleteSelectedItems = () => {
     return
   }
 
-  let msg = `Are you sure you want to delete '${selectedElms.value.length}' items?`
+  let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${selectedElms.value.length}' items?`
   if (true === config.app.remove_files) {
-    msg += '\nThis will delete the files from the server if they exist.'
+    msg += ' This will remove any associated files if they exists.'
   }
 
   if (false === box.confirm(msg, config.app.remove_files)) {
@@ -620,10 +620,11 @@ const deleteSelectedItems = () => {
       remove_file: config.app.remove_files,
     })
   }
+  selectedElms.value = []
 }
 
 const clearCompleted = () => {
-  let msg = 'Are you sure you want to clear all completed downloads?'
+  let msg = 'Clear all completed downloads?'
   if (false === box.confirm(msg)) {
     return
   }
@@ -636,7 +637,7 @@ const clearCompleted = () => {
 }
 
 const clearIncomplete = () => {
-  if (false === box.confirm('Are you sure you want to clear all in-complete downloads?')) {
+  if (false === box.confirm('Clear all in-complete downloads?')) {
     return
   }
 
@@ -731,7 +732,7 @@ const setStatus = item => {
 }
 
 const retryIncomplete = () => {
-  if (false === box.confirm('Are you sure you want to retry all incomplete downloads?')) {
+  if (false === box.confirm('Retry all incomplete downloads?')) {
     return false
   }
 
@@ -781,11 +782,12 @@ const archiveItem = async (item, opts = {}) => {
 }
 
 const removeItem = item => {
-  let msg = `Remove '${item.title ?? item.id ?? item.url ?? '??'}'?`
-  if (item.status === 'finished' && item.filename && config.app.remove_files) {
-    msg += '\nThis will delete the file from the server if it exists.'
+  let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${item.title ?? item.id ?? item.url ?? '??'}'?`
+  if (item.status === 'finished' && config.app.remove_files) {
+    msg += ' This will remove any associated files if they exists.'
   }
-  if (false === box.confirm(msg, config.app.remove_files)) {
+
+  if (false === box.confirm(msg, item.filename && config.app.remove_files)) {
     return false
   }
 
@@ -809,7 +811,7 @@ const retryItem = (item, re_add = false) => {
   socket.emit('item_delete', { id: item._id, remove_file: false })
 
   if (true === re_add) {
-    toast.info('Removed the item from history, and added it to the new download form.')
+    toast.info('Cleared the item from history, and added it to the new download form.')
     emitter('add_new', item_req)
     return
   }
@@ -850,6 +852,8 @@ const downloadSelected = async () => {
 
     files_list.push(item.folder ? item.folder + '/' + item.filename : item.filename)
   }
+
+  selectedElms.value = []
 
   try {
     const response = await request('/api/file/download', {

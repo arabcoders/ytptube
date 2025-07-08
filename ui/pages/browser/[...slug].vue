@@ -203,7 +203,7 @@ const config = useConfigStore()
 const socket = useSocketStore()
 
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const sort_by = useStorage('sort_by', 'name')
 const sort_order = useStorage('sort_order', 'asc')
 

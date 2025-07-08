@@ -71,8 +71,7 @@ div.is-centered {
       </div>
     </div>
 
-
-    <div class="columns is-multiline is-mobile" v-if="filteredTasks && filteredTasks.length > 0">
+    <div class="columns is-multiline is-mobile" v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
       <div class="column" v-if="'list' !== display_style">
         <button type="button" class="button is-fullwidth is-ghost is-inverted"
           @click="masterSelectAll = !masterSelectAll">
@@ -103,9 +102,7 @@ div.is-centered {
           </span>
         </button>
       </div>
-
     </div>
-
 
     <div class="columns is-multiline" v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <template v-if="'list' === display_style">
@@ -152,9 +149,21 @@ div.is-centered {
                         {{ remove_tags(item.name) }}
                       </NuxtLink>
                     </div>
-                    <div v-if="item.preset">
-                      <span class="icon"><i class="fa-solid fa-tv" /></span>
-                      <span>{{ item.preset ?? config.app.default_preset }}</span>
+                    <div>
+                      <span class="icon-text">
+                        <span class="icon">
+                          <i class="fa-solid"
+                            :class="{ 'fa-circle-pause': item.auto_start, 'fa-circle-play': !item.auto_start }" />
+                        </span>
+                        <span>
+                          {{ item.auto_start ? 'Auto' : 'Manual' }}
+                        </span>
+                      </span>
+                      &nbsp;
+                      <span class="icon-text" v-if="item.preset">
+                        <span class="icon"><i class="fa-solid fa-tv" /></span>
+                        <span>{{ item.preset ?? config.app.default_preset }}</span>
+                      </span>
                     </div>
                   </td>
                   <td class="is-vcentered has-text-centered">
@@ -218,7 +227,12 @@ div.is-centered {
                       {{ tag }}
                     </span>
                   </div>
-
+                  <div class="control">
+                    <span class="icon" v-tooltip="`${item.auto_start ? 'Auto' : 'Manual'} start`">
+                      <i class="fa-solid"
+                        :class="{ 'fa-circle-pause': item.auto_start, 'fa-circle-play': !item.auto_start }" />
+                    </span>
+                  </div>
                   <div class="control">
                     <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
@@ -653,6 +667,10 @@ const runNow = async (item: task_item, mass: boolean = false) => {
     data.cli = item.cli
   }
 
+  if (item?.auto_start !== undefined) {
+    data.auto_start = item.auto_start
+  }
+
   socket.emit('add_url', data)
 
   if (true === mass) {
@@ -685,6 +703,7 @@ const exportItem = async (item: task_item) => {
     preset: info.preset,
     timer: info.timer,
     folder: info.folder,
+    auto_start: info?.auto_start ?? true,
   } as exported_task
 
   if (info.template) {

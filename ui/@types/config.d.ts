@@ -42,6 +42,8 @@ type AppConfig = {
   app_build_date: string
   /** App branch name, e.g. "main" or "develop" */
   app_branch: string
+  /** When the app started */
+  started: number
 }
 
 type Preset = {

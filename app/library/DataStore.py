@@ -5,9 +5,9 @@ import logging
 from collections import OrderedDict
 from datetime import UTC, datetime
 from email.utils import formatdate
+from enum import Enum
 from sqlite3 import Connection
 
-from .config import Config
 from .Download import Download
 from .ItemDTO import ItemDTO
 from .Utils import init_class
@@ -15,60 +15,100 @@ from .Utils import init_class
 LOG = logging.getLogger("datastore")
 
 
+class StoreType(str, Enum):
+    DONE = "done"
+    QUEUE = "queue"
+    PENDING = "pending"
+
+    @classmethod
+    def all(cls) -> list[str]:
+        return [member.value for member in cls]
+
+    @classmethod
+    def from_value(cls, value: str) -> "StoreType":
+        """
+        Returns the StoreType enum member corresponding to the given value.
+
+        Args:
+            value (str): The value to match against the enum members.
+
+        Returns:
+            StoreType: The enum member that matches the value.
+
+        Raises:
+            ValueError: If the value does not match any member.
+
+        """
+        for member in cls:
+            if member.value == value:
+                return member
+
+        msg = f"Invalid StoreType value: {value}"
+        raise ValueError(msg)
+
+    def __str__(self) -> str:
+        return self.value
+
+
 class DataStore:
     """
     Persistent queue.
     """
 
-    type: str = None
-    dict: OrderedDict[str, Download] = None
-    config: Config = None
+    _type: StoreType = None
+    """Type of the store, e.g., DONE, QUEUE, PENDING."""
 
-    connection: Connection
+    _dict: OrderedDict[str, Download] = None
+    """Ordered dictionary to store Download objects."""
 
-    def __init__(self, type: str, connection: Connection):
-        self.dict = OrderedDict()
-        self.type = type
-        self.config = Config.get_instance()
-        self.connection = connection
+    _connection: Connection
+    """SQLite connection to the database."""
+
+    def __init__(self, type: StoreType, connection: Connection):
+        self._dict = OrderedDict()
+        self._type = type
+        self._connection = connection
 
     def load(self) -> None:
         for id, item in self.saved_items():
-            self.dict.update({id: Download(info=item)})
+            self._dict.update({id: Download(info=item)})
 
     def exists(self, key: str | None = None, url: str | None = None) -> bool:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
 
-        if key and key in self.dict:
+        if key and key in self._dict:
             return True
 
-        return any((key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url) for i in self.dict)
+        return any(
+            (key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url) for i in self._dict
+        )
 
     def get(self, key: str | None = None, url: str | None = None) -> Download:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
 
-        for i in self.dict:
-            if (key and self.dict[i].info._id == key) or (url and self.dict[i].info.url == url):
-                return self.dict[i]
+        for i in self._dict:
+            if (key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url):
+                return self._dict[i]
 
         msg: str = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
     def get_by_id(self, id: str) -> Download | None:
-        return self.dict.get(id, None)
+        return self._dict.get(id, None)
 
     def items(self) -> list[tuple[str, Download]]:
-        return self.dict.items()
+        return self._dict.items()
 
     def saved_items(self) -> list[tuple[str, ItemDTO]]:
         items: list[tuple[str, ItemDTO]] = []
 
-        cursor = self.connection.execute(
-            'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC', (self.type,)
+        cursor = self._connection.execute(
+            'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" ASC',
+            (str(self._type),),
         )
 
         for row in cursor:
@@ -88,39 +128,40 @@ class DataStore:
 
             asyncio.create_task(EventBus.get_instance().emit(Events.ITEM_ERROR, value.info), name="emit_item_error")
 
-        self.dict.update({value.info._id: value})
-        self._update_store_item(self.type, value.info)
+        self._dict.update({value.info._id: value})
+        self._update_store_item(self._type, value.info)
 
-        return self.dict[value.info._id]
+        return self._dict[value.info._id]
 
     def delete(self, key: str) -> None:
-        self.dict.pop(key, None)
+        self._dict.pop(key, None)
         self._delete_store_item(key)
 
     def next(self) -> tuple[str, Download]:
-        return next(iter(self.dict.items()))
+        return next(iter(self._dict.items()))
 
     def empty(self):
-        return not bool(self.dict)
+        return not bool(self._dict)
 
     def has_downloads(self):
-        if 0 == len(self.dict):
+        if 0 == len(self._dict):
             return False
 
-        return any(self.dict[key].started() is False for key in self.dict)
+        return any(self._dict[key].info.auto_start and self._dict[key].started() is False for key in self._dict)
 
     def get_next_download(self) -> Download:
-        for key in self.dict:
-            if self.dict[key].started() is False and self.dict[key].is_cancelled() is False:
-                return self.dict[key]
+        for key in self._dict:
+            ref = self._dict[key]
+            if ref.info.auto_start and ref.started() is False and ref.is_cancelled() is False:
+                return ref
 
         return None
 
     async def test(self) -> bool:
-        self.connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
+        self._connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
         return True
 
-    def _update_store_item(self, type: str, item: ItemDTO) -> None:
+    def _update_store_item(self, type: StoreType, item: ItemDTO) -> None:
         sqlStatement = """
         INSERT INTO "history" ("id", "type", "url", "data")
         VALUES (?, ?, ?, ?)
@@ -141,14 +182,14 @@ class DataStore:
             except AttributeError:
                 pass
 
-        self.connection.execute(
+        self._connection.execute(
             sqlStatement.strip(),
             (
                 stored._id,
-                type,
+                str(type),
                 stored.url,
                 stored.json(),
-                type,
+                str(type),
                 stored.url,
                 stored.json(),
                 datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
@@ -156,4 +197,4 @@ class DataStore:
         )
 
     def _delete_store_item(self, key: str) -> None:
-        self.connection.execute('DELETE FROM "history" WHERE "type" = ? AND "id" = ?', (self.type, key))
+        self._connection.execute('DELETE FROM "history" WHERE "type" = ? AND "id" = ?', (str(self._type), key))

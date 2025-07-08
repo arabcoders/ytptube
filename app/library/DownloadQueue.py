@@ -13,11 +13,10 @@ from typing import TYPE_CHECKING
 import yt_dlp
 from aiohttp import web
 
-from app.library.ag_utils import ag
-
+from .ag_utils import ag
 from .conditions import Conditions
 from .config import Config
-from .DataStore import DataStore
+from .DataStore import DataStore, StoreType
 from .Download import Download
 from .Events import EventBus, Events
 from .Events import info as event_info
@@ -50,12 +49,6 @@ class DownloadQueue(metaclass=Singleton):
     DownloadQueue class is a singleton class that manages the download queue and the download history.
     """
 
-    TYPE_DONE: str = "done"
-    """Queue type for completed downloads."""
-
-    TYPE_QUEUE: str = "queue"
-    """Queue type for pending downloads."""
-
     paused: asyncio.Event
     """Event to pause the download queue."""
 
@@ -74,6 +67,9 @@ class DownloadQueue(metaclass=Singleton):
     done: DataStore
     """DataStore for the completed downloads."""
 
+    pending: DataStore
+    """DataStore for the pending downloads."""
+
     workers: asyncio.Semaphore
     """Semaphore to limit the number of concurrent downloads."""
 
@@ -85,8 +81,8 @@ class DownloadQueue(metaclass=Singleton):
 
         self.config = config or Config.get_instance()
         self._notify = EventBus.get_instance()
-        self.done = DataStore(type=DownloadQueue.TYPE_DONE, connection=connection)
-        self.queue = DataStore(type=DownloadQueue.TYPE_QUEUE, connection=connection)
+        self.done = DataStore(type=StoreType.DONE, connection=connection)
+        self.queue = DataStore(type=StoreType.QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
         self.paused = asyncio.Event()
@@ -153,6 +149,94 @@ class DownloadQueue(metaclass=Singleton):
             f"Using '{self.config.max_workers}' worker/s for downloading. Can be configured via `YTP_MAX_WORKERS` environment variable."
         )
         asyncio.create_task(self._download_pool(), name="download_pool")
+
+    async def start_items(self, ids: list[str]) -> dict[str, str]:
+        """
+        Start one or more queued downloads that were added with auto_started=False.
+
+        Args:
+            ids (list[str]): List of item IDs to start.
+
+        Returns:
+            dict[str, str]: Dictionary of per-ID results and overall status.
+
+        """
+        status: dict[str, str] = {"status": "ok"}
+        started = False
+        tasks = []
+
+        for item_id in ids:
+            try:
+                item = self.queue.get(key=item_id)
+            except KeyError as e:
+                status[item_id] = f"not found: {e!s}"
+                status["status"] = "error"
+                LOG.warning(f"Start requested for non-existent item {item_id=}.")
+                continue
+
+            if item.info.auto_start:
+                status[item_id] = "already started"
+                LOG.debug(f"Item {item.info.name()} already started.")
+                continue
+
+            item.info.auto_start = True
+            updated = self.queue.put(item)
+            tasks.append(self._notify.emit(Events.UPDATED, data=updated.info))
+            status[item_id] = "started"
+            started = True
+            LOG.debug(f"Item {item.info.name()} marked as started.")
+
+        if started:
+            self.event.set()
+
+        if len(tasks) > 0:
+            await asyncio.gather(*tasks)
+
+        return status
+
+    async def pause_items(self, ids: list[str]) -> dict[str, str]:
+        """
+        Pause one or more queued downloads that were added with auto_started=True.
+
+        Args:
+            ids (list[str]): List of item IDs to pause.
+
+        Returns:
+            dict[str, str]: Dictionary of per-ID results and overall status.
+
+        """
+        status: dict[str, str] = {"status": "ok"}
+        tasks = []
+
+        for item_id in ids:
+            try:
+                item = self.queue.get(key=item_id)
+            except KeyError as e:
+                status[item_id] = f"not found: {e!s}"
+                status["status"] = "error"
+                LOG.warning(f"Start requested for non-existent item {item_id=}.")
+                continue
+
+            if item.started() or item.is_cancelled():
+                status[item_id] = "already started"
+                LOG.debug(f"Item {item.info.name()} already started.")
+                continue
+
+            if item.info.auto_start is False:
+                status[item_id] = "not started"
+                LOG.debug(f"Item {item.info.name()} is not set to auto-start.")
+                continue
+
+            item.info.auto_start = False
+            updated = self.queue.put(item)
+            tasks.append(self._notify.emit(Events.UPDATED, data=updated.info))
+            status[item_id] = "paused"
+            LOG.debug(f"Item {item.info.name()} marked as paused.")
+
+        if len(tasks) > 0:
+            await asyncio.gather(*tasks)
+
+        return status
 
     def pause(self, shutdown: bool = False) -> bool:
         """
@@ -362,11 +446,12 @@ class DownloadQueue(metaclass=Singleton):
             live_in=live_in if live_in else item.extras.get("live_in", None),
             options=options,
             cli=item.cli,
+            auto_start=item.auto_start,
             extras=item.extras,
         )
 
         try:
-            dlInfo: Download = Download(info=dl, info_dict=entry, logs=logs)
+            dlInfo: Download = Download(info=dl, info_dict=entry if item.auto_start else None, logs=logs)
 
             text_logs: str = ""
             if filtered_logs := extract_ytdlp_logs(logs):
@@ -411,7 +496,10 @@ class DownloadQueue(metaclass=Singleton):
                 if _requeue:
                     NotifyEvent = Events.ADDED
                     itemDownload = self.queue.put(dlInfo)
-                    self.event.set()
+                    if item.auto_start:
+                        self.event.set()
+                    else:
+                        LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
                 else:
                     dlInfo.info.status = "not_live"
                     itemDownload = self.done.put(dlInfo)
@@ -423,7 +511,10 @@ class DownloadQueue(metaclass=Singleton):
             else:
                 NotifyEvent = Events.ADDED
                 itemDownload = self.queue.put(dlInfo)
-                self.event.set()
+                if item.auto_start:
+                    self.event.set()
+                else:
+                    LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
 
             await self._notify.emit(NotifyEvent, data=itemDownload.info.serialize())
 
@@ -632,7 +723,7 @@ class DownloadQueue(metaclass=Singleton):
                 self.queue.delete(id)
                 await self._notify.emit(Events.CANCELLED, data=item.info.serialize())
                 item.info.status = "cancelled"
-                item.info.error = "Cancelled by user."
+                # item.info.error = "Cancelled by user."
                 self.done.put(item)
                 await self._notify.emit(Events.COMPLETED, data=item.info.serialize())
                 LOG.info(f"Deleted from queue {item_ref}")
@@ -755,7 +846,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.info("Download pool resumed downloading.")
 
             for _id, entry in list(self.queue.items()):
-                if entry.started() or entry.is_cancelled():
+                if entry.started() or entry.is_cancelled() or entry.info.auto_start is False:
                     continue
 
                 if entry.is_live:
@@ -816,7 +907,7 @@ class DownloadQueue(metaclass=Singleton):
             if entry.is_cancelled() is True:
                 await self._notify.emit(Events.CANCELLED, data=entry.info.serialize())
                 entry.info.status = "cancelled"
-                entry.info.error = "Cancelled by user."
+                # entry.info.error = "Cancelled by user."
 
             self.done.put(value=entry)
             await self._notify.emit(Events.COMPLETED, data=entry.info.serialize())

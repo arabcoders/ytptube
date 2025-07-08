@@ -23,6 +23,19 @@
           </span>
         </button>
       </div>
+      <div class="column is-half-mobile" v-if="hasManualStart">
+        <button type="button" class="button is-fullwidth is-success" :disabled="!hasSelected" @click="startItems">
+          <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+          <span>Start</span>
+        </button>
+      </div>
+      <div class="column is-half-mobile" v-if="hasPausable">
+        <button type="button" class="button is-fullwidth is-background-warning-85" :disabled="!hasSelected"
+          @click="pauseSelected">
+          <span class="icon"><i class="fa-solid fa-pause" /></span>
+          <span>Pause</span>
+        </button>
+      </div>
       <div class="column is-half-mobile" v-if="('cards' === display_style || hasSelected)">
         <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
           <span class="icon"><i class="fa-solid fa-eject" /></span>
@@ -105,6 +118,14 @@
                 <td class="is-vcentered is-items-center">
                   <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
                     :button_classes="'is-small'" label="Actions">
+                    <template v-if="!item.auto_start">
+                      <NuxtLink class="dropdown-item has-text-success" @click="startItem(item)">
+                        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                        <span>Start Download</span>
+                      </NuxtLink>
+                      <hr class="dropdown-divider" />
+                    </template>
+
                     <template v-if="isEmbedable(item.url)">
                       <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
@@ -219,6 +240,18 @@
                   <span>Cancel</span>
                 </button>
               </div>
+              <div class="column is-half-mobile" v-if="!item.auto_start && !item.status">
+                <button class="button is-success is-fullwidth" @click="startItem(item)">
+                  <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                  <span>Start</span>
+                </button>
+              </div>
+              <div class="column is-half-mobile" v-if="item.auto_start && !item.status">
+                <button class="button is-background-warning-85 is-fullwidth" @click="pauseItem(item)">
+                  <span class="icon"><i class="fa-solid fa-pause" /></span>
+                  <span>Pause</span>
+                </button>
+              </div>
               <div class="column is-half-mobile">
                 <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
                   <template v-if="isEmbedable(item.url)">
@@ -294,7 +327,7 @@ const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'cards')
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)
@@ -324,8 +357,42 @@ const filteredItems = computed(() => {
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
 const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
+const hasManualStart = computed(() => {
+  if (stateStore.count('queue') < 0) {
+    return false
+  }
+
+  for (const key in stateStore.queue) {
+    const item = stateStore.queue[key]
+    if (!item.status && item.auto_start === false) {
+      return true
+    }
+  }
+
+  return false
+})
+
+const hasPausable = computed(() => {
+  if (stateStore.count('queue') < 0) {
+    return false
+  }
+
+  for (const key in stateStore.queue) {
+    const item = stateStore.queue[key]
+    if (!item.status && item.auto_start === true) {
+      return true
+    }
+  }
+
+  return false
+})
+
 
 const setIcon = item => {
+  if (!item.auto_start) {
+    return 'fa-hourglass-half'
+  }
+
   if ('downloading' === item.status && item.is_live) {
     return 'fa-globe fa-spin'
   }
@@ -350,6 +417,10 @@ const setIcon = item => {
 }
 
 const setStatus = item => {
+  if (!item.auto_start) {
+    return 'Pending'
+  }
+
   if (null === item.status && true === config.paused) {
     return 'Paused'
   }
@@ -378,7 +449,7 @@ const setIconColor = item => {
     return 'has-text-info'
   }
 
-  if (null === item.status && true === config.paused) {
+  if (!item.auto_start || (null === item.status && true === config.paused)) {
     return 'has-text-warning'
   }
 
@@ -422,8 +493,12 @@ const percentPipe = value => {
 const updateProgress = (item) => {
   let string = ''
 
+  if (!item.auto_start) {
+    return 'Manual start'
+  }
+
   if (null === item.status && true === config.paused) {
-    return 'Paused'
+    return 'Global Pause'
   }
 
   if ('postprocessing' === item.status) {
@@ -480,6 +555,65 @@ const cancelItems = item => {
   }
 
   items.forEach(id => socket.emit('item_cancel', id))
+}
+
+const startItem = item => socket.emit('item_start', item._id)
+const pauseItem = item => socket.emit('item_pause', item._id)
+
+const startItems = () => {
+  if (selectedElms.value.length < 1) {
+    return
+  }
+
+  let filtered = []
+
+  selectedElms.value.forEach(id => {
+    const item = stateStore.get('queue', id)
+    if (item && !item.auto_start && !item.status) {
+      filtered.push(id)
+    }
+  })
+
+  selectedElms.value = []
+
+  if (filtered.length < 1) {
+    toast.error('No eligible items to start.')
+    return
+  }
+
+  if (true !== box.confirm(`Start '${filtered.length}' selected items?`)) {
+    return false
+  }
+
+  filtered.forEach(id => socket.emit('item_start', id))
+}
+
+const pauseSelected = () => {
+  if (selectedElms.value.length < 1) {
+    return
+  }
+
+  let filtered = []
+
+  selectedElms.value.forEach(id => {
+    const item = stateStore.get('queue', id)
+    if (item && item.auto_start && !item.status) {
+      filtered.push(id)
+    }
+  })
+
+  selectedElms.value = []
+
+  if (filtered.length < 1) {
+    toast.error('No eligible items to pause.')
+    return
+  }
+
+  if (true !== box.confirm(`Pause '${filtered.length}' selected items?`)) {
+    return false
+  }
+
+  filtered.forEach(id => socket.emit('item_pause', id))
 }
 
 const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null

@@ -127,7 +127,7 @@ const logContainer = useTemplateRef<HTMLDivElement>('logContainer')
 const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker')
 const textWrap = useStorage<boolean>('logs_wrap', true)
 const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 
 const logs = ref<Array<log_line>>([])
 const offset = ref<number>(0)
