@@ -3,7 +3,7 @@
     <nav class="navbar is-mobile is-dark">
 
       <div class="navbar-brand pl-5">
-        <NuxtLink class="navbar-item is-text-overflow" to="/" @click.native="e => changeRoute(e)"
+        <NuxtLink class="navbar-item is-text-overflow" to="/" @click.native="(e: MouseEvent) => changeRoute(e)"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span class="is-text-overflow">
             <span class="icon"><i class="fas fa-home" /></span>
@@ -23,30 +23,30 @@
 
       <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
         <div class="navbar-start" v-if="!config.app.basic_mode">
-          <NuxtLink class="navbar-item" to="/browser" @click.native="e => changeRoute(e)"
+          <NuxtLink class="navbar-item" to="/browser" @click.native="(e: MouseEvent) => changeRoute(e)"
             v-if="config.app.browser_enabled">
             <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
             <span>Files</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/presets" @click.native="e => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/presets" @click.native="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-sliders" /></span>
             <span>Presets</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/tasks" @click.native="e => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/tasks" @click.native="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span>Tasks</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/notifications" @click.native="e => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/notifications" @click.native="(e: MouseEvent) => changeRoute(e)">
             <span class="icon-text">
               <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
               <span>Notifications</span>
             </span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/conditions" @click.native="e => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/conditions" @click.native="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-filter" /></span>
             <span>Conditions</span>
           </NuxtLink>
@@ -60,13 +60,13 @@
             </a>
 
             <div class="navbar-dropdown">
-              <NuxtLink class="navbar-item" to="/logs" @click.native="e => changeRoute(e)"
+              <NuxtLink class="navbar-item" to="/logs" @click.native="(e: MouseEvent) => changeRoute(e)"
                 v-if="config.app.file_logging">
                 <span class="icon"><i class="fa-solid fa-file-lines" /></span>
                 <span>Logs</span>
               </NuxtLink>
 
-              <NuxtLink class="navbar-item" to="/console" @click.native="e => changeRoute(e)"
+              <NuxtLink class="navbar-item" to="/console" @click.native="(e: MouseEvent) => changeRoute(e)"
                 v-if="config.app.console_enabled">
                 <span class="icon"><i class="fa-solid fa-terminal" /></span>
                 <span>Console</span>
@@ -135,7 +135,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
@@ -154,46 +154,70 @@ const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
 
-const applyPreferredColorScheme = scheme => {
-  if (!scheme || 'auto' === scheme) {
+const applyPreferredColorScheme = (scheme: string) => {
+  if (!scheme || scheme === 'auto') {
     return
   }
 
   for (let s = 0; s < document.styleSheets.length; s++) {
-    for (let i = 0; i < document.styleSheets[s].cssRules.length; i++) {
-      try {
-        const rule = document.styleSheets[s].cssRules[i]
-        if (rule && rule.media && rule.media.mediaText.includes("prefers-color-scheme")) {
-          switch (scheme) {
-            case "light":
-              rule.media.appendMedium("original-prefers-color-scheme")
-              if (rule.media.mediaText.includes("light")) {
-                rule.media.deleteMedium("(prefers-color-scheme: light)")
-              }
-              if (rule.media.mediaText.includes("dark")) {
-                rule.media.deleteMedium("(prefers-color-scheme: dark)")
-              }
-              break
-            case "dark":
-              rule.media.appendMedium("(prefers-color-scheme: light)")
-              rule.media.appendMedium("(prefers-color-scheme: dark)")
-              if (rule.media.mediaText.includes("original")) {
-                rule.media.deleteMedium("original-prefers-color-scheme")
-              }
-              break
-            default:
-              rule.media.appendMedium("(prefers-color-scheme: dark)")
-              if (rule.media.mediaText.includes("light")) {
-                rule.media.deleteMedium("(prefers-color-scheme: light)")
-              }
-              if (rule.media.mediaText.includes("original")) {
-                rule.media.deleteMedium("original-prefers-color-scheme")
-              }
-              break
+    const styleSheet = document.styleSheets[s]
+
+    let rules: CSSRuleList
+    try {
+      rules = styleSheet.cssRules
+    } catch (e) {
+      // Cross-origin stylesheet
+      console.debug("Unable to access stylesheet rules:", e)
+      continue
+    }
+
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i]
+
+      if (rule instanceof CSSMediaRule && rule.media.mediaText.includes("prefers-color-scheme")) {
+        const media = rule.media
+
+        const safeDelete = (medium: string) => {
+          if (media.mediaText.includes(medium)) {
+            try {
+              media.deleteMedium(medium)
+            } catch (e) {
+              console.debug(`Failed to delete medium "${medium}"`, e)
+            }
           }
         }
-      } catch (e) {
-        console.debug(e)
+
+        try {
+          switch (scheme) {
+            case "light":
+              if (!media.mediaText.includes("original-prefers-color-scheme")) {
+                media.appendMedium("original-prefers-color-scheme")
+              }
+              safeDelete("(prefers-color-scheme: light)")
+              safeDelete("(prefers-color-scheme: dark)")
+              break
+
+            case "dark":
+              if (!media.mediaText.includes("(prefers-color-scheme: light)")) {
+                media.appendMedium("(prefers-color-scheme: light)")
+              }
+              if (!media.mediaText.includes("(prefers-color-scheme: dark)")) {
+                media.appendMedium("(prefers-color-scheme: dark)")
+              }
+              safeDelete("original-prefers-color-scheme")
+              break
+
+            default:
+              if (!media.mediaText.includes("(prefers-color-scheme: dark)")) {
+                media.appendMedium("(prefers-color-scheme: dark)")
+              }
+              safeDelete("(prefers-color-scheme: light)")
+              safeDelete("original-prefers-color-scheme")
+              break
+          }
+        } catch (e) {
+          console.debug("Error modifying media rule:", e)
+        }
       }
     }
   }
@@ -236,10 +260,10 @@ watch(bg_opacity, v => {
   if (false === bg_enable.value) {
     return
   }
-  document.querySelector('body').setAttribute("style", `opacity: ${v}`)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${v}`)
 })
 
-watch(loadedImage, v => {
+watch(loadedImage, _ => {
   if (false === bg_enable.value) {
     return
   }
@@ -253,14 +277,14 @@ watch(loadedImage, v => {
     "min-height": '100%',
     "min-width": '100%',
     "background-image": `url(${loadedImage.value})`,
-  }
+  } as any
 
   html.setAttribute("style", Object.keys(style).map(k => `${k}: ${style[k]}`).join('; ').trim())
   html.classList.add('bg-fanart')
-  body.setAttribute("style", `opacity: ${bg_opacity.value}`)
+  body?.setAttribute("style", `opacity: ${bg_opacity.value}`)
 })
 
-const handleImage = async enabled => {
+const handleImage = async (enabled: boolean) => {
   if (false === enabled) {
     if (!loadedImage.value) {
       return
@@ -272,9 +296,11 @@ const handleImage = async enabled => {
     if (html.getAttribute("style")) {
       html.removeAttribute("style")
     }
-    if (body.getAttribute("style")) {
+
+    if (body?.getAttribute("style")) {
       body.removeAttribute("style")
     }
+
     loadedImage.value = ''
     return
   }
@@ -312,7 +338,7 @@ const loadImage = async (force = false) => {
   }
 }
 
-const changeRoute = async (_, callback) => {
+const changeRoute = async (_: MouseEvent, callback: Function | null = null) => {
   showMenu.value = false
   document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
   if (callback) {
@@ -320,15 +346,16 @@ const changeRoute = async (_, callback) => {
   }
 }
 
-const openMenu = e => {
-  const elm = e.target.closest('div.has-dropdown')
+const openMenu = (e: MouseEvent) => {
+  const elm = (e.target as HTMLElement)?.closest('div.has-dropdown') as HTMLElement | null
 
-  document.querySelectorAll('div.has-dropdown').forEach(el => {
+  document.querySelectorAll<HTMLElement>('div.has-dropdown').forEach(el => {
     if (el !== elm) {
       el.classList.remove('is-active')
     }
   })
 
-  e.target.closest('div.has-dropdown').classList.toggle('is-active')
+  elm?.classList.toggle('is-active')
 }
+
 </script>
