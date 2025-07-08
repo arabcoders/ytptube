@@ -138,7 +138,7 @@ defineProps({
 })
 
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const selectedTheme = useStorage('theme', 'auto')
 const allow_toasts = useStorage('allow_toasts', true)
 const reduce_confirm = useStorage('reduce_confirm', false)

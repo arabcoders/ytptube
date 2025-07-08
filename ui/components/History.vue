@@ -489,7 +489,7 @@ const hideThumbnail = useStorage('hideThumbnailHistory', false)
 const direction = useStorage('sortCompleted', 'desc')
 const display_style = useStorage('display_style', 'cards')
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 
 const selectedElms = ref([])
 const masterSelectAll = ref(false)

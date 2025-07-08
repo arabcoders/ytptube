@@ -151,7 +151,7 @@ const loadedImage = ref()
 const show_settings = ref(false)
 const loadingImage = ref(false)
 const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.85)
+const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
 
 const applyPreferredColorScheme = scheme => {

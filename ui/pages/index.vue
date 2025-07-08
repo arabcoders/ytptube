@@ -81,7 +81,7 @@ const stateStore = useStateStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 const display_style = useStorage<string>('display_style', 'cards')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 

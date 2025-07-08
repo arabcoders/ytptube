@@ -65,7 +65,7 @@ const config = useConfigStore()
 const socket = useSocketStore()
 
 const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.85)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 
 const terminal = ref<Terminal>()
 const terminalFit = ref<FitAddon>()
