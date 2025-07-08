@@ -13,11 +13,10 @@ from typing import TYPE_CHECKING
 import yt_dlp
 from aiohttp import web
 
-from app.library.ag_utils import ag
-
+from .ag_utils import ag
 from .conditions import Conditions
 from .config import Config
-from .DataStore import DataStore
+from .DataStore import DataStore, StoreType
 from .Download import Download
 from .Events import EventBus, Events
 from .Events import info as event_info
@@ -50,12 +49,6 @@ class DownloadQueue(metaclass=Singleton):
     DownloadQueue class is a singleton class that manages the download queue and the download history.
     """
 
-    TYPE_DONE: str = "done"
-    """Queue type for completed downloads."""
-
-    TYPE_QUEUE: str = "queue"
-    """Queue type for pending downloads."""
-
     paused: asyncio.Event
     """Event to pause the download queue."""
 
@@ -74,6 +67,9 @@ class DownloadQueue(metaclass=Singleton):
     done: DataStore
     """DataStore for the completed downloads."""
 
+    pending: DataStore
+    """DataStore for the pending downloads."""
+
     workers: asyncio.Semaphore
     """Semaphore to limit the number of concurrent downloads."""
 
@@ -85,8 +81,8 @@ class DownloadQueue(metaclass=Singleton):
 
         self.config = config or Config.get_instance()
         self._notify = EventBus.get_instance()
-        self.done = DataStore(type=DownloadQueue.TYPE_DONE, connection=connection)
-        self.queue = DataStore(type=DownloadQueue.TYPE_QUEUE, connection=connection)
+        self.done = DataStore(type=StoreType.DONE, connection=connection)
+        self.queue = DataStore(type=StoreType.QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
         self.paused = asyncio.Event()
