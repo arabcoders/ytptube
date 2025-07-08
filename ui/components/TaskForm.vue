@@ -328,6 +328,9 @@ onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset)
   }
+  if (typeof form.auto_start === 'undefined' || form.auto_start === null) {
+    form.auto_start = true
+  }
 })
 
 const checkInfo = async () => {
