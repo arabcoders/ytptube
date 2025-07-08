@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250707-49cce85c",
-        "date": "2025-07-07T15:48:28+00:00",
+        "tag": "master-20250708-4c11e178",
+        "date": "2025-07-08T19:25:42+00:00",
         "commits": [
+            {
+                "sha": "543d7137",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-07-08T19:14:59+00:00",
+                "full_sha": "543d7137f49ffddf39e34dc021b9a2f6efaf8ab6"
+            },
+            {
+                "sha": "9ff9735a",
+                "message": "Added the ability to add item in paused state",
+                "author": "arabcoders",
+                "date": "2025-07-08T19:13:45+00:00",
+                "full_sha": "9ff9735a2ff2982de01cfb82da2127ac641f4984"
+            },
+            {
+                "sha": "1239643f",
+                "message": "minor update to store fields",
+                "author": "arabcoders",
+                "date": "2025-07-08T14:58:56+00:00",
+                "full_sha": "1239643f97d5f317f0aa1a318f3ac2b5480fc122"
+            },
+            {
+                "sha": "61cbd4ae",
+                "message": "update default.vue to use ts",
+                "author": "arabcoders",
+                "date": "2025-07-08T13:42:02+00:00",
+                "full_sha": "61cbd4aec8e30bd07a9facce449d4eb9d354ead8"
+            },
+            {
+                "sha": "e7dad280",
+                "message": "change default opacity  to 0.95",
+                "author": "arabcoders",
+                "date": "2025-07-08T13:12:28+00:00",
+                "full_sha": "e7dad280cd4b8fc7c35a902d2ab5e18736438777"
+            },
+            {
+                "sha": "ed77a59b",
+                "message": "clean up language usage.",
+                "author": "arabcoders",
+                "date": "2025-07-08T13:11:03+00:00",
+                "full_sha": "ed77a59b4247756f3e3ac220201044b6f452debd"
+            },
             {
                 "sha": "37dab36f",
                 "message": "support running in pywebview in windows.",
@@ -578,7 +620,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "49cce85cfe8ff21ab66c41585287257b1a86069b"
+        "full_sha": "4c11e178b2318478e975fa2fd86f6342ebe7a247"
     },
     {
         "tag": "master-20250616-c07465a6",
