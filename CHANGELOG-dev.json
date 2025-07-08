@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250708-61cbd4ae",
-        "date": "2025-07-08T13:42:02+00:00",
+        "tag": "dev-20250708-543d7137",
+        "date": "2025-07-08T19:14:59+00:00",
         "commits": [
+            {
+                "sha": "543d7137",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-07-08T19:14:59+00:00",
+                "full_sha": "543d7137f49ffddf39e34dc021b9a2f6efaf8ab6"
+            },
+            {
+                "sha": "9ff9735a",
+                "message": "Added the ability to add item in paused state",
+                "author": "arabcoders",
+                "date": "2025-07-08T19:13:45+00:00",
+                "full_sha": "9ff9735a2ff2982de01cfb82da2127ac641f4984"
+            },
+            {
+                "sha": "1239643f",
+                "message": "minor update to store fields",
+                "author": "arabcoders",
+                "date": "2025-07-08T14:58:56+00:00",
+                "full_sha": "1239643f97d5f317f0aa1a318f3ac2b5480fc122"
+            },
             {
                 "sha": "61cbd4ae",
                 "message": "update default.vue to use ts",
@@ -599,7 +620,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "61cbd4aec8e30bd07a9facce449d4eb9d354ead8"
+        "full_sha": "543d7137f49ffddf39e34dc021b9a2f6efaf8ab6"
     },
     {
         "tag": "dev-20250616-c07465a6",
