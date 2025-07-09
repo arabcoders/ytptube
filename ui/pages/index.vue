@@ -66,7 +66,7 @@
     <Queue @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :thumbnails="show_thumbnail"
       :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
     <History @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)"
-      @add_new="item => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
+      @add_new="(item: item_request) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
     <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
       @closeModel="close_info()" />
@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import type { item_request } from '~/@types/item'
 
 const config = useConfigStore()
 const stateStore = useStateStore()
@@ -90,7 +91,7 @@ const info_view = ref({
   preset: '',
   useUrl: false,
 }) as Ref<{ url: string, preset: string, useUrl: boolean }>
-const item_form = ref({})
+const item_form = ref<item_request|object>({})
 const query = ref()
 const toggleFilter = ref(false)
 
@@ -123,7 +124,7 @@ watch(() => stateStore.queue, () => {
 }, { deep: true })
 
 const pauseDownload = () => {
-  if (false === box.confirm('Are you sure you want to pause all non-active downloads?')) {
+  if (false === box.confirm('Pause all non-active downloads?')) {
     return false
   }
 
@@ -152,7 +153,7 @@ watch(() => info_view.value.url, v => {
 
 const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
 
-const toNewDownload = async (item: any) => {
+const toNewDownload = async (item: item_request) => {
   if (!item) {
     return
   }

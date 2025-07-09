@@ -523,7 +523,7 @@ const updateProgress = (item) => {
 }
 
 const confirmCancel = item => {
-  if (true !== box.confirm(`Are you sure you want to cancel (${item.title})?`)) {
+  if (true !== box.confirm(`Cancel '${item.title}'?`)) {
     return false
   }
   cancelItems(item._id)
@@ -531,7 +531,7 @@ const confirmCancel = item => {
 }
 
 const cancelSelected = () => {
-  if (true !== box.confirm('Are you sure you want to cancel selected items?')) {
+  if (true !== box.confirm(`Cancel '${selectedElms.value.length}' selected items?`)) {
     return false;
   }
   cancelItems(selectedElms.value)

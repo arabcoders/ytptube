@@ -330,7 +330,7 @@ const importItem = async () => {
       return
     }
 
-    if ((form.filter || form.cli) && false === box.confirm('This will overwrite the current data. Are you sure?', true)) {
+    if ((form.filter || form.cli) && false === box.confirm('Overwrite the current form fields?', true)) {
       return
     }
 
