@@ -1,4 +1,6 @@
 export type item_request = {
+  /** Unique identifier for the item */
+  id?: string|null,
   /** URL of the item to download */
   url: string,
   /** Preset to use for the download */
