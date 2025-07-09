@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250708-347f99ad",
-        "date": "2025-07-08T19:54:05+00:00",
+        "tag": "dev-20250709-a8b318b4",
+        "date": "2025-07-09T16:14:19+00:00",
         "commits": [
+            {
+                "sha": "a8b318b4",
+                "message": "Refactor confirmation messages for consistency across components",
+                "author": "arabcoders",
+                "date": "2025-07-09T16:14:19+00:00",
+                "full_sha": "a8b318b40e0ba991ea0789929463b6186d73cead"
+            },
             {
                 "sha": "347f99ad",
                 "message": "Set default value for auto_start in TaskForm component",
@@ -627,7 +634,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "347f99adb607d2d1bdd3b199eda7e18220286e87"
+        "full_sha": "a8b318b40e0ba991ea0789929463b6186d73cead"
     },
     {
         "tag": "dev-20250616-c07465a6",
