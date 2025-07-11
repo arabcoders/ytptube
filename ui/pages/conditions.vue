@@ -16,7 +16,7 @@
               </button>
             </p>
             <p class="control">
-              <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
+              <button class="button is-info" @click="reloadContent(false)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="items && items.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
               </button>
@@ -30,8 +30,8 @@
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <ConditionForm :addInProgress="addInProgress" :reference="itemRef" :item="item" @cancel="resetForm(true)"
-          @submit="updateItem" />
+        <ConditionForm :addInProgress="addInProgress" :reference="itemRef" :item="item as ConditionItem"
+          @cancel="resetForm(true)" @submit="updateItem" />
       </div>
 
       <div class="column is-12" v-if="!toggleForm">
@@ -114,18 +114,19 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { request } from '~/utils/index'
 import { encode } from '~/utils/importer'
+import type { ConditionItem, ImportedConditionItem } from '~/@types/conditions'
 
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 
-const items = ref([])
-const item = ref({})
-const itemRef = ref("")
+const items = ref<ConditionItem[]>([])
+const item = ref<Partial<ConditionItem>>({})
+const itemRef = ref<string | null | undefined>("")
 const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
@@ -146,15 +147,15 @@ watch(() => socket.isConnected, async () => {
   }
 })
 
-const reloadContent = async (fromMounted = false) => {
+
+const reloadContent = async (fromMounted = false): Promise<void> => {
   try {
     isLoading.value = true
-    const response = await request("/api/conditions")
+    const response = await request('/api/conditions')
 
     if (fromMounted && !response.ok) {
       return
     }
-
     const data = await response.json()
     if (data.length < 1) {
       return
@@ -162,17 +163,16 @@ const reloadContent = async (fromMounted = false) => {
 
     items.value = data
   } catch (e) {
-    if (fromMounted) {
-      return
+    if (!fromMounted) {
+      console.error(e)
+      toast.error('Failed to fetch page content.')
     }
-    console.error(e)
-    toast.error("Failed to fetch page content.")
   } finally {
     isLoading.value = false
   }
 }
 
-const resetForm = (closeForm = false) => {
+const resetForm = (closeForm = false): void => {
   item.value = {}
   itemRef.value = null
   addInProgress.value = false
@@ -181,30 +181,29 @@ const resetForm = (closeForm = false) => {
   }
 }
 
-const updateItems = async items => {
-  let data
+const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
+  let data: any
+
   try {
     addInProgress.value = true
 
-    const local_items = []
-    for (const item of items) {
-      const { id, name, filter, cli } = item
+    const validItems = newItems.map(({ id, name, filter, cli }) => {
       if (!name || !filter || !cli) {
-        toast.error("Name, filter and cli are required.")
-        return false
+        toast.error('Name, filter and cli are required.')
+        throw new Error('Missing fields')
       }
-      local_items.push({ id, name, filter, cli })
-    }
-
-    const response = await request("/api/conditions", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(local_items),
+      return { id, name, filter, cli }
     })
 
-    data = await response.json()
+    const response = await request('/api/conditions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(validItems),
+    })
 
-    if (200 !== response.status) {
+    data = await response.json() as ConditionItem[]
+
+    if (response.status !== 200) {
       toast.error(`Failed to update items. ${data.error}`)
       return false
     }
@@ -212,44 +211,46 @@ const updateItems = async items => {
     items.value = data
     resetForm(true)
     return true
-  } catch (e) {
-    toast.error(`Failed to update items. ${data?.error}. ${e.message}`)
+  } catch (e: any) {
+    toast.error(`Failed to update items. ${data?.error ?? ''} ${e.message}`)
   } finally {
     addInProgress.value = false
   }
+
+  return false
 }
 
-const deleteItem = async (item) => {
-  if (true !== box.confirm(`Delete '${item.name}'?`, true)) {
+const deleteItem = async (cond: ConditionItem): Promise<void> => {
+  if (!box.confirm(`Delete '${cond.name}'?`, true)) {
     return
   }
 
-  const index = items.value.findIndex((t) => t?.id === item.id)
-  if (index > -1) {
-    items.value.splice(index, 1)
-  } else {
-    toast.error("Item not found.")
+  const index = items.value.findIndex(t => t?.id === cond.id)
+  if (-1 === index) {
+    toast.error('Item not found.')
     return
   }
 
+  items.value.splice(index, 1)
   const status = await updateItems(items.value)
-
-  if (!status) {
-    return
+  if (status) {
+    toast.success('Item deleted.')
   }
-
-  toast.success("Item deleted.")
 }
 
-const updateItem = async ({ reference, item }) => {
-  item = cleanObject(item, remove_keys)
+const updateItem = async ({ reference, item: updatedItem, }: {
+  reference: string | null | undefined,
+  item: ConditionItem
+}): Promise<void> => {
+  updatedItem = cleanObject(updatedItem, remove_keys)
+
   if (reference) {
     const index = items.value.findIndex(t => t?.id === reference)
-    if (index > -1) {
-      items.value[index] = item
+    if (index !== -1) {
+      items.value[index] = updatedItem
     }
   } else {
-    items.value.push(item)
+    items.value.push(updatedItem)
   }
 
   const status = await updateItems(items.value)
@@ -257,36 +258,32 @@ const updateItem = async ({ reference, item }) => {
     return
   }
 
-  toast.success(`Item ${reference ? "updated" : "added"}.`)
+  toast.success(`Item ${reference ? 'updated' : 'added'}.`)
   resetForm(true)
 }
 
-const editItem = _item => {
-  item.value = _item
+const editItem = (_item: ConditionItem): void => {
+  item.value = { ..._item }
   itemRef.value = _item.id
   toggleForm.value = true
 }
 
-onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""))
+const exportItem = (cond: ConditionItem): void => {
+  const clone: Partial<ImportedConditionItem> = JSON.parse(JSON.stringify(cond))
+  delete clone.id
 
-const exportItem = item => {
-  let data = JSON.parse(JSON.stringify(item))
-  if ("id" in data) {
-    delete data['id']
-  }
+  const userData: ImportedConditionItem = {
+    ...Object.fromEntries(Object.entries(clone).filter(([_, v]) => !!v)),
+    _type: 'condition',
+    _version: '1.0',
+  } as ImportedConditionItem
 
-  let userData = {}
-
-  for (const key of Object.keys(data)) {
-    if (!data[key]) {
-      continue
-    }
-    userData[key] = data[key]
-  }
-
-  userData['_type'] = 'condition'
-  userData['_version'] = '1.0'
-
-  return copyText(encode(userData))
+  copyText(encode(userData))
 }
+
+onMounted(async () => {
+  if (socket.isConnected) {
+    await reloadContent(true)
+  }
+})
 </script>
