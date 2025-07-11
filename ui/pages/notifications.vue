@@ -236,7 +236,7 @@ const updateData = async notifications => {
 }
 
 const deleteItem = async item => {
-  if (true !== box.confirm(`Are you sure you want to delete notification target (${item.name})?`)) {
+  if (true !== box.confirm(`Delete '${item.name}'?`)) {
     return
   }
 
@@ -296,7 +296,7 @@ const editItem = item => {
 const join_events = events => (!events || events.length < 1) ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
 
 const sendTest = async () => {
-  if (true !== box.confirm('Are you sure you want to send a test notification?')) {
+  if (true !== box.confirm('Send test notification?')) {
     return
   }
 

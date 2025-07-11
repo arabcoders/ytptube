@@ -328,6 +328,9 @@ onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset)
   }
+  if (typeof form.auto_start === 'undefined' || form.auto_start === null) {
+    form.auto_start = true
+  }
 })
 
 const checkInfo = async () => {
@@ -384,7 +387,7 @@ const importItem = async () => {
     }
 
     if (form.url || form.timer) {
-      if (false === box.confirm('This will overwrite the current form fields. Are you sure?', true)) {
+      if (false === box.confirm('Overwrite the current form fields?', true)) {
         return
       }
     }

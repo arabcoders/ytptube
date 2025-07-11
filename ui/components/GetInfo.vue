@@ -1,3 +1,9 @@
+<style scoped>
+code {
+  color: var(--bulma-code) !important
+}
+</style>
+
 <template>
   <div>
     <div class="modal is-active" v-if="false === externalModel">
@@ -31,62 +37,41 @@
   </div>
 </template>
 
-<style scoped>
-code {
-  color: var(--bulma-code) !important
-}
-</style>
 <script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { request } from '~/utils/index'
 
 const toast = useNotification()
+const emitter = defineEmits<{ (e: 'closeModel'): void }>()
 
-const emitter = defineEmits(['closeModel'])
-const isLoading = ref<Boolean>(false)
+const props = defineProps<{
+  link?: string
+  preset?: string
+  useUrl?: boolean
+  externalModel?: boolean
+}>()
+
+const isLoading = ref<boolean>(false)
 const data = ref<any>({})
 
-const props = defineProps({
-  link: {
-    type: String,
-    default: '',
-    required: false,
-  },
-  preset: {
-    type: String,
-    default: '',
-    required: false,
-  },
-  useUrl: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
-  externalModel: {
-    type: Boolean,
-    default: false,
-    required: false,
-  },
-})
-
-const handle_event = (e: KeyboardEvent) => {
-  if (e.key !== 'Escape') {
-    return
+const handle_event = (e: KeyboardEvent): void => {
+  if (e.key === 'Escape') {
+    emitter('closeModel')
   }
-  emitter('closeModel')
 }
 
-onMounted(async () => {
+onMounted(async (): Promise<void> => {
   document.addEventListener('keydown', handle_event)
 
-  let url = props.useUrl ? props.link : '/api/yt-dlp/url/info';
+  let url = props.useUrl ? props.link || '' : '/api/yt-dlp/url/info'
 
   if (!props.useUrl) {
-    let params = new URLSearchParams();
+    const params = new URLSearchParams()
     if (props.preset) {
-      params.append('preset', props.preset);
+      params.append('preset', props.preset)
     }
-    params.append('url', props.link);
-    url += '?' + params.toString();
+    params.append('url', props.link || '')
+    url += '?' + params.toString()
   }
 
   try {
@@ -96,10 +81,9 @@ onMounted(async () => {
 
     try {
       data.value = JSON.parse(body)
-    } catch (e) {
+    } catch {
       data.value = body
     }
-
   } catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
@@ -108,5 +92,7 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handle_event)
+})
 </script>

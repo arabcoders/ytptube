@@ -385,26 +385,6 @@ const formatBytes = (bytes, decimals = 2) => {
 }
 
 
-/**
- * Convert options to JSON
- *
- * @param {string} opts
- *
- * @returns {Promise<string>}
- */
-const convertCliOptions = async opts => {
-  const response = await request('/api/yt-dlp/convert', {
-    method: 'POST',
-    body: JSON.stringify({ args: opts }),
-  });
-
-  const data = await response.json()
-  if (200 !== response.status) {
-    throw new Error(`Error: (${response.status}): ${data.error}`)
-  }
-
-  return data
-}
 
 /**
  * Check if array or object has data.
@@ -513,7 +493,6 @@ export {
   getQueryParams,
   makeDownload,
   formatBytes,
-  convertCliOptions,
   has_data,
   toggleClass,
   cleanObject,

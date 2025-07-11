@@ -51,7 +51,7 @@
 
               <div class="field">
                 <label class="label is-unselectable" for="random_bg_opacity">
-                  Background visibility <code>{{ parseFloat(1.0 - bg_opacity).toFixed(2) }}</code>
+                  Background visibility <code>{{ parseFloat(String(1.0 - bg_opacity)).toFixed(2) }}</code>
                 </label>
                 <div class="control">
                   <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50"
@@ -66,6 +66,19 @@
                   <label for="show_thumbnail" class="is-unselectable">
                     &nbsp;{{ show_thumbnail ? 'Enabled' : 'Disabled' }}
                   </label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="label is-unselectable" for="show_thumbnail">URLs Separator</label>
+                <div class="control">
+                  <div class="select is-fullwidth">
+                    <select class="is-fullwidth" v-model="separator">
+                      <option v-for="(sep, index) in separators" :key="`sep-${index}`" :value="sep.value">
+                        {{ sep.name }} ({{ sep.value }})
+                      </option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -126,24 +139,20 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import { POSITION } from 'vue-toastification'
+import { separators } from '~/utils/utils'
 
-defineProps({
-  isLoading: {
-    type: Boolean,
-    required: true
-  }
-})
+defineProps<{ isLoading: boolean }>()
 
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.95)
-const selectedTheme = useStorage('theme', 'auto')
-const allow_toasts = useStorage('allow_toasts', true)
-const reduce_confirm = useStorage('reduce_confirm', false)
-const toast_position = useStorage('toast_position', POSITION.TOP_RIGHT)
-const toast_dismiss_on_click = useStorage('toast_dismiss_on_click', true)
-const show_thumbnail = useStorage('show_thumbnail', true)
-
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
+const selectedTheme = useStorage<'auto' | 'light' | 'dark'>('theme', 'auto')
+const allow_toasts = useStorage<boolean>('allow_toasts', true)
+const reduce_confirm = useStorage<boolean>('reduce_confirm', false)
+const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
+const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+const separator = useStorage<string>('url_separator', separators[0].value)
 </script>

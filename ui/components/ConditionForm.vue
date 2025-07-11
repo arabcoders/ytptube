@@ -206,77 +206,37 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-const emitter = defineEmits(['cancel', 'submit'])
 import { decode } from '~/utils/importer'
+import type { ConditionItem, ImportedConditionItem } from '~/@types/conditions'
 
-const props = defineProps({
-  reference: {
-    type: String,
-    required: false,
-    default: null,
-  },
-  item: {
-    type: Object,
-    required: true,
-  },
-  addInProgress: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-})
+const emitter = defineEmits<{
+  (e: 'cancel'): void
+  (e: 'submit', payload: { reference: string | null | undefined, item: ConditionItem }): void
+}>()
 
-const test_data = ref({ show: false, url: '', data: { status: null, data: {} }, in_progress: false })
+const props = defineProps<{
+  reference?: string | null
+  item: ConditionItem
+  addInProgress?: boolean
+}>()
 
 const toast = useNotification()
-const box = useConfirm()
-const form = reactive(JSON.parse(JSON.stringify(props.item)))
-const import_string = ref('')
 const showImport = useStorage('showImport', false)
+const box = useConfirm()
 
-const run_test = async () => {
-  if (!test_data.value.url) {
-    toast.error('The URL is required for testing.', { force: true })
-    return
-  }
+const form = reactive<ConditionItem>(JSON.parse(JSON.stringify(props.item)))
+const import_string = ref('')
+const test_data = ref<{
+  show: boolean,
+  url: string,
+  in_progress: boolean,
+  data: { status: boolean | null, data: Record<string, any> }
+}>({ show: false, url: '', in_progress: false, data: { status: null, data: {} } })
 
-  try {
-    new URL(test_data.value.url)
-  } catch (e) {
-    toast.error('The URL is invalid.', { force: true })
-    return
-  }
-
-  test_data.value.in_progress = true
-  test_data.value.data.status = null
-
-  try {
-    const response = await request('/api/conditions/test', {
-      method: 'POST',
-      body: JSON.stringify({
-        url: test_data.value.url,
-        condition: form.filter,
-      }),
-    })
-
-    const json = await response.json()
-    if (!response.ok) {
-      toast.error(json.message || json.error || 'Unknown error', { force: true })
-      return
-    }
-
-    test_data.value.data = json
-  } catch (e) {
-    toast.error(`Failed to test condition. ${error.message}`)
-  } finally {
-    test_data.value.in_progress = false
-  }
-}
-
-const checkInfo = async () => {
-  const required = ['name', 'filter', 'cli']
+const checkInfo = async (): Promise<void> => {
+  const required: (keyof ConditionItem)[] = ['name', 'filter', 'cli']
 
   for (const key of required) {
     if (!form[key]) {
@@ -285,15 +245,15 @@ const checkInfo = async () => {
     }
   }
 
-  if (form?.cli && '' !== form.cli) {
+  if (form.cli && '' !== form.cli.trim()) {
     const options = await convertOptions(form.cli)
-    if (null === options) {
+    if (options === null) {
       return
     }
     form.cli = form.cli.trim()
   }
 
-  let copy = JSON.parse(JSON.stringify(form))
+  const copy: ConditionItem = JSON.parse(JSON.stringify(form))
 
   for (const key in copy) {
     if (typeof copy[key] !== 'string') {
@@ -305,32 +265,68 @@ const checkInfo = async () => {
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) })
 }
 
-const convertOptions = async args => {
+const convertOptions = async (args: string): Promise<any | null> => {
   try {
     const response = await convertCliOptions(args)
     return response.opts
-  } catch (e) {
+  } catch (e: any) {
     toast.error(e.message)
   }
   return null
 }
 
-const importItem = async () => {
-  let val = import_string.value.trim()
+const run_test = async (): Promise<void> => {
+  if (!test_data.value.url) {
+    toast.error('The URL is required for testing.', { force: true })
+    return
+  }
+
+  try {
+    new URL(test_data.value.url)
+  } catch {
+    toast.error('The URL is invalid.', { force: true })
+    return
+  }
+
+  test_data.value.in_progress = true
+  test_data.value.data.status = null
+
+  try {
+    const response = await request('/api/conditions/test', {
+      method: 'POST',
+      body: JSON.stringify({ url: test_data.value.url, condition: form.filter })
+    })
+
+    const json = await response.json()
+    if (!response.ok) {
+      toast.error(json.message || json.error || 'Unknown error', { force: true })
+      return
+    }
+
+    test_data.value.data = json
+  } catch (error: any) {
+    toast.error(`Failed to test condition. ${error.message}`)
+  } finally {
+    test_data.value.in_progress = false
+  }
+}
+
+const importItem = async (): Promise<void> => {
+  const val = import_string.value.trim()
   if (!val) {
     toast.error('The import string is required.')
     return
   }
 
   try {
-    const item = decode(val)
+    const item = decode(val) as ImportedConditionItem
 
-    if (!item?._type || 'condition' !== item._type) {
+    if (!item?._type || item._type !== 'condition') {
       toast.error(`Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`)
       return
     }
 
-    if ((form.filter || form.cli) && false === box.confirm('This will overwrite the current data. Are you sure?', true)) {
+    if ((form.filter || form.cli) && !box.confirm('Overwrite the current form fields?', true)) {
       return
     }
 
@@ -348,14 +344,14 @@ const importItem = async () => {
 
     import_string.value = ''
     showImport.value = false
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Failed to parse import string. ${e.message}`)
   }
 }
 
-const show_data = () => {
-  if (!test_data.value.data?.data || !Object.keys(test_data.value.data?.data).length) {
+const show_data = (): string => {
+  if (!test_data.value.data?.data || Object.keys(test_data.value.data.data).length === 0) {
     return 'No data to show.'
   }
 

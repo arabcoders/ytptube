@@ -7,33 +7,31 @@
             <div class="column is-12">
               <label class="label is-inline is-unselectable" for="url">
                 <span class="icon"><i class="fa-solid fa-link" /></span>
-                URLs
+                URLs separated by <span class="is-bold">{{ getSeparatorsName(separator) }}</span>
               </label>
               <div class="field is-grouped">
                 <div class="control is-expanded">
-                  <input type="text" class="input" id="url" placeholder="Video or playlist link"
+                  <input type="text" class="input" id="url" placeholder="URLs to download"
                     :disabled="!socket.isConnected || addInProgress" v-model="form.url">
                 </div>
-                <div class="control is-align-content-space-around" v-if="!config.app.basic_mode"
-                v-tooltip="'Auto start the download after adding it.'">
-                  <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
-                    class="switch is-success" />
-                  <label for="auto_start" class="is-unselectable">Start</label>
+                <div class="control">
+                  <button type="submit" class="button is-primary"
+                    :class="{ 'is-loading': !socket.isConnected || addInProgress }"
+                    :disabled="!socket.isConnected || addInProgress || !form?.url">
+                    <span class="icon"><i class="fa-solid fa-plus" /></span>
+                    <span>Add</span>
+                  </button>
                 </div>
               </div>
-              <span class="help is-bold is-unselectable">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>You can add multiple URLs separated by <code
-                    class="is-bold">{{ getSeparatorsName(separator) }}</code>.</span>
-              </span>
             </div>
+
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field has-addons">
-                <div class="control">
-                  <a href="#" class="button is-static">
+                <div class="control" @click="show_description = !show_description">
+                  <label class="button is-static">
                     <span class="icon"><i class="fa-solid fa-sliders" /></span>
                     <span>Preset</span>
-                  </a>
+                  </label>
                 </div>
                 <div class="control is-expanded">
                   <div class="select is-fullwidth">
@@ -55,13 +53,14 @@
                 </div>
               </div>
             </div>
+
             <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
                 <div class="control">
-                  <a href="#" class="button is-static">
+                  <label class="button is-static">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
                     <span>Save in</span>
-                  </a>
+                  </label>
                 </div>
                 <div class="control is-expanded">
                   <input type="text" class="input is-fullwidth" id="path" v-model="form.folder" placeholder="Default"
@@ -69,23 +68,17 @@
                 </div>
               </div>
             </div>
-            <div class="column">
-              <button type="submit" class="button is-primary"
-                :class="{ 'is-loading': !socket.isConnected || addInProgress }"
-                :disabled="!socket.isConnected || addInProgress || !form?.url">
-                <span class="icon"><i class="fa-solid fa-plus" /></span>
-                <span>Add</span>
-              </button>
-            </div>
+
             <div class="column" v-if="!config.app.basic_mode">
               <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
                 :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
-                <span>Opts</span>
+                <span>Advanced Options</span>
               </button>
             </div>
+
             <div class="column is-12"
-              v-if="!config.app.basic_mode && !hasFormatInConfig && get_preset(form.preset)?.description">
+              v-if="show_description && !config.app.basic_mode && !hasFormatInConfig && get_preset(form.preset)?.description">
               <div class="is-overflow-auto" style="max-height: 150px;">
                 <div class="is-ellipsis is-clickable" @click="expand_description">
                   <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}
@@ -97,44 +90,36 @@
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field">
-                <label class="label is-inline is-unselectable">
-                  <span class="icon"><i class="fa-solid fa-object-ungroup" /></span>
-                  <span>URLs Separator</span>
+                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
+                  class="switch is-success" />
+                <label for="auto_start" class="is-unselectable">
+                  {{ auto_start ? 'Auto start' : 'Manual start' }}
                 </label>
-                <div class="control">
-                  <div class="select is-fullwidth">
-                    <select class="is-fullwidth" :disabled="!socket.isConnected || addInProgress" v-model="separator">
-                      <option v-for="(sep, index) in separators" :key="`sep-${index}`" :value="sep.value">
-                        {{ sep.name }} ({{ sep.value }})
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use this to separate multiple URLs in the input field.</span>
-                </span>
               </div>
+              <span class="help">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span class="is-bold">Whether to start the download automatically or wait.</span>
+              </span>
             </div>
 
             <div class="column is-8-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline is-unselectable" for="output_format"
-                  v-tooltip="'Default: ' + config.app.output_template">
-                  <span class="icon"><i class="fa-solid fa-file" /></span>
-                  Output Template
-                </label>
+              <div class="field has-addons">
                 <div class="control">
-                  <input type="text" class="input" v-model="form.template" id="output_format"
-                    :disabled="!socket.isConnected || addInProgress"
-                    placeholder="Uses default output template naming if empty.">
+                  <label for="output_format" class="button is-static is-unselectable">
+                    <span class="icon"><i class="fa-solid fa-file" /></span>
+                    <span>Template</span>
+                  </label>
                 </div>
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>All output template naming options can be found at <NuxtLink target="_blank"
-                      to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
-                </span>
+                <div class="control is-expanded">
+                  <input type="text" class="input" v-model="form.template" id="output_format"
+                    :disabled="!socket.isConnected || addInProgress" :placeholder="get_output_template()">
+                </div>
               </div>
+              <span class="help is-bold is-unselectable">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span>All output template naming options can be found at <NuxtLink target="_blank"
+                    to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
+              </span>
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
@@ -154,7 +139,7 @@
                   <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this page
                     </NuxtLink> for more info. <span class="has-text-danger">Not all options are supported <NuxtLink
                         target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L24-L46">some are
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
                         ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.</span>
                   </span>
                 </span>
@@ -222,7 +207,7 @@
 
                 <div class="control">
                   <button type="button" class="button is-danger" @click="resetConfig"
-                    :disabled="!socket.isConnected || form?.id" v-tooltip="'Reset local settings'">
+                    :disabled="!!(!socket.isConnected || form?.id)" v-tooltip="'Reset local settings'">
                     <span class="icon"><i class="fa-solid fa-rotate-left" /></span>
                     <span>Reset</span>
                   </button>
@@ -237,47 +222,36 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
+    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
+      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
+      @cancel="() => dialog_confirm.visible = false" />
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
+import type { item_request } from '~/@types/item'
+import { getSeparatorsName, separators } from '~/utils/utils'
 
-const props = defineProps({
-  item: {
-    type: Object,
-    required: false,
-    default: () => { },
-  },
-})
-
-const emitter = defineEmits(['getInfo', 'clear_form', 'remove_archive'])
+const props = defineProps<{ item?: Partial<item_request> }>()
+const emitter = defineEmits<{
+  (e: 'getInfo', url: string, preset: string | undefined): void
+  (e: 'clear_form'): void
+  (e: 'remove_archive', url: string): void
+}>()
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
-const box = useConfirm()
 
-const separators = [
-  { name: 'Comma', value: ',', },
-  { name: 'Semicolon', value: ';', },
-  { name: 'Colon', value: ':', },
-  { name: 'Pipe', value: '|', },
-  { name: 'Space', value: ' ', }
-]
+const showAdvanced = useStorage<boolean>('show_advanced', false)
+const separator = useStorage<string>('url_separator', separators[0].value)
+const auto_start = useStorage<boolean>('auto_start', true)
+const show_description = useStorage<boolean>('show_description', true)
 
-const getSeparatorsName = (value) => {
-  const sep = separators.find(s => s.value === value)
-  return sep ? `${sep.name} (${value})` : 'Unknown'
-}
+const addInProgress = ref<boolean>(false)
 
-const showAdvanced = useStorage('show_advanced', false)
-const separator = useStorage('url_separator', separators[0].value)
-const auto_start = useStorage('auto_start', true)
-
-const addInProgress = ref(false)
-
-const form = useStorage('local_config_v1', {
+const form = useStorage<item_request>('local_config_v1', {
   id: null,
   url: '',
   preset: config.app.default_preset,
@@ -286,6 +260,14 @@ const form = useStorage('local_config_v1', {
   template: '',
   folder: '',
   extras: {},
+}) as Ref<item_request>
+
+const dialog_confirm = ref({
+  visible: false,
+  title: 'Confirm Action',
+  confirm: () => { },
+  message: '',
+  options: [],
 })
 
 const addDownload = async () => {
@@ -296,9 +278,9 @@ const addDownload = async () => {
     }
   }
 
-  const request_data = []
+  const request_data = [] as Array<item_request>
 
-  form.value.url.split(separator.value).forEach(async (url) => {
+  form.value.url.split(separator.value).forEach(async (url: string) => {
     if (!url.trim()) {
       return
     }
@@ -311,7 +293,7 @@ const addDownload = async () => {
       cookies: config.app.basic_mode ? '' : form.value.cookies,
       cli: config.app.basic_mode ? null : form.value.cli,
       auto_start: config.app.basic_mode ? true : auto_start.value
-    }
+    } as item_request
 
     if (form.value?.extras && Object.keys(form.value.extras).length > 0) {
       data.extras = form.value.extras
@@ -334,7 +316,7 @@ const addDownload = async () => {
       return
     }
 
-    data.forEach(item => {
+    data.forEach((item: Record<string, any>) => {
       if (false !== item.status) {
         return
       }
@@ -344,7 +326,7 @@ const addDownload = async () => {
     form.value.url = ''
     emitter('clear_form')
   }
-  catch (e) {
+  catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
   } finally {
@@ -353,12 +335,13 @@ const addDownload = async () => {
 }
 
 const resetConfig = () => {
-  if (true !== box.confirm('Reset your local configuration?')) {
-    return
-  }
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.message = `Reset local configuration?`
+  dialog_confirm.value.confirm = reset_config
+}
 
+const reset_config = () => {
   form.value = {
-    id: null,
     url: '',
     preset: config.app.default_preset,
     cookies: '',
@@ -366,15 +349,15 @@ const resetConfig = () => {
     template: '',
     folder: '',
     extras: {},
-  }
+  } as item_request
 
   showAdvanced.value = false
-  separator.value = separators[0].value
 
   toast.success('Local configuration has been reset.')
+  dialog_confirm.value.visible = false
 }
 
-const convertOptions = async args => {
+const convertOptions = async (args: string) => {
   try {
     const response = await convertCliOptions(args)
 
@@ -387,7 +370,7 @@ const convertOptions = async args => {
     }
 
     return response.opts
-  } catch (e) {
+  } catch (e: any) {
     toast.error(e.message)
   }
 
@@ -418,36 +401,30 @@ onMounted(async () => {
   }
 
   if (props?.item) {
-    Object.keys(props.item).forEach(key => {
-      if (key in form.value) {
-        let value = props.item[key]
-        if ('extras' === key) {
-          value = JSON.parse(JSON.stringify(props.item[key]))
-        }
-        form.value[key] = value
-      }
-    })
-    emitter('clear_form');
+    const updates: Partial<item_request> = {}
+    const keys = Object.keys(props.item) as (keyof item_request)[]
+    for (const key of keys) {
+      const value = props.item[key]
+      updates[key] = key === 'extras' ? JSON.parse(JSON.stringify(value)) : value!
+    }
+    form.value = { ...form.value, ...updates }
+    emitter('clear_form')
   }
 
   await nextTick()
+
   if (!separators.some(s => s.value === separator.value)) {
     separator.value = separators[0].value
   }
 })
 
-const hasFormatInConfig = computed(() => {
-  if (!form.value?.cli) {
-    return false
-  }
-  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.value.cli)
-})
+const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\S)(-f|--format)(=|\s)(\S+)/))
 
-const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
-const get_preset = name => config.presets.find(item => item.name === name)
-const expand_description = e => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
+const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
+const get_preset = (name: string | undefined) => config.presets.find(item => item.name === name)
+const expand_description = (e: Event) => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
 
-const removeFromArchive = async url => {
+const removeFromArchive = async (url: string) => {
   try {
     const req = await request(`/api/archive/0`, {
       credentials: 'include',
@@ -463,8 +440,19 @@ const removeFromArchive = async url => {
     }
 
     toast.success(data.message ?? `Removed item from archive.`)
-  } catch (e) {
+  } catch (e: any) {
     toast.error(`Error: ${e.message}`)
   }
 }
+
+const get_output_template = () => {
+  if (form.value.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.value.preset)
+    if (preset && preset.template) {
+      return preset.template
+    }
+  }
+  return config.app.output_template || '%(title)s.%(ext)s'
+}
+
 </script>
