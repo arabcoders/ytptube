@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "f782cad21325006552de1cd50d312f7c17918eba",
-    "date": "2025-07-09T22:02:38+00:00",
+    "full_sha": "9d24fc01b43b6e45cb66950e8983731927f50e16",
+    "date": "2025-07-11T15:18:45+00:00",
     "commits": [
+      {
+        "sha": "9d24fc01",
+        "full_sha": "9d24fc01b43b6e45cb66950e8983731927f50e16",
+        "message": "Make it possible to cancel download and retain the temp data, ref #332",
+        "author": "arabcoders",
+        "date": "2025-07-11T15:18:45+00:00"
+      },
       {
         "sha": "f782cad2",
         "full_sha": "f782cad21325006552de1cd50d312f7c17918eba",
