@@ -15,11 +15,11 @@ from http.cookiejar import MozillaCookieJar
 from pathlib import Path
 from typing import TypeVar
 
-import yt_dlp
 from Crypto.Cipher import AES
 from yt_dlp.utils import age_restricted, match_str
 
 from .LogWrapper import LogWrapper
+from .ytdlp import YTDLP
 
 LOG: logging.Logger = logging.getLogger("Utils")
 
@@ -47,7 +47,7 @@ REMOVE_KEYS: list = [
     },
 ]
 
-YTDLP_INFO_CLS: yt_dlp.YoutubeDL = None
+YTDLP_INFO_CLS: YTDLP = None
 
 ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
 
@@ -189,7 +189,7 @@ def extract_info(
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
-    data = yt_dlp.YoutubeDL(params=params).extract_info(url, download=False)
+    data = YTDLP(params=params).extract_info(url, download=False)
 
     if data and follow_redirect and "_type" in data and "url" == data["_type"]:
         return extract_info(
@@ -208,7 +208,7 @@ def extract_info(
     if not data["is_premiere"]:
         data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
 
-    return yt_dlp.YoutubeDL.sanitize_info(data) if sanitize_info else data
+    return YTDLP.sanitize_info(data) if sanitize_info else data
 
 
 def merge_dict(source: dict, destination: dict) -> dict:
@@ -1103,7 +1103,7 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
     }
 
     if YTDLP_INFO_CLS is None:
-        YTDLP_INFO_CLS = yt_dlp.YoutubeDL(
+        YTDLP_INFO_CLS = YTDLP(
             params={
                 "color": "no_color",
                 "extract_flat": True,

@@ -4,18 +4,20 @@ import logging
 import multiprocessing
 import os
 import re
+import signal
 import time
 from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
 
-import yt_dlp
+import yt_dlp.utils
 
 from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
+from .ytdlp import YTDLP
 from .YTDLPOpts import YTDLPOpts
 
 
@@ -264,9 +266,16 @@ class Download:
 
             params["logger"] = NestedLogger(self.logger)
 
-            cls = yt_dlp.YoutubeDL(params=params)
+            cls = YTDLP(params=params)
 
             self.started_time = int(time.time())
+
+            def mark_cancelled(*_):
+                cls._interrupted = True
+                cls.to_screen("[info] Interrupt received, exiting cleanly...")
+                raise SystemExit(130)  # noqa: TRY301
+
+            signal.signal(signal.SIGUSR1, mark_cancelled)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
@@ -275,10 +284,10 @@ class Download:
                     download=True,
                     extra_info={k: v for k, v in self.info.extras.items() if k not in self.info_dict},
                 )
-                ret = cls._download_retcode
+                ret: int = cls._download_retcode
             else:
                 self.logger.debug(f"Downloading using url: {self.info.url}")
-                ret = cls.download(url_list=[self.info.url])
+                ret: int = cls.download(url_list=[self.info.url])
 
             self.status_queue.put({"id": self.id, "status": "finished" if ret == 0 else "error"})
         except yt_dlp.utils.ExistingVideoReached as exc:
@@ -333,7 +342,7 @@ class Download:
             return False
 
         self.cancel_in_progress = True
-        procId = self.proc.ident
+        procId: int | None = self.proc.ident
 
         self.logger.info(f"Closing PID='{procId}' download process.")
 
@@ -387,7 +396,10 @@ class Download:
 
         try:
             self.logger.info(f"Killing download process: '{self.proc.ident}'.")
-            self.proc.kill()
+            if self.proc.pid and "posix" == os.name:
+                os.kill(self.proc.pid, signal.SIGUSR1)
+            else:
+                self.proc.kill()
             return True
         except Exception as e:
             self.logger.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
@@ -398,9 +410,9 @@ class Download:
         if self.temp_keep is True or not self.temp_path:
             return
 
-        if "finished" != self.info.status and self.is_live:
+        if "finished" != self.info.status and self.info.downloaded_bytes > 0:
             self.logger.warning(
-                f"Keeping live temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
+                f"Keeping temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
             )
             return
 

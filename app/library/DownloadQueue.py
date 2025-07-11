@@ -10,7 +10,7 @@ from pathlib import Path
 from sqlite3 import Connection
 from typing import TYPE_CHECKING
 
-import yt_dlp
+import yt_dlp.utils
 from aiohttp import web
 
 from .ag_utils import ag
