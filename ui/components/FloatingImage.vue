@@ -19,40 +19,32 @@
   </vTooltip>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { ref } from 'vue'
 import { request } from '~/utils/index'
 
-const props = defineProps({
-  image: {
-    type: String,
-    required: false,
-  },
-  title: {
-    type: String,
-    required: false
-  },
-  loader: {
-    Type: Function,
-    required: false,
-  },
-  privacy: {
-    type: Boolean,
-    required: false,
-    default: true
-  }
-});
+const props = defineProps < {
+  image?: string
+  title?: string
+  loader?: () => Promise < void>
+    privacy ?: boolean
+} > ()
 
 const cache = useSessionCache()
 const toast = useNotification()
-const url = ref()
+const url = ref < string | null > (null)
 const error = ref(false)
 const isPreloading = ref(false)
 
-let loadTimer = null;
-const cancelRequest = new AbortController();
+let loadTimer: ReturnType<typeof setTimeout> | null = null
+const cancelRequest = new AbortController()
 
-const defaultLoader = async () => {
+const defaultLoader = async (): Promise<void> => {
   try {
+    if (!props.image) {
+      return
+    }
+
     if (cache.has(props.image)) {
       url.value = cache.get(props.image)
       return
@@ -60,18 +52,16 @@ const defaultLoader = async () => {
 
     const response = await request(props.image, { signal: cancelRequest.signal })
 
-    if (200 !== response.status) {
+    if (!response.ok) {
       toast.error(`ImageView Request error. ${response.status}: ${response.statusText}`)
-      return;
+      return
     }
 
-    const objUrl = URL.createObjectURL(await response.blob());
-
+    const objUrl = URL.createObjectURL(await response.blob())
     cache.set(props.image, objUrl)
-
-    url.value = objUrl;
-  } catch (e) {
-    if ('not_needed' === e) {
+    url.value = objUrl
+  } catch (e: any) {
+    if (e === 'not_needed') {
       return
     }
     console.error(e)
@@ -81,25 +71,28 @@ const defaultLoader = async () => {
   }
 }
 
-const stopTimer = async () => {
+const stopTimer = async (): Promise<void> => {
   if (error.value) {
     return
   }
 
   if (url.value) {
     isPreloading.value = false
-    url.value = null;
-    return;
+    url.value = null
+    return
   }
 
   await awaiter(() => isPreloading.value)
-  clearTimeout(loadTimer)
+  if (loadTimer !== null) {
+    clearTimeout(loadTimer)
+  }
+
   isPreloading.value = false
-  url.value = null;
+  url.value = null
   cancelRequest.abort('not_needed')
 }
 
-const loadContent = async () => {
+const loadContent = async (): Promise<void> => {
   if (props.loader) {
     return props.loader()
   }
@@ -107,11 +100,18 @@ const loadContent = async () => {
   return defaultLoader()
 }
 
-const clearCache = async () => {
+const clearCache = async (): Promise<void> => {
+  if (!props.image) return
+
   cache.remove(props.image)
-  url.value = '';
+  url.value = ''
   return loadContent()
 }
 
-const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+const pImg = (e: Event): void => {
+  const target = e.target as HTMLImageElement
+  if (target.naturalHeight > target.naturalWidth) {
+    target.classList.add('image-portrait')
+  }
+}
 </script>

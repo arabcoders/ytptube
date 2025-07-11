@@ -18,27 +18,28 @@
             </p>
 
             <p class="control">
-              <button class="button is-danger is-light" v-tooltip.bottom="'Filter'"
-                @click="toggleFilter = !toggleFilter">
+              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
+                <span class="is-hidden-mobile">Filter</span>
               </button>
             </p>
 
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
-              <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused"
-                v-tooltip.bottom="'Pause non-active downloads.'">
+              <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused">
                 <span class="icon"><i class="fas fa-pause" /></span>
+                <span class="is-hidden-mobile">Pause</span>
               </button>
               <button class="button is-danger" @click="socket.emit('resume', {})" v-else
                 v-tooltip.bottom="'Resume downloading.'">
                 <span class="icon"><i class="fas fa-play" /></span>
+                <span class="is-hidden-mobile">Resume</span>
               </button>
             </p>
 
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
-              <button v-tooltip.bottom="'Toggle download form'" class="button is-primary has-tooltip-bottom"
-                @click="config.showForm = !config.showForm">
+              <button class="button is-primary has-tooltip-bottom" @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
+                <span class="is-hidden-mobile">New Download</span>
               </button>
             </p>
 
@@ -47,6 +48,7 @@
                 @click="() => changeDisplay()">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+                <span class="is-hidden-mobile">{{ display_style === 'cards' ? 'Cards' : 'List' }}</span>
               </button>
             </p>
 
@@ -70,6 +72,9 @@
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
     <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
       @closeModel="close_info()" />
+    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
+      :html_message="dialog_confirm.html_message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
+      @cancel="() => dialog_confirm.visible = false" />
   </div>
 </template>
 
@@ -91,9 +96,16 @@ const info_view = ref({
   preset: '',
   useUrl: false,
 }) as Ref<{ url: string, preset: string, useUrl: boolean }>
-const item_form = ref<item_request|object>({})
+const item_form = ref<item_request | object>({})
 const query = ref()
 const toggleFilter = ref(false)
+const dialog_confirm = ref({
+  visible: false,
+  title: 'Confirm Action',
+  confirm: () => { },
+  html_message: '',
+  options: [],
+})
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -123,12 +135,18 @@ watch(() => stateStore.queue, () => {
   useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}  | ${Object.keys(stateStore.history).length || 0} )` })
 }, { deep: true })
 
-const pauseDownload = () => {
-  if (false === box.confirm('Pause all non-active downloads?')) {
-    return false
-  }
 
-  socket.emit('pause', {})
+const pauseDownload = () => {
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.html_message = `<span class="is-bold">Pause All non-active downloads?</span><br>
+  <span class="has-text-danger">
+    <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
+    <span>This will not stop downloads that are currently in progress.</span>
+  </span>`
+  dialog_confirm.value.confirm = () => {
+    socket.emit('pause', {})
+    dialog_confirm.value.visible = false
+  }
 }
 
 const close_info = () => {

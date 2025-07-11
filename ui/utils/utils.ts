@@ -1,5 +1,26 @@
 import type { convert_args_response } from "~/@types/responses";
 
+const separators = [
+  { name: 'Comma', value: ',', },
+  { name: 'Semicolon', value: ';', },
+  { name: 'Colon', value: ':', },
+  { name: 'Pipe', value: '|', },
+  { name: 'Space', value: ' ', }
+]
+
+/**
+ * Get the name of a separator based on its value
+ *
+ * @param {string} value - The separator value
+ *
+ * @returns {string} The name of the separator, or 'Unknown' if not found
+ */
+const getSeparatorsName = (value: string): string => {
+  const sep = separators.find(s => s.value === value)
+  return sep ? `${sep.name} (${value})` : 'Unknown'
+}
+
+
 /**
  * Convert options to JSON
  *
@@ -21,4 +42,4 @@ const convertCliOptions = async (opts: string): Promise<convert_args_response> =
   return data
 }
 
-export { convertCliOptions }
+export { convertCliOptions, separators, getSeparatorsName }

@@ -7,7 +7,7 @@
             <div class="column is-12">
               <label class="label is-inline is-unselectable" for="url">
                 <span class="icon"><i class="fa-solid fa-link" /></span>
-                URLs. separated by <span class="is-bold">{{ getSeparatorsName(separator) }}</span>
+                URLs separated by <span class="is-bold">{{ getSeparatorsName(separator) }}</span>
               </label>
               <div class="field is-grouped">
                 <div class="control is-expanded">
@@ -69,18 +69,11 @@
               </div>
             </div>
 
-            <div class="column is-narrow" v-if="!config.app.basic_mode"
-              v-tooltip="`Automatically start downloading after adding. [${auto_start ? 'Enabled' : 'Disabled'}]`">
-              <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
-                class="switch is-success" />
-              <label for="auto_start" class="is-unselectable"></label>
-            </div>
-
             <div class="column" v-if="!config.app.basic_mode">
               <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
                 :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
-                <span>Options</span>
+                <span>Advanced Options</span>
               </button>
             </div>
 
@@ -96,42 +89,30 @@
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
             <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
-              <div class="field has-addons">
-                <div class="control">
-                  <label class="button is-static">
-                    <span class="icon"><i class="fa-solid fa-object-ungroup" /></span>
-                    <span>Separator</span>
-                  </label>
-                </div>
-                <div class="control is-expanded">
-                  <div class="select is-fullwidth">
-                    <select class="is-fullwidth" :disabled="!socket.isConnected || addInProgress" v-model="separator">
-                      <option v-for="(sep, index) in separators" :key="`sep-${index}`" :value="sep.value">
-                        {{ sep.name }} ({{ sep.value }})
-                      </option>
-                    </select>
-                  </div>
-                </div>
+              <div class="field">
+                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
+                  class="switch is-success" />
+                <label for="auto_start" class="is-unselectable">
+                  {{ auto_start ? 'Auto start' : 'Manual start' }}
+                </label>
               </div>
-              <span class="help is-bold is-unselectable">
+              <span class="help">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Use this to separate multiple URLs in the input field.</span>
+                <span class="is-bold">Whether to start the download automatically or wait.</span>
               </span>
             </div>
 
             <div class="column is-8-tablet is-12-mobile">
               <div class="field has-addons">
                 <div class="control">
-                  <label for="output_format" v-tooltip="'Default: ' + config.app.output_template"
-                    class="button is-static is-unselectable">
+                  <label for="output_format" class="button is-static is-unselectable">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
                     <span>Template</span>
                   </label>
                 </div>
                 <div class="control is-expanded">
                   <input type="text" class="input" v-model="form.template" id="output_format"
-                    :disabled="!socket.isConnected || addInProgress"
-                    placeholder="Uses default output template naming if empty.">
+                    :disabled="!socket.isConnected || addInProgress" :placeholder="get_output_template()">
                 </div>
               </div>
               <span class="help is-bold is-unselectable">
@@ -251,6 +232,7 @@
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import type { item_request } from '~/@types/item'
+import { getSeparatorsName, separators } from '~/utils/utils'
 
 const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
@@ -261,20 +243,6 @@ const emitter = defineEmits<{
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
-const box = useConfirm()
-
-const separators = [
-  { name: 'Comma', value: ',', },
-  { name: 'Semicolon', value: ';', },
-  { name: 'Colon', value: ':', },
-  { name: 'Pipe', value: '|', },
-  { name: 'Space', value: ' ', }
-]
-
-const getSeparatorsName = (value: string): string => {
-  const sep = separators.find(s => s.value === value)
-  return sep ? `${sep.name} (${value})` : 'Unknown'
-}
 
 const showAdvanced = useStorage<boolean>('show_advanced', false)
 const separator = useStorage<string>('url_separator', separators[0].value)
@@ -384,7 +352,6 @@ const reset_config = () => {
   } as item_request
 
   showAdvanced.value = false
-  separator.value = separators[0].value
 
   toast.success('Local configuration has been reset.')
   dialog_confirm.value.visible = false
@@ -477,4 +444,15 @@ const removeFromArchive = async (url: string) => {
     toast.error(`Error: ${e.message}`)
   }
 }
+
+const get_output_template = () => {
+  if (form.value.preset && !hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.value.preset)
+    if (preset && preset.template) {
+      return preset.template
+    }
+  }
+  return config.app.output_template || '%(title)s.%(ext)s'
+}
+
 </script>

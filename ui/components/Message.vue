@@ -1,67 +1,45 @@
 <template>
-  <div class="notification" :class="message_class">
-    <button class="delete" @click="$emit('close')" v-if="!useToggle && useClose"></button>
-    <div @click="$emit('toggle')" class="is-clickable is-pulled-right is-unselectable" v-if="useToggle">
+  <div class="notification" :class="props.message_class">
+    <button class="delete" @click="emit('close')" v-if="!props.useToggle && props.useClose"></button>
+
+    <div @click="emit('toggle')" class="is-clickable is-pulled-right is-unselectable" v-if="props.useToggle">
       <span class="icon">
-        <i class="fas" :class="{ 'fa-arrow-up': toggle, 'fa-arrow-down': !toggle }"></i>
+        <i class="fas" :class="{ 'fa-arrow-up': props.toggle, 'fa-arrow-down': !props.toggle }"></i>
       </span>
-      <span>{{ toggle ? 'Close' : 'Open' }}</span>
+      <span>{{ props.toggle ? 'Close' : 'Open' }}</span>
     </div>
-    <div class="notification-title is-unselectable" :class="{ 'is-clickable': useToggle }" v-if="title || icon"
-      @click="useToggle ? $emit('toggle', toggle) : null">
-      <template v-if="icon">
+
+    <div class="notification-title is-unselectable" :class="{ 'is-clickable': props.useToggle }"
+      v-if="props.title || props.icon" @click="props.useToggle ? emit('toggle', props.toggle) : null">
+      <template v-if="props.icon">
         <span class="icon-text">
-          <span class="icon"><i :class="icon"></i></span>
-          <span>{{ title }}</span>
+          <span class="icon"><i :class="props.icon"></i></span>
+          <span>{{ props.title }}</span>
         </span>
       </template>
-      <template v-else>{{ title }}</template>
+      <template v-else>{{ props.title }}</template>
     </div>
-    <div class="notification-content content" v-if="false === useToggle || toggle">
-      <template v-if="message">{{ message }}</template>
+
+    <div class="notification-content content" v-if="!props.useToggle || props.toggle">
+      <template v-if="props.message">{{ props.message }}</template>
       <slot />
     </div>
   </div>
 </template>
 
-<script setup>
-defineProps({
-  title: {
-    type: String,
-    default: null,
-    required: false
-  },
-  icon: {
-    type: String,
-    default: null,
-    required: false
-  },
-  message: {
-    type: String,
-    default: null,
-    required: false
-  },
-  message_class: {
-    type: String,
-    default: 'is-info',
-    required: false
-  },
-  useToggle: {
-    type: Boolean,
-    default: false,
-    required: false
-  },
-  toggle: {
-    type: Boolean,
-    default: false,
-    required: false
-  },
-  useClose: {
-    type: Boolean,
-    default: false,
-    required: false
-  }
-})
+<script setup lang="ts">
+const props = defineProps < {
+  title?: string
+  icon?: string
+  message?: string
+  message_class?: string
+  useToggle?: boolean
+  toggle?: boolean
+  useClose?: boolean
+} > ()
 
-defineEmits(['toggle', 'close'])
+const emit = defineEmits < {
+  (e: 'toggle', value ?: boolean): void
+  (e: 'close'): void
+}> ()
 </script>
