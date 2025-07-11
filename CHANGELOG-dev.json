@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250711-9d24fc01",
-        "date": "2025-07-11T15:18:45+00:00",
+        "tag": "dev-20250711-dfe1acbe",
+        "date": "2025-07-11T16:46:41+00:00",
         "commits": [
+            {
+                "sha": "dfe1acbe",
+                "message": "minor design update",
+                "author": "arabcoders",
+                "date": "2025-07-11T16:46:41+00:00",
+                "full_sha": "dfe1acbec438bf8331bf77b75cf7d9242ca9bc04"
+            },
+            {
+                "sha": "5e14c232",
+                "message": "move condition to ts",
+                "author": "arabcoders",
+                "date": "2025-07-11T15:53:43+00:00",
+                "full_sha": "5e14c232d7a0c377e12d49f9cc2bb7ae343a6685"
+            },
             {
                 "sha": "9d24fc01",
                 "message": "Make it possible to cancel download and retain the temp data, ref #332",
@@ -648,7 +662,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9d24fc01b43b6e45cb66950e8983731927f50e16"
+        "full_sha": "dfe1acbec438bf8331bf77b75cf7d9242ca9bc04"
     },
     {
         "tag": "dev-20250616-c07465a6",
