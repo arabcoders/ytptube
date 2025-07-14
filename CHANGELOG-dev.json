@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250711-dfe1acbe",
-        "date": "2025-07-11T16:46:41+00:00",
+        "tag": "dev-20250714-47b5967c",
+        "date": "2025-07-14T20:00:41+00:00",
         "commits": [
+            {
+                "sha": "47b5967c",
+                "message": "Add the ability to disable temp file handling",
+                "author": "arabcoders",
+                "date": "2025-07-14T20:00:41+00:00",
+                "full_sha": "47b5967c58845bac54be8622d4dde4453ef5eb24"
+            },
             {
                 "sha": "dfe1acbe",
                 "message": "minor design update",
@@ -662,7 +669,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dfe1acbec438bf8331bf77b75cf7d9242ca9bc04"
+        "full_sha": "47b5967c58845bac54be8622d4dde4453ef5eb24"
     },
     {
         "tag": "dev-20250616-c07465a6",
