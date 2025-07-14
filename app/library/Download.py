@@ -50,6 +50,8 @@ class Download:
     id: str = None
     download_dir: str = None
     temp_dir: str = None
+    temp_disabled: bool = False
+    "Disable the temporary files feature."
     template: str = None
     template_chapter: str = None
     info: ItemDTO = None
@@ -99,7 +101,7 @@ class Download:
             logs (list): Logs from yt-dlp.
 
         """
-        config = Config.get_instance()
+        config: Config = Config.get_instance()
 
         self.download_dir = info.download_dir
         self.temp_dir = info.temp_dir
@@ -117,6 +119,7 @@ class Download:
         self._notify = EventBus.get_instance()
         self.max_workers = int(config.max_workers)
         self.temp_keep = bool(config.temp_keep)
+        self.temp_disabled = bool(config.temp_disabled)
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.info_dict = info_dict
         self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
@@ -164,6 +167,8 @@ class Download:
         self.status_queue.put({"id": self.id, "filename": filename})
 
     def _download(self):
+        cookie_file = None
+
         try:
             params: dict = (
                 YTDLPOpts.get_instance()
@@ -175,7 +180,7 @@ class Download:
                         "color": "no_color",
                         "paths": {
                             "home": str(self.download_dir),
-                            "temp": str(self.temp_path),
+                            "temp": str(self.temp_path) if self.temp_path else self.download_dir,
                         },
                         "outtmpl": {
                             "default": self.template,
@@ -203,7 +208,9 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    cookie_file = Path(self.temp_path) / f"cookie_{self.info._id}.txt"
+                    cookie_file: Path = (
+                        Path(self.temp_path if self.temp_path else self.temp_dir) / f"cookie_{self.info._id}.txt"
+                    )
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
                     )
@@ -273,9 +280,9 @@ class Download:
             def mark_cancelled(*_):
                 cls._interrupted = True
                 cls.to_screen("[info] Interrupt received, exiting cleanly...")
-                raise SystemExit(130)  # noqa: TRY301
+                raise KeyboardInterrupt  # noqa: TRY301
 
-            signal.signal(signal.SIGUSR1, mark_cancelled)
+            signal.signal(signal.SIGINT, mark_cancelled)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
@@ -299,6 +306,12 @@ class Download:
             self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
         finally:
             self.status_queue.put(Terminator())
+            if cookie_file and cookie_file.exists():
+                try:
+                    cookie_file.unlink()
+                    self.logger.debug(f"Deleted cookie file: {cookie_file}")
+                except Exception as e:
+                    self.logger.error(f"Failed to delete cookie file: {cookie_file}. {e}")
 
         self.logger.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
 
@@ -306,12 +319,13 @@ class Download:
         self.status_queue = Config.get_manager().Queue()
 
         # Create temp dir for each download.
-        self.temp_path = Path(self.temp_dir) / hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5)
+        if not self.temp_disabled:
+            self.temp_path = Path(self.temp_dir) / hashlib.shake_256(f"D-{self.info.id}".encode()).hexdigest(5)
 
-        if not self.temp_path.exists():
-            self.temp_path.mkdir(parents=True, exist_ok=True)
+            if not self.temp_path.exists():
+                self.temp_path.mkdir(parents=True, exist_ok=True)
 
-        self.info.temp_path = str(self.temp_path)
+            self.info.temp_path = str(self.temp_path)
 
         self.proc = multiprocessing.Process(name=f"download-{self.id}", target=self._download)
         self.proc.start()
@@ -407,7 +421,7 @@ class Download:
         return False
 
     def delete_temp(self):
-        if self.temp_keep is True or not self.temp_path:
+        if self.temp_disabled or self.temp_keep is True or not self.temp_path:
             return
 
         if "finished" != self.info.status and self.info.downloaded_bytes > 0:
@@ -461,7 +475,10 @@ class Download:
                 try:
                     self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.download_dir)))
                 except ValueError:
-                    self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.temp_path)))
+                    if self.temp_path:
+                        self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.temp_path)))
+                    else:
+                        self.info.filename = str(fl)
 
                 if fl.is_file() and fl.exists():
                     try:

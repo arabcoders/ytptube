@@ -31,6 +31,9 @@ class Config:
     temp_keep: bool = False
     """Keep temporary files after the download is complete."""
 
+    temp_disabled: bool = False
+    """Disable the temporary files feature."""
+
     output_template: str = "%(title)s.%(ext)s"
     """The output template to use for the downloaded files."""
 
@@ -233,6 +236,7 @@ class Config:
         "browser_control_enabled",
         "ytdlp_auto_update",
         "prevent_premiere_live",
+        "temp_disabled",
     )
     "The variables that are booleans."
 
@@ -580,7 +584,7 @@ class Config:
                 return
 
             commit_date, commit_sha = commit_info.split("_", 1)
-            commit_date = time.strftime("%Y%m%d", time.localtime(int(commit_date)))
+            commit_date: str = time.strftime("%Y%m%d", time.localtime(int(commit_date)))
 
             self.app_version = f"{branch_name}-{commit_date}-{commit_sha[:8]}"
             self.app_branch = branch_name
