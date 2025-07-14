@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (f4ec06ce)",
-    "full_sha": "f4ec06cef9c2c432fb161ceebd9296d44b89b53d",
-    "date": "2025-07-11T16:58:33+00:00",
+    "tag": "v0.2.6",
+    "full_sha": "f66980c3bf80e58e65d223b6e9b794d3e0ac8c72",
+    "date": "2025-07-14T20:06:38+00:00",
     "commits": [
+      {
+        "sha": "47b5967c",
+        "full_sha": "47b5967c58845bac54be8622d4dde4453ef5eb24",
+        "message": "Add the ability to disable temp file handling",
+        "author": "arabcoders",
+        "date": "2025-07-14T20:00:41+00:00"
+      },
       {
         "sha": "dfe1acbe",
         "full_sha": "dfe1acbec438bf8331bf77b75cf7d9242ca9bc04",
@@ -45,20 +52,6 @@
         "message": "Set default value for auto_start in TaskForm component",
         "author": "arabcoders",
         "date": "2025-07-08T19:54:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "47b5967c58845bac54be8622d4dde4453ef5eb24",
-    "date": "2025-07-14T20:00:41+00:00",
-    "commits": [
-      {
-        "sha": "47b5967c",
-        "full_sha": "47b5967c58845bac54be8622d4dde4453ef5eb24",
-        "message": "Add the ability to disable temp file handling",
-        "author": "arabcoders",
-        "date": "2025-07-14T20:00:41+00:00"
       }
     ]
   },
