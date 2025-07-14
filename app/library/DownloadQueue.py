@@ -901,7 +901,7 @@ class DownloadQueue(metaclass=Singleton):
             await entry.close()
 
         if self.queue.exists(key=id):
-            LOG.debug(f"Download '{id}' is done. Removing from queue.")
+            LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
             self.queue.delete(key=id)
 
             if entry.is_cancelled() is True:
