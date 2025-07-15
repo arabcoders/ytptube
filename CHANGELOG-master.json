@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250714-f66980c3",
-        "date": "2025-07-14T20:06:38+00:00",
+        "tag": "master-20250715-043b019b",
+        "date": "2025-07-15T16:01:30+00:00",
         "commits": [
+            {
+                "sha": "5cc86ade",
+                "message": "Fix color contrast on pause button in dark mode. Closes #337",
+                "author": "arabcoders",
+                "date": "2025-07-15T13:05:03+00:00",
+                "full_sha": "5cc86ade7de770ad1b7996f68e6acd16a03e4573"
+            },
             {
                 "sha": "47b5967c",
                 "message": "Add the ability to disable temp file handling",
@@ -669,7 +676,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f66980c3bf80e58e65d223b6e9b794d3e0ac8c72"
+        "full_sha": "043b019bde80be1db8beb599414d94599e233b3e"
     },
     {
         "tag": "master-20250616-c07465a6",
