@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "5cc86ade7de770ad1b7996f68e6acd16a03e4573",
+    "date": "2025-07-15T13:05:03+00:00",
+    "commits": [
+      {
+        "sha": "5cc86ade",
+        "full_sha": "5cc86ade7de770ad1b7996f68e6acd16a03e4573",
+        "message": "Fix color contrast on pause button in dark mode. Closes #337",
+        "author": "arabcoders",
+        "date": "2025-07-15T13:05:03+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.6",
     "full_sha": "f66980c3bf80e58e65d223b6e9b794d3e0ac8c72",
     "date": "2025-07-14T20:06:38+00:00",
