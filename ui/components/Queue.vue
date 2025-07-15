@@ -30,7 +30,7 @@
         </button>
       </div>
       <div class="column is-half-mobile" v-if="hasPausable">
-        <button type="button" class="button is-fullwidth is-background-warning-85" :disabled="!hasSelected"
+        <button type="button" class="button is-fullwidth is-warning is-background-warning-85" :disabled="!hasSelected"
           @click="pauseSelected">
           <span class="icon"><i class="fa-solid fa-pause" /></span>
           <span>Pause</span>
@@ -247,7 +247,7 @@
                 </button>
               </div>
               <div class="column is-half-mobile" v-if="item.auto_start && !item.status">
-                <button class="button is-background-warning-85 is-fullwidth" @click="pauseItem(item)">
+                <button class="button is-warning is-background-warning-85 is-fullwidth" @click="pauseItem(item)">
                   <span class="icon"><i class="fa-solid fa-pause" /></span>
                   <span>Pause</span>
                 </button>
