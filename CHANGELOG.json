@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "c1763f9e3b4e9cc976a63c524a070a5cdcb65c3b",
+    "date": "2025-07-16T13:16:44+00:00",
+    "commits": [
+      {
+        "sha": "c1763f9e",
+        "full_sha": "c1763f9e3b4e9cc976a63c524a070a5cdcb65c3b",
+        "message": "add preset to history/queue",
+        "author": "arabcoders",
+        "date": "2025-07-16T13:16:44+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.2.7",
     "full_sha": "043b019bde80be1db8beb599414d94599e233b3e",
     "date": "2025-07-15T16:01:30+00:00",
