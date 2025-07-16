@@ -119,14 +119,14 @@
                   </div>
                   <div v-if="showThumbnails && item.extras.thumbnail">
                     <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
-                      :title="item.title">
+                      :title="`[${item.preset}] - ${item.title}`">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                       </div>
                     </FloatingImage>
                   </div>
                   <template v-else>
-                    <div class="is-text-overflow" v-tooltip="item.title">
+                    <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
                       <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                     </div>
                   </template>
@@ -299,6 +299,10 @@
                   <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
                   <span>{{ setStatus(item) }}</span>
                 </span>
+              </div>
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+                <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
                 v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)">

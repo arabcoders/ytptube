@@ -118,14 +118,6 @@
                 <td class="is-vcentered is-items-center">
                   <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
                     :button_classes="'is-small'" label="Actions">
-                    <template v-if="!item.auto_start">
-                      <NuxtLink class="dropdown-item has-text-success" @click="startItem(item)">
-                        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-                        <span>Start Download</span>
-                      </NuxtLink>
-                      <hr class="dropdown-divider" />
-                    </template>
-
                     <template v-if="isEmbedable(item.url)">
                       <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
@@ -136,8 +128,24 @@
 
                     <NuxtLink class="dropdown-item has-text-warning" @click="confirmCancel(item);">
                       <span class="icon"><i class="fa-solid fa-eject" /></span>
-                      <span>Cancel Item</span>
+                      <span>Cancel Download</span>
                     </NuxtLink>
+
+                    <template v-if="!item.auto_start && !item.status">
+                      <hr class="dropdown-divider" />
+                      <NuxtLink class="dropdown-item has-text-success" @click="startItem(item)">
+                        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                        <span>Start Download</span>
+                      </NuxtLink>
+                    </template>
+
+                    <template v-if="item.auto_start && !item.status">
+                      <hr class="dropdown-divider" />
+                      <NuxtLink class="dropdown-item has-text-warning" @click="pauseItem(item)">
+                        <span class="icon"><i class="fa-solid fa-pause" /></span>
+                        <span>Pause Download</span>
+                      </NuxtLink>
+                    </template>
 
                     <template v-if="!config.app.basic_mode">
                       <hr class="dropdown-divider" />
@@ -222,6 +230,10 @@
                   </span>
                   <span v-text="setStatus(item)" />
                 </span>
+              </div>
+              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+                <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
