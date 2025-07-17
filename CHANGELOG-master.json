@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250716-78002ef9",
-        "date": "2025-07-16T14:37:28+00:00",
+        "tag": "master-20250718-6e84b78f",
+        "date": "2025-07-17T21:17:07+00:00",
         "commits": [
+            {
+                "sha": "112da011",
+                "message": "Major notification update to add initial support for apprise URLs.",
+                "author": "arabcoders",
+                "date": "2025-07-17T21:10:14+00:00",
+                "full_sha": "112da01105d9797dabdc600837c30af5d088c860"
+            },
             {
                 "sha": "c1763f9e",
                 "message": "add preset to history/queue",
@@ -683,7 +690,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "78002ef99af7ef39d6dd1542675bf53f9ec4b68e"
+        "full_sha": "6e84b78f22259d71f0c8e51995111136029a44a6"
     },
     {
         "tag": "master-20250616-c07465a6",

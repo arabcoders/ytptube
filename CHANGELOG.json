@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (78002ef9)",
-    "full_sha": "78002ef99af7ef39d6dd1542675bf53f9ec4b68e",
-    "date": "2025-07-16T14:37:28+00:00",
-    "commits": [
-      {
-        "sha": "c1763f9e",
-        "full_sha": "c1763f9e3b4e9cc976a63c524a070a5cdcb65c3b",
-        "message": "add preset to history/queue",
-        "author": "arabcoders",
-        "date": "2025-07-16T13:16:44+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "112da01105d9797dabdc600837c30af5d088c860",
-    "date": "2025-07-17T21:10:14+00:00",
+    "tag": "Unreleased (6e84b78f)",
+    "full_sha": "6e84b78f22259d71f0c8e51995111136029a44a6",
+    "date": "2025-07-17T21:17:07+00:00",
     "commits": [
       {
         "sha": "112da011",
@@ -24,6 +10,13 @@
         "message": "Major notification update to add initial support for apprise URLs.",
         "author": "arabcoders",
         "date": "2025-07-17T21:10:14+00:00"
+      },
+      {
+        "sha": "c1763f9e",
+        "full_sha": "c1763f9e3b4e9cc976a63c524a070a5cdcb65c3b",
+        "message": "add preset to history/queue",
+        "author": "arabcoders",
+        "date": "2025-07-16T13:16:44+00:00"
       }
     ]
   },
