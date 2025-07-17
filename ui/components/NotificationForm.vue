@@ -84,7 +84,8 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">The URL to send the notification to. It can be regular http/https endpoint.
-                      or <NuxtLink target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">Apprise</NuxtLink> URL.</span>
+                      or <NuxtLink target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">
+                        Apprise</NuxtLink> URL.</span>
                   </span>
                 </div>
               </div>
@@ -300,8 +301,20 @@ const showImport = useStorage('showImport', false);
 const import_string = ref('');
 const box = useConfirm()
 
+onMounted(() => {
+  if (!form.request.data_key) {
+    form.request.data_key = 'data';
+  }
+});
+
 const checkInfo = async () => {
-  const required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
+  let required;
+
+  if (!isApprise.value) {
+    required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
+  } else {
+    required = ['name', 'request.url'];
+  }
   for (const key of required) {
     if (key.includes('.')) {
       const [parent, child] = key.split('.');
@@ -315,11 +328,13 @@ const checkInfo = async () => {
     }
   }
 
-  try {
-    new URL(form.request.url);
-  } catch (e) {
-    toast.error('Invalid URL');
-    return;
+  if (!isApprise.value) {
+    try {
+      new URL(form.request.url);
+    } catch (e) {
+      toast.error('Invalid URL');
+      return;
+    }
   }
 
   let headers = []
