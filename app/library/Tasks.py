@@ -342,7 +342,6 @@ class Tasks(metaclass=Singleton):
                 ),
                 title=f"Task '{task.name}' completed",
                 message=f"Task '{task.name}' completed at '{timeNow}'",
-                id=task.id,
             )
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
