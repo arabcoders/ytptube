@@ -130,10 +130,12 @@ div.is-centered {
             The other keys <code>id</code>, <code>event</code> and <code>created_at</code> will be sent as they are.
           </li>
           <li>We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the request.</li>
+          <li>Support for <code>Apprise URLs</code> is in beta and subject to many changes to come, currently the
+            message field fallback to JSON encoded string of the event if there there is custom message set by us for
+            that particular event.</li>
         </ul>
       </Message>
     </div>
-
   </div>
 </template>
 

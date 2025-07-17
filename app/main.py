@@ -16,6 +16,7 @@ import caribou
 import magic
 from aiohttp import web
 
+from app.library.BackgroundWorker import BackgroundWorker
 from app.library.conditions import Conditions
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
@@ -39,8 +40,10 @@ class Main:
         self._config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
         self._app.on_shutdown.append(self.on_shutdown)
+        self._background_worker = BackgroundWorker()
 
         Services.get_instance().add("app", self._app)
+        Services.get_instance().add("background_worker", self._background_worker)
 
         self._check_folders()
 
@@ -94,7 +97,12 @@ class Main:
             raise
 
     async def on_shutdown(self, _: web.Application):
-        await EventBus.get_instance().emit(Events.SHUTDOWN, data={"app": self._app})
+        await EventBus.get_instance().emit(
+            Events.SHUTDOWN,
+            data={"app": self._app},
+            title="Application Shutdown",
+            message="The application is shutting down.",
+        )
 
     def start(self, host: str | None = None, port: int | None = None, cb=None):
         """

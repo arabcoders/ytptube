@@ -83,12 +83,13 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The URL to send the notification to.</span>
+                    <span class="is-bold">The URL to send the notification to. It can be regular http/https endpoint.
+                      or <NuxtLink target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">Apprise</NuxtLink> URL.</span>
                   </span>
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline" for="method">
                     Request method
@@ -113,7 +114,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline" for="type">
                     Request Type
@@ -138,7 +139,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12-mobile" :class="{ 'is-6-tablet': !isApprise, 'is-12': isApprise }">
                 <div class="field">
                   <label class="label is-inline" for="on">
                     Select Events
@@ -167,7 +168,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline" for="data_key">
                     Data field
@@ -187,7 +188,7 @@
                 </div>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-12" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline is-unselectable">
                     Optional Headers - <button type="button" class="has-text-link"
@@ -382,4 +383,6 @@ const importItem = async () => {
     toast.error(`Failed to import task. ${e.message}`)
   }
 }
+
+const isApprise = computed(() => form.request.url && !form.request.url.startsWith('http'))
 </script>
