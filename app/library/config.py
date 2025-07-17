@@ -103,6 +103,9 @@ class Config:
     manual_archive: str = "{config_path}/archive.manual.log"
     """The path to the manual archive file."""
 
+    apprise_config: str = "{config_path}/apprise.yml"
+    """The path to the Apprise configuration file."""
+
     ui_update_title: bool = True
     """Update the title of the browser tab with the current status."""
 
@@ -454,8 +457,9 @@ class Config:
 
         self.started = time.time()
 
-        logging.getLogger("httpx").setLevel(logging.WARNING)
         logging.getLogger("httpcore").setLevel(logging.INFO)
+        for _tool in ("httpx", "urllib3.connectionpool", "apprise"):
+            logging.getLogger(_tool).setLevel(logging.WARNING)
 
         # check env
         if self.app_env not in ("production", "development"):

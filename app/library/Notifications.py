@@ -11,6 +11,7 @@ import httpx
 from aiohttp import web
 
 from .ag_utils import ag
+from .BackgroundWorker import BackgroundWorker
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
@@ -129,6 +130,7 @@ class Notification(metaclass=Singleton):
         client: httpx.AsyncClient | None = None,
         encoder: Encoder | None = None,
         config: Config | None = None,
+        background_worker: BackgroundWorker | None = None,
     ):
         Notification._instance = self
         config: Config = config or Config.get_instance()
@@ -138,6 +140,7 @@ class Notification(metaclass=Singleton):
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
         self._version = config.app_version
+        self._offload: BackgroundWorker = background_worker or BackgroundWorker.get_instance()
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -335,16 +338,53 @@ class Notification(metaclass=Singleton):
 
         tasks = []
 
+        apprise_targets: list[Target] = []
+
         for target in self._targets:
             if len(target.on) > 0 and ev.event not in target.on and "test" != ev.event:
                 continue
 
-            tasks.append(self._send(target, ev))
+            if not target.request.url.startswith("http"):
+                apprise_targets.append(target)
+            else:
+                tasks.append(self._send(target, ev))
+
+        if len(apprise_targets) > 0:
+            tasks.append(self._apprise(apprise_targets, ev))
 
         if wait:
             return await asyncio.gather(*tasks)
 
         return tasks
+
+    async def _apprise(self, target: list[Target], ev: Event) -> dict:
+        if not target or not isinstance(target, list):
+            return {}
+
+        import apprise
+
+        try:
+            notify = apprise.Apprise()
+            apr_config = Path(Config.get_instance().apprise_config)
+            if apr_config.exists():
+                apprise_config = notify.AppriseConfig()
+                apprise_config.add(apr_config)
+                notify.add(apprise_config)
+
+            for t in target:
+                notify.add(t.request.url)
+
+            notify.notify(
+                body=ev.message or json.dumps(ev.serialize(), sort_keys=False, ensure_ascii=False),
+                title=ev.title or f"YTPTube Event: {ev.event}",
+                notify_type=ev.event,
+            )
+        except Exception as e:
+            LOG.exception(e)
+            LOG.error(f"Error sending Apprise notification: {e!s}")
+            return {"error": str(e), "event": ev.event, "id": ev.id, "targets": [t.name for t in target]}
+
+        return {}
 
     async def _send(self, target: Target, ev: Event) -> dict:
         try:
@@ -397,11 +437,13 @@ class Notification(metaclass=Singleton):
             LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'.")
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 
-    def emit(self, e: Event, _, **kwargs):  # noqa: ARG002
+    def emit(self, e: Event, _, **__):
         if len(self._targets) < 1 or not NotificationEvents.is_valid(e.event):
-            return asyncio.sleep(0)
+            return self.noop()
 
-        return self.send(e)
+        self._offload.submit(self.send, e)
+
+        return self.noop()
 
     def _deep_unpack(self, data: dict) -> dict:
         for k, v in data.items():
@@ -415,3 +457,6 @@ class Notification(metaclass=Singleton):
                 data[k] = v.serialize()
 
         return data
+
+    async def noop(self) -> None:
+        return None

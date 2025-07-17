@@ -19,13 +19,23 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @route(RouteType.SOCKET, "pause", "pause_downloads")
 async def pause(notify: EventBus, queue: DownloadQueue):
     queue.pause()
-    await notify.emit(Events.PAUSED, data={"paused": True, "at": time.time()})
+    await notify.emit(
+        Events.PAUSED,
+        data={"paused": True, "at": time.time()},
+        title="Downloads Paused",
+        message="Download pool has been paused.",
+    )
 
 
 @route(RouteType.SOCKET, "resume", "resume_downloads")
 async def resume(notify: EventBus, queue: DownloadQueue):
     queue.resume()
-    await notify.emit(Events.PAUSED, data={"paused": False, "at": time.time()})
+    await notify.emit(
+        Events.PAUSED,
+        data={"paused": False, "at": time.time()},
+        title="Downloads Resumed",
+        message="Download pool has been resumed.",
+    )
 
 
 @route(RouteType.SOCKET, "add_url", "add_url")
@@ -76,7 +86,9 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
     status = await queue.clear([id], remove_file=bool(data.get("remove_file", False)))
     status.update({"identifier": id})
 
-    await notify.emit(Events.ITEM_DELETE, data=status)
+    await notify.emit(
+        Events.ITEM_DELETE, data=status, title="Item Deleted", message=f"Item with ID '{id}' has been deleted."
+    )
 
 
 @route(RouteType.SOCKET, "archive_item", "archive_item")

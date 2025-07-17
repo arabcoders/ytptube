@@ -164,7 +164,7 @@ def extract_info(
     archive_id = f".{idDict['id']}" if idDict.get("id") else None
 
     log_wrapper.add_target(
-        target=logging.getLogger(f"yt-dlp{archive_id}"),
+        target=logging.getLogger(f"yt-dlp{archive_id if archive_id else '.extract_info'}"),
         level=logging.DEBUG if debug else logging.WARNING,
     )
 

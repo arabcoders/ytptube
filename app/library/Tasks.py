@@ -325,6 +325,8 @@ class Tasks(metaclass=Singleton):
                     "template": template,
                     "cli": cli,
                 },
+                title=f"Task '{task.name}' started",
+                message=f"Task '{task.name}' started at '{timeNow}'",
                 id=task.id,
             )
 
@@ -338,11 +340,17 @@ class Tasks(metaclass=Singleton):
                 data=success(
                     f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.", data={"lowPriority": True}
                 ),
+                title=f"Task '{task.name}' completed",
+                message=f"Task '{task.name}' completed at '{timeNow}'",
+                id=task.id,
             )
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
-                Events.ERROR, data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
+                Events.ERROR,
+                data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'."),
+                title=f"Task '{task.name}' failed",
+                message=str(e),
             )
 
 

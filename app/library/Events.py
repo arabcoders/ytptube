@@ -203,6 +203,12 @@ class Event:
     event: str
     """The event that was emitted."""
 
+    title: str | None = None
+    """The title of the event, if any."""
+
+    message: str | None = None
+    """The message of the event, if any."""
+
     data: any
     """The data that was passed to the event."""
 
@@ -214,10 +220,17 @@ class Event:
             dict: The serialized event.
 
         """
-        return {"id": self.id, "created_at": self.created_at, "event": self.event, "data": self.data}
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "event": self.event,
+            "title": self.title,
+            "message": self.message,
+            "data": self.data,
+        }
 
     def __repr__(self):
-        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, data={self.data})"
+        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, title={self.title}, message={self.message} data={self.data})"
 
     def datatype(self) -> str:
         """
@@ -230,7 +243,7 @@ class Event:
         return type(self.data).__name__
 
     def __str__(self):
-        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event})"
+        return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, title={self.title}, message={self.message})"
 
 
 class EventListener:
@@ -414,13 +427,17 @@ class EventBus(metaclass=Singleton):
         fut = asyncio.run_coroutine_threadsafe(emit_all(), loop)
         return fut.result() if wait else fut
 
-    async def emit(self, event: str, data: Any, **kwargs) -> Awaitable:
+    async def emit(
+        self, event: str, data: Any, title: str | None = None, message: str | None = None, **kwargs
+    ) -> Awaitable:
         """
         Emit an event.
 
         Args:
             event (str): The event to emit.
             data (Any): The data to pass to the event.
+            title (str | None): The title of the event, if any.
+            message (str | None): The message of the event, if any.
             **kwargs: The keyword arguments to pass to the event.
 
         Returns:
@@ -430,7 +447,7 @@ class EventBus(metaclass=Singleton):
         if event not in self._listeners:
             return []
 
-        ev = Event(event=event, data=data)
+        ev = Event(event=event, data=data, title=title, message=message)
 
         if self.debug or event not in Events.only_debug():
             LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
