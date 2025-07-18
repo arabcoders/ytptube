@@ -1,5 +1,47 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "09c5d7794d6c66e5757726c363ddfc425fc0f04f",
+    "date": "2025-07-18T18:06:09+00:00",
+    "commits": [
+      {
+        "sha": "09c5d779",
+        "full_sha": "09c5d7794d6c66e5757726c363ddfc425fc0f04f",
+        "message": "Cleaning up the event dispatcher system.",
+        "author": "arabcoders",
+        "date": "2025-07-18T18:06:09+00:00"
+      },
+      {
+        "sha": "84f623f2",
+        "full_sha": "84f623f2e4cbbee6489144b19c471f0de2d8ebc4",
+        "message": "Convert socketStore and stateStore to ts",
+        "author": "arabcoders",
+        "date": "2025-07-18T16:49:36+00:00"
+      },
+      {
+        "sha": "1580388b",
+        "full_sha": "1580388b96a8ea3a0f332052daf08b8529737de1",
+        "message": "renamed types folder",
+        "author": "arabcoders",
+        "date": "2025-07-18T15:56:38+00:00"
+      },
+      {
+        "sha": "caf60333",
+        "full_sha": "caf60333ea2082afda6f857e92478b9918feb8f8",
+        "message": "minor improvements to the bg worker",
+        "author": "arabcoders",
+        "date": "2025-07-18T14:24:19+00:00"
+      },
+      {
+        "sha": "49ac2720",
+        "full_sha": "49ac2720acc837b9c2c37c2abd54493f4e7a2391",
+        "message": "auto focus the confirm button in confirm dialog.",
+        "author": "arabcoders",
+        "date": "2025-07-18T14:01:32+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.3.0",
     "full_sha": "f9b70fec5faca1221b71914f170f89a9a5648f8f",
     "date": "2025-07-17T21:40:37+00:00",
