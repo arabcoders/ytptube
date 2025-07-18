@@ -1,8 +1,57 @@
 [
     {
-        "tag": "master-20250718-f9b70fec",
-        "date": "2025-07-17T21:40:37+00:00",
+        "tag": "master-20250718-e3983219",
+        "date": "2025-07-18T19:06:53+00:00",
         "commits": [
+            {
+                "sha": "0f7f22bd",
+                "message": "removed event type ERROR and migrated it's uses to LOG_ERROR",
+                "author": "arabcoders",
+                "date": "2025-07-18T18:59:43+00:00",
+                "full_sha": "0f7f22bdbf0371aec60a3545fbbbdb6e9f4b4e92"
+            },
+            {
+                "sha": "138a4977",
+                "message": "only offload to bg worker when needed.",
+                "author": "arabcoders",
+                "date": "2025-07-18T18:14:42+00:00",
+                "full_sha": "138a497703ce230fc5685696e5826587a4169539"
+            },
+            {
+                "sha": "09c5d779",
+                "message": "Cleaning up the event dispatcher system.",
+                "author": "arabcoders",
+                "date": "2025-07-18T18:06:09+00:00",
+                "full_sha": "09c5d7794d6c66e5757726c363ddfc425fc0f04f"
+            },
+            {
+                "sha": "84f623f2",
+                "message": "Convert socketStore and stateStore to ts",
+                "author": "arabcoders",
+                "date": "2025-07-18T16:49:36+00:00",
+                "full_sha": "84f623f2e4cbbee6489144b19c471f0de2d8ebc4"
+            },
+            {
+                "sha": "1580388b",
+                "message": "renamed types folder",
+                "author": "arabcoders",
+                "date": "2025-07-18T15:56:38+00:00",
+                "full_sha": "1580388b96a8ea3a0f332052daf08b8529737de1"
+            },
+            {
+                "sha": "caf60333",
+                "message": "minor improvements to the bg worker",
+                "author": "arabcoders",
+                "date": "2025-07-18T14:24:19+00:00",
+                "full_sha": "caf60333ea2082afda6f857e92478b9918feb8f8"
+            },
+            {
+                "sha": "49ac2720",
+                "message": "auto focus the confirm button in confirm dialog.",
+                "author": "arabcoders",
+                "date": "2025-07-18T14:01:32+00:00",
+                "full_sha": "49ac2720acc837b9c2c37c2abd54493f4e7a2391"
+            },
             {
                 "sha": "395d01fe",
                 "message": "Remove task ID from completion notification message",
@@ -704,7 +753,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f9b70fec5faca1221b71914f170f89a9a5648f8f"
+        "full_sha": "e39832190115a521156ebff3efa2ad4ef3f0efc2"
     },
     {
         "tag": "master-20250616-c07465a6",
