@@ -7,7 +7,7 @@ import anyio
 
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
-from app.library.Events import EventBus, Events, error
+from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import RouteType, route
 from app.library.Utils import is_downloaded
@@ -43,25 +43,37 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
     url: str | None = data.get("url")
 
     if not url:
-        await notify.emit(Events.ERROR, data=error("No URL provided.", data={"unlock": True}), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid URL",
+            message="Please provide a valid URL to add to the download queue.",
+            to=sid,
+        )
         return
 
     try:
+        status = await queue.add(item=Item.format(data))
         await notify.emit(
             event=Events.STATUS,
-            data=await queue.add(item=Item.format(data)),
+            title="Adding URL",
+            message=f"Adding URL '{url}' to the download queue.",
+            data=status,
             to=sid,
         )
     except ValueError as e:
         LOG.exception(e)
-        await notify.emit(Events.ERROR, data=error(str(e)), to=sid)
-        return
+        await notify.emit(Events.LOG_ERROR, title="Error Adding URL", message=str(e), to=sid)
 
 
 @route(RouteType.SOCKET, "item_cancel", "item_cancel")
 async def item_cancel(queue: DownloadQueue, notify: EventBus, sid: str, data: str):
     if not data:
-        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid Request",
+            message="No item ID provided to cancel.",
+            to=sid,
+        )
         return
 
     status: dict[str, str] = {}
@@ -74,12 +86,32 @@ async def item_cancel(queue: DownloadQueue, notify: EventBus, sid: str, data: st
 @route(RouteType.SOCKET, "item_delete", "item_delete")
 async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
     if not data:
-        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid Request",
+            message="No item ID provided to delete.",
+            to=sid,
+        )
         return
 
     id: str | None = data.get("id")
     if not id:
-        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid Request",
+            message="No item ID provided to delete.",
+            to=sid,
+        )
+        return
+
+    item = queue.get_item(id=id)
+    if not item:
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Item Not Found",
+            message=f"Item with ID '{id}' not found.",
+            to=sid,
+        )
         return
 
     status: dict[str, str] = {}
@@ -87,7 +119,7 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
     status.update({"identifier": id})
 
     await notify.emit(
-        Events.ITEM_DELETE, data=status, title="Item Deleted", message=f"Item with ID '{id}' has been deleted."
+        Events.ITEM_DELETE, data=status, title="Item Deleted", message=f"Item '{item.info.title}': has been deleted."
     )
 
 
@@ -145,7 +177,12 @@ async def archive_item(config: Config, data: dict):
 @route(RouteType.SOCKET, "item_start", "item_start")
 async def item_start(queue: DownloadQueue, notify: EventBus, sid: str, data: list | str) -> None:
     if not data:
-        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid Request",
+            message="No items provided to start.",
+            to=sid,
+        )
         return
 
     if isinstance(data, str):
@@ -157,7 +194,12 @@ async def item_start(queue: DownloadQueue, notify: EventBus, sid: str, data: lis
 @route(RouteType.SOCKET, "item_pause", "item_pause")
 async def item_pause(queue: DownloadQueue, notify: EventBus, sid: str, data: list | str) -> None:
     if not data:
-        await notify.emit(Events.ERROR, data=error("Invalid request."), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Invalid Request",
+            message="No items provided to pause.",
+            to=sid,
+        )
         return
 
     if isinstance(data, str):

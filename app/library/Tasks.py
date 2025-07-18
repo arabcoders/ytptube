@@ -15,7 +15,7 @@ from app.library.Services import Services
 
 from .config import Config
 from .encoder import Encoder
-from .Events import EventBus, Events, error, success
+from .Events import EventBus, Events
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import init_class, validate_url
@@ -325,7 +325,7 @@ class Tasks(metaclass=Singleton):
                     "template": template,
                     "cli": cli,
                 },
-                title=f"Task '{task.name}' started",
+                title="Tasks",
                 message=f"Task '{task.name}' started at '{timeNow}'",
                 id=task.id,
             )
@@ -337,19 +337,16 @@ class Tasks(metaclass=Singleton):
 
             await self._notify.emit(
                 Events.LOG_SUCCESS,
-                data=success(
-                    f"Task '{task.name}' completed in '{ended - started:.2f}' seconds.", data={"lowPriority": True}
-                ),
-                title=f"Task '{task.name}' completed",
-                message=f"Task '{task.name}' completed at '{timeNow}'",
+                data={"lowPriority": True},
+                title="Task completed",
+                message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
             )
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
-                Events.ERROR,
-                data=error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'."),
-                title=f"Task '{task.name}' failed",
-                message=str(e),
+                Events.LOG_ERROR,
+                title="Task failed",
+                message=f"Failed to execute '{task.name}'. '{e!s}'",
             )
 
 

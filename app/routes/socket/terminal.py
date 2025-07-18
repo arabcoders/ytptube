@@ -3,7 +3,7 @@ import os
 from typing import TYPE_CHECKING
 
 from app.library.config import Config
-from app.library.Events import EventBus, Events, error
+from app.library.Events import EventBus, Events
 from app.library.router import RouteType, route
 
 if TYPE_CHECKING:
@@ -17,11 +17,16 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @route(RouteType.SOCKET, "cli_post", "socket_cli_post")
 async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
     if not config.console_enabled:
-        await notify.emit(Events.ERROR, data=error("Console is disabled."), to=sid)
+        notify.offload(
+            Events.LOG_ERROR,
+            title="Feature disabled",
+            message="Console feature is disabled.",
+            to=sid,
+        )
         return
 
     if not data:
-        await notify.emit(Events.CLI_CLOSE, data={"exitcode": 0}, to=sid)
+        notify.offload(Events.CLI_CLOSE, data={"exitcode": 0}, to=sid)
         return
 
     import asyncio
@@ -29,6 +34,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
     import shlex
     import subprocess  # ignore
 
+    returncode: int = -1
     try:
         LOG.info(f"Cli command from client '{sid}'. '{data}'")
 
@@ -36,15 +42,21 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
         _env: dict[str, str] = os.environ.copy()
         _env.update(
             {
-                "TERM": "xterm-256color",
-                "LANG": "en_US.UTF-8",
-                "SHELL": "/bin/bash",
-                "LC_ALL": "en_US.UTF-8",
                 "PWD": config.download_path,
                 "FORCE_COLOR": "1",
                 "PYTHONUNBUFFERED": "1",
             }
         )
+
+        if "nt" != os.name:
+            _env.update(
+                {
+                    "TERM": "xterm-256color",
+                    "LANG": "en_US.UTF-8",
+                    "LC_ALL": "en_US.UTF-8",
+                    "SHELL": "/bin/bash",
+                }
+            )
 
         try:
             import pty
@@ -81,7 +93,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
                 assert proc.stdout is not None
                 async for raw_line in proc.stdout:
                     line = raw_line.rstrip(b"\n")
-                    await notify.emit(
+                    notify.offload(
                         Events.CLI_OUTPUT,
                         data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
                         to=sid,
@@ -100,7 +112,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
 
                 if not chunk:
                     if buffer:
-                        await notify.emit(
+                        notify.offload(
                             Events.CLI_OUTPUT,
                             data={"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
                             to=sid,
@@ -111,7 +123,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
                 *lines, buffer = buffer.split(b"\n")
 
                 for line in lines:
-                    await notify.emit(
+                    notify.offload(
                         Events.CLI_OUTPUT,
                         data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
                         to=sid,
@@ -126,10 +138,9 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
         returncode: int = await proc.wait()
 
         await read_task
-
-        await notify.emit(Events.CLI_CLOSE, data={"exitcode": returncode}, to=sid)
     except Exception as e:
         LOG.error(f"CLI execute exception was thrown for client '{sid}'.")
         LOG.exception(e)
-        await notify.emit(Events.CLI_OUTPUT, data={"type": "stderr", "line": str(e)}, to=sid)
-        await notify.emit(Events.CLI_CLOSE, data={"exitcode": -1}, to=sid)
+        notify.offload(Events.CLI_OUTPUT, data={"type": "stderr", "line": str(e)}, to=sid)
+    finally:
+        notify.offload(Events.CLI_CLOSE, data={"exitcode": returncode}, to=sid)

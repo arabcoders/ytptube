@@ -5,7 +5,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.library.encoder import Encoder
-from app.library.Events import EventBus, Events, message
+from app.library.Events import EventBus, Events
 from app.library.Notifications import Notification, NotificationEvents
 from app.library.router import route
 from app.library.Utils import validate_uuid
@@ -104,8 +104,6 @@ async def notification_test(encoder: Encoder, notify: EventBus) -> Response:
         Response: The response object.
 
     """
-    data = message("test", "This is a test notification.")
+    await notify.emit(Events.TEST, title="Test Notification", message="This is a test notification.")
 
-    await notify.emit(Events.TEST, data=data, title="Test Notification", message="This is a test notification.")
-
-    return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
+    return web.json_response(data={}, status=web.HTTPOk.status_code, dumps=encoder.encode)

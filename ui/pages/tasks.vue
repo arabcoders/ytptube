@@ -686,7 +686,8 @@ const runNow = async (item: task_item, mass: boolean = false) => {
 onBeforeUnmount(() => socket.off('status', statusHandler))
 
 const statusHandler = async (stream: string) => {
-  const { status, msg } = JSON.parse(stream)
+  const json = JSON.parse(stream)
+  const { status, msg } = json.data
 
   if ('error' === status) {
     toast.error(msg)

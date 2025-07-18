@@ -492,10 +492,10 @@ class Download:
             if "error" == self.info.status and "error" in status:
                 self.info.error = status.get("error")
                 await self._notify.emit(
-                    Events.ERROR,
-                    data={"message": self.info.error, "data": self.info},
+                    Events.LOG_ERROR,
+                    data=self.info,
                     title="Download Error",
-                    message=f"Error in download task '{self.info.title}': {self.info.error}",
+                    message=f"'{self.info.title}' failed to download: {self.info.error}",
                 )
 
             if "downloaded_bytes" in status and status.get("downloaded_bytes") > 0:

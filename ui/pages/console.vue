@@ -173,9 +173,9 @@ const writer = (s: string) => {
     return
   }
 
-  const data = JSON.parse(s)
+  const json = JSON.parse(s)
 
-  terminal.value.writeln(data.line)
+  terminal.value.writeln(json.data.line)
 }
 
 const loader = () => isLoading.value = false

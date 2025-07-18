@@ -336,3 +336,7 @@ hr {
 .fa-spin-10 {
   --fa-animation-iteration-count: 10;
 }
+
+.Vue-Toastification__toast-body {
+  user-select: none;
+}
