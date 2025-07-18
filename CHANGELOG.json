@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "138a497703ce230fc5685696e5826587a4169539",
-    "date": "2025-07-18T18:14:42+00:00",
+    "full_sha": "0f7f22bdbf0371aec60a3545fbbbdb6e9f4b4e92",
+    "date": "2025-07-18T18:59:43+00:00",
     "commits": [
+      {
+        "sha": "0f7f22bd",
+        "full_sha": "0f7f22bdbf0371aec60a3545fbbbdb6e9f4b4e92",
+        "message": "removed event type ERROR and migrated it's uses to LOG_ERROR",
+        "author": "arabcoders",
+        "date": "2025-07-18T18:59:43+00:00"
+      },
       {
         "sha": "138a4977",
         "full_sha": "138a497703ce230fc5685696e5826587a4169539",
