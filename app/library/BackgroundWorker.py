@@ -6,10 +6,16 @@ from queue import Empty, Queue
 
 from .Singleton import Singleton
 
-LOG = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class BackgroundWorker(metaclass=Singleton):
+    """
+    Background worker to run tasks in a separate thread.
+    This class uses a queue to submit tasks that will be executed in the background.
+    It is designed to run in a separate thread and uses asyncio to handle asynchronous tasks.
+    """
+
     _instance = None
     """The instance of the Notification class."""
 
@@ -37,19 +43,18 @@ class BackgroundWorker(metaclass=Singleton):
             except Exception as e:
                 LOG.exception("Loop error: %s", e)
 
-        threading.Thread(target=_loop_runner, daemon=True).start()
+        threading.Thread(target=_loop_runner, daemon=True, name="Background Runner").start()
 
         while self.running:
             try:
                 fn, args, kwargs = self.queue.get(timeout=1)
                 try:
-                    LOG.debug("Running background task: %s", fn.__name__)
                     result = fn(*args, **kwargs)
                     if inspect.iscoroutine(result):
                         loop.call_soon_threadsafe(loop.create_task, result)
                 except Exception as e:
                     LOG.exception(e)
-                    LOG.error(f"Error in background task: {fn.__name__}")
+                    LOG.error(f"Failed to run '{fn.__name__}'. {e!s}")
             except Empty:
                 continue
 
