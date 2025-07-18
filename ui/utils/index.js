@@ -13,7 +13,7 @@ const getValue = (obj) => 'function' === typeof obj ? obj() : obj
 /**
  * Get value from object or function and return default value if it's undefined  or null
  *
- * @param {Object|Array} obj The object to get the value from.
+ * @param {Object|Array|any} obj The object to get the value from.
  * @param {string} path The path to the value.
  * @param {*} defaultValue The default value to return if the path is not found.
  *

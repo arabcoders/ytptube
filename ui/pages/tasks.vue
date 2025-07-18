@@ -330,7 +330,7 @@ import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import { request, sleep } from '~/utils/index'
 import { encode } from '~/utils/importer'
-import type { task_item, exported_task, error_response } from '~/@types/tasks'
+import type { task_item, exported_task, error_response } from '~/types/tasks'
 
 const box = useConfirm()
 const toast = useNotification()
@@ -686,7 +686,8 @@ const runNow = async (item: task_item, mass: boolean = false) => {
 onBeforeUnmount(() => socket.off('status', statusHandler))
 
 const statusHandler = async (stream: string) => {
-  const { status, msg } = JSON.parse(stream)
+  const json = JSON.parse(stream)
+  const { status, msg } = json.data
 
   if ('error' === status) {
     toast.error(msg)

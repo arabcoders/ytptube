@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { request } from '~/utils/index'
 import { encode } from '~/utils/importer'
-import type { ConditionItem, ImportedConditionItem } from '~/@types/conditions'
+import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
 const toast = useNotification()
 const config = useConfigStore()

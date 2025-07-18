@@ -55,7 +55,7 @@ class HttpSocket:
         self.rootPath = root_path
 
         def emit(e: Event, _, **kwargs):
-            return self.sio.emit(event=e.event, data=encoder.encode(e.data), **kwargs)
+            return self.sio.emit(event=e.event, data=encoder.encode(e), **kwargs)
 
         services = Services.get_instance()
         services.add_all(

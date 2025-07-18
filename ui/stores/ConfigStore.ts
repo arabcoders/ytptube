@@ -1,5 +1,5 @@
 import { useStorage } from '@vueuse/core'
-import type { ConfigState } from '~/@types/config';
+import type { ConfigState } from '~/types/config';
 
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({

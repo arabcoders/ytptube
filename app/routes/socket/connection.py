@@ -1,12 +1,13 @@
 import asyncio
 import logging
 from pathlib import Path
+from typing import Any
 
 import socketio
 
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
-from app.library.Events import EventBus, Events, error
+from app.library.Events import EventBus, Events
 from app.library.Presets import Presets
 from app.library.router import RouteType, route
 from app.library.Utils import tail_log
@@ -30,7 +31,13 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
 
     data["folders"] = [folder.name for folder in Path(config.download_path).iterdir() if folder.is_dir()]
 
-    await notify.emit(Events.INITIAL_DATA, data=data, to=sid)
+    await notify.emit(
+        Events.CONNECTED,
+        data=data,
+        title="Client connected",
+        message=f"Client '{sid}' connected.",
+        to=sid,
+    )
 
 
 @route(RouteType.SOCKET, "disconnect", "socket_disconnect")
@@ -52,7 +59,7 @@ async def disconnect(sio: socketio.AsyncServer, sid: str, data: str = None):
 
 
 @route(RouteType.SOCKET, "subscribe", "socket_subscribe")
-async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer, sid: str, data: str):
+async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer, sid: str, data: str | Any):
     """
     Subscribe to a specific event.
 
@@ -64,8 +71,13 @@ async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer,
         data (str): The event to subscribe to.
 
     """
-    if not isinstance(data, str):
-        await notify.emit(Events.ERROR, data=error("Invalid event."), to=sid)
+    if not isinstance(data, str) or not data:
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Subscription Error",
+            message="Invalid event type was expecting a string.",
+            to=sid,
+        )
         return
 
     if data not in _Data.subscribers:

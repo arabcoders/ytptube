@@ -19,8 +19,6 @@ from .config import Config
 from .DataStore import DataStore, StoreType
 from .Download import Download
 from .Events import EventBus, Events
-from .Events import info as event_info
-from .Events import warning as event_warning
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
@@ -452,39 +450,48 @@ class DownloadQueue(metaclass=Singleton):
 
         try:
             dlInfo: Download = Download(info=dl, info_dict=entry if item.auto_start else None, logs=logs)
+            notifyTitle: str | None = None
+            notifyMessage: str | None = None
 
             text_logs: str = ""
             if filtered_logs := extract_ytdlp_logs(logs):
                 text_logs = f" Logs: {', '.join(filtered_logs)}"
 
             if "is_upcoming" == entry.get("live_status"):
-                NotifyEvent = Events.COMPLETED
+                notifyEvent = Events.COMPLETED
+                notifyTitle = "Upcoming Premiere" if is_premiere else "Upcoming Live Stream"
+                notifyMessage = f"{'Premiere video' if is_premiere else 'Stream' } '{dlInfo.info.title}' is not available yet. {text_logs}"
+
                 dlInfo.info.status = "not_live"
-                dlInfo.info.msg = f"{'Premiere video' if is_premiere else 'Stream' } is not available yet." + text_logs
+                dlInfo.info.msg = notifyMessage.replace(f" '{dlInfo.info.title}'", "")
+
                 await self._notify.emit(
                     Events.LOG_INFO,
-                    data=event_info(dlInfo.info.msg, {"lowPriority": True}),
-                    title="Premiere video" if is_premiere else "Live Stream",
-                    message=f"Item '{dlInfo.info.title}' is not available yet. {dlInfo.info.msg}",
+                    data={"lowPriority": True},
+                    title=notifyTitle,
+                    message=notifyMessage,
                 )
+
                 itemDownload: Download = self.done.put(dlInfo)
             elif len(entry.get("formats", [])) < 1:
-                availability: str = entry.get("availability", "public")
-                msg: str = "No formats found."
-                if availability and availability not in ("public",):
-                    msg += f" Availability is set for '{availability}'."
+                ava: str = entry.get("availability", "public")
+                notifyTitle = "Download Error"
+                notifyMessage: str = f"No formats for '{dl.title}'."
+                if ava and ava not in ("public",):
+                    notifyMessage += f" Availability is set for '{ava}'."
 
-                dlInfo.info.error = msg + text_logs
+                dlInfo.info.error = notifyMessage.replace(f" for '{dl.title}'.", ".") + text_logs
                 dlInfo.info.status = "error"
                 itemDownload = self.done.put(dlInfo)
-                NotifyEvent = Events.COMPLETED
+                notifyEvent = Events.COMPLETED
                 await self._notify.emit(
                     Events.LOG_WARNING,
-                    data=event_warning(f"No formats found for '{dl.title}'."),
-                    title="No Formats Found",
-                    message=f"No formats found for '{dl.title}'. {dlInfo.info.error}",
+                    data={"logs": text_logs},
+                    title=notifyTitle,
+                    message=notifyMessage,
                 )
             elif is_premiere and self.config.prevent_live_premiere:
+                notifyTitle = "Premiere Video"
                 dlInfo.info.error = "Premiering right now."
 
                 _requeue = True
@@ -496,6 +503,7 @@ class DownloadQueue(metaclass=Singleton):
                         )
                         starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
                         dlInfo.info.error += f" Download will start at {starts_in.astimezone().isoformat()}."
+                        notifyMessage = dlInfo.info.error.strip()
                         _requeue = False
                     except Exception as e:
                         LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
@@ -503,25 +511,24 @@ class DownloadQueue(metaclass=Singleton):
                 else:
                     dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
 
+                notifyMessage = dlInfo.info.error.strip()
+
                 if _requeue:
-                    NotifyEvent = Events.ADDED
+                    notifyEvent = Events.ADDED
                     itemDownload = self.queue.put(dlInfo)
                     if item.auto_start:
                         self.event.set()
-                    else:
-                        LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
                 else:
                     dlInfo.info.status = "not_live"
                     itemDownload = self.done.put(dlInfo)
-                    NotifyEvent = Events.COMPLETED
-                    await self._notify.emit(
-                        Events.LOG_INFO,
-                        data=event_info(f"'{dl.title}' is {dlInfo.info.error}.", {"lowPriority": True}),
-                        title="Item Not Live",
-                        message=f"Item '{dl.title}' is not live. {dlInfo.info.error}",
-                    )
+                    notifyEvent = Events.COMPLETED
+                    notifyTitle = "Item Not Live"
+                    notifyMessage = f"Item '{dlInfo.info.title}' is not live."
+                    await self._notify.emit(Events.LOG_INFO, title=notifyTitle, message=notifyMessage)
             else:
-                NotifyEvent = Events.ADDED
+                notifyEvent = Events.ADDED
+                notifyTitle = "Item Added"
+                notifyMessage = f"Item '{dlInfo.info.title}' has been added to the download queue."
                 itemDownload = self.queue.put(dlInfo)
                 if item.auto_start:
                     self.event.set()
@@ -529,10 +536,10 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
 
             await self._notify.emit(
-                NotifyEvent,
+                notifyEvent,
                 data=itemDownload.info.serialize(),
-                title="Item Added" if Events.ADDED == NotifyEvent else None,
-                message=f"Added '{itemDownload.info.title}'." if NotifyEvent == Events.ADDED else None,
+                title=notifyTitle,
+                message=notifyMessage,
             )
 
             return {"status": "ok"}
@@ -740,14 +747,18 @@ class DownloadQueue(metaclass=Singleton):
                 self.queue.delete(id)
                 await self._notify.emit(
                     Events.CANCELLED,
-                    data=item.info.serialize(),
+                    data=item.info,
                     title="Download Cancelled",
                     message=f"Download '{item.info.title}' has been cancelled.",
                 )
                 item.info.status = "cancelled"
-                # item.info.error = "Cancelled by user."
                 self.done.put(item)
-                await self._notify.emit(Events.COMPLETED, data=item.info.serialize())
+                await self._notify.emit(
+                    Events.COMPLETED,
+                    data=item.info,
+                    title="Download Cancelled",
+                    message=f"Download '{item.info.title}' has been cancelled.",
+                )
                 LOG.info(f"Deleted from queue {item_ref}")
 
             status[id] = "ok"
@@ -815,11 +826,13 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
             self.done.delete(id)
+
+            _status: str = "Removed" if removed_files > 0 else "Cleared"
             await self._notify.emit(
                 Events.CLEARED,
-                data=item.info.serialize(),
-                title="Download Cleared",
-                message=f"Cleared download '{item.info.title}' from history.",
+                data=item.info,
+                title=f"Download {_status}",
+                message=f"{_status} '{item.info.title}' from history.",
             )
 
             msg = f"Deleted completed download '{itemRef}'."
@@ -856,6 +869,27 @@ class DownloadQueue(metaclass=Singleton):
                 items["done"][k] = v.info
 
         return items
+
+    def get_item(self, id: str) -> Download | None:
+        """
+        Get a specific item from the download queue or history.
+
+        Args:
+            id (str): The ID of the item to retrieve.
+
+        Returns:
+            Download | None: The requested item if found, otherwise None.
+
+        """
+        try:
+            return self.queue.get(key=id)
+        except KeyError:
+            pass
+
+        try:
+            return self.done.get(key=id)
+        except KeyError:
+            return None
 
     async def _download_pool(self) -> None:
         """
@@ -931,25 +965,25 @@ class DownloadQueue(metaclass=Singleton):
             LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
             self.queue.delete(key=id)
 
+            notifyTitle: str | None = None
+            notifyMessage: str | None = None
+
             if entry.is_cancelled() is True:
                 await self._notify.emit(
                     Events.CANCELLED,
-                    data=entry.info.serialize(),
+                    data=entry.info,
                     title="Download Cancelled",
                     message=f"Download '{entry.info.title}' has been cancelled.",
                 )
                 entry.info.status = "cancelled"
-                # entry.info.error = "Cancelled by user."
+                notifyTitle = "Download Cancelled"
+                notifyMessage = f"Download '{entry.info.title}' has been cancelled."
+            elif entry.info.status == "finished":
+                notifyTitle = "Download Completed"
+                notifyMessage = f"Download '{entry.info.title}' has been completed."
 
             self.done.put(value=entry)
-            await self._notify.emit(
-                Events.COMPLETED,
-                data=entry.info.serialize(),
-                title="Download Completed" if entry.info.status == "finished" else None,
-                message=f"Download '{entry.info.title}' has been completed."
-                if entry.info.status == "finished"
-                else None,
-            )
+            await self._notify.emit(Events.COMPLETED, data=entry.info, title=notifyTitle, message=notifyMessage)
         else:
             LOG.warning(f"Download '{id}' not found in queue.")
 

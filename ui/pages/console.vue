@@ -63,6 +63,7 @@ import { useStorage } from '@vueuse/core'
 
 const config = useConfigStore()
 const socket = useSocketStore()
+const toast = useNotification()
 
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
@@ -88,14 +89,15 @@ watch(() => config.app.basic_mode, async () => {
     return
   }
   await navigateTo('/')
-})
+}, { immediate: true })
 
 watch(() => config.app.console_enabled, async () => {
   if (config.app.console_enabled) {
     return
   }
+  toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
   await navigateTo('/')
-})
+}, { immediate: true })
 
 const handle_event = () => {
   if (!terminal.value) {
@@ -171,9 +173,9 @@ const writer = (s: string) => {
     return
   }
 
-  const data = JSON.parse(s)
+  const json = JSON.parse(s)
 
-  terminal.value.writeln(data.line)
+  terminal.value.writeln(json.data.line)
 }
 
 const loader = () => isLoading.value = false

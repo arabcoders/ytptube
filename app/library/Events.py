@@ -6,85 +6,10 @@ from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from typing import Any
 
+from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
 
-LOG = logging.getLogger("Events")
-
-
-def error(msg: str, data: dict | None = None) -> dict:
-    """
-    Create an error message.
-
-    Args:
-        msg (str): The message.
-        data (dict|None): The data to include in the message.
-
-    Returns:
-        dict : The message wrapped in a dictionary.
-
-    """
-    return message("error", msg, data)
-
-
-def warning(msg: str, data: dict | None = None) -> dict:
-    """
-    Create an error message.
-
-    Args:
-        msg (str): The message.
-        data (dict|None): The data to include in the message.
-
-    Returns:
-        dict : The message wrapped in a dictionary.
-
-    """
-    return message("warning", msg, data)
-
-
-def info(msg: str, data: dict | None = None) -> dict:
-    """
-    Create an info message.
-
-    Args:
-        msg (str): The message.
-        data (dict|None): The data to include in the message.
-
-    Returns:
-        dict : The message wrapped in a dictionary.
-
-    """
-    return message("info", msg, data)
-
-
-def success(msg: str, data: dict | None = None) -> dict:
-    """
-    Create a success message.
-
-    Args:
-        msg (str): The message.
-        data (dict|None): The data to include in the message.
-
-    Returns:
-        dict : The message wrapped in a dictionary.
-
-    """
-    return message("success", msg, data)
-
-
-def message(type: str, message: str, data: dict | None = None) -> dict:
-    """
-    Create a message.
-
-    Args:
-        type (str): The type of the message.
-        message (str): The message.
-        data (dict|None): The data to include in the message.
-
-    Returns:
-        dict : The message wrapped in a dictionary.
-
-    """
-    return {"type": type, "message": message, "data": data if data else {}}
+LOG: logging.Logger = logging.getLogger("Events")
 
 
 class Events:
@@ -98,29 +23,31 @@ class Events:
     SHUTDOWN = "shutdown"
 
     ADDED = "added"
+    UPDATE = "update"
     UPDATED = "updated"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     CLEARED = "cleared"
-    ERROR = "error"
+    CONNECTED = "connected"
+    STATUS = "status"
+
     LOG_INFO = "log_info"
     LOG_WARNING = "log_warning"
     LOG_ERROR = "log_error"
     LOG_SUCCESS = "log_success"
 
-    INITIAL_DATA = "initial_data"
     ITEM_DELETE = "item_delete"
     ITEM_CANCEL = "item_cancel"
     ITEM_ERROR = "item_error"
-    STATUS = "status"
-    CLI_CLOSE = "cli_close"
-    CLI_OUTPUT = "cli_output"
-    UPDATE = "update"
+
     TEST = "test"
     ADD_URL = "add_url"
 
-    CLI_POST = "cli_post"
     PAUSED = "paused"
+
+    CLI_POST = "cli_post"
+    CLI_CLOSE = "cli_close"
+    CLI_OUTPUT = "cli_output"
 
     TASKS_ADD = "task_add"
     TASK_DISPATCHED = "task_dispatched"
@@ -129,6 +56,7 @@ class Events:
 
     PRESETS_ADD = "presets_add"
     PRESETS_UPDATE = "presets_update"
+
     SCHEDULE_ADD = "schedule_add"
 
     CONDITIONS_ADD = "conditions_add"
@@ -158,9 +86,8 @@ class Events:
 
         """
         return [
-            Events.INITIAL_DATA,
+            Events.CONNECTED,
             Events.ADDED,
-            Events.ERROR,
             Events.LOG_INFO,
             Events.LOG_WARNING,
             Events.LOG_ERROR,
@@ -185,7 +112,7 @@ class Events:
             list: The list of debug events.
 
         """
-        return [Events.UPDATED]
+        return [Events.UPDATED, Events.CLI_OUTPUT]
 
 
 @dataclass(kw_only=True)
@@ -209,7 +136,7 @@ class Event:
     message: str | None = None
     """The message of the event, if any."""
 
-    data: any
+    data: Any
     """The data that was passed to the event."""
 
     def serialize(self) -> dict:
@@ -277,12 +204,16 @@ class EventBus(metaclass=Singleton):
     debug: bool = False
     """Whether to log debug messages or not."""
 
+    _offload: BackgroundWorker
+    """The background worker to offload tasks to."""
+
     def __init__(self):
         EventBus._instance = self
 
         from .config import Config
 
         self.debug = Config.get_instance().debug
+        self._offload = BackgroundWorker.get_instance()
 
     @staticmethod
     def get_instance() -> "EventBus":
@@ -368,13 +299,24 @@ class EventBus(metaclass=Singleton):
 
         return self
 
-    def sync_emit(self, event: str, data: Any, loop=None, wait: bool = True, **kwargs):
+    def sync_emit(
+        self,
+        event: str,
+        data: Any | None = None,
+        title: str | None = None,
+        message: str | None = None,
+        loop=None,
+        wait: bool = True,
+        **kwargs,
+    ):
         """
         Emit event and (optionally) wait for results.
 
         Args:
             event (str): The event to emit.
-            data (Any): The data to pass to the event.
+            data (Any|None): The data to pass to the event.
+            title (str | None): The title of the event, if any.
+            message (str | None): The message of the event, if any.
             loop (asyncio.AbstractEventLoop | None): The event loop to use. If None, the current running loop is used.
             wait (bool): Whether to wait for the results of the event handlers. Defaults to True.
             **kwargs: Additional keyword arguments to pass to the event
@@ -389,8 +331,11 @@ class EventBus(metaclass=Singleton):
         if event not in self._listeners:
             return []
 
+        if not data:
+            data = {}
+
         async def emit_all():
-            ev = Event(event=event, data=data)
+            ev = Event(event=event, title=title, message=message, data=data)
             LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
             res: list = []
@@ -428,14 +373,14 @@ class EventBus(metaclass=Singleton):
         return fut.result() if wait else fut
 
     async def emit(
-        self, event: str, data: Any, title: str | None = None, message: str | None = None, **kwargs
+        self, event: str, data: Any | None = None, title: str | None = None, message: str | None = None, **kwargs
     ) -> Awaitable:
         """
         Emit an event.
 
         Args:
             event (str): The event to emit.
-            data (Any): The data to pass to the event.
+            data (Any|None): The data to pass to the event.
             title (str | None): The title of the event, if any.
             message (str | None): The message of the event, if any.
             **kwargs: The keyword arguments to pass to the event.
@@ -447,7 +392,10 @@ class EventBus(metaclass=Singleton):
         if event not in self._listeners:
             return []
 
-        ev = Event(event=event, data=data, title=title, message=message)
+        if not data:
+            data = {}
+
+        ev = Event(event=event, title=title, message=message, data=data)
 
         if self.debug or event not in Events.only_debug():
             LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
@@ -461,3 +409,35 @@ class EventBus(metaclass=Singleton):
                 LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
 
         return asyncio.gather(*tasks)
+
+    def offload(
+        self, event: str, title: str | None = None, message: str | None = None, data: Any | None = None, **kwargs
+    ) -> None:
+        """
+        Offload an dispatching event to a background worker.
+
+        Args:
+            event (str): The event to offload.
+            data (Any|None): The data to pass to the event.
+            title (str | None): The title of the event, if any.
+            message (str | None): The message of the event, if any.
+            **kwargs: Additional keyword arguments to pass to the event.
+
+        """
+        if event not in self._listeners:
+            return
+
+        if not data:
+            data = {}
+
+        ev = Event(event=event, title=title, message=message, data=data)
+
+        if self.debug or event not in Events.only_debug():
+            LOG.debug(f"Offloading event '{ev.id}: {ev.event}'.", extra={"data": data})
+
+        for handler in self._listeners[event].values():
+            try:
+                self._offload.submit(handler.handle, ev, **kwargs)
+            except Exception as e:
+                LOG.exception(e)
+                LOG.error(f"Failed to offload event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")

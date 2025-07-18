@@ -111,7 +111,12 @@ class Main:
         host = host or self._config.host
         port = port or self._config.port
 
-        EventBus.get_instance().sync_emit(Events.STARTUP, data={"app": self._app})
+        EventBus.get_instance().sync_emit(
+            Events.STARTUP,
+            data={"app": self._app},
+            title="Application Startup",
+            message="The application is starting up.",
+        )
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
@@ -123,7 +128,12 @@ class Main:
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
 
-        EventBus.get_instance().sync_emit(Events.LOADED, data={"app": self._app})
+        EventBus.get_instance().sync_emit(
+            Events.LOADED,
+            data={"app": self._app},
+            title="Application Loaded",
+            message="The application has loaded all components.",
+        )
 
         def started(_):
             LOG.info("=" * 40)
@@ -132,7 +142,14 @@ class Main:
 
             loop = asyncio.get_event_loop()
 
-            EventBus.get_instance().sync_emit(Events.STARTED, data={"app": self._app}, loop=loop, wait=False)
+            EventBus.get_instance().sync_emit(
+                Events.STARTED,
+                data={"app": self._app},
+                title="Application Started",
+                message="The application has started successfully.",
+                loop=loop,
+                wait=False,
+            )
 
             if loop and self._config.debug:
                 loop.set_debug(True)
