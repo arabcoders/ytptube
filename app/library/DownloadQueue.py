@@ -828,7 +828,7 @@ class DownloadQueue(metaclass=Singleton):
             self.done.delete(id)
 
             _status: str = "Removed" if removed_files > 0 else "Cleared"
-            self._notify.offload(
+            await self._notify.emit(
                 Events.CLEARED,
                 data=item.info,
                 title=f"Download {_status}",

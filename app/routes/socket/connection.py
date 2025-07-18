@@ -66,7 +66,7 @@ async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer,
 
     """
     if not isinstance(data, str) or not data:
-        notify.offload(
+        await notify.emit(
             Events.ERROR,
             title="Subscription Error",
             message="Invalid event type was expecting a string.",
