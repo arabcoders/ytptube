@@ -31,7 +31,13 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
 
     data["folders"] = [folder.name for folder in Path(config.download_path).iterdir() if folder.is_dir()]
 
-    await notify.emit(Events.INITIAL_DATA, data=data, to=sid)
+    await notify.emit(
+        Events.CONNECTED,
+        data=data,
+        title="Client connected",
+        message=f"Client '{sid}' connected.",
+        to=sid,
+    )
 
 
 @route(RouteType.SOCKET, "disconnect", "socket_disconnect")
@@ -67,7 +73,7 @@ async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer,
     """
     if not isinstance(data, str) or not data:
         await notify.emit(
-            Events.ERROR,
+            Events.LOG_ERROR,
             title="Subscription Error",
             message="Invalid event type was expecting a string.",
             to=sid,

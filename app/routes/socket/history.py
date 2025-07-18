@@ -80,7 +80,9 @@ async def item_cancel(queue: DownloadQueue, notify: EventBus, sid: str, data: st
     status = await queue.cancel([data])
     status.update({"identifier": data})
 
-    await notify.emit(Events.ITEM_CANCEL, data=status)
+    await notify.emit(
+        Events.ITEM_CANCEL, data=status, title="Item Cancelled", message=f"Item '{data}': has been cancelled."
+    )
 
 
 @route(RouteType.SOCKET, "item_delete", "item_delete")

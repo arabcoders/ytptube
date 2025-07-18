@@ -92,7 +92,6 @@ class Target:
 class NotificationEvents:
     ADDED = Events.ADDED
     COMPLETED = Events.COMPLETED
-    ERROR = Events.ERROR
     CANCELLED = Events.CANCELLED
     CLEARED = Events.CLEARED
     LOG_INFO = Events.LOG_INFO
@@ -308,10 +307,17 @@ class Notification(metaclass=Singleton):
                 msg = "Invalid notification target. Invalid 'on' event list found."
                 raise ValueError(msg)
 
+            removed_events = []
+            all_events = NotificationEvents.get_events().values()
             for e in target["on"]:
-                if e not in NotificationEvents.get_events().values():
-                    msg = f"Invalid notification target. Invalid event '{e}' found."
-                    raise ValueError(msg)
+                if e not in all_events:
+                    removed_events.append(e)
+                    target["on"].remove(e)
+                    continue
+
+            if len(removed_events) > 0 and len(target["on"]) < 1:
+                msg: str = f"Invalid notification target. Invalid events '{', '.join(removed_events)}' found."
+                raise ValueError(msg)
 
         if "headers" in target["request"]:
             if not isinstance(target["request"]["headers"], list):

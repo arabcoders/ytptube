@@ -30,7 +30,7 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value.on('connect', () => isConnected.value = true);
     socket.value.on('disconnect', () => isConnected.value = false);
 
-    socket.value.on('initial_data', stream => {
+    socket.value.on('connected', stream => {
       const json = JSON.parse(stream)
 
       config.setAll({
@@ -49,11 +49,6 @@ export const useSocketStore = defineStore('socket', () => {
       const json = JSON.parse(stream);
       stateStore.add('queue', json.data._id, json.data);
       toast.success(`Item queued: ${ag(stateStore.get('queue', json.data._id, {}), 'title')}`);
-    });
-
-    socket.value.on('error', stream => {
-      const json = JSON.parse(stream);
-      toast.error(`${json.data?.id}: ${json?.message || json?.data?.message}`, json.data || {});
     });
 
     ['log_info', 'log_success', 'log_warning', 'log_error'].forEach(event => socket.value?.on(event, stream => {

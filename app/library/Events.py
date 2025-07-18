@@ -11,6 +11,7 @@ from .Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("Events")
 
+
 class Events:
     """
     The events that can be emitted.
@@ -22,29 +23,31 @@ class Events:
     SHUTDOWN = "shutdown"
 
     ADDED = "added"
+    UPDATE = "update"
     UPDATED = "updated"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     CLEARED = "cleared"
-    ERROR = "error"
+    CONNECTED = "connected"
+    STATUS = "status"
+
     LOG_INFO = "log_info"
     LOG_WARNING = "log_warning"
     LOG_ERROR = "log_error"
     LOG_SUCCESS = "log_success"
 
-    INITIAL_DATA = "initial_data"
     ITEM_DELETE = "item_delete"
     ITEM_CANCEL = "item_cancel"
     ITEM_ERROR = "item_error"
-    STATUS = "status"
-    CLI_CLOSE = "cli_close"
-    CLI_OUTPUT = "cli_output"
-    UPDATE = "update"
+
     TEST = "test"
     ADD_URL = "add_url"
 
-    CLI_POST = "cli_post"
     PAUSED = "paused"
+
+    CLI_POST = "cli_post"
+    CLI_CLOSE = "cli_close"
+    CLI_OUTPUT = "cli_output"
 
     TASKS_ADD = "task_add"
     TASK_DISPATCHED = "task_dispatched"
@@ -53,6 +56,7 @@ class Events:
 
     PRESETS_ADD = "presets_add"
     PRESETS_UPDATE = "presets_update"
+
     SCHEDULE_ADD = "schedule_add"
 
     CONDITIONS_ADD = "conditions_add"
@@ -82,9 +86,8 @@ class Events:
 
         """
         return [
-            Events.INITIAL_DATA,
+            Events.CONNECTED,
             Events.ADDED,
-            Events.ERROR,
             Events.LOG_INFO,
             Events.LOG_WARNING,
             Events.LOG_ERROR,
