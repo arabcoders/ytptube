@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import type { item_request } from '~/@types/item'
+import type { item_request } from '~/types/item'
 
 const config = useConfigStore()
 const stateStore = useStateStore()

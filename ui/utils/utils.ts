@@ -1,4 +1,4 @@
-import type { convert_args_response } from "~/@types/responses";
+import type { convert_args_response } from "~/types/responses";
 
 const separators = [
   { name: 'Comma', value: ',', },

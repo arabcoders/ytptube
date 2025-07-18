@@ -209,7 +209,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import { decode } from '~/utils/importer'
-import type { ConditionItem, ImportedConditionItem } from '~/@types/conditions'
+import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
 const emitter = defineEmits<{
   (e: 'cancel'): void

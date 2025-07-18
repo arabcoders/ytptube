@@ -231,7 +231,7 @@
 <script setup lang="ts">
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
-import type { item_request } from '~/@types/item'
+import type { item_request } from '~/types/item'
 import { getSeparatorsName, separators } from '~/utils/utils'
 
 const props = defineProps<{ item?: Partial<item_request> }>()

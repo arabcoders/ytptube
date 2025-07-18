@@ -114,7 +114,7 @@ import moment from 'moment'
 import { request } from '~/utils/index'
 import { ref, onMounted, nextTick } from 'vue'
 import { useStorage } from '@vueuse/core'
-import type { log_line } from '~/@types/logs'
+import type { log_line } from '~/types/logs'
 
 let scrollTimeout: NodeJS.Timeout | null = null
 

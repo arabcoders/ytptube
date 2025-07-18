@@ -72,7 +72,7 @@ hr {
 
 <script setup lang="ts">
 import moment from 'moment'
-import type { changelogs, changeset } from '~/@types/changelogs'
+import type { changelogs, changeset } from '~/types/changelogs'
 
 const toast = useNotification()
 const config = useConfigStore()
