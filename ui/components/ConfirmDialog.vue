@@ -23,7 +23,7 @@
       <footer class="modal-card-foot p-5">
         <div class="field is-grouped" style="width:100%">
           <div class="control is-expanded">
-            <button class="button is-fullwidth" :class="confirm_button_color" @click="handleConfirm">
+            <button ref="confirmBtn" class="button is-fullwidth" :class="confirm_button_color" @click="handleConfirm">
               {{ confirm_button_label }}
             </button>
           </div>
@@ -83,21 +83,25 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
+const confirmBtn = ref<HTMLButtonElement | null>(null)
 const selected = reactive<Record<string, boolean>>({})
 
-watch(() => props.visible, visible => {
-  if (visible && props.options) {
+watch(() => props.visible, async visible => {
+  if (!visible) {
+    return
+  }
+
+  if (props.options) {
     for (const opt of props.options) {
       selected[opt.key] ??= false
     }
   }
-})
 
-function handleConfirm() {
-  emit('confirm', { ...selected })
-}
+  await nextTick()
+  confirmBtn.value?.focus()
+}, { immediate: true })
 
-function cancel() {
-  emit('cancel')
-}
+
+const handleConfirm = () => emit('confirm', { ...selected })
+const cancel = () => emit('cancel')
 </script>
