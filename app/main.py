@@ -127,6 +127,7 @@ class Main:
         Presets.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
+        self._background_worker.attach(self._app)
 
         EventBus.get_instance().sync_emit(
             Events.LOADED,

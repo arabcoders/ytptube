@@ -89,7 +89,7 @@ watch(() => config.app.basic_mode, async () => {
     return
   }
   await navigateTo('/')
-}, { immediate: true })
+})
 
 watch(() => config.app.console_enabled, async () => {
   if (config.app.console_enabled) {
@@ -97,7 +97,7 @@ watch(() => config.app.console_enabled, async () => {
   }
   toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
   await navigateTo('/')
-}, { immediate: true })
+})
 
 const handle_event = () => {
   if (!terminal.value) {
@@ -108,6 +108,12 @@ const handle_event = () => {
 
 const runCommand = async () => {
   if ('' === command.value) {
+    return
+  }
+
+  if (config.app.basic_mode || !config.app.console_enabled) {
+    await navigateTo('/')
+    toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
     return
   }
 

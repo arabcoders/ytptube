@@ -11,12 +11,13 @@ from typing import Any
 
 from aiohttp import web
 
-from app.library.Services import Services
-
 from .config import Config
+from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus, Events
+from .ItemDTO import Item
 from .Scheduler import Scheduler
+from .Services import Services
 from .Singleton import Singleton
 from .Utils import init_class, validate_url
 
@@ -76,6 +77,7 @@ class Tasks(metaclass=Singleton):
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         self._notify: EventBus = EventBus.get_instance()
         self._task_handler = HandleTask(self._scheduler, self, config)
+        self._downloadQueue = DownloadQueue.get_instance()
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -316,31 +318,38 @@ class Tasks(metaclass=Singleton):
             template: str = task.template if task.template else ""
             cli: str = task.cli if task.cli else ""
 
-            await self._notify.emit(
-                Events.ADD_URL,
-                data={
-                    "url": task.url,
-                    "preset": preset,
-                    "folder": folder,
-                    "template": template,
-                    "cli": cli,
-                },
-                title="Tasks",
-                message=f"Task '{task.name}' started at '{timeNow}'",
-                id=task.id,
+            status = await self._downloadQueue.add(
+                item=Item.format(
+                    {
+                        "url": task.url,
+                        "preset": preset,
+                        "folder": folder,
+                        "template": template,
+                        "cli": cli,
+                    }
+                )
             )
 
             timeNow = datetime.now(UTC).isoformat()
-
             ended: float = time.time()
             LOG.info(f"Task '{task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
 
-            await self._notify.emit(
-                Events.LOG_SUCCESS,
-                data={"lowPriority": True},
-                title="Task completed",
-                message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
-            )
+            _tasks = [
+                self._notify.emit(
+                    Events.TASK_DISPATCHED,
+                    data=status,
+                    title=f"Task '{task.name}' dispatched",
+                    message=f"Task '{task.name}' dispatched at '{timeNow}'.",
+                ),
+                self._notify.emit(
+                    Events.LOG_SUCCESS,
+                    data={"lowPriority": True},
+                    title="Task completed",
+                    message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
+                ),
+            ]
+
+            await asyncio.gather(*_tasks)
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(

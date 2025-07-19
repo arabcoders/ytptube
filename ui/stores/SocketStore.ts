@@ -12,6 +12,21 @@ export const useSocketStore = defineStore('socket', () => {
   const socket = ref<IOSocket | null>(null)
   const isConnected = ref<boolean>(false)
 
+  const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
+  const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
+    if (!Array.isArray(event)) {
+      event = [event]
+    }
+    event.forEach(e => socket.value?.on(e, (...args) => true === withEvent ? callback(e, ...args) : callback(...args)))
+  }
+
+  const off = (event: string | string[], callback: (...args: any[]) => void): any => {
+    if (!Array.isArray(event)) {
+      event = [event]
+    }
+    event.forEach(e => socket.value?.off(e, callback));
+  }
+
   const connect = () => {
     let opts = {
       transports: ['websocket', 'polling'],
@@ -23,6 +38,8 @@ export const useSocketStore = defineStore('socket', () => {
     if ('development' !== runtimeConfig.public?.APP_ENV) {
       url = window.origin;
       opts.path = `${runtimeConfig.app.baseURL.replace(/\/$/, '')}/socket.io`;
+    } else {
+      window.ws = socket.value;
     }
 
     socket.value = io(url, opts)
@@ -45,13 +62,13 @@ export const useSocketStore = defineStore('socket', () => {
       stateStore.addAll('history', json.data.done || {})
     })
 
-    socket.value.on('added', stream => {
+    on('item_added', stream => {
       const json = JSON.parse(stream);
       stateStore.add('queue', json.data._id, json.data);
       toast.success(`Item queued: ${ag(stateStore.get('queue', json.data._id, {}), 'title')}`);
     });
 
-    ['log_info', 'log_success', 'log_warning', 'log_error'].forEach(event => socket.value?.on(event, stream => {
+    on(['log_info', 'log_success', 'log_warning', 'log_error'], (event: string, stream: string) => {
       const json = JSON.parse(stream);
       const message = json?.message || json?.data?.message;
       const data = json.data?.data || json.data || {};
@@ -69,19 +86,24 @@ export const useSocketStore = defineStore('socket', () => {
           toast.error(message, data);
           break;
       }
-    }));
+    }, true);
 
-    socket.value.on('completed', stream => {
+    on('item_completed', (stream: string) => {
       const json = JSON.parse(stream);
 
       if (true === stateStore.has('queue', json.data._id)) {
         stateStore.remove('queue', json.data._id);
       }
 
+      if (true === stateStore.has('history', json.data._id)) {
+        stateStore.update('history', json.data._id, json.data);
+        return;
+      }
+
       stateStore.add('history', json.data._id, json.data);
     });
 
-    socket.value.on('cancelled', stream => {
+    on('item_cancelled', (stream: string) => {
       const item = JSON.parse(stream);
       const id = item.data._id
 
@@ -96,7 +118,7 @@ export const useSocketStore = defineStore('socket', () => {
       }
     });
 
-    socket.value.on('cleared', stream => {
+    on('item_deleted', (stream: string) => {
       const item = JSON.parse(stream);
       const id = item.data._id
 
@@ -107,7 +129,7 @@ export const useSocketStore = defineStore('socket', () => {
       stateStore.remove('history', id);
     });
 
-    socket.value.on("updated", stream => {
+    on('item_updated', (stream: string) => {
       const json = JSON.parse(stream);
       const id = json.data._id;
 
@@ -116,42 +138,51 @@ export const useSocketStore = defineStore('socket', () => {
         return;
       }
 
-      stateStore.update('queue', id, json.data);
-    });
-
-    socket.value.on("update", stream => {
-      const json = JSON.parse(stream);
-      if (true === stateStore.has('history', json.data._id)) {
-        stateStore.update('history', json.data._id, json.data);
-        return;
+      if (true === stateStore.has('queue', id)) {
+        stateStore.update('queue', id, json.data);
       }
     });
 
-    socket.value.on('paused', data => {
+    on('item_moved', (stream: string) => {
+      const json = JSON.parse(stream);
+      const to = json.data.to;
+      const id = json.data.item._id;
+
+      if ('queue' === to) {
+        if (true === stateStore.has('history', id)) {
+          stateStore.remove('history', id);
+        }
+        stateStore.add('queue', id, json.data.item);
+      }
+
+      if ('history' === to) {
+        if (true === stateStore.has('queue', id)) {
+          stateStore.remove('queue', id);
+        }
+        stateStore.add('history', id, json.data.item);
+      }
+    });
+
+    on(['paused', 'resumed'], (event: string, data: string) => {
       const json = JSON.parse(data);
       const pausedState = Boolean(json.data.paused);
       config.update('paused', pausedState);
 
-      if (false === pausedState) {
+      if ('resumed' === event) {
         toast.success('Download queue resumed.');
         return;
       }
 
       toast.warning('Download queue paused.', { timeout: 10000 });
-    });
+    }, true);
 
-    socket.value.on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
+    on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
   }
-
-  const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
-  const on = (event: string, callback: (...args: any[]) => void): any => socket.value?.on(event, callback)
-  const off = (event: string, callback: (...args: any[]) => void): any => socket.value?.off(event, callback)
 
   if (false === isConnected.value) {
     connect();
   }
 
-  window.ws = socket.value;
 
   return { connect, on, off, emit, socket, isConnected };
 });

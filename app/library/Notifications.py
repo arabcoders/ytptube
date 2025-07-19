@@ -90,15 +90,25 @@ class Target:
 
 
 class NotificationEvents:
-    ADDED = Events.ADDED
-    COMPLETED = Events.COMPLETED
-    CANCELLED = Events.CANCELLED
-    CLEARED = Events.CLEARED
-    LOG_INFO = Events.LOG_INFO
-    LOG_SUCCESS = Events.LOG_SUCCESS
-    LOG_WARNING = Events.LOG_WARNING
-    LOG_ERROR = Events.LOG_ERROR
-    TEST = Events.TEST
+    TEST: str = Events.TEST
+
+    ITEM_ADDED: str = Events.ITEM_ADDED
+    ITEM_COMPLETED: str = Events.ITEM_COMPLETED
+    ITEM_CANCELLED: str = Events.ITEM_CANCELLED
+    ITEM_DELETED: str = Events.ITEM_DELETED
+    ITEM_PAUSED: str = Events.ITEM_PAUSED
+    ITEM_RESUMED: str = Events.ITEM_RESUMED
+    ITEM_MOVED: str = Events.ITEM_MOVED
+
+    PAUSED: str = Events.PAUSED
+    RESUMED: str = Events.RESUMED
+
+    LOG_INFO: str = Events.LOG_INFO
+    LOG_SUCCESS: str = Events.LOG_SUCCESS
+    LOG_WARNING: str = Events.LOG_WARNING
+    LOG_ERROR: str = Events.LOG_ERROR
+
+    TASK_DISPATCHED: str = Events.TASK_DISPATCHED
 
     @staticmethod
     def get_events() -> dict[str, str]:

@@ -137,7 +137,7 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
 
     if updated:
         queue.done.put(item)
-        await notify.emit(Events.UPDATE, data=item.info)
+        await notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
         data=item.info,
