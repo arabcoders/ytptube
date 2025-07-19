@@ -161,7 +161,6 @@ class Item:
             data["template"] = item.get("template")
 
         if "auto_start" in item and isinstance(item.get("auto_start"), bool):
-            LOG.info("Item '%s' auto_start is set to %s.", url, item.get("auto_start"))
             data["auto_start"] = bool(item.get("auto_start"))
 
         extras = item.get("extras")
