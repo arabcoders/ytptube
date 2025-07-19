@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250718-0f7f22bd",
-        "date": "2025-07-18T18:59:43+00:00",
+        "tag": "dev-20250719-a7e8d242",
+        "date": "2025-07-19T16:45:07+00:00",
         "commits": [
+            {
+                "sha": "a7e8d242",
+                "message": "Completed the events system upgrade and expanded the notifications events with support for apprise.",
+                "author": "arabcoders",
+                "date": "2025-07-19T16:45:07+00:00",
+                "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299"
+            },
             {
                 "sha": "0f7f22bd",
                 "message": "removed event type ERROR and migrated it's uses to LOG_ERROR",
@@ -753,7 +760,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0f7f22bdbf0371aec60a3545fbbbdb6e9f4b4e92"
+        "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299"
     },
     {
         "tag": "dev-20250616-c07465a6",

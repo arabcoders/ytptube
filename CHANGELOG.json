@@ -56,6 +56,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299",
+    "date": "2025-07-19T16:45:07+00:00",
+    "commits": [
+      {
+        "sha": "a7e8d242",
+        "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299",
+        "message": "Completed the events system upgrade and expanded the notifications events with support for apprise.",
+        "author": "arabcoders",
+        "date": "2025-07-19T16:45:07+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.3.0",
     "full_sha": "f9b70fec5faca1221b71914f170f89a9a5648f8f",
     "date": "2025-07-17T21:40:37+00:00",
