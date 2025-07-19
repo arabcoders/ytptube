@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
+    "date": "2025-07-19T17:49:50+00:00",
+    "commits": [
+      {
+        "sha": "94193b80",
+        "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
+        "message": "removed useless log statement.",
+        "author": "arabcoders",
+        "date": "2025-07-19T17:49:50+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.4.0",
     "full_sha": "10182e1373004c6b31c846ce9dd00447cf8ed04c",
     "date": "2025-07-19T16:54:15+00:00",
