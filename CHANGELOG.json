@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (e3983219)",
-    "full_sha": "e39832190115a521156ebff3efa2ad4ef3f0efc2",
-    "date": "2025-07-18T19:06:53+00:00",
+    "tag": "Unreleased (10182e13)",
+    "full_sha": "10182e1373004c6b31c846ce9dd00447cf8ed04c",
+    "date": "2025-07-19T16:54:15+00:00",
     "commits": [
+      {
+        "sha": "a7e8d242",
+        "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299",
+        "message": "Completed the events system upgrade and expanded the notifications events with support for apprise.",
+        "author": "arabcoders",
+        "date": "2025-07-19T16:45:07+00:00"
+      },
       {
         "sha": "0f7f22bd",
         "full_sha": "0f7f22bdbf0371aec60a3545fbbbdb6e9f4b4e92",
@@ -52,20 +59,6 @@
         "message": "auto focus the confirm button in confirm dialog.",
         "author": "arabcoders",
         "date": "2025-07-18T14:01:32+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299",
-    "date": "2025-07-19T16:45:07+00:00",
-    "commits": [
-      {
-        "sha": "a7e8d242",
-        "full_sha": "a7e8d242c91124867113f6181f34a4cfe7e2f299",
-        "message": "Completed the events system upgrade and expanded the notifications events with support for apprise.",
-        "author": "arabcoders",
-        "date": "2025-07-19T16:45:07+00:00"
       }
     ]
   },
