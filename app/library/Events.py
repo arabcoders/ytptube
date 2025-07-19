@@ -17,53 +17,54 @@ class Events:
     The events that can be emitted.
     """
 
-    STARTUP = "startup"
-    LOADED = "loaded"
-    STARTED = "started"
-    SHUTDOWN = "shutdown"
+    STARTUP: str = "startup"
+    LOADED: str = "loaded"
+    STARTED: str = "started"
+    SHUTDOWN: str = "shutdown"
 
-    ADDED = "added"
-    UPDATE = "update"
-    UPDATED = "updated"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
-    CLEARED = "cleared"
-    CONNECTED = "connected"
-    STATUS = "status"
+    CONNECTED: str = "connected"
 
-    LOG_INFO = "log_info"
-    LOG_WARNING = "log_warning"
-    LOG_ERROR = "log_error"
-    LOG_SUCCESS = "log_success"
+    LOG_INFO: str = "log_info"
+    LOG_WARNING: str = "log_warning"
+    LOG_ERROR: str = "log_error"
+    LOG_SUCCESS: str = "log_success"
 
-    ITEM_DELETE = "item_delete"
-    ITEM_CANCEL = "item_cancel"
-    ITEM_ERROR = "item_error"
+    ITEM_ADDED: str = "item_added"
+    ITEM_UPDATED: str = "item_updated"
+    ITEM_COMPLETED: str = "item_completed"
+    ITEM_CANCELLED: str = "item_cancelled"
+    ITEM_DELETED: str = "item_deleted"
+    ITEM_PAUSED: str = "item_paused"
+    ITEM_RESUMED: str = "item_resumed"
+    ITEM_MOVED: str = "item_moved"
+    ITEM_STATUS: str = "item_status"
+    ITEM_ERROR: str = "item_error"
 
-    TEST = "test"
-    ADD_URL = "add_url"
+    TEST: str = "test"
+    ADD_URL: str = "add_url"
 
-    PAUSED = "paused"
+    PAUSED: str = "paused"
+    RESUMED: str = "resumed"
 
-    CLI_POST = "cli_post"
-    CLI_CLOSE = "cli_close"
-    CLI_OUTPUT = "cli_output"
+    CLI_POST: str = "cli_post"
+    CLI_CLOSE: str = "cli_close"
+    CLI_OUTPUT: str = "cli_output"
 
-    TASKS_ADD = "task_add"
-    TASK_DISPATCHED = "task_dispatched"
-    TASK_FINISHED = "task_finished"
-    TASK_ERROR = "task_error"
+    TASKS_ADD: str = "task_add"
+    TASK_DISPATCHED: str = "task_dispatched"
+    TASK_FINISHED: str = "task_finished"
+    TASK_ERROR: str = "task_error"
 
-    PRESETS_ADD = "presets_add"
-    PRESETS_UPDATE = "presets_update"
+    PRESETS_ADD: str = "presets_add"
+    PRESETS_UPDATE: str = "presets_update"
 
-    SCHEDULE_ADD = "schedule_add"
+    SCHEDULE_ADD: str = "schedule_add"
 
-    CONDITIONS_ADD = "conditions_add"
-    CONDITIONS_UPDATE = "conditions_update"
+    CONDITIONS_ADD: str = "conditions_add"
+    CONDITIONS_UPDATE: str = "conditions_update"
 
-    SUBSCRIBED = "subscribed"
-    UNSUBSCRIBED = "unsubscribed"
+    SUBSCRIBED: str = "subscribed"
+    UNSUBSCRIBED: str = "unsubscribed"
 
     def get_all() -> list:
         """
@@ -87,21 +88,22 @@ class Events:
         """
         return [
             Events.CONNECTED,
-            Events.ADDED,
             Events.LOG_INFO,
             Events.LOG_WARNING,
             Events.LOG_ERROR,
             Events.LOG_SUCCESS,
-            Events.COMPLETED,
-            Events.CANCELLED,
-            Events.CLEARED,
-            Events.UPDATED,
-            Events.UPDATE,
+            Events.ITEM_ADDED,
+            Events.ITEM_UPDATED,
+            Events.ITEM_COMPLETED,
+            Events.ITEM_CANCELLED,
+            Events.ITEM_DELETED,
+            Events.ITEM_MOVED,
+            Events.ITEM_STATUS,
             Events.PAUSED,
-            Events.PRESETS_UPDATE,
-            Events.STATUS,
+            Events.RESUMED,
             Events.CLI_CLOSE,
             Events.CLI_OUTPUT,
+            Events.PRESETS_UPDATE,
         ]
 
     def only_debug() -> list:
@@ -112,7 +114,7 @@ class Events:
             list: The list of debug events.
 
         """
-        return [Events.UPDATED, Events.CLI_OUTPUT]
+        return [Events.ITEM_UPDATED, Events.CLI_OUTPUT]
 
 
 @dataclass(kw_only=True)

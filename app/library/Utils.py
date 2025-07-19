@@ -1188,6 +1188,8 @@ def extract_ytdlp_logs(logs: list[str], filters: list[str | re.Pattern] = None) 
         "This video is available to this channel",
         "Private video. Sign in if you've been granted access to this video",
         "[youtube] Premieres in",
+        "Falling back on generic information extractor",
+        "URL could be a direct video link, returning it as such",
     ] + (filters or [])
 
     compiled: list[re.Pattern] = [

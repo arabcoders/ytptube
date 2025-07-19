@@ -14,7 +14,7 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Random beautiful background. `can be disabled or source changed`.
 * Can handle live streams.
 * Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
-* Send notification to targets based on selected events. 
+* Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support for non http/https URLs.
 * Support per link `cli options` & `cookies`.
 * Queue multiple URLs separated by comma.
 * Presets system to re-use frequently used yt-dlp options.
@@ -31,13 +31,7 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Automatic upcoming live stream re-queue.
 * Apply `yt-dlp` options per custom defined conditions.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-
-### Side project
-
-We have a side project related to YTPTube, which takes YTPTube source code and build an executable for Windows, macOS and Linux.
-The project is in early stages, and might not even work yet. However keep an eye at [This build action](https://github.com/arabcoders/ytptube/actions/workflows/native-build.yml) for builds, simply select last successful build and download the executable for your platform. Help us test out the platforms
-and report any issues you might find. We only have windows/linux machines to test on, so we need your help to test it out on macOS.
-
+* A executable for Windows, macOS and Linux, which can be found in the release page.
 
 # Installation
 

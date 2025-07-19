@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
-from app.library.ItemDTO import ItemDTO
+from app.library.ItemDTO import Item, ItemDTO
 from app.library.Tasks import Task
 from app.library.Utils import is_downloaded
 from app.library.YTDLPOpts import YTDLPOpts
@@ -147,18 +147,18 @@ class YoutubeHandler:
         template: str = task.template if task.template else ""
         cli: str = task.cli if task.cli else ""
 
-        queued = asyncio.gather(
-            *[
-                notify.emit(
-                    Events.ADD_URL,
-                    data={"url": item["url"], "preset": preset, "folder": folder, "template": template, "cli": cli},
-                )
-                for item in filtered
-            ]
-        )
-
         try:
-            await queued
+            await asyncio.gather(
+                *[
+                    notify.emit(
+                        Events.ADD_URL,
+                        data=Item.format(
+                            {"url": item["url"], "preset": preset, "folder": folder, "template": template, "cli": cli}
+                        ).serialize(),
+                    )
+                    for item in filtered
+                ]
+            )
         except Exception as e:
             LOG.error(f"Error while adding items from '{task.id}: {task.name}'. {e!s}")
             return

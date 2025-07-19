@@ -23,7 +23,7 @@ async def pause(notify: EventBus, queue: DownloadQueue):
         Events.PAUSED,
         data={"paused": True, "at": time.time()},
         title="Downloads Paused",
-        message="Download pool has been paused.",
+        message="Non-active downloads have been paused.",
     )
 
 
@@ -31,10 +31,10 @@ async def pause(notify: EventBus, queue: DownloadQueue):
 async def resume(notify: EventBus, queue: DownloadQueue):
     queue.resume()
     await notify.emit(
-        Events.PAUSED,
+        Events.RESUMED,
         data={"paused": False, "at": time.time()},
         title="Downloads Resumed",
-        message="Download pool has been resumed.",
+        message="Resumed all downloads.",
     )
 
 
@@ -54,7 +54,7 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
     try:
         status = await queue.add(item=Item.format(data))
         await notify.emit(
-            event=Events.STATUS,
+            event=Events.ITEM_STATUS,
             title="Adding URL",
             message=f"Adding URL '{url}' to the download queue.",
             data=status,
@@ -76,12 +76,26 @@ async def item_cancel(queue: DownloadQueue, notify: EventBus, sid: str, data: st
         )
         return
 
+    try:
+        item = queue.get_item(id=data)
+    except KeyError:
+        await notify.emit(
+            Events.LOG_ERROR,
+            title="Item Not Found",
+            message=f"Item with ID '{data}' not found.",
+            to=sid,
+        )
+        return
+
     status: dict[str, str] = {}
     status = await queue.cancel([data])
     status.update({"identifier": data})
 
     await notify.emit(
-        Events.ITEM_CANCEL, data=status, title="Item Cancelled", message=f"Item '{data}': has been cancelled."
+        Events.ITEM_CANCELLED,
+        data=item.info,
+        title="Item Cancelled",
+        message=f"Cancelled '{item.info.title}'.",
     )
 
 
@@ -106,23 +120,7 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
         )
         return
 
-    item = queue.get_item(id=id)
-    if not item:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Item Not Found",
-            message=f"Item with ID '{id}' not found.",
-            to=sid,
-        )
-        return
-
-    status: dict[str, str] = {}
-    status = await queue.clear([id], remove_file=bool(data.get("remove_file", False)))
-    status.update({"identifier": id})
-
-    await notify.emit(
-        Events.ITEM_DELETE, data=status, title="Item Deleted", message=f"Item '{item.info.title}': has been deleted."
-    )
+    await queue.clear([id], remove_file=bool(data.get("remove_file", False)))
 
 
 @route(RouteType.SOCKET, "archive_item", "archive_item")

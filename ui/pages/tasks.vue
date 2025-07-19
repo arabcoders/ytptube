@@ -397,7 +397,7 @@ watch(() => config.app.basic_mode, async () => {
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
-    socket.on('status', statusHandler)
+    socket.on('item_status', statusHandler)
     await reloadContent(true)
     initialLoad.value = false
   }
@@ -586,7 +586,7 @@ onMounted(async () => {
   if (!socket.isConnected) {
     return;
   }
-  socket.on('status', statusHandler)
+  socket.on('item_status', statusHandler)
   await reloadContent(true)
 });
 
@@ -683,7 +683,7 @@ const runNow = async (item: task_item, mass: boolean = false) => {
   }, 500)
 }
 
-onBeforeUnmount(() => socket.off('status', statusHandler))
+onBeforeUnmount(() => socket.off('item_status', statusHandler))
 
 const statusHandler = async (stream: string) => {
   const json = JSON.parse(stream)

@@ -18,7 +18,6 @@ LOG = logging.getLogger("datastore")
 class StoreType(str, Enum):
     DONE = "done"
     QUEUE = "queue"
-    PENDING = "pending"
 
     @classmethod
     def all(cls) -> list[str]:
