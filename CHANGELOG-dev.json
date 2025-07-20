@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250720-ac2056f0",
-        "date": "2025-07-20T14:02:01+00:00",
+        "tag": "dev-20250720-e07751c4",
+        "date": "2025-07-20T14:51:05+00:00",
         "commits": [
+            {
+                "sha": "e07751c4",
+                "message": "Minor messaging changes",
+                "author": "arabcoders",
+                "date": "2025-07-20T14:51:05+00:00",
+                "full_sha": "e07751c41f61f335150231312cd38b2f67cb1a5c"
+            },
             {
                 "sha": "ac2056f0",
                 "message": "Fix text overflow, Closes #345",
@@ -781,7 +788,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643"
+        "full_sha": "e07751c41f61f335150231312cd38b2f67cb1a5c"
     },
     {
         "tag": "dev-20250616-c07465a6",
