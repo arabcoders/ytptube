@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
-    "date": "2025-07-19T17:49:50+00:00",
+    "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643",
+    "date": "2025-07-20T14:02:01+00:00",
     "commits": [
+      {
+        "sha": "ac2056f0",
+        "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643",
+        "message": "Fix text overflow, Closes #345",
+        "author": "arabcoders",
+        "date": "2025-07-20T14:02:01+00:00"
+      },
+      {
+        "sha": "472b8cb4",
+        "full_sha": "472b8cb46859e2ace13d7d9d338896c61456e9a5",
+        "message": "Fixes #344",
+        "author": "arabcoders",
+        "date": "2025-07-20T13:53:56+00:00"
+      },
       {
         "sha": "94193b80",
         "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
