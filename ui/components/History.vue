@@ -889,7 +889,7 @@ const downloadSelected = async () => {
   }
 }
 
-const toggle_class = e => e.currentTarget.classList.toggle('is-text-overflow')
+const toggle_class = e => ['is-text-overflow', 'is-word-break'].forEach(c => e.currentTarget.classList.toggle(c))
 
 const removeFromArchiveDialog = (item) => {
   dialog_confirm.value.visible = true
