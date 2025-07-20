@@ -82,6 +82,7 @@
     "rejecttitle",
     "remux",
     "rtime",
+    "SIGUSR",
     "smhd",
     "socketio",
     "timespec",

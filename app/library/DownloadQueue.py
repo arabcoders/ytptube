@@ -317,8 +317,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
                 if not _status:
-                    LOG.debug(_msg)
-                    return {"status": "ok", "msg": _msg}
+                    return {"status": "error", "msg": _msg}
 
                 extras = {
                     "playlist": entry.get("title") or entry.get("id"),
@@ -366,7 +365,7 @@ class DownloadQueue(metaclass=Singleton):
         if any("error" == res["status"] for res in results):
             return {
                 "status": "error",
-                "msg": ", ".join(res["msg"] for res in results if res["status"] == "error" and "msg" in res),
+                "msg": ", ".join(res["msg"] for res in results if "error" == res["status"] and "msg" in res),
             }
 
         return {"status": "ok"}
@@ -470,7 +469,7 @@ class DownloadQueue(metaclass=Singleton):
 
             text_logs: str = ""
             if filtered_logs := extract_ytdlp_logs(logs):
-                text_logs = ", ".join(filtered_logs)
+                text_logs = " " + ", ".join(filtered_logs)
 
             if "is_upcoming" == entry.get("live_status"):
                 nEvent = Events.ITEM_MOVED
@@ -690,13 +689,13 @@ class DownloadQueue(metaclass=Singleton):
 
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
                 already.pop()
-                LOG.info(f"Condition '{condition.name}' matched for '{item.url}'.")
+                LOG.info(f"Matched '{condition.name}' for '{item.url}' Adding '{condition.cli}' to request.")
                 return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
             _status, _msg = ytdlp_reject(entry=entry, yt_params=yt_conf)
             if not _status:
                 LOG.debug(_msg)
-                return {"status": "ok", "msg": _msg}
+                return {"status": "error", "msg": _msg}
 
             end_time = time.perf_counter() - started
             LOG.debug(f"extract_info: for 'URL: {item.url}' is done in '{end_time:.3f}'. Length: '{len(entry)}/keys'.")
@@ -1028,23 +1027,22 @@ class DownloadQueue(metaclass=Singleton):
         """
         Monitor pool for stale downloads and cancel them if needed.
         """
-        if self.is_paused():
+        if self.is_paused() or self.queue.empty():
             return
 
-        if not self.queue.empty():
-            LOG.debug("Checking for stale items in the download queue.")
-            for _id, item in list(self.queue.items()):
-                item_ref = f"{_id=} {item.info.id=} {item.info.title=}"
-                if not item.is_stale():
-                    LOG.debug(f"Item '{item_ref}' is not stale.")
-                    continue
+        LOG.debug("Checking for stale items in the download queue.")
+        for _id, item in list(self.queue.items()):
+            item_ref = f"{_id=} {item.info.id=} {item.info.title=}"
+            if not item.is_stale():
+                LOG.debug(f"Item '{item_ref}' is not stale.")
+                continue
 
+            try:
                 LOG.warning(f"Cancelling staled item '{item_ref}' from download queue.")
-                try:
-                    await self.cancel([_id])
-                except Exception as e:
-                    LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
-                    LOG.exception(e)
+                await self.cancel([_id])
+            except Exception as e:
+                LOG.error(f"Failed to cancel staled item '{item_ref}'. {e!s}")
+                LOG.exception(e)
 
     async def _check_live(self):
         """
