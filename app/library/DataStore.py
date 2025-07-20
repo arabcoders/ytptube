@@ -16,7 +16,7 @@ LOG = logging.getLogger("datastore")
 
 
 class StoreType(str, Enum):
-    DONE = "done"
+    HISTORY = "done"
     QUEUE = "queue"
 
     @classmethod

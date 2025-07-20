@@ -3,13 +3,12 @@ from pathlib import Path
 
 from .config import Config
 from .Presets import Preset, Presets
-from .Singleton import Singleton
 from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, load_cookies, merge_dict
 
 LOG: logging.Logger = logging.getLogger("YTDLPOpts")
 
 
-class YTDLPOpts(metaclass=Singleton):
+class YTDLPOpts:
     _item_opts: dict = {}
     """The item options."""
 
@@ -21,9 +20,6 @@ class YTDLPOpts(metaclass=Singleton):
 
     _preset_cli: str = ""
     """The command options for yt-dlp from preset."""
-
-    _instance = None
-    """The instance of the class."""
 
     def __init__(self):
         self._config = Config.get_instance()
@@ -37,10 +33,7 @@ class YTDLPOpts(metaclass=Singleton):
             Presets: The instance of the class
 
         """
-        if not YTDLPOpts._instance:
-            YTDLPOpts._instance = YTDLPOpts()
-
-        return YTDLPOpts._instance
+        return YTDLPOpts()
 
     def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
         """
@@ -133,7 +126,7 @@ class YTDLPOpts(metaclass=Singleton):
                 load_cookies(file)
                 self._preset_opts["cookiefile"] = str(file)
             except ValueError as e:
-                LOG.error(str(e))
+                LOG.error(f"Failed to load '{preset.name}' cookies from '{file}'. {e!s}")
 
         if preset.template:
             self._preset_opts["outtmpl"] = {"default": preset.template, "chapter": self._config.output_template_chapter}
@@ -210,6 +203,6 @@ class YTDLPOpts(metaclass=Singleton):
             if data["format"] == "-best":
                 data["format"] = data["format"][1:]
 
-        LOG.debug(f"Parsed yt-dlp options are: '{data!s}'.")
+        LOG.debug(f"Final yt-dlp options: '{data!s}'.")
 
         return data
