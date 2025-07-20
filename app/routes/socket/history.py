@@ -40,15 +40,9 @@ async def resume(notify: EventBus, queue: DownloadQueue):
 
 @route(RouteType.SOCKET, "add_url", "add_url")
 async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
-    url: str | None = data.get("url")
-
-    if not url:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Invalid URL",
-            message="Please provide a valid URL to add to the download queue.",
-            to=sid,
-        )
+    data = data if isinstance(data, dict) else {}
+    if not (url := data.get("url", None)):
+        await notify.emit(Events.LOG_ERROR, title="Invalid request", message="No URL provided.", to=sid)
         return
 
     try:
@@ -67,57 +61,19 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
 
 @route(RouteType.SOCKET, "item_cancel", "item_cancel")
 async def item_cancel(queue: DownloadQueue, notify: EventBus, sid: str, data: str):
-    if not data:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Invalid Request",
-            message="No item ID provided to cancel.",
-            to=sid,
-        )
+    if not (data := data if isinstance(data, str) else None):
+        await notify.emit(Events.LOG_ERROR, title="Invalid Request", message="No item ID provided.", to=sid)
         return
 
-    try:
-        item = queue.get_item(id=data)
-    except KeyError:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Item Not Found",
-            message=f"Item with ID '{data}' not found.",
-            to=sid,
-        )
-        return
-
-    status: dict[str, str] = {}
-    status = await queue.cancel([data])
-    status.update({"identifier": data})
-
-    await notify.emit(
-        Events.ITEM_CANCELLED,
-        data=item.info,
-        title="Item Cancelled",
-        message=f"Cancelled '{item.info.title}'.",
-    )
+    await queue.cancel([data])
 
 
 @route(RouteType.SOCKET, "item_delete", "item_delete")
 async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
-    if not data:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Invalid Request",
-            message="No item ID provided to delete.",
-            to=sid,
-        )
-        return
+    data = data if isinstance(data, dict) else {}
 
-    id: str | None = data.get("id")
-    if not id:
-        await notify.emit(
-            Events.LOG_ERROR,
-            title="Invalid Request",
-            message="No item ID provided to delete.",
-            to=sid,
-        )
+    if not (id := data.get("id", None)):
+        await notify.emit(Events.LOG_ERROR, title="Invalid Request", message="No item ID provided.", to=sid)
         return
 
     await queue.clear([id], remove_file=bool(data.get("remove_file", False)))

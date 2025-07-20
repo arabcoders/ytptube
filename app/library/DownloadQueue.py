@@ -76,7 +76,7 @@ class DownloadQueue(metaclass=Singleton):
 
         self.config = config or Config.get_instance()
         self._notify = EventBus.get_instance()
-        self.done = DataStore(type=StoreType.DONE, connection=connection)
+        self.done = DataStore(type=StoreType.HISTORY, connection=connection)
         self.queue = DataStore(type=StoreType.QUEUE, connection=connection)
         self.done.load()
         self.queue.load()
@@ -981,13 +981,13 @@ class DownloadQueue(metaclass=Singleton):
 
             if entry.is_cancelled() is True:
                 nTitle = "Download Cancelled"
-                nMessage = f"Download '{entry.info.title}' has been cancelled."
+                nMessage = f"Cancelled '{entry.info.title}' download."
                 await self._notify.emit(Events.ITEM_CANCELLED, data=entry.info, title=nTitle, message=nMessage)
                 entry.info.status = "cancelled"
 
             if entry.info.status == "finished" and entry.info.filename:
                 nTitle = "Download Completed"
-                nMessage = f"Download '{entry.info.title}' has been finished."
+                nMessage = f"Completed '{entry.info.title}' download."
                 _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
 
             self.done.put(value=entry)

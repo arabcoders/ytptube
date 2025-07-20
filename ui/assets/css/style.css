@@ -340,3 +340,8 @@ hr {
 .Vue-Toastification__toast-body {
   user-select: none;
 }
+
+.is-word-break {
+  word-break: break-word;
+  text-wrap: auto;
+}
