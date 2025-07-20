@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20250719-10182e13",
-        "date": "2025-07-19T16:54:15+00:00",
+        "tag": "master-20250720-b7cb89f6",
+        "date": "2025-07-20T14:09:31+00:00",
         "commits": [
+            {
+                "sha": "ac2056f0",
+                "message": "Fix text overflow, Closes #345",
+                "author": "arabcoders",
+                "date": "2025-07-20T14:02:01+00:00",
+                "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643"
+            },
+            {
+                "sha": "472b8cb4",
+                "message": "Fixes #344",
+                "author": "arabcoders",
+                "date": "2025-07-20T13:53:56+00:00",
+                "full_sha": "472b8cb46859e2ace13d7d9d338896c61456e9a5"
+            },
+            {
+                "sha": "94193b80",
+                "message": "removed useless log statement.",
+                "author": "arabcoders",
+                "date": "2025-07-19T17:49:50+00:00",
+                "full_sha": "94193b808fc9286dffeec23b925c789f925d4839"
+            },
             {
                 "sha": "a7e8d242",
                 "message": "Completed the events system upgrade and expanded the notifications events with support for apprise.",
@@ -760,7 +781,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "10182e1373004c6b31c846ce9dd00447cf8ed04c"
+        "full_sha": "b7cb89f656fe06d6f46defeb3956efb05ffc867a"
     },
     {
         "tag": "master-20250616-c07465a6",
