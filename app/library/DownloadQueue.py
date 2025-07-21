@@ -511,7 +511,6 @@ class DownloadQueue(metaclass=Singleton):
                         )
                         starts_in = starts_in + timedelta(minutes=5, seconds=dl.extras.get("duration", 0))
                         dlInfo.info.error += f" Download will start at {starts_in.astimezone().isoformat()}."
-                        nMessage = dlInfo.info.error.strip()
                         _requeue = False
                     except Exception as e:
                         LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
@@ -519,7 +518,7 @@ class DownloadQueue(metaclass=Singleton):
                 else:
                     dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
 
-                nMessage = dlInfo.info.error.strip()
+                nMessage = f"'{dl.info.title}': '{dlInfo.info.error.strip()}'."
 
                 if _requeue:
                     nEvent = Events.ITEM_ADDED
@@ -531,8 +530,7 @@ class DownloadQueue(metaclass=Singleton):
                     itemDownload = self.done.put(dlInfo)
                     nStore = "history"
                     nEvent = Events.ITEM_MOVED
-                    nTitle = "Item Not Live"
-                    nMessage = f"Item '{dlInfo.info.title}' is not live."
+                    nTitle = "Premiering right now"
                     await self._notify.emit(Events.LOG_INFO, title=nTitle, message=nMessage)
             else:
                 nEvent = Events.ITEM_ADDED
