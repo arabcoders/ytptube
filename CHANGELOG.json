@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e07751c41f61f335150231312cd38b2f67cb1a5c",
-    "date": "2025-07-20T14:51:05+00:00",
+    "full_sha": "a58921dba57723069342c57e5cf9453ebe7236f1",
+    "date": "2025-07-21T13:07:23+00:00",
     "commits": [
+      {
+        "sha": "a58921db",
+        "full_sha": "a58921dba57723069342c57e5cf9453ebe7236f1",
+        "message": "Showing Premiering right now instead on not live",
+        "author": "arabcoders",
+        "date": "2025-07-21T13:07:23+00:00"
+      },
       {
         "sha": "e07751c4",
         "full_sha": "e07751c41f61f335150231312cd38b2f67cb1a5c",

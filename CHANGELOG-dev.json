@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250720-e07751c4",
-        "date": "2025-07-20T14:51:05+00:00",
+        "tag": "dev-20250721-a58921db",
+        "date": "2025-07-21T13:07:23+00:00",
         "commits": [
+            {
+                "sha": "a58921db",
+                "message": "Showing Premiering right now instead on not live",
+                "author": "arabcoders",
+                "date": "2025-07-21T13:07:23+00:00",
+                "full_sha": "a58921dba57723069342c57e5cf9453ebe7236f1"
+            },
             {
                 "sha": "e07751c4",
                 "message": "Minor messaging changes",
@@ -788,7 +795,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "e07751c41f61f335150231312cd38b2f67cb1a5c"
+        "full_sha": "a58921dba57723069342c57e5cf9453ebe7236f1"
     },
     {
         "tag": "dev-20250616-c07465a6",
