@@ -1,36 +1,8 @@
 [
   {
-    "tag": "Unreleased (b7cb89f6)",
-    "full_sha": "b7cb89f656fe06d6f46defeb3956efb05ffc867a",
-    "date": "2025-07-20T14:09:31+00:00",
-    "commits": [
-      {
-        "sha": "ac2056f0",
-        "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643",
-        "message": "Fix text overflow, Closes #345",
-        "author": "arabcoders",
-        "date": "2025-07-20T14:02:01+00:00"
-      },
-      {
-        "sha": "472b8cb4",
-        "full_sha": "472b8cb46859e2ace13d7d9d338896c61456e9a5",
-        "message": "Fixes #344",
-        "author": "arabcoders",
-        "date": "2025-07-20T13:53:56+00:00"
-      },
-      {
-        "sha": "94193b80",
-        "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
-        "message": "removed useless log statement.",
-        "author": "arabcoders",
-        "date": "2025-07-19T17:49:50+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "b0f08f1531ea39cd797fa967ab4f6117032473f1",
-    "date": "2025-07-23T00:28:29+00:00",
+    "tag": "Unreleased (35aa158f)",
+    "full_sha": "35aa158f40bc77709ad62cd47166d8717b6c2e3a",
+    "date": "2025-07-23T00:32:31+00:00",
     "commits": [
       {
         "sha": "d0706dd1",
@@ -52,6 +24,27 @@
         "message": "Minor messaging changes",
         "author": "arabcoders",
         "date": "2025-07-20T14:51:05+00:00"
+      },
+      {
+        "sha": "ac2056f0",
+        "full_sha": "ac2056f03890889b4d86a309553f9ef3513e1643",
+        "message": "Fix text overflow, Closes #345",
+        "author": "arabcoders",
+        "date": "2025-07-20T14:02:01+00:00"
+      },
+      {
+        "sha": "472b8cb4",
+        "full_sha": "472b8cb46859e2ace13d7d9d338896c61456e9a5",
+        "message": "Fixes #344",
+        "author": "arabcoders",
+        "date": "2025-07-20T13:53:56+00:00"
+      },
+      {
+        "sha": "94193b80",
+        "full_sha": "94193b808fc9286dffeec23b925c789f925d4839",
+        "message": "removed useless log statement.",
+        "author": "arabcoders",
+        "date": "2025-07-19T17:49:50+00:00"
       }
     ]
   },
