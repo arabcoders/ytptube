@@ -261,7 +261,7 @@ class Download:
             if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
                 msg = f"Failed to extract any formats for '{self.info.url}'."
                 if filtered_logs := extract_ytdlp_logs(self.logs):
-                    msg += f" Logs: {', '.join(filtered_logs)}"
+                    msg += " " + ", ".join(filtered_logs)
 
                 raise ValueError(msg)  # noqa: TRY301
 
@@ -280,9 +280,9 @@ class Download:
             def mark_cancelled(*_):
                 cls._interrupted = True
                 cls.to_screen("[info] Interrupt received, exiting cleanly...")
-                raise KeyboardInterrupt  # noqa: TRY301
+                raise SystemExit(130)  # noqa: TRY301
 
-            signal.signal(signal.SIGINT, mark_cancelled)
+            signal.signal(signal.SIGUSR1, mark_cancelled)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
@@ -313,7 +313,9 @@ class Download:
                 except Exception as e:
                     self.logger.error(f"Failed to delete cookie file: {cookie_file}. {e}")
 
-        self.logger.info(f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" completed.')
+        self.logger.info(
+            f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" completed.'
+        )
 
     async def start(self):
         self.status_queue = Config.get_manager().Queue()
