@@ -1,79 +1,86 @@
-const sources = [
+export type EmbedSource = {
+  name: string
+  url: string
+  regex: RegExp
+}
+
+const sources: EmbedSource[] = [
   {
     name: 'youtube',
-    url: 'https://www.youtube-nocookie.com/embed/',
+    url: 'https://www.youtube-nocookie.com/embed/{id}',
     regex: /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:shorts\/|[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)(?<id>[a-zA-Z0-9_-]{11})/,
   },
   {
     name: "instagram_post",
-    url: "https://www.instagram.com/p/",
+    url: "https://www.instagram.com/p/{id}",
     regex: /https?:\/\/(?:www\.)?instagram\.com\/p\/(?<id>[^/?#&]+)/,
   },
   {
     name: "instagram_story",
-    url: "https://www.instagram.com/stories/highlights/",
+    url: "https://www.instagram.com/stories/highlights/{id}",
     regex: /https?:\/\/(?:www\.)?instagram\.com\/stories\/highlights\/(?<id>[^/?#&]+)/,
   },
   {
     name: "twitter",
-    url: "https://twitter.com/i/status/",
+    url: "https://twitter.com/i/status/{id}",
     regex: /https?:\/\/(?:www\.)?(twitter\.com|x\.com)\/.+?\/status\/(?<id>[^/?#&]+)/,
   },
   {
     name: "facebook",
-    url: "https://www.facebook.com/plugins/post.php?href=",
+    url: "https://www.facebook.com/plugins/post.php?href={id}",
     regex: /https?:\/\/(?:www\.)?facebook\.com\/(?:[^/?#&]+)\/posts\/(?<id>[^/?#&]+)/,
   },
   {
     name: "tiktok",
-    url: "https://www.tiktok.com/embed/",
+    url: "https://www.tiktok.com/embed/{id}",
     regex: /https?:\/\/(?:www\.)?tiktok\.com\/(?:[^/?#&]+)\/video\/(?<id>[^/?#&]+)/,
   },
   {
     name: "vimeo",
-    url: "https://player.vimeo.com/video/",
+    url: "https://player.vimeo.com/video/{id}",
     regex: /https?:\/\/(?:www\.)?vimeo\.com(?:\/[^/?#&]+)?\/(?<id>[^/?#&]+)/,
   },
   {
     name: "spotify",
-    url: "https://open.spotify.com/embed/",
+    url: "https://open.spotify.com/embed/{id}",
     regex: /https?:\/\/(?:open\.)?spotify\.com\/(?:[^/?#&]+)\/(?<id>[^/?#&]+)/,
   },
   {
     name: "twitch_vod",
-    url: "https://player.twitch.tv/?parent={origin}&video=",
+    url: "https://player.twitch.tv/?parent={origin}&video={id}",
     regex: /https?:\/\/(?:www\.)?twitch\.tv\/(?:[^/?#&]+)\/(?<id>[^/?#&]+)/,
   },
   {
     name: "twitch_clip",
-    url: "https://clips.twitch.tv/embed?parent={origin}&clip=",
+    url: "https://clips.twitch.tv/embed?parent={origin}&clip={id}",
     regex: /https?:\/\/(?:www\.)?twitch\.tv\/(?:[^/?#&]+)\/clip\/(?<id>[^/?#&]+)/,
   },
   {
     name: "twitch_channel",
-    url: "https://player.twitch.tv/?parent={origin}&channel=",
+    url: "https://player.twitch.tv/?parent={origin}&channel={id}",
     regex: /https?:\/\/(?:www\.)?twitch\.tv\/(?<id>[^/?#&]+)/,
   },
   {
     name: "dailymotion",
-    url: "https://www.dailymotion.com/embed/video/",
+    url: "https://www.dailymotion.com/embed/video/{id}",
     regex: /^.+dailymotion.com\/(video|hub)\/(?<id>[^_]+)[^#]*(#video=([^_&]+))?/,
   },
 ]
 
-const isEmbedable = url => {
-  return sources.some(source => source.regex.test(url));
-}
+const isEmbedable = (url: string): boolean => sources.some(source => source.regex.test(url))
 
-const getEmbedable = url => {
-  const source = sources.find(source => source.regex.test(url));
+const getEmbedable = (url: string): string | null => {
+  const source = sources.find(source => source.regex.test(url))
   if (!source) {
-    return null;
+    return null
   }
 
-  source.url.replace(/\{origin\}/g, window.location.origin);
+  const match = source.regex.exec(url)
+  if (!match || !match.groups?.id) {
+    return null
+  }
 
-  return source.url + source.regex.exec(url)['groups'].id;
+  return source.url.replace(/\{origin\}/g, window.location.origin).replace(/\{id\}/g, match.groups.id)
 }
 
-export { isEmbedable, getEmbedable };
+export { isEmbedable, getEmbedable }
