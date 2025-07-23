@@ -49,6 +49,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "bdbc2f5b7a5031bf1484c57df3aae72f13bf261e",
+    "date": "2025-07-23T16:34:08+00:00",
+    "commits": [
+      {
+        "sha": "bdbc2f5b",
+        "full_sha": "bdbc2f5b7a5031bf1484c57df3aae72f13bf261e",
+        "message": "migrate more code to ts",
+        "author": "arabcoders",
+        "date": "2025-07-23T16:34:08+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.4.0",
     "full_sha": "10182e1373004c6b31c846ce9dd00447cf8ed04c",
     "date": "2025-07-19T16:54:15+00:00",
