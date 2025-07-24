@@ -329,8 +329,8 @@ class DownloadQueue(metaclass=Singleton):
                     "playlist_channel": entry.get("channel"),
                     "playlist_channel_id": entry.get("channel_id"),
                     "playlist_webpage_url": entry.get("webpage_url"),
-                    "playlist_index": f"{{0:0{len(str(playlistCount))}d}}".format(i),
-                    "playlist_autonumber": i + 1,
+                    "playlist_index": i,
+                    "playlist_autonumber": i,
                 }
 
                 for property in ("id", "title", "uploader", "uploader_id"):
