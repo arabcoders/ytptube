@@ -70,7 +70,11 @@ export default defineNuxtConfig({
     },
     ...extraNitro,
   },
-
+  vite: {
+    server: {
+      allowedHosts: true,
+    }
+  },
   telemetry: false,
   compatibilityDate: "2024-07-13",
 })
