@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250724-ca4e3dfd",
-        "date": "2025-07-24T14:22:05+00:00",
+        "tag": "dev-20250724-4a017500",
+        "date": "2025-07-24T16:31:19+00:00",
         "commits": [
+            {
+                "sha": "4a017500",
+                "message": "Fixed in browser match_str to closely match yt-dlp match_str",
+                "author": "arabcoders",
+                "date": "2025-07-24T16:31:19+00:00",
+                "full_sha": "4a017500c79385266ee674863e8e9fa9dca56523"
+            },
+            {
+                "sha": "6f059c78",
+                "message": "nuxt4 migration",
+                "author": "arabcoders",
+                "date": "2025-07-24T15:51:12+00:00",
+                "full_sha": "6f059c78b89c89132fda28554928fc9d18919fdb"
+            },
             {
                 "sha": "ca4e3dfd",
                 "message": "Fix upgrading and installing pip packages",
@@ -830,7 +844,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f"
+        "full_sha": "4a017500c79385266ee674863e8e9fa9dca56523"
     },
     {
         "tag": "dev-20250616-c07465a6",
