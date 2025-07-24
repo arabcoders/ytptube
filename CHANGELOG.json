@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (fd75d3cb)",
-    "full_sha": "fd75d3cb8fc0841212e6c4b0bd76184b63cc8384",
-    "date": "2025-07-24T16:39:01+00:00",
+    "tag": "Unreleased (b4e5990b)",
+    "full_sha": "b4e5990b8353146498ec060b5f7fbc00b712da45",
+    "date": "2025-07-24T20:50:17+00:00",
     "commits": [
+      {
+        "sha": "c60c14d6",
+        "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5",
+        "message": "Fix playlist_autonumber. Closes #351",
+        "author": "arabcoders",
+        "date": "2025-07-24T20:47:12+00:00"
+      },
       {
         "sha": "4a017500",
         "full_sha": "4a017500c79385266ee674863e8e9fa9dca56523",
@@ -17,20 +24,6 @@
         "message": "nuxt4 migration",
         "author": "arabcoders",
         "date": "2025-07-24T15:51:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5",
-    "date": "2025-07-24T20:47:12+00:00",
-    "commits": [
-      {
-        "sha": "c60c14d6",
-        "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5",
-        "message": "Fix playlist_autonumber. Closes #351",
-        "author": "arabcoders",
-        "date": "2025-07-24T20:47:12+00:00"
       }
     ]
   },

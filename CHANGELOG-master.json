@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250724-fd75d3cb",
-        "date": "2025-07-24T16:39:01+00:00",
+        "tag": "master-20250724-b4e5990b",
+        "date": "2025-07-24T20:50:17+00:00",
         "commits": [
+            {
+                "sha": "c60c14d6",
+                "message": "Fix playlist_autonumber. Closes #351",
+                "author": "arabcoders",
+                "date": "2025-07-24T20:47:12+00:00",
+                "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5"
+            },
             {
                 "sha": "4a017500",
                 "message": "Fixed in browser match_str to closely match yt-dlp match_str",
@@ -844,7 +851,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fd75d3cb8fc0841212e6c4b0bd76184b63cc8384"
+        "full_sha": "b4e5990b8353146498ec060b5f7fbc00b712da45"
     },
     {
         "tag": "master-20250616-c07465a6",
