@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250724-3f338dba",
-        "date": "2025-07-24T12:44:32+00:00",
+        "tag": "dev-20250724-ca4e3dfd",
+        "date": "2025-07-24T14:22:05+00:00",
         "commits": [
+            {
+                "sha": "ca4e3dfd",
+                "message": "Fix upgrading and installing pip packages",
+                "author": "arabcoders",
+                "date": "2025-07-24T14:22:05+00:00",
+                "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f"
+            },
+            {
+                "sha": "78e09e03",
+                "message": "update external dependencies",
+                "author": "arabcoders",
+                "date": "2025-07-24T14:21:47+00:00",
+                "full_sha": "78e09e03cf87257ccdf11b247d7da01e04bd562d"
+            },
             {
                 "sha": "3f338dba",
                 "message": "Added event for item in archive",
@@ -816,7 +830,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3f338dba202fdca8f146708dde113ce81553073e"
+        "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f"
     },
     {
         "tag": "dev-20250616-c07465a6",

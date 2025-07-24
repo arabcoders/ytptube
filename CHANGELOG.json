@@ -50,9 +50,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "3f338dba202fdca8f146708dde113ce81553073e",
-    "date": "2025-07-24T12:44:32+00:00",
+    "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f",
+    "date": "2025-07-24T14:22:05+00:00",
     "commits": [
+      {
+        "sha": "ca4e3dfd",
+        "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f",
+        "message": "Fix upgrading and installing pip packages",
+        "author": "arabcoders",
+        "date": "2025-07-24T14:22:05+00:00"
+      },
+      {
+        "sha": "78e09e03",
+        "full_sha": "78e09e03cf87257ccdf11b247d7da01e04bd562d",
+        "message": "update external dependencies",
+        "author": "arabcoders",
+        "date": "2025-07-24T14:21:47+00:00"
+      },
       {
         "sha": "3f338dba",
         "full_sha": "3f338dba202fdca8f146708dde113ce81553073e",
