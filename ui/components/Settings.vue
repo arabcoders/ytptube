@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import { POSITION } from 'vue-toastification'
-import { separators } from '~/utils/utils'
+import { separators } from '~/utils/index'
 
 defineProps<{ isLoading: boolean }>()
 
@@ -154,5 +154,5 @@ const reduce_confirm = useStorage<boolean>('reduce_confirm', false)
 const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
-const separator = useStorage<string>('url_separator', separators[0].value)
+const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 </script>

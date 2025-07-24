@@ -232,7 +232,7 @@
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import type { item_request } from '~/types/item'
-import { getSeparatorsName, separators } from '~/utils/utils'
+import { getSeparatorsName, separators } from '~/utils/index'
 
 const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
@@ -245,7 +245,7 @@ const socket = useSocketStore()
 const toast = useNotification()
 
 const showAdvanced = useStorage<boolean>('show_advanced', false)
-const separator = useStorage<string>('url_separator', separators[0].value)
+const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
 
@@ -414,7 +414,7 @@ onMounted(async () => {
   await nextTick()
 
   if (!separators.some(s => s.value === separator.value)) {
-    separator.value = separators[0].value
+    separator.value = separators[0]?.value ?? '.'
   }
 })
 
@@ -422,7 +422,7 @@ const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\
 
 const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
 const get_preset = (name: string | undefined) => config.presets.find(item => item.name === name)
-const expand_description = (e: Event) => toggleClass(e.target, ['is-ellipsis', 'is-pre-wrap'])
+const expand_description = (e: Event) => toggleClass(e.target as HTMLElement, ['is-ellipsis', 'is-pre-wrap'])
 
 const removeFromArchive = async (url: string) => {
   try {

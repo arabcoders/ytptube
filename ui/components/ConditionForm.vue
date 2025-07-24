@@ -181,23 +181,22 @@
 
               <div class="field">
                 <span class="is-bold" :class="{
-                  'has-text-success': true === test_data?.data?.status,
-                  'has-text-danger': false === test_data?.data?.status,
+                  'has-text-success': true === logic_test,
+                  'has-text-danger': false === logic_test,
                 }">
                   <span class="icon"><i class="fa-solid" :class="{
-                    'fa-check': true === test_data.data.status,
-                    'fa-xmark': false === test_data.data.status,
-                    'fa-question': null === (test_data.data.status || null),
+                    'fa-check': true === logic_test,
+                    'fa-xmark': false === logic_test,
+                    'fa-question': null === logic_test,
                   }" /></span>
-                  Filter Status: {{ test_data?.data?.status === null ? 'Not tested' : test_data?.data?.status ?
-                    'Matched' : 'Not matched' }}
+                  Filter Status:
+                  <template v-if="null === test_data?.data?.status">Not tested</template>
+                  <template v-else>{{ logic_test ? 'Matched' : 'Not matched' }}</template>
                 </span>
               </div>
-
               <div class="field">
                 <pre style="height:60vh;"><code>{{ show_data() }}</code></pre>
               </div>
-
             </div>
           </div>
         </form>
@@ -209,6 +208,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import { decode } from '~/utils/importer'
+import { match_str } from '~/utils/ytdlp'
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
 const emitter = defineEmits<{
@@ -232,8 +232,11 @@ const test_data = ref<{
   show: boolean,
   url: string,
   in_progress: boolean,
+  changed: boolean,
   data: { status: boolean | null, data: Record<string, any> }
-}>({ show: false, url: '', in_progress: false, data: { status: null, data: {} } })
+}>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } })
+
+watch(() => form.filter, () => test_data.value.changed = true)
 
 const checkInfo = async (): Promise<void> => {
   const required: (keyof ConditionItem)[] = ['name', 'filter', 'cli']
@@ -304,6 +307,7 @@ const run_test = async (): Promise<void> => {
     }
 
     test_data.value.data = json
+    test_data.value.changed = false
   } catch (error: any) {
     toast.error(`Failed to test condition. ${error.message}`)
   } finally {
@@ -357,4 +361,21 @@ const show_data = (): string => {
 
   return JSON.stringify(test_data.value.data.data, null, 2)
 }
+
+const logic_test = computed(() => {
+  if (!test_data.value.data || !test_data.value.data.data) {
+    return null
+  }
+
+  if (!test_data.value.changed) {
+    return test_data.value.data.status
+  }
+
+  try {
+    return match_str(form.filter, test_data.value.data.data, true)
+  } catch (e: any) {
+    console.error(e)
+    return false
+  }
+})
 </script>

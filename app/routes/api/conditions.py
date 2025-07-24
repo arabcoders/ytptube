@@ -1,5 +1,6 @@
 import logging
 import uuid
+from collections import OrderedDict
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -185,7 +186,11 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         )
 
     return web.json_response(
-        data={"status": status, "condition": cond, "data": data},
+        data={
+            "status": status,
+            "condition": cond,
+            "data": OrderedDict(sorted(data.items(), key=lambda item: len(str(item[1])))),
+        },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )

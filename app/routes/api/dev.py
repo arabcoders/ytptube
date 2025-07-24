@@ -40,3 +40,29 @@ async def debug_asyncio(config: Config, encoder: Encoder) -> Response:
         dumps=encoder.encode,
     )
 
+
+@route("GET", "api/dev/pip", "check_pip_packages")
+async def check_pip_packages(config: Config, encoder: Encoder) -> Response:
+    pkgs = config.pip_packages.split(" ") if config.pip_packages else []
+    if not pkgs:
+        return web.json_response(
+            data={"message": "No pip packages configured."},
+            status=web.HTTPOk.status_code,
+        )
+
+    def _get_installed_version(pkg: str) -> str | None:
+        try:
+            import importlib.metadata
+
+            return importlib.metadata.version(pkg)
+        except importlib.metadata.PackageNotFoundError:
+            return None
+
+    response = {}
+    for pkg in pkgs:
+        if not (pkg := pkg.strip()):
+            continue
+
+        response.update({pkg: _get_installed_version(pkg)})
+
+    return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
