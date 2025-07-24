@@ -650,6 +650,7 @@ class DownloadQueue(metaclass=Singleton):
             if downloaded is True and id_dict:
                 message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
+                await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
                 return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
