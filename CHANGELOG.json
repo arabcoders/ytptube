@@ -1,9 +1,37 @@
 [
   {
-    "tag": "Unreleased (35aa158f)",
-    "full_sha": "35aa158f40bc77709ad62cd47166d8717b6c2e3a",
-    "date": "2025-07-23T00:32:31+00:00",
+    "tag": "v0.5.0",
+    "full_sha": "6ba83ac00b83d0ee1366c0377c06c58b04e61041",
+    "date": "2025-07-24T14:26:08+00:00",
     "commits": [
+      {
+        "sha": "ca4e3dfd",
+        "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f",
+        "message": "Fix upgrading and installing pip packages",
+        "author": "arabcoders",
+        "date": "2025-07-24T14:22:05+00:00"
+      },
+      {
+        "sha": "78e09e03",
+        "full_sha": "78e09e03cf87257ccdf11b247d7da01e04bd562d",
+        "message": "update external dependencies",
+        "author": "arabcoders",
+        "date": "2025-07-24T14:21:47+00:00"
+      },
+      {
+        "sha": "3f338dba",
+        "full_sha": "3f338dba202fdca8f146708dde113ce81553073e",
+        "message": "Added event for item in archive",
+        "author": "arabcoders",
+        "date": "2025-07-24T12:44:32+00:00"
+      },
+      {
+        "sha": "bdbc2f5b",
+        "full_sha": "bdbc2f5b7a5031bf1484c57df3aae72f13bf261e",
+        "message": "migrate more code to ts",
+        "author": "arabcoders",
+        "date": "2025-07-23T16:34:08+00:00"
+      },
       {
         "sha": "d0706dd1",
         "full_sha": "d0706dd1af3965e9c3fa1348f3e8501189b7afc5",
@@ -45,41 +73,6 @@
         "message": "removed useless log statement.",
         "author": "arabcoders",
         "date": "2025-07-19T17:49:50+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f",
-    "date": "2025-07-24T14:22:05+00:00",
-    "commits": [
-      {
-        "sha": "ca4e3dfd",
-        "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f",
-        "message": "Fix upgrading and installing pip packages",
-        "author": "arabcoders",
-        "date": "2025-07-24T14:22:05+00:00"
-      },
-      {
-        "sha": "78e09e03",
-        "full_sha": "78e09e03cf87257ccdf11b247d7da01e04bd562d",
-        "message": "update external dependencies",
-        "author": "arabcoders",
-        "date": "2025-07-24T14:21:47+00:00"
-      },
-      {
-        "sha": "3f338dba",
-        "full_sha": "3f338dba202fdca8f146708dde113ce81553073e",
-        "message": "Added event for item in archive",
-        "author": "arabcoders",
-        "date": "2025-07-24T12:44:32+00:00"
-      },
-      {
-        "sha": "bdbc2f5b",
-        "full_sha": "bdbc2f5b7a5031bf1484c57df3aae72f13bf261e",
-        "message": "migrate more code to ts",
-        "author": "arabcoders",
-        "date": "2025-07-23T16:34:08+00:00"
       }
     ]
   },

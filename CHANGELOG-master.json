@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250723-35aa158f",
-        "date": "2025-07-23T00:32:31+00:00",
+        "tag": "master-20250724-6ba83ac0",
+        "date": "2025-07-24T14:26:08+00:00",
         "commits": [
+            {
+                "sha": "ca4e3dfd",
+                "message": "Fix upgrading and installing pip packages",
+                "author": "arabcoders",
+                "date": "2025-07-24T14:22:05+00:00",
+                "full_sha": "ca4e3dfd7955e112e93ac52c8f9aa80ddae3a90f"
+            },
+            {
+                "sha": "78e09e03",
+                "message": "update external dependencies",
+                "author": "arabcoders",
+                "date": "2025-07-24T14:21:47+00:00",
+                "full_sha": "78e09e03cf87257ccdf11b247d7da01e04bd562d"
+            },
+            {
+                "sha": "3f338dba",
+                "message": "Added event for item in archive",
+                "author": "arabcoders",
+                "date": "2025-07-24T12:44:32+00:00",
+                "full_sha": "3f338dba202fdca8f146708dde113ce81553073e"
+            },
+            {
+                "sha": "bdbc2f5b",
+                "message": "migrate more code to ts",
+                "author": "arabcoders",
+                "date": "2025-07-23T16:34:08+00:00",
+                "full_sha": "bdbc2f5b7a5031bf1484c57df3aae72f13bf261e"
+            },
             {
                 "sha": "d0706dd1",
                 "message": "Update yt-dlp to 2025.7.21",
@@ -802,7 +830,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "35aa158f40bc77709ad62cd47166d8717b6c2e3a"
+        "full_sha": "6ba83ac00b83d0ee1366c0377c06c58b04e61041"
     },
     {
         "tag": "master-20250616-c07465a6",
