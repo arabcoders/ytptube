@@ -21,6 +21,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5",
+    "date": "2025-07-24T20:47:12+00:00",
+    "commits": [
+      {
+        "sha": "c60c14d6",
+        "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5",
+        "message": "Fix playlist_autonumber. Closes #351",
+        "author": "arabcoders",
+        "date": "2025-07-24T20:47:12+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.5.0",
     "full_sha": "6ba83ac00b83d0ee1366c0377c06c58b04e61041",
     "date": "2025-07-24T14:26:08+00:00",
