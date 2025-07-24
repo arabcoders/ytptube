@@ -290,7 +290,7 @@ const run_test = async (): Promise<void> => {
   }
 
   test_data.value.in_progress = true
-  test_data.value.data.status = null
+  test_data.value.data.status = false
 
   try {
     const response = await request('/api/conditions/test', {
@@ -361,7 +361,7 @@ const show_data = (): string => {
 }
 
 const logic_test = computed(() => {
-  if (!test_data.value.data || !test_data.value.data.data) {
+  if (Object.keys(test_data.value.data?.data ?? {}).length < 1) {
     return null
   }
 

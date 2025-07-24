@@ -5,9 +5,28 @@ function match_str(filterStr: string, dct: Record<string, any>, incomplete: bool
     return true;
   }
 
-  return filterStr
-    .split(/(?<!\\)&/)
-    .every(filterPart => _match_one(filterPart.replace(/\\&/g, '&'), dct, incomplete));
+  if (/\s*&\s*$/.test(filterStr)) {
+    return false;
+  }
+
+  try {
+    const filterParts = filterStr
+      .split(/(?:(^|[^\\]))&/g)
+      .reduce((parts, part, index, array) => {
+        if (index % 2 === 0) {
+          parts.push((part + (array[index + 1] || '')).replace(/\\&/g, '&'));
+        }
+        return parts;
+      }, [] as string[]);
+
+    if (filterParts.some(fp => !fp.trim())) {
+      return false;
+    }
+
+    return filterParts.every(filterPart => _match_one(filterPart, dct, incomplete));
+  } catch (e) {
+    return false;
+  }
 }
 
 function lookup_unit_table(unitTable: Record<string, number>, s: string, strict = false): number | null {
@@ -101,7 +120,14 @@ function _match_one(filterPart: string, dct: Record<string, any>, incomplete: bo
     const opFn = negation ? (a: any, b: any) => !unnegatedOp(a, b) : unnegatedOp;
 
     let value = quoted ?? plain ?? '';
-    if (quote) value = value.replace(new RegExp(`\\\\${quote}`, 'g'), quote);
+
+    if (quote) {
+      value = value.replace(new RegExp(`\\\\${quote}`, 'g'), quote);
+    }
+
+    if (!(key! in dct)) {
+      return isIncomplete(key!) || Boolean(noneInclusive);
+    }
 
     const actual = dct[key!];
     let numeric: number | null = null;
@@ -117,10 +143,6 @@ function _match_one(filterPart: string, dct: Record<string, any>, incomplete: bo
       throw new Error(`Operator ${op} only supports string values!`);
     }
 
-    if (actual == null) {
-      return isIncomplete(key!) || Boolean(noneInclusive);
-    }
-
     return opFn(actual, numeric !== null ? numeric : value);
   }
 
@@ -133,12 +155,12 @@ function _match_one(filterPart: string, dct: Record<string, any>, incomplete: bo
   const mu = filterPart.trim().match(unaryRe);
   if (mu?.groups) {
     const { op, key } = mu.groups;
-    const actual = dct[key!];
 
-    if (actual === undefined && isIncomplete(key!)) {
-      return true;
+    if (!(key! in dct)) {
+      return isIncomplete(key!);
     }
 
+    const actual = dct[key!];
     const unaryOp = UNARY_OPERATORS[op!];
 
     if (!unaryOp) {
