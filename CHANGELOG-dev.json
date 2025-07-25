@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250724-c60c14d6",
-        "date": "2025-07-24T20:47:12+00:00",
+        "tag": "dev-20250725-4e1a1e65",
+        "date": "2025-07-25T15:38:04+00:00",
         "commits": [
+            {
+                "sha": "4e1a1e65",
+                "message": "Add loading screen",
+                "author": "arabcoders",
+                "date": "2025-07-25T15:38:04+00:00",
+                "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2"
+            },
+            {
+                "sha": "438254c5",
+                "message": "Added task to kill debugpy, sometimes vscode leave it behind causing problems  during development",
+                "author": "arabcoders",
+                "date": "2025-07-25T14:37:52+00:00",
+                "full_sha": "438254c594e48c460274cac0f04a73d9d0743ff1"
+            },
             {
                 "sha": "c60c14d6",
                 "message": "Fix playlist_autonumber. Closes #351",
@@ -851,7 +865,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c60c14d674b13a81b2356b72ac23533731e692a5"
+        "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2"
     },
     {
         "tag": "dev-20250616-c07465a6",

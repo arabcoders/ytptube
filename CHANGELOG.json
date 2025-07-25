@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2",
+    "date": "2025-07-25T15:38:04+00:00",
+    "commits": [
+      {
+        "sha": "4e1a1e65",
+        "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2",
+        "message": "Add loading screen",
+        "author": "arabcoders",
+        "date": "2025-07-25T15:38:04+00:00"
+      },
+      {
+        "sha": "438254c5",
+        "full_sha": "438254c594e48c460274cac0f04a73d9d0743ff1",
+        "message": "Added task to kill debugpy, sometimes vscode leave it behind causing problems  during development",
+        "author": "arabcoders",
+        "date": "2025-07-25T14:37:52+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.5.1",
     "full_sha": "b4e5990b8353146498ec060b5f7fbc00b712da45",
     "date": "2025-07-24T20:50:17+00:00",
