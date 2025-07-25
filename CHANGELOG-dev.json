@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250725-584d4e10",
-        "date": "2025-07-25T17:17:51+00:00",
+        "tag": "dev-20250725-e44077b9",
+        "date": "2025-07-25T17:24:48+00:00",
         "commits": [
+            {
+                "sha": "e44077b9",
+                "message": "typo",
+                "author": "arabcoders",
+                "date": "2025-07-25T17:24:48+00:00",
+                "full_sha": "e44077b99f84a761fe8eca737dd2c4b793fb20f8"
+            },
             {
                 "sha": "584d4e10",
                 "message": "Added toggle for task handler.",
@@ -879,7 +886,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "584d4e107e47d223178eb9da38618d442e688a53"
+        "full_sha": "e44077b99f84a761fe8eca737dd2c4b793fb20f8"
     },
     {
         "tag": "dev-20250616-c07465a6",
