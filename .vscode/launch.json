@@ -1,7 +1,4 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
@@ -18,17 +15,17 @@
       "cwd": "${workspaceFolder}/ui",
       "env": {
         "NUXT_API_URL": "http://localhost:8081/api/",
-        "NUXT_PUBLIC_WSS": ":8081/",
+        "NUXT_PUBLIC_WSS": ":8081/"
       },
       "console": "internalConsole",
-      "outputCapture": "std",
+      "outputCapture": "std"
     },
     {
-      "name": "Python: main.py",
+      "name": "Python: main.py ",
       "type": "debugpy",
       "request": "launch",
       "program": "app/main.py",
-      "console": "internalConsole",
+      "console": "integratedTerminal",
       "justMyCode": true,
       "env": {
         "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
@@ -36,7 +33,9 @@
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
         "PYDEVD_DISABLE_FILE_VALIDATION": "1",
         "YTP_IGNORE_UI": "true"
-      }
+      },
+      "subProcess": true,
+      "postDebugTask": "kill-debugpy"
     },
     {
       "name": "Node: Generate UI",
@@ -65,14 +64,14 @@
         "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
         "YTP_TEMP_PATH": "${workspaceFolder}/var/tmp",
-        "YTP_LOG_LEVEL": "DEBUG",
+        "YTP_LOG_LEVEL": "DEBUG"
       }
     },
     {
       "name": "Python: Attach To Process",
       "type": "debugpy",
       "request": "attach",
-      "processId": "${command:pickProcess}",
+      "processId": "${command:pickProcess}"
     },
     {
       "name": "Python: Attach To Container",

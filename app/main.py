@@ -171,7 +171,6 @@ class Main:
             self._app,
             host=host,
             port=port,
-            reuse_port="win32" != sys.platform,
             loop=asyncio.get_event_loop(),
             access_log=HTTP_LOGGER,
             print=started,
