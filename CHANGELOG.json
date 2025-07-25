@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2",
-    "date": "2025-07-25T15:38:04+00:00",
+    "full_sha": "584d4e107e47d223178eb9da38618d442e688a53",
+    "date": "2025-07-25T17:17:51+00:00",
     "commits": [
+      {
+        "sha": "584d4e10",
+        "full_sha": "584d4e107e47d223178eb9da38618d442e688a53",
+        "message": "Added toggle for task handler.",
+        "author": "arabcoders",
+        "date": "2025-07-25T17:17:51+00:00"
+      },
+      {
+        "sha": "dcaeb7ac",
+        "full_sha": "dcaeb7acc8ae8b68a15e07cc5825e80c9a960c1e",
+        "message": "migrated more code to ts",
+        "author": "arabcoders",
+        "date": "2025-07-25T16:41:17+00:00"
+      },
       {
         "sha": "4e1a1e65",
         "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2",
