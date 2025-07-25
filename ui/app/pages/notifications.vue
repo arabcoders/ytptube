@@ -66,7 +66,7 @@ div.is-centered {
                   <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                 </div>
                 <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Export target.'" @click.prevent="exportItem(item)">
+                  <a class="has-text-info" v-tooltip="'Export target.'" @click.prevent="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="item.raw = !item.raw">

@@ -190,7 +190,7 @@ div.is-centered {
                       </div>
 
                       <div class="control">
-                        <button class="button is-primary is-small is-fullwidth" v-tooltip="'Export'"
+                        <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
                           @click="exportItem(item)">
                           <span class="icon"><i class="fa-solid fa-file-export" /></span>
                         </button>
@@ -235,16 +235,17 @@ div.is-centered {
                   <div class="control">
                     <span class="icon" v-tooltip="`${item.auto_start ? 'Auto' : 'Manual'} start`">
                       <i class="fa-solid"
-                        :class="{ 'fa-circle-pause': item.auto_start, 'fa-circle-play': !item.auto_start }" />
+                        :class="{ 'fa-circle-pause has-text-success': item.auto_start, 'fa-circle-play has-text-danger': !item.auto_start }" />
                     </span>
                   </div>
                   <div class="control">
                     <span class="icon" v-tooltip="`RSS monitoring is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
-                      <i class="fa-solid fa-rss has-text-success" />
+                      <i class="fa-solid fa-rss"
+                        :class="{ 'has-text-success': item.handler_enabled, 'has-text-danger': !item.handler_enabled }" />
                     </span>
                   </div>
                   <div class="control">
-                    <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                    <a class="has-text-info" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
                     </a>
                   </div>

@@ -79,7 +79,7 @@ div.is-centered {
                     <td class="is-vcentered is-items-center">
                       <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                          <button class="button is-primary is-small is-fullwidth" v-tooltip="'Export'"
+                          <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
                             @click="exportItem(item)">
                             <span class="icon"><i class="fa-solid fa-file-export" /></span>
                           </button>
@@ -111,7 +111,7 @@ div.is-centered {
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
                 <div class="card-header-icon">
-                  <button class="has-text-primary" v-tooltip="'Export'" @click="exportItem(item)">
+                  <button class="has-text-info" v-tooltip="'Export'" @click="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </button>
                   <button @click="item.raw = !item.raw">

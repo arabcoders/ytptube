@@ -41,7 +41,7 @@
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
                 <div class="card-header-icon">
-                  <a class="has-text-primary" v-tooltip="'Export item.'" @click.prevent="exportItem(cond)">
+                  <a class="has-text-info" v-tooltip="'Export item.'" @click.prevent="exportItem(cond)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
                   <button @click="cond.raw = !cond.raw">
