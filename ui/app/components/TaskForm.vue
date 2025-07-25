@@ -215,6 +215,28 @@
                 </div>
               </div>
 
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="output_template">
+                    <span class="icon"><i class="fa-solid fa-rss" /></span>
+                    Enable Handler
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="auto_start" type="checkbox" v-model="form.enabled_handler" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="auto_start" class="is-unselectable">
+                      {{ form.enabled_handler ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Some URLs like YouTube channels and playlists can be monitored for new videos using RSS
+                      feed independent of the timer. If enabled, the task will monitor the RSS feed for new videos and
+                      automatically queue them for download if they are not already downloaded.</span>
+                  </span>
+                </div>
+              </div>
+
               <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
@@ -260,22 +282,19 @@
     </div>
 
     <div class="column is-12">
-      <Message title="Tips" class="is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+      <Message title="Tips" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
         <span>
           <ul>
             <li>To enable YouTube RSS feed monitoring, The task URL must include a <code>channel_id</code> or
               <code>playlist_id</code>. Other link types won’t work.
             </li>
-            <li>RSS monitoring runs every hour alongside the actual task execution. It checks each feed for new videos
-              and automatically queues any you haven’t downloaded yet.</li>
-            <li>To opt out of RSS monitoring for a specific task, append <code>[no_handler]</code> to that task’s name.
-            </li>
-            <li>To have the task only monitor RSS feed, do not set timer and add <code>[only_handler]</code> to that
-              task’s name.</li>
+            <li>RSS monitoring runs every hour alongside the actual task execution. Regardless if the task has timer set
+              or not. To opt out of RSS monitoring for a specific task, simply disable the <code>Enable Handler</code>
+              option. To have the task only monitor RSS feed, <b>do not set timer</b>.</li>
             <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in command options
-              for ytdlp.cli, preset or task.</li>
-            <li>If you don't have <code>--download-archive</code> set but <code>YTP_KEEP_ARCHIVE</code> environment
-              option is set to <code>true</code> which is the default, It will also work.
+              for ytdlp.cli, preset or task. If you don't have <code>--download-archive</code> set but
+              <code>YTP_KEEP_ARCHIVE</code> environment option is set to <code>true</code> which is the default, It will
+              also work.
             </li>
           </ul>
         </span>
@@ -320,9 +339,15 @@ onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset)
   }
+
   if (typeof form.auto_start === 'undefined' || null === form.auto_start) {
     form.auto_start = true
   }
+
+  if (typeof form.enabled_handler === 'undefined' || null === form.enabled_handler) {
+    form.enabled_handler = true
+  }
+
 })
 
 const checkInfo = async (): Promise<void> => {

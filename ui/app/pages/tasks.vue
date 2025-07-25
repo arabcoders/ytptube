@@ -66,8 +66,8 @@ div.is-centered {
 
     <div class="columns is-multiline" v-if="toggleForm">
       <div class="column is-12">
-        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task" @cancel="resetForm(true);"
-          @submit="updateItem" />
+        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task as task_item"
+          @cancel="resetForm(true);" @submit="updateItem" />
       </div>
     </div>
 
@@ -149,7 +149,7 @@ div.is-centered {
                         {{ remove_tags(item.name) }}
                       </NuxtLink>
                     </div>
-                    <div>
+                    <div class="is-unselectable">
                       <span class="icon-text">
                         <span class="icon">
                           <i class="fa-solid"
@@ -158,6 +158,11 @@ div.is-centered {
                         <span>
                           {{ item.auto_start ? 'Auto' : 'Manual' }}
                         </span>
+                      </span>
+                      &nbsp;
+                      <span class="icon-text">
+                        <span class="icon"><i class="fa-solid fa-rss" /></span>
+                        <span>{{ item.enabled_handler ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
                       <span class="icon-text" v-if="item.preset">
@@ -231,6 +236,11 @@ div.is-centered {
                     <span class="icon" v-tooltip="`${item.auto_start ? 'Auto' : 'Manual'} start`">
                       <i class="fa-solid"
                         :class="{ 'fa-circle-pause': item.auto_start, 'fa-circle-play': !item.auto_start }" />
+                    </span>
+                  </div>
+                  <div class="control">
+                    <span class="icon" v-tooltip="`RSS monitoring is ${item.enabled_handler ? 'enabled' : 'disabled'}`">
+                      <i class="fa-solid fa-rss has-text-success" />
                     </span>
                   </div>
                   <div class="control">
@@ -544,7 +554,7 @@ const deleteItem = async (item: task_item) => {
   toast.success('Task deleted.')
 }
 
-const updateItem = async ({ reference, task }: { reference?: string, task: task_item }) => {
+const updateItem = async ({ reference, task }: { reference?: string | null | undefined, task: task_item }) => {
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)

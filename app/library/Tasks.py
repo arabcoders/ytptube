@@ -35,6 +35,7 @@ class Task:
     template: str = ""
     cli: str = ""
     auto_start: bool = True
+    enabled_handler: bool = True
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -100,7 +101,8 @@ class Tasks(metaclass=Singleton):
         return Tasks._instance
 
     async def on_shutdown(self, _: web.Application):
-        pass
+        self.clear(shutdown=True)
+        self._task_handler.on_shutdown(_)
 
     def attach(self, _: web.Application):
         """
@@ -116,6 +118,7 @@ class Tasks(metaclass=Singleton):
             lambda data, _, **kwargs: self.save(**data.data),  # noqa: ARG005
             f"{__class__.__name__}.add",
         )
+        self._task_handler.load()
 
     def get_all(self) -> list[Task]:
         """Return the tasks."""
@@ -155,7 +158,7 @@ class Tasks(metaclass=Singleton):
 
             self._tasks.append(task)
 
-            if not task.timer or "[only_handler]" in task.name:
+            if not task.timer:
                 continue
 
             try:
@@ -361,12 +364,21 @@ class Tasks(metaclass=Singleton):
 
 class HandleTask:
     _tasks: Tasks
+    _handlers: list[type]
+    _scheduler: Scheduler
+    _config: Config
+    _task_name: str
 
     def __init__(self, scheduler: Scheduler, tasks: Tasks, config: Config) -> None:
         self._tasks = tasks
+        self._scheduler = scheduler
+        self._config = config
+        self._task_name: str = f"{__class__.__name__}._dispatcher"
+
+    def load(self) -> None:
         self._handlers: list[type] = self._discover()
 
-        timer = config.tasks_handler_timer
+        timer: str = self._config.tasks_handler_timer
         try:
             from cronsim import CronSim
 
@@ -375,18 +387,26 @@ class HandleTask:
             timer = "15 */1 * * *"
             LOG.error(f"Invalid timer format. '{e!s}'. Defaulting to '{timer}'.")
 
-        scheduler.add(
+        self._scheduler.add(
             timer=timer,
             func=self._dispatcher,
             id=f"{__class__.__name__}._dispatcher",
         )
 
+    def on_shutdown(self, _: web.Application) -> None:
+        """
+        Handle shutdown event.
+
+        Args:
+            _: web.Application: The aiohttp application.
+
+        """
+        if self._scheduler.has(self._task_name):
+            self._scheduler.remove(self._task_name)
+
     def _dispatcher(self):
         for task in self._tasks.get_all():
-            if "[no_handler]" in task.name:
-                continue
-
-            if not task.timer and "[only_handler]" not in task.name:
+            if not task.enabled_handler:
                 continue
 
             try:
