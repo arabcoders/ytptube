@@ -162,7 +162,7 @@ div.is-centered {
                       &nbsp;
                       <span class="icon-text">
                         <span class="icon"><i class="fa-solid fa-rss" /></span>
-                        <span>{{ item.enabled_handler ? 'Enabled' : 'Disabled' }}</span>
+                        <span>{{ item.handler_enabled ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
                       <span class="icon-text" v-if="item.preset">
@@ -239,7 +239,7 @@ div.is-centered {
                     </span>
                   </div>
                   <div class="control">
-                    <span class="icon" v-tooltip="`RSS monitoring is ${item.enabled_handler ? 'enabled' : 'disabled'}`">
+                    <span class="icon" v-tooltip="`RSS monitoring is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
                       <i class="fa-solid fa-rss has-text-success" />
                     </span>
                   </div>

@@ -222,10 +222,10 @@
                     Enable Handler
                   </label>
                   <div class="control is-unselectable">
-                    <input id="auto_start" type="checkbox" v-model="form.enabled_handler" :disabled="addInProgress"
+                    <input id="auto_start" type="checkbox" v-model="form.handler_enabled" :disabled="addInProgress"
                       class="switch is-success" />
                     <label for="auto_start" class="is-unselectable">
-                      {{ form.enabled_handler ? 'Yes' : 'No' }}
+                      {{ form.handler_enabled ? 'Yes' : 'No' }}
                     </label>
                   </div>
                   <span class="help">
@@ -344,8 +344,8 @@ onMounted(() => {
     form.auto_start = true
   }
 
-  if (typeof form.enabled_handler === 'undefined' || null === form.enabled_handler) {
-    form.enabled_handler = true
+  if (typeof form.handler_enabled === 'undefined' || null === form.handler_enabled) {
+    form.handler_enabled = true
   }
 
 })

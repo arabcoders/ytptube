@@ -240,7 +240,7 @@ const updateItem = async ({ reference, item: updatedItem, }: {
   reference: string | null | undefined,
   item: ConditionItem
 }): Promise<void> => {
-  updatedItem = cleanObject(updatedItem, remove_keys)
+  updatedItem = cleanObject(updatedItem, remove_keys) as ConditionItem
 
   if (reference) {
     const index = items.value.findIndex(t => t?.id === reference)

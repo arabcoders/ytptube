@@ -9,7 +9,7 @@ type task_item = {
   timer?: string,
   in_progress?: boolean,
   auto_start?: boolean,
-  enabled_handler?: boolean,
+  handler_enabled?: boolean,
 }
 
 type exported_task = task_item & { _type: string, _version: string }

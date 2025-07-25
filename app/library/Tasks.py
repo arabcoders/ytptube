@@ -35,7 +35,7 @@ class Task:
     template: str = ""
     cli: str = ""
     auto_start: bool = True
-    enabled_handler: bool = True
+    handler_enabled: bool = True
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -406,7 +406,7 @@ class HandleTask:
 
     def _dispatcher(self):
         for task in self._tasks.get_all():
-            if not task.enabled_handler:
+            if not task.handler_enabled:
                 continue
 
             try:
