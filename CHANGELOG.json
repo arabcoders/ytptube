@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e44077b99f84a761fe8eca737dd2c4b793fb20f8",
-    "date": "2025-07-25T17:24:48+00:00",
+    "full_sha": "6c7542e8a33f42c11fcc8039b03cd547b580e9c1",
+    "date": "2025-07-25T17:30:21+00:00",
     "commits": [
+      {
+        "sha": "6c7542e8",
+        "full_sha": "6c7542e8a33f42c11fcc8039b03cd547b580e9c1",
+        "message": "Fixed incorrect form control for handler enable",
+        "author": "arabcoders",
+        "date": "2025-07-25T17:30:21+00:00"
+      },
       {
         "sha": "e44077b9",
         "full_sha": "e44077b99f84a761fe8eca737dd2c4b793fb20f8",
