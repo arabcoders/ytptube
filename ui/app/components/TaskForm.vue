@@ -197,7 +197,7 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="output_template">
+                  <label class="label is-inline" for="auto_start">
                     <span class="icon"><i class="fa-solid fa-circle-play" /></span>
                     Auto Start
                   </label>
@@ -217,14 +217,14 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="output_template">
+                  <label class="label is-inline" for="handler_enabled">
                     <span class="icon"><i class="fa-solid fa-rss" /></span>
                     Enable Handler
                   </label>
                   <div class="control is-unselectable">
-                    <input id="auto_start" type="checkbox" v-model="form.handler_enabled" :disabled="addInProgress"
+                    <input id="handler_enabled" type="checkbox" v-model="form.handler_enabled" :disabled="addInProgress"
                       class="switch is-success" />
-                    <label for="auto_start" class="is-unselectable">
+                    <label for="handler_enabled" class="is-unselectable">
                       {{ form.handler_enabled ? 'Yes' : 'No' }}
                     </label>
                   </div>
