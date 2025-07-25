@@ -288,52 +288,45 @@
   </main>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
+import type { exported_task, task_item } from '~/types/tasks'
 
-const props = defineProps({
-  reference: {
-    type: String,
-    required: false,
-    default: null,
-  },
-  task: {
-    type: Object,
-    required: true,
-  },
-  addInProgress: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-})
+const props = defineProps<{
+  reference?: string | null | undefined
+  task: task_item
+  addInProgress?: boolean
+}>()
 
-const emitter = defineEmits(['cancel', 'submit'])
+const emitter = defineEmits<{
+  (e: 'cancel'): void
+  (e: 'submit', payload: { reference: string | null | undefined, task: task_item }): void
+}>()
 
 const toast = useNotification()
 const config = useConfigStore()
 const box = useConfirm()
 const showImport = useStorage('showImport', false)
 
-const import_string = ref('')
+const import_string = ref<string>('')
 
-const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))\/?$/;
+const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))\/?$/
 
-const form = reactive(props.task)
+const form = reactive<task_item>({ ...props.task })
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset)
   }
-  if (typeof form.auto_start === 'undefined' || form.auto_start === null) {
+  if (typeof form.auto_start === 'undefined' || null === form.auto_start) {
     form.auto_start = true
   }
 })
 
-const checkInfo = async () => {
-  const required = ['name', 'url']
+const checkInfo = async (): Promise<void> => {
+  const required = ['name', 'url'] as const
   for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`)
@@ -344,7 +337,7 @@ const checkInfo = async () => {
   if (form.timer) {
     try {
       CronExpressionParser.parse(form.timer)
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
       toast.error(`Invalid CRON expression. ${e.message}`)
       return
@@ -353,31 +346,29 @@ const checkInfo = async () => {
 
   try {
     new URL(form.url)
-  } catch (e) {
+  } catch {
     toast.error('Invalid URL')
     return
   }
 
-  if (form?.cli && '' !== form.cli) {
+  if (form.cli && '' !== form.cli) {
     const options = await convertOptions(form.cli)
-    if (null === options) {
-      return
-    }
-    form.cli = form.cli.trim(" ")
+    if (null === options) return
+    form.cli = form.cli.trim()
   }
 
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) })
 }
 
-const importItem = async () => {
-  let val = import_string.value.trim()
+const importItem = async (): Promise<void> => {
+  const val = import_string.value.trim()
   if (!val) {
     toast.error('The import string is required.')
     return
   }
 
   try {
-    const item = decode(val)
+    const item = decode(val) as exported_task
 
     if ('task' !== item._type) {
       toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`)
@@ -391,34 +382,15 @@ const importItem = async () => {
       }
     }
 
-    if (item.name) {
-      form.name = item.name
-    }
-
-    if (item.url) {
-      form.url = item.url
-    }
-
-    if (item.template) {
-      form.template = item.template
-    }
-
-    if (item.timer) {
-      form.timer = item.timer
-    }
-
-    if (item.folder) {
-      form.folder = item.folder
-    }
-
-    if (item.cli) {
-      form.cli = item.cli
-    }
-
-    form.auto_start = item?.auto_start ?? true
+    form.name = item.name ?? form.name
+    form.url = item.url ?? form.url
+    form.template = item.template ?? form.template
+    form.timer = item.timer ?? form.timer
+    form.folder = item.folder ?? form.folder
+    form.cli = item.cli ?? form.cli
+    form.auto_start = item.auto_start ?? true
 
     if (item.preset) {
-      //  -- check if the preset exists in config.presets
       const preset = config.presets.find(p => p.name === item.preset)
       if (!preset) {
         toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`)
@@ -429,13 +401,13 @@ const importItem = async () => {
     }
 
     import_string.value = ''
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Failed to import string. ${e.message}`)
   }
 }
 
-const convertOptions = async args => {
+const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
   try {
     const response = await convertCliOptions(args)
 
@@ -447,51 +419,42 @@ const convertOptions = async args => {
       form.folder = response.download_path
     }
 
-    return response.opts
-  } catch (e) {
+    return response.opts as Record<string, any>
+  } catch (e: any) {
     toast.error(e.message)
   }
 
   return null
 }
 
-const hasFormatInConfig = computed(() => {
-  if (!form?.cli) {
-    return false
-  }
-
-  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli)
-})
+const hasFormatInConfig = computed<boolean>(() => !!form.cli && /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli))
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 
-const get_download_folder = () => {
-  if (form.preset && !hasFormatInConfig.value) {
+const get_download_folder = (): string => {
+  if (form.preset && false === hasFormatInConfig.value) {
     const preset = config.presets.find(p => p.name === form.preset)
-    if (preset && preset.folder) {
+    if (preset?.folder) {
       return preset.folder.replace(config.app.download_path, '')
     }
   }
   return '/'
 }
 
-const get_output_template = () => {
-  if (form.preset && !hasFormatInConfig.value) {
+const get_output_template = (): string => {
+  if (form.preset && false === hasFormatInConfig.value) {
     const preset = config.presets.find(p => p.name === form.preset)
-    if (preset && preset.template) {
+    if (preset?.template) {
       return preset.template
     }
   }
   return config.app.output_template || '%(title)s.%(ext)s'
 }
 
-function is_yt_handle(url) {
-  let m = url.match(CHANNEL_REGEX);
+const is_yt_handle = (url: string): boolean => {
+  const m = url.match(CHANNEL_REGEX)
   if (m?.groups) {
-    if (m.groups?.channelId) {
-      return false
-    }
-    return true
+    return !m.groups.channelId
   }
   return false
 }

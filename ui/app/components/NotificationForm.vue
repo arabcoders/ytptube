@@ -198,7 +198,7 @@
                   </label>
                   <div class="columns is-multiline is-mobile">
                     <template v-for="_, key in form.request.headers" :key="key">
-                      <div class="column is-5">
+                      <div class="column is-5" v-if="form.request.headers[key]">
                         <div class="field">
                           <div class="control has-icons-left">
                             <input type="text" class="input" v-model="form.request.headers[key].key"
@@ -211,7 +211,7 @@
                           <span>The header key to send with the notification.</span>
                         </span>
                       </div>
-                      <div class="column is-6">
+                      <div class="column is-6" v-if="form.request.headers[key]">
                         <div class="field">
                           <div class="control has-icons-left">
                             <input type="text" class="input" v-model="form.request.headers[key].value"
@@ -267,11 +267,14 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import type { notification, notificationImport } from '~/types/notification'
 
-const emitter = defineEmits(['cancel', 'submit']);
-const toast = useNotification();
+const emitter = defineEmits(['cancel', 'submit'])
+const toast = useNotification()
+const box = useConfirm()
+
 const props = defineProps({
   reference: {
     type: String,
@@ -279,11 +282,11 @@ const props = defineProps({
     default: null,
   },
   allowedEvents: {
-    type: Array,
+    type: Array as () => string[],
     required: true,
   },
   item: {
-    type: Object,
+    type: Object as () => notification,
     required: true,
   },
   addInProgress: {
@@ -293,71 +296,75 @@ const props = defineProps({
   },
 })
 
-const form = reactive(props.item);
-const requestMethods = ['POST', 'PUT'];
-const requestType = ['json', 'form'];
-const showImport = useStorage('showImport', false);
-const import_string = ref('');
-const box = useConfirm()
+const form = reactive<notification>({ ...props.item })
+const requestMethods = ['POST', 'PUT']
+const requestType = ['json', 'form']
+const showImport = useStorage('showImport', false)
+const import_string = ref('')
 
 onMounted(() => {
   if (!form.request.data_key) {
-    form.request.data_key = 'data';
+    form.request.data_key = 'data'
   }
-});
+})
 
 const checkInfo = async () => {
-  let required;
+  let required: string[]
 
   if (!isApprise.value) {
-    required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
+    required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key']
   } else {
-    required = ['name', 'request.url'];
+    required = ['name', 'request.url']
   }
+
   for (const key of required) {
     if (key.includes('.')) {
-      const [parent, child] = key.split('.');
-      if (!form[parent][child]) {
-        toast.error(`The field ${parent}.${child} is required.`);
-        return;
+      const [parent, child] = key.split('.') as [keyof typeof form, string]
+      const parentObj = form[parent] as Record<string, any> | undefined
+
+      if (!parentObj || !parentObj[child]) {
+        toast.error(`The field ${parent}.${child} is required.`)
+        return
       }
-    } else if (!form[key]) {
-      toast.error(`The field ${key} is required.`);
-      return;
+    } else {
+      const value = (form as Record<string, any>)[key]
+      if (!value) {
+        toast.error(`The field ${key} is required.`)
+        return
+      }
     }
   }
 
   if (!isApprise.value) {
     try {
-      new URL(form.request.url);
-    } catch (e) {
-      toast.error('Invalid URL');
-      return;
+      new URL(form.request.url)
+    } catch (_) {
+      toast.error('Invalid URL')
+      return
     }
   }
 
-  let headers = []
-
+  const headers = []
   for (const header of form.request.headers) {
     if (!header.key || !header.value) {
       continue
     }
     headers.push({ key: String(header.key).trim(), value: String(header.value).trim() })
   }
+  form.request.headers = headers
 
-  form.request.headers = headers;
-  emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) });
+  emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) })
 }
 
 const importItem = async () => {
-  let val = import_string.value.trim()
+  const val = import_string.value.trim()
   if (!val) {
     toast.error('The import string is required.')
     return
   }
 
   try {
-    const item = decode(val)
+    const item = decode(val) as notificationImport
 
     if ('notification' !== item._type) {
       toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`)
@@ -365,7 +372,7 @@ const importItem = async () => {
       return
     }
 
-    if (form.target) {
+    if (form.name || form.request?.url) {
       if (false === box.confirm('Overwrite the current form fields?', true)) {
         return
       }
@@ -375,24 +382,25 @@ const importItem = async () => {
       form.name = item.name
     }
 
-    if (item.url) {
-      form.url = item.url
+    if (!form.request) {
+      form.request = {} as any
     }
 
     if (item.request) {
       form.request = item.request
     }
 
-    if (item.data_key) {
-      form.data_key = item.data_key
+    if (item.request?.data_key) {
+      form.request.data_key = item.request.data_key
     }
 
     if (item.on) {
       form.on = item.on
+
     }
 
     import_string.value = ''
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Failed to import task. ${e.message}`)
   }

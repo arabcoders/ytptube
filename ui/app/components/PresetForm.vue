@@ -230,102 +230,74 @@
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import type { Preset, PresetImport } from '~/types/presets'
 
-const emitter = defineEmits(['cancel', 'submit']);
+const emitter = defineEmits<{
+  (event: 'cancel'): void
+  (event: 'submit', payload: { reference: string | null, preset: Preset }): void
+}>()
 
-const props = defineProps({
-  reference: {
-    type: String,
-    required: false,
-    default: null,
-  },
-  preset: {
-    type: Object,
-    required: true,
-  },
-  addInProgress: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-  presets: {
-    type: Array,
-    required: false,
-    default: () => [],
-  },
-})
+const props = defineProps<{
+  reference?: string | null
+  preset: Preset
+  addInProgress?: boolean
+  presets?: Preset[]
+}>()
 
 const config = useConfigStore()
 const toast = useNotification()
-const form = reactive(JSON.parse(JSON.stringify(props.preset)))
-const import_string = ref('')
-const showImport = useStorage('showImport', false)
-const box = useConfirm()
-const selected_preset = ref('')
+const form = reactive<Preset>(JSON.parse(JSON.stringify(props.preset)))
+const import_string = ref<string>('')
+const showImport = useStorage<boolean>('showImport', false)
+const selected_preset = ref<string>('')
 
-onMounted(() => {
-  if (props.preset?.cli && '' !== props.preset?.cli) {
-    return
-  }
-
-  if (props.preset?.args && (typeof props.preset.args === 'object')) {
-    form.args = JSON.stringify(props.preset.args, null, 2)
-  }
-
-  if (props.preset?.postprocessors && (typeof props.preset.postprocessors === 'object')) {
-    form.postprocessors = JSON.stringify(props.preset.postprocessors, null, 2)
-  }
-})
-
-const checkInfo = async () => {
+const checkInfo = async (): Promise<void> => {
   for (const key of ['name']) {
-    if (!form[key]) {
-      toast.error(`The ${key} field is required.`);
+    if (!form[key as keyof Preset]) {
+      toast.error(`The ${key} field is required.`)
       return
     }
   }
 
-  if (form?.cli && '' !== form.cli) {
-    const options = await convertOptions(form.cli);
+  if (form.cli && '' !== form.cli) {
+    const options = await convertOptions(form.cli)
     if (null === options) {
       return
     }
     form.cli = form.cli.trim()
   }
 
-  let copy = JSON.parse(JSON.stringify(form));
+  const copy: Preset = JSON.parse(JSON.stringify(form))
+  let usedName = false
+  const name = String(form.name).trim().toLowerCase()
 
-  let usedName = false;
-  let name = String(form.name).trim().toLowerCase();
-
-  props.presets.forEach(p => {
+  props.presets?.forEach(p => {
     if (p.id === props.reference) {
-      return;
+      return
     }
-
     if (String(p.name).toLowerCase() === name) {
-      usedName = true;
+      usedName = true
     }
-  });
+  })
 
-  if (true === usedName) {
-    toast.error('The preset name is already in use.');
-    return;
+  if (usedName) {
+    toast.error('The preset name is already in use.')
+    return
   }
 
   for (const key in copy) {
-    if (typeof copy[key] !== 'string') {
-      continue
+    const val = copy[key as keyof Preset]
+    if ('string' === typeof val) {
+      (copy as any)[key] = val.trim()
     }
-    copy[key] = copy[key].trim()
   }
 
-  emitter('submit', { reference: toRaw(props.reference), preset: toRaw(copy) });
+  emitter('submit', { reference: toRaw(props.reference ?? null), preset: toRaw(copy) })
 }
 
-const convertOptions = async args => {
+const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
   try {
     const response = await convertCliOptions(args)
 
@@ -337,23 +309,22 @@ const convertOptions = async args => {
       form.folder = response.download_path
     }
 
-    return response.opts
-  } catch (e) {
+    return response.opts as Record<string, any>
+  } catch (e: any) {
     toast.error(e.message)
+    return null
   }
-
-  return null;
 }
 
-const importItem = async () => {
-  let val = import_string.value.trim()
+const importItem = async (): Promise<void> => {
+  const val = import_string.value.trim()
   if (!val) {
     toast.error('The import string is required.')
     return
   }
 
   try {
-    const item = decode(val)
+    const item = decode(val) as PresetImport
 
     if (!item?._type || 'preset' !== item._type) {
       toast.error(`Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`)
@@ -366,16 +337,6 @@ const importItem = async () => {
 
     if (item.cli) {
       form.cli = item.cli
-    }
-
-    // -- backwards compatibility for old presets.
-    if (item.format) {
-      if (!item?.cli) {
-        form.cli = `--format '${item.format}'`
-      } else {
-        form.cli = `--format '${item.format}'\n${form.cli}`
-      }
-      form.cli = form.cli.trim()
     }
 
     if (item.template) {
@@ -392,15 +353,15 @@ const importItem = async () => {
 
     import_string.value = ''
     showImport.value = false
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Failed to parse. ${e.message}`)
   }
 }
 
-const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
+const filter_presets = (flag = true): Preset[] => config.presets.filter(item => item.default === flag)
 
-const import_existing_preset = async () => {
+const import_existing_preset = async (): Promise<void> => {
   if (!selected_preset.value) {
     return
   }

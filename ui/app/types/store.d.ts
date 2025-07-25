@@ -54,6 +54,11 @@ export type StoreItem = {
     thumbnail?: string
     /** The uploader of the item if available */
     uploader?: string
+    /** Uploader name if available */
+    is_audio?: boolean
+    /** If the item has audio stream */
+    is_video?: boolean
+    /** If the item has video stream */
   }
   /** The item temporary filename */
   tmpfilename?: string | null

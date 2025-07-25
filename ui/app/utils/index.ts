@@ -1,4 +1,5 @@
 import type { convert_args_response } from "~/types/responses";
+import type { StoreItem } from "~/types/store";
 
 const runtimeConfig = useRuntimeConfig()
 const toast = useNotification()
@@ -437,7 +438,7 @@ const getQueryParams = (url: string = window.location.search): Record<string, st
  * @param base - The base endpoint type (default: 'api/download').
  * @returns The fully constructed download URI.
  */
-const makeDownload = (config: any, item: { folder?: string; filename: string }, base: string = 'api/download'): string => {
+const makeDownload = (config: any, item: StoreItem | { folder?: string; filename: string }, base: string = 'api/download'): string => {
   let baseDir = 'api/player/m3u8/video/'
   if ('m3u8' !== base) {
     baseDir = `${base}/`
@@ -446,6 +447,10 @@ const makeDownload = (config: any, item: { folder?: string; filename: string }, 
   if (item.folder) {
     item.folder = item.folder.replace(/#/g, '%23')
     baseDir += item.folder + '/'
+  }
+
+  if (!item.filename) {
+    return ''
   }
 
   const url = `/${sTrim(baseDir, '/')}${encodePath(item.filename)}`

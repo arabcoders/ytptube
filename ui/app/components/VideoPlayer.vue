@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import Hls from 'hls.js'
+import type { StoreItem } from '~/types/store'
 
 type video_track_element = {
   file: string,
@@ -58,7 +59,7 @@ const toast = useNotification()
 
 const props = defineProps({
   item: {
-    type: Object,
+    type: Object as () => StoreItem,
     default: () => ({}),
   }
 })
@@ -122,8 +123,8 @@ onMounted(async () => {
   if (props.item.extras?.thumbnail) {
     thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
   } else {
-    if (response?.sidecar?.image && response.sidecar.image.length > 0) {
-      thumbnail.value = makeDownload(config, { "filename": response.sidecar.image[0]['file'] })
+    if (response.sidecar?.image?.[0]?.file) {
+      thumbnail.value = makeDownload(config, { "filename": response.sidecar.image[0].file })
     }
   }
 
