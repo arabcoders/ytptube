@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" data-n-head-ssr="" data-n-head-ssr-body="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YTPTube Loading...</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #fff;
+      color: #111;
+      user-select: none;
+      overflow: hidden;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    @media (prefers-color-scheme: dark) {
+      html, body {
+        background-color: #121212;
+        color: #eee;
+      }
+    }
+
+    .loader-container {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    svg.ytptube-loading {
+      width: 420px;
+      height: 105px;
+      stroke: #FF0000;
+      stroke-width: 4.5px;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 700;
+      stroke-dashoffset: 700;
+      animation: stroke-move 3s linear infinite;
+      user-select: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      svg.ytptube-loading {
+        stroke: #FF4444;
+      }
+    }
+
+    @keyframes stroke-move {
+      100% {
+        stroke-dashoffset: -700;
+      }
+    }
+
+    .spinner {
+      margin: 20px auto 0;
+      width: 64px;
+      height: 64px;
+      border: 8px solid transparent;
+      border-top-color: #FF0000;
+      border-radius: 50%;
+      animation: spin 1.2s linear infinite;
+      filter: drop-shadow(0 0 6px rgba(255,0,0,0.8));
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .spinner {
+        border-top-color: #FF4444;
+        filter: drop-shadow(0 0 8px #FF4444);
+      }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .subtitle {
+      margin-top: 14px;
+      font-size: 1rem;
+      color: inherit;
+      opacity: 0.8;
+      user-select: none;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="loader-container" role="img" aria-label="Loading YTPTube">
+    <svg class="ytptube-loading" viewBox="0 0 420 105" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <!-- Y -->
+      <path d="M10 10 L25 37.5 L10 65" />
+      <path d="M25 37.5 L40 10" />
+      <!-- T -->
+      <path d="M50 10 L90 10" />
+      <path d="M70 10 L70 65" />
+      <!-- P -->
+      <path d="M100 65 L100 10 L130 10 Q145 10 145 27.5 Q145 45 130 45 L100 45" />
+      <!-- T -->
+      <path d="M160 10 L200 10" />
+      <path d="M180 10 L180 65" />
+      <!-- U -->
+      <path d="M210 10 L210 50 Q210 65 230 65 Q250 65 250 50 L250 10" />
+      <!-- B -->
+      <path d="M270 10 L270 65" />
+      <path d="M270 10 Q300 10 300 25 Q300 45 270 45" />
+      <path d="M270 45 Q300 45 300 60 Q300 65 270 65" />
+      <!-- E -->
+      <path d="M320 10 L320 65" />
+      <path d="M320 10 L360 10" />
+      <path d="M320 37.5 L350 37.5" />
+      <path d="M320 65 L360 65" />
+    </svg>
+    <div class="spinner"></div>
+    <div class="subtitle">Loading, please wait...</div>
+  </div>
+</body>
+</html>
