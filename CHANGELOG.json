@@ -1,9 +1,37 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "da53055be8113e2088f6446a947c262799d6683d",
-    "date": "2025-07-25T17:48:12+00:00",
+    "full_sha": "964a24cdd594f1d57b78792cc63e40ed630fa1b0",
+    "date": "2025-07-26T18:14:53+00:00",
     "commits": [
+      {
+        "sha": "964a24cd",
+        "full_sha": "964a24cdd594f1d57b78792cc63e40ed630fa1b0",
+        "message": "completed the ts migration",
+        "author": "arabcoders",
+        "date": "2025-07-26T18:14:53+00:00"
+      },
+      {
+        "sha": "c94a4e5c",
+        "full_sha": "c94a4e5c75272904b233aaa9ee866e5fd183759c",
+        "message": "migrated file browser to ts",
+        "author": "arabcoders",
+        "date": "2025-07-26T17:39:06+00:00"
+      },
+      {
+        "sha": "5942d12f",
+        "full_sha": "5942d12f2ebaf89a4beb8118ed1798e5544bdc8e",
+        "message": "migrated presets.vue to ts",
+        "author": "arabcoders",
+        "date": "2025-07-26T17:08:49+00:00"
+      },
+      {
+        "sha": "4b0522e7",
+        "full_sha": "4b0522e72efac481c9b29ef2dcb153d90e69b576",
+        "message": "Added list view for notifications.",
+        "author": "arabcoders",
+        "date": "2025-07-26T16:57:44+00:00"
+      },
       {
         "sha": "da53055b",
         "full_sha": "da53055be8113e2088f6446a947c262799d6683d",
