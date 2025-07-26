@@ -1,13 +1,3 @@
-<style scoped>
-table.is-fixed {
-  table-layout: fixed;
-}
-
-div.is-centered {
-  justify-content: center;
-}
-</style>
-
 <template>
   <main>
     <div class="mt-1 columns is-multiline">
@@ -35,7 +25,7 @@ div.is-centered {
               </button>
             </p>
             <p class="control">
-              <button class="button is-info" @click="reloadContent" :class="{ 'is-loading': isLoading }"
+              <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="presets && presets.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
               </button>
@@ -71,9 +61,13 @@ div.is-centered {
                 </thead>
                 <tbody>
                   <tr v-for="item in presetsNoDefault" :key="item.id">
-                    <td class="is-vcentered">
-                      <div class="is-text-overflow">
-                        {{ item.name }}
+                    <td class="is-text-overflow is-vcentered">
+                      <div> {{ item.name }}</div>
+                      <div class="is-unselectable">
+                        <span class="icon-text" v-if="item.cookies">
+                          <span class="icon"><i class="fa-solid fa-cookie" /></span>
+                          <span>Cookies</span>
+                        </span>
                       </div>
                     </td>
                     <td class="is-vcentered is-items-center">
@@ -210,24 +204,25 @@ div.is-centered {
   </main>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import type { Preset } from '~/types/presets'
 
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 
-const display_style = useStorage("preset_display_style", "cards")
+const display_style = useStorage<string>('preset_display_style', 'cards')
 
-const presets = ref([])
-const preset = ref({})
-const presetRef = ref("")
+const presets = ref<Preset[]>([])
+const preset = ref<Partial<Preset>>({})
+const presetRef = ref<string | null>('')
 const toggleForm = ref(false)
 const isLoading = ref(true)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
-const remove_keys = ["raw", "toggle_description"]
+const remove_keys = ['raw', 'toggle_description']
 
 const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
 
@@ -237,7 +232,7 @@ watch(
     if (!config.app.basic_mode) {
       return
     }
-    await navigateTo("/")
+    await navigateTo('/')
   },
 )
 
@@ -251,24 +246,24 @@ watch(() => socket.isConnected, async () => {
 const reloadContent = async (fromMounted = false) => {
   try {
     isLoading.value = true
-    const response = await request("/api/presets")
+    const response = await request('/api/presets')
 
     if (fromMounted && !response.ok) {
       return
     }
 
     const data = await response.json()
-    if (data.length < 1) {
+    if (0 === data.length) {
       return
     }
 
     presets.value = data
-  } catch (e) {
+  } catch (e: any) {
     if (fromMounted) {
       return
     }
     console.error(e)
-    toast.error("Failed to fetch page content.")
+    toast.error('Failed to fetch page content.')
   } finally {
     isLoading.value = false
   }
@@ -283,14 +278,14 @@ const resetForm = (closeForm = false) => {
   }
 }
 
-const updatePresets = async (items) => {
-  let data
+const updatePresets = async (items: Preset[]): Promise<boolean | undefined> => {
+  let data: any
   try {
     addInProgress.value = true
 
-    const response = await request("/api/presets", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+    const response = await request('/api/presets', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(items.filter((t) => !t.default)),
     })
 
@@ -304,44 +299,49 @@ const updatePresets = async (items) => {
     presets.value = data
     resetForm(true)
     return true
-  } catch (e) {
+  } catch (e: any) {
     toast.error(`Failed to update presets. ${data?.error}. ${e.message}`)
   } finally {
     addInProgress.value = false
   }
 }
 
-const deleteItem = async (item) => {
+const deleteItem = async (item: Preset) => {
   if (true !== box.confirm(`Delete preset '${item.name}'?`, true)) {
     return
   }
 
   const index = presets.value.findIndex((t) => t?.id === item.id)
-  if (index > -1) {
-    presets.value.splice(index, 1)
-  } else {
-    toast.error("Preset not found.")
+  if (-1 === index) {
+    toast.error('Preset not found.')
     return
   }
 
-  const status = await updatePresets(presets.value)
+  presets.value.splice(index, 1)
 
+  const status = await updatePresets(presets.value)
   if (!status) {
     return
   }
 
-  toast.success("Preset deleted.")
+  toast.success('Preset deleted.')
 }
 
-const updateItem = async ({ reference, preset }) => {
-  preset = cleanObject(preset, remove_keys)
+const updateItem = async ({
+  reference,
+  preset: item,
+}: {
+  reference: string | null
+  preset: Preset
+}) => {
+  item = cleanObject(item, remove_keys) as Preset
   if (reference) {
     const index = presets.value.findIndex((t) => t?.id === reference)
-    if (index > -1) {
-      presets.value[index] = preset
+    if (-1 !== index) {
+      presets.value[index] = item
     }
   } else {
-    presets.value.push(preset)
+    presets.value.push(item)
   }
 
   const status = await updatePresets(presets.value)
@@ -349,66 +349,56 @@ const updateItem = async ({ reference, preset }) => {
     return
   }
 
-  toast.success(`Preset ${reference ? "updated" : "added"}.`)
+  toast.success(`Preset ${reference ? 'updated' : 'added'}.`)
   resetForm(true)
 }
 
-const filterItem = item => {
+const filterItem = (item: Preset) => {
   const rest = cleanObject(item, remove_keys)
-  if ("default" in rest) {
+  if ('default' in rest) {
     delete rest.default
   }
   return JSON.stringify(rest, null, 2)
 }
 
-const editItem = item => {
+const editItem = (item: Preset) => {
   preset.value = JSON.parse(filterItem(item))
-  presetRef.value = item.id
+  presetRef.value = item.id ?? null
   toggleForm.value = true
 }
 
-onMounted(async () => (socket.isConnected ? await reloadContent(true) : ""))
+onMounted(async () => (socket.isConnected ? await reloadContent(true) : ''))
 
-const exportItem = item => {
-  let data = JSON.parse(JSON.stringify(item))
-  const keys = ["id", "default", "raw", "cookies", "toggle_description"]
-  keys.forEach(key => {
+const exportItem = (item: Preset) => {
+  const keys = ['id', 'default', 'raw', 'cookies', 'toggle_description']
+  const data = JSON.parse(JSON.stringify(item))
+
+  for (const key of keys) {
     if (key in data) {
       delete data[key]
     }
-  })
+  }
 
-  let userData = {}
-
+  const userData: Record<string, any> = {}
   for (const key of Object.keys(data)) {
-    if (!data[key]) {
-      continue
+    if (data[key]) {
+      userData[key] = data[key]
     }
-    userData[key] = data[key]
   }
 
   if (config?.app?.ytdlp_cli) {
     const val = `# exported from ytdlp.cli #\n${config.app.ytdlp_cli}\n# exported from ytdlp.cli #\n`
-    if (userData.cli) {
-      userData.cli = val + "\n" + userData.cli
-    } else {
-      userData.cli = val
-    }
+    userData.cli = userData.cli ? val + '\n' + userData.cli : val
   }
 
   userData['_type'] = 'preset'
   userData['_version'] = '2.5'
 
-  return copyText(encode(userData))
+  copyText(encode(userData))
 }
 
-const calcPath = (path) => {
-  const loc = config.app.download_path || "/downloads"
-
-  if (path) {
-    return loc + "/" + sTrim(path, "/")
-  }
-
-  return loc
+const calcPath = (path?: string): string => {
+  const loc = config.app.download_path || '/downloads'
+  return path ? loc + '/' + sTrim(path, '/') : loc
 }
 </script>

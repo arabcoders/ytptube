@@ -241,7 +241,7 @@ const emitter = defineEmits<{
 
 const props = defineProps<{
   reference?: string | null
-  preset: Preset
+  preset: Partial<Preset>
   addInProgress?: boolean
   presets?: Preset[]
 }>()

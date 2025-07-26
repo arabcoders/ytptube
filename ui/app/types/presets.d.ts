@@ -7,6 +7,8 @@ type Preset = {
   description: string
   folder: string
   template: string
+  raw?:boolean
+  toggle_description?: boolean
 }
 
 type PresetImport = Preset & {
