@@ -192,9 +192,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
+import type { FileItem, FileBrowserResponse } from '~/types/filebrowser'
 
 const route = useRoute()
 const toast = useNotification()
@@ -206,26 +207,32 @@ const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const sort_by = useStorage('sort_by', 'name')
 const sort_order = useStorage('sort_order', 'asc')
 
-const isLoading = ref(false)
-const initialLoad = ref(true)
-const items = ref([])
-const path = ref(`/${route.params.slug?.length > 0 ? route.params.slug?.join('/') : ''}`)
-const table_container = ref(false)
-const search = ref('')
-const show_filter = ref(false)
+const isLoading = ref<boolean>(false)
+const initialLoad = ref<boolean>(true)
+const items = ref<FileItem[]>([])
+const path = ref<string>((() => {
+  const slug = route.params.slug
+  if (Array.isArray(slug) && slug.length > 0) {
+    return '/' + slug.join('/')
+  }
+  return '/'
+})())
+const table_container = ref<boolean>(false)
+const search = ref<string>('')
+const show_filter = ref<boolean>(false)
 
-const filteredItems = computed(() => {
+const filteredItems = computed<FileItem[]>(() => {
   if (!search.value) {
     return sortedItems(items.value)
   }
 
   const searchLower = search.value.toLowerCase()
-  return sortedItems(items.value.filter(item => {
+  return sortedItems(items.value.filter((item: FileItem) => {
     return item.name.toLowerCase().includes(searchLower)
   }))
 })
 
-const sortedItems = items => {
+const sortedItems = (items: FileItem[]): FileItem[] => {
 
   if (!items || items.length < 1) {
     return []
@@ -247,7 +254,7 @@ const sortedItems = items => {
     return items.sort((a, b) => {
       let aDate = new Date(a.mtime)
       let bDate = new Date(b.mtime)
-      return 'asc' === sort_order.value ? aDate - bDate : bDate - aDate
+      return 'asc' === sort_order.value ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime()
     })
   }
 
@@ -260,8 +267,8 @@ const sortedItems = items => {
   return items
 }
 
-const model_item = ref()
-const closeModel = () => model_item.value = null
+const model_item = ref<any>()
+const closeModel = (): void => { model_item.value = null }
 
 watch(() => config.app.basic_mode, async () => {
   if (!config.app.basic_mode) {
@@ -284,7 +291,7 @@ watch(() => socket.isConnected, async () => {
   }
 })
 
-const handleClick = item => {
+const handleClick = (item: FileItem): void => {
   if ('video' === item.content_type) {
     model_item.value = {
       "type": 'video',
@@ -325,10 +332,10 @@ const handleClick = item => {
     return
   }
 
-  window.location = makeDownload(config, { "filename": item.path, "folder": "", "extras": {} })
+  window.location.href = makeDownload(config, { "filename": item.path, "folder": "", "extras": {} })
 }
 
-const reloadContent = async (dir = '/', fromMounted = false) => {
+const reloadContent = async (dir: string = '/', fromMounted: boolean = false): Promise<void> => {
   try {
     isLoading.value = true
 
@@ -346,11 +353,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
 
     items.value = []
 
-    const data = await response.json()
-
-    if (data.length < 1) {
-      return
-    }
+    const data = await response.json() as FileBrowserResponse
 
     if (!data?.contents || data.contents.length > 0) {
       items.value = data.contents
@@ -368,7 +371,7 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
     }
 
     useHead({ title: decodeURIComponent(title) })
-  } catch (e) {
+  } catch (e: any) {
     if (fromMounted) {
       return
     }
@@ -379,17 +382,17 @@ const reloadContent = async (dir = '/', fromMounted = false) => {
   }
 }
 
-const event_handler = e => {
-
-  if (!e.state) {
+const event_handler = (e: Event): void => {
+  const evt = e as PopStateEvent
+  if (!evt.state) {
     return
   }
 
-  if (e.state.path === path.value || e.state.path === window.location.pathname) {
+  if (evt.state.path === path.value || evt.state.path === window.location.pathname) {
     return
   }
 
-  reloadContent(e.state.path, true)
+  reloadContent(evt.state.path, true)
 }
 
 onMounted(async () => {
@@ -397,12 +400,12 @@ onMounted(async () => {
     await reloadContent(path.value, true)
   }
 
-  document.addEventListener('popstate', event_handler)
+  document.addEventListener('popstate', event_handler as EventListener)
 })
 
-onBeforeUnmount(() => document.removeEventListener('popstate', event_handler))
+onBeforeUnmount(() => document.removeEventListener('popstate', event_handler as EventListener))
 
-const makeBreadCrumb = path => {
+const makeBreadCrumb = (path: string): { name: string, link: string, path: string }[] => {
   const baseLink = '/'
 
   path = path.replace(/^\/+/, '').replace(/\/+$/, '')
@@ -428,16 +431,15 @@ const makeBreadCrumb = path => {
   return links
 }
 
-
 watch(model_item, v => {
   if (!bg_enable.value) {
     return
   }
 
-  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
-const setIcon = item => {
+const setIcon = (item: FileItem): string => {
   if ('link' === item.type) {
     return 'fa-link'
   }
@@ -460,7 +462,7 @@ const setIcon = item => {
   return 'fa-file'
 }
 
-const changeSort = by => {
+const changeSort = (by: string): void => {
   if (!['name', 'size', 'date', 'type'].includes(by)) {
     return
   }
@@ -472,17 +474,17 @@ const changeSort = by => {
   sort_order.value = 'asc' === sort_order.value ? 'desc' : 'asc'
 }
 
-const toggleFilter = () => {
+const toggleFilter = (): void => {
   show_filter.value = !show_filter.value
   if (!show_filter.value) {
     search.value = ''
     return
   }
 
-  awaitElement('#search', e => e.focus())
+  awaitElement('#search', (e: Element) => (e as HTMLElement).focus())
 }
 
-const createDirectory = async (dir) => {
+const createDirectory = async (dir: string): Promise<void> => {
   if (!config.app.browser_control_enabled) {
     return
   }
@@ -497,13 +499,13 @@ const createDirectory = async (dir) => {
     return
   }
 
-  await actionRequest({ path: dir }, 'directory', { new_dir: new_dir }, (item, action, data) => {
+  await actionRequest({ path: dir } as FileItem, 'directory', { new_dir: new_dir }, (item, action, data) => {
     reloadContent(path.value, true)
     toast.success(`Successfully created '${new_dir}'.`)
   })
 }
 
-const handleAction = async (action, item) => {
+const handleAction = async (action: string, item: FileItem): Promise<void> => {
   if (!config.app.browser_control_enabled) {
     return
   }
@@ -561,7 +563,12 @@ const handleAction = async (action, item) => {
   }
 }
 
-const actionRequest = async (item, action, data, cb) => {
+const actionRequest = async (
+  item: FileItem,
+  action: string,
+  data: Record<string, any>,
+  cb: (item: FileItem, action: string, data: any) => void
+): Promise<any> => {
   if (!config.app.browser_control_enabled) {
     return
   }
@@ -591,10 +598,9 @@ const actionRequest = async (item, action, data, cb) => {
     }
 
     return response
-  } catch (error) {
+  } catch (error: any) {
     console.error(error)
     toast.error(`Failed to perform action: ${error.message}`)
   }
 }
-
 </script>
