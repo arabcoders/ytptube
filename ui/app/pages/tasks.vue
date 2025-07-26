@@ -1,13 +1,3 @@
-<style scoped>
-table.is-fixed {
-  table-layout: fixed;
-}
-
-div.is-centered {
-  justify-content: center;
-}
-</style>
-
 <template>
   <main>
     <div class="mt-1 columns is-multiline">

@@ -16,6 +16,7 @@ type notification = {
   name: string;
   request: notificationRequest;
   on: string[];
+  raw?: boolean;
 };
 
 type notificationImport = notification & {
