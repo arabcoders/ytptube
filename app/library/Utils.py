@@ -373,14 +373,18 @@ def check_id(file: Path) -> bool | str:
 
     id = match.groupdict().get("id")
 
-    for f in file.parent.iterdir():
-        if id not in f.stem:
-            continue
+    try:
+        for f in file.parent.iterdir():
+            if id not in f.stem:
+                continue
 
-        if f.suffix != file.suffix:
-            continue
+            if f.suffix != file.suffix:
+                continue
 
-        return f.absolute()
+            return f.absolute()
+    except OSError as e:
+        LOG.error(f"Error checking file '{file}': {e!s}")
+        return False
 
     return False
 
