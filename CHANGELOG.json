@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "964a24cdd594f1d57b78792cc63e40ed630fa1b0",
-    "date": "2025-07-26T18:14:53+00:00",
+    "full_sha": "781b767879dec66e5238ccb2c81ec49f1f8d8a91",
+    "date": "2025-07-27T13:44:36+00:00",
     "commits": [
+      {
+        "sha": "781b7678",
+        "full_sha": "781b767879dec66e5238ccb2c81ec49f1f8d8a91",
+        "message": "Add support for converting youtube handle channels urls to channel_id. Closes #353",
+        "author": "arabcoders",
+        "date": "2025-07-27T13:44:36+00:00"
+      },
+      {
+        "sha": "7b9144b2",
+        "full_sha": "7b9144b200656e7ba73a257c7eef0f8bd6b1f9ec",
+        "message": "added cli opts support for info extraction endpoint",
+        "author": "arabcoders",
+        "date": "2025-07-27T13:07:38+00:00"
+      },
       {
         "sha": "964a24cd",
         "full_sha": "964a24cdd594f1d57b78792cc63e40ed630fa1b0",
