@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (33fbf4bd)",
-    "full_sha": "33fbf4bda8ebfdbf937995a6ee9cb3d9ee2494e5",
-    "date": "2025-07-27T13:57:27+00:00",
+    "tag": "Unreleased (9b5c1d9a)",
+    "full_sha": "9b5c1d9ae799f1ee7029a19cef091a256c59f9b0",
+    "date": "2025-07-27T14:08:28+00:00",
     "commits": [
+      {
+        "sha": "36b590cd",
+        "full_sha": "36b590cda3f1f469d91a6f16608920a442995851",
+        "message": "Fix automatic premiere re-queue.",
+        "author": "arabcoders",
+        "date": "2025-07-27T14:04:14+00:00"
+      },
       {
         "sha": "781b7678",
         "full_sha": "781b767879dec66e5238ccb2c81ec49f1f8d8a91",
@@ -94,20 +101,6 @@
         "message": "Added task to kill debugpy, sometimes vscode leave it behind causing problems  during development",
         "author": "arabcoders",
         "date": "2025-07-25T14:37:52+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "36b590cda3f1f469d91a6f16608920a442995851",
-    "date": "2025-07-27T14:04:14+00:00",
-    "commits": [
-      {
-        "sha": "36b590cd",
-        "full_sha": "36b590cda3f1f469d91a6f16608920a442995851",
-        "message": "Fix automatic premiere re-queue.",
-        "author": "arabcoders",
-        "date": "2025-07-27T14:04:14+00:00"
       }
     ]
   },
