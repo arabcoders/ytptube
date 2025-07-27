@@ -98,6 +98,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "36b590cda3f1f469d91a6f16608920a442995851",
+    "date": "2025-07-27T14:04:14+00:00",
+    "commits": [
+      {
+        "sha": "36b590cd",
+        "full_sha": "36b590cda3f1f469d91a6f16608920a442995851",
+        "message": "Fix automatic premiere re-queue.",
+        "author": "arabcoders",
+        "date": "2025-07-27T14:04:14+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.5.1",
     "full_sha": "b4e5990b8353146498ec060b5f7fbc00b712da45",
     "date": "2025-07-24T20:50:17+00:00",
