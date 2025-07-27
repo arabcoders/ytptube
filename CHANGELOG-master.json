@@ -1,8 +1,99 @@
 [
     {
-        "tag": "master-20250724-b4e5990b",
-        "date": "2025-07-24T20:50:17+00:00",
+        "tag": "master-20250727-33fbf4bd",
+        "date": "2025-07-27T13:57:27+00:00",
         "commits": [
+            {
+                "sha": "781b7678",
+                "message": "Add support for converting youtube handle channels urls to channel_id. Closes #353",
+                "author": "arabcoders",
+                "date": "2025-07-27T13:44:36+00:00",
+                "full_sha": "781b767879dec66e5238ccb2c81ec49f1f8d8a91"
+            },
+            {
+                "sha": "7b9144b2",
+                "message": "added cli opts support for info extraction endpoint",
+                "author": "arabcoders",
+                "date": "2025-07-27T13:07:38+00:00",
+                "full_sha": "7b9144b200656e7ba73a257c7eef0f8bd6b1f9ec"
+            },
+            {
+                "sha": "964a24cd",
+                "message": "completed the ts migration",
+                "author": "arabcoders",
+                "date": "2025-07-26T18:14:53+00:00",
+                "full_sha": "964a24cdd594f1d57b78792cc63e40ed630fa1b0"
+            },
+            {
+                "sha": "c94a4e5c",
+                "message": "migrated file browser to ts",
+                "author": "arabcoders",
+                "date": "2025-07-26T17:39:06+00:00",
+                "full_sha": "c94a4e5c75272904b233aaa9ee866e5fd183759c"
+            },
+            {
+                "sha": "5942d12f",
+                "message": "migrated presets.vue to ts",
+                "author": "arabcoders",
+                "date": "2025-07-26T17:08:49+00:00",
+                "full_sha": "5942d12f2ebaf89a4beb8118ed1798e5544bdc8e"
+            },
+            {
+                "sha": "4b0522e7",
+                "message": "Added list view for notifications.",
+                "author": "arabcoders",
+                "date": "2025-07-26T16:57:44+00:00",
+                "full_sha": "4b0522e72efac481c9b29ef2dcb153d90e69b576"
+            },
+            {
+                "sha": "da53055b",
+                "message": "use info color for exporting icon",
+                "author": "arabcoders",
+                "date": "2025-07-25T17:48:12+00:00",
+                "full_sha": "da53055be8113e2088f6446a947c262799d6683d"
+            },
+            {
+                "sha": "6c7542e8",
+                "message": "Fixed incorrect form control for handler enable",
+                "author": "arabcoders",
+                "date": "2025-07-25T17:30:21+00:00",
+                "full_sha": "6c7542e8a33f42c11fcc8039b03cd547b580e9c1"
+            },
+            {
+                "sha": "e44077b9",
+                "message": "typo",
+                "author": "arabcoders",
+                "date": "2025-07-25T17:24:48+00:00",
+                "full_sha": "e44077b99f84a761fe8eca737dd2c4b793fb20f8"
+            },
+            {
+                "sha": "584d4e10",
+                "message": "Added toggle for task handler.",
+                "author": "arabcoders",
+                "date": "2025-07-25T17:17:51+00:00",
+                "full_sha": "584d4e107e47d223178eb9da38618d442e688a53"
+            },
+            {
+                "sha": "dcaeb7ac",
+                "message": "migrated more code to ts",
+                "author": "arabcoders",
+                "date": "2025-07-25T16:41:17+00:00",
+                "full_sha": "dcaeb7acc8ae8b68a15e07cc5825e80c9a960c1e"
+            },
+            {
+                "sha": "4e1a1e65",
+                "message": "Add loading screen",
+                "author": "arabcoders",
+                "date": "2025-07-25T15:38:04+00:00",
+                "full_sha": "4e1a1e65ed88fd6898495c135d516c5592971af2"
+            },
+            {
+                "sha": "438254c5",
+                "message": "Added task to kill debugpy, sometimes vscode leave it behind causing problems  during development",
+                "author": "arabcoders",
+                "date": "2025-07-25T14:37:52+00:00",
+                "full_sha": "438254c594e48c460274cac0f04a73d9d0743ff1"
+            },
             {
                 "sha": "c60c14d6",
                 "message": "Fix playlist_autonumber. Closes #351",
@@ -851,7 +942,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b4e5990b8353146498ec060b5f7fbc00b712da45"
+        "full_sha": "33fbf4bda8ebfdbf937995a6ee9cb3d9ee2494e5"
     },
     {
         "tag": "master-20250616-c07465a6",
