@@ -161,7 +161,7 @@
                   <div class="field is-grouped is-grouped-centered">
                     <div class="control" v-if="item.status != 'finished' || !item.filename">
                       <button class="button is-warning is-fullwidth is-small" v-tooltip="'Retry download'"
-                        @click="(event) => retryItem(item, event)">
+                        @click="() => retryItem(item, true)">
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                       </button>
                     </div>
@@ -188,7 +188,8 @@
                           <hr class="dropdown-divider" />
                         </template>
                         <template v-else-if="isEmbedable(item.url)">
-                          <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                          <NuxtLink class="dropdown-item has-text-danger"
+                            @click="embed_url = getEmbedable(item.url) as string">
                             <span class="icon"><i class="fa-solid fa-play" /></span>
                             <span>Play video</span>
                           </NuxtLink>
@@ -279,7 +280,8 @@
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
-              <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
+              <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
+                class="play-overlay">
                 <div class="play-icon embed-icon"></div>
                 <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
@@ -322,7 +324,7 @@
             </div>
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
-                <a class="button is-warning is-fullwidth" @click="(event) => retryItem(item, event)">
+                <a class="button is-warning is-fullwidth" @click="() => retryItem(item, false)">
                   <span class="icon-text is-block">
                     <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     <span>Retry</span>
@@ -360,7 +362,8 @@
                   </template>
 
                   <template v-else-if="isEmbedable(item.url)">
-                    <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                    <NuxtLink class="dropdown-item has-text-danger"
+                      @click="embed_url = getEmbedable(item.url) as string">
                       <span class="icon"><i class="fa-solid fa-play" /></span>
                       <span>Play video</span>
                     </NuxtLink>
@@ -459,24 +462,22 @@
       @cancel="() => dialog_confirm.visible = false" />
   </div>
 </template>
-
-<script setup>
-import { useStorage } from '@vueuse/core'
+<script setup lang="ts">
 import moment from 'moment'
+import { useStorage } from '@vueuse/core'
+import type { StoreItem } from '~/types/store'
 
-const emitter = defineEmits(['getInfo', 'add_new', 'getItemInfo', 'clear_search'])
+const emitter = defineEmits<{
+  (e: 'getInfo', url: string, preset: string): void
+  (e: 'add_new', item: Partial<StoreItem>): void
+  (e: 'getItemInfo', id: string): void
+  (e: 'clear_search'): void
+}>()
 
-const props = defineProps({
-  thumbnails: {
-    type: Boolean,
-    default: true
-  },
-  query: {
-    type: String,
-    required: false,
-    default: '',
-  }
-})
+const props = defineProps<{
+  thumbnails?: boolean
+  query?: string
+}>()
 
 const config = useConfigStore()
 const stateStore = useStateStore()
@@ -484,19 +485,25 @@ const socket = useSocketStore()
 const toast = useNotification()
 const box = useConfirm()
 
-const showCompleted = useStorage('showCompleted', true)
-const hideThumbnail = useStorage('hideThumbnailHistory', false)
-const direction = useStorage('sortCompleted', 'desc')
-const display_style = useStorage('display_style', 'cards')
-const bg_enable = useStorage('random_bg', true)
-const bg_opacity = useStorage('random_bg_opacity', 0.95)
+const showCompleted = useStorage<boolean>('showCompleted', true)
+const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false)
+const direction = useStorage<'asc' | 'desc'>('sortCompleted', 'desc')
+const display_style = useStorage<'cards' | 'list'>('display_style', 'cards')
+const bg_enable = useStorage<boolean>('random_bg', true)
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 
-const selectedElms = ref([])
+const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
 const table_container = ref(false)
 const embed_url = ref('')
-const video_item = ref(null)
-const dialog_confirm = ref({
+const video_item = ref<StoreItem | null>(null)
+const dialog_confirm = ref<{
+  visible: boolean
+  title: string
+  confirm: (opts?: any) => void
+  message: string
+  options: { key: string; label: string }[]
+}>({
   visible: false,
   title: 'Confirm Action',
   confirm: () => { },
@@ -506,60 +513,57 @@ const dialog_confirm = ref({
   ],
 })
 
-const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
+const showThumbnails = computed(() => (props.thumbnails || true) && !hideThumbnail.value)
 
-const playVideo = item => video_item.value = item
-const closeVideo = () => video_item.value = null
+const playVideo = (item: StoreItem) => { video_item.value = item }
+const closeVideo = () => { video_item.value = null }
 
-const filteredItems = items => !props.query ? items : items.filter(filterItem)
+const filteredItems = (items: StoreItem[]) => !props.query ? items : items.filter(filterItem)
 
-const filterItem = item => {
+const filterItem = (item: StoreItem) => {
   const q = props.query?.toLowerCase()
   if (!q) {
     return true
   }
-  return Object.values(item).some(v => typeof v === 'string' && v.toLowerCase().includes(q))
+  return Object.values(item).some(v =>
+    typeof v === 'string' && v.toLowerCase().includes(q)
+  )
 }
 
 watch(masterSelectAll, (value) => {
-  for (const key in stateStore.history) {
-    const element = stateStore.history[key]
-    if (value) {
-      selectedElms.value.push(element._id)
-    } else {
-      selectedElms.value = []
-    }
+  if (value) {
+    selectedElms.value = Object.values(stateStore.history).map((element: StoreItem) => element._id)
+  } else {
+    selectedElms.value = []
   }
 })
 
 const sortCompleted = computed(() => {
   const thisDirection = direction.value
-  return Object.values(stateStore.history).sort((a, b) => {
+  return Object.values(stateStore.history as Record<string, StoreItem>).sort((a, b) => {
     if ('asc' === thisDirection) {
-      return new Date(a.datetime) - new Date(b.datetime)
+      return new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
     }
-    return new Date(b.datetime) - new Date(a.datetime)
+    return new Date(b.datetime).getTime() - new Date(a.datetime).getTime()
   })
 })
 
 const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasItems = computed(() => filteredItems(sortCompleted.value).length > 0)
+const hasItems = computed(() => filteredItems(sortCompleted.value as StoreItem[]).length > 0)
 
-const showMessage = (item) => {
+const showMessage = (item: StoreItem) => {
   if (!item?.msg || item.msg === item?.error) {
     return false
   }
-
-  return item.msg.length > 0
+  return (item.msg?.length || 0) > 0
 }
 
 const hasIncomplete = computed(() => {
   if (Object.keys(stateStore.history)?.length < 0) {
     return false
   }
-
   for (const key in stateStore.history) {
-    const element = stateStore.history[key]
+    const element = stateStore.history[key] as StoreItem
     if (element.status !== 'finished') {
       return true
     }
@@ -571,9 +575,8 @@ const hasCompleted = computed(() => {
   if (Object.keys(stateStore.history)?.length < 0) {
     return false
   }
-
   for (const key in stateStore.history) {
-    const element = stateStore.history[key]
+    const element = stateStore.history[key] as StoreItem
     if (element.status === 'finished') {
       return true
     }
@@ -585,9 +588,8 @@ const hasDownloaded = computed(() => {
   if (Object.keys(stateStore.history)?.length < 0) {
     return false
   }
-
   for (const key in stateStore.history) {
-    const element = stateStore.history[key]
+    const element = stateStore.history[key] as StoreItem
     if (element.status === 'finished' && element.filename) {
       return true
     }
@@ -600,18 +602,19 @@ const deleteSelectedItems = () => {
     toast.error('No items selected.')
     return
   }
-
   let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${selectedElms.value.length}' items?`
   if (true === config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-
   if (false === box.confirm(msg, config.app.remove_files)) {
     return
   }
-
   for (const key in selectedElms.value) {
-    const item = stateStore.history[selectedElms.value[key]]
+    const item_id = selectedElms.value[key]
+    if (!item_id) {
+      continue
+    }
+    const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
     if ('finished' === item.status) {
       socket.emit('archive_item', item)
     }
@@ -628,10 +631,9 @@ const clearCompleted = () => {
   if (false === box.confirm(msg)) {
     return
   }
-
   for (const key in stateStore.history) {
-    if ('finished' === ag(stateStore.get('history', key, {}), 'status')) {
-      socket.emit('item_delete', { id: stateStore.history[key]._id, remove_file: false, })
+    if ('finished' === ag(stateStore.get('history', key, {} as StoreItem), 'status')) {
+      socket.emit('item_delete', { id: stateStore.history[key]?._id, remove_file: false, })
     }
   }
 }
@@ -640,18 +642,17 @@ const clearIncomplete = () => {
   if (false === box.confirm('Clear all in-complete downloads?')) {
     return
   }
-
   for (const key in stateStore.history) {
-    if (stateStore.history[key].status !== 'finished') {
+    if ((stateStore.history[key] as StoreItem).status !== 'finished') {
       socket.emit('item_delete', {
-        id: stateStore.history[key]._id,
+        id: stateStore.history[key]?._id,
         remove_file: false,
       })
     }
   }
 }
 
-const setIcon = item => {
+const setIcon = (item: StoreItem) => {
   if ('finished' === item.status) {
     if (!item.filename) {
       return 'fa-solid fa-exclamation'
@@ -661,73 +662,59 @@ const setIcon = item => {
     }
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
-
   if ('error' === item.status) {
     return 'fa-solid fa-circle-xmark'
   }
-
   if ('cancelled' === item.status) {
     return 'fa-solid fa-eject'
   }
-
   if ('not_live' === item.status) {
     return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset'
   }
-
   if ('skip' === item.status) {
     return 'fa-solid fa-ban'
   }
-
   return 'fa-solid fa-circle'
 }
 
-const setIconColor = item => {
+const setIconColor = (item: StoreItem) => {
   if ('finished' === item.status) {
     if (!item.filename) {
       return 'has-text-warning'
     }
     return 'has-text-success'
   }
-
   if ('not_live' === item.status) {
     return 'has-text-info'
   }
-
-  if ('cancelled' === item.status || "skipped" === item.status) {
+  if ('cancelled' === item.status || "skip" === item.status) {
     return 'has-text-warning'
   }
-
   return 'has-text-danger'
 }
 
-const setStatus = item => {
+const setStatus = (item: StoreItem) => {
   if ('finished' === item.status) {
     if (item.extras?.is_premiere) {
       return 'Premiered'
     }
-
     return item.is_live ? 'Streamed' : 'Completed'
   }
-
   if ('error' === item.status) {
     return 'Error'
   }
-
   if ('cancelled' === item.status) {
     return 'Cancelled'
   }
-
   if ('not_live' === item.status) {
     if (item.extras?.is_premiere) {
       return 'Premiere'
     }
     return display_style.value === 'cards' ? 'Stream' : 'Live'
   }
-
   if ('skip' === item.status) {
     return 'Skipped'
   }
-
   return item.status
 }
 
@@ -735,9 +722,8 @@ const retryIncomplete = () => {
   if (false === box.confirm('Retry all incomplete downloads?')) {
     return false
   }
-
   for (const key in stateStore.history) {
-    const item = stateStore.get('history', key, {})
+    const item = stateStore.get('history', key, {} as StoreItem) as StoreItem
     if ('finished' === item.status) {
       continue
     }
@@ -745,96 +731,85 @@ const retryIncomplete = () => {
   }
 }
 
-const addArchiveDialog = (item) => {
+const addArchiveDialog = (item: StoreItem) => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.title = 'Archive Item'
-  dialog_confirm.value.message = `Archive '${item.title ?? item.id ?? item.url ?? '??'}'?`
-  dialog_confirm.value.confirm = opts => archiveItem(item, opts)
+  dialog_confirm.value.message = `Archive '${item.title || item.id || item.url || '??'}'?`
+  dialog_confirm.value.confirm = (opts: any) => archiveItem(item, opts)
 }
 
-const archiveItem = async (item, opts = {}) => {
+const archiveItem = async (item: StoreItem, opts = {}) => {
   try {
-
     const req = await request(`/api/archive/${item._id}`, {
       credentials: 'include',
       method: 'POST',
     })
-
     const data = await req.json()
-
     dialog_confirm.value.visible = false
-
     if (!req.ok) {
       toast.error(data.error)
       return
     }
-
-    toast.success(data.message ?? `Archived '${item.title ?? item.id ?? item.url ?? '??'}'.`)
-  } catch (e) {
+    toast.success(data.message ?? `Archived '${item.title || item.id || item.url || '??'}'.`)
+  } catch (e: any) {
     console.error(e)
   }
-
-  if (!opts?.remove_history) {
+  if (!(opts as any)?.remove_history) {
     return
   }
-
   socket.emit('item_delete', { id: item._id, remove_file: false })
 }
 
-const removeItem = item => {
-  let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${item.title ?? item.id ?? item.url ?? '??'}'?`
+const removeItem = (item: StoreItem) => {
+  let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${item.title || item.id || item.url || '??'}'?`
   if (item.status === 'finished' && config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-
-  if (false === box.confirm(msg, item.filename && config.app.remove_files)) {
+  if (false === box.confirm(msg, Boolean(item.filename && config.app.remove_files))) {
     return false
   }
-
   socket.emit('item_delete', {
     id: item._id,
     remove_file: config.app.remove_files
   })
 }
 
-const retryItem = (item, re_add = false) => {
-  const item_req = {
+const retryItem = (item: StoreItem, re_add = false) => {
+  const item_req: Partial<StoreItem> = {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
     cookies: item.cookies,
     template: item.template,
     cli: item?.cli,
-    extras: toRaw(item.extras ?? {}) ?? {},
-  };
-
+    extras: toRaw(item?.extras || {}) ?? {},
+  }
   socket.emit('item_delete', { id: item._id, remove_file: false })
-
   if (true === re_add) {
     toast.info('Cleared the item from history, and added it to the new download form.')
     emitter('add_new', item_req)
     return
   }
-
   socket.emit('add_url', item_req)
 }
 
-const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+const pImg = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  target.naturalHeight > target.naturalWidth && target.classList.add('image-portrait')
+}
 
 watch(video_item, v => {
   if (!bg_enable.value) {
     return
   }
-
-  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
 watch(embed_url, v => {
   if (!bg_enable.value) {
     return
   }
-
-  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
 const downloadSelected = async () => {
@@ -842,100 +817,89 @@ const downloadSelected = async () => {
     toast.error('No items selected.')
     return
   }
-
-  let files_list = []
+  let files_list: string[] = []
   for (const key in selectedElms.value) {
-    const item = stateStore.history[selectedElms.value[key]]
+    const item_id = selectedElms.value[key]
+    if (!item_id) {
+      continue
+    }
+    const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
     if ('finished' !== item.status || !item.filename) {
       continue
     }
-
     files_list.push(item.folder ? item.folder + '/' + item.filename : item.filename)
   }
-
   selectedElms.value = []
-
   try {
     const response = await request('/api/file/download', {
       method: 'POST',
       credentials: 'include',
       body: JSON.stringify(files_list),
-    });
-
-    const json = await response.json();
-
+    })
+    const json = await response.json()
     if (!response.ok) {
-      toast.error(json.error || 'Failed to start download.');
+      toast.error(json.error || 'Failed to start download.')
       return
     }
-
     const token = json.token
-
     const body = document.querySelector('body')
-    const link = document.createElement('a');
-    link.href = uri(`/api/file/download/${token}`);
-    link.setAttribute('target', '_blank');
-    body.appendChild(link);
-    link.click();
-    body.removeChild(link);
-  } catch (e) {
-    console.error(e);
-    toast.error(`Error: ${e.message}`);
-    return;
+    const link = document.createElement('a')
+    link.href = uri(`/api/file/download/${token}`)
+    link.setAttribute('target', '_blank')
+    body?.appendChild(link)
+    link.click()
+    body?.removeChild(link)
+  } catch (e: any) {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+    return
   }
 }
 
-const toggle_class = e => ['is-text-overflow', 'is-word-break'].forEach(c => e.currentTarget.classList.toggle(c))
+const toggle_class = (e: Event) => ['is-text-overflow', 'is-word-break'].forEach(c => (e.currentTarget as HTMLElement).classList.toggle(c))
 
-const removeFromArchiveDialog = (item) => {
+const removeFromArchiveDialog = (item: StoreItem) => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.title = 'Remove from Archive'
-  dialog_confirm.value.message = `Remove '${item.title ?? item.id ?? item.url ?? '??'}' from archive?`
+  dialog_confirm.value.message = `Remove '${item.title || item.id || item.url || '??'}' from archive?`
   dialog_confirm.value.confirm = () => removeFromArchive(item)
 }
 
-const removeFromArchive = async (item, opts) => {
+const removeFromArchive = async (item: StoreItem, opts?: { remove_history?: boolean }) => {
   try {
     const req = await request(`/api/archive/${item._id}`, {
       credentials: 'include',
       method: 'DELETE',
     })
-
     const data = await req.json()
-
     if (!req.ok) {
       toast.error(data.error)
       return
     }
-
-    toast.success(data.message ?? `Removed '${item.title ?? item.id ?? item.url ?? '??'}' from archive.`)
-  } catch (e) {
+    toast.success(data.message || `Removed '${item.title || item.id || item.url || '??'}' from archive.`)
+  } catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
   } finally {
     dialog_confirm.value.visible = false
   }
-
   if (opts?.remove_history) {
     socket.emit('item_delete', { id: item._id, remove_file: false })
   }
 }
 
-const is_queued = item => {
+const is_queued = (item: StoreItem) => {
   if (!item?.status || 'not_live' !== item.status) {
     return ''
   }
-
   return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin fa-spin-10' : ''
 }
 
-const makePath = item => {
+const makePath = (item: StoreItem) => {
   if (!item?.filename) {
     return ''
   }
-
   const real_path = eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/')
-
   return real_path.replace(config.app.download_path, '').replace(/^\//, '')
 }
 </script>

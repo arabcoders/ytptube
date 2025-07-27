@@ -345,3 +345,11 @@ hr {
   word-break: break-word;
   text-wrap: auto;
 }
+
+table.is-fixed {
+  table-layout: fixed;
+}
+
+div.is-centered {
+  justify-content: center;
+}

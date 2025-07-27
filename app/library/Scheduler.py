@@ -58,6 +58,7 @@ class Scheduler(metaclass=Singleton):
         for job in self._jobs:
             try:
                 self._jobs[job].stop()
+                LOG.debug(f"Stopped job '{job}'.")
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to stop job '{job}'. Error message '{e!s}'.")

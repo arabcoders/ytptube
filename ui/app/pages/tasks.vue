@@ -1,13 +1,3 @@
-<style scoped>
-table.is-fixed {
-  table-layout: fixed;
-}
-
-div.is-centered {
-  justify-content: center;
-}
-</style>
-
 <template>
   <main>
     <div class="mt-1 columns is-multiline">
@@ -66,8 +56,8 @@ div.is-centered {
 
     <div class="columns is-multiline" v-if="toggleForm">
       <div class="column is-12">
-        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task" @cancel="resetForm(true);"
-          @submit="updateItem" />
+        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task as task_item"
+          @cancel="resetForm(true);" @submit="updateItem" />
       </div>
     </div>
 
@@ -149,7 +139,7 @@ div.is-centered {
                         {{ remove_tags(item.name) }}
                       </NuxtLink>
                     </div>
-                    <div>
+                    <div class="is-unselectable">
                       <span class="icon-text">
                         <span class="icon">
                           <i class="fa-solid"
@@ -158,6 +148,11 @@ div.is-centered {
                         <span>
                           {{ item.auto_start ? 'Auto' : 'Manual' }}
                         </span>
+                      </span>
+                      &nbsp;
+                      <span class="icon-text">
+                        <span class="icon"><i class="fa-solid fa-rss" /></span>
+                        <span>{{ item.handler_enabled ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
                       <span class="icon-text" v-if="item.preset">
@@ -185,7 +180,7 @@ div.is-centered {
                       </div>
 
                       <div class="control">
-                        <button class="button is-primary is-small is-fullwidth" v-tooltip="'Export'"
+                        <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
                           @click="exportItem(item)">
                           <span class="icon"><i class="fa-solid fa-file-export" /></span>
                         </button>
@@ -230,11 +225,17 @@ div.is-centered {
                   <div class="control">
                     <span class="icon" v-tooltip="`${item.auto_start ? 'Auto' : 'Manual'} start`">
                       <i class="fa-solid"
-                        :class="{ 'fa-circle-pause': item.auto_start, 'fa-circle-play': !item.auto_start }" />
+                        :class="{ 'fa-circle-pause has-text-success': item.auto_start, 'fa-circle-play has-text-danger': !item.auto_start }" />
                     </span>
                   </div>
                   <div class="control">
-                    <a class="has-text-primary" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                    <span class="icon" v-tooltip="`RSS monitoring is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
+                      <i class="fa-solid fa-rss"
+                        :class="{ 'has-text-success': item.handler_enabled, 'has-text-danger': !item.handler_enabled }" />
+                    </span>
+                  </div>
+                  <div class="control">
+                    <a class="has-text-info" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
                     </a>
                   </div>
@@ -544,7 +545,7 @@ const deleteItem = async (item: task_item) => {
   toast.success('Task deleted.')
 }
 
-const updateItem = async ({ reference, task }: { reference?: string, task: task_item }) => {
+const updateItem = async ({ reference, task }: { reference?: string | null | undefined, task: task_item }) => {
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)

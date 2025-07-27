@@ -172,7 +172,7 @@ watch(() => config.app.file_logging, async v => {
 const filteredItems = computed(() => {
   const raw = query.value.trim().toLowerCase()
   const contextMatch = raw.match(/context:(\d+)/)
-  const context = contextMatch ? parseInt(contextMatch[1], 10) : 0
+  const context = contextMatch ? parseInt(String(contextMatch[1]), 10) : 0
   const searchTerm = raw.replace(/context:\d+/, '').trim()
 
   if (!searchTerm) {
@@ -191,7 +191,7 @@ const filteredItems = computed(() => {
   })
 
   Array.from(matchedIndexes).sort((a: any, b: any) => a - b).forEach((index: any) => {
-    result.push(logs.value[index])
+    result.push(logs.value[index] as log_line)
   })
 
   return result
@@ -276,21 +276,20 @@ const scrollToBottom = (fast = false) => {
   })
 }
 
+const log_handler = (data: log_line) => {
+  logs.value.push(data)
+
+  nextTick(() => {
+    if (autoScroll.value && bottomMarker.value) {
+      bottomMarker.value.scrollIntoView({ behavior: 'smooth' })
+    }
+  })
+}
+
 onMounted(async () => {
   await fetchLogs()
+  socket.on('log_lines', log_handler)
   socket.emit('subscribe', 'log_lines')
-
-  socket.on('log_lines', (data: any) => {
-    logs.value.push(data)
-
-    nextTick(() => {
-      if (autoScroll.value && bottomMarker.value) {
-        bottomMarker.value.scrollIntoView({ behavior: 'smooth' })
-      }
-    })
-
-  })
-
   if (bg_enable.value) {
     document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
   }
@@ -298,7 +297,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   socket.emit('unsubscribe', 'log_lines')
-  socket.off('log_lines')
+  socket.off('log_lines', log_handler)
   if (bg_enable.value) {
     document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
   }
@@ -306,7 +305,7 @@ onBeforeUnmount(() => {
 
 onBeforeUnmount(() => {
   socket.emit('unsubscribe', 'log_lines')
-  socket.off('log_lines')
+  socket.off('log_lines', log_handler)
   if (scrollTimeout) clearTimeout(scrollTimeout)
 
 })

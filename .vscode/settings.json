@@ -111,7 +111,7 @@
     "youtu"
   ],
   "css.styleSheets": [
-    "ui/assets/css/*.css"
+    "ui/app/assets/css/*.css"
   ],
   "spellright.language": [
     "en"

@@ -324,6 +324,7 @@ async def prepare_zip_file(request: Request, config: Config, cache: Cache):
     for f in json:
         if not isinstance(f, str):
             continue
+
         ref, status = get_file(download_path=config.download_path, file=f)
         if status == web.HTTPNotFound.status_code:
             continue

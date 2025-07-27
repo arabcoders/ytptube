@@ -105,6 +105,8 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             status=web.HTTPBadRequest.status_code,
         )
 
+    opts = YTDLPOpts.get_instance()
+
     preset: str = request.query.get("preset", config.default_preset)
     exists: Preset | None = Presets.get_instance().get(preset)
     if not exists:
@@ -114,14 +116,28 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             status=web.HTTPBadRequest.status_code,
         )
 
+    if cli_args := request.query.get("args", None):
+        try:
+            arg_converter(cli_args, dumps=True)
+            opts = opts.add_cli(cli_args, from_user=True)
+        except Exception as e:
+            err = str(e).strip()
+            err = err.split("\n")[-1] if "\n" in err else err
+            err = err.replace("main.py: error: ", "").strip().capitalize()
+            return web.json_response(
+                data={"error": f"Failed to parse command options for yt-dlp. '{err}'."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
     try:
-        key: str = cache.hash(f"{preset}:{url}")
+        key: str = cache.hash(f"{preset}:{url}:{cli_args or ''}")
 
         if cache.has(key) and not request.query.get("force", False):
             data: Any | None = cache.get(key)
             data["_cached"] = {
                 "status": "hit",
                 "preset": preset,
+                "cli_args": cli_args,
                 "key": key,
                 "ttl": data.get("_cached", {}).get("ttl", 300),
                 "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
@@ -129,20 +145,18 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             }
             return web.Response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
-        opts: dict = {}
-
         if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
-            opts["proxy"] = ytdlp_proxy
+            opts = opts.add({"proxy": ytdlp_proxy})
 
         logs: list = []
 
         ytdlp_opts: dict = {
+            **opts.get_all(),
             "callback": {
                 "func": lambda _, msg: logs.append(msg),
                 "level": logging.WARNING,
                 "name": "callback-logger",
             },
-            **YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all(),
         }
 
         data = extract_info(
@@ -177,6 +191,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         data["_cached"] = {
             "status": "miss",
             "preset": preset,
+            "cli_args": cli_args,
             "key": key,
             "ttl": 300,
             "ttl_left": 300,

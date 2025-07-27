@@ -1,3 +1,46 @@
+<style scoped>
+.notification-item {
+  border-left: 4px solid transparent;
+  padding-left: 0.75rem;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.notification-info {
+  border-color: var(--bulma-info);
+}
+
+.notification-success {
+  border-color: var(--bulma-primary);
+}
+
+.notification-warning {
+  border-color: var(--bulma-warning);
+}
+
+.notification-error {
+  border-color: var(--bulma-danger);
+}
+
+.notification-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  max-width: 280px;
+}
+
+.notification-message.expanded {
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+</style>
+
 <template>
   <div class="navbar-item has-dropdown is-hoverable">
     <a class="navbar-link">
@@ -73,64 +116,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
+
 const store = useNotificationStore()
-const copiedId = ref(null)
-const expandedId = ref(null)
 
-const toggleExpand = id => expandedId.value = expandedId.value === id ? null : id
+const copiedId = ref<string | null>(null)
+const expandedId = ref<string | null>(null)
 
-const copy_text = (id, text) => {
+const toggleExpand = (id: string) => expandedId.value = expandedId.value === id ? null : id
+
+const copy_text = (id: string, text: string): void => {
   copiedId.value = id
   copyText(text, false, false)
   setTimeout(() => {
-    if (copiedId.value === id) {
-      copiedId.value = null
-    }
+    if (copiedId.value === id) copiedId.value = null
   }, 2000)
 }
 </script>
-
-<style scoped>
-.notification-item {
-  border-left: 4px solid transparent;
-  padding-left: 0.75rem;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.notification-info {
-  border-color: var(--bulma-info);
-}
-
-.notification-success {
-  border-color: var(--bulma-primary);
-}
-
-.notification-warning {
-  border-color: var(--bulma-warning);
-}
-
-.notification-error {
-  border-color: var(--bulma-danger);
-}
-
-.notification-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.notification-message {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  max-width: 280px;
-}
-
-.notification-message.expanded {
-  white-space: normal;
-  word-break: break-word;
-  max-width: 100%;
-}
-</style>

@@ -142,8 +142,9 @@ or an error:
 
 **Query Parameters**:
 - `url=<video-url>` (required)
-- `preset=<preset-name>` (optional) - The preset to use for extracting info
-- `force=true` (optional) - Force fetch new info instead of using cache
+- `preset=<preset-name>` (optional) - The preset to use for extracting info.
+- `force=true` (optional) - Force fetch new info instead of using cache.
+- `args=<yt-dlp-command-opts>` (optional) - The yt-dlp command options to apply to the info extraction.
 
 **Response** (example):
 ```json
@@ -153,6 +154,8 @@ or an error:
   "extractor": "youtube",
   "_cached": {
     "status": "miss|hit",
+    "preset": "<preset-name>",
+    "cli_args": "<yt-dlp-command-opts>",
     "key": "<hash>",
     "ttl": 300,
     "ttl_left": 299.82,

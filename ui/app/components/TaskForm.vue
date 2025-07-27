@@ -1,20 +1,10 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12" v-if="form?.url && is_yt_handle(form.url)">
-      <Message title="Warning" class="is-background-warning-80 has-text-dark" icon="fas fa-info-circle">
-        <span>
-          <ul>
-            <li>You are using a YouTube link with handle instead of channel_id. To activate RSS feed support for
-              channel, you need to use
-              the channel ID. For example, <code>https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg</code>
-            </li>
-            <li>
-              To get youtube channel_id simply visit the page, click on <b>more about this channel</b>, scroll down to
-              <b>share
-                channel</b>, click on <code>Copy channel id</code>.
-            </li>
-          </ul>
-        </span>
+      <Message title="Information" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+        <span>You are using a YouTube link with <b>@handle</b> instead of <b>channel_id</b>. To activate RSS feed
+          support for URL click on the <NuxtLink @click="async () => form.url = await convert_url(form.url)"><b>Convert
+              URL</b></NuxtLink> link.</span>
       </Message>
     </div>
     <div class="column is-12">
@@ -79,7 +69,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The name is used to identify this specific task.</span>
+                    <span class="is-bold">The name is used to identify this specific task.</span>
                   </span>
                 </div>
               </div>
@@ -89,17 +79,20 @@
                   <label class="label is-inline" for="url">
                     <span class="icon"><i class="fa-solid fa-link" /></span>
                     URL
+                    <template v-if="is_yt_handle(form.url)">
+                      - <NuxtLink @click="async () => form.url = await convert_url(form.url)">Convert URL</NuxtLink>
+                    </template>
                   </label>
                   <div class="control has-icons-left">
-                    <input type="url" class="input" id="url" v-model="form.url" :disabled="addInProgress">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
+                    <input type="url" class="input" id="url" v-model="form.url"
+                      :disabled="addInProgress || convertInProgress"
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-link"
+                        :class="{ 'fa-spin': convertInProgress }" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The channel or playlist URL. For youtube there is rss feed support if you use URL with
-                      channel_id or playlist_id. For example, https://www.youtube.com/<span
-                        class="has-text-danger">channel/UCUi3_cffYenmMTuWEsLHzqg</span>
-                    </span>
+                    <span class="is-bold">The channel or playlist URL.</span>
                   </span>
                 </div>
               </div>
@@ -130,7 +123,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Select the preset to use for this URL. <span class="text-has-danger">If the
+                    <span class="is-bold">Select the preset to use for this URL. <span class="text-has-danger">If the
                         <code>-f, --format</code> <span class="has-text-danger">
                           argument is present in the command line options, the preset and all
                           it's options will be ignored.</span></span>
@@ -151,7 +144,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
+                    <span class="is-bold">
                       The CRON timer expression to use for this task. If not set, the task will be disabled. For more
                       information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
                         crontab.guru</NuxtLink>.
@@ -172,8 +165,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Current download folder: <code>{{ get_download_folder() }}</code>. All folders are
-                      sub-folders of <code>{{ config.app.download_path }}</code>.</span>
+                    <span class="is-bold">Current download folder: <code>{{ get_download_folder() }}</code>. All folders
+                      are sub-folders of <code>{{ config.app.download_path }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -190,14 +183,14 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Current output format: <code>{{ get_output_template() }}</code>.</span>
+                    <span class="is-bold">Current output format: <code>{{ get_output_template() }}</code>.</span>
                   </span>
                 </div>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="output_template">
+                  <label class="label is-inline" for="auto_start">
                     <span class="icon"><i class="fa-solid fa-circle-play" /></span>
                     Auto Start
                   </label>
@@ -210,7 +203,29 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Whether to automatically start downloading or just queue them in paused state.</span>
+                    <span class="is-bold">Whether to automatically start downloading or just queue them in paused
+                      state.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="handler_enabled">
+                    <span class="icon"><i class="fa-solid fa-rss" /></span>
+                    Enable Handler
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="handler_enabled" type="checkbox" v-model="form.handler_enabled" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="handler_enabled" class="is-unselectable">
+                      {{ form.handler_enabled ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Some URLs like YouTube channels/playlists can be monitored using RSS feed,
+                      this option works regardless of the timer being set or not.</span>
                   </span>
                 </div>
               </div>
@@ -228,7 +243,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
+                    <span class="is-bold">yt-dlp cli arguments. Check <NuxtLink target="_blank"
                         to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
                       For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
                         with caution those arguments can break yt-dlp or the frontend.</span>
@@ -260,22 +275,19 @@
     </div>
 
     <div class="column is-12">
-      <Message title="Tips" class="is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+      <Message title="Tips" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
         <span>
           <ul>
             <li>To enable YouTube RSS feed monitoring, The task URL must include a <code>channel_id</code> or
               <code>playlist_id</code>. Other link types won’t work.
             </li>
-            <li>RSS monitoring runs every hour alongside the actual task execution. It checks each feed for new videos
-              and automatically queues any you haven’t downloaded yet.</li>
-            <li>To opt out of RSS monitoring for a specific task, append <code>[no_handler]</code> to that task’s name.
-            </li>
-            <li>To have the task only monitor RSS feed, do not set timer and add <code>[only_handler]</code> to that
-              task’s name.</li>
+            <li>RSS monitoring runs every hour alongside the actual task execution. Regardless if the task has timer set
+              or not. To opt out of RSS monitoring for a specific task, simply disable the <code>Enable Handler</code>
+              option. To have the task only monitor RSS feed, <b>do not set timer</b>.</li>
             <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in command options
-              for ytdlp.cli, preset or task.</li>
-            <li>If you don't have <code>--download-archive</code> set but <code>YTP_KEEP_ARCHIVE</code> environment
-              option is set to <code>true</code> which is the default, It will also work.
+              for ytdlp.cli, preset or task. If you don't have <code>--download-archive</code> set but
+              <code>YTP_KEEP_ARCHIVE</code> environment option is set to <code>true</code> which is the default, It will
+              also work.
             </li>
           </ul>
         </span>
@@ -288,52 +300,52 @@
   </main>
 </template>
 
-<script setup>
+<script lang="ts" setup>
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
+import type { exported_task, task_item } from '~/types/tasks'
 
-const props = defineProps({
-  reference: {
-    type: String,
-    required: false,
-    default: null,
-  },
-  task: {
-    type: Object,
-    required: true,
-  },
-  addInProgress: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-})
+const props = defineProps<{
+  reference?: string | null | undefined
+  task: task_item
+  addInProgress?: boolean
+}>()
 
-const emitter = defineEmits(['cancel', 'submit'])
+const emitter = defineEmits<{
+  (e: 'cancel'): void
+  (e: 'submit', payload: { reference: string | null | undefined, task: task_item }): void
+}>()
 
 const toast = useNotification()
 const config = useConfigStore()
 const box = useConfirm()
 const showImport = useStorage('showImport', false)
 
-const import_string = ref('')
+const convertInProgress = ref<boolean>(false)
+const import_string = ref<string>('')
 
-const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))\/?$/;
+const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 
-const form = reactive(props.task)
+const form = reactive<task_item>({ ...props.task })
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
     form.preset = toRaw(config.app.default_preset)
   }
-  if (typeof form.auto_start === 'undefined' || form.auto_start === null) {
+
+  if (typeof form.auto_start === 'undefined' || null === form.auto_start) {
     form.auto_start = true
   }
+
+  if (typeof form.handler_enabled === 'undefined' || null === form.handler_enabled) {
+    form.handler_enabled = true
+  }
+
 })
 
-const checkInfo = async () => {
-  const required = ['name', 'url']
+const checkInfo = async (): Promise<void> => {
+  const required = ['name', 'url'] as const
   for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`)
@@ -344,7 +356,7 @@ const checkInfo = async () => {
   if (form.timer) {
     try {
       CronExpressionParser.parse(form.timer)
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
       toast.error(`Invalid CRON expression. ${e.message}`)
       return
@@ -353,31 +365,29 @@ const checkInfo = async () => {
 
   try {
     new URL(form.url)
-  } catch (e) {
+  } catch {
     toast.error('Invalid URL')
     return
   }
 
-  if (form?.cli && '' !== form.cli) {
+  if (form.cli && '' !== form.cli) {
     const options = await convertOptions(form.cli)
-    if (null === options) {
-      return
-    }
-    form.cli = form.cli.trim(" ")
+    if (null === options) return
+    form.cli = form.cli.trim()
   }
 
   emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) })
 }
 
-const importItem = async () => {
-  let val = import_string.value.trim()
+const importItem = async (): Promise<void> => {
+  const val = import_string.value.trim()
   if (!val) {
     toast.error('The import string is required.')
     return
   }
 
   try {
-    const item = decode(val)
+    const item = decode(val) as exported_task
 
     if ('task' !== item._type) {
       toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`)
@@ -391,34 +401,15 @@ const importItem = async () => {
       }
     }
 
-    if (item.name) {
-      form.name = item.name
-    }
-
-    if (item.url) {
-      form.url = item.url
-    }
-
-    if (item.template) {
-      form.template = item.template
-    }
-
-    if (item.timer) {
-      form.timer = item.timer
-    }
-
-    if (item.folder) {
-      form.folder = item.folder
-    }
-
-    if (item.cli) {
-      form.cli = item.cli
-    }
-
-    form.auto_start = item?.auto_start ?? true
+    form.name = item.name ?? form.name
+    form.url = item.url ?? form.url
+    form.template = item.template ?? form.template
+    form.timer = item.timer ?? form.timer
+    form.folder = item.folder ?? form.folder
+    form.cli = item.cli ?? form.cli
+    form.auto_start = item.auto_start ?? true
 
     if (item.preset) {
-      //  -- check if the preset exists in config.presets
       const preset = config.presets.find(p => p.name === item.preset)
       if (!preset) {
         toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`)
@@ -429,13 +420,13 @@ const importItem = async () => {
     }
 
     import_string.value = ''
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     toast.error(`Failed to import string. ${e.message}`)
   }
 }
 
-const convertOptions = async args => {
+const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
   try {
     const response = await convertCliOptions(args)
 
@@ -447,52 +438,81 @@ const convertOptions = async args => {
       form.folder = response.download_path
     }
 
-    return response.opts
-  } catch (e) {
+    return response.opts as Record<string, any>
+  } catch (e: any) {
     toast.error(e.message)
   }
 
   return null
 }
 
-const hasFormatInConfig = computed(() => {
-  if (!form?.cli) {
-    return false
-  }
-
-  return /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli)
-})
+const hasFormatInConfig = computed<boolean>(() => !!form.cli && /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli))
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 
-const get_download_folder = () => {
-  if (form.preset && !hasFormatInConfig.value) {
+const get_download_folder = (): string => {
+  if (form.preset && false === hasFormatInConfig.value) {
     const preset = config.presets.find(p => p.name === form.preset)
-    if (preset && preset.folder) {
+    if (preset?.folder) {
       return preset.folder.replace(config.app.download_path, '')
     }
   }
   return '/'
 }
 
-const get_output_template = () => {
-  if (form.preset && !hasFormatInConfig.value) {
+const get_output_template = (): string => {
+  if (form.preset && false === hasFormatInConfig.value) {
     const preset = config.presets.find(p => p.name === form.preset)
-    if (preset && preset.template) {
+    if (preset?.template) {
       return preset.template
     }
   }
   return config.app.output_template || '%(title)s.%(ext)s'
 }
 
-function is_yt_handle(url) {
-  let m = url.match(CHANNEL_REGEX);
+const is_yt_handle = (url: string): boolean => {
+  if (!url || '' === url) {
+    return false
+  }
+  const m = url.match(CHANNEL_REGEX)
   if (m?.groups) {
-    if (m.groups?.channelId) {
-      return false
-    }
-    return true
+    return !m.groups.channelId
   }
   return false
 }
+
+const convert_url = async (url: string): Promise<string> => {
+  if (!url || '' === url) {
+    return url
+  }
+
+  const m = url.match(CHANNEL_REGEX)
+  if (!m?.groups || !m.groups.handle) {
+    return url
+  }
+
+  const params = new URLSearchParams()
+  params.append('url', url)
+  params.append('args', '-I0')
+
+  try {
+    convertInProgress.value = true
+    const resp = await request('/api/yt-dlp/url/info?' + params.toString(), { credentials: 'include' })
+    const body = await resp.json()
+    const channel_id = ag(body, 'channel_id', null)
+    console.log('convert_url', { url, channel_id, body })
+
+    if (channel_id) {
+      return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`)
+    }
+  } catch (e: any) {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+  } finally {
+    convertInProgress.value = false
+  }
+
+  return url
+}
+
 </script>

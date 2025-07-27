@@ -1,5 +1,5 @@
-export type ItemStatus = 'finished' | 'preparing' | 'error' | 'cancelled' | 'downloading' | 'postprocessing' | 'not_live' | null;
-export type StoreItem = {
+type ItemStatus = 'finished' | 'preparing' | 'error' | 'cancelled' | 'downloading' | 'postprocessing' | 'not_live' | 'skip' | null;
+type StoreItem = {
   /** Unique identifier for the item */
   _id: string
   /** Error message if available */
@@ -54,6 +54,15 @@ export type StoreItem = {
     thumbnail?: string
     /** The uploader of the item if available */
     uploader?: string
+    /** Uploader name if available */
+    is_audio?: boolean
+    /** If the item has audio stream */
+    is_video?: boolean
+    /** If the item has video stream */
+    live_in?: string
+    /** Live stream start time if available */
+    is_premiere?: boolean
+    /** If the item is a premiere */
   }
   /** The item temporary filename */
   tmpfilename?: string | null
@@ -74,3 +83,5 @@ export type StoreItem = {
   /** Time remaining for the item download if available */
   eta?: number | null
 }
+
+export type { ItemStatus, StoreItem }

@@ -20,7 +20,7 @@ export const useSocketStore = defineStore('socket', () => {
     event.forEach(e => socket.value?.on(e, (...args) => true === withEvent ? callback(e, ...args) : callback(...args)))
   }
 
-  const off = (event: string | string[], callback: (...args: any[]) => void): any => {
+  const off = (event: string | string[], callback?: (...args: any[]) => void): any => {
     if (!Array.isArray(event)) {
       event = [event]
     }

@@ -108,7 +108,7 @@
                 <td>
                   <div class="progress-bar is-unselectable">
                     <div class="progress-percentage">{{ updateProgress(item) }}</div>
-                    <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
+                    <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
                   </div>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
@@ -119,7 +119,8 @@
                   <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
                     :button_classes="'is-small'" label="Actions">
                     <template v-if="isEmbedable(item.url)">
-                      <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                      <NuxtLink class="dropdown-item has-text-danger"
+                        @click="embed_url = getEmbedable(item.url) as string">
                         <span class="icon"><i class="fa-solid fa-play" /></span>
                         <span>Play video</span>
                       </NuxtLink>
@@ -202,7 +203,8 @@
           </header>
           <div v-if="showThumbnails" class="card-image">
             <figure class="image is-3by1">
-              <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url)" class="play-overlay">
+              <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
+                class="play-overlay">
                 <div class="play-icon embed-icon"></div>
                 <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
@@ -220,7 +222,7 @@
               <div class="column is-12">
                 <div class="progress-bar is-unselectable">
                   <div class="progress-percentage">{{ updateProgress(item) }}</div>
-                  <div class="progress" :style="{ width: percentPipe(item.percent) + '%' }"></div>
+                  <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
                 </div>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
@@ -267,7 +269,8 @@
               <div class="column is-half-mobile">
                 <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
                   <template v-if="isEmbedable(item.url)">
-                    <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url)">
+                    <NuxtLink class="dropdown-item has-text-danger"
+                      @click="embed_url = getEmbedable(item.url) as string">
                       <span class="icon"><i class="fa-solid fa-play" /></span>
                       <span>Play video</span>
                     </NuxtLink>
@@ -312,26 +315,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
+import type { StoreItem } from '~/types/store'
 
-const emitter = defineEmits(['getInfo', 'clear_search', 'getItemInfo'])
-const props = defineProps({
-  thumbnails: {
-    type: Boolean,
-    default: true
-  },
-  query: {
-    type: String,
-    required: false,
-    default: ''
-  }
-})
+const emitter = defineEmits<{
+  (e: 'getInfo', url: string, preset: string): void
+  (e: 'getItemInfo', id: string): void
+  (e: 'clear_search'): void
+}>()
+
+const props = defineProps<{
+  thumbnails?: boolean
+  query?: string
+}>()
+
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
 const box = useConfirm()
+const toast = useNotification()
 
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
@@ -339,135 +343,116 @@ const display_style = useStorage('display_style', 'cards')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 
-const selectedElms = ref([])
+const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
 const embed_url = ref('')
 const table_container = ref(false)
 
-const showThumbnails = computed(() => props.thumbnails && !hideThumbnail.value)
+const showThumbnails = computed(() => !!props.thumbnails && !hideThumbnail.value)
 
 watch(masterSelectAll, (value) => {
-  for (const key in stateStore.queue) {
-    const element = stateStore.queue[key]
-    if (value) {
-      selectedElms.value.push(element._id)
-    } else {
-      selectedElms.value = []
-    }
+  if (value) {
+    selectedElms.value = Object.values(stateStore.queue).map((element: StoreItem) => element._id)
+  } else {
+    selectedElms.value = []
   }
 })
 
-const filteredItems = computed(() => {
-  const q = props.query?.toLowerCase();
+const filteredItems = computed<StoreItem[]>(() => {
+  const q = props.query?.toLowerCase()
   if (!q) {
     return Object.values(stateStore.queue)
   }
-  return Object.values(stateStore.queue).filter(i => Object.values(i).some(v => typeof v === 'string' && v.toLowerCase().includes(q)));
-});
+  return Object.values(stateStore.queue).filter((i: StoreItem) =>
+    Object.values(i).some(v => typeof v === 'string' && v.toLowerCase().includes(q))
+  )
+})
 
-const hasSelected = computed(() => selectedElms.value.length > 0)
-const hasQueuedItems = computed(() => stateStore.count('queue') > 0)
+const hasSelected = computed(() => 0 < selectedElms.value.length)
+const hasQueuedItems = computed(() => 0 < stateStore.count('queue'))
 const hasManualStart = computed(() => {
-  if (stateStore.count('queue') < 0) {
+  if (0 > stateStore.count('queue')) {
     return false
   }
-
   for (const key in stateStore.queue) {
-    const item = stateStore.queue[key]
-    if (!item.status && item.auto_start === false) {
+    const item = stateStore.queue[key] as StoreItem
+    if (!item.status && false === item.auto_start) {
       return true
     }
   }
-
   return false
 })
 
 const hasPausable = computed(() => {
-  if (stateStore.count('queue') < 0) {
+  if (0 > stateStore.count('queue')) {
     return false
   }
-
   for (const key in stateStore.queue) {
-    const item = stateStore.queue[key]
-    if (!item.status && item.auto_start === true) {
+    const item = stateStore.queue[key] as StoreItem
+    if (!item.status && true === item.auto_start) {
       return true
     }
   }
-
   return false
 })
 
-
-const setIcon = item => {
+const setIcon = (item: StoreItem): string => {
   if (!item.auto_start) {
     return 'fa-hourglass-half'
   }
-
   if ('downloading' === item.status && item.is_live) {
     return 'fa-globe fa-spin'
   }
-
   if ('downloading' === item.status) {
     return 'fa-download'
   }
-
   if ('postprocessing' === item.status) {
     return 'fa-cog fa-spin'
   }
-
   if (null === item.status && true === config.paused) {
     return 'fa-pause-circle'
   }
-
   if (!item.status) {
     return 'fa-question'
   }
-
   return 'fa-spinner fa-spin'
 }
 
-const setStatus = item => {
+const setStatus = (item: StoreItem): string => {
   if (!item.auto_start) {
     return 'Pending'
   }
-
   if (null === item.status && true === config.paused) {
     return 'Paused'
   }
-
   if ('downloading' === item.status && item.is_live) {
     return 'Streaming'
   }
-
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..';
+    // @ts-ignore
+    return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..'
   }
-
   if (!item.status) {
     return 'Unknown...'
   }
-
   return ucFirst(item.status)
 }
 
-const setIconColor = item => {
-  if (item.status === 'downloading') {
+const setIconColor = (item: StoreItem): string => {
+  if ('downloading' === item.status) {
     return 'has-text-success'
   }
-
   if ('postprocessing' === item.status) {
     return 'has-text-info'
   }
-
   if (!item.auto_start || (null === item.status && true === config.paused)) {
     return 'has-text-warning'
   }
-
   return ''
 }
 
-const ETAPipe = value => {
-  if (value === null || 0 === value) {
+const ETAPipe = (value: number | null): string => {
+  if (null === value || 0 === value) {
     return 'Live'
   }
   if (value < 60) {
@@ -481,11 +466,10 @@ const ETAPipe = value => {
   return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`
 }
 
-const speedPipe = value => {
+const speedPipe = (value: number | null): string => {
   if (null === value || 0 === value) {
     return '0KB/s'
   }
-
   const k = 1024
   const dm = 2
   const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s']
@@ -493,46 +477,39 @@ const speedPipe = value => {
   return parseFloat((value / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-const percentPipe = value => {
-  if (value === null || 0 === value) {
+const percentPipe = (value: number | null): string => {
+  if (null === value || 0 === value) {
     return '00.00'
   }
-  return parseFloat(value).toFixed(2)
+  return parseFloat(String(value)).toFixed(2)
 }
 
-const updateProgress = (item) => {
+const updateProgress = (item: StoreItem): string => {
   let string = ''
-
   if (!item.auto_start) {
     return 'Manual start'
   }
-
   if (null === item.status && true === config.paused) {
     return 'Global Pause'
   }
-
   if ('postprocessing' === item.status) {
     return 'Post-processors are running.'
   }
-
   if ('preparing' === item.status) {
+    // @ts-ignore
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
   }
-
   if (null != item.status) {
     string += item.percent && !item.is_live ? percentPipe(item.percent) + '%' : 'Live'
   }
-
   string += item.speed ? ' - ' + speedPipe(item.speed) : ' - Waiting..'
-
   if (null != item.status && item.eta) {
     string += ' - ' + ETAPipe(item.eta)
   }
-
-  return string;
+  return string
 }
 
-const confirmCancel = item => {
+const confirmCancel = (item: StoreItem) => {
   if (true !== box.confirm(`Cancel '${item.title}'?`)) {
     return false
   }
@@ -542,97 +519,84 @@ const confirmCancel = item => {
 
 const cancelSelected = () => {
   if (true !== box.confirm(`Cancel '${selectedElms.value.length}' selected items?`)) {
-    return false;
+    return false
   }
   cancelItems(selectedElms.value)
   selectedElms.value = []
-  return true;
+  return true
 }
 
-const cancelItems = item => {
-  const items = []
-
-  if (typeof item === 'object') {
+const cancelItems = (item: string | string[]) => {
+  const items: string[] = []
+  if ('object' === typeof item) {
     for (const key in item) {
-      items.push(item[key])
+      items.push((item as any)[key])
     }
   } else {
     items.push(item)
   }
-
-  if (items.length < 0) {
+  if (0 > items.length) {
     return
   }
-
   items.forEach(id => socket.emit('item_cancel', id))
 }
 
-const startItem = item => socket.emit('item_start', item._id)
-const pauseItem = item => socket.emit('item_pause', item._id)
+const startItem = (item: StoreItem) => socket.emit('item_start', item._id)
+const pauseItem = (item: StoreItem) => socket.emit('item_pause', item._id)
 
 const startItems = () => {
-  if (selectedElms.value.length < 1) {
+  if (1 > selectedElms.value.length) {
     return
   }
-
-  let filtered = []
-
+  let filtered: string[] = []
   selectedElms.value.forEach(id => {
-    const item = stateStore.get('queue', id)
+    const item = stateStore.get('queue', id) as StoreItem
     if (item && !item.auto_start && !item.status) {
       filtered.push(id)
     }
   })
-
   selectedElms.value = []
-
-  if (filtered.length < 1) {
+  if (1 > filtered.length) {
     toast.error('No eligible items to start.')
     return
   }
-
   if (true !== box.confirm(`Start '${filtered.length}' selected items?`)) {
     return false
   }
-
   filtered.forEach(id => socket.emit('item_start', id))
 }
 
 const pauseSelected = () => {
-  if (selectedElms.value.length < 1) {
+  if (1 > selectedElms.value.length) {
     return
   }
-
-  let filtered = []
-
+  let filtered: string[] = []
   selectedElms.value.forEach(id => {
-    const item = stateStore.get('queue', id)
+    const item = stateStore.get('queue', id) as StoreItem
     if (item && item.auto_start && !item.status) {
       filtered.push(id)
     }
   })
-
   selectedElms.value = []
-
-  if (filtered.length < 1) {
+  if (1 > filtered.length) {
     toast.error('No eligible items to pause.')
     return
   }
-
   if (true !== box.confirm(`Pause '${filtered.length}' selected items?`)) {
     return false
   }
-
   filtered.forEach(id => socket.emit('item_pause', id))
 }
 
-const pImg = e => e.target.naturalHeight > e.target.naturalWidth ? e.target.classList.add('image-portrait') : null
+const pImg = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  target.naturalHeight > target.naturalWidth ? target.classList.add('image-portrait') : null
+}
 
 watch(embed_url, v => {
   if (!bg_enable.value) {
     return
   }
-  document.querySelector('body').setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
+  document.querySelector('body')?.setAttribute('style', `opacity: ${v ? 1 : bg_opacity.value}`)
 })
-
 </script>
