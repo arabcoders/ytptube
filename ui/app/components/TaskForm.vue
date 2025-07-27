@@ -1,20 +1,10 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12" v-if="form?.url && is_yt_handle(form.url)">
-      <Message title="Warning" class="is-background-warning-80 has-text-dark" icon="fas fa-info-circle">
-        <span>
-          <ul>
-            <li>You are using a YouTube link with handle instead of channel_id. To activate RSS feed support for
-              channel, you need to use
-              the channel ID. For example, <code>https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg</code>
-            </li>
-            <li>
-              To get youtube channel_id simply visit the page, click on <b>more about this channel</b>, scroll down to
-              <b>share
-                channel</b>, click on <code>Copy channel id</code>.
-            </li>
-          </ul>
-        </span>
+      <Message title="Information" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+        <span>You are using a YouTube link with <b>@handle</b> instead of <b>channel_id</b>. To activate RSS feed
+          support for URL click on the <NuxtLink @click="async () => form.url = await convert_url(form.url)"><b>Convert
+              URL</b></NuxtLink> link.</span>
       </Message>
     </div>
     <div class="column is-12">
@@ -79,7 +69,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The name is used to identify this specific task.</span>
+                    <span class="is-bold">The name is used to identify this specific task.</span>
                   </span>
                 </div>
               </div>
@@ -89,17 +79,20 @@
                   <label class="label is-inline" for="url">
                     <span class="icon"><i class="fa-solid fa-link" /></span>
                     URL
+                    <template v-if="is_yt_handle(form.url)">
+                      - <NuxtLink @click="async () => form.url = await convert_url(form.url)">Convert URL</NuxtLink>
+                    </template>
                   </label>
                   <div class="control has-icons-left">
-                    <input type="url" class="input" id="url" v-model="form.url" :disabled="addInProgress">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
+                    <input type="url" class="input" id="url" v-model="form.url"
+                      :disabled="addInProgress || convertInProgress"
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg">
+                    <span class="icon is-small is-left"><i class="fa-solid fa-link"
+                        :class="{ 'fa-spin': convertInProgress }" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The channel or playlist URL. For youtube there is rss feed support if you use URL with
-                      channel_id or playlist_id. For example, https://www.youtube.com/<span
-                        class="has-text-danger">channel/UCUi3_cffYenmMTuWEsLHzqg</span>
-                    </span>
+                    <span class="is-bold">The channel or playlist URL.</span>
                   </span>
                 </div>
               </div>
@@ -130,7 +123,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Select the preset to use for this URL. <span class="text-has-danger">If the
+                    <span class="is-bold">Select the preset to use for this URL. <span class="text-has-danger">If the
                         <code>-f, --format</code> <span class="has-text-danger">
                           argument is present in the command line options, the preset and all
                           it's options will be ignored.</span></span>
@@ -151,7 +144,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
+                    <span class="is-bold">
                       The CRON timer expression to use for this task. If not set, the task will be disabled. For more
                       information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
                         crontab.guru</NuxtLink>.
@@ -172,8 +165,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Current download folder: <code>{{ get_download_folder() }}</code>. All folders are
-                      sub-folders of <code>{{ config.app.download_path }}</code>.</span>
+                    <span class="is-bold">Current download folder: <code>{{ get_download_folder() }}</code>. All folders
+                      are sub-folders of <code>{{ config.app.download_path }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -190,7 +183,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Current output format: <code>{{ get_output_template() }}</code>.</span>
+                    <span class="is-bold">Current output format: <code>{{ get_output_template() }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -210,7 +203,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Whether to automatically start downloading or just queue them in paused state.</span>
+                    <span class="is-bold">Whether to automatically start downloading or just queue them in paused
+                      state.</span>
                   </span>
                 </div>
               </div>
@@ -230,9 +224,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Some URLs like YouTube channels and playlists can be monitored for new videos using RSS
-                      feed independent of the timer. If enabled, the task will monitor the RSS feed for new videos and
-                      automatically queue them for download if they are not already downloaded.</span>
+                    <span class="is-bold">Some URLs like YouTube channels/playlists can be monitored using RSS feed,
+                      this option works regardless of the timer being set or not.</span>
                   </span>
                 </div>
               </div>
@@ -250,7 +243,7 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
+                    <span class="is-bold">yt-dlp cli arguments. Check <NuxtLink target="_blank"
                         to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
                       For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
                         with caution those arguments can break yt-dlp or the frontend.</span>
@@ -329,9 +322,10 @@ const config = useConfigStore()
 const box = useConfirm()
 const showImport = useStorage('showImport', false)
 
+const convertInProgress = ref<boolean>(false)
 const import_string = ref<string>('')
 
-const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))\/?$/
+const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 
 const form = reactive<task_item>({ ...props.task })
 
@@ -477,10 +471,48 @@ const get_output_template = (): string => {
 }
 
 const is_yt_handle = (url: string): boolean => {
+  if (!url || '' === url) {
+    return false
+  }
   const m = url.match(CHANNEL_REGEX)
   if (m?.groups) {
     return !m.groups.channelId
   }
   return false
 }
+
+const convert_url = async (url: string): Promise<string> => {
+  if (!url || '' === url) {
+    return url
+  }
+
+  const m = url.match(CHANNEL_REGEX)
+  if (!m?.groups || !m.groups.handle) {
+    return url
+  }
+
+  const params = new URLSearchParams()
+  params.append('url', url)
+  params.append('args', '-I0')
+
+  try {
+    convertInProgress.value = true
+    const resp = await request('/api/yt-dlp/url/info?' + params.toString(), { credentials: 'include' })
+    const body = await resp.json()
+    const channel_id = ag(body, 'channel_id', null)
+    console.log('convert_url', { url, channel_id, body })
+
+    if (channel_id) {
+      return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`)
+    }
+  } catch (e: any) {
+    console.error(e)
+    toast.error(`Error: ${e.message}`)
+  } finally {
+    convertInProgress.value = false
+  }
+
+  return url
+}
+
 </script>
