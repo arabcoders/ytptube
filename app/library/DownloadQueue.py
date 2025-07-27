@@ -518,7 +518,7 @@ class DownloadQueue(metaclass=Singleton):
                 else:
                     dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
 
-                nMessage = f"'{dl.info.title}': '{dlInfo.info.error.strip()}'."
+                nMessage = f"'{dlInfo.info.title}': '{dlInfo.info.error.strip()}'."
 
                 if _requeue:
                     nEvent = Events.ITEM_ADDED
