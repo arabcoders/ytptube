@@ -775,7 +775,7 @@ const removeItem = (item: StoreItem) => {
 }
 
 const retryItem = (item: StoreItem, re_add = false) => {
-  const item_req: Partial<StoreItem> = {
+  let item_req: Partial<StoreItem> = {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
@@ -783,7 +783,9 @@ const retryItem = (item: StoreItem, re_add = false) => {
     template: item.template,
     cli: item?.cli,
     extras: toRaw(item?.extras || {}) ?? {},
+    auto_start: item.auto_start,
   }
+
   socket.emit('item_delete', { id: item._id, remove_file: false })
   if (true === re_add) {
     toast.info('Cleared the item from history, and added it to the new download form.')

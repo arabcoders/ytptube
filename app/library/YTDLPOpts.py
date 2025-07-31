@@ -33,7 +33,7 @@ class YTDLPOpts:
             Presets: The instance of the class
 
         """
-        return YTDLPOpts()
+        return YTDLPOpts().reset()
 
     def add_cli(self, args: str, from_user: int | bool = False) -> "YTDLPOpts":
         """
@@ -188,13 +188,10 @@ class YTDLPOpts:
                 msg = f"Invalid command options for yt-dlp were given. '{e!s}'."
                 raise ValueError(msg) from e
 
-        data = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
+        data: dict = merge_dict(user_cli, merge_dict(self._item_opts, merge_dict(self._preset_opts, default_opts)))
 
         if not keep:
-            self.presets_opts = {}
-            self._item_opts = {}
-            self._item_cli = []
-            self._preset_cli = ""
+            self.reset()
 
         if "format" in data:
             if data["format"] in ["not_set", "default", "best"]:
@@ -206,3 +203,18 @@ class YTDLPOpts:
         LOG.debug(f"Final yt-dlp options: '{data!s}'.")
 
         return data
+
+    def reset(self) -> "YTDLPOpts":
+        """
+        Reset the item options.
+
+        Returns:
+            YTDLPOpts: The instance of the class
+
+        """
+        self._item_opts = {}
+        self._item_cli = []
+        self._preset_cli = ""
+        self._preset_opts = {}
+
+        return self
