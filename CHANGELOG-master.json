@@ -1,8 +1,43 @@
 [
     {
-        "tag": "master-20250727-9b5c1d9a",
-        "date": "2025-07-27T14:08:28+00:00",
+        "tag": "master-20250731-a9396547",
+        "date": "2025-07-31T20:56:36+00:00",
         "commits": [
+            {
+                "sha": "3918fa0b",
+                "message": "hard reset YTDLPOpts.",
+                "author": "arabcoders",
+                "date": "2025-07-31T20:50:57+00:00",
+                "full_sha": "3918fa0b8bdfac7e396b8074bb930f0ad3392511"
+            },
+            {
+                "sha": "1fbe80c9",
+                "message": "allow custom PPs",
+                "author": "arabcoders",
+                "date": "2025-07-31T20:50:33+00:00",
+                "full_sha": "1fbe80c91552bed5afb7f87ac04e505a1578b578"
+            },
+            {
+                "sha": "918b11fc",
+                "message": "do not consider auto_start False items as stale",
+                "author": "arabcoders",
+                "date": "2025-07-31T20:50:19+00:00",
+                "full_sha": "918b11fc778c5ec315821a3a93136a9c570a9177"
+            },
+            {
+                "sha": "432f2773",
+                "message": "respect auto_start when re-queuing item",
+                "author": "arabcoders",
+                "date": "2025-07-31T20:49:52+00:00",
+                "full_sha": "432f277329330284a98c2f1c0668ce304f7bd068"
+            },
+            {
+                "sha": "15ab126a",
+                "message": "external packages updates",
+                "author": "arabcoders",
+                "date": "2025-07-31T20:49:30+00:00",
+                "full_sha": "15ab126a51083be52fb0c19bc8d3c5a53ca68e9a"
+            },
             {
                 "sha": "36b590cd",
                 "message": "Fix automatic premiere re-queue.",
@@ -949,7 +984,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9b5c1d9ae799f1ee7029a19cef091a256c59f9b0"
+        "full_sha": "a93965471549f9b79575cc604c842c5db55249d7"
     },
     {
         "tag": "master-20250616-c07465a6",
