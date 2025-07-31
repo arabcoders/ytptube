@@ -1,5 +1,7 @@
 import yt_dlp
 
+import app.postprocessors  # noqa: F401
+
 
 class YTDLP(yt_dlp.YoutubeDL):
     _interrupted = False
