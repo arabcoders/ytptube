@@ -394,6 +394,7 @@ class Download:
             return True
         except Exception as e:
             self.logger.error(f"Failed to close process: '{procId}'. {e}")
+            self.logger.exception(e)
 
         return False
 
@@ -426,7 +427,7 @@ class Download:
         if self.temp_disabled or self.temp_keep is True or not self.temp_path:
             return
 
-        if "finished" != self.info.status and self.info.downloaded_bytes > 0:
+        if "finished" != self.info.status and self.info.downloaded_bytes and self.info.downloaded_bytes > 0:
             self.logger.warning(
                 f"Keeping temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
             )
@@ -542,6 +543,9 @@ class Download:
             bool: True if the download task is stale, False otherwise.
 
         """
+        if not self.info.auto_start:
+            return False
+
         if self.started_time < 1:
             self.logger.debug(f"Download task '{self.info.title}: {self.info.id}' not started yet.")
             return False
