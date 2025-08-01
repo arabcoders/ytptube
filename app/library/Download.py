@@ -167,6 +167,9 @@ class Download:
         self.status_queue.put({"id": self.id, "filename": filename})
 
     def _download(self):
+        if not self._notify:
+            self._notify = EventBus.get_instance()
+
         cookie_file = None
 
         try:
@@ -359,6 +362,13 @@ class Download:
 
         self.cancel_in_progress = True
         procId: int | None = self.proc.ident
+
+        if not procId:
+            if self.proc:
+                self.proc.close()
+                self.proc = None
+            self.logger.warning("Attempted to close download process, but it is not running.")
+            return False
 
         self.logger.info(f"Closing PID='{procId}' download process.")
 
@@ -570,3 +580,14 @@ class Download:
             return True
 
         return False
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+
+        # Exclude (unpickleable) keys during pickling, this issue arise mostly on Windows.
+        excluded_keys = ("_notify",)
+        for key in excluded_keys:
+            if key in state:
+                state[key] = None
+
+        return state

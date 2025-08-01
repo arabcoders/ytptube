@@ -1377,3 +1377,34 @@ def ytdlp_reject(entry: dict, yt_params: dict) -> tuple[bool, str]:
         return (False, f'Video "{entry.get("title", "unknown")}" is age restricted.')
 
     return (True, "")
+
+
+def find_unpickleable(obj, name="root", seen=None):
+    import pickle
+
+    if seen is None:
+        seen = set()
+
+    if id(obj) in seen:
+        return
+
+    seen.add(id(obj))
+
+    try:
+        pickle.dumps(obj)
+    except Exception as e:
+        LOG.error(f"[UNPICKLEABLE] {name}: {e}")
+
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                find_unpickleable(v, f"{name}[{repr(k)!s}]", seen)
+        elif hasattr(obj, "__dict__"):
+            for attr in vars(obj):
+                try:
+                    value = getattr(obj, attr)
+                    find_unpickleable(value, f"{name}.{attr}", seen)
+                except Exception as ie:
+                    LOG.error(f"[ERROR] Accessing {name}.{attr}: {ie}")
+        elif isinstance(obj, (list, tuple, set)):
+            for idx, item in enumerate(obj):
+                find_unpickleable(item, f"{name}[{idx}]", seen)

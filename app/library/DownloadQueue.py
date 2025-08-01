@@ -1115,9 +1115,12 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
 
-    def _handle_task_exception(self, task: asyncio.Task):
+    def _handle_task_exception(self, task: asyncio.Task) -> None:
         if task.cancelled():
             return
 
         if exc := task.exception():
-            LOG.error(f"Unhandled exception in background task: {exc!s}")
+            import traceback
+
+            task_name: str = task.get_name() if task.get_name() else "unknown_task"
+            LOG.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {traceback.format_exc()}")
