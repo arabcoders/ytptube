@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593",
-    "date": "2025-08-01T14:37:46+00:00",
+    "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83",
+    "date": "2025-08-01T15:07:28+00:00",
     "commits": [
+      {
+        "sha": "bac1a51a",
+        "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83",
+        "message": "Do not register signals in non posix OS",
+        "author": "arabcoders",
+        "date": "2025-08-01T15:07:28+00:00"
+      },
       {
         "sha": "92a6101b",
         "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593",

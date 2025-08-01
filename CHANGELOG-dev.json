@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250801-92a6101b",
-        "date": "2025-08-01T14:37:46+00:00",
+        "tag": "dev-20250801-bac1a51a",
+        "date": "2025-08-01T15:07:28+00:00",
         "commits": [
+            {
+                "sha": "bac1a51a",
+                "message": "Do not register signals in non posix OS",
+                "author": "arabcoders",
+                "date": "2025-08-01T15:07:28+00:00",
+                "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83"
+            },
             {
                 "sha": "92a6101b",
                 "message": "Add exception catch for sub download task",
@@ -1005,7 +1012,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593"
+        "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83"
     },
     {
         "tag": "dev-20250616-c07465a6",
