@@ -36,3 +36,4 @@ __pycache__
 .idea
 dist
 build
+version.txt

@@ -280,12 +280,14 @@ class Download:
 
             self.started_time = int(time.time())
 
-            def mark_cancelled(*_):
-                cls._interrupted = True
-                cls.to_screen("[info] Interrupt received, exiting cleanly...")
-                raise SystemExit(130)  # noqa: TRY301
+            if "posix" == os.name:
 
-            signal.signal(signal.SIGUSR1, mark_cancelled)
+                def mark_cancelled(*_) -> None:
+                    cls._interrupted = True
+                    cls.to_screen("[info] Interrupt received, exiting cleanly...")
+                    raise SystemExit(130)  # noqa: TRY301
+
+                signal.signal(signal.SIGUSR1, mark_cancelled)
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
