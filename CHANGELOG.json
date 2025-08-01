@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "7e4fd51e8cdb80305895c2fd07d16ec82830b033",
+    "date": "2025-08-01T15:28:17+00:00",
+    "commits": [
+      {
+        "sha": "7e4fd51e",
+        "full_sha": "7e4fd51e8cdb80305895c2fd07d16ec82830b033",
+        "message": "fix windows build",
+        "author": "arabcoders",
+        "date": "2025-08-01T15:28:17+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.6.3",
     "full_sha": "cc3057f432e093da0792fcc189252a63bcbe10a9",
     "date": "2025-08-01T15:11:58+00:00",

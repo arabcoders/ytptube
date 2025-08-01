@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250801-bac1a51a",
-        "date": "2025-08-01T15:07:28+00:00",
+        "tag": "dev-20250801-7e4fd51e",
+        "date": "2025-08-01T15:28:17+00:00",
         "commits": [
+            {
+                "sha": "7e4fd51e",
+                "message": "fix windows build",
+                "author": "arabcoders",
+                "date": "2025-08-01T15:28:17+00:00",
+                "full_sha": "7e4fd51e8cdb80305895c2fd07d16ec82830b033"
+            },
             {
                 "sha": "bac1a51a",
                 "message": "Do not register signals in non posix OS",
@@ -1012,7 +1019,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83"
+        "full_sha": "7e4fd51e8cdb80305895c2fd07d16ec82830b033"
     },
     {
         "tag": "dev-20250616-c07465a6",
