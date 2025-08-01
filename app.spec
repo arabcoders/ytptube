@@ -1,7 +1,23 @@
+import importlib.util
 import os
 import platform
 import sys
 import tomllib
+
+spec = importlib.util.spec_from_file_location("version", "./app/library/version.py")
+ver = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(ver)
+
+with open("version.txt", "w") as f:
+    f.write(f"""# UTF-8
+# FileVersion:       "{ver.APP_VERSION}"
+# ProductVersion:    "{ver.APP_VERSION}"
+# FileDescription:   "YTPTube build {ver.APP_COMMIT_SHA}"
+# ProductName:       "YTPTube"
+# OriginalFilename:  "ytptube.exe"
+# InternalName:      "YTPTube"
+# Comments:          "Built from {ver.APP_BRANCH} at {ver.APP_BUILD_DATE}"
+""")
 
 block_cipher = None
 
@@ -31,7 +47,7 @@ hidden = [
     "engineio",
     "engineio.async_drivers.aiohttp",
     "socketio.async_drivers.aiohttp",
-    "app"
+    "app",
 ]
 
 hidden = [f.replace("-", "_") for f in hidden]
@@ -63,7 +79,8 @@ exe = EXE(  # type: ignore # noqa: F821
     debug=False,
     strip=False,
     upx=True,
-    console=False, # Turn on to True if you want a console window for debugging.
+    version="version.txt",
+    console=False,  # Turn on to True if you want a console window for debugging.
     icon="ui/public/favicon.ico",
     onefile=True,
 )
