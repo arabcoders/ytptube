@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250801-da6bd957",
-        "date": "2025-08-01T14:03:26+00:00",
+        "tag": "dev-20250801-c6535f0c",
+        "date": "2025-08-01T14:31:18+00:00",
         "commits": [
+            {
+                "sha": "c6535f0c",
+                "message": "Update the pyinstaller build to include version number.",
+                "author": "arabcoders",
+                "date": "2025-08-01T14:31:18+00:00",
+                "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f"
+            },
             {
                 "sha": "da6bd957",
                 "message": "Fix threading issue on windows exe",
@@ -991,7 +998,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "da6bd95733f8268df72ef5e944e9ad4c37dd5ca3"
+        "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f"
     },
     {
         "tag": "dev-20250616-c07465a6",

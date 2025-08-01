@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f",
+    "date": "2025-08-01T14:31:18+00:00",
+    "commits": [
+      {
+        "sha": "c6535f0c",
+        "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f",
+        "message": "Update the pyinstaller build to include version number.",
+        "author": "arabcoders",
+        "date": "2025-08-01T14:31:18+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.6.2",
     "full_sha": "517d4e7528028664d0ea09b82ad05933c52653eb",
     "date": "2025-08-01T14:13:12+00:00",
