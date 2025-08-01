@@ -963,6 +963,9 @@ class DownloadQueue(metaclass=Singleton):
 
             if entry.info.status not in ("finished", "skip"):
                 entry.info.status = "error"
+        except Exception as e:
+            entry.info.status = "error"
+            entry.info.error = str(e)
         finally:
             if entry.info._id in self._active:
                 self._active.pop(entry.info._id, None)
