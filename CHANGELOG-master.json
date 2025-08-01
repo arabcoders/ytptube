@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20250801-517d4e75",
-        "date": "2025-08-01T14:13:12+00:00",
+        "tag": "master-20250801-cc3057f4",
+        "date": "2025-08-01T15:11:58+00:00",
         "commits": [
+            {
+                "sha": "bac1a51a",
+                "message": "Do not register signals in non posix OS",
+                "author": "arabcoders",
+                "date": "2025-08-01T15:07:28+00:00",
+                "full_sha": "bac1a51a4a00177f363ad95dba7eb9cfe4637c83"
+            },
+            {
+                "sha": "92a6101b",
+                "message": "Add exception catch for sub download task",
+                "author": "arabcoders",
+                "date": "2025-08-01T14:37:46+00:00",
+                "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593"
+            },
+            {
+                "sha": "c6535f0c",
+                "message": "Update the pyinstaller build to include version number.",
+                "author": "arabcoders",
+                "date": "2025-08-01T14:31:18+00:00",
+                "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f"
+            },
             {
                 "sha": "da6bd957",
                 "message": "Fix threading issue on windows exe",
@@ -991,7 +1012,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "517d4e7528028664d0ea09b82ad05933c52653eb"
+        "full_sha": "cc3057f432e093da0792fcc189252a63bcbe10a9"
     },
     {
         "tag": "master-20250616-c07465a6",
