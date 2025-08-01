@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250731-3918fa0b",
-        "date": "2025-07-31T20:50:57+00:00",
+        "tag": "dev-20250801-da6bd957",
+        "date": "2025-08-01T14:03:26+00:00",
         "commits": [
+            {
+                "sha": "da6bd957",
+                "message": "Fix threading issue on windows exe",
+                "author": "arabcoders",
+                "date": "2025-08-01T14:03:26+00:00",
+                "full_sha": "da6bd95733f8268df72ef5e944e9ad4c37dd5ca3"
+            },
             {
                 "sha": "3918fa0b",
                 "message": "hard reset YTDLPOpts.",
@@ -984,7 +991,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3918fa0b8bdfac7e396b8074bb930f0ad3392511"
+        "full_sha": "da6bd95733f8268df72ef5e944e9ad4c37dd5ca3"
     },
     {
         "tag": "dev-20250616-c07465a6",
