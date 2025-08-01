@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f",
-    "date": "2025-08-01T14:31:18+00:00",
+    "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593",
+    "date": "2025-08-01T14:37:46+00:00",
     "commits": [
+      {
+        "sha": "92a6101b",
+        "full_sha": "92a6101bbe159a5b47f827b38dbd14488d0a7593",
+        "message": "Add exception catch for sub download task",
+        "author": "arabcoders",
+        "date": "2025-08-01T14:37:46+00:00"
+      },
       {
         "sha": "c6535f0c",
         "full_sha": "c6535f0ce159003720daf76ec0b05ad380859c1f",
