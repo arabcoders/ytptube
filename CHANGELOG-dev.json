@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250801-7e4fd51e",
-        "date": "2025-08-01T15:28:17+00:00",
+        "tag": "dev-20250802-2d82737a",
+        "date": "2025-08-02T13:32:56+00:00",
         "commits": [
+            {
+                "sha": "2d82737a",
+                "message": "Add configurable download_path depth env to control auto complete depth",
+                "author": "arabcoders",
+                "date": "2025-08-02T13:32:56+00:00",
+                "full_sha": "2d82737a3a7067643131add73d9df3b9b18d2312"
+            },
+            {
+                "sha": "48fb3532",
+                "message": "Added force download switch",
+                "author": "arabcoders",
+                "date": "2025-08-02T13:32:21+00:00",
+                "full_sha": "48fb35329a4688f1a6c0dbd26307ec63464f9368"
+            },
+            {
+                "sha": "2bfa45e6",
+                "message": "vscode luncher updates",
+                "author": "arabcoders",
+                "date": "2025-08-02T12:56:22+00:00",
+                "full_sha": "2bfa45e64d2c642e08744af3b49c068e9b75a7eb"
+            },
             {
                 "sha": "7e4fd51e",
                 "message": "fix windows build",
@@ -1019,7 +1040,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7e4fd51e8cdb80305895c2fd07d16ec82830b033"
+        "full_sha": "2d82737a3a7067643131add73d9df3b9b18d2312"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "2d82737a3a7067643131add73d9df3b9b18d2312",
+    "date": "2025-08-02T13:32:56+00:00",
+    "commits": [
+      {
+        "sha": "2d82737a",
+        "full_sha": "2d82737a3a7067643131add73d9df3b9b18d2312",
+        "message": "Add configurable download_path depth env to control auto complete depth",
+        "author": "arabcoders",
+        "date": "2025-08-02T13:32:56+00:00"
+      },
+      {
+        "sha": "48fb3532",
+        "full_sha": "48fb35329a4688f1a6c0dbd26307ec63464f9368",
+        "message": "Added force download switch",
+        "author": "arabcoders",
+        "date": "2025-08-02T13:32:21+00:00"
+      },
+      {
+        "sha": "2bfa45e6",
+        "full_sha": "2bfa45e64d2c642e08744af3b49c068e9b75a7eb",
+        "message": "vscode luncher updates",
+        "author": "arabcoders",
+        "date": "2025-08-02T12:56:22+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.6.4",
     "full_sha": "4c5ebf2f391472b112e2a5bc3539bc4abec25ede",
     "date": "2025-08-01T15:32:02+00:00",
