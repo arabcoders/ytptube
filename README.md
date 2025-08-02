@@ -317,4 +317,5 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |
 | YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                                |
 | YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`                            |
+| YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                                |
 

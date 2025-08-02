@@ -88,21 +88,31 @@
           </div>
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-            <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
+            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
               <div class="field">
-                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
-                  class="switch is-success" />
-                <label for="auto_start" class="is-unselectable">
-                  {{ auto_start ? 'Auto start' : 'Manual start' }}
-                </label>
+                <input id="force_download" type="checkbox" class="switch is-danger" :checked="forceDownload"
+                  @change="forceDownload = !forceDownload" :disabled="addInProgress" />
+                <label for="force_download" class="is-unselectable">Force download</label>
               </div>
               <span class="help">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span class="is-bold">Whether to start the download automatically or wait.</span>
+                <span class="is-bold">Ignore archive and re-download.</span>
               </span>
             </div>
 
-            <div class="column is-8-tablet is-12-mobile">
+            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
+              <div class="field">
+                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
+                  class="switch is-success" />
+                <label for="auto_start" class="is-unselectable">Auto start</label>
+              </div>
+              <span class="help">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span class="is-bold">Whether to start the download automatically.</span>
+              </span>
+            </div>
+
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field has-addons">
                 <div class="control">
                   <label for="output_format" class="button is-static is-unselectable">
@@ -268,6 +278,7 @@ const dialog_confirm = ref({
   message: '',
   options: [],
 })
+const FORCE_FLAG = '--no-download-archive'
 
 const addDownload = async () => {
   if (form.value?.cli && '' !== form.value.cli) {
@@ -454,4 +465,26 @@ const get_output_template = () => {
   return config.app.output_template || '%(title)s.%(ext)s'
 }
 
+const forceDownload = computed({
+  get(): boolean {
+    return new RegExp(`(^|\\s)${FORCE_FLAG}(\\s|$)`).test(form.value.cli || '')
+  },
+  set(val: boolean): void {
+    const cli = form.value.cli || ''
+
+    if (val) {
+      if (!cli.includes(FORCE_FLAG)) {
+        form.value.cli = cli.trim() + (cli.trim() ? ` ${FORCE_FLAG}` : FORCE_FLAG)
+      }
+    } else {
+      form.value.cli = cli
+        .replace(new RegExp(`(\\s*)${FORCE_FLAG}(\\s*)`, 'g'), (match, before, after) => {
+          return before && after ? ' ' : ''
+        })
+        .replace(/[ \t]+/g, ' ')
+        .replace(/^[ \t]+|[ \t]+$/g, '')
+        .trim()
+    }
+  },
+})
 </script>

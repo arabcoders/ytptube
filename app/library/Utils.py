@@ -1405,6 +1405,32 @@ def find_unpickleable(obj, name="root", seen=None):
                     find_unpickleable(value, f"{name}.{attr}", seen)
                 except Exception as ie:
                     LOG.error(f"[ERROR] Accessing {name}.{attr}: {ie}")
-        elif isinstance(obj, (list, tuple, set)):
+        elif isinstance(obj, list | tuple | set):
             for idx, item in enumerate(obj):
                 find_unpickleable(item, f"{name}[{idx}]", seen)
+
+
+def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
+    """
+    List all folders relative to a base path, up to a specified depth limit.
+
+    Args:
+        path (Path): The path to start listing folders from.
+        base (Path): The base path to which the folders should be relative.
+        depth_limit (int): The maximum depth to traverse from the base path.
+
+    Returns:
+        list[str]: A list of folder paths relative to the base path, up to the specified
+
+    """
+    rel_depth: int = len(path.relative_to(base).parts)
+    if rel_depth > depth_limit:
+        return []
+
+    folders: list[str] = []
+    for entry in path.iterdir():
+        if entry.is_dir():
+            folders.append(str(entry.relative_to(base)))
+            folders.extend(list_folders(entry, base, depth_limit))
+
+    return folders

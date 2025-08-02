@@ -27,6 +27,7 @@
       "program": "app/main.py",
       "console": "integratedTerminal",
       "justMyCode": true,
+      "subProcess": true,
       "env": {
         "YTP_CONFIG_PATH": "${workspaceFolder}/var/config",
         "YTP_DOWNLOAD_PATH": "${workspaceFolder}/var/downloads",
@@ -34,8 +35,6 @@
         "PYDEVD_DISABLE_FILE_VALIDATION": "1",
         "YTP_IGNORE_UI": "true"
       },
-      "subProcess": true,
-      "postDebugTask": "kill-debugpy"
     },
     {
       "name": "Node: Generate UI",
