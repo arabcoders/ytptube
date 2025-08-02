@@ -10,7 +10,7 @@ from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.Presets import Presets
 from app.library.router import RouteType, route
-from app.library.Utils import tail_log
+from app.library.Utils import list_folders, tail_log
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -29,7 +29,11 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
         "paused": queue.is_paused(),
     }
 
-    data["folders"] = [folder.name for folder in Path(config.download_path).iterdir() if folder.is_dir()]
+    data["folders"] = list_folders(
+        path=Path(config.download_path),
+        base=Path(config.download_path),
+        depth_limit=config.download_path_depth-1,
+    )
 
     await notify.emit(
         Events.CONNECTED,

@@ -25,6 +25,9 @@ class Config:
     download_path: str = "."
     """The path to the download directory."""
 
+    download_path_depth: int = 2
+    """How many subdirectories to show in auto complete."""
+
     temp_path: str = "/tmp"
     """The path to the temporary directory."""
 
@@ -219,6 +222,7 @@ class Config:
         "extract_info_timeout",
         "debugpy_port",
         "playlist_items_concurrency",
+        "download_path_depth",
     )
     "The variables that are integers."
 
