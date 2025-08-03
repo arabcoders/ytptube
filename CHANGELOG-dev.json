@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250802-2d82737a",
-        "date": "2025-08-02T13:32:56+00:00",
+        "tag": "dev-20250803-59508b53",
+        "date": "2025-08-03T13:11:26+00:00",
         "commits": [
+            {
+                "sha": "59508b53",
+                "message": "Add new version notification for WebUI",
+                "author": "arabcoders",
+                "date": "2025-08-03T13:11:26+00:00",
+                "full_sha": "59508b533269d73deadc773bf77f33ac5ec568bb"
+            },
             {
                 "sha": "2d82737a",
                 "message": "Add configurable download_path depth env to control auto complete depth",
@@ -1040,7 +1047,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2d82737a3a7067643131add73d9df3b9b18d2312"
+        "full_sha": "59508b533269d73deadc773bf77f33ac5ec568bb"
     },
     {
         "tag": "dev-20250616-c07465a6",
