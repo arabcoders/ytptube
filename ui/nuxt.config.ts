@@ -76,5 +76,8 @@ export default defineNuxtConfig({
     }
   },
   telemetry: false,
-  compatibilityDate: "2024-07-13",
+  compatibilityDate: "2025-08-03",
+  experimental: {
+    checkOutdatedBuildInterval: 1000 * 60 * 60,
+  }
 })
