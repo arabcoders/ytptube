@@ -339,6 +339,21 @@
       </div>
     </div>
 
+    <div class="columns is-multiline" v-if="tasks && tasks.length > 0">
+      <div class="column is-12">
+        <Message title="Tips" class="is-info is-background-info-80" icon="fas fa-info-circle">
+          <span>
+            <ul>
+              <li>If you are adding a big channel or playlist and you want to skip all old videos, please click on
+                <code>Actions > Archive All</code> button to mark all videos as downloaded. otherwise, it will try to
+                download all videos.
+              </li>
+            </ul>
+          </span>
+        </Message>
+      </div>
+    </div>
+
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       :html_message="dialog_confirm.html_message" @cancel="dialog_confirm = reset_dialog()" />
