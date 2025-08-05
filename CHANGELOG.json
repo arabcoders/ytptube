@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (4c54f80b)",
-    "full_sha": "4c54f80b877684e4520f5958aed2f379b3cac25f",
-    "date": "2025-08-05T14:59:17+00:00",
+    "tag": "Unreleased (ffd99e7c)",
+    "full_sha": "ffd99e7c0995bd3bb800d3b343067ed9af084cf2",
+    "date": "2025-08-05T15:15:45+00:00",
     "commits": [
+      {
+        "sha": "a3084351",
+        "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb",
+        "message": "Fixed a bug in DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-08-05T15:12:00+00:00"
+      },
       {
         "sha": "7b0cb87c",
         "full_sha": "7b0cb87c32168a78a8db8132a14d77c7cbcfe5fa",
@@ -24,20 +31,6 @@
         "message": "Add new version notification for WebUI",
         "author": "arabcoders",
         "date": "2025-08-03T13:11:26+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb",
-    "date": "2025-08-05T15:12:00+00:00",
-    "commits": [
-      {
-        "sha": "a3084351",
-        "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb",
-        "message": "Fixed a bug in DownloadQueue",
-        "author": "arabcoders",
-        "date": "2025-08-05T15:12:00+00:00"
       }
     ]
   },
