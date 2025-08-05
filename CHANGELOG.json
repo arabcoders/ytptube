@@ -28,6 +28,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb",
+    "date": "2025-08-05T15:12:00+00:00",
+    "commits": [
+      {
+        "sha": "a3084351",
+        "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb",
+        "message": "Fixed a bug in DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-08-05T15:12:00+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.6.5",
     "full_sha": "c310ae9abc389a75fc33806f4a65c715a45bfd3a",
     "date": "2025-08-02T13:45:06+00:00",

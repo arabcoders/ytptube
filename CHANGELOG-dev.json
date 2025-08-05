@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250805-7b0cb87c",
-        "date": "2025-08-05T14:56:43+00:00",
+        "tag": "dev-20250805-a3084351",
+        "date": "2025-08-05T15:12:00+00:00",
         "commits": [
+            {
+                "sha": "a3084351",
+                "message": "Fixed a bug in DownloadQueue",
+                "author": "arabcoders",
+                "date": "2025-08-05T15:12:00+00:00",
+                "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb"
+            },
             {
                 "sha": "7b0cb87c",
                 "message": "make it clear we are doing something with playlist items.",
@@ -1061,7 +1068,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7b0cb87c32168a78a8db8132a14d77c7cbcfe5fa"
+        "full_sha": "a30843510ea1f4b6bb9a3de65a30c6e2060f1bdb"
     },
     {
         "tag": "dev-20250616-c07465a6",
