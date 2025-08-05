@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20250802-c310ae9a",
-        "date": "2025-08-02T13:45:06+00:00",
+        "tag": "master-20250805-4c54f80b",
+        "date": "2025-08-05T14:59:17+00:00",
         "commits": [
+            {
+                "sha": "7b0cb87c",
+                "message": "make it clear we are doing something with playlist items.",
+                "author": "arabcoders",
+                "date": "2025-08-05T14:56:43+00:00",
+                "full_sha": "7b0cb87c32168a78a8db8132a14d77c7cbcfe5fa"
+            },
+            {
+                "sha": "1589e730",
+                "message": "Implement a way to mark items from task as already downloaded.",
+                "author": "arabcoders",
+                "date": "2025-08-05T14:34:07+00:00",
+                "full_sha": "1589e73063da86dfd0122ef046de9a349180dab9"
+            },
+            {
+                "sha": "59508b53",
+                "message": "Add new version notification for WebUI",
+                "author": "arabcoders",
+                "date": "2025-08-03T13:11:26+00:00",
+                "full_sha": "59508b533269d73deadc773bf77f33ac5ec568bb"
+            },
             {
                 "sha": "2d82737a",
                 "message": "Add configurable download_path depth env to control auto complete depth",
@@ -1040,7 +1061,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c310ae9abc389a75fc33806f4a65c715a45bfd3a"
+        "full_sha": "4c54f80b877684e4520f5958aed2f379b3cac25f"
     },
     {
         "tag": "master-20250616-c07465a6",

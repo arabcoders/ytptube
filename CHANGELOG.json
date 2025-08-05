@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "1589e73063da86dfd0122ef046de9a349180dab9",
-    "date": "2025-08-05T14:34:07+00:00",
+    "tag": "Unreleased (4c54f80b)",
+    "full_sha": "4c54f80b877684e4520f5958aed2f379b3cac25f",
+    "date": "2025-08-05T14:59:17+00:00",
     "commits": [
+      {
+        "sha": "7b0cb87c",
+        "full_sha": "7b0cb87c32168a78a8db8132a14d77c7cbcfe5fa",
+        "message": "make it clear we are doing something with playlist items.",
+        "author": "arabcoders",
+        "date": "2025-08-05T14:56:43+00:00"
+      },
       {
         "sha": "1589e730",
         "full_sha": "1589e73063da86dfd0122ef046de9a349180dab9",
