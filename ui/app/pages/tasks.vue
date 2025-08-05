@@ -97,7 +97,7 @@
     <div class="columns is-multiline" v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <template v-if="'list' === display_style">
         <div class="column is-12">
-          <div class="table-container">
+          <div :class="{ 'table-container': table_container }">
             <table class="table is-striped is-hoverable is-fullwidth is-bordered"
               style="min-width: 850px; table-layout: fixed;">
               <thead>
@@ -171,20 +171,6 @@
                   </td>
                   <td class="is-vcentered is-items-center">
                     <div class="field is-grouped is-grouped-centered">
-
-                      <div class="control">
-                        <button class="button is-purple is-small is-fullwidth" v-tooltip="'Run now'"
-                          @click="runNow(item)" :class="{ 'is-loading': item?.in_progress }">
-                          <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
-                        </button>
-                      </div>
-
-                      <div class="control">
-                        <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
-                          @click="exportItem(item)">
-                          <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                        </button>
-                      </div>
                       <div class="control">
                         <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
                           @click="editItem(item)">
@@ -196,6 +182,31 @@
                           @click="deleteItem(item)">
                           <span class="icon"><i class="fa-solid fa-trash" /></span>
                         </button>
+                      </div>
+
+                      <div class="control is-expanded">
+                        <Dropdown icons="fa-solid fa-cogs" label="Actions" button_classes="is-small"
+                          @open_state="s => table_container = !s">
+                          <NuxtLink class="dropdown-item has-text-purple" @click="runNow(item)">
+                            <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+                            <span>Run now</span>
+                          </NuxtLink>
+
+                          <hr class="dropdown-divider" />
+
+                          <NuxtLink class="dropdown-item has-text-danger" @click="archiveItems(item)">
+                            <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                            <span>Archive all</span>
+                          </NuxtLink>
+
+                          <hr class="dropdown-divider" />
+
+                          <NuxtLink class="dropdown-item has-text-info" @click="exportItem(item)">
+                            <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                            <span>Export Task</span>
+                          </NuxtLink>
+
+                        </Dropdown>
                       </div>
                     </div>
                   </td>
@@ -292,12 +303,21 @@
                   <span>Delete</span>
                 </button>
               </div>
+
               <div class="card-footer-item">
-                <button class="button is-purple is-fullwidth" @click="runNow(item)"
-                  :class="{ 'is-loading': item?.in_progress }">
-                  <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
-                  <span>Run now</span>
-                </button>
+                <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                  <NuxtLink class="dropdown-item has-text-purple" @click="runNow(item)">
+                    <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+                    <span>Run now</span>
+                  </NuxtLink>
+
+                  <hr class="dropdown-divider" />
+
+                  <NuxtLink class="dropdown-item has-text-danger" @click="archiveItems(item)">
+                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                    <span>Archive all</span>
+                  </NuxtLink>
+                </Dropdown>
               </div>
             </div>
           </div>
@@ -348,6 +368,7 @@ const selectedElms = ref<Array<string>>([])
 const masterSelectAll = ref(false)
 const massRun = ref<boolean>(false)
 const massDelete = ref<boolean>(false)
+const table_container = ref(false)
 
 const reset_dialog = () => ({
   visible: false,
@@ -727,4 +748,32 @@ const get_tags = (name: string): Array<string> => {
 }
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
+
+const archiveItems = async (item: task_item) => {
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Archive All videos'
+  dialog_confirm.value.message = `Archive all items for '${item.name}' task? This will mark all items as downloaded and update the archive file.`
+  dialog_confirm.value.confirm = async () => await archiveAll(item)
+}
+
+const archiveAll = async (item: task_item) => {
+  try {
+    dialog_confirm.value.visible = false
+    item.in_progress = true
+    const response = await request(`/api/tasks/${item.id}/mark`, { method: 'POST' })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success(data.message)
+  } catch (e: any) {
+    toast.error(`Failed to archive items. ${e.message || 'Unknown error.'}`)
+    return
+  } finally {
+    item.in_progress = false
+  }
+}
 </script>

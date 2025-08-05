@@ -19,7 +19,8 @@ from .ItemDTO import Item
 from .Scheduler import Scheduler
 from .Services import Services
 from .Singleton import Singleton
-from .Utils import init_class, validate_url
+from .Utils import extract_info, init_class, validate_url
+from .YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("tasks")
 
@@ -45,6 +46,80 @@ class Task:
 
     def get(self, key: str, default: Any = None) -> Any:
         return self.serialize().get(key, default)
+
+    def mark(self) -> tuple[bool, str]:
+        if not self.url:
+            return False, "No URL found in task parameters."
+
+        params: YTDLPOpts = YTDLPOpts.get_instance().preset(name=self.preset)
+        if self.cli:
+            params.add_cli(self.cli, from_user=True)
+
+        params = params.get_all()
+        if not (_archive := params.get("download_archive", None)):
+            return False, "No archive file found in task parameters."
+
+        _archive: Path = Path(_archive)
+        if not _archive.parent.exists():
+            _archive.parent.mkdir(parents=True, exist_ok=True)
+
+        if not _archive.exists():
+            _archive.touch()
+
+        _info = extract_info(params, self.url, no_archive=True, follow_redirect=True)
+        if not _info or not isinstance(_info, dict):
+            return False, "Failed to extract information from URL."
+
+        if "playlist" != _info.get("_type"):
+            return False, "Expected a playlist type from extract_info."
+
+        archived_items: list[str] = []
+        with _archive.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line or not isinstance(line, str) or line.startswith("#"):
+                    continue
+
+                archived_items.append(line)
+
+        def _process(item: dict) -> bool:
+            status = False
+            for entry in item.get("entries", []):
+                if not isinstance(entry, dict):
+                    continue
+
+                if "playlist" == entry.get("_type"):
+                    _status = _process(entry)
+                    if status is False:
+                        status = _status
+                    continue
+
+                if entry.get("_type") not in ("video", "url"):
+                    continue
+
+                if not entry.get("id") or not entry.get("ie_key"):
+                    continue
+
+                archive_id = f'{entry.get("ie_key","").lower()} {entry.get("id")}'
+
+                if archive_id in archived_items:
+                    continue
+
+                archived_items.append(archive_id)
+                status = True
+
+            return status
+
+        updated = _process(_info)
+
+        if not updated:
+            return True, "No new items to mark as downloaded."
+
+        with _archive.open("a") as f:
+            for item in archived_items:
+                f.write(f"{item}\n")
+
+        return True, f"Task '{self.name}' marked as downloaded. Updated archive file '{_archive}'."
 
 
 class Tasks(metaclass=Singleton):
@@ -123,6 +198,19 @@ class Tasks(metaclass=Singleton):
     def get_all(self) -> list[Task]:
         """Return the tasks."""
         return self._tasks
+
+    def get(self, task_id: str) -> Task | None:
+        """
+        Get a task by its ID.
+
+        Args:
+            task_id (str): The ID of the task.
+
+        Returns:
+            Task | None: The task if found, otherwise None.
+
+        """
+        return next((task for task in self._tasks if task.id == task_id), None)
 
     def load(self) -> "Tasks":
         """
