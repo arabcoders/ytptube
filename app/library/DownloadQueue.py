@@ -314,7 +314,7 @@ class DownloadQueue(metaclass=Singleton):
             await self.processors.acquire()
             try:
                 LOG.info(
-                    f"Processing '{entry.get("title")}: {i}/{playlistCount}' - ID: {etr.get('id')} - Title: {etr.get('title')}"
+                    f"Processing '{entry.get('title')}: {i}/{playlistCount}' - ID: {etr.get('id')} - Title: {etr.get('title')}"
                 )
 
                 _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
