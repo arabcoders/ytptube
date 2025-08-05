@@ -313,7 +313,9 @@ class DownloadQueue(metaclass=Singleton):
         async def playlist_processor(i: int, etr: dict):
             await self.processors.acquire()
             try:
-                LOG.debug(f"Processing entry {i}/{playlistCount} - ID: {etr.get('id')} - Title: {etr.get('title')}")
+                LOG.info(
+                    f"Processing '{entry.get("title")}: {i}/{playlistCount}' - ID: {etr.get('id')} - Title: {etr.get('title')}"
+                )
 
                 _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
                 if not _status:
