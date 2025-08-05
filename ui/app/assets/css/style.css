@@ -178,6 +178,10 @@ hr {
   color: #fff;
 }
 
+.has-text-purple {
+  color: #5f00d1;
+}
+
 .progress,
 .progress-percentage {
   border-radius: unset !important;

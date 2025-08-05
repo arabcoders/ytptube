@@ -1,5 +1,6 @@
 <template>
   <div id="main_container" class="container">
+    <NewVersion v-if="newVersionIsAvailable" />
     <nav class="navbar is-mobile is-dark">
 
       <div class="navbar-brand pl-5">
@@ -360,5 +361,20 @@ const openMenu = (e: MouseEvent) => {
 
   elm?.classList.toggle('is-active')
 }
+
+const useVersionUpdate = () => {
+  const newVersionIsAvailable = ref(false)
+  const nuxtApp = useNuxtApp()
+  nuxtApp.hooks.addHooks({
+    'app:manifest:update': () => {
+      newVersionIsAvailable.value = true
+    }
+  });
+
+  return {
+    newVersionIsAvailable: readonly(newVersionIsAvailable),
+  }
+}
+const { newVersionIsAvailable } = useVersionUpdate()
 
 </script>
