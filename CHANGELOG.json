@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "59508b533269d73deadc773bf77f33ac5ec568bb",
-    "date": "2025-08-03T13:11:26+00:00",
+    "full_sha": "1589e73063da86dfd0122ef046de9a349180dab9",
+    "date": "2025-08-05T14:34:07+00:00",
     "commits": [
+      {
+        "sha": "1589e730",
+        "full_sha": "1589e73063da86dfd0122ef046de9a349180dab9",
+        "message": "Implement a way to mark items from task as already downloaded.",
+        "author": "arabcoders",
+        "date": "2025-08-05T14:34:07+00:00"
+      },
       {
         "sha": "59508b53",
         "full_sha": "59508b533269d73deadc773bf77f33ac5ec568bb",
