@@ -33,6 +33,7 @@
     "dotenv",
     "edgechromium",
     "engineio",
+    "Errno",
     "euuo",
     "faststart",
     "finaldir",
