@@ -58,6 +58,9 @@ class Events:
     PRESETS_ADD: str = "presets_add"
     PRESETS_UPDATE: str = "presets_update"
 
+    DLFIELDS_ADD: str = "dlfields_add"
+    DLFIELDS_UPDATE: str = "dlfields_update"
+
     SCHEDULE_ADD: str = "schedule_add"
 
     CONDITIONS_ADD: str = "conditions_add"
@@ -104,6 +107,7 @@ class Events:
             Events.CLI_CLOSE,
             Events.CLI_OUTPUT,
             Events.PRESETS_UPDATE,
+            Events.DLFIELDS_UPDATE,
         ]
 
     def only_debug() -> list:

@@ -19,6 +19,7 @@ from aiohttp import web
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.conditions import Conditions
 from app.library.config import Config
+from app.library.dl_fields import DLFields
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
@@ -127,6 +128,7 @@ class Main:
         Presets.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
+        DLFields.get_instance().attach(self._app)
         self._background_worker.attach(self._app)
 
         EventBus.get_instance().sync_emit(
