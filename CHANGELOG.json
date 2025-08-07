@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "00fc97c57096d4ad8ae4f9841c1dcc12ebb6588e",
-    "date": "2025-08-07T20:03:34+00:00",
+    "full_sha": "568c244cd892c59b1eb18af6d536c523d2d8ca08",
+    "date": "2025-08-07T20:47:39+00:00",
     "commits": [
+      {
+        "sha": "568c244c",
+        "full_sha": "568c244cd892c59b1eb18af6d536c523d2d8ca08",
+        "message": "merge force download into the new custom fields handling.",
+        "author": "arabcoders",
+        "date": "2025-08-07T20:47:39+00:00"
+      },
       {
         "sha": "00fc97c5",
         "full_sha": "00fc97c57096d4ad8ae4f9841c1dcc12ebb6588e",
