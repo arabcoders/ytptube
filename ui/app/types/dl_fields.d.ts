@@ -16,6 +16,12 @@ type DLField = {
   /** The kind of the field. i.e. string, bool */
   kind: DLFieldType;
 
+  /** The icon of the field, it can be a font-awesome icon */
+  icon?: string;
+
+  /** The order of the field, used to sort the fields in the UI. */
+  order: number = 1;
+
   /** The default value of the field, It's currently unused */
   value: string;
 

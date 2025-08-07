@@ -9,6 +9,12 @@
       <section class="modal-card-body">
         <div class="columns is-multiline">
           <div class="column is-12 is-clearfix is-unselectable">
+            <span class="title is-4">
+              <span class="icon-text">
+                <span class="icon"><i class="fas fa-plus" /></span>
+                <span>Custom Fields</span>
+              </span>
+            </span>
             <div class="is-pulled-right">
               <div class="field is-grouped">
                 <p class="control">
@@ -24,9 +30,13 @@
                 </p>
               </div>
             </div>
+            <div class="is-hidden-mobile">
+              <span class="subtitle">The idea behind the custom fields is to allow you to add new fields to the download
+                form to automate some of the yt-dlp options.</span>
+            </div>
           </div>
 
-          <div class="column is-12" v-for="(item, index) in items" :key="item.id || index">
+          <div class="column is-12" v-for="(item, index) in sortedDLFields" :key="item.id || index">
             <div class="box">
               <div class="columns is-multiline">
                 <div class="column is-12 is-12-mobile">
@@ -38,7 +48,10 @@
 
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label">Field Type</label>
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-cog" /></span>
+                      <span>Field Type</span>
+                    </label>
                     <div class="select is-fullwidth" :class="{ 'is-loading': isLoading }">
                       <select v-model="item.kind" :disabled="isLoading" class="is-capitalized">
                         <option v-for="kind in Object.values(FieldTypes)" :key="`kind-${kind}`" :value="kind"
@@ -46,13 +59,16 @@
                       </select>
                     </div>
                     <span class="help is-bold">
-                      Field Type.
+                      Field Type. String is a single line input, Text is a multi-line input, Bool is a checkbox.
                     </span>
                   </div>
                 </div>
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label">Field Name</label>
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-font" /></span>
+                      <span>Field Name</span>
+                    </label>
                     <input type="text" v-model="item.name" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
                       The name of the field, it will be shown in the UI.
@@ -61,7 +77,10 @@
                 </div>
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label">Associated yt-dlp option</label>
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-terminal" /></span>
+                      <span>Associated yt-dlp option</span>
+                    </label>
                     <input type="text" v-model="item.field" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
                       The long form of yt-dlp option name, e.g. <code>--no-overwrites</code> not <code>-w</code>.
@@ -70,7 +89,10 @@
                 </div>
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label">Description</label>
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-info-circle" /></span>
+                      <span>Field Description</span>
+                    </label>
                     <input type="text" v-model="item.description" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
                       A short description of the field, it will be shown in the UI.
@@ -78,34 +100,36 @@
                   </div>
                 </div>
 
-                <!--
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label is-unselectable" :for="`p-${index}`">Persist the value?</label>
-
-                    <input :id="`p-${index}`" type="checkbox" v-model="item.extras.persist" :disabled="isLoading"
-                      class="switch is-success" />
-                    <label class="label is-unselectable" :for="`p-${index}`">
-                      {{ item.extras?.persist ? 'Yes' : 'No' }}
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-sort-numeric-up" /></span>
+                      <span>Field Order</span>
                     </label>
-                    <span class="help is-bold">If enabled the value will persist.</span>
+                    <input type="number" v-model="item.order" class="input" :disabled="isLoading" />
+                    <span class="help is-bold">
+                      The order of the field, used to sort the fields in the UI. Lower numbers will appear first.
+                    </span>
                   </div>
                 </div>
 
                 <div class="column is-6 is-12-mobile">
                   <div class="field">
-                    <label class="label">Value</label>
-                    <input type="text" v-model="item.value" class="input" :disabled="true" />
+                    <label class="label">
+                      <span class="icon"><i class="fas fa-image" /></span>
+                      <span>Field Icon</span>
+                    </label>
+                    <input type="text" v-model="item.icon" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
-                      This field will be used in the future to store values for select type field.
+                      The icon of the field, must be from <NuxtLink
+                        href="https://fontawesome.com/icons/image?f=classic&s=solid" target="_blank">
+                        font-awesome</NuxtLink> icon. e.g. <code>fa-solid fa-image</code>. Leave empty for no icon.
                     </span>
                   </div>
-                </div> -->
-
+                </div>
               </div>
             </div>
           </div>
-
           <div class="column is-12">
             <Message message_class="has-background-warning-90 has-text-dark" v-if="items.length === 0">
               <span class="icon">
@@ -211,9 +235,10 @@ const addNewField = () => items.value.push({
   kind: 'string',
   field: '',
   value: '',
+  icon: '',
+  order: items.value.reduce((max, item) => Math.max(max, item.order || 1), 0) + 1,
   extras: {}
 })
-
 
 const deleteField = (index: number) => items.value.splice(index, 1)
 
@@ -222,10 +247,15 @@ const validateItem = (item: DLField, index: number): boolean => {
   const requiredFields = ['name', 'field', 'kind', 'description']
 
   for (const field of requiredFields) {
-    if (!item[field as keyof DLField] || item[field as keyof DLField]?.trim() === '') {
+    if (!item[field as keyof DLField]) {
       toast.error(`${item.name || index}: Field ${field} is required.`)
       return false
     }
+  }
+
+  if (!item.order || item.order < 1) {
+    toast.error(`${item.name || index}: Order must be a positive number.`)
+    return false
   }
 
   if (!Object.values(FieldTypes).includes(item.kind)) {
@@ -242,4 +272,5 @@ const validateItem = (item: DLField, index: number): boolean => {
 }
 
 onMounted(async () => await loadContent())
+const sortedDLFields = computed(() => items.value.sort((a, b) => (a.order || 0) - (b.order || 0)))
 </script>

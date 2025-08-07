@@ -149,10 +149,11 @@
               </DLInput>
             </div>
             <template v-if="config.dl_fields.length > 0">
-              <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in config.dl_fields"
+              <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"
                 :key="fi.id || `dlf-${index}`">
                 <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
-                  v-model="dlFields[fi.field]" :field="fi.field" />
+                  :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field"
+                  :disabled="!socket.isConnected || addInProgress" />
               </div>
             </template>
             <div class="column is-12 is-hidden-tablet">
@@ -254,7 +255,7 @@ const show_description = useStorage<boolean>('show_description', true)
 
 const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
-const dlFields: Record<string, any> = ref({})
+const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -278,10 +279,31 @@ const dialog_confirm = ref({
 const FORCE_FLAG = '--no-download-archive'
 
 const addDownload = async () => {
-  if (form.value?.cli && '' !== form.value.cli) {
-    const options = await convertOptions(form.value.cli)
-    if (null === options) {
-      return
+  let form_cli = (form.value?.cli || '').trim()
+
+  if (false === config.app.basic_mode) {
+    if (dlFields.value && Object.keys(dlFields.value).length > 0 && config.dl_fields && config.dl_fields.length > 0) {
+      const joined = []
+      for (const [key, value] of Object.entries(dlFields.value)) {
+        if (!config.dl_fields.some(f => f.field === key)) {
+          continue
+        }
+
+        if ([undefined, null, '', false].includes(value as any)) {
+          continue
+        }
+        joined.push(true === value ? `${key}` : `${key} ${value}`)
+      }
+      if (joined.length > 0) {
+        form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+      }
+    }
+
+    if (form_cli && form_cli.trim()) {
+      const options = await convertOptions(form_cli)
+      if (null === options) {
+        return
+      }
     }
   }
 
@@ -298,7 +320,7 @@ const addDownload = async () => {
       folder: config.app.basic_mode ? null : form.value.folder,
       template: config.app.basic_mode ? null : form.value.template,
       cookies: config.app.basic_mode ? '' : form.value.cookies,
-      cli: config.app.basic_mode ? null : form.value.cli,
+      cli: config.app.basic_mode ? null : form_cli,
       auto_start: config.app.basic_mode ? true : auto_start.value
     } as item_request
 
@@ -323,15 +345,20 @@ const addDownload = async () => {
       return
     }
 
+    let had_errors = false
+
     data.forEach((item: Record<string, any>) => {
       if (false !== item.status) {
         return
       }
       toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+      had_errors = true
     })
 
-    form.value.url = ''
-    emitter('clear_form')
+    if (false === had_errors) {
+      form.value.url = ''
+      emitter('clear_form')
+    }
   }
   catch (e: any) {
     console.error(e)
@@ -357,6 +384,7 @@ const reset_config = () => {
     folder: '',
     extras: {},
   } as item_request
+  dlFields.value = {}
 
   showAdvanced.value = false
 
@@ -484,4 +512,6 @@ const forceDownload = computed({
     }
   },
 })
+
+const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
 </script>

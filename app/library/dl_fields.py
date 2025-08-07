@@ -70,6 +70,12 @@ class DLField:
     kind: FieldType = FieldType.TEXT
     """The kind of the field. i.e. string, bool"""
 
+    icon: str = ""
+    """The icon of the field, it can be a font-awesome icon"""
+
+    order: int = 0
+    """The order of the field, used to sort the fields in the UI."""
+
     value: str = ""
     """The default value of the field, It's currently unused."""
 
@@ -252,6 +258,10 @@ class DLFields(metaclass=Singleton):
 
         if item.get("value") and not isinstance(item.get("value"), str):
             msg = "Value must be a string."
+            raise ValueError(msg)
+
+        if item.get("order") is not None and not isinstance(item.get("order"), int):
+            msg = "Order must be an integer."
             raise ValueError(msg)
 
         if not isinstance(item.get("extras", {}), dict):
