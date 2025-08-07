@@ -1,8 +1,8 @@
-enum DLFieldType { STRING = "string", TEXT = "text", BOOL = "bool" }
+type DLFieldType = "string" | "text" | "bool";
 
 type DLField = {
   /** The id of the field */
-  id: string;
+  id?: string;
 
   /** The name of the preset */
   name: string;

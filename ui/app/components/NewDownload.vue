@@ -198,6 +198,13 @@
             <div class="column is-12">
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
+                  <button type="button" class="button is-purple" @click="() => showFields = true"
+                    :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
+                    <span class="icon"><i class="fa-solid fa-plus" /></span>
+                    <span>Custom Fields</span>
+                  </button>
+                </div>
+                   <div class="control">
                   <button type="button" class="button is-info" @click="emitter('getInfo', form.url, form.preset)"
                     :class="{ 'is-loading': !socket.isConnected }"
                     :disabled="!socket.isConnected || addInProgress || !form?.url">
@@ -235,6 +242,8 @@
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       @cancel="() => dialog_confirm.visible = false" />
+
+    <DLFields v-if="showFields" @cancel="() => showFields = false" />
   </main>
 </template>
 
@@ -259,6 +268,7 @@ const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
 
 const addInProgress = ref<boolean>(false)
+const showFields = ref<boolean>(true)
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,

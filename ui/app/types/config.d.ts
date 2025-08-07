@@ -72,6 +72,8 @@ type ConfigState = {
   app: AppConfig
   /** List of presets */
   presets: Preset[]
+  /** List of custom download fields */
+  dl_fields: DLField[]
   /** List of folders where files can be saved */
   folders: string[]
   /** Indicates if downloads are currently paused */

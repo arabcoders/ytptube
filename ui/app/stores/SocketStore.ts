@@ -177,6 +177,7 @@ export const useSocketStore = defineStore('socket', () => {
     }, true);
 
     on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
+    on('dlfields_update', (data: string) => config.update('dl_fields', JSON.parse(data).data || []));
   }
 
   if (false === isConnected.value) {

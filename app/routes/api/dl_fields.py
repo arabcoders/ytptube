@@ -85,7 +85,7 @@ async def dl_fields_add(request: Request, encoder: Encoder, notify: EventBus) ->
                 status=web.HTTPBadRequest.status_code,
             )
 
-        items.append(init_class(DLFields, item))
+        items.append(init_class(DLField, item))
 
     try:
         items = cls.save(items=items).load().get_all()

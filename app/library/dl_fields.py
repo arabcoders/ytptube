@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import uuid
 from dataclasses import dataclass, field
 from enum import Enum
@@ -153,7 +154,7 @@ class DLFields(metaclass=Singleton):
 
     def get_all(self) -> list[DLField]:
         """Return the items."""
-        return self._default + self._items
+        return self._items
 
     def load(self) -> "DLFields":
         """
@@ -256,6 +257,10 @@ class DLFields(metaclass=Singleton):
         if not isinstance(item.get("extras", {}), dict):
             msg = "Extras must be a dictionary."
             raise ValueError(msg)  # noqa: TRY004
+
+        if re.match(r"^--[a-zA-Z0-9\-]+$", item.get("field", "").strip()) is None:
+            msg = "Invalid yt-dlp option field it must starts with '--' and contain only alphanumeric characters."
+            raise ValueError(msg)
 
         return True
 
