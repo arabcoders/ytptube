@@ -88,96 +88,82 @@
           </div>
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
-              <div class="field">
-                <input id="force_download" type="checkbox" class="switch is-danger" :checked="forceDownload"
-                  @change="forceDownload = !forceDownload" :disabled="addInProgress" />
-                <label for="force_download" class="is-unselectable">Force download</label>
-              </div>
-              <span class="help">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span class="is-bold">Ignore archive and re-download.</span>
-              </span>
+            <div class="column is-3-tablet is-12-mobile">
+              <DLInput id="force_download" type="bool" label="Force download"
+                v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
+                :disabled="!socket.isConnected || addInProgress" description="Ignore archive and re-download." />
             </div>
 
-            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
-              <div class="field">
-                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
-                  class="switch is-success" />
-                <label for="auto_start" class="is-unselectable">Auto start</label>
-              </div>
-              <span class="help">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span class="is-bold">Whether to start the download automatically.</span>
-              </span>
+            <div class="column is-3-tablet is-12-mobile">
+              <DLInput id="auto_start" type="bool" label="Auto start" v-model="auto_start" icon="fa-solid fa-play"
+                :disabled="!socket.isConnected || addInProgress"
+                description="Whether to start the download automatically." />
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <div class="field has-addons">
-                <div class="control">
-                  <label for="output_format" class="button is-static is-unselectable">
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>Template</span>
-                  </label>
-                </div>
-                <div class="control is-expanded">
-                  <input type="text" class="input" v-model="form.template" id="output_format"
-                    :disabled="!socket.isConnected || addInProgress" :placeholder="get_output_template()">
-                </div>
-              </div>
-              <span class="help is-bold is-unselectable">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>All output template naming options can be found at <NuxtLink target="_blank"
-                    to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
-              </span>
-            </div>
 
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline is-unselectable" for="cli_options">
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  Command options for yt-dlp
-                </label>
-                <div class="control">
-                  <textarea class="textarea is-pre" v-model="form.cli" id="cli_options"
-                    :disabled="!socket.isConnected || addInProgress"
-                    placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
-                </div>
-
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this page
-                    </NuxtLink> for more info. <span class="has-text-danger">Not all options are supported <NuxtLink
-                        target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
-                        ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.</span>
+              <DLInput id="output_template" type="string" label="Output template" v-model="form.template"
+                icon="fa-solid fa-file" :disabled="!socket.isConnected || addInProgress"
+                :placeholder="get_output_template()">
+                <template #help>
+                  <span class="help is-bold is-unselectable">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>All output template naming options can be found at <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
                   </span>
-                </span>
-              </div>
+                </template>
+              </DLInput>
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline is-unselectable" for="ytdlpCookies">
-                  <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                  Cookies
-                </label>
-                <div class="control">
-                  <textarea class="textarea is-pre" id="ytdlpCookies" v-model="form.cookies"
-                    :disabled="!socket.isConnected || addInProgress" />
-                </div>
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use the <NuxtLink target="_blank"
-                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                      Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
-                      cookies MUST be in Netscape HTTP Cookie format.</span>
+              <DLInput id="cli_options" type="text" label="Command options for yt-dlp" v-model="form.cli"
+                icon="fa-solid fa-terminal" :disabled="!socket.isConnected || addInProgress">
+                <template #help>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this
+                        page</NuxtLink> for more info. <span class="has-text-danger">Not all options are supported
+                        <NuxtLink target="_blank"
+                          to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
+                          ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </div>
+                </template>
+              </DLInput>
             </div>
+
+            <div class="column is-6-tablet is-12-mobile">
+              <DLInput id="ytdlpCookies" type="text" label="Cookies for yt-dlp" v-model="form.cookies"
+                icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress">
+                <template #help>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use the <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                        Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
+                        cookies MUST be in Netscape HTTP Cookie format.</span>
+                    </span>
+                  </span>
+                </template>
+              </DLInput>
+            </div>
+            <template v-if="config.dl_fields.length > 0">
+              <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"
+                :key="fi.id || `dlf-${index}`">
+                <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
+                  :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field"
+                  :disabled="!socket.isConnected || addInProgress" />
+              </div>
+            </template>
             <div class="column is-12 is-hidden-tablet">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                <NuxtLink class="dropdown-item" @click="() => showFields = true">
+                  <span class="icon has-text-purple"><i class="fa-solid fa-plus" /></span>
+                  <span>Custom Fields</span>
+                </NuxtLink>
+                <hr class="dropdown-divider" />
+
                 <NuxtLink class="dropdown-item" @click="emitter('getInfo', form.url, form.preset)">
                   <span class="icon has-text-info"><i class="fa-solid fa-info" /></span>
                   <span>yt-dlp Information</span>
@@ -197,6 +183,13 @@
             </div>
             <div class="column is-12">
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
+                <div class="control">
+                  <button type="button" class="button is-purple" @click="() => showFields = true"
+                    :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
+                    <span class="icon"><i class="fa-solid fa-plus" /></span>
+                    <span>Custom Fields</span>
+                  </button>
+                </div>
                 <div class="control">
                   <button type="button" class="button is-info" @click="emitter('getInfo', form.url, form.preset)"
                     :class="{ 'is-loading': !socket.isConnected }"
@@ -235,6 +228,8 @@
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       @cancel="() => dialog_confirm.visible = false" />
+
+    <DLFields v-if="showFields" @cancel="() => showFields = false" />
   </main>
 </template>
 
@@ -259,6 +254,9 @@ const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
 
 const addInProgress = ref<boolean>(false)
+const showFields = ref<boolean>(false)
+const dlFields = useStorage<Record<string, any>>('dl_fields', {})
+const dlFieldsExtra = ['--no-download-archive']
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -271,6 +269,7 @@ const form = useStorage<item_request>('local_config_v1', {
   extras: {},
 }) as Ref<item_request>
 
+
 const dialog_confirm = ref({
   visible: false,
   title: 'Confirm Action',
@@ -278,13 +277,48 @@ const dialog_confirm = ref({
   message: '',
   options: [],
 })
-const FORCE_FLAG = '--no-download-archive'
 
 const addDownload = async () => {
-  if (form.value?.cli && '' !== form.value.cli) {
-    const options = await convertOptions(form.value.cli)
-    if (null === options) {
-      return
+  let form_cli = (form.value?.cli || '').trim()
+
+  const is_valid = (dl_field: string): boolean => {
+    if (dlFieldsExtra.includes(dl_field)) {
+      return true
+    }
+
+    if (config.dl_fields && config.dl_fields.length > 0) {
+      return config.dl_fields.some(f => f.field === dl_field)
+    }
+
+    return false;
+  }
+
+  if (false === config.app.basic_mode) {
+    if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+      const joined = []
+      for (const [key, value] of Object.entries(dlFields.value)) {
+        if (false === is_valid(key)) {
+          continue
+        }
+
+        if ([undefined, null, '', false].includes(value as any)) {
+          continue
+        }
+
+        joined.push(true === value ? `${key}` : `${key} ${value}`)
+      }
+
+      if (joined.length > 0) {
+        form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+      }
+
+    }
+
+    if (form_cli && form_cli.trim()) {
+      const options = await convertOptions(form_cli)
+      if (null === options) {
+        return
+      }
     }
   }
 
@@ -301,7 +335,7 @@ const addDownload = async () => {
       folder: config.app.basic_mode ? null : form.value.folder,
       template: config.app.basic_mode ? null : form.value.template,
       cookies: config.app.basic_mode ? '' : form.value.cookies,
-      cli: config.app.basic_mode ? null : form.value.cli,
+      cli: config.app.basic_mode ? null : form_cli,
       auto_start: config.app.basic_mode ? true : auto_start.value
     } as item_request
 
@@ -326,15 +360,20 @@ const addDownload = async () => {
       return
     }
 
+    let had_errors = false
+
     data.forEach((item: Record<string, any>) => {
       if (false !== item.status) {
         return
       }
       toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+      had_errors = true
     })
 
-    form.value.url = ''
-    emitter('clear_form')
+    if (false === had_errors) {
+      form.value.url = ''
+      emitter('clear_form')
+    }
   }
   catch (e: any) {
     console.error(e)
@@ -360,6 +399,7 @@ const reset_config = () => {
     folder: '',
     extras: {},
   } as item_request
+  dlFields.value = {}
 
   showAdvanced.value = false
 
@@ -465,26 +505,5 @@ const get_output_template = () => {
   return config.app.output_template || '%(title)s.%(ext)s'
 }
 
-const forceDownload = computed({
-  get(): boolean {
-    return new RegExp(`(^|\\s)${FORCE_FLAG}(\\s|$)`).test(form.value.cli || '')
-  },
-  set(val: boolean): void {
-    const cli = form.value.cli || ''
-
-    if (val) {
-      if (!cli.includes(FORCE_FLAG)) {
-        form.value.cli = cli.trim() + (cli.trim() ? ` ${FORCE_FLAG}` : FORCE_FLAG)
-      }
-    } else {
-      form.value.cli = cli
-        .replace(new RegExp(`(\\s*)${FORCE_FLAG}(\\s*)`, 'g'), (match, before, after) => {
-          return before && after ? ' ' : ''
-        })
-        .replace(/[ \t]+/g, ' ')
-        .replace(/^[ \t]+|[ \t]+$/g, '')
-        .trim()
-    }
-  },
-})
+const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
 </script>

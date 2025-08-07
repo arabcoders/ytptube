@@ -39,6 +39,7 @@ export const useConfigStore = defineStore('config', () => {
         'default': true
       }
     ],
+    dl_fields: [],
     folders: [],
     paused: false,
     is_loaded: false,

@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 import type { Socket as IOSocket, SocketOptions } from "socket.io-client"
 import type { ManagerOptions } from "socket.io-client";
+import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
 
 export const useSocketStore = defineStore('socket', () => {
@@ -55,8 +56,9 @@ export const useSocketStore = defineStore('socket', () => {
         tasks: json.data.tasks,
         folders: json.data.folders,
         presets: json.data.presets,
+        dl_fields: json.data.dl_fields,
         paused: Boolean(json.data.paused)
-      })
+      } as Partial<ConfigState>)
 
       stateStore.addAll('queue', json.data.queue || {})
       stateStore.addAll('history', json.data.done || {})
@@ -177,6 +179,7 @@ export const useSocketStore = defineStore('socket', () => {
     }, true);
 
     on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
+    on('dlfields_update', (data: string) => config.update('dl_fields', JSON.parse(data).data || []));
   }
 
   if (false === isConnected.value) {
