@@ -88,96 +88,81 @@
           </div>
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
-            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
-              <div class="field">
-                <input id="force_download" type="checkbox" class="switch is-danger" :checked="forceDownload"
-                  @change="forceDownload = !forceDownload" :disabled="addInProgress" />
-                <label for="force_download" class="is-unselectable">Force download</label>
-              </div>
-              <span class="help">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span class="is-bold">Ignore archive and re-download.</span>
-              </span>
+            <div class="column is-3-tablet is-12-mobile">
+              <DLInput id="force_download" type="bool" label="Force download" v-model="forceDownload"
+                icon="fa-solid fa-download" :disabled="!socket.isConnected || addInProgress"
+                description="Ignore archive and re-download." />
             </div>
 
-            <div class="column is-3-tablet is-12-mobile" v-if="!config.app.basic_mode">
-              <div class="field">
-                <input id="auto_start" type="checkbox" v-model="auto_start" :disabled="addInProgress"
-                  class="switch is-success" />
-                <label for="auto_start" class="is-unselectable">Auto start</label>
-              </div>
-              <span class="help">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span class="is-bold">Whether to start the download automatically.</span>
-              </span>
+            <div class="column is-3-tablet is-12-mobile">
+              <DLInput id="auto_start" type="bool" label="Auto start" v-model="auto_start" icon="fa-solid fa-play"
+                :disabled="!socket.isConnected || addInProgress"
+                description="Whether to start the download automatically." />
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <div class="field has-addons">
-                <div class="control">
-                  <label for="output_format" class="button is-static is-unselectable">
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>Template</span>
-                  </label>
-                </div>
-                <div class="control is-expanded">
-                  <input type="text" class="input" v-model="form.template" id="output_format"
-                    :disabled="!socket.isConnected || addInProgress" :placeholder="get_output_template()">
-                </div>
-              </div>
-              <span class="help is-bold is-unselectable">
-                <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>All output template naming options can be found at <NuxtLink target="_blank"
-                    to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
-              </span>
-            </div>
 
-            <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline is-unselectable" for="cli_options">
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  Command options for yt-dlp
-                </label>
-                <div class="control">
-                  <textarea class="textarea is-pre" v-model="form.cli" id="cli_options"
-                    :disabled="!socket.isConnected || addInProgress"
-                    placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
-                </div>
-
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this page
-                    </NuxtLink> for more info. <span class="has-text-danger">Not all options are supported <NuxtLink
-                        target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
-                        ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.</span>
+              <DLInput id="output_template" type="string" label="Output template" v-model="form.template"
+                icon="fa-solid fa-file" :disabled="!socket.isConnected || addInProgress"
+                :placeholder="get_output_template()">
+                <template #help>
+                  <span class="help is-bold is-unselectable">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>All output template naming options can be found at <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp#output-template">this page</NuxtLink>.</span>
                   </span>
-                </span>
-              </div>
+                </template>
+              </DLInput>
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <div class="field">
-                <label class="label is-inline is-unselectable" for="ytdlpCookies">
-                  <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                  Cookies
-                </label>
-                <div class="control">
-                  <textarea class="textarea is-pre" id="ytdlpCookies" v-model="form.cookies"
-                    :disabled="!socket.isConnected || addInProgress" />
-                </div>
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use the <NuxtLink target="_blank"
-                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                      Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
-                      cookies MUST be in Netscape HTTP Cookie format.</span>
+              <DLInput id="cli_options" type="text" label="Command options for yt-dlp" v-model="form.cli"
+                icon="fa-solid fa-terminal" :disabled="!socket.isConnected || addInProgress">
+                <template #help>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this
+                        page</NuxtLink> for more info. <span class="has-text-danger">Not all options are supported
+                        <NuxtLink target="_blank"
+                          to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
+                          ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </div>
+                </template>
+              </DLInput>
             </div>
+
+            <div class="column is-6-tablet is-12-mobile">
+              <DLInput id="ytdlpCookies" type="text" label="Cookies for yt-dlp" v-model="form.cookies"
+                icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress">
+                <template #help>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use the <NuxtLink target="_blank"
+                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                        Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
+                        cookies MUST be in Netscape HTTP Cookie format.</span>
+                    </span>
+                  </span>
+                </template>
+              </DLInput>
+            </div>
+            <template v-if="config.dl_fields.length > 0">
+              <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in config.dl_fields"
+                :key="fi.id || `dlf-${index}`">
+                <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
+                  v-model="dlFields[fi.field]" :field="fi.field" />
+              </div>
+            </template>
             <div class="column is-12 is-hidden-tablet">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                <NuxtLink class="dropdown-item" @click="() => showFields = true">
+                  <span class="icon has-text-purple"><i class="fa-solid fa-plus" /></span>
+                  <span>Custom Fields</span>
+                </NuxtLink>
+                <hr class="dropdown-divider" />
+
                 <NuxtLink class="dropdown-item" @click="emitter('getInfo', form.url, form.preset)">
                   <span class="icon has-text-info"><i class="fa-solid fa-info" /></span>
                   <span>yt-dlp Information</span>
@@ -204,7 +189,7 @@
                     <span>Custom Fields</span>
                   </button>
                 </div>
-                   <div class="control">
+                <div class="control">
                   <button type="button" class="button is-info" @click="emitter('getInfo', form.url, form.preset)"
                     :class="{ 'is-loading': !socket.isConnected }"
                     :disabled="!socket.isConnected || addInProgress || !form?.url">
@@ -268,7 +253,8 @@ const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
 
 const addInProgress = ref<boolean>(false)
-const showFields = ref<boolean>(true)
+const showFields = ref<boolean>(false)
+const dlFields: Record<string, any> = ref({})
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -280,6 +266,7 @@ const form = useStorage<item_request>('local_config_v1', {
   folder: '',
   extras: {},
 }) as Ref<item_request>
+
 
 const dialog_confirm = ref({
   visible: false,

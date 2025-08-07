@@ -1,3 +1,4 @@
+import type { DLField } from "./dl_fields"
 
 type AppConfig = {
   /** Path where downloaded files will be saved */
