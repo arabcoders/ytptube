@@ -1,9 +1,37 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c261cb6e4ffa71a12049a2d3b070268ac00fd587",
-    "date": "2025-08-06T17:00:29+00:00",
+    "full_sha": "00fc97c57096d4ad8ae4f9841c1dcc12ebb6588e",
+    "date": "2025-08-07T20:03:34+00:00",
     "commits": [
+      {
+        "sha": "00fc97c5",
+        "full_sha": "00fc97c57096d4ad8ae4f9841c1dcc12ebb6588e",
+        "message": "working version of custom fields.",
+        "author": "arabcoders",
+        "date": "2025-08-07T20:03:34+00:00"
+      },
+      {
+        "sha": "45401639",
+        "full_sha": "45401639ad77a90055572532864b9b7cca0487db",
+        "message": "Update download form to use the custom input",
+        "author": "arabcoders",
+        "date": "2025-08-07T19:08:59+00:00"
+      },
+      {
+        "sha": "355adfad",
+        "full_sha": "355adfade47db40dfb68aacda38b770c81e8f31f",
+        "message": "more changes to support custom fields in download form",
+        "author": "arabcoders",
+        "date": "2025-08-07T18:01:24+00:00"
+      },
+      {
+        "sha": "0ea1d802",
+        "full_sha": "0ea1d8024302f13d8b8796b8d2bfa3bc2606b751",
+        "message": "Added initial code to support adding custom fields to NewDownload form.",
+        "author": "arabcoders",
+        "date": "2025-08-07T15:12:24+00:00"
+      },
       {
         "sha": "c261cb6e",
         "full_sha": "c261cb6e4ffa71a12049a2d3b070268ac00fd587",
