@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250805-ffd99e7c",
-        "date": "2025-08-05T15:15:45+00:00",
+        "tag": "master-20250808-3f11262a",
+        "date": "2025-08-07T21:02:45+00:00",
         "commits": [
+            {
+                "sha": "568c244c",
+                "message": "merge force download into the new custom fields handling.",
+                "author": "arabcoders",
+                "date": "2025-08-07T20:47:39+00:00",
+                "full_sha": "568c244cd892c59b1eb18af6d536c523d2d8ca08"
+            },
+            {
+                "sha": "00fc97c5",
+                "message": "working version of custom fields.",
+                "author": "arabcoders",
+                "date": "2025-08-07T20:03:34+00:00",
+                "full_sha": "00fc97c57096d4ad8ae4f9841c1dcc12ebb6588e"
+            },
+            {
+                "sha": "45401639",
+                "message": "Update download form to use the custom input",
+                "author": "arabcoders",
+                "date": "2025-08-07T19:08:59+00:00",
+                "full_sha": "45401639ad77a90055572532864b9b7cca0487db"
+            },
+            {
+                "sha": "355adfad",
+                "message": "more changes to support custom fields in download form",
+                "author": "arabcoders",
+                "date": "2025-08-07T18:01:24+00:00",
+                "full_sha": "355adfade47db40dfb68aacda38b770c81e8f31f"
+            },
+            {
+                "sha": "0ea1d802",
+                "message": "Added initial code to support adding custom fields to NewDownload form.",
+                "author": "arabcoders",
+                "date": "2025-08-07T15:12:24+00:00",
+                "full_sha": "0ea1d8024302f13d8b8796b8d2bfa3bc2606b751"
+            },
+            {
+                "sha": "c261cb6e",
+                "message": "Add FAQ",
+                "author": "arabcoders",
+                "date": "2025-08-06T17:00:29+00:00",
+                "full_sha": "c261cb6e4ffa71a12049a2d3b070268ac00fd587"
+            },
             {
                 "sha": "a3084351",
                 "message": "Fixed a bug in DownloadQueue",
@@ -1068,7 +1110,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ffd99e7c0995bd3bb800d3b343067ed9af084cf2"
+        "full_sha": "3f11262afbbb95f5a5ebf60c7f93b45e9a4da0e6"
     },
     {
         "tag": "master-20250616-c07465a6",
