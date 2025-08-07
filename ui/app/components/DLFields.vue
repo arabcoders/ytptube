@@ -122,7 +122,7 @@
                     <input type="text" v-model="item.icon" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
                       The icon of the field, must be from <NuxtLink
-                        href="https://fontawesome.com/icons/image?f=classic&s=solid" target="_blank">
+                        href="https://fontawesome.com/search?ic=free&o=r" target="_blank">
                         font-awesome</NuxtLink> icon. e.g. <code>fa-solid fa-image</code>. Leave empty for no icon.
                     </span>
                   </div>

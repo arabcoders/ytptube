@@ -89,9 +89,9 @@
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
             <div class="column is-3-tablet is-12-mobile">
-              <DLInput id="force_download" type="bool" label="Force download" v-model="forceDownload"
-                icon="fa-solid fa-download" :disabled="!socket.isConnected || addInProgress"
-                description="Ignore archive and re-download." />
+              <DLInput id="force_download" type="bool" label="Force download"
+                v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
+                :disabled="!socket.isConnected || addInProgress" description="Ignore archive and re-download." />
             </div>
 
             <div class="column is-3-tablet is-12-mobile">
@@ -256,6 +256,7 @@ const show_description = useStorage<boolean>('show_description', true)
 const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
 const dlFields = useStorage<Record<string, any>>('dl_fields', {})
+const dlFieldsExtra = ['--no-download-archive']
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -276,27 +277,41 @@ const dialog_confirm = ref({
   message: '',
   options: [],
 })
-const FORCE_FLAG = '--no-download-archive'
 
 const addDownload = async () => {
   let form_cli = (form.value?.cli || '').trim()
 
+  const is_valid = (dl_field: string): boolean => {
+    if (dlFieldsExtra.includes(dl_field)) {
+      return true
+    }
+
+    if (config.dl_fields && config.dl_fields.length > 0) {
+      return config.dl_fields.some(f => f.field === dl_field)
+    }
+
+    return false;
+  }
+
   if (false === config.app.basic_mode) {
-    if (dlFields.value && Object.keys(dlFields.value).length > 0 && config.dl_fields && config.dl_fields.length > 0) {
+    if (dlFields.value && Object.keys(dlFields.value).length > 0) {
       const joined = []
       for (const [key, value] of Object.entries(dlFields.value)) {
-        if (!config.dl_fields.some(f => f.field === key)) {
+        if (false === is_valid(key)) {
           continue
         }
 
         if ([undefined, null, '', false].includes(value as any)) {
           continue
         }
+
         joined.push(true === value ? `${key}` : `${key} ${value}`)
       }
+
       if (joined.length > 0) {
         form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
       }
+
     }
 
     if (form_cli && form_cli.trim()) {
@@ -489,29 +504,6 @@ const get_output_template = () => {
   }
   return config.app.output_template || '%(title)s.%(ext)s'
 }
-
-const forceDownload = computed({
-  get(): boolean {
-    return new RegExp(`(^|\\s)${FORCE_FLAG}(\\s|$)`).test(form.value.cli || '')
-  },
-  set(val: boolean): void {
-    const cli = form.value.cli || ''
-
-    if (val) {
-      if (!cli.includes(FORCE_FLAG)) {
-        form.value.cli = cli.trim() + (cli.trim() ? ` ${FORCE_FLAG}` : FORCE_FLAG)
-      }
-    } else {
-      form.value.cli = cli
-        .replace(new RegExp(`(\\s*)${FORCE_FLAG}(\\s*)`, 'g'), (match, before, after) => {
-          return before && after ? ' ' : ''
-        })
-        .replace(/[ \t]+/g, ' ')
-        .replace(/^[ \t]+|[ \t]+$/g, '')
-        .trim()
-    }
-  },
-})
 
 const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
 </script>
