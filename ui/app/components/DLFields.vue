@@ -121,8 +121,8 @@
                     </label>
                     <input type="text" v-model="item.icon" class="input" :disabled="isLoading" />
                     <span class="help is-bold">
-                      The icon of the field, must be from <NuxtLink
-                        href="https://fontawesome.com/search?ic=free&o=r" target="_blank">
+                      The icon of the field, must be from <NuxtLink href="https://fontawesome.com/search?ic=free&o=r"
+                        target="_blank">
                         font-awesome</NuxtLink> icon. e.g. <code>fa-solid fa-image</code>. Leave empty for no icon.
                     </span>
                   </div>
@@ -165,6 +165,7 @@
 <script setup lang="ts">
 import { defineEmits, ref } from 'vue'
 import type { DLField } from '~/types/dl_fields'
+import { disableOpacity, enableOpacity } from '~/utils'
 
 const emitter = defineEmits<{ (e: 'cancel'): void }>()
 
@@ -271,6 +272,11 @@ const validateItem = (item: DLField, index: number): boolean => {
   return true
 }
 
-onMounted(async () => await loadContent())
 const sortedDLFields = computed(() => items.value.sort((a, b) => (a.order || 0) - (b.order || 0)))
+
+onMounted(async () => {
+  disableOpacity()
+  await loadContent()
+})
+onBeforeUnmount(() => enableOpacity())
 </script>

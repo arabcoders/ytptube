@@ -1,3 +1,4 @@
+import { useStorage } from '@vueuse/core'
 import type { convert_args_response } from "~/types/responses";
 import type { StoreItem } from "~/types/store";
 
@@ -651,10 +652,31 @@ const decode = (str: string): object => {
   return JSON.parse(jsonStr);
 }
 
+const disableOpacity = (): boolean => {
+  const bg_enable = useStorage<boolean>('random_bg', true)
+  if (!bg_enable) {
+    return false;
+  }
+
+  document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
+  return true
+}
+
+const enableOpacity = (): boolean => {
+  const bg_enable = useStorage<boolean>('random_bg', true)
+  if (!bg_enable) {
+    return false;
+  }
+
+  const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
+  document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
+  return true
+}
+
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity
 }

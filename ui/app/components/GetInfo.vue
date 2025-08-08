@@ -38,6 +38,8 @@ code {
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils';
+
 const toast = useNotification()
 const emitter = defineEmits<{ (e: 'closeModel'): void }>()
 
@@ -58,6 +60,7 @@ const handle_event = (e: KeyboardEvent): void => {
 }
 
 onMounted(async (): Promise<void> => {
+  disableOpacity()
   document.addEventListener('keydown', handle_event)
 
   let url = props.useUrl ? props.link || '' : '/api/yt-dlp/url/info'
@@ -90,6 +93,7 @@ onMounted(async (): Promise<void> => {
 })
 
 onBeforeUnmount(() => {
+  enableOpacity()
   document.removeEventListener('keydown', handle_event)
 })
 </script>

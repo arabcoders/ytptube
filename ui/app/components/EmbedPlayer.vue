@@ -16,6 +16,8 @@
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils'
+
 defineProps({
   url: {
     type: String,
@@ -32,6 +34,13 @@ const handle_event = (e: KeyboardEvent) => {
   emitter('closeModel')
 }
 
-onMounted(() => document.addEventListener('keydown', handle_event))
-onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
+onMounted(() => {
+  document.addEventListener('keydown', handle_event)
+  disableOpacity()
+})
+
+onBeforeUnmount(() => {
+  enableOpacity()
+  document.removeEventListener('keydown', handle_event)
+})
 </script>

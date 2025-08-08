@@ -39,6 +39,8 @@
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils'
+
 const props = defineProps({
   visible: {
     type: Boolean,
@@ -104,4 +106,7 @@ watch(() => props.visible, async visible => {
 
 const handleConfirm = () => emit('confirm', { ...selected })
 const cancel = () => emit('cancel')
+
+onMounted(() => disableOpacity())
+onBeforeUnmount(() => enableOpacity())
 </script>

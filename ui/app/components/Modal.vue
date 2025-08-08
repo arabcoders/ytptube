@@ -12,6 +12,8 @@
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils'
+
 const emitter = defineEmits(['close'])
 
 defineProps({
@@ -29,6 +31,13 @@ const handle_event = (e: KeyboardEvent) => {
   emitter('close')
 }
 
-onMounted(() => document.addEventListener('keydown', handle_event))
-onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
+onMounted(() => {
+  document.addEventListener('keydown', handle_event)
+  disableOpacity()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handle_event)
+  enableOpacity()
+})
 </script>
