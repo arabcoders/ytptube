@@ -29,6 +29,7 @@
 import { useStorage } from '@vueuse/core'
 import Hls from 'hls.js'
 import type { StoreItem } from '~/types/store'
+import { disableOpacity, enableOpacity } from '~/utils'
 
 type video_track_element = {
   file: string,
@@ -108,6 +109,7 @@ const volume_change_handler = () => {
 }
 
 onMounted(async () => {
+  disableOpacity()
   const req = await request(makeDownload(config, props.item, 'api/file/info'))
 
   const response: file_info = await req.json()
@@ -189,6 +191,7 @@ onMounted(async () => {
 onUpdated(() => prepareVideoPlayer())
 
 onBeforeUnmount(() => {
+  enableOpacity()
   if (hls) {
     hls.destroy()
   }

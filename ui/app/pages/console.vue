@@ -56,17 +56,14 @@
 </template>
 
 <script setup lang="ts">
-import "@xterm/xterm/css/xterm.css"
-import { Terminal } from "@xterm/xterm"
-import { FitAddon } from "@xterm/addon-fit"
-import { useStorage } from '@vueuse/core'
+import '@xterm/xterm/css/xterm.css'
+import { Terminal } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
+import { disableOpacity, enableOpacity } from '~/utils'
 
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
-
-const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 
 const terminal = ref<Terminal>()
 const terminalFit = ref<FitAddon>()
@@ -200,17 +197,13 @@ onMounted(async () => {
   socket.off('cli_output', writer)
   socket.on('cli_close', loader)
   socket.on('cli_output', writer)
-  if (bg_enable.value) {
-    document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
-  }
+  disableOpacity()
 })
 
 onBeforeUnmount(() => {
   socket.off('cli_close', loader)
   socket.off('cli_output', writer)
   document.removeEventListener('resize', handle_event)
-  if (bg_enable.value) {
-    document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
-  }
+  enableOpacity()
 });
 </script>

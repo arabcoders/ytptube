@@ -19,6 +19,8 @@ img {
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils'
+
 const toast = useNotification()
 const emitter = defineEmits(['closeModel'])
 
@@ -40,6 +42,7 @@ const handle_event = (e: KeyboardEvent) => {
 }
 
 onMounted(async () => {
+  disableOpacity()
   document.addEventListener('keydown', handle_event)
 
   const url = props.link.startsWith('/') ? props.link : '/api/thumbnail?url=' + encodePath(props.link)
@@ -61,5 +64,11 @@ onMounted(async () => {
   }
 })
 
-onBeforeUnmount(() => document.removeEventListener('keydown', handle_event))
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handle_event)
+  if (image.value) {
+    URL.revokeObjectURL(image.value)
+  }
+  enableOpacity()
+})
 </script>

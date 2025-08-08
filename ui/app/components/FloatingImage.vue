@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { disableOpacity, enableOpacity } from '~/utils'
+
 const props = defineProps<{
   image?: string
   title?: string
@@ -111,4 +113,13 @@ const pImg = (e: Event): void => {
     target.classList.add('image-portrait')
   }
 }
+onMounted(() => disableOpacity())
+onBeforeUnmount(() => {
+  enableOpacity()
+  if (null !== loadTimer) {
+    clearTimeout(loadTimer)
+  }
+  cancelRequest.abort('not_needed')
+})
+
 </script>
