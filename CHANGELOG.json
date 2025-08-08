@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (3f11262a)",
-    "full_sha": "3f11262afbbb95f5a5ebf60c7f93b45e9a4da0e6",
-    "date": "2025-08-07T21:02:45+00:00",
+    "tag": "Unreleased (3447ac80)",
+    "full_sha": "3447ac803251f670d8f5d6412468a222c3963234",
+    "date": "2025-08-08T19:37:33+00:00",
     "commits": [
+      {
+        "sha": "d4e837a8",
+        "full_sha": "d4e837a805a641f6dcb9650ec7545c4fa89f9dd3",
+        "message": "Disable opacity whenever an overlay is showing",
+        "author": "arabcoders",
+        "date": "2025-08-08T19:11:03+00:00"
+      },
       {
         "sha": "568c244c",
         "full_sha": "568c244cd892c59b1eb18af6d536c523d2d8ca08",
@@ -45,20 +52,6 @@
         "message": "Add FAQ",
         "author": "arabcoders",
         "date": "2025-08-06T17:00:29+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "d4e837a805a641f6dcb9650ec7545c4fa89f9dd3",
-    "date": "2025-08-08T19:11:03+00:00",
-    "commits": [
-      {
-        "sha": "d4e837a8",
-        "full_sha": "d4e837a805a641f6dcb9650ec7545c4fa89f9dd3",
-        "message": "Disable opacity whenever an overlay is showing",
-        "author": "arabcoders",
-        "date": "2025-08-08T19:11:03+00:00"
       }
     ]
   },
