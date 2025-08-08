@@ -49,6 +49,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "d4e837a805a641f6dcb9650ec7545c4fa89f9dd3",
+    "date": "2025-08-08T19:11:03+00:00",
+    "commits": [
+      {
+        "sha": "d4e837a8",
+        "full_sha": "d4e837a805a641f6dcb9650ec7545c4fa89f9dd3",
+        "message": "Disable opacity whenever an overlay is showing",
+        "author": "arabcoders",
+        "date": "2025-08-08T19:11:03+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.7.0",
     "full_sha": "ffd99e7c0995bd3bb800d3b343067ed9af084cf2",
     "date": "2025-08-05T15:15:45+00:00",
