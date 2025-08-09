@@ -83,7 +83,17 @@ services:
 Then simply create a new preset, and in the `Command options for yt-dlp` field set the following:
 
 ```bash
---extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416;disable_innertube=1" 
+--extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416" 
 --extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
 ```
+
+you and also enable the fallback by using the follow extractor args
+
+```bash
+--extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416;disable_innertube=1"
+--extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
+```
+
+Use this settings in case the extractor fails to get the pot tokens from the bgutil provider server.
+
 For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.

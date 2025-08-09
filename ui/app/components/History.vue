@@ -508,9 +508,7 @@ const dialog_confirm = ref<{
   title: 'Confirm Action',
   confirm: () => { },
   message: '',
-  options: [
-    { key: 'remove_history', label: 'Also, Remove from history.' },
-  ],
+  options: [],
 })
 
 const showThumbnails = computed(() => (props.thumbnails || true) && !hideThumbnail.value)
@@ -735,6 +733,7 @@ const addArchiveDialog = (item: StoreItem) => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.title = 'Archive Item'
   dialog_confirm.value.message = `Archive '${item.title || item.id || item.url || '??'}'?`
+  dialog_confirm.value.options = [{ key: 'remove_history', label: 'Also, Remove from history.' }]
   dialog_confirm.value.confirm = (opts: any) => archiveItem(item, opts)
 }
 
@@ -864,10 +863,15 @@ const removeFromArchiveDialog = (item: StoreItem) => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.title = 'Remove from Archive'
   dialog_confirm.value.message = `Remove '${item.title || item.id || item.url || '??'}' from archive?`
-  dialog_confirm.value.confirm = () => removeFromArchive(item)
+  dialog_confirm.value.options = [
+    { key: 'remove_history', label: 'Also, Remove from history.' },
+    { key: 're_add', label: 'Re-add to download form.' },
+  ]
+  dialog_confirm.value.confirm = (opts: any) => removeFromArchive(item, opts)
 }
 
-const removeFromArchive = async (item: StoreItem, opts?: { remove_history?: boolean }) => {
+const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
+  console.log('Removing from archive:', item, opts)
   try {
     const req = await request(`/api/archive/${item._id}`, {
       credentials: 'include',
@@ -876,15 +880,21 @@ const removeFromArchive = async (item: StoreItem, opts?: { remove_history?: bool
     const data = await req.json()
     if (!req.ok) {
       toast.error(data.error)
-      return
+    } else {
+      toast.success(data.message || `Removed '${item.title || item.id || item.url || '??'}' from archive.`)
     }
-    toast.success(data.message || `Removed '${item.title || item.id || item.url || '??'}' from archive.`)
   } catch (e: any) {
     console.error(e)
     toast.error(`Error: ${e.message}`)
   } finally {
     dialog_confirm.value.visible = false
   }
+
+  if (opts?.re_add) {
+    retryItem(item, true)
+    return
+  }
+
   if (opts?.remove_history) {
     socket.emit('item_delete', { id: item._id, remove_file: false })
   }
