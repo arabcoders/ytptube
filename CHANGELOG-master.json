@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250808-3447ac80",
-        "date": "2025-08-08T19:37:33+00:00",
+        "tag": "master-20250809-6aab6fd0",
+        "date": "2025-08-09T15:39:35+00:00",
         "commits": [
+            {
+                "sha": "7551aa1f",
+                "message": "minor history fix",
+                "author": "arabcoders",
+                "date": "2025-08-09T15:32:51+00:00",
+                "full_sha": "7551aa1fd45e5125a95fdd5bc6bba926304a0338"
+            },
+            {
+                "sha": "ec72c76b",
+                "message": "Added docs on how to enable bgutil ytdlp pot provider",
+                "author": "arabcoders",
+                "date": "2025-08-09T15:10:58+00:00",
+                "full_sha": "ec72c76b9c507c28b46b10610dea6f7b0806639d"
+            },
+            {
+                "sha": "21accb01",
+                "message": "Add ffprobe to local data when available",
+                "author": "arabcoders",
+                "date": "2025-08-09T14:40:48+00:00",
+                "full_sha": "21accb012d795d6aa5cd48067ffab9d38aed9e8d"
+            },
+            {
+                "sha": "96149f5e",
+                "message": "Make it possible to pin specific yt-dlp version",
+                "author": "arabcoders",
+                "date": "2025-08-09T14:27:00+00:00",
+                "full_sha": "96149f5e2d9a4b9eb336db546094e09284b74270"
+            },
             {
                 "sha": "d4e837a8",
                 "message": "Disable opacity whenever an overlay is showing",
@@ -1117,7 +1145,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3447ac803251f670d8f5d6412468a222c3963234"
+        "full_sha": "6aab6fd06211d236afcec0a3e06cae93b6be4c0b"
     },
     {
         "tag": "master-20250616-c07465a6",
