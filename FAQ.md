@@ -39,3 +39,13 @@ whenever the link includes a playlist id.
 
 > [!NOTE]
 > You can also do the same via advanced options `Command options for yt-dlp` field, but presets are more convenient.
+
+# Install specific yt-dlp version?
+
+You can force specific version of `yt-dlp` by setting the `YTP_YTDLP_VERSION` environment variable for example
+
+```env
+YTP_YTDLP_VERSION=2025.07.21 or master or nightly
+
+Then restart the container to apply the changes.
+

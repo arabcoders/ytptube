@@ -111,7 +111,7 @@ class Download:
         self.info = info
         self.id = info._id
         self.debug = bool(config.debug)
-        self.debug_ytdl = bool(config.ytdl_debug)
+        self.debug_ytdl = bool(config.ytdlp_debug)
         self.cancelled = False
         self.tmpfilename = None
         self.status_queue = None

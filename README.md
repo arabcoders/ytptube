@@ -291,7 +291,6 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                             |
 | YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                            |
 | YTP_KEEP_ARCHIVE               | Keep history of downloaded videos                                  | `true`                             |
-| YTP_YTDL_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
 | YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                          |
 | YTP_PORT                       | Which port to bind to                                              | `8081`                             |
 | YTP_LOG_LEVEL                  | Log level                                                          | `info`                             |
@@ -312,6 +311,8 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                            |
 | YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                            |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
+| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
+| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`                     |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
 | YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |

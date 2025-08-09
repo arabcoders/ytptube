@@ -49,10 +49,18 @@ class PackageInstaller:
                 sys.path.insert(0, str(self.user_site))
 
     def action(self, pkg: str, upgrade: bool = False):
-        current_version = self._get_installed_version(pkg)
+        version: str | None = None
+        if "==" in pkg:
+            pkg, version = pkg.split("==", 1)
 
-        if upgrade and current_version:
-            latest_version = self._get_latest_version(pkg)
+        current_version: str | None = self._get_installed_version(pkg)
+
+        if current_version and version and self.compare_versions(current_version, version):
+            LOG.info(f"'{pkg}' is already installed with the specified version ({version}). Skipping installation.")
+            return
+
+        if upgrade and current_version and not version:
+            latest_version: str | None = self._get_latest_version(pkg)
             if latest_version and parse_version(current_version) >= parse_version(latest_version):
                 LOG.info(f"'{pkg}' is already the latest version ({current_version}). Skipping upgrade.")
                 return
@@ -62,7 +70,7 @@ class PackageInstaller:
         else:
             LOG.info(f"'{pkg}' is not installed. Installing...")
 
-        self._install_pkg(pkg)
+        self._install_pkg(pkg, version=version)
 
     def _get_installed_version(self, pkg: str) -> str | None:
         try:
@@ -82,23 +90,37 @@ class PackageInstaller:
             LOG.warning(f"Error while querying PyPI for '{pkg}': {e}")
         return None
 
-    def _install_pkg(self, pkg: str):
-        subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pip",
-                "install",
-                "--upgrade",
-                "--disable-pip-version-check",
-                "--target",
-                str(self.user_site),
-                "--no-warn-script-location",
-                pkg,
-            ],
-            check=True,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
+    def _install_pkg(self, pkg: str, version: str | None = None):
+        cmd: list[str] = [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-warn-script-location",
+            "--upgrade",
+            "--target",
+            str(self.user_site),
+        ]
+
+        if version:
+            if "nightly" == version and pkg == "yt_dlp":
+                cmd.extend(["--pre", "yt-dlp[default]"])
+            elif "master" == version and pkg == "yt_dlp":
+                cmd.append("git+https://github.com/yt-dlp/yt-dlp.git@master")
+            else:
+                cmd.append(version if str(version).startswith("git+") else f"{pkg}=={version}")
+        else:
+            cmd.extend(["--disable-pip-version-check", pkg])
+
+        try:
+            subprocess.run(
+                cmd,
+                check=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
+            )
+        except subprocess.CalledProcessError as e:
+            LOG.error(f"Failed to install package '{pkg}'. Error: {e}")
+            raise
 
     def check(self, pkgs: Packages):
         """
@@ -118,3 +140,28 @@ class PackageInstaller:
             except Exception as e:
                 LOG.error(f"Failed to install or upgrade package '{package}'. Error message: {e!s}")
                 LOG.exception(e)
+
+    def compare_versions(self, current: str, target: str) -> bool:
+        """
+        Compare versions, handling yt-dlp format where pip uses 2025.7.21 but actual is 2025.07.21
+        Returns True if versions match, False otherwise
+        """
+        if current == target:
+            return True
+
+        # Handle yt-dlp version format differences
+        current_parts = current.split(".")
+        target_parts = target.split(".")
+
+        if len(current_parts) == len(target_parts):
+            # Normalize parts by zero-padding single digits
+            current_normalized: list[str] = [
+                part.zfill(2) if part.isdigit() and len(part) == 1 else part for part in current_parts
+            ]
+            target_normalized: list[str] = [
+                part.zfill(2) if part.isdigit() and len(part) == 1 else part for part in target_parts
+            ]
+            if current_normalized == target_normalized:
+                return True
+
+        return False
