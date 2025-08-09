@@ -1,10 +1,12 @@
 import asyncio
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
@@ -70,7 +72,7 @@ async def item_delete(request: Request, queue: DownloadQueue, encoder: Encoder) 
 
 
 @route("GET", "api/history/{id}", "item_view")
-async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, config: Config) -> Response:
     """
     Update an item in the history.
 
@@ -79,6 +81,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         queue (DownloadQueue): The download queue instance.
         encoder (Encoder): The encoder instance.
         notify (EventBus): The event bus instance.
+        config (Config): The configuration instance.
 
     Returns:
         Response: The response object.
@@ -92,7 +95,35 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     if not item:
         return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
 
-    return web.json_response(data=item.info, status=web.HTTPOk.status_code, dumps=encoder.encode)
+    if not item.info:
+        return web.json_response(data={"error": "item has no info."}, status=web.HTTPNotFound.status_code)
+
+    info = {
+        **item.info.serialize(),
+        "ffprobe": {},
+    }
+
+    if item.info.filename:
+        try:
+            from app.library.ffprobe import ffprobe
+            from app.library.Utils import get_file
+
+            filename = Path(config.download_path)
+            if item.info.folder:
+                filename: Path = filename / item.info.folder
+
+            filename: Path = filename / item.info.filename
+
+            if filename.exists():
+                realFile, status = get_file(
+                    download_path=config.download_path, file=str(filename.relative_to(config.download_path))
+                )
+                if status in (web.HTTPOk.status_code, web.HTTPFound.status_code):
+                    info["ffprobe"] = await ffprobe(str(realFile))
+        except Exception:
+            pass
+
+    return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("POST", "api/history/{id}", "item_update")

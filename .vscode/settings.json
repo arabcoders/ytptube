@@ -19,6 +19,9 @@
     "arrowless",
     "attl",
     "autonumber",
+    "bgutil",
+    "bgutilhttp",
+    "brainicism",
     "brotlicffi",
     "consoletitle",
     "cookiesfrombrowser",
@@ -111,7 +114,8 @@
     "vconvert",
     "writedescription",
     "xerror",
-    "youtu"
+    "youtu",
+    "youtubepot"
   ],
   "css.styleSheets": [
     "ui/app/assets/css/*.css"

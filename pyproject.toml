@@ -38,6 +38,7 @@ dependencies = [
   "defusedxml>=0.7.1",
   "zipstream-ng>=1.8.0",
   "apprise>=1.9.3",
+  "bgutil-ytdlp-pot-provider>=1.2.1",
 ]
 
 [tool.ruff]

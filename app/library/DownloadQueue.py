@@ -676,7 +676,7 @@ class DownloadQueue(metaclass=Singleton):
                         extract_info,
                         config=yt_conf,
                         url=item.url,
-                        debug=bool(self.config.ytdl_debug),
+                        debug=bool(self.config.ytdlp_debug),
                         no_archive=False,
                         follow_redirect=True,
                     ),

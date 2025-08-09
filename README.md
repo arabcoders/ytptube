@@ -167,7 +167,7 @@ postprocessing, permissions, other `yt-dlp options` configurations which seem no
 concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
 
 In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, 
-and once that is working, importing the options that worked for you into a new `preset` or `ytdlp.cli` file.
+and once that is working, importing the options that worked for you into a new `preset`.
 
 ## Via HTTP
 
@@ -185,20 +185,6 @@ yt-dlp ....
 ```
 
 Once there, you can use the yt-dlp command freely.
-
-# ytdlp.cli file
-
-The `config/ytdlp.cli`, is a command line options file for `yt-dlp` it will be globally applied to all downloads.
-
-We strongly recommend not use this file for options that aren't **truly global**, everything that can be done via the 
-file can also be done via the presets which is dynamic can be altered per download. Example of good global options 
-are to be used for all downloads are:
-
-```bash
---continue --windows-filenames --live-from-start
-```
-
-Everything else can be done via the presets, and it's more flexible and easier to manage.
 
 # Authentication
 
@@ -291,7 +277,6 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                             |
 | YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                            |
 | YTP_KEEP_ARCHIVE               | Keep history of downloaded videos                                  | `true`                             |
-| YTP_YTDL_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
 | YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                          |
 | YTP_PORT                       | Which port to bind to                                              | `8081`                             |
 | YTP_LOG_LEVEL                  | Log level                                                          | `info`                             |
@@ -312,6 +297,8 @@ Certain configuration values can be set via environment variables, using the `-e
 | YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                            |
 | YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                            |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
+| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
+| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`                     |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
 | YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |

@@ -46,9 +46,6 @@ class Config:
     keep_archive: bool = True
     """Keep the download archive file."""
 
-    ytdl_debug: bool = False
-    """Enable yt-dlp debugging."""
-
     host: str = "0.0.0.0"
     """The host to bind the server to."""
 
@@ -178,6 +175,12 @@ class Config:
     _ytdlp_cli_mutable: str = ""
     """The command line options to use for yt-dlp."""
 
+    ytdlp_version: str | None = None
+    """The version of yt-dlp to use, if not set, the latest version will be used."""
+
+    ytdlp_debug: bool = False
+    """Enable yt-dlp debugging."""
+
     is_native: bool = False
     "Is the application running in webview."
 
@@ -228,7 +231,7 @@ class Config:
 
     _boolean_vars: tuple = (
         "keep_archive",
-        "ytdl_debug",
+        "ytdlp_debug",
         "debug",
         "temp_keep",
         "access_log",
@@ -531,11 +534,11 @@ class Config:
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
 
-        data["ytdlp_version"] = Config.ytdlp_version()
+        data["ytdlp_version"] = Config._ytdlp_version()
         return data
 
     @staticmethod
-    def ytdlp_version():
+    def _ytdlp_version():
         try:
             from yt_dlp.version import __version__ as YTDLP_VERSION
 

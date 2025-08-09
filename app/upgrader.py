@@ -21,6 +21,8 @@ class Upgrader:
         config_path: Path = Path(__file__).parent.parent / "var" / "config"
         if env_path := os.environ.get("YTP_CONFIG_PATH", None):
             config_path = Path(env_path)
+        else:
+            os.environ.update({"YTP_CONFIG_PATH": str(config_path)})
 
         if config_path.exists():
             envFile: Path = config_path / ".env"
@@ -33,11 +35,17 @@ class Upgrader:
         pkg_installer = PackageInstaller()
 
         ytdlp_auto_update: bool = os.environ.get("YTP_YTDLP_AUTO_UPDATE", "true").strip().lower() == "true"
+        ytdlp_version: str | None = os.environ.get("YTP_YTDLP_VERSION", "").strip() or None
 
         if ytdlp_auto_update:
             try:
                 LOG.info("Checking for newer versions of 'yt-dlp' package.")
-                pkg_installer.action(pkg="yt_dlp", upgrade=True)
+                pkg_name = "yt_dlp"
+                if ytdlp_version:
+                    LOG.info(f"Using specified version '{ytdlp_version}' for '{pkg_name}'.")
+                    pkg_name += f"=={ytdlp_version}"
+
+                pkg_installer.action(pkg=pkg_name, upgrade=True)
 
                 from yt_dlp.version import __version__ as YTDLP_VERSION
 
