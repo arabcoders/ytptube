@@ -46,6 +46,44 @@ You can force specific version of `yt-dlp` by setting the `YTP_YTDLP_VERSION` en
 
 ```env
 YTP_YTDLP_VERSION=2025.07.21 or master or nightly
+```
 
 Then restart the container to apply the changes.
 
+# How to generate POT tokens?
+
+You need to start up a pot provider server we already have extractor `bgutil-ytdlp-pot-provider` pre-installed in the container.
+You can simply do the following to enable the support for it.
+
+```yaml
+services:
+  ytptube:
+    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
+    image: ghcr.io/arabcoders/ytptube:latest
+    container_name: ytptube
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/config:rw
+      - ./downloads:/downloads:rw
+    tmpfs:
+      - /tmp
+    depends_on:
+      - bgutil_provider
+  bgutil_provider:
+    init: true
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    container_name: bgutil_provider
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4416:4416"
+```
+
+Then simply create a new preset, and in the `Command options for yt-dlp` field set the following:
+
+```bash
+--extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416;disable_innertube=1" 
+--extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
+```
+For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.

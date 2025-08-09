@@ -167,7 +167,7 @@ postprocessing, permissions, other `yt-dlp options` configurations which seem no
 concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
 
 In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, 
-and once that is working, importing the options that worked for you into a new `preset` or `ytdlp.cli` file.
+and once that is working, importing the options that worked for you into a new `preset`.
 
 ## Via HTTP
 
@@ -185,20 +185,6 @@ yt-dlp ....
 ```
 
 Once there, you can use the yt-dlp command freely.
-
-# ytdlp.cli file
-
-The `config/ytdlp.cli`, is a command line options file for `yt-dlp` it will be globally applied to all downloads.
-
-We strongly recommend not use this file for options that aren't **truly global**, everything that can be done via the 
-file can also be done via the presets which is dynamic can be altered per download. Example of good global options 
-are to be used for all downloads are:
-
-```bash
---continue --windows-filenames --live-from-start
-```
-
-Everything else can be done via the presets, and it's more flexible and easier to manage.
 
 # Authentication
 

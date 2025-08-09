@@ -165,6 +165,15 @@ wheels = [
 ]
 
 [[package]]
+name = "bgutil-ytdlp-pot-provider"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/3f/62fc3c3668a0518cc6a0dab159362bf2c213c0baf7631d15899a98b83176/bgutil_ytdlp_pot_provider-1.2.1.tar.gz", hash = "sha256:771173df631451046c982dcac27482cc89b300ce0aedc487043f80e45774b9f6", size = 8889 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6f/37/c66e32bdb34b84581b8a794bdc86775b1161208f915f103e39bd1ad665d3/bgutil_ytdlp_pot_provider-1.2.1-py3-none-any.whl", hash = "sha256:ddf9fee9857fb64c7fdfb4db96db81ca5864a6004fff5549a2043693776184ef", size = 9473 },
+]
+
+[[package]]
 name = "bidict"
 version = "0.23.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1575,6 +1584,7 @@ dependencies = [
     { name = "anyio" },
     { name = "apprise" },
     { name = "async-timeout" },
+    { name = "bgutil-ytdlp-pot-provider" },
     { name = "brotli" },
     { name = "brotlicffi" },
     { name = "caribou" },
@@ -1615,6 +1625,7 @@ requires-dist = [
     { name = "anyio" },
     { name = "apprise", specifier = ">=1.9.3" },
     { name = "async-timeout" },
+    { name = "bgutil-ytdlp-pot-provider", specifier = ">=1.2.1" },
     { name = "brotli" },
     { name = "brotlicffi" },
     { name = "caribou", specifier = ">=0.3.0" },
