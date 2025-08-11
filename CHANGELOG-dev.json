@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250809-7551aa1f",
-        "date": "2025-08-09T15:32:51+00:00",
+        "tag": "dev-20250811-f4fa2ea4",
+        "date": "2025-08-11T13:52:14+00:00",
         "commits": [
+            {
+                "sha": "f4fa2ea4",
+                "message": "as bilibili as target for embedable content",
+                "author": "arabcoders",
+                "date": "2025-08-11T13:52:14+00:00",
+                "full_sha": "f4fa2ea4fa41724b115215115ed367190aba713c"
+            },
             {
                 "sha": "7551aa1f",
                 "message": "minor history fix",
@@ -1145,7 +1152,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7551aa1fd45e5125a95fdd5bc6bba926304a0338"
+        "full_sha": "f4fa2ea4fa41724b115215115ed367190aba713c"
     },
     {
         "tag": "dev-20250616-c07465a6",
