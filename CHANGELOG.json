@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "f4fa2ea4fa41724b115215115ed367190aba713c",
-    "date": "2025-08-11T13:52:14+00:00",
+    "full_sha": "22f7bc62ff4ef9b6f541dc17bca0762bd8d53172",
+    "date": "2025-08-12T00:29:38+00:00",
     "commits": [
+      {
+        "sha": "4b00435f",
+        "full_sha": "4b00435fdd6b5106b5a044e46c04ccff89e6af67",
+        "message": "Update yt-dlp to 2025.8.11",
+        "author": "ArabCoders",
+        "date": "2025-08-12T00:25:21+00:00"
+      },
       {
         "sha": "f4fa2ea4",
         "full_sha": "f4fa2ea4fa41724b115215115ed367190aba713c",
