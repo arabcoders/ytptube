@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250809-6aab6fd0",
-        "date": "2025-08-09T15:39:35+00:00",
+        "tag": "master-20250812-2cdfa250",
+        "date": "2025-08-12T00:45:45+00:00",
         "commits": [
+            {
+                "sha": "4b00435f",
+                "message": "Update yt-dlp to 2025.8.11",
+                "author": "ArabCoders",
+                "date": "2025-08-12T00:25:21+00:00",
+                "full_sha": "4b00435fdd6b5106b5a044e46c04ccff89e6af67"
+            },
+            {
+                "sha": "f4fa2ea4",
+                "message": "as bilibili as target for embedable content",
+                "author": "arabcoders",
+                "date": "2025-08-11T13:52:14+00:00",
+                "full_sha": "f4fa2ea4fa41724b115215115ed367190aba713c"
+            },
             {
                 "sha": "7551aa1f",
                 "message": "minor history fix",
@@ -1145,7 +1159,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6aab6fd06211d236afcec0a3e06cae93b6be4c0b"
+        "full_sha": "2cdfa2503b861e43721ecc014925cfa194ce4ae3"
     },
     {
         "tag": "master-20250616-c07465a6",
