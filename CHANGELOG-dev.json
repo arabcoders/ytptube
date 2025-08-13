@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250812-22f7bc62",
-        "date": "2025-08-12T00:29:38+00:00",
+        "tag": "dev-20250813-764e59b0",
+        "date": "2025-08-13T16:35:42+00:00",
         "commits": [
+            {
+                "sha": "764e59b0",
+                "message": "use random user agent for requesting thumbnails and background",
+                "author": "arabcoders",
+                "date": "2025-08-13T16:35:42+00:00",
+                "full_sha": "764e59b0f38f61bf893e5cd17f1a1e386c6126fb"
+            },
+            {
+                "sha": "2dfaa6b1",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-08-13T16:35:26+00:00",
+                "full_sha": "2dfaa6b1619f5a2f2d5ce62a819a820d47d8f4ee"
+            },
             {
                 "sha": "4b00435f",
                 "message": "Update yt-dlp to 2025.8.11",
@@ -1159,7 +1173,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "22f7bc62ff4ef9b6f541dc17bca0762bd8d53172"
+        "full_sha": "764e59b0f38f61bf893e5cd17f1a1e386c6126fb"
     },
     {
         "tag": "dev-20250616-c07465a6",
