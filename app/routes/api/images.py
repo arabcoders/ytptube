@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import httpx
 from aiohttp import web
 from aiohttp.web import Request, Response
+from yt_dlp.utils.networking import random_user_agent
 
 from app.library.ag_utils import ag
 from app.library.cache import Cache
@@ -47,7 +48,7 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
             "proxy": ytdlp_args.get("proxy", None),
             "headers": {
                 "User-Agent": ytdlp_args.get(
-                    "user_agent", request.headers.get("User-Agent", f"YTPTube/{config.app_version}")
+                    "user_agent", request.headers.get("User-Agent", random_user_agent())
                 ),
             },
         }
@@ -118,7 +119,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
         opts = {
             "proxy": ytdlp_args.get("proxy", None),
             "headers": {
-                "User-Agent": ytdlp_args.get("user_agent", f"YTPTube/{config.app_version}"),
+                "User-Agent": ytdlp_args.get("user_agent", random_user_agent()),
             },
         }
 

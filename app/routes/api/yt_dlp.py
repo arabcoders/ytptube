@@ -12,7 +12,7 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.Presets import Preset, Presets
+from app.library.Presets import Presets
 from app.library.router import route
 from app.library.Utils import REMOVE_KEYS, arg_converter, extract_info, validate_url
 from app.library.YTDLPOpts import YTDLPOpts
@@ -105,16 +105,17 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             status=web.HTTPBadRequest.status_code,
         )
 
-    opts = YTDLPOpts.get_instance()
+    opts: YTDLPOpts = YTDLPOpts.get_instance()
 
     preset: str = request.query.get("preset", config.default_preset)
-    exists: Preset | None = Presets.get_instance().get(preset)
-    if not exists:
+    if not Presets.get_instance().get(preset):
         msg: str = f"Preset '{preset}' does not exist."
         return web.json_response(
             data={"status": False, "message": msg, "error": msg},
             status=web.HTTPBadRequest.status_code,
         )
+
+    opts = opts.preset(preset)
 
     if cli_args := request.query.get("args", None):
         try:

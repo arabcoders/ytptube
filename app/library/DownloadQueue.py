@@ -310,6 +310,20 @@ class DownloadQueue(metaclass=Singleton):
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
 
+        playlist_keys = {
+            "playlist_count": playlistCount,
+            "playlist": entry.get("title") or entry.get("id"),
+            "playlist_id": entry.get("id"),
+            "playlist_title": entry.get("title"),
+            "playlist_uploader": entry.get("uploader"),
+            "playlist_uploader_id": entry.get("uploader_id"),
+            "playlist_channel": entry.get("channel"),
+            "playlist_channel_id": entry.get("channel_id"),
+            "playlist_webpage_url": entry.get("webpage_url"),
+            "__last_playlist_index": playlistCount - 1,
+            "n_entries": len(entries),
+        }
+
         async def playlist_processor(i: int, etr: dict):
             await self.processors.acquire()
             try:
@@ -322,16 +336,9 @@ class DownloadQueue(metaclass=Singleton):
                     return {"status": "error", "msg": _msg}
 
                 extras = {
-                    "playlist": entry.get("title") or entry.get("id"),
-                    "playlist_count": playlistCount,
-                    "playlist_id": entry.get("id"),
-                    "playlist_title": entry.get("title"),
-                    "playlist_uploader": entry.get("uploader"),
-                    "playlist_uploader_id": entry.get("uploader_id"),
-                    "playlist_channel": entry.get("channel"),
-                    "playlist_channel_id": entry.get("channel_id"),
-                    "playlist_webpage_url": entry.get("webpage_url"),
+                    **playlist_keys,
                     "playlist_index": i,
+                    "playlist_index_number": i,
                     "playlist_autonumber": i,
                 }
 
