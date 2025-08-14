@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250813-764e59b0",
-        "date": "2025-08-13T16:35:42+00:00",
+        "tag": "dev-20250814-a05568f4",
+        "date": "2025-08-14T08:46:58+00:00",
         "commits": [
+            {
+                "sha": "a05568f4",
+                "message": "make playlist_index works",
+                "author": "arabcoders",
+                "date": "2025-08-14T08:46:58+00:00",
+                "full_sha": "a05568f44c3162a024bbcf2c6f76d6e2dc5ca0a8"
+            },
+            {
+                "sha": "a81657b1",
+                "message": "Fixed bug in get info endpoint not considering preset.",
+                "author": "arabcoders",
+                "date": "2025-08-14T08:16:21+00:00",
+                "full_sha": "a81657b1ef4d592b501bf309c77347f11c392c13"
+            },
             {
                 "sha": "764e59b0",
                 "message": "use random user agent for requesting thumbnails and background",
@@ -1173,7 +1187,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "764e59b0f38f61bf893e5cd17f1a1e386c6126fb"
+        "full_sha": "a05568f44c3162a024bbcf2c6f76d6e2dc5ca0a8"
     },
     {
         "tag": "dev-20250616-c07465a6",
