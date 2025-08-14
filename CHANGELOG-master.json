@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250812-2cdfa250",
-        "date": "2025-08-12T00:45:45+00:00",
+        "tag": "master-20250814-286d8ce8",
+        "date": "2025-08-14T09:30:41+00:00",
         "commits": [
+            {
+                "sha": "a05568f4",
+                "message": "make playlist_index works",
+                "author": "arabcoders",
+                "date": "2025-08-14T08:46:58+00:00",
+                "full_sha": "a05568f44c3162a024bbcf2c6f76d6e2dc5ca0a8"
+            },
+            {
+                "sha": "a81657b1",
+                "message": "Fixed bug in get info endpoint not considering preset.",
+                "author": "arabcoders",
+                "date": "2025-08-14T08:16:21+00:00",
+                "full_sha": "a81657b1ef4d592b501bf309c77347f11c392c13"
+            },
+            {
+                "sha": "764e59b0",
+                "message": "use random user agent for requesting thumbnails and background",
+                "author": "arabcoders",
+                "date": "2025-08-13T16:35:42+00:00",
+                "full_sha": "764e59b0f38f61bf893e5cd17f1a1e386c6126fb"
+            },
+            {
+                "sha": "2dfaa6b1",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-08-13T16:35:26+00:00",
+                "full_sha": "2dfaa6b1619f5a2f2d5ce62a819a820d47d8f4ee"
+            },
             {
                 "sha": "4b00435f",
                 "message": "Update yt-dlp to 2025.8.11",
@@ -1159,7 +1187,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2cdfa2503b861e43721ecc014925cfa194ce4ae3"
+        "full_sha": "286d8ce818c1e71ed83ed62b2842c8c17ba1ad78"
     },
     {
         "tag": "master-20250616-c07465a6",
