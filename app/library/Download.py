@@ -292,7 +292,8 @@ class Download:
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
                 _dct: dict = self.info_dict.copy()
-                _dct.update([{k: v for k, v in self.info.extras.items() if k not in _dct or not _dct.get(k)}])
+                if isinstance(self.info.extras, dict) and len(self.info.extras) > 0:
+                    _dct.update({k: v for k, v in self.info.extras.items() if k not in _dct or not _dct.get(k)})
 
                 cls.process_ie_result(ie_result=_dct, download=True)
                 ret: int = cls._download_retcode
