@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "53b7474069849a78d1d8868fe31c92e8a96bf4f9",
+    "date": "2025-08-16T17:06:33+00:00",
+    "commits": [
+      {
+        "sha": "53b74740",
+        "full_sha": "53b7474069849a78d1d8868fe31c92e8a96bf4f9",
+        "message": "bump playlist_items_concurrency to 4 by default",
+        "author": "arabcoders",
+        "date": "2025-08-16T17:06:33+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.4",
     "full_sha": "650ba810a83bb022864cff17a107db2a902a4e3f",
     "date": "2025-08-15T01:47:20+00:00",
