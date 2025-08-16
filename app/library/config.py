@@ -187,7 +187,7 @@ class Config:
     prevent_live_premiere: bool = False
     """Prevent downloading of the initial premiere live broadcast."""
 
-    playlist_items_concurrency: int = 1
+    playlist_items_concurrency: int = 4
     """The number of concurrent playlist items to be processed at same time."""
 
     pictures_backends: list[str] = [
