@@ -166,11 +166,11 @@ wheels = [
 
 [[package]]
 name = "bgutil-ytdlp-pot-provider"
-version = "1.2.1"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a7/3f/62fc3c3668a0518cc6a0dab159362bf2c213c0baf7631d15899a98b83176/bgutil_ytdlp_pot_provider-1.2.1.tar.gz", hash = "sha256:771173df631451046c982dcac27482cc89b300ce0aedc487043f80e45774b9f6", size = 8889 }
+sdist = { url = "https://files.pythonhosted.org/packages/eb/2b/6ee7ce5eb7ec148ad43603f9ed6875c65f93668e62e41f3faae2abeeadca/bgutil_ytdlp_pot_provider-1.2.2.tar.gz", hash = "sha256:f597d7f453a3ceee24251405a5d769e1e3f31f39d5760670f273630fddae417e", size = 9372 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/37/c66e32bdb34b84581b8a794bdc86775b1161208f915f103e39bd1ad665d3/bgutil_ytdlp_pot_provider-1.2.1-py3-none-any.whl", hash = "sha256:ddf9fee9857fb64c7fdfb4db96db81ca5864a6004fff5549a2043693776184ef", size = 9473 },
+    { url = "https://files.pythonhosted.org/packages/de/68/665246c0469147cc431fcd6450ef03873de644c8d1510c25b1dfa80ce8ec/bgutil_ytdlp_pot_provider-1.2.2-py3-none-any.whl", hash = "sha256:f2ff0f340e36503f24119192c7dfa1c1957f37520e78764a3cdf3d99db46633a", size = 9983 },
 ]
 
 [[package]]
