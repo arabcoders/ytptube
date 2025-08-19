@@ -96,7 +96,7 @@
                   <div class="control">
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The name to refers to this preset of settings.</span>
                   </span>
@@ -113,7 +113,7 @@
                     <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this folder if non is given with URL. Leave empty to use default download path. Default
                       download path <code>{{ config.app.download_path }}</code>.</span>
@@ -131,7 +131,7 @@
                     <input type="text" class="input" id="output_template" :disabled="addInProgress"
                       placeholder="Leave empty to use default template." v-model="form.template">
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this output template if non are given with URL. if not set, it will defaults to
                       <code>{{ config.app.output_template }}</code>.
@@ -146,20 +146,19 @@
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
-                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command options for yt-dlp
+                    <span>Command options for yt-dlp -
+                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
+                    </span>
                   </label>
                   <div class="control">
                     <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
                       placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp cli arguments. Check <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
-                      For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
-                        with caution those arguments can break yt-dlp or the frontend.</span>
-                    </span>
+                    <span>Not all options are supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
+                        ignored</NuxtLink>. Use with caution.</span>
                   </span>
                 </div>
               </div>
@@ -174,7 +173,7 @@
                     <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress"
                       placeholder="Leave empty to use default cookies" />
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this cookies if non are given with the URL. Use the <NuxtLink target="_blank"
                         to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
@@ -195,7 +194,7 @@
                     <textarea class="textarea" id="description" v-model="form.description" :disabled="addInProgress"
                       placeholder="Extras instructions for users to follow" />
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this field to help users to understand how to use this preset.</span>
                   </span>
@@ -227,6 +226,10 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
+
+    <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
+      <YTDLPOptions />
+    </Modal>
   </main>
 </template>
 
@@ -252,6 +255,7 @@ const form = reactive<Preset>(JSON.parse(JSON.stringify(props.preset)))
 const import_string = ref<string>('')
 const showImport = useStorage<boolean>('showImport', false)
 const selected_preset = ref<string>('')
+const showOptions = ref<boolean>(false)
 
 const checkInfo = async (): Promise<void> => {
   for (const key of ['name']) {

@@ -1,9 +1,14 @@
+<style>
+.model-content {
+  width: 70vw;
+}
+</style>
 <template>
   <div>
     <div class="modal is-active">
       <div class="model-title" v-if="title" />
       <div class="modal-background" @click="emitter('close')"></div>
-      <div class="modal-content" style="width:70vw;">
+      <div class="modal-content" :class="contentClass">
         <slot />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="emitter('close')"></button>
@@ -18,6 +23,11 @@ const emitter = defineEmits(['close'])
 
 defineProps({
   title: {
+    type: String,
+    default: '',
+    required: false,
+  },
+  contentClass: {
     type: String,
     default: '',
     required: false,

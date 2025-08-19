@@ -59,7 +59,7 @@
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress"
                       placeholder="For the problematic channel or video name.">
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The name that refers to this condition.</span>
                   </span>
@@ -81,7 +81,7 @@
                     <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
                       placeholder="availability = 'needs_auth' & channel_id = 'channel_id'">
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp <code>[--match-filters]</code> logic.</span>
                   </span>
@@ -92,19 +92,20 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command options for yt-dlp
+                    <span>
+                      Command options for yt-dlp -
+                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
+                    </span>
                   </label>
                   <div class="control">
                     <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
                       placeholder="command options to use, e.g. --proxy 1.2.3.4:3128" />
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>If the filter is matched, these options will be used.
-                      <span class="has-text-danger">This will override the command options for yt-dlp given with the
-                        URL. it's recommended to use presets and keep that field with url empty if you plan to use this
-                        feature.</span>
-                    </span>
+                    <span>Not all options are supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
+                        ignored</NuxtLink>. Use with caution.</span>
                   </span>
                 </div>
               </div>
@@ -202,6 +203,9 @@
         </form>
       </Modal>
     </div>
+    <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
+      <YTDLPOptions />
+    </Modal>
   </main>
 </template>
 
@@ -233,6 +237,7 @@ const test_data = ref<{
   changed: boolean,
   data: { status: boolean | null, data: Record<string, any> }
 }>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } })
+const showOptions = ref<boolean>(false)
 
 watch(() => form.filter, () => test_data.value.changed = true)
 

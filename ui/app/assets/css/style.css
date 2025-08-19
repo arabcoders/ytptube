@@ -357,3 +357,10 @@ table.is-fixed {
 div.is-centered {
   justify-content: center;
 }
+
+
+.modal-content-max {
+  width: max-content;
+  padding: 0;
+  margin: 0;
+}

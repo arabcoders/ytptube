@@ -75,27 +75,22 @@
             </div>
           </div>
 
-          <div class="navbar-item is-hidden-mobile" v-if="false === config.app.is_native">
+          <div class="navbar-item" v-if="false === config.app.is_native">
             <button class="button is-dark" @click="reloadPage">
               <span class="icon"><i class="fas fa-refresh" /></span>
-            </button>
-          </div>
-          <div class="navbar-item is-hidden-tablet">
-            <button class="button is-dark" @click="reloadPage">
-              <span class="icon"><i class="fas fa-refresh" /></span>
-              <span>Reload</span>
+              <span v-if="isMobile">Reload</span>
             </button>
           </div>
 
           <NotifyDropdown />
 
-          <div class="navbar-item is-hidden-mobile">
+          <div class="navbar-item" v-if="!isMobile">
             <button class="button is-dark has-tooltip-bottom mr-4" v-tooltip.bottom="'WebUI Settings'"
               @click="show_settings = !show_settings">
               <span class="icon"><i class="fas fa-cog" /></span>
             </button>
           </div>
-          <div class="navbar-item is-hidden-tablet">
+          <div class="navbar-item" v-if="isMobile">
             <button class="button is-dark" @click="show_settings = !show_settings">
               <span class="icon"><i class="fas fa-cog" /></span>
               <span>WebUI Settings</span>
@@ -116,11 +111,11 @@
       <div class="column is-8-mobile">
         <div class="has-text-left" v-if="config.app?.app_version">
           © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-          <span class="is-hidden-mobile has-tooltip"
+          <span class="has-tooltip" v-if="!isMobile"
             v-tooltip="`Build Date: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, commit: ${config.app?.app_commit_sha}`">
             &nbsp;({{ config?.app?.app_version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
-          <span class="is-hidden-mobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
+          <span v-if="!isMobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
           - <NuxtLink to="/changelog">CHANGELOG</NuxtLink>
         </div>
       </div>
@@ -137,6 +132,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, watch, readonly } from 'vue'
 import 'assets/css/bulma.css'
 import 'assets/css/style.css'
 import 'assets/css/all.css'
@@ -154,6 +150,7 @@ const loadingImage = ref(false)
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const applyPreferredColorScheme = (scheme: string) => {
   if (!scheme || scheme === 'auto') {

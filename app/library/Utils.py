@@ -43,7 +43,21 @@ REMOVE_KEYS: list = [
         "progress_template": "--progress-template",
         "consoletitle": "--console-title",
         "progress_with_newline": "--newline",
-        "forcejson": "-j, --dump-json",
+        "forcejson": "-j, --dump-single-json",
+        "opt_update_to": "--update-to",
+        "opt_ap_list_mso": "--ap-list-mso",
+        "opt_batch_file": "-a, --batch-file",
+        "opt_alias": "--alias",
+        "opt_list_extractors": "--list-extractors",
+        "opt_version": "--version",
+        "opt_help": "-h, --help",
+        "opt_update": "-U, --update",
+        "opt_list_subtitles": "--list-subs",
+        "opt_list_thumbnails": "--list-thumbnails",
+        "opt_list_format": "-F, --list-formats",
+        "opt_dump_agent": "--dump-user-agent",
+        "opt_extractor_descriptions": "--extractor-descriptions",
+        "opt_list_impersonate_targets": "--list-impersonate-targets"
     },
 ]
 

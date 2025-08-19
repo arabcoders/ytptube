@@ -144,7 +144,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
                 "ttl_left": data.get("_cached", {}).get("expires", time.time() + 300) - time.time(),
                 "expires": data.get("_cached", {}).get("expires", time.time() + 300),
             }
-            return web.Response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
+            return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
         if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
             opts = opts.add({"proxy": ytdlp_proxy})
@@ -203,7 +203,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
 
         cache.set(key=key, value=data, ttl=300)
 
-        return web.Response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
+        return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
     except Exception as e:
         LOG.exception(e)
         LOG.error(f"Error encountered while getting video info for '{url}'. '{e!s}'.")
@@ -296,3 +296,19 @@ async def archive_recheck(cache: Cache) -> Response:
             response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
 
     return web.json_response(data=response, status=web.HTTPOk.status_code)
+
+
+@route("GET", "api/yt-dlp/options/", "get_options")
+async def get_options() -> Response:
+    """
+    Get the yt-dlp CLI options.
+
+    Returns:
+        Response: The response object with the yt-dlp CLI options.
+
+    """
+    from app.library.ytdlp import ytdlp_options
+
+    return web.json_response(
+        body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code
+    )
