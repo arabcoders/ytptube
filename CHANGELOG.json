@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697",
+    "date": "2025-08-19T20:06:46+00:00",
+    "commits": [
+      {
+        "sha": "f31ea55c",
+        "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697",
+        "message": "Fixed order by and sorting",
+        "author": "arabcoders",
+        "date": "2025-08-19T20:06:46+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.6",
     "full_sha": "b4505d2fcd8a491b87674ec4cd2860544fc764eb",
     "date": "2025-08-19T19:33:42+00:00",

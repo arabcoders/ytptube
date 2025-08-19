@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250819-89d4c026",
-        "date": "2025-08-19T19:24:51+00:00",
+        "tag": "dev-20250819-f31ea55c",
+        "date": "2025-08-19T20:06:46+00:00",
         "commits": [
+            {
+                "sha": "f31ea55c",
+                "message": "Fixed order by and sorting",
+                "author": "arabcoders",
+                "date": "2025-08-19T20:06:46+00:00",
+                "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697"
+            },
             {
                 "sha": "89d4c026",
                 "message": "Added built-in reference for yt-dlp options.",
@@ -1215,7 +1222,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "89d4c026c5f8453a3a46af1967ae22149db90e1a"
+        "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697"
     },
     {
         "tag": "dev-20250616-c07465a6",
