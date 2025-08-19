@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "444e1458bea065e479dd81929baa2a72169f475d",
+    "date": "2025-08-19T16:27:45+00:00",
+    "commits": [
+      {
+        "sha": "444e1458",
+        "full_sha": "444e1458bea065e479dd81929baa2a72169f475d",
+        "message": "minor ui updates/",
+        "author": "arabcoders",
+        "date": "2025-08-19T16:27:45+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.5",
     "full_sha": "f6d1618c9196c2958ea06a3305e063de3d6e3b85",
     "date": "2025-08-16T17:29:11+00:00",
