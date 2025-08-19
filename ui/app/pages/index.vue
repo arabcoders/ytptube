@@ -20,26 +20,26 @@
             <p class="control">
               <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
-                <span class="is-hidden-mobile">Filter</span>
+                <span v-if="!isMobile">Filter</span>
               </button>
             </p>
 
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
               <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused">
                 <span class="icon"><i class="fas fa-pause" /></span>
-                <span class="is-hidden-mobile">Pause</span>
+                <span v-if="!isMobile">Pause</span>
               </button>
               <button class="button is-danger" @click="socket.emit('resume', {})" v-else
                 v-tooltip.bottom="'Resume downloading.'">
                 <span class="icon"><i class="fas fa-play" /></span>
-                <span class="is-hidden-mobile">Resume</span>
+                <span v-if="!isMobile">Resume</span>
               </button>
             </p>
 
             <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
               <button class="button is-primary has-tooltip-bottom" @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
-                <span class="is-hidden-mobile">New Download</span>
+                <span v-if="!isMobile">New Download</span>
               </button>
             </p>
 
@@ -48,13 +48,14 @@
                 @click="() => changeDisplay()">
                 <span class="icon"><i class="fa-solid"
                     :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
-                <span class="is-hidden-mobile">{{ display_style === 'cards' ? 'Cards' : 'List' }}</span>
+                <span v-if="!isMobile">
+                  {{ display_style === 'cards' ? 'Cards' : 'List' }}
+                </span>
               </button>
             </p>
-
           </div>
         </div>
-        <div class="is-hidden-mobile">
+        <div v-if="!isMobile">
           <span class="subtitle">
             Queued and completed downloads are displayed here.
           </span>
@@ -68,7 +69,7 @@
     <Queue @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :thumbnails="show_thumbnail"
       :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
     <History @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)"
-      @add_new="(item: item_request) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
+      @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
     <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
       @closeModel="close_info()" />
@@ -81,6 +82,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { item_request } from '~/types/item'
+import type { StoreItem } from '~/types/store'
 
 const config = useConfigStore()
 const stateStore = useStateStore()
@@ -105,6 +107,8 @@ const dialog_confirm = ref({
   html_message: '',
   options: [],
 })
+
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -170,7 +174,7 @@ watch(() => info_view.value.url, v => {
 
 const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
 
-const toNewDownload = async (item: item_request) => {
+const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
   if (!item) {
     return
   }
