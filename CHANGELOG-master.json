@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250816-f6d1618c",
-        "date": "2025-08-16T17:29:11+00:00",
+        "tag": "master-20250819-b4505d2f",
+        "date": "2025-08-19T19:33:42+00:00",
         "commits": [
+            {
+                "sha": "89d4c026",
+                "message": "Added built-in reference for yt-dlp options.",
+                "author": "arabcoders",
+                "date": "2025-08-19T19:24:51+00:00",
+                "full_sha": "89d4c026c5f8453a3a46af1967ae22149db90e1a"
+            },
+            {
+                "sha": "444e1458",
+                "message": "minor ui updates/",
+                "author": "arabcoders",
+                "date": "2025-08-19T16:27:45+00:00",
+                "full_sha": "444e1458bea065e479dd81929baa2a72169f475d"
+            },
             {
                 "sha": "53b74740",
                 "message": "bump playlist_items_concurrency to 4 by default",
@@ -1201,7 +1215,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f6d1618c9196c2958ea06a3305e063de3d6e3b85"
+        "full_sha": "b4505d2fcd8a491b87674ec4cd2860544fc764eb"
     },
     {
         "tag": "master-20250616-c07465a6",
