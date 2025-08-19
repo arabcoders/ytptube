@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "444e1458bea065e479dd81929baa2a72169f475d",
-    "date": "2025-08-19T16:27:45+00:00",
+    "full_sha": "89d4c026c5f8453a3a46af1967ae22149db90e1a",
+    "date": "2025-08-19T19:24:51+00:00",
     "commits": [
+      {
+        "sha": "89d4c026",
+        "full_sha": "89d4c026c5f8453a3a46af1967ae22149db90e1a",
+        "message": "Added built-in reference for yt-dlp options.",
+        "author": "arabcoders",
+        "date": "2025-08-19T19:24:51+00:00"
+      },
       {
         "sha": "444e1458",
         "full_sha": "444e1458bea065e479dd81929baa2a72169f475d",
