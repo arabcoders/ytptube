@@ -267,12 +267,16 @@ const grouped = computed<{ name: string, items: YTDLPOption[] }[]>(() => {
     map.get(key)!.push(o)
   }
 
-  const out = Array.from(map.entries()).map(([name, items]) => {
-    items.sort((a, b) => (a.flags[0] || '').localeCompare(b.flags[0] || ''))
-    return { name, items }
-  })
+  const dir = 'asc' === sortDir.value ? 1 : -1
+  const out = Array.from(map.entries()).map(([name, items]) => ({ name, items }))
 
-  out.sort((a, b) => a.name.localeCompare(b.name))
+  if ('group' === sortBy.value) {
+    out.sort((a, b) => a.name.localeCompare(b.name) * dir)
+  } else {
+    // When sorting by flag, groups should still be in alphabetical order
+    out.sort((a, b) => a.name.localeCompare(b.name))
+  }
+
   return out
 })
 </script>
