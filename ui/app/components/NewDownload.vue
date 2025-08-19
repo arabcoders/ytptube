@@ -118,16 +118,18 @@
             <div class="column is-6-tablet is-12-mobile">
               <DLInput id="cli_options" type="text" label="Command options for yt-dlp" v-model="form.cli"
                 icon="fa-solid fa-terminal" :disabled="!socket.isConnected || addInProgress">
+                <template #title>
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  <span>Command options for yt-dlp -
+                    <NuxtLink @click="showOptions = true" v-text="'View Options'" />
+                  </span>
+                </template>
                 <template #help>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Check <NuxtLink target="_blank" to="https://github.com/yt-dlp/yt-dlp#general-options">this
-                        page</NuxtLink> for more info. <span class="has-text-danger">Not all options are supported
-                        <NuxtLink target="_blank"
-                          to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26-L48">some are
-                          ignored</NuxtLink>. Use with caution these options can break yt-dlp or the frontend.
-                      </span>
-                    </span>
+                    <span>Not all options are supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
+                        ignored</NuxtLink>. Use with caution.</span>
                   </span>
                 </template>
               </DLInput>
@@ -230,6 +232,9 @@
       @cancel="() => dialog_confirm.visible = false" />
 
     <DLFields v-if="showFields" @cancel="() => showFields = false" />
+    <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
+      <YTDLPOptions />
+    </Modal>
   </main>
 </template>
 
@@ -252,10 +257,11 @@ const showAdvanced = useStorage<boolean>('show_advanced', false)
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
+const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 
 const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
-const dlFields = useStorage<Record<string, any>>('dl_fields', {})
+const showOptions = ref<boolean>(false)
 const dlFieldsExtra = ['--no-download-archive']
 
 const form = useStorage<item_request>('local_config_v1', {

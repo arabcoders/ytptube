@@ -234,20 +234,20 @@
                 <div class="field">
                   <label class="label is-inline" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    Command options for yt-dlp
+                    <span>Command options for yt-dlp -
+                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
+                    </span>
                   </label>
                   <div class="control">
                     <textarea type="text" class="textarea is-pre" v-model="form.cli" id="cli_options"
                       :disabled="addInProgress"
                       placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">yt-dlp cli arguments. Check <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#general-options">this page</NuxtLink>.
-                      For more info. <span class="has-text-danger">Not all options are supported some are ignored. Use
-                        with caution those arguments can break yt-dlp or the frontend.</span>
-                    </span>
+                    <span>Not all options are supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
+                        ignored</NuxtLink>. Use with caution.</span>
                   </span>
                 </div>
               </div>
@@ -297,6 +297,9 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
+    <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
+      <YTDLPOptions />
+    </Modal>
   </main>
 </template>
 
@@ -324,6 +327,7 @@ const showImport = useStorage('showImport', false)
 
 const convertInProgress = ref<boolean>(false)
 const import_string = ref<string>('')
+const showOptions = ref<boolean>(false)
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 

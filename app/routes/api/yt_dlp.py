@@ -296,3 +296,19 @@ async def archive_recheck(cache: Cache) -> Response:
             response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
 
     return web.json_response(data=response, status=web.HTTPOk.status_code)
+
+
+@route("GET", "api/yt-dlp/options/", "get_options")
+async def get_options() -> Response:
+    """
+    Get the yt-dlp CLI options.
+
+    Returns:
+        Response: The response object with the yt-dlp CLI options.
+
+    """
+    from app.library.ytdlp import ytdlp_options
+
+    return web.json_response(
+        body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code
+    )

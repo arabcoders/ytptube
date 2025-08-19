@@ -1,8 +1,13 @@
 <template>
   <div class="field">
     <label :for="`dlf-${id}`" class="label is-unselectable">
-      <span v-if="icon" class="icon"><i :class="icon" /></span>
-      <span v-tooltip="field ? `yt-dlp option: ${field}` : null" :class="{ 'has-tooltip': field }">{{ label }}</span>
+      <template v-if="$slots.title">
+        <slot name="title"></slot>
+      </template>
+      <template v-else>
+        <span v-if="icon" class="icon"><i :class="icon" /></span>
+        <span v-tooltip="field ? `yt-dlp option: ${field}` : null" :class="{ 'has-tooltip': field }">{{ label }}</span>
+      </template>
     </label>
     <div class="control is-expanded" v-if="'string' === type">
       <input :id="`dlf-${id}`" :type="type" class="input" v-model="model" :placeholder="placeholder"
