@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250819-f31ea55c",
-        "date": "2025-08-19T20:06:46+00:00",
+        "tag": "dev-20250820-3ebd66fd",
+        "date": "2025-08-20T16:33:20+00:00",
         "commits": [
+            {
+                "sha": "3ebd66fd",
+                "message": "add support for --no-continue",
+                "author": "arabcoders",
+                "date": "2025-08-20T16:33:20+00:00",
+                "full_sha": "3ebd66fd603b364c8934cee7e8ff34182114582a"
+            },
+            {
+                "sha": "a0533a08",
+                "message": "Added autocomplete for cli options",
+                "author": "arabcoders",
+                "date": "2025-08-20T16:18:39+00:00",
+                "full_sha": "a0533a08611ac5b35cb79800970c09dc8dc4b69f"
+            },
             {
                 "sha": "f31ea55c",
                 "message": "Fixed order by and sorting",
@@ -1222,7 +1236,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697"
+        "full_sha": "3ebd66fd603b364c8934cee7e8ff34182114582a"
     },
     {
         "tag": "dev-20250616-c07465a6",

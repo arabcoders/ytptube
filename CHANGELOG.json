@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697",
-    "date": "2025-08-19T20:06:46+00:00",
+    "full_sha": "3ebd66fd603b364c8934cee7e8ff34182114582a",
+    "date": "2025-08-20T16:33:20+00:00",
     "commits": [
+      {
+        "sha": "3ebd66fd",
+        "full_sha": "3ebd66fd603b364c8934cee7e8ff34182114582a",
+        "message": "add support for --no-continue",
+        "author": "arabcoders",
+        "date": "2025-08-20T16:33:20+00:00"
+      },
+      {
+        "sha": "a0533a08",
+        "full_sha": "a0533a08611ac5b35cb79800970c09dc8dc4b69f",
+        "message": "Added autocomplete for cli options",
+        "author": "arabcoders",
+        "date": "2025-08-20T16:18:39+00:00"
+      },
       {
         "sha": "f31ea55c",
         "full_sha": "f31ea55ca06b9202adebfb0344be85a95d0af697",
