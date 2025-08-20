@@ -41,6 +41,7 @@ export const useConfigStore = defineStore('config', () => {
     ],
     dl_fields: [],
     folders: [],
+    ytdlp_options: [],
     paused: false,
     is_loaded: false,
   });

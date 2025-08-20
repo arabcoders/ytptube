@@ -153,13 +153,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-
-type YTDLPOption = {
-  flags: string[],
-  description: string | null,
-  group: string | null,
-  ignored: boolean,
-}
+import type { YTDLPOption } from '~/types/ytdlp'
 
 const isLoading = ref(false)
 const options = ref<YTDLPOption[]>([])

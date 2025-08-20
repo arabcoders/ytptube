@@ -232,22 +232,20 @@
 
               <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="cli_options">
+                  <label class="label is-unselectable" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>Command options for yt-dlp -
-                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
-                    </span>
+                    <span>Command options for yt-dlp</span>
                   </label>
-                  <div class="control">
-                    <textarea type="text" class="textarea is-pre" v-model="form.cli" id="cli_options"
-                      :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
-                  </div>
+                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
+                    :disabled="addInProgress" />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Not all options are supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
-                        ignored</NuxtLink>. Use with caution.</span>
+                    <span>
+                      <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are
+                      supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
+                        are ignored</NuxtLink>. Use with caution.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -307,6 +305,8 @@
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import type { AutoCompleteOptions } from '~/types/autocomplete'
 import type { exported_task, task_item } from '~/types/tasks'
 
 const props = defineProps<{
@@ -328,10 +328,19 @@ const showImport = useStorage('showImport', false)
 const convertInProgress = ref<boolean>(false)
 const import_string = ref<string>('')
 const showOptions = ref<boolean>(false)
+const ytDlpOpt = ref<AutoCompleteOptions>([])
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 
 const form = reactive<task_item>({ ...props.task })
+
+watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
+  .filter(opt => !opt.ignored)
+  .flatMap(opt => opt.flags
+    .filter(flag => flag.startsWith('--'))
+    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  { immediate: true }
+)
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {

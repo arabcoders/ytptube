@@ -2,13 +2,14 @@
 code {
   color: var(--bulma-code) !important
 }
+
 </style>
 
 <template>
   <div>
     <div class="modal is-active" v-if="false === externalModel">
       <div class="modal-background" @click="emitter('closeModel')"></div>
-      <div class="modal-content" style="width:60vw;">
+      <div class="modal-content modal-content-max">
         <div style="font-size:30vh; width: 99%" class="has-text-centered" v-if="isLoading">
           <i class="fas fa-circle-notch fa-spin"></i>
         </div>
@@ -25,7 +26,7 @@ code {
       </div>
       <button class="modal-close is-large" aria-label="close" @click="emitter('closeModel')"></button>
     </div>
-    <div style="width:70vw; height: 80vh;" v-else>
+    <div class="modal-content-max" style="height: 80vh;" v-else>
       <div class="content p-0 m-0" style="position: relative">
         <pre><code class="p-4 is-block" v-text="data" /></pre>
         <button class="button m-4" @click="() => copyText(JSON.stringify(data, null, 4))"

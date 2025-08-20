@@ -90,22 +90,20 @@
 
               <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="cli_options">
+                  <label class="label is-unselectable" for="cli_options">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>
-                      Command options for yt-dlp -
-                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
-                    </span>
+                    <span>Command options for yt-dlp</span>
                   </label>
-                  <div class="control">
-                    <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --proxy 1.2.3.4:3128" />
-                  </div>
+                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
+                    :disabled="addInProgress" />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Not all options are supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
-                        ignored</NuxtLink>. Use with caution.</span>
+                    <span>
+                      <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are
+                      supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
+                        are ignored</NuxtLink>. Use with caution.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -211,6 +209,8 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
 const emitter = defineEmits<{
@@ -227,6 +227,7 @@ const props = defineProps<{
 const toast = useNotification()
 const showImport = useStorage('showImport', false)
 const box = useConfirm()
+const config = useConfigStore()
 
 const form = reactive<ConditionItem>(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
@@ -238,6 +239,15 @@ const test_data = ref<{
   data: { status: boolean | null, data: Record<string, any> }
 }>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } })
 const showOptions = ref<boolean>(false)
+const ytDlpOpt = ref<AutoCompleteOptions>([])
+
+watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
+  .filter(opt => !opt.ignored)
+  .flatMap(opt => opt.flags
+    .filter(flag => flag.startsWith('--'))
+    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  { immediate: true }
+)
 
 watch(() => form.filter, () => test_data.value.changed = true)
 

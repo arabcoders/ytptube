@@ -358,9 +358,11 @@ div.is-centered {
   justify-content: center;
 }
 
-
 .modal-content-max {
-  width: max-content;
+  width: calc(100% - 20px);
+  max-width: 1344px;
+  min-width: 320px;
+  box-sizing: border-box;
   padding: 0;
-  margin: 0;
+  margin: 0 auto;
 }

@@ -143,22 +143,22 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
-                  <label class="label is-inline" for="cli_options">
-                    <span>Command options for yt-dlp -
-                      <NuxtLink @click="showOptions = true" v-text="'View Options'" />
-                    </span>
+                  <label class="label is-unselectable" for="cli_options">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                    <span>Command options for yt-dlp</span>
                   </label>
-                  <div class="control">
-                    <textarea class="textarea is-pre" v-model="form.cli" id="cli_options" :disabled="addInProgress"
-                      placeholder="command options to use, e.g. --no-embed-metadata --no-embed-thumbnail" />
-                  </div>
+                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
+                    :disabled="addInProgress" />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Not all options are supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
-                        ignored</NuxtLink>. Use with caution.</span>
+                    <span>
+                      <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are
+                      supported <NuxtLink target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
+                        are ignored</NuxtLink>. Use with caution.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -184,7 +184,7 @@
                 </div>
               </div>
 
-              <div class="column">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="description">
                     <span class="icon"><i class="fa-solid fa-comment" /></span>
@@ -235,6 +235,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset, PresetImport } from '~/types/presets'
 
 const emitter = defineEmits<{
@@ -256,6 +257,15 @@ const import_string = ref<string>('')
 const showImport = useStorage<boolean>('showImport', false)
 const selected_preset = ref<string>('')
 const showOptions = ref<boolean>(false)
+const ytDlpOpt = ref<AutoCompleteOptions>([])
+
+watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
+  .filter(opt => !opt.ignored)
+  .flatMap(opt => opt.flags
+    .filter(flag => flag.startsWith('--'))
+    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  { immediate: true }
+)
 
 const checkInfo = async (): Promise<void> => {
   for (const key of ['name']) {
