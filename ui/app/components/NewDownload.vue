@@ -127,8 +127,8 @@
                   <span>
                     <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are supported
                     <NuxtLink target="_blank"
-                      to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
-                      ignored</NuxtLink>. Use with caution.
+                      to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
+                      are ignored</NuxtLink>. Use with caution.
                   </span>
                 </span>
               </div>
@@ -311,6 +311,11 @@ const addDownload = async () => {
 
         if ([undefined, null, '', false].includes(value as any)) {
           continue
+        }
+
+        const keyRegex = new RegExp(`(^|\s)${key}(\s|$)`);
+        if (form_cli && keyRegex.test(form_cli)) {
+          continue;
         }
 
         joined.push(true === value ? `${key}` : `${key} ${value}`)

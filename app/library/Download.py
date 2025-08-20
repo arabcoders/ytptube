@@ -276,6 +276,9 @@ class Download:
 
             params["logger"] = NestedLogger(self.logger)
 
+            if "continuedl" in params and params["continuedl"] is False:
+                self.delete_temp(by_pass=True)
+
             cls = YTDLP(params=params)
 
             self.started_time = int(time.time())
@@ -435,11 +438,16 @@ class Download:
 
         return False
 
-    def delete_temp(self):
+    def delete_temp(self, by_pass: bool = False):
         if self.temp_disabled or self.temp_keep is True or not self.temp_path:
             return
 
-        if "finished" != self.info.status and self.info.downloaded_bytes and self.info.downloaded_bytes > 0:
+        if (
+            not by_pass
+            and "finished" != self.info.status
+            and self.info.downloaded_bytes
+            and self.info.downloaded_bytes > 0
+        ):
             self.logger.warning(
                 f"Keeping temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
             )
@@ -457,7 +465,11 @@ class Download:
             return
 
         status = delete_dir(tmp_dir)
-        self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
+        if by_pass:
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            self.logger.info(f"Temp folder '{self.temp_path}' emptied.")
+        else:
+            self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
 
     async def progress_update(self):
         """
