@@ -81,7 +81,8 @@
                       <span class="icon"><i class="fas fa-terminal" /></span>
                       <span>Associated yt-dlp option</span>
                     </label>
-                    <input type="text" v-model="item.field" class="input" :disabled="isLoading" />
+                    <InputAutocomplete v-model="item.field" :options="ytDlpOptions" :disabled="isLoading"
+                      placeholder="Type or select a yt-dlp option" />
                     <span class="help is-bold">
                       The long form of yt-dlp option name, e.g. <code>--no-overwrites</code> not <code>-w</code>.
                     </span>
@@ -164,8 +165,11 @@
 
 <script setup lang="ts">
 import { defineEmits, ref } from 'vue'
-import type { DLField } from '~/types/dl_fields'
+import InputAutocomplete from '~/components/InputAutocomplete.vue'
 import { disableOpacity, enableOpacity } from '~/utils'
+
+import type { DLField } from '~/types/dl_fields'
+import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const emitter = defineEmits<{ (e: 'cancel'): void }>()
 
@@ -173,6 +177,8 @@ const toast = useNotification()
 
 const isLoading = ref<boolean>(false)
 const items = ref<DLField[]>([])
+const config = useConfigStore()
+const ytDlpOptions = ref<AutoCompleteOptions>([])
 
 const FieldTypes = {
   STRING: 'string',
@@ -274,6 +280,12 @@ const validateItem = (item: DLField, index: number): boolean => {
 
 const sortedDLFields = computed(() => items.value.sort((a, b) => (a.order || 0) - (b.order || 0)))
 
+watch(() => config.ytdlp_options, newOptions => ytDlpOptions.value = newOptions
+  .filter(opt => !opt.ignored).flatMap(opt => opt.flags
+    .filter(flag => flag.startsWith('--'))
+    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  { immediate: true }
+)
 onMounted(async () => {
   disableOpacity()
   await loadContent()

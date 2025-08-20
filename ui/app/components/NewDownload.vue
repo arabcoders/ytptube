@@ -116,23 +116,22 @@
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <DLInput id="cli_options" type="text" label="Command options for yt-dlp" v-model="form.cli"
-                icon="fa-solid fa-terminal" :disabled="!socket.isConnected || addInProgress">
-                <template #title>
+              <div class="field">
+                <label class="label is-unselectable" for="cli_options">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  <span>Command options for yt-dlp -
-                    <NuxtLink @click="showOptions = true" v-text="'View Options'" />
+                  <span>Command options for yt-dlp</span>
+                </label>
+                <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt" />
+                <span class="help is-bold">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>
+                    <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are supported
+                    <NuxtLink target="_blank"
+                      to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
+                      are ignored</NuxtLink>. Use with caution.
                   </span>
-                </template>
-                <template #help>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Not all options are supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some are
-                        ignored</NuxtLink>. Use with caution.</span>
-                  </span>
-                </template>
-              </DLInput>
+                </span>
+              </div>
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
@@ -241,7 +240,9 @@
 <script setup lang="ts">
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { item_request } from '~/types/item'
+import type { AutoCompleteOptions } from '~/types/autocomplete';
 
 const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
@@ -263,6 +264,7 @@ const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
 const showOptions = ref<boolean>(false)
 const dlFieldsExtra = ['--no-download-archive']
+const ytDlpOpt = ref<AutoCompleteOptions>([])
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -309,6 +311,11 @@ const addDownload = async () => {
 
         if ([undefined, null, '', false].includes(value as any)) {
           continue
+        }
+
+        const keyRegex = new RegExp(`(^|\s)${key}(\s|$)`);
+        if (form_cli && keyRegex.test(form_cli)) {
+          continue;
         }
 
         joined.push(true === value ? `${key}` : `${key} ${value}`)
@@ -444,6 +451,14 @@ onUpdated(async () => {
     form.value.preset = config.app.default_preset
   }
 })
+
+watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
+  .filter(opt => !opt.ignored)
+  .flatMap(opt => opt.flags
+    .filter(flag => flag.startsWith('--'))
+    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  { immediate: true }
+)
 
 onMounted(async () => {
   await nextTick()

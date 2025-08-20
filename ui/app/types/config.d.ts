@@ -1,3 +1,4 @@
+import type { YTDLPOption } from './ytdlp';
 import type { DLField } from "./dl_fields"
 
 type AppConfig = {
@@ -77,6 +78,8 @@ type ConfigState = {
   dl_fields: DLField[]
   /** List of folders where files can be saved */
   folders: string[]
+  /** List of yt-dlp options */
+  ytdlp_options: YTDLPOption[]
   /** Indicates if downloads are currently paused */
   paused: boolean
   /** Indicates if the configuration has been loaded */

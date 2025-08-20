@@ -339,7 +339,7 @@
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="tasks && tasks.length > 0">
+    <div class="columns is-multiline" v-if="!toggleForm && tasks && tasks.length > 0">
       <div class="column is-12">
         <Message title="Tips" class="is-info is-background-info-80" icon="fas fa-info-circle">
           <span>

@@ -139,6 +139,7 @@ import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from 'moment'
 import * as Sentry from '@sentry/nuxt'
+import type { YTDLPOption } from '~/types/ytdlp'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -235,13 +236,20 @@ watch(() => config.app.sentry_dsn, dsn => {
 onMounted(async () => {
   try {
     await handleImage(bg_enable.value)
-  } catch (e) {
-  }
+  } catch (e) { }
+
+  try {
+    const opts = await request('/api/yt-dlp/options')
+    if (!opts.ok) {
+      return
+    }
+    const data: Array<YTDLPOption> = await opts.json()
+    config.ytdlp_options = data
+  } catch (e) { }
 
   try {
     applyPreferredColorScheme(selectedTheme.value)
-  } catch (e) {
-  }
+  } catch (e) { }
 })
 
 watch(selectedTheme, value => {
