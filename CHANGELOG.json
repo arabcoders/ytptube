@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "cde6d956bb0ddcfbf4facd76df89a8e991264814",
+    "date": "2025-08-21T20:26:24+00:00",
+    "commits": [
+      {
+        "sha": "cde6d956",
+        "full_sha": "cde6d956bb0ddcfbf4facd76df89a8e991264814",
+        "message": "fix bug in textarea cli options auto triggering complete on enter even if nothing is written",
+        "author": "arabcoders",
+        "date": "2025-08-21T20:26:24+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.7",
     "full_sha": "4c9c9eab84d72137439cd09dbb7c7e33252896d5",
     "date": "2025-08-20T16:37:34+00:00",
