@@ -88,7 +88,16 @@ const setDropdownItemRef = (el: Element | ComponentPublicInstance | null, idx: n
   dropdownItemRefs.value[idx] = el instanceof HTMLElement ? el : null
 }
 
-watch(filteredOptions, () => dropdownItemRefs.value = Array(filteredOptions.value.length).fill(null))
+watch(filteredOptions, () => {
+  highlightedIndex.value = filteredOptions.value.length ? 0 : -1
+  dropdownItemRefs.value = Array(filteredOptions.value.length).fill(null)
+  nextTick(() => {
+    const dropdown = document.querySelector('.dropdown-content')
+    if (dropdown) {
+      dropdown.scrollTop = 0
+    }
+  })
+})
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (!filteredOptions.value.length) {

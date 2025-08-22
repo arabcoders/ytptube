@@ -82,6 +82,17 @@ const onInput = () => {
   highlightedIndex.value = (showList.value && filteredOptions.value.length && lastWord.length > 0) ? 0 : -1
 }
 
+// Reset scroll position when filtered options change
+watch(filteredOptions, () => {
+  highlightedIndex.value = filteredOptions.value.length > 0 && showList.value ? 0 : -1
+  nextTick(() => {
+    const dropdown = document.querySelector('.dropdown-content')
+    if (dropdown) {
+      dropdown.scrollTop = 0
+    }
+  })
+})
+
 const hideList = () => setTimeout(() => { showList.value = false; highlightedIndex.value = -1 }, 100)
 
 const onKeydown = (e: KeyboardEvent) => {
