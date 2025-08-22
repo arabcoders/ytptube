@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "cde6d956bb0ddcfbf4facd76df89a8e991264814",
-    "date": "2025-08-21T20:26:24+00:00",
+    "full_sha": "f21fee96a33d8dea3a5deb137651ec70cb752023",
+    "date": "2025-08-22T14:47:59+00:00",
     "commits": [
+      {
+        "sha": "f21fee96",
+        "full_sha": "f21fee96a33d8dea3a5deb137651ec70cb752023",
+        "message": "refactor: update basic mode watch logic to check config loading state",
+        "author": "arabcoders",
+        "date": "2025-08-22T14:47:59+00:00"
+      },
+      {
+        "sha": "2adc529a",
+        "full_sha": "2adc529a5bcfae61d15265606f8e1b64c3cf6edf",
+        "message": "reset dropdown position when writing",
+        "author": "arabcoders",
+        "date": "2025-08-22T14:21:39+00:00"
+      },
       {
         "sha": "cde6d956",
         "full_sha": "cde6d956bb0ddcfbf4facd76df89a8e991264814",
