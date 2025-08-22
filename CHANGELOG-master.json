@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250820-4c9c9eab",
-        "date": "2025-08-20T16:37:34+00:00",
+        "tag": "master-20250822-d2ce9940",
+        "date": "2025-08-22T15:22:59+00:00",
         "commits": [
+            {
+                "sha": "abf9c7a9",
+                "message": "feat: add download_info_expires config to manage download info validity",
+                "author": "arabcoders",
+                "date": "2025-08-22T15:10:22+00:00",
+                "full_sha": "abf9c7a9d8a7444ad6e1331809e2ebf6cfc1562d"
+            },
+            {
+                "sha": "f21fee96",
+                "message": "refactor: update basic mode watch logic to check config loading state",
+                "author": "arabcoders",
+                "date": "2025-08-22T14:47:59+00:00",
+                "full_sha": "f21fee96a33d8dea3a5deb137651ec70cb752023"
+            },
+            {
+                "sha": "2adc529a",
+                "message": "reset dropdown position when writing",
+                "author": "arabcoders",
+                "date": "2025-08-22T14:21:39+00:00",
+                "full_sha": "2adc529a5bcfae61d15265606f8e1b64c3cf6edf"
+            },
+            {
+                "sha": "cde6d956",
+                "message": "fix bug in textarea cli options auto triggering complete on enter even if nothing is written",
+                "author": "arabcoders",
+                "date": "2025-08-21T20:26:24+00:00",
+                "full_sha": "cde6d956bb0ddcfbf4facd76df89a8e991264814"
+            },
             {
                 "sha": "3ebd66fd",
                 "message": "add support for --no-continue",
@@ -1236,7 +1264,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4c9c9eab84d72137439cd09dbb7c7e33252896d5"
+        "full_sha": "d2ce9940e8fffa7d49dc4878e0563d2e2d94ef7d"
     },
     {
         "tag": "master-20250616-c07465a6",
