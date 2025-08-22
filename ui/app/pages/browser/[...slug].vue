@@ -221,6 +221,14 @@ const table_container = ref<boolean>(false)
 const search = ref<string>('')
 const show_filter = ref<boolean>(false)
 
+watch(() => config.app.basic_mode, async v => {
+  if (!config.isLoaded() || !v) {
+    return
+  }
+  await navigateTo('/')
+},{ immediate: true })
+
+
 const filteredItems = computed<FileItem[]>(() => {
   if (!search.value) {
     return sortedItems(items.value)

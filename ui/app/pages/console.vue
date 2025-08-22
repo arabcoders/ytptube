@@ -82,11 +82,11 @@ watch(() => isLoading.value, async value => {
 }, { immediate: true })
 
 watch(() => config.app.basic_mode, async () => {
-  if (!config.app.basic_mode) {
+  if (!config.isLoaded() || !config.app.basic_mode) {
     return
   }
   await navigateTo('/')
-})
+}, { immediate: true })
 
 watch(() => config.app.console_enabled, async () => {
   if (config.app.console_enabled) {

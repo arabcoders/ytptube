@@ -156,11 +156,11 @@ watch(toggleFilter, () => {
 });
 
 watch(() => config.app.basic_mode, async v => {
-  if (!v) {
+  if (!config.isLoaded() || !v) {
     return
   }
   await navigateTo('/')
-})
+}, { immediate: true })
 
 watch(() => config.app.file_logging, async v => {
   if (v) {

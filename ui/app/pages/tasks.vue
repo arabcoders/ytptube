@@ -423,12 +423,12 @@ watch(masterSelectAll, value => {
   }
 })
 
-watch(() => config.app.basic_mode, async () => {
-  if (!config.app.basic_mode) {
+watch(() => config.app.basic_mode, async v => {
+  if (!config.isLoaded() || !v) {
     return
   }
   await navigateTo('/')
-})
+},{ immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
