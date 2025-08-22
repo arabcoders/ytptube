@@ -104,7 +104,15 @@
     <div>
       <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
       <NuxtLoadingIndicator />
-      <NuxtPage />
+      <NuxtPage v-if="config.is_loaded" />
+      <Message v-else class="has-background-info-90 has-text-dark mt-5" title="Loading Configuration"
+        icon="fas fa-spinner fa-spin">
+        <p>Loading application configuration. This usually takes less than a second.</p>
+        <p v-if="!socket.isConnected" class="mt-2">
+          If this is taking too long, please check that the backend server is running and that the WebSocket
+          connection is functional.
+        </p>
+      </Message>
     </div>
 
     <div class="columns mt-3 is-mobile">

@@ -77,9 +77,21 @@ const appendFlag = (flag: string) => {
 }
 
 const onInput = () => {
-  showList.value = true
-  highlightedIndex.value = filteredOptions.value.length ? 0 : -1
+  const lastWord = localValue.value.split(/\s+/).pop() || ''
+  showList.value = lastWord.length > 0
+  highlightedIndex.value = (showList.value && filteredOptions.value.length && lastWord.length > 0) ? 0 : -1
 }
+
+// Reset scroll position when filtered options change
+watch(filteredOptions, () => {
+  highlightedIndex.value = filteredOptions.value.length > 0 && showList.value ? 0 : -1
+  nextTick(() => {
+    const dropdown = document.querySelector('.dropdown-content')
+    if (dropdown) {
+      dropdown.scrollTop = 0
+    }
+  })
+})
 
 const hideList = () => setTimeout(() => { showList.value = false; highlightedIndex.value = -1 }, 100)
 
@@ -119,9 +131,11 @@ const onKeydown = (e: KeyboardEvent) => {
       if (el) el.scrollIntoView({ block: 'nearest' })
     })
   } else if (e.key === 'Enter' || e.key === 'Tab') {
+    const lastWord = localValue.value.split(/\s+/).pop() || ''
     const selected = highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length ?
       filteredOptions.value[highlightedIndex.value] : undefined
-    if (selected) {
+    // Only autocomplete if there's a partial word being typed
+    if (selected && lastWord.trim().length > 0) {
       e.preventDefault()
       appendFlag(selected.value)
     }

@@ -351,7 +351,7 @@
                 </a>
               </div>
 
-              <div class="column">
+              <div class="column" v-if="!config.app.basic_mode">
                 <Dropdown icons="fa-solid fa-cogs" label="Actions">
                   <template v-if="'finished' === item.status && item.filename">
                     <NuxtLink @click="playVideo(item)" class="dropdown-item">

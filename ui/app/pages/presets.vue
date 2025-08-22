@@ -226,15 +226,12 @@ const remove_keys = ['raw', 'toggle_description']
 
 const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
 
-watch(
-  () => config.app.basic_mode,
-  async () => {
-    if (!config.app.basic_mode) {
-      return
-    }
-    await navigateTo('/')
-  },
-)
+watch(() => config.app.basic_mode, async v => {
+  if (!config.isLoaded() || !v) {
+    return
+  }
+  await navigateTo('/')
+}, { immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {

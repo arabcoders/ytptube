@@ -107,6 +107,7 @@ class Download:
         self.temp_dir = info.temp_dir
         self.template = info.template
         self.template_chapter = info.template_chapter
+        self.download_info_expires = int(config.download_info_expires)
         self.preset = info.preset
         self.info = info
         self.id = info._id
@@ -226,7 +227,15 @@ class Download:
                     self.logger.error(err_msg)
                     raise ValueError(err_msg) from e
 
-            if not self.info_dict:
+            # Safe-guard incase downloading take too long and the info expires.
+            if self.info_dict and isinstance(self.info_dict, dict) and self.download_info_expires > 0:
+                _ts: int | None = self.info_dict.get("timestamp")
+                _ts = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
+                if not _ts or (datetime.now(tz=UTC) - _ts).total_seconds() > self.download_info_expires:
+                    self.info_dict = None
+                    self.logger.warning(f"Info for '{self.info.url}' has expired, re-extracting info.")
+
+            if not self.info_dict or not isinstance(self.info_dict, dict):
                 self.logger.info(f"Extracting info for '{self.info.url}'.")
                 self.logs = []
                 ie_params = params.copy()

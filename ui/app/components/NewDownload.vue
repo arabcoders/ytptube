@@ -121,7 +121,8 @@
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   <span>Command options for yt-dlp</span>
                 </label>
-                <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt" />
+                <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
+                  :disabled="!socket.isConnected || addInProgress" />
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>
