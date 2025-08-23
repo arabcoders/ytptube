@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250823-c4b8121c",
-        "date": "2025-08-23T10:41:51+00:00",
+        "tag": "dev-20250823-e9190b6d",
+        "date": "2025-08-23T18:41:37+00:00",
         "commits": [
+            {
+                "sha": "e9190b6d",
+                "message": "added better fallback to hls.",
+                "author": "arabcoders",
+                "date": "2025-08-23T18:41:37+00:00",
+                "full_sha": "e9190b6dab2095aab08e7c946ad7db17dfa58a83"
+            },
+            {
+                "sha": "d9ec7733",
+                "message": "consider file size when caching ffprobe results.",
+                "author": "arabcoders",
+                "date": "2025-08-23T17:21:16+00:00",
+                "full_sha": "d9ec7733a11086aee81525956aec7e49443abca0"
+            },
             {
                 "sha": "c4b8121c",
                 "message": "external packages update",
@@ -1278,7 +1292,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c4b8121c3dc481782aec5a8e0ca4c9637225caab"
+        "full_sha": "e9190b6dab2095aab08e7c946ad7db17dfa58a83"
     },
     {
         "tag": "dev-20250616-c07465a6",

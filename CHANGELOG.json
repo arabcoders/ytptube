@@ -1,9 +1,37 @@
 [
   {
-    "tag": "Unreleased (d2ce9940)",
-    "full_sha": "d2ce9940e8fffa7d49dc4878e0563d2e2d94ef7d",
-    "date": "2025-08-22T15:22:59+00:00",
+    "tag": "Unreleased (84736187)",
+    "full_sha": "8473618726f323e193ccea398d672aed928fc6f4",
+    "date": "2025-08-23T18:44:50+00:00",
     "commits": [
+      {
+        "sha": "e9190b6d",
+        "full_sha": "e9190b6dab2095aab08e7c946ad7db17dfa58a83",
+        "message": "added better fallback to hls.",
+        "author": "arabcoders",
+        "date": "2025-08-23T18:41:37+00:00"
+      },
+      {
+        "sha": "d9ec7733",
+        "full_sha": "d9ec7733a11086aee81525956aec7e49443abca0",
+        "message": "consider file size when caching ffprobe results.",
+        "author": "arabcoders",
+        "date": "2025-08-23T17:21:16+00:00"
+      },
+      {
+        "sha": "c4b8121c",
+        "full_sha": "c4b8121c3dc481782aec5a8e0ca4c9637225caab",
+        "message": "external packages update",
+        "author": "arabcoders",
+        "date": "2025-08-23T10:41:51+00:00"
+      },
+      {
+        "sha": "dcc2359f",
+        "full_sha": "dcc2359f49395b4d0d1b8bb44e326943397d2892",
+        "message": "Update yt-dlp to 2025.8.22",
+        "author": "ArabCoders",
+        "date": "2025-08-23T00:23:41+00:00"
+      },
       {
         "sha": "abf9c7a9",
         "full_sha": "abf9c7a9d8a7444ad6e1331809e2ebf6cfc1562d",
@@ -31,27 +59,6 @@
         "message": "fix bug in textarea cli options auto triggering complete on enter even if nothing is written",
         "author": "arabcoders",
         "date": "2025-08-21T20:26:24+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "c4b8121c3dc481782aec5a8e0ca4c9637225caab",
-    "date": "2025-08-23T10:41:51+00:00",
-    "commits": [
-      {
-        "sha": "c4b8121c",
-        "full_sha": "c4b8121c3dc481782aec5a8e0ca4c9637225caab",
-        "message": "external packages update",
-        "author": "arabcoders",
-        "date": "2025-08-23T10:41:51+00:00"
-      },
-      {
-        "sha": "dcc2359f",
-        "full_sha": "dcc2359f49395b4d0d1b8bb44e326943397d2892",
-        "message": "Update yt-dlp to 2025.8.22",
-        "author": "ArabCoders",
-        "date": "2025-08-23T00:23:41+00:00"
       }
     ]
   },
