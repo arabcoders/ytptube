@@ -5,35 +5,19 @@ Python wrapper for ffprobe command line tool. ffprobe must exist in the path.
 import asyncio
 import functools
 import json
+import logging
 import operator
 import os
-import subprocess
+import subprocess  # qa: ignore
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import anyio
 
+if TYPE_CHECKING:
+    from app.library.cache import Cache
 
-# parameter-less decorator
-def async_lru_cache_decorator(async_function):
-    @functools.lru_cache
-    def cached_async_function(*args, **kwargs):
-        coroutine = async_function(*args, **kwargs)
-        return asyncio.ensure_future(coroutine)
-
-    return cached_async_function
-
-
-# decorator with options
-def async_lru_cache(*lru_cache_args, **lru_cache_kwargs):
-    def async_lru_cache_decorator(async_function):
-        @functools.lru_cache(*lru_cache_args, **lru_cache_kwargs)
-        def cached_async_function(*args, **kwargs):
-            coroutine = async_function(*args, **kwargs)
-            return asyncio.ensure_future(coroutine)
-
-        return cached_async_function
-
-    return async_lru_cache_decorator
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class FFProbeError(Exception):
@@ -254,7 +238,6 @@ class FFProbeResult:
         }
 
 
-@async_lru_cache(maxsize=512)
 async def ffprobe(file: str) -> FFProbeResult:
     """
     Run ffprobe on a file and return the parsed data as a dictionary.
@@ -266,6 +249,21 @@ async def ffprobe(file: str) -> FFProbeResult:
         dict: A dictionary containing the parsed data.
 
     """
+    from app.library.Services import Services
+
+    f = Path(file)
+
+    if not f.exists():
+        msg = f"No such media file '{file}'."
+        raise OSError(msg)
+
+    cache: Cache | None = Services.get_instance().get("cache")
+    cache_key: str = f"ffprobe:{f!s}:{f.stat().st_size}"
+
+    if cache and (cached := cache.get(cache_key)):
+        LOG.debug(f"ffprobe cache hit for '{cache_key}'")
+        return cached
+
     try:
         async with await anyio.open_file(os.devnull, "w") as tempf:
             await asyncio.create_subprocess_exec(
@@ -279,11 +277,7 @@ async def ffprobe(file: str) -> FFProbeResult:
         msg = "ffprobe not found."
         raise OSError(msg) from e
 
-    if not Path(file).exists():
-        msg = f"No such media file '{file}'."
-        raise OSError(msg)
-
-    args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", file]
+    args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(f)]
 
     p = await asyncio.create_subprocess_exec(
         "ffprobe",
@@ -315,5 +309,8 @@ async def ffprobe(file: str) -> FFProbeResult:
             result.subtitle.append(stream)
         elif stream.is_attachment():
             result.attachment.append(stream)
+
+    if cache:
+        cache.set(cache_key, result, ttl=300)
 
     return result
