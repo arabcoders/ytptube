@@ -25,7 +25,7 @@
     "nuxt": "^4.0.3",
     "pinia": "^3.0.3",
     "socket.io-client": "^4.8.1",
-    "vue": "^3.5.18",
+    "vue": "^3.5.19",
     "vue-router": "^4.5.1",
     "vue-toastification": "2.0.0-rc.5"
   }
