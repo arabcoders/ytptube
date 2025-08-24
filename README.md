@@ -1,6 +1,8 @@
 # YTPTube
 
 ![Build Status](https://github.com/ArabCoders/ytptube/actions/workflows/main.yml/badge.svg)
+![MIT License](https://img.shields.io/github/license/arabcoders/ytptube.svg)
+![Docker pull](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
 **YTPTube** is a web-based GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp), designed to make downloading videos from 
 YouTube and other video platforms easier and more user-friendly. It supports downloading playlists, channels, and 
@@ -10,28 +12,24 @@ live streams, and includes features like scheduling downloads, sending notificat
 
 # YTPTube Features.
 
-* Multi-downloads support.
-* Random beautiful background. `can be disabled or source changed`.
-* Can handle live streams.
-* Scheduler to queue channels or playlists to be downloaded automatically at a specified time.
-* Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support for non http/https URLs.
-* Support per link `cli options` & `cookies`.
-* Queue multiple URLs separated by comma.
-* Presets system to re-use frequently used yt-dlp options.
-* Simple file browser. `Disabled by default`.
+* Multi-download support.
+* Random beautiful background.
+* Handles live and upcoming streams.
+* Schedule channels or playlists to be downloaded automatically.
+* Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
+* Support per link options.
+* Queue multiple URLs.
+* Powerful presets system for applying `yt-dlp` options.
+* File browser.
 * A built in video player **with support for sidecar external subtitles**.
-* New `POST /api/history` endpoint that allow one or multiple links to be sent at the same time.
-* New `GET /api/history/add?url=http://..` endpoint that allow to add single item via GET request.
-* Modern frontend UI.
-* SQLite as database backend.
 * Basic authentication support.
-* Support for curl_cffi, see [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
-* Support basic mode for WebUI for non-technical users, which hides most of the normal features from view.
-* Bundled tools in container: curl-cffi, ffmpeg, ffprobe, aria2, rtmpdump, mkvtoolsnix, mp4box.
-* Automatic upcoming live stream re-queue.
-* Apply `yt-dlp` options per custom defined conditions.
+* Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
+* Bundled `pot provider`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide)
+* Automatic updates for `yt-dlp` and custom `pip` packages.
+* Basic mode UI for non-technical users.
+* Conditions feature.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-* A executable for Windows, macOS and Linux, which can be found in the release page.
+* A Bundled executable version for Windows, macOS and Linux.
 
 Please read the [FAQ](FAQ.md) for more information.
 
