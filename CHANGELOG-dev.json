@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250823-e9190b6d",
-        "date": "2025-08-23T18:41:37+00:00",
+        "tag": "dev-20250824-ad872749",
+        "date": "2025-08-24T13:28:49+00:00",
         "commits": [
+            {
+                "sha": "ad872749",
+                "message": "upgrade curl_cffi to 0.13.x",
+                "author": "arabcoders",
+                "date": "2025-08-24T13:28:49+00:00",
+                "full_sha": "ad87274929372ba4dd73b32ff210f2503d880fd5"
+            },
             {
                 "sha": "e9190b6d",
                 "message": "added better fallback to hls.",
@@ -1292,7 +1299,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "e9190b6dab2095aab08e7c946ad7db17dfa58a83"
+        "full_sha": "ad87274929372ba4dd73b32ff210f2503d880fd5"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ad87274929372ba4dd73b32ff210f2503d880fd5",
+    "date": "2025-08-24T13:28:49+00:00",
+    "commits": [
+      {
+        "sha": "ad872749",
+        "full_sha": "ad87274929372ba4dd73b32ff210f2503d880fd5",
+        "message": "upgrade curl_cffi to 0.13.x",
+        "author": "arabcoders",
+        "date": "2025-08-24T13:28:49+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.8",
     "full_sha": "8473618726f323e193ccea398d672aed928fc6f4",
     "date": "2025-08-23T18:44:50+00:00",
