@@ -1,3 +1,105 @@
+# Environment variables
+
+Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
+or the `environment:` section in `compose.yaml` file.
+
+| Environment Variable           | Description                                                        | Default                            |
+| ------------------------------ | ------------------------------------------------------------------ | ---------------------------------- |
+| YTP_OUTPUT_TEMPLATE            | The template for the filenames of the downloaded videos            | `%(title)s.%(ext)s`                |
+| YTP_DEFAULT_PRESET             | The default preset to use for the download                         | `default`                          |
+| YTP_INSTANCE_TITLE             | The title of the instance                                          | `empty string`                     |
+| YTP_FILE_LOGGING               | Whether to log to file                                             | `false`                            |
+| YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                          | `/downloads`                       |
+| YTP_MAX_WORKERS                | How many works to use for downloads                                | `1`                                |
+| YTP_AUTH_USERNAME              | Username for basic authentication                                  | `empty string`                     |
+| YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `empty string`                     |
+| YTP_CONSOLE_ENABLED            | Whether to enable the console                                      | `false`                            |
+| YTP_REMOVE_FILES               | Remove the actual file when clicking the remove button             | `false`                            |
+| YTP_CONFIG_PATH                | Path to where the config files will be stored.                     | `/config`                          |
+| YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                             |
+| YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                            |
+| YTP_KEEP_ARCHIVE               | Keep history of downloaded videos                                  | `true`                             |
+| YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                          |
+| YTP_PORT                       | Which port to bind to                                              | `8081`                             |
+| YTP_LOG_LEVEL                  | Log level                                                          | `info`                             |
+| YTP_STREAMER_VCODEC            | The video codec to use for in-browser streaming                    | `libx264`                          |
+| YTP_STREAMER_ACODEC            | The audio codec to use for in-browser streaming                    | `aac`                              |
+| YTP_ACCESS_LOG                 | Whether to log access to the web server                            | `true`                             |
+| YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`                            |
+| YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                             |
+| YTP_SOCKET_TIMEOUT             | The timeout for the yt-dlp socket connection variable              | `30`                               |
+| YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                               |
+| YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db`         |
+| YTP_MANUAL_ARCHIVE             | The path to the manual archive file                                | `{config_path}/manual_archive.log` |
+| YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                             |
+| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`                     |
+| YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                            |
+| YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                            |
+| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`                     |
+| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                            |
+| YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                            |
+| YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
+| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
+| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`                     |
+| YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
+| YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
+| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |
+| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                                |
+| YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`                            |
+| YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                                |
+
+
+# Browser extensions & bookmarklets
+
+## Simple bookmarklet
+
+```javascript
+javascript:(() => { const url = "https://ytptube.example.org"; const preset = "default"; const mUrl = new URL(url); mUrl.pathname = "/api/history"; fetch(mUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: document.location.href, preset: preset }) }).then(res => alert(res.ok ? "URL sent!" : "Failed to send URL.")); })()
+```
+
+Change the the variable `url` and `preset` variables to match your YTPTube instance and preset name.
+
+## Browser stores
+
+- For Firefox via [Firefox Store](https://addons.mozilla.org/en-US/firefox/addon/ytptube-extension/)
+- For Chrome/Chromium Browsers via [Chrome Store](https://chromewebstore.google.com/detail/ytptube-extension/kiepfnpeflemfokokgjiaelddchglfil)
+
+## iOS Shortcuts
+
+You can download [Add To YTPTube](https://www.icloud.com/shortcuts/18b8f70666a04a06aed09424f97ce951) shortcut and use it to send links to your YTPTube instance.
+You have to edit the shortcut and replace the following:
+
+- `https://ytp.example.org` with your YTPTube instance.
+- `username:password` replace this with your own username & password or leave it empty if you don't have authentication enabled.
+
+This shortcut is powerful, as it's allow you to select your preset on the fly pulled directly from your instance.
+Combined with the new and powerful presets system, you could add presets for specific websites that need cookies,
+and use that preset to download directly from your iOS device.
+
+### Advanced iOS Shortcut
+
+This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/6e3db0bd532843e3aec70e6ce211be08) is more advanced, as it's parses
+the `yt-dlp` output and attempt to download the media directly to your iOS device. It doesn't always work, but it's a good
+starting point for those who want to download media directly to their iOS device. We provide no support for this use case
+other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
+
+
+
+
+
+# Authentication
+
+To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart 
+the container. This will prompt the user to enter the username and password before accessing the web interface/API.
+As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
+
+`http://username:password@your_ytptube_url:port`
+
+# Basic mode
+
+What does the basic mode do? it basically strips down the interface to the bare minimum, 
+to make it easier for non-technical users to use it.
+
 # I cant download anything
 
 If you are receiving errors like:
@@ -52,7 +154,7 @@ Then restart the container to apply the changes.
 
 # How to generate POT tokens?
 
-You need to start up a pot provider server we already have extractor `bgutil-ytdlp-pot-provider` pre-installed in the container.
+You need a pot provider server we already have the extractor `bgutil-ytdlp-pot-provider` pre-installed in the container.
 You can simply do the following to enable the support for it.
 
 ```yaml
@@ -75,9 +177,7 @@ services:
     init: true
     image: brainicism/bgutil-ytdlp-pot-provider:latest
     container_name: bgutil_provider
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:4416:4416"
+    restart: unless-stopped    
 ```
 
 Then simply create a new preset, and in the `Command options for yt-dlp` field set the following:
@@ -94,6 +194,104 @@ you and also enable the fallback by using the follow extractor args
 --extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
 ```
 
-Use this settings in case the extractor fails to get the pot tokens from the bgutil provider server.
-
+Use this alternative extractor args in case the extractor fails to get the pot tokens from the bgutil provider server. 
 For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
+
+# How to set global settings for yt-dlp?
+
+You can create a file named `ytdlp.cli` in the `/config` folder, and add your desired global settings there. 
+
+> [!IMPORTANT]
+> We strongly recommend to use presets instead of global settings, as presets are more convenient.
+
+The `ytdlp.cli` file usage is deprecated and likely will be removed in `v1.0.0` release.
+
+# Updating yt-dlp
+
+The engine which powers the actual video downloads in YTPTube is [yt-dlp](https://github.com/yt-dlp/yt-dlp). Since video 
+sites regularly updated, frequent updates of yt-dlp are required to keep up.
+
+We have added the `YTP_YTDLP_AUTO_UPDATE` environment variable, which is enabled by default. This feature allows the 
+container to automatically update `yt-dlp` to the latest version whenever the container starts. If a new version is 
+available, it will be downloaded and applied automatically. To disable this automatic update, set the 
+`YTP_YTDLP_AUTO_UPDATE` environment variable to `false`.
+
+We will no longer release new versions of YTPTube for every new version of yt-dlp.
+
+# Troubleshooting and submitting issues
+
+Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a thin wrapper for 
+[yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, 
+postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that 
+concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
+
+In order to debug and troubleshoot them, it's advised to try using the yt-dlp binary directly first, bypassing the UI, 
+and once that is working, importing the options that worked for you into a new `preset`.
+
+## Via HTTP
+
+If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Other > Terminal` use
+ the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else.
+
+## Via CLI 
+
+Assuming your YTPTube container is called `ytptube`, run the following on your docker host to get a shell inside the container:
+
+```bash
+docker exec -ti ytptube bash
+cd /downloads
+yt-dlp ....
+```
+
+Once there, you can use the yt-dlp command freely.
+
+# Run behind reverse proxy.
+
+It's advisable to run YTPTube behind a reverse proxy, if better authentication and/or HTTPS support are required.
+
+## Caddy http server
+
+The following example Caddyfile gets a reverse proxy going behind [caddy](https://caddyserver.com).
+
+```caddyfile
+# If you are using sub-domain.
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+ytp.example.org {
+  reverse_proxy ytptube:8081
+}
+
+# If you are using sub-folder, for example: https://example.org/ytptube/
+# Also make sure to set the `YTP_BASE_PATH` environment variable to `/ytptube/`
+# make sure to change "ytptube:8081" to the actual name of your YTPTube container/port.
+example.org {
+  redir /ytptube /ytptube/
+  route /ytptube/* {
+    reverse_proxy ytptube:8081
+  }
+}
+```
+
+# How to autoload yt-dlp plugins?
+
+Loading yt-dlp plugins in YTPTube is quite simple, we already have everything setup for you. simply, create a folder 
+inside the `/config` directory named `yt-dlp` so, the path will be `/config/yt-dlp`. then follow 
+[yt-dlp plugins docs](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#plugins) to know how to install the plugins.
+
+Once you have installed the plugins, restart the container and the plugins will be auto-loaded on demand.
+
+# How to load random backgrounds from WatchState or any other source?
+
+YTPTube can be configured to pull random background images from different sources, including `WatchState` which is another 
+project of mine, simply change the `YTP_PICTURES_BACKENDS` environment variable to the following url
+
+```env
+YTP_PICTURES_BACKENDS=https://watchstate.ip/v1/api/system/images/background?apikey=[api_key]
+```
+
+Where `[api_key]` is the api key you get from your WatchState instance.
+
+# The origin of the project.
+
+The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
+rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
+project and what i wanted to achieve with it.
