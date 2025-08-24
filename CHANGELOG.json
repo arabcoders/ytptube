@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "1624fc0ee4b9c0bd18724f1d81f602ba995982ce",
-    "date": "2025-08-24T14:00:08+00:00",
+    "full_sha": "32bebcaf46f2afe634d0d3fffe7787f73ce39744",
+    "date": "2025-08-24T14:14:06+00:00",
     "commits": [
+      {
+        "sha": "32bebcaf",
+        "full_sha": "32bebcaf46f2afe634d0d3fffe7787f73ce39744",
+        "message": "add pnpm configuration for built dependencies",
+        "author": "arabcoders",
+        "date": "2025-08-24T14:14:06+00:00"
+      },
       {
         "sha": "1624fc0e",
         "full_sha": "1624fc0ee4b9c0bd18724f1d81f602ba995982ce",
