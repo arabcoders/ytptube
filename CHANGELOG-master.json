@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250823-84736187",
-        "date": "2025-08-23T18:44:50+00:00",
+        "tag": "master-20250824-43e0128c",
+        "date": "2025-08-24T17:06:20+00:00",
         "commits": [
+            {
+                "sha": "32bebcaf",
+                "message": "add pnpm configuration for built dependencies",
+                "author": "arabcoders",
+                "date": "2025-08-24T14:14:06+00:00",
+                "full_sha": "32bebcaf46f2afe634d0d3fffe7787f73ce39744"
+            },
+            {
+                "sha": "1624fc0e",
+                "message": "update README",
+                "author": "arabcoders",
+                "date": "2025-08-24T14:00:08+00:00",
+                "full_sha": "1624fc0ee4b9c0bd18724f1d81f602ba995982ce"
+            },
+            {
+                "sha": "10ae84ab",
+                "message": "update README",
+                "author": "arabcoders",
+                "date": "2025-08-24T13:41:45+00:00",
+                "full_sha": "10ae84abec2e06132dc0ec41349d52c896838369"
+            },
+            {
+                "sha": "ad872749",
+                "message": "upgrade curl_cffi to 0.13.x",
+                "author": "arabcoders",
+                "date": "2025-08-24T13:28:49+00:00",
+                "full_sha": "ad87274929372ba4dd73b32ff210f2503d880fd5"
+            },
             {
                 "sha": "e9190b6d",
                 "message": "added better fallback to hls.",
@@ -1292,7 +1320,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8473618726f323e193ccea398d672aed928fc6f4"
+        "full_sha": "43e0128c3b6d35a1a51a6474261eebd4fe312a4c"
     },
     {
         "tag": "master-20250616-c07465a6",
