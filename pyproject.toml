@@ -23,7 +23,7 @@ dependencies = [
   "httpx",
   "async-timeout",
   "pyjson5",
-  "curl_cffi==0.7.1",
+  "curl_cffi>=0.13",
   "pysubs2",
   "regex",
   "mutagen",
