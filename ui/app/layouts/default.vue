@@ -1,5 +1,6 @@
 <template>
-  <div id="main_container" class="container">
+  <Shutdown v-if="app_shutdown" />
+  <div id="main_container" class="container" v-else>
     <NewVersion v-if="newVersionIsAvailable" />
     <nav class="navbar is-mobile is-dark">
 
@@ -75,7 +76,15 @@
             </div>
           </div>
 
-          <div class="navbar-item" v-if="false === config.app.is_native">
+          <div class="navbar-item" v-if="true === config.app.is_native">
+            <button class="button is-dark" @click="shutdownApp">
+              <span class="icon"><i class="fas fa-power-off" /></span>
+              <span v-if="isMobile">Shutdown</span>
+            </button>
+          </div>
+
+
+          <div class="navbar-item">
             <button class="button is-dark" @click="reloadPage">
               <span class="icon"><i class="fas fa-refresh" /></span>
               <span v-if="isMobile">Reload</span>
@@ -113,6 +122,9 @@
           connection is functional.
         </p>
       </Message>
+      <ClientOnly>
+        <Dialog />
+      </ClientOnly>
     </div>
 
     <div class="columns mt-3 is-mobile">
@@ -148,6 +160,9 @@ import { useStorage } from '@vueuse/core'
 import moment from 'moment'
 import * as Sentry from '@sentry/nuxt'
 import type { YTDLPOption } from '~/types/ytdlp'
+import { useDialog } from '~/composables/useDialog'
+import Dialog from '~/components/Dialog.vue'
+import Shutdown from '~/components/shutdown.vue'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -160,6 +175,7 @@ const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
+const app_shutdown = ref<boolean>(false)
 
 const applyPreferredColorScheme = (scheme: string) => {
   if (!scheme || scheme === 'auto') {
@@ -388,6 +404,47 @@ const useVersionUpdate = () => {
     newVersionIsAvailable: readonly(newVersionIsAvailable),
   }
 }
+
 const { newVersionIsAvailable } = useVersionUpdate()
+
+const shutdownApp = async () => {
+  const { alertDialog, confirmDialog: confirm_message } = useDialog()
+
+  if (false === config.app.is_native) {
+    await alertDialog({
+      title: 'Shutdown Unavailable',
+      message: 'The shutdown feature is only available when running as native application.',
+    })
+    return
+  }
+
+  const { status } = await confirm_message({
+    title: 'Shutdown Application',
+    message: 'Are you sure you want to shutdown the application?',
+  })
+
+  if (false === status) {
+    return
+  }
+
+  try {
+    const resp = await fetch('/api/system/shutdown', { method: 'POST' })
+    if (!resp.ok) {
+      const body = await resp.json()
+      await alertDialog({
+        title: 'Shutdown Failed',
+        message: `Failed to shutdown the application: ${body.error || resp.statusText || resp.status}`,
+      })
+      return
+    }
+    app_shutdown.value = true
+    await nextTick()
+  } catch (e: any) {
+    await alertDialog({
+      title: 'Shutdown Failed',
+      message: `Failed to shutdown the application: ${e.message || e}`,
+    })
+  }
+}
 
 </script>

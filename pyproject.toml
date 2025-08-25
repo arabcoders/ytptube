@@ -78,12 +78,7 @@ indent-width = 4
 target-version = "py311"
 
 [project.optional-dependencies]
-webview = [
-  #windows only
-  "qtpy; sys_platform == 'win32'",
-  "pyside6; sys_platform == 'win32'",
-  # all
-  "pywebview",
+installer = [
   "pyinstaller",
 ]
 
