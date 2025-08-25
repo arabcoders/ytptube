@@ -48,7 +48,7 @@ jobs:
           ref: ${{ env.TAG_NAME }}
 
       - name: Overwrite app.spec from workflow branch
-        if: github.event.inputs.useWorkflowSpec == true
+        if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
@@ -58,7 +58,7 @@ jobs:
           path: temp-spec
 
       - name: Replace app.spec with version from workflow branch
-        if: github.event.inputs.useWorkflowSpec == true
+        if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
         run: cp temp-spec/app.spec ./app.spec
 
       - name: Cache Python venv
