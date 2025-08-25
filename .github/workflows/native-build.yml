@@ -42,16 +42,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG_NAME }}
-
-      - name: Cache Chocolatey packages
-        if: matrix.os == 'windows-latest'
-        uses: actions/cache@v4
-        with:
-          path: C:\ProgramData\chocolatey\lib
-          key: choco-${{ runner.os }}-${{ matrix.arch }}-qt6
-          restore-keys: |
-            choco-${{ runner.os }}-${{ matrix.arch }}-
-
       - name: Cache Python venv
         id: cache-python
         uses: actions/cache@v4
@@ -71,7 +61,7 @@ jobs:
         run: |
           pip install uv
           uv venv --system-site-packages --relocatable
-          uv sync --link-mode=copy --active
+          uv sync --link-mode=copy --active -extra installer
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -93,7 +83,7 @@ jobs:
 
       - name: Build native binary
         run: |
-          uv tool run pyinstaller ./app.spec
+          uv run pyinstaller ./app.spec
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
