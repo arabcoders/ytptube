@@ -229,7 +229,7 @@ class Download:
 
             # Safe-guard incase downloading take too long and the info expires.
             if self.info_dict and isinstance(self.info_dict, dict) and self.download_info_expires > 0:
-                _ts: int | None = self.info_dict.get("timestamp")
+                _ts: int | None = self.info_dict.get("epoch", self.info_dict.get("timestamp", None))
                 _ts = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
                 if not _ts or (datetime.now(tz=UTC) - _ts).total_seconds() > self.download_info_expires:
                     self.info_dict = None

@@ -57,7 +57,7 @@ REMOVE_KEYS: list = [
         "opt_list_format": "-F, --list-formats",
         "opt_dump_agent": "--dump-user-agent",
         "opt_extractor_descriptions": "--extractor-descriptions",
-        "opt_list_impersonate_targets": "--list-impersonate-targets"
+        "opt_list_impersonate_targets": "--list-impersonate-targets",
     },
 ]
 
@@ -459,6 +459,7 @@ def arg_converter(
     level: int | bool | None = None,
     dumps: bool = False,
     removed_options: list | None = None,
+    keep_defaults: bool = False,
 ) -> dict:
     """
     Convert yt-dlp options to a dictionary.
@@ -468,6 +469,7 @@ def arg_converter(
         level (int|bool|None): Level of options to remove, True for all.
         dumps (bool): Dump options as JSON.
         removed_options (list|None): List of removed options.
+        keep_defaults (bool): Keep default options.
 
     Returns:
         dict: yt-dlp options dictionary.
@@ -488,8 +490,7 @@ def arg_converter(
     default_opts = _default_opts([]).ydl_opts
 
     opts = yt_dlp.parse_options(shlex.split(args)).ydl_opts
-
-    diff = {k: v for k, v in opts.items() if default_opts[k] != v}
+    diff = {k: v for k, v in opts.items() if default_opts[k] != v} if not keep_defaults else opts.items()
     if "postprocessors" in diff:
         diff["postprocessors"] = [pp for pp in diff["postprocessors"] if pp not in default_opts["postprocessors"]]
 

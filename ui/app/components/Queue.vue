@@ -523,6 +523,7 @@ const cancelSelected = () => {
   }
   cancelItems(selectedElms.value)
   selectedElms.value = []
+  masterSelectAll.value = false
   return true
 }
 
