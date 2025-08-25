@@ -141,10 +141,17 @@ watch(() => stateStore.queue, () => {
 
 const pauseDownload = () => {
   dialog_confirm.value.visible = true
-  dialog_confirm.value.html_message = `<span class="is-bold">Pause All non-active downloads?</span><br>
-  <span class="has-text-danger">
+  dialog_confirm.value.html_message = `
+  <span class="icon-text">
     <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
-    <span>This will not stop downloads that are currently in progress.</span>
+    <span class="is-bold">Pause All non-active downloads?</span>
+  </span>
+  <br>
+  <span class="has-text-danger">
+    <ul>
+      <li>This will not stop downloads that are currently in progress.</li>
+      <li>If you are in middle of adding a playlist/channel, it will break and stop adding more items.</li>
+    </ul>
   </span>`
   dialog_confirm.value.confirm = () => {
     socket.emit('pause', {})

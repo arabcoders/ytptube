@@ -305,7 +305,7 @@ class DownloadQueue(metaclass=Singleton):
 
         entries = entry.get("entries", [])
 
-        LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')}' Playlist.")
+        LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')} ({len(entries)})' Playlist.")
 
         playlistCount = int(entry.get("playlist_count", len(entries)))
         results = []
@@ -325,11 +325,19 @@ class DownloadQueue(metaclass=Singleton):
         }
 
         async def playlist_processor(i: int, etr: dict):
-            await self.processors.acquire()
             try:
-                LOG.info(
-                    f"Processing '{entry.get('title')}: {i}/{playlistCount}' - ID: {etr.get('id')} - Title: {etr.get('title')}"
+                item_name = (
+                    f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
                 )
+                LOG.debug(f"Waiting to acquire lock for {item_name}")
+                await self.processors.acquire()
+                LOG.debug(f"Acquired lock for {item_name}")
+
+                if self.is_paused():
+                    LOG.warning(f"Download is paused. Skipping processing of '{item_name}'.")
+                    return {"status": "ok"}
+
+                LOG.info(f"Processing '{item_name}'.")
 
                 _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
                 if not _status:

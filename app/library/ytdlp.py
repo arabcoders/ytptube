@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 import yt_dlp
@@ -47,13 +45,16 @@ def ytdlp_options() -> list[dict[str, Any]]:
                 ),
             }
             for opt in opts
-            if (
-                (getattr(opt, "_short_opts", []) or getattr(opt, "_long_opts", []))
-                and getattr(opt, "help", None)
-                and "SUPPRESSHELP" not in getattr(opt, "help", "")
-            )
+            if (getattr(opt, "_long_opts", []) and getattr(opt, "help", None))
         ]
 
-    return collect(parser.option_list, "root") + [
+    opts = collect(parser.option_list, "root") + [
         entry for grp in parser.option_groups for entry in collect(grp.option_list, grp.title or "other")
     ]
+
+    for opt in opts:
+        if "SUPPRESSHELP" in opt.get("description", ""):
+            opt["description"] = "No description available from yt-dlp."
+
+    return opts
+
