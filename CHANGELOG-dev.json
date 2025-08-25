@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250825-30830a94",
-        "date": "2025-08-25T14:50:47+00:00",
+        "tag": "dev-20250825-3adc4eb0",
+        "date": "2025-08-25T15:48:36+00:00",
         "commits": [
+            {
+                "sha": "3adc4eb0",
+                "message": "Sometimes yt-dlp doesn't provide playlist_count, so we need to have fallback. Fixes #384",
+                "author": "arabcoders",
+                "date": "2025-08-25T15:48:36+00:00",
+                "full_sha": "3adc4eb0625cfafd90e8b650156cc81a783e508e"
+            },
             {
                 "sha": "30830a94",
                 "message": "fix info extracting expired to use epoch as it is the ended instead of timestamp.",
@@ -1334,7 +1341,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4"
+        "full_sha": "3adc4eb0625cfafd90e8b650156cc81a783e508e"
     },
     {
         "tag": "dev-20250616-c07465a6",

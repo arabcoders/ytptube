@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4",
-    "date": "2025-08-25T14:50:47+00:00",
+    "full_sha": "3adc4eb0625cfafd90e8b650156cc81a783e508e",
+    "date": "2025-08-25T15:48:36+00:00",
     "commits": [
+      {
+        "sha": "3adc4eb0",
+        "full_sha": "3adc4eb0625cfafd90e8b650156cc81a783e508e",
+        "message": "Sometimes yt-dlp doesn't provide playlist_count, so we need to have fallback. Fixes #384",
+        "author": "arabcoders",
+        "date": "2025-08-25T15:48:36+00:00"
+      },
       {
         "sha": "30830a94",
         "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4",
