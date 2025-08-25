@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "d538d94216491485fece55557c4b6749d1bfafab",
+    "date": "2025-08-25T21:59:14+00:00",
+    "commits": [
+      {
+        "sha": "d538d942",
+        "full_sha": "d538d94216491485fece55557c4b6749d1bfafab",
+        "message": "Fix windows multiprocessing threads",
+        "author": "arabcoders",
+        "date": "2025-08-25T21:59:14+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.11",
     "full_sha": "963fa5870cf47293c33831a164774734740c0186",
     "date": "2025-08-25T21:31:42+00:00",
