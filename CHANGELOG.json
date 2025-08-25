@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unreleased (1dd464d6)",
+    "full_sha": "1dd464d6ccabf275053684882dbbfb07059352da",
+    "date": "2025-08-25T20:39:08+00:00",
+    "commits": [
+      {
+        "sha": "5f2b0661",
+        "full_sha": "5f2b0661af8d2ec59c497e031f4ea14675ca08d7",
+        "message": "Fix native builds.",
+        "author": "arabcoders",
+        "date": "2025-08-25T20:38:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.10",
     "full_sha": "c91ca38035fdb005eb596667e86304b2aa2c4210",
     "date": "2025-08-25T19:43:05+00:00",
