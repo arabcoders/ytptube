@@ -141,6 +141,8 @@ class Main:
         def started(_):
             LOG.info("=" * 40)
             LOG.info(f"YTPTube {self._config.app_version} - started on http://{host}:{port}{self._config.base_path}")
+            if self._config.is_native:
+                LOG.info("Running in native mode.")
             LOG.info("=" * 40)
 
             loop = asyncio.get_event_loop()

@@ -1,4 +1,4 @@
-name: Build WebView wrappers
+name: Build Native wrappers
 
 on:
   workflow_dispatch:
@@ -52,10 +52,6 @@ jobs:
           restore-keys: |
             choco-${{ runner.os }}-${{ matrix.arch }}-
 
-      - name: Install Qt (Windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install -y qt6-base-dev
-
       - name: Cache Python venv
         id: cache-python
         uses: actions/cache@v4
@@ -77,16 +73,6 @@ jobs:
           uv venv --system-site-packages --relocatable
           uv sync --link-mode=copy --active
 
-      - name: Install PyInstaller + Qt backend (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          uv pip install pyinstaller pywebview QtPy PySide6
-
-      - name: Install PyInstaller + Qt backend (Other OSs)
-        if: matrix.os != 'windows-latest'
-        run: |
-          uv pip install pyinstaller pywebview[qt]
-
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -107,7 +93,7 @@ jobs:
 
       - name: Build native binary
         run: |
-          uv run pyinstaller ./app.spec
+          uv tool run pyinstaller ./app.spec
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

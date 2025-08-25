@@ -185,7 +185,7 @@ class Config:
     """Enable yt-dlp debugging."""
 
     is_native: bool = False
-    "Is the application running in webview."
+    "Is the application running in natively."
 
     prevent_live_premiere: bool = False
     """Prevent downloading of the initial premiere live broadcast."""
@@ -288,7 +288,9 @@ class Config:
     @staticmethod
     def get_instance(is_native: bool = False) -> "Config":
         """Static access method."""
-        return Config(is_native) if not Config.__instance else Config.__instance
+        cls: Config = Config(is_native) if not Config.__instance else Config.__instance
+        cls.is_native = is_native or cls.is_native
+        return cls
 
     @staticmethod
     def get_manager() -> SyncManager:

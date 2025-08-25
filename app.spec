@@ -1,25 +1,10 @@
 import os
 import platform
-import sys
 import tomllib
 
 block_cipher = None
 
 machine = platform.machine().lower()
-binaries = []
-if sys.platform.startswith("linux"):
-    if machine in ("x86_64", "amd64"):
-        libdir = "/usr/lib/x86_64-linux-gnu"
-    elif machine in ("aarch64", "arm64"):
-        libdir = "/usr/lib/aarch64-linux-gnu"
-    else:
-        libdir = "/usr/lib"
-    binaries = []
-elif sys.platform == "darwin":
-    binaries = []
-elif sys.platform.startswith("win"):
-    # Windows DLLs
-    binaries = []
 
 with open("./uv.lock", "rb") as f:
     lock = tomllib.load(f)
@@ -37,9 +22,9 @@ hidden = [
 hidden = [f.replace("-", "_") for f in hidden]
 
 a = Analysis(  # noqa: F821 # type: ignore
-    ["app/native.py"],
+    ["app/local.py"],
     pathex=[os.getcwd()],
-    binaries=binaries,
+    binaries=[],
     datas=[
         ("ui/exported", "ui/exported"),
         ("app/", "app/"),
@@ -47,7 +32,7 @@ a = Analysis(  # noqa: F821 # type: ignore
     hiddenimports=hidden,
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=["libstdc++.so.6"],
     cipher=block_cipher,
 )
 
@@ -63,7 +48,7 @@ exe = EXE(  # type: ignore # noqa: F821
     debug=False,
     strip=False,
     upx=True,
-    console=False,  # Turn on to True if you want a console window for debugging.
+    console=True,
     icon="ui/public/favicon.ico",
     onefile=True,
 )

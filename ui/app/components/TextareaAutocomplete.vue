@@ -1,7 +1,7 @@
 <template>
   <div class="dropdown" :class="{ 'is-active': showList && filteredOptions.length }" style="width:100%;">
     <div class="control" style="width:100%;">
-      <textarea v-model="localValue" @input="onInput" @focus="showList = true" @blur="hideList" @keydown="onKeydown"
+      <textarea :id="id" v-model="localValue" @input="onInput" @focus="showList = true" @blur="hideList" @keydown="onKeydown"
         class="textarea" :placeholder="placeholder" autocomplete="off" style="width:100%; position:relative; z-index:2;"
         rows="4" :disabled="disabled" />
     </div>
@@ -26,6 +26,7 @@ const props = defineProps<{
   options: AutoCompleteOptions
   placeholder?: string
   disabled?: boolean
+  id?: string
 }>()
 
 const model = defineModel<string>()

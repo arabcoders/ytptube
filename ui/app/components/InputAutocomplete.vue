@@ -3,7 +3,7 @@
     <div class="control" style="width:100%;">
       <input v-model="model" @focus="onFocus" @blur="hideList" @keydown="handleKeydown" @input="onInput" class="input"
         :placeholder="placeholder" autocomplete="new-password" style="width:100%; position:relative; z-index:2;"
-        :disabled="disabled" />
+        :disabled="disabled" :id="id" />
     </div>
     <div class="dropdown-menu" role="menu" style="width:100%; z-index:3;">
       <div class="dropdown-content" style="width:100%; max-height:10em; overflow-y:auto;">
@@ -27,7 +27,8 @@ import type { AutoCompleteOptions } from '~/types/autocomplete'
 const props = defineProps<{
   options: AutoCompleteOptions
   placeholder?: string
-  disabled?: boolean
+  disabled?: boolean,
+  id?: string
 }>()
 
 const model = defineModel<string>()
