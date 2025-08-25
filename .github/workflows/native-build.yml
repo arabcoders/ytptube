@@ -6,6 +6,10 @@ on:
       tag:
         required: true
         description: "Ref to build from (e.g. v1.0.0)"
+      useWorkflowSpec:
+        type: boolean
+        default: false
+        description: "Use app.spec from workflow branch instead of tag"
   push:
     tags:
       - "v*"
@@ -42,6 +46,21 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.TAG_NAME }}
+
+      - name: Overwrite app.spec from workflow branch
+        if: github.event.inputs.useWorkflowSpec == true
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          sparse-checkout: |
+            app.spec
+          sparse-checkout-cone-mode: false
+          path: temp-spec
+
+      - name: Replace app.spec with version from workflow branch
+        if: github.event.inputs.useWorkflowSpec == true
+        run: cp temp-spec/app.spec ./app.spec
+
       - name: Cache Python venv
         id: cache-python
         uses: actions/cache@v4
