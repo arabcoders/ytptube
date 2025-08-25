@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (b48daf11)",
-    "full_sha": "b48daf11c8bf0e3b2955be71082b229d55e8d2dd",
-    "date": "2025-08-25T21:22:20+00:00",
+    "tag": "Unreleased (963fa587)",
+    "full_sha": "963fa5870cf47293c33831a164774734740c0186",
+    "date": "2025-08-25T21:31:42+00:00",
     "commits": [
+      {
+        "sha": "daa41c1c",
+        "full_sha": "daa41c1c665e349a647e1ccf6708f89b43f50a80",
+        "message": "restore pycryptodome",
+        "author": "arabcoders",
+        "date": "2025-08-25T21:31:01+00:00"
+      },
       {
         "sha": "703b5a60",
         "full_sha": "703b5a6052b6db6f7f9cd9156cffbe3a30331f16",

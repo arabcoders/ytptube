@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250826-703b5a60",
-        "date": "2025-08-25T21:21:24+00:00",
+        "tag": "dev-20250826-daa41c1c",
+        "date": "2025-08-25T21:31:01+00:00",
         "commits": [
+            {
+                "sha": "daa41c1c",
+                "message": "restore pycryptodome",
+                "author": "arabcoders",
+                "date": "2025-08-25T21:31:01+00:00",
+                "full_sha": "daa41c1c665e349a647e1ccf6708f89b43f50a80"
+            },
             {
                 "sha": "703b5a60",
                 "message": "more fixes.",
@@ -1376,7 +1383,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "703b5a6052b6db6f7f9cd9156cffbe3a30331f16"
+        "full_sha": "daa41c1c665e349a647e1ccf6708f89b43f50a80"
     },
     {
         "tag": "dev-20250616-c07465a6",
