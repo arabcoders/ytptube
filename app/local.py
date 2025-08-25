@@ -3,21 +3,21 @@
 
 import argparse
 import os
+import pathlib
 import socket
 import sys
 import time
 import urllib.request
 import webbrowser
-from pathlib import Path
 
-from dotenv import load_dotenv
+import dotenv
 
 os.environ["PYTHONUTF8"] = "1"
 
 sys.path.insert(0, os.path.join(getattr(sys, "_MEIPASS", os.path.abspath(os.path.dirname(__file__))), "app"))
 
 APP_NAME = "YTPTube"
-APP_ROOT = str((Path(__file__).parent / "..").resolve())
+APP_ROOT = str((pathlib.Path(__file__).parent / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
 
@@ -80,7 +80,7 @@ def app_start(host: str, port: int) -> None:
     Main(is_native=True).start(host, port)
 
 
-def update_env_file(env_file: Path, port: int) -> None:
+def update_env_file(env_file: pathlib.Path, port: int) -> None:
     lines = []
     if env_file.exists():
         with env_file.open("r", encoding="utf-8") as f:
@@ -105,11 +105,11 @@ def main():
 
     set_env()
 
-    env_file: Path = Path(os.getenv("YTP_CONFIG_PATH")) / ".env"
+    env_file: pathlib.Path = pathlib.Path(os.getenv("YTP_CONFIG_PATH")) / ".env"
 
     port = None
     if env_file.exists():
-        load_dotenv(env_file)
+        dotenv.load_dotenv(env_file)
         port = os.getenv("YTP_PORT")
 
     host = os.getenv("YTP_HOST", "127.0.0.1")

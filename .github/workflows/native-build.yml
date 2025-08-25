@@ -81,8 +81,16 @@ jobs:
           pnpm install --production --prefer-offline --frozen-lockfile
           pnpm run generate
 
-      - name: Build native binary
+      - name: Build native binary (Windows)
+        if: matrix.os == 'windows-latest'
         run: |
+          .\.venv\Scripts\activate
+          uv run pyinstaller ./app.spec
+
+      - name: Build native binary (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          . .venv/bin/activate
           uv run pyinstaller ./app.spec
 
       - name: Upload artifact
