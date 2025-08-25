@@ -307,7 +307,9 @@ class DownloadQueue(metaclass=Singleton):
 
         LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')} ({len(entries)})' Playlist.")
 
-        playlistCount = int(entry.get("playlist_count", len(entries)))
+        playlistCount = entry.get("playlist_count")
+        playlistCount = int(playlistCount) if playlistCount else len(entries)
+
         results = []
 
         playlist_keys = {
