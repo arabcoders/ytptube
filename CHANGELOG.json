@@ -28,6 +28,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "70e06f01229435a98efb776398b181eab8319abe",
+    "date": "2025-08-25T19:24:04+00:00",
+    "commits": [
+      {
+        "sha": "70e06f01",
+        "full_sha": "70e06f01229435a98efb776398b181eab8319abe",
+        "message": "remove webview in favor of using built-in browser.",
+        "author": "arabcoders",
+        "date": "2025-08-25T19:24:04+00:00"
+      },
+      {
+        "sha": "fe38837b",
+        "full_sha": "fe38837b9e7e9ed70a68eaeb478ebf2a163c164c",
+        "message": "Add dialog composable",
+        "author": "arabcoders",
+        "date": "2025-08-25T19:21:32+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.9",
     "full_sha": "43e0128c3b6d35a1a51a6474261eebd4fe312a4c",
     "date": "2025-08-24T17:06:20+00:00",

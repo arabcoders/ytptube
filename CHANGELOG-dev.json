@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250825-3adc4eb0",
-        "date": "2025-08-25T15:48:36+00:00",
+        "tag": "dev-20250825-70e06f01",
+        "date": "2025-08-25T19:24:04+00:00",
         "commits": [
+            {
+                "sha": "70e06f01",
+                "message": "remove webview in favor of using built-in browser.",
+                "author": "arabcoders",
+                "date": "2025-08-25T19:24:04+00:00",
+                "full_sha": "70e06f01229435a98efb776398b181eab8319abe"
+            },
+            {
+                "sha": "fe38837b",
+                "message": "Add dialog composable",
+                "author": "arabcoders",
+                "date": "2025-08-25T19:21:32+00:00",
+                "full_sha": "fe38837b9e7e9ed70a68eaeb478ebf2a163c164c"
+            },
             {
                 "sha": "3adc4eb0",
                 "message": "Sometimes yt-dlp doesn't provide playlist_count, so we need to have fallback. Fixes #384",
@@ -1341,7 +1355,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3adc4eb0625cfafd90e8b650156cc81a783e508e"
+        "full_sha": "70e06f01229435a98efb776398b181eab8319abe"
     },
     {
         "tag": "dev-20250616-c07465a6",
