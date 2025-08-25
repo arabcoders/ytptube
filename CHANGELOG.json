@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (1dd464d6)",
-    "full_sha": "1dd464d6ccabf275053684882dbbfb07059352da",
-    "date": "2025-08-25T20:39:08+00:00",
+    "tag": "Unreleased (c3d8aa83)",
+    "full_sha": "c3d8aa83484a1fc1266d53d941374608be07107a",
+    "date": "2025-08-25T20:41:50+00:00",
     "commits": [
+      {
+        "sha": "3e755af6",
+        "full_sha": "3e755af621c3e9c60d028db43f0827948112cb64",
+        "message": "followup fix",
+        "author": "arabcoders",
+        "date": "2025-08-25T20:41:13+00:00"
+      },
       {
         "sha": "5f2b0661",
         "full_sha": "5f2b0661af8d2ec59c497e031f4ea14675ca08d7",

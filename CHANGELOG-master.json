@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250825-1dd464d6",
-        "date": "2025-08-25T20:39:08+00:00",
+        "tag": "master-20250825-c3d8aa83",
+        "date": "2025-08-25T20:41:50+00:00",
         "commits": [
+            {
+                "sha": "3e755af6",
+                "message": "followup fix",
+                "author": "arabcoders",
+                "date": "2025-08-25T20:41:13+00:00",
+                "full_sha": "3e755af621c3e9c60d028db43f0827948112cb64"
+            },
             {
                 "sha": "5f2b0661",
                 "message": "Fix native builds.",
@@ -1362,7 +1369,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1dd464d6ccabf275053684882dbbfb07059352da"
+        "full_sha": "c3d8aa83484a1fc1266d53d941374608be07107a"
     },
     {
         "tag": "master-20250616-c07465a6",
