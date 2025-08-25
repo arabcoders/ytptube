@@ -38,7 +38,7 @@ dependencies = [
   "zipstream-ng>=1.8.0",
   "apprise>=1.9.3",
   "bgutil-ytdlp-pot-provider>=1.2.1",
-  "pycryptodomex>=3.23.0",
+  "pycryptodome>=3.23.0",
 ]
 
 [tool.ruff]
