@@ -61,7 +61,7 @@ jobs:
         run: |
           pip install uv
           uv venv --system-site-packages --relocatable
-          uv sync --link-mode=copy --active -extra installer
+          uv sync --link-mode=copy --active --extra installer
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
