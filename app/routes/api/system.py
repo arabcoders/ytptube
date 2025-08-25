@@ -50,6 +50,7 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
 
     # Schedule shutdown after response
     asyncio.create_task(do_shutdown())
+    LOG.info("Shutdown initiated by user request. Stopping the server...")
     return web.json_response(
         data={
             "message": "The application shutting down.",

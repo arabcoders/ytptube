@@ -99,9 +99,9 @@ def update_env_file(env_file: pathlib.Path, port: int) -> None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Start YTPTube server")
+    parser = argparse.ArgumentParser(description="Start YTPTube server", allow_abbrev=False)
     parser.add_argument("--no-browser", action="store_true", help="Do not open browser on start")
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
 
     set_env()
 
@@ -130,4 +130,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from multiprocessing import freeze_support
+
+    freeze_support()
     main()
