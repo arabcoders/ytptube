@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4",
+    "date": "2025-08-25T14:50:47+00:00",
+    "commits": [
+      {
+        "sha": "30830a94",
+        "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4",
+        "message": "fix info extracting expired to use epoch as it is the ended instead of timestamp.",
+        "author": "arabcoders",
+        "date": "2025-08-25T14:50:47+00:00"
+      },
+      {
+        "sha": "19b9f8dc",
+        "full_sha": "19b9f8dc6c2c1ef7a9df11878fca3e042d0fd022",
+        "message": "Added support for pausing adding items from playlist.",
+        "author": "arabcoders",
+        "date": "2025-08-25T14:34:40+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.9",
     "full_sha": "43e0128c3b6d35a1a51a6474261eebd4fe312a4c",
     "date": "2025-08-24T17:06:20+00:00",

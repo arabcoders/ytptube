@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250824-32bebcaf",
-        "date": "2025-08-24T14:14:06+00:00",
+        "tag": "dev-20250825-30830a94",
+        "date": "2025-08-25T14:50:47+00:00",
         "commits": [
+            {
+                "sha": "30830a94",
+                "message": "fix info extracting expired to use epoch as it is the ended instead of timestamp.",
+                "author": "arabcoders",
+                "date": "2025-08-25T14:50:47+00:00",
+                "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4"
+            },
+            {
+                "sha": "19b9f8dc",
+                "message": "Added support for pausing adding items from playlist.",
+                "author": "arabcoders",
+                "date": "2025-08-25T14:34:40+00:00",
+                "full_sha": "19b9f8dc6c2c1ef7a9df11878fca3e042d0fd022"
+            },
             {
                 "sha": "32bebcaf",
                 "message": "add pnpm configuration for built dependencies",
@@ -1320,7 +1334,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "32bebcaf46f2afe634d0d3fffe7787f73ce39744"
+        "full_sha": "30830a94e8c949d4f0755f7fc79079591a340ed4"
     },
     {
         "tag": "dev-20250616-c07465a6",
