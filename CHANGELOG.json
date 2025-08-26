@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (8b9077d4)",
-    "full_sha": "8b9077d47643aaec6bf0a4bccb6528768e1ecc52",
-    "date": "2025-08-25T22:07:37+00:00",
-    "commits": [
-      {
-        "sha": "d538d942",
-        "full_sha": "d538d94216491485fece55557c4b6749d1bfafab",
-        "message": "Fix windows multiprocessing threads",
-        "author": "arabcoders",
-        "date": "2025-08-25T21:59:14+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "21c7b0f20829a9bebfd9de6e1143b998a9d5c8d3",
-    "date": "2025-08-26T21:53:08+00:00",
+    "tag": "v0.8.12",
+    "full_sha": "3de3471bd5518ca521dc0acec748c836a98a2dc5",
+    "date": "2025-08-26T22:02:17+00:00",
     "commits": [
       {
         "sha": "21c7b0f2",
@@ -38,6 +24,13 @@
         "message": "make it possible to use different app.spec from workflow",
         "author": "arabcoders",
         "date": "2025-08-25T22:19:12+00:00"
+      },
+      {
+        "sha": "d538d942",
+        "full_sha": "d538d94216491485fece55557c4b6749d1bfafab",
+        "message": "Fix windows multiprocessing threads",
+        "author": "arabcoders",
+        "date": "2025-08-25T21:59:14+00:00"
       }
     ]
   },
