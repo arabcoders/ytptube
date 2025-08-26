@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250826-1adc837d",
-        "date": "2025-08-25T22:23:41+00:00",
+        "tag": "dev-20250827-21c7b0f2",
+        "date": "2025-08-26T21:53:08+00:00",
         "commits": [
+            {
+                "sha": "21c7b0f2",
+                "message": "Fixes #384",
+                "author": "arabcoders",
+                "date": "2025-08-26T21:53:08+00:00",
+                "full_sha": "21c7b0f20829a9bebfd9de6e1143b998a9d5c8d3"
+            },
             {
                 "sha": "1adc837d",
                 "message": "attempt 2",
@@ -1404,7 +1411,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1adc837d129927d96428e233a3f24492de012303"
+        "full_sha": "21c7b0f20829a9bebfd9de6e1143b998a9d5c8d3"
     },
     {
         "tag": "dev-20250616-c07465a6",
