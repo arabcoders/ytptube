@@ -981,6 +981,8 @@ class DownloadQueue(metaclass=Singleton):
             await entry.start()
 
             if entry.info.status not in ("finished", "skip"):
+                if not entry.info.error:
+                    entry.info.error = f"Download failed with status '{entry.info.status}'."
                 entry.info.status = "error"
         except Exception as e:
             entry.info.status = "error"

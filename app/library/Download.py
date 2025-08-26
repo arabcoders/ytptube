@@ -6,6 +6,7 @@ import os
 import re
 import signal
 import time
+from copy import deepcopy
 from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
@@ -64,6 +65,7 @@ class Download:
     update_task = None
 
     cancel_in_progress: bool = False
+    final_update = False
 
     bad_live_options: list = [
         "concurrent_fragment_downloads",
@@ -130,36 +132,40 @@ class Download:
 
     def _progress_hook(self, data: dict):
         if self.debug:
-            from copy import deepcopy
-
             d_copy = deepcopy(data)
             for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
                 d_copy["info_dict"].pop(k, None)
 
-            self.logger.debug(f"Progress hook: {d_copy}")
+            self.logger.debug(f"PG Hook: {d_copy}")
 
-        dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
-
-        if "finished" == data.get("status") and data.get("info_dict", {}).get("filename", None):
-            dataDict["filename"] = data["info_dict"]["filename"]
-
-        self.status_queue.put({"id": self.id, **dataDict})
+        self.status_queue.put(
+            {
+                "id": self.id,
+                "action": "progress",
+                **{k: v for k, v in data.items() if k in self._ytdlp_fields},
+            }
+        )
 
     def _postprocessor_hook(self, data: dict):
         if self.debug:
-            self.logger.debug(f"Postprocessor hook: {data}")
+            d_copy = deepcopy(data)
+            for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
+                d_copy["info_dict"].pop(k, None)
 
-        if "MoveFiles" != data.get("postprocessor") or "finished" != data.get("status"):
-            dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
-            self.status_queue.put({"id": self.id, **dataDict, "status": "postprocessing"})
+            self.logger.debug(f"PP Hook: {d_copy}")
+
+        if "MoveFiles" == data.get("postprocessor") and "finished" == data.get("status"):
+            if "__finaldir" in data.get("info_dict", {}) and "filepath" in data.get("info_dict", {}):
+                filename = str(Path(data["info_dict"]["__finaldir"]) / Path(data["info_dict"]["filepath"]).name)
+            else:
+                filename = data.get("info_dict", {}).get("filepath", data.get("filename"))
+
+            self.logger.debug(f"Final filename: '{filename}'.")
+            self.status_queue.put({"id": self.id, "action": "moved", "status": "finished", "final_name": filename})
             return
 
-        if "__finaldir" in data["info_dict"]:
-            filename = str(Path(data["info_dict"]["__finaldir"]) / Path(data["info_dict"]["filepath"]).name)
-        else:
-            filename = data["info_dict"]["filepath"]
-
-        self.status_queue.put({"id": self.id, "status": "finished", "filename": filename})
+        dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
+        self.status_queue.put({"id": self.id, "action": "postprocessing", **dataDict, "status": "postprocessing"})
 
     def post_hooks(self, filename: str | None = None):
         if not filename:
@@ -353,7 +359,32 @@ class Download:
         await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
         asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
-        return await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
+        ret = await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
+
+        if self.final_update:
+            return ret
+
+        self.status_queue.put(Terminator())
+        self.logger.debug("Draining status queue.")
+        try:
+            drain_count: int = 50 + (self.status_queue.qsize() if hasattr(self.status_queue, "qsize") else 5)
+        except Exception:
+            drain_count = 55
+
+        for i in range(drain_count):
+            try:
+                self.logger.debug(f"(50/{i}) Draining the status queue...")
+                if self.final_update:
+                    self.logger.debug("(50/{i}) Draining stopped. Final update received.")
+                    break
+                next_status = self.status_queue.get(timeout=0.1)
+                if next_status is None or isinstance(next_status, Terminator):
+                    continue
+                await self._process_status_update(next_status)
+            except Exception:  # noqa: S112
+                continue
+
+        return ret
 
     def started(self) -> bool:
         return self.proc is not None
@@ -480,6 +511,85 @@ class Download:
         else:
             self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
 
+    async def _process_status_update(self, status):
+        if status.get("id") != self.id or len(status) < 2:
+            self.logger.warning(f"Received invalid status update. {status}")
+            return
+
+        if self.debug:
+            self.logger.debug(f"Status Update: {self.info._id=} {status=}")
+
+        if isinstance(status, str):
+            await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+            return
+
+        self.tmpfilename = status.get("tmpfilename")
+
+        fl = None
+        if "final_name" in status:
+            fl = Path(status.get("final_name"))
+            try:
+                self.info.filename = str(fl.relative_to(Path(self.download_dir)))
+            except ValueError as ve:
+                self.logger.debug(f"Failed to get relative path for '{fl}' from '{self.download_dir}'. {ve}")
+                if self.temp_path:
+                    self.info.filename = str(fl.relative_to(Path(self.temp_path)))
+                else:
+                    self.info.filename = str(fl)
+
+            if fl.is_file() and fl.exists():
+                self.final_update = True
+                self.logger.debug(f"Final file name: '{fl}'.")
+
+                try:
+                    self.info.file_size = fl.stat().st_size
+                except FileNotFoundError:
+                    self.info.file_size = 0
+
+        self.info.status = status.get("status", self.info.status)
+        self.info.msg = status.get("msg")
+
+        if "error" == self.info.status and "error" in status:
+            self.info.error = status.get("error")
+            await self._notify.emit(
+                Events.LOG_ERROR,
+                data=self.info,
+                title="Download Error",
+                message=f"'{self.info.title}' failed to download. {self.info.error}",
+            )
+
+        if "downloaded_bytes" in status and status.get("downloaded_bytes", 0) > 0:
+            self.info.downloaded_bytes = status.get("downloaded_bytes")
+            total = status.get("total_bytes") or status.get("total_bytes_estimate")
+            if total:
+                try:
+                    self.info.percent = status["downloaded_bytes"] / total * 100
+                except ZeroDivisionError:
+                    self.info.percent = 0
+                self.info.total_bytes = total
+
+        self.info.speed = status.get("speed")
+        self.info.eta = status.get("eta")
+
+        if "finished" == self.info.status and fl and fl.is_file() and fl.exists():
+            self.info.file_size = fl.stat().st_size
+            self.info.datetime = str(formatdate(time.time()))
+
+            try:
+                ff = await ffprobe(str(fl))
+                self.info.extras["is_video"] = ff.has_video()
+                self.info.extras["is_audio"] = ff.has_audio()
+                if (ff.has_video() or ff.has_audio()) and not self.info.extras.get("duration"):
+                    self.info.extras["duration"] = int(float(ff.metadata.get("duration", 0.0)))
+            except Exception as e:
+                self.info.extras["is_video"] = True
+                self.info.extras["is_audio"] = True
+                self.logger.exception(e)
+                self.logger.error(f"Failed to run ffprobe. {status.get}. {e}")
+
+        if not self.final_update or fl:
+            await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+
     async def progress_update(self):
         """
         Update status of download task and notify the client.
@@ -488,84 +598,11 @@ class Download:
             try:
                 self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
                 status = await self.update_task
+                if status is None or isinstance(status, Terminator):
+                    return
+                await self._process_status_update(status)
             except (asyncio.CancelledError, OSError, FileNotFoundError):
                 return
-
-            if status is None or isinstance(status, Terminator):
-                return
-
-            if status.get("id") != self.id or len(status) < 2:
-                continue
-
-            if self.debug:
-                self.logger.debug(f"Status Update: {self.info._id=} {status=}")
-
-            if isinstance(status, str):
-                await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
-                continue
-
-            self.tmpfilename = status.get("tmpfilename")
-
-            if "filename" in status:
-                fl = Path(status.get("filename"))
-                try:
-                    self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.download_dir)))
-                except ValueError:
-                    if self.temp_path:
-                        self.info.filename = str(Path(status.get("filename")).relative_to(Path(self.temp_path)))
-                    else:
-                        self.info.filename = str(fl)
-
-                if fl.is_file() and fl.exists():
-                    try:
-                        self.info.file_size = fl.stat().st_size
-                    except FileNotFoundError:
-                        self.info.file_size = 0
-
-            self.info.status = status.get("status", self.info.status)
-            self.info.msg = status.get("msg")
-
-            if "error" == self.info.status and "error" in status:
-                self.info.error = status.get("error")
-                await self._notify.emit(
-                    Events.LOG_ERROR,
-                    data=self.info,
-                    title="Download Error",
-                    message=f"'{self.info.title}' failed to download: {self.info.error}",
-                )
-
-            if "downloaded_bytes" in status and status.get("downloaded_bytes") > 0:
-                self.info.downloaded_bytes = status.get("downloaded_bytes")
-                total = status.get("total_bytes") or status.get("total_bytes_estimate")
-                if total:
-                    try:
-                        self.info.percent = status["downloaded_bytes"] / total * 100
-                    except ZeroDivisionError:
-                        self.info.percent = 0
-                    self.info.total_bytes = total
-
-            self.info.speed = status.get("speed")
-            self.info.eta = status.get("eta")
-
-            fl = Path(status.get("filename")) if status and "filename" in status else None
-
-            if "finished" == self.info.status and fl and fl.is_file() and fl.exists():
-                self.info.file_size = fl.stat().st_size
-                self.info.datetime = str(formatdate(time.time()))
-
-                try:
-                    ff = await ffprobe(status.get("filename"))
-                    self.info.extras["is_video"] = ff.has_video()
-                    self.info.extras["is_audio"] = ff.has_audio()
-                    if (ff.has_video() or ff.has_audio()) and not self.info.extras.get("duration"):
-                        self.info.extras["duration"] = int(float(ff.metadata.get("duration", 0.0)))
-                except Exception as e:
-                    self.info.extras["is_video"] = True
-                    self.info.extras["is_audio"] = True
-                    self.logger.exception(e)
-                    self.logger.error(f"Failed to run ffprobe. {status.get}. {e}")
-
-            await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
 
     def is_stale(self) -> bool:
         """
