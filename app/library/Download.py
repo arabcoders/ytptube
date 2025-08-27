@@ -361,7 +361,9 @@ class Download:
 
         ret = await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
 
-        if self.final_update:
+        if self.final_update or self.cancelled:
+            if self.cancelled:
+                self.info.status = "cancelled"
             return ret
 
         self.status_queue.put(Terminator())

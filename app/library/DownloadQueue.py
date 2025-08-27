@@ -494,7 +494,7 @@ class DownloadQueue(metaclass=Singleton):
                 nEvent = Events.ITEM_MOVED
                 nStore = "history"
                 nTitle = "Upcoming Premiere" if is_premiere else "Upcoming Live Stream"
-                nMessage = f"{'Premiere video' if is_premiere else 'Stream' } '{dlInfo.info.title}' is not available yet. {text_logs}"
+                nMessage = f"{'Premiere video' if is_premiere else 'Stream'} '{dlInfo.info.title}' is not available yet. {text_logs}"
 
                 dlInfo.info.status = "not_live"
                 dlInfo.info.msg = nMessage.replace(f" '{dlInfo.info.title}'", "")
@@ -535,7 +535,7 @@ class DownloadQueue(metaclass=Singleton):
                         LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
                         dlInfo.info.error += f" Failed to parse live_in date '{release_in}'."
                 else:
-                    dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
+                    dlInfo.info.error += f" Delaying download by '{300 + dl.extras.get('duration', 0)}' seconds."
 
                 nMessage = f"'{dlInfo.info.title}': '{dlInfo.info.error.strip()}'."
 
@@ -665,7 +665,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
-            downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
+            downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive"), url=item.url)
             if downloaded is True and id_dict:
                 message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
