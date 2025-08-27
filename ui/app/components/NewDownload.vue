@@ -63,8 +63,9 @@
                   </label>
                 </div>
                 <div class="control is-expanded">
-                  <input type="text" class="input is-fullwidth" id="path" v-model="form.folder" placeholder="Default"
-                    :disabled="!socket.isConnected || addInProgress" list="folders">
+                  <input type="text" class="input is-fullwidth" id="path" v-model="form.folder"
+                    :placeholder="get_download_folder()" :disabled="!socket.isConnected || addInProgress"
+                    list="folders">
                 </div>
               </div>
             </div>
@@ -525,6 +526,16 @@ const get_output_template = () => {
     }
   }
   return config.app.output_template || '%(title)s.%(ext)s'
+}
+
+const get_download_folder = (): string => {
+  if (form.value.preset && false === hasFormatInConfig.value) {
+    const preset = config.presets.find(p => p.name === form.value.preset)
+    if (preset?.folder) {
+      return preset.folder.replace(config.app.download_path, '')
+    }
+  }
+  return '/'
 }
 
 const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
