@@ -39,6 +39,7 @@ dependencies = [
   "apprise>=1.9.3",
   "bgutil-ytdlp-pot-provider>=1.2.1",
   "pycryptodome>=3.23.0",
+  "httpx-curl-cffi>=0.1.4",
 ]
 
 [tool.ruff]

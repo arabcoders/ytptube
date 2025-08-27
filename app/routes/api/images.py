@@ -43,19 +43,19 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
         return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
 
     try:
+
         ytdlp_args = config.get_ytdlp_args()
         opts = {
             "proxy": ytdlp_args.get("proxy", None),
             "headers": {
-                "User-Agent": ytdlp_args.get(
-                    "user_agent", request.headers.get("User-Agent", random_user_agent())
-                ),
+                "User-Agent": ytdlp_args.get("user_agent", request.headers.get("User-Agent", random_user_agent())),
             },
         }
 
         async with httpx.AsyncClient(**opts) as client:
             LOG.debug(f"Fetching thumbnail from '{url}'.")
-            response = await client.request(method="GET", url=url)
+            response = await client.request(method="GET", url=url, follow_redirects=True)
+
             return web.Response(
                 body=response.content,
                 headers={
@@ -122,6 +122,17 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 "User-Agent": ytdlp_args.get("user_agent", random_user_agent()),
             },
         }
+        try:
+            from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
+
+            opts["transport"] = AsyncCurlTransport(
+                impersonate="chrome",
+                default_headers=True,
+                curl_options={CurlOpt.FRESH_CONNECT: True},
+            )
+            opts.pop("headers", None)
+        except Exception:
+            pass
 
         async with httpx.AsyncClient(**opts) as client:
             if backend.startswith("https://www.bing.com/HPImageArchive.aspx"):

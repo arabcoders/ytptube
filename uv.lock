@@ -592,6 +592,20 @@ wheels = [
 ]
 
 [[package]]
+name = "httpx-curl-cffi"
+version = "0.1.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "curl-cffi" },
+    { name = "httpx" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/11/e9/42542f3f4bf9ba457f10dda6620dc3f56e77480722c67579a35956c5d2e2/httpx_curl_cffi-0.1.4.tar.gz", hash = "sha256:1e00b741b121b3781942d45781288f89842f41fe32a743e27672d7fc542c1cd1", size = 7907 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/25/7a093edd86d0ea2cc0ff5570f74b00c603ce100303031a77f7d9db9aa80a/httpx_curl_cffi-0.1.4-py3-none-any.whl", hash = "sha256:bbd6e89abbf26a37c436d9a3d2c55ae646b78b0dcf4bc1be2f2451912e39d7b6", size = 8913 },
+]
+
+[[package]]
 name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1394,6 +1408,7 @@ dependencies = [
     { name = "debugpy" },
     { name = "defusedxml" },
     { name = "httpx" },
+    { name = "httpx-curl-cffi" },
     { name = "multidict" },
     { name = "mutagen" },
     { name = "platformdirs" },
@@ -1432,6 +1447,7 @@ requires-dist = [
     { name = "debugpy", specifier = ">=1.8.1" },
     { name = "defusedxml", specifier = ">=0.7.1" },
     { name = "httpx" },
+    { name = "httpx-curl-cffi", specifier = ">=0.1.4" },
     { name = "multidict", specifier = "==6.5.1" },
     { name = "mutagen" },
     { name = "platformdirs" },

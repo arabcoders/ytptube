@@ -84,7 +84,7 @@
                     </span>
                   </div>
                   <div v-if="showThumbnails && item.extras?.thumbnail">
-                    <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                    <FloatingImage :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -206,13 +206,13 @@
               <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))" />
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
