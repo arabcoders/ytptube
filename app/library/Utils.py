@@ -405,13 +405,9 @@ def check_id(file: Path) -> bool | str:
 
 @lru_cache(maxsize=512)
 def is_private_address(hostname: str) -> bool:
-    try:
-        ip = socket.gethostbyname(hostname)
-        ip_obj = ipaddress.ip_address(ip)
-        return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
-    except socket.gaierror:
-        # Could not resolve - treat as invalid or restricted
-        return True
+    ip = socket.gethostbyname(hostname)
+    ip_obj = ipaddress.ip_address(ip)
+    return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
 
 
 def validate_url(url: str, allow_internal: bool = False) -> bool:
@@ -447,9 +443,19 @@ def validate_url(url: str, allow_internal: bool = False) -> bool:
         raise ValueError(msg)
 
     hostname: str | None = parsed_url.host
-    if allow_internal is False and (not hostname or is_private_address(hostname)):
-        msg = "Access to internal urls or private networks is not allowed."
+    if not hostname:
+        msg = "Invalid hostname."
         raise ValueError(msg)
+
+    if allow_internal is False:
+        try:
+            if is_private_address(hostname):
+                msg = "Access to internal urls or private networks is not allowed."
+                raise ValueError(msg)
+        except socket.gaierror as e:
+            LOG.error(f"Error resolving hostname '{hostname}': {e!s}")
+            msg = "Invalid hostname."
+            raise ValueError(msg) from e
 
     return True
 

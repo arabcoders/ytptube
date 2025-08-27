@@ -309,6 +309,37 @@ async def get_options() -> Response:
     """
     from app.library.ytdlp import ytdlp_options
 
-    return web.json_response(
-        body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code
-    )
+    return web.json_response(body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code)
+
+
+@route("POST", "api/yt-dlp/archive_id/", "get_archive_ids")
+async def get_archive_ids(request: Request) -> Response:
+    """
+    Get the yt-dlp CLI options.
+
+    Returns:
+        Response: The response object with the yt-dlp CLI options.
+
+    """
+    from app.library.Utils import get_archive_id
+
+    data = (await request.json()) if request.body_exists else None
+    if not data or not isinstance(data, list):
+        return web.json_response(
+            data={"error": "Invalid request. expecting list with URLs."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    response = []
+
+    for i, url in enumerate(data):
+        dct = {"index": i, "url": url}
+        try:
+            validate_url(url)
+            dct.update(get_archive_id(url))
+        except ValueError as e:
+            dct.update({"id": None, "ie_key": None, "archive_id": None, "error": str(e)})
+
+        response.append(dct)
+
+    return web.json_response(data=response, status=web.HTTPOk.status_code)

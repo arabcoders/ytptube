@@ -44,7 +44,9 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/logs](#get-apilogs)
     - [GET /api/notifications](#get-apinotifications)
     - [PUT /api/notifications](#put-apinotifications)
+    - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
     - [POST /api/notifications/test](#post-apinotificationstest)
+    - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
   - [Error Responses](#error-responses)
 
 ---
@@ -824,6 +826,41 @@ Binary image data with appropriate `Content-Type` header.
   "allowedTypes": ["added", "completed", "error", "cancelled", "cleared", "log_info", "log_success", ...]
 }
 ```
+---
+
+### POST /api/yt-dlp/archive_id/
+**Purpose**: Get the archive ID for a given URLs.
+**Body**: Array of URLs.
+```json
+[
+    "https://youtube.com/...",
+    "https://..."
+}
+```
+
+**Response**:
+```json
+[
+  {
+    "index": "index_of_the_url_in_request_array",
+    "url": "the_url",
+    "id": "the_video_id_or_null_if_not_found",
+    "ie_key": "the_extractor_key_or_null_if_not_found",
+    "archive_id": "the_archive_id_or_null_if_not_found",
+    "error": "error_message_if_any_or_null"
+  },
+  ...
+]
+```
+
+or an error:
+```json
+{
+  "error": "text"
+}
+```
+
+- If the body is not a valid JSON array, returns `400 Bad Request`.
 
 ---
 
@@ -836,6 +873,24 @@ Binary image data with appropriate `Content-Type` header.
   "type": "test",
   "message": "This is a test notification."
 }
+```
+
+---
+
+### GET /api/yt-dlp/options
+**Purpose**: Get the current yt-dlp CLI options as a JSON object.
+
+**Response**:
+```json
+[
+  {
+    "description": "Description of the option",
+    "flags":[ "--option", "-o" ],
+    "group": "Option Group",
+    "ignored": false, // true if this option is ignored by ytptube.
+  },
+  ...
+]
 ```
 
 ---
