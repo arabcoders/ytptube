@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250827-71bd40a2",
-        "date": "2025-08-27T13:28:19+00:00",
+        "tag": "dev-20250827-309d4ca0",
+        "date": "2025-08-27T14:21:55+00:00",
         "commits": [
+            {
+                "sha": "309d4ca0",
+                "message": "Update default placeholder for save_in dynamically based on selected preset.",
+                "author": "arabcoders",
+                "date": "2025-08-27T14:21:55+00:00",
+                "full_sha": "309d4ca01329976775827557689006222710f318"
+            },
+            {
+                "sha": "bfe4ea63",
+                "message": "add cancelled as accepted status",
+                "author": "arabcoders",
+                "date": "2025-08-27T14:14:49+00:00",
+                "full_sha": "bfe4ea63540781f90f0aa444b4a96b4a04e9e3cc"
+            },
             {
                 "sha": "71bd40a2",
                 "message": "added new endpoint to get urls archive ids",
@@ -1418,7 +1432,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9"
+        "full_sha": "309d4ca01329976775827557689006222710f318"
     },
     {
         "tag": "dev-20250616-c07465a6",
