@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9",
+    "date": "2025-08-27T13:28:19+00:00",
+    "commits": [
+      {
+        "sha": "71bd40a2",
+        "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9",
+        "message": "added new endpoint to get urls archive ids",
+        "author": "arabcoders",
+        "date": "2025-08-27T13:28:19+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.12",
     "full_sha": "3de3471bd5518ca521dc0acec748c836a98a2dc5",
     "date": "2025-08-26T22:02:17+00:00",

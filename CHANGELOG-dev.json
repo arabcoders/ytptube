@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250827-21c7b0f2",
-        "date": "2025-08-26T21:53:08+00:00",
+        "tag": "dev-20250827-71bd40a2",
+        "date": "2025-08-27T13:28:19+00:00",
         "commits": [
+            {
+                "sha": "71bd40a2",
+                "message": "added new endpoint to get urls archive ids",
+                "author": "arabcoders",
+                "date": "2025-08-27T13:28:19+00:00",
+                "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9"
+            },
             {
                 "sha": "21c7b0f2",
                 "message": "Fixes #384",
@@ -1411,7 +1418,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "21c7b0f20829a9bebfd9de6e1143b998a9d5c8d3"
+        "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9"
     },
     {
         "tag": "dev-20250616-c07465a6",
