@@ -139,11 +139,8 @@
                   </div>
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
-                  <span class="icon-text">
-                    <span class="icon" :class="setIconColor(item)"><i
-                        :class="[setIcon(item), is_queued(item)]" /></span>
-                    <span>{{ setStatus(item) }}</span>
-                  </span>
+                  <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
+                  <span>{{ setStatus(item) }}</span>
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
                   <span class="user-hint" :date-datetime="item.datetime"
@@ -285,7 +282,8 @@
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
+                <img @load="e => pImg(e)"
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
@@ -299,10 +297,8 @@
           <div class="card-content">
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <span class="icon-text">
-                  <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
-                  <span>{{ setStatus(item) }}</span>
-                </span>
+                <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
+                <span>{{ setStatus(item) }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon"><i class="fa-solid fa-sliders" /></span>

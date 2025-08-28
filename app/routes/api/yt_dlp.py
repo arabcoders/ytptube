@@ -14,7 +14,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.Presets import Presets
 from app.library.router import route
-from app.library.Utils import REMOVE_KEYS, arg_converter, extract_info, validate_url
+from app.library.Utils import REMOVE_KEYS, arg_converter, extract_info, is_downloaded, validate_url
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -198,6 +198,12 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             "ttl_left": 300,
             "expires": time.time() + 300,
         }
+
+        is_archived = False
+        if user_file := ytdlp_opts.get("download_archive"):
+            is_archived, _ = is_downloaded(user_file, url)
+
+        data["is_archived"] = is_archived
 
         data = OrderedDict(sorted(data.items(), key=lambda item: len(str(item[1]))))
 

@@ -13,6 +13,8 @@ from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.Presets import Preset, Presets
 from app.library.router import route
+from app.library.Utils import is_downloaded
+from app.library.YTDLPOpts import YTDLPOpts
 
 if TYPE_CHECKING:
     from library.Download import Download
@@ -98,8 +100,18 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, co
     if not item.info:
         return web.json_response(data={"error": "item has no info."}, status=web.HTTPNotFound.status_code)
 
+    is_archived = False
+    params: YTDLPOpts = YTDLPOpts.get_instance().preset(name=item.info.preset)
+    if item.info.cli:
+        params.add_cli(item.info.cli, from_user=True)
+
+    params = params.get_all()
+    if archive_file := params.get("download_archive"):
+        is_archived, _ = is_downloaded(archive_file, item.info.url)
+
     info = {
         **item.info.serialize(),
+        "is_archived": is_archived,
         "ffprobe": {},
     }
 
