@@ -25,8 +25,11 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
     - [GET /api/history](#get-apihistory)
+    - [DELETE /api/archive/{id}](#delete-apiarchiveid)
+    - [POST /api/archive/{id}](#post-apiarchiveid)
     - [GET /api/tasks](#get-apitasks)
     - [PUT /api/tasks](#put-apitasks)
+    - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [GET /api/player/playlist/{file:.\*}.m3u8](#get-apiplayerplaylistfilem3u8)
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
@@ -35,18 +38,27 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
     - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
+    - [POST /api/file/action/{path:.\*}](#post-apifileactionpath)
+    - [POST /api/file/download](#post-apifiledownload)
+    - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
     - [GET /api/yt-dlp/archive/recheck](#get-apiyt-dlparchiverecheck)
     - [GET /api/random/background](#get-apirandombackground)
     - [GET /api/presets](#get-apipresets)
+    - [GET /api/dl\_fields](#get-apidl_fields)
+    - [PUT /api/dl\_fields](#put-apidl_fields)
     - [PUT /api/presets](#put-apipresets)
     - [GET /api/conditions](#get-apiconditions)
     - [PUT /api/conditions](#put-apiconditions)
+    - [POST /api/conditions/test](#post-apiconditionstest)
     - [GET /api/logs](#get-apilogs)
     - [GET /api/notifications](#get-apinotifications)
     - [PUT /api/notifications](#put-apinotifications)
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
+    - [POST /api/system/shutdown](#post-apisystemshutdown)
+    - [GET /api/dev/loop](#get-apidevloop)
+    - [GET /api/dev/pip](#get-apidevpip)
   - [Error Responses](#error-responses)
 
 ---
@@ -350,6 +362,52 @@ or an error:
 
 ---
 
+### DELETE /api/archive/{id}
+**Purpose**: Remove an item's URL from the yt-dlp archive file, allowing it to be re-downloaded.
+
+**Path Parameter**:
+- `id`: Item ID from the history (if body `url` is not provided).
+
+**Body (optional)**:
+```json
+{ "url": "https://..." }
+```
+If `url` is provided, it is used directly; otherwise the route resolves the item by `id` and uses its URL.
+
+**Response**:
+```json
+{ "message": "item '<title>' removed from '<archive_file>' archive." }
+```
+or an error:
+```json
+{ "error": "text" }
+```
+
+- `400 Bad Request` if archive is not configured or parameters are invalid.
+- `404 Not Found` if the item or archive entry is not found.
+
+---
+
+### POST /api/archive/{id}
+**Purpose**: Manually mark an item as archived by writing its archive ID to the archive file.
+
+**Path Parameter**:
+- `id`: Item ID from the history.
+
+**Response**:
+```json
+{ "message": "item '<archive_id>' archived in file '<archive_file>'." }
+```
+or an error:
+```json
+{ "error": "text" }
+```
+
+- `404 Not Found` if the item or archive file does not exist.
+- `409 Conflict` if the item is already archived.
+
+---
+
 ### GET /api/tasks
 **Purpose**: Retrieves the scheduled tasks from the internal `Tasks` manager.  
 
@@ -419,6 +477,26 @@ or on error
   "error": "text"
 }
 ```
+
+---
+
+### POST /api/tasks/{id}/mark
+**Purpose**: Mark all entries associated with a scheduled task as downloaded.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+```json
+{ "message": "..." }
+```
+or
+```json
+{ "error": "..." }
+```
+
+- `400 Bad Request` if id is missing or invalid.
+- `404 Not Found` if the task does not exist.
 
 ---
 
@@ -579,6 +657,63 @@ Binary image data with the appropriate `Content-Type`.
 
 ---
 
+### POST /api/file/action/{path:.*}
+**Purpose**: Perform a file browser action on a file or directory.
+
+**Path Parameter**:
+- `path`: Base path (relative to `download_path`) to operate under. Use `/` for root.
+
+**Body**:
+```json
+{ "action": "rename|delete|move|directory", ... }
+```
+Actions and required fields:
+- `rename`: `{ "new_name": "<name>" }`
+- `delete`: no extra fields
+- `move`: `{ "new_path": "<dir-relative-to-download_path>" }`
+- `directory`: `{ "new_dir": "<subdir/to/create>" }`
+
+**Response**: `200 OK` with empty body.
+
+or an error:
+```json
+{ "error": "text" }
+```
+
+- `403 Forbidden` if browser or actions are disabled.
+- `400/404` for invalid paths or parameters.
+
+---
+
+### POST /api/file/download
+**Purpose**: Prepare a ZIP download of selected files (and detected sidecars). Returns a short-lived token.
+
+**Body**:
+```json
+[ "relative/path/file1.ext", "relative/path/file2.ext" ]
+```
+
+**Response**:
+```json
+{ "token": "<uuid>", "files": ["relative/path/file1.ext", "..."] }
+```
+
+- `400 Bad Request` if the body is not a JSON array or contains no valid files.
+
+---
+
+### GET /api/file/download/{token}
+**Purpose**: Stream a ZIP file for the previously prepared download token.
+
+**Path Parameter**:
+- `token`: Token returned by POST `/api/file/download`.
+
+**Response**:
+- `200 OK` streaming response with `Content-Type: application/zip` and `Content-Disposition: attachment`.
+- JSON error with `400 Bad Request` if the token is invalid/expired or no files available.
+
+---
+
 ### GET /api/yt-dlp/archive/recheck
 **Purpose**: Recheck manual archive entries to see if become available or not.
 
@@ -631,6 +766,47 @@ Binary image data with appropriate `Content-Type` header.
   },
   ...
 ]
+```
+
+---
+
+### GET /api/dl_fields
+**Purpose**: Retrieve the list of configured download fields.
+
+**Query Parameters (optional)**:
+- `filter`: Comma-separated list of field names to include in each object.
+
+**Response**:
+```json
+[
+  { "id": "<uuid>", "name": "...", ... },
+  ...
+]
+```
+
+---
+
+### PUT /api/dl_fields
+**Purpose**: Save the list of download fields. Replaces existing entries.
+
+**Body**: Array of objects. Required per-item fields: `name`. `id` is auto-generated if missing or invalid.
+```json
+[
+  { "name": "...", "id": "<uuid>", ... },
+  { "name": "..." }
+]
+```
+
+**Response**:
+```json
+[
+  { "id": "<uuid>", "name": "...", ... },
+  ...
+]
+```
+or an error:
+```json
+{ "error": "text" }
 ```
 
 ---
@@ -715,6 +891,27 @@ Binary image data with appropriate `Content-Type` header.
   ...
 ]
 ```
+
+---
+
+### POST /api/conditions/test
+**Purpose**: Evaluate a condition expression against info extracted from a URL.
+
+**Body**:
+```json
+{ "url": "https://...", "condition": "yt:duration > 600", "preset": "<optional-preset>" }
+```
+
+**Response**:
+```json
+{
+  "status": true,
+  "condition": "...",
+  "data": { ... }  // sanitized, possibly large
+}
+```
+
+- `400 Bad Request` for invalid body, missing fields, or extractor failures.
 
 ---
 
@@ -891,6 +1088,40 @@ or an error:
   },
   ...
 ]
+```
+
+---
+
+### POST /api/system/shutdown
+**Purpose**: Gracefully shut down the application (native mode only).
+
+**Response**:
+```json
+{ "message": "The application shutting down." }
+```
+
+- `400 Bad Request` if not running in native mode.
+
+---
+
+### GET /api/dev/loop
+**Purpose**: Development-only. Show asyncio loop details and running tasks.
+
+**Response**:
+```json
+{ "total_tasks": 1, "loop": "...", "tasks": [ { "task": "...", "stack": ["..."] } ] }
+```
+
+- `403 Forbidden` if not in development mode.
+
+---
+
+### GET /api/dev/pip
+**Purpose**: Development-only. Return installed versions for configured pip packages.
+
+**Response**:
+```json
+{ "package": "version-or-null", "...": null }
 ```
 
 ---

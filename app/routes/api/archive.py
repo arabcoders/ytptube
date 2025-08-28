@@ -42,7 +42,7 @@ async def archive_remove(request: Request, queue: DownloadQueue, config: Config)
 
     title: str = ""
 
-    url: str | None = data.get("url", None) if data else None
+    url: str | None = data.get("url")
 
     if not url:
         id: str = request.match_info.get("id")
