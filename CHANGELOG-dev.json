@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250827-283ed74f",
-        "date": "2025-08-27T16:52:35+00:00",
+        "tag": "dev-20250828-9d4984b7",
+        "date": "2025-08-28T00:25:56+00:00",
         "commits": [
+            {
+                "sha": "9b08a17c",
+                "message": "Update yt-dlp to 2025.8.27",
+                "author": "ArabCoders",
+                "date": "2025-08-28T00:23:57+00:00",
+                "full_sha": "9b08a17ce2698b9dd6bce89813432056796e1220"
+            },
             {
                 "sha": "283ed74f",
                 "message": "handle redirection for thumbnails.",
@@ -1446,7 +1453,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "283ed74f71d4433f588015926a5705ef17b3b480"
+        "full_sha": "9d4984b7a18eb88c9816c7fae019260faa9580d4"
     },
     {
         "tag": "dev-20250616-c07465a6",
