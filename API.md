@@ -41,7 +41,6 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/file/action/{path:.\*}](#post-apifileactionpath)
     - [POST /api/file/download](#post-apifiledownload)
     - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
-    - [GET /api/yt-dlp/archive/recheck](#get-apiyt-dlparchiverecheck)
     - [GET /api/random/background](#get-apirandombackground)
     - [GET /api/presets](#get-apipresets)
     - [GET /api/dl\_fields](#get-apidl_fields)
@@ -714,25 +713,6 @@ or an error:
 
 ---
 
-### GET /api/yt-dlp/archive/recheck
-**Purpose**: Recheck manual archive entries to see if become available or not.
-
-**Response**:
-```json
-[
-  {
-    "id": "youtube_video_id",
-    "url": "https://youtube.com/watch?v=...",
-    "status": "available|unavailable|error",
-    "info": { ... }  // video info if available
-  },
-  ...
-]
-```
-- Returns `404 Not Found` if manual archive is not enabled or file doesn't exist.
-
----
-
 ### GET /api/random/background
 **Purpose**: Get a random background image from configured backends.  
 
@@ -1105,7 +1085,7 @@ or an error:
 ---
 
 ### GET /api/dev/loop
-**Purpose**: Development-only. Show asyncio loop details and running tasks.
+**Purpose**: Development-only. Show event loop details and running tasks.
 
 **Response**:
 ```json

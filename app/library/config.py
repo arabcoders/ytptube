@@ -103,9 +103,6 @@ class Config:
     archive_file: str = "{config_path}/archive.log"
     """The path to the download archive file."""
 
-    manual_archive: str = "{config_path}/archive.manual.log"
-    """The path to the manual archive file."""
-
     apprise_config: str = "{config_path}/apprise.yml"
     """The path to the Apprise configuration file."""
 
@@ -424,7 +421,7 @@ class Config:
                 LOG.info(f"Creating archive file '{archive_file}'.")
                 archive_file.touch(exist_ok=True)
 
-            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}'.")
+            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}' by default.")
             self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
 
         if self.temp_keep:
@@ -519,6 +516,16 @@ class Config:
         return "production" == self.app_env
 
     def get_ytdlp_args(self) -> dict:
+        """
+        Get the yt-dlp command line options as a dictionary.
+
+        Returns:
+            dict: The yt-dlp command line options.
+
+        Todo:
+            Rename to get_ytdlp_opts() to match the system.
+
+        """
         try:
             return arg_converter(args=self._ytdlp_cli_mutable, level=True)
         except Exception as e:
@@ -537,6 +544,7 @@ class Config:
 
         ytdlp_args = self.get_ytdlp_args()
 
+        # TODO: this doesn't make sense, as each item might have it's own archive file or none at all.
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
 
@@ -544,7 +552,7 @@ class Config:
         return data
 
     @staticmethod
-    def _ytdlp_version():
+    def _ytdlp_version() -> str:
         try:
             from yt_dlp.version import __version__ as YTDLP_VERSION
 

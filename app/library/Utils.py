@@ -63,7 +63,7 @@ REMOVE_KEYS: list = [
 
 YTDLP_INFO_CLS: YTDLP = None
 
-ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
+ALLOWED_SUBS_EXTENSIONS: tuple[str, str, str] = (".srt", ".vtt", ".ass")
 
 FILES_TYPE: list = [
     {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$", re.IGNORECASE), "type": "video"},
@@ -261,113 +261,6 @@ def merge_dict(source: dict, destination: dict) -> dict:
             destination_copy[key] = copy.deepcopy(value)
 
     return destination_copy
-
-
-def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
-    """
-    Check if the video is already downloaded.
-
-    Args:
-        archive_file (str): Archive file path.
-        url (str): URL to check.
-
-    Returns:
-        bool: True if the video is already downloaded.
-        dict: Video information.
-
-    """
-    idDict = {"id": None, "ie_key": None, "archive_id": None}
-
-    if not url or not archive_file:
-        return (False, idDict)
-
-    if not Path(archive_file).exists():
-        return (False, idDict)
-
-    idDict = get_archive_id(url=url)
-
-    if idDict.get("archive_id"):
-        with open(archive_file) as f:
-            for line in f:
-                if idDict["archive_id"] in line:
-                    return (True, idDict)
-
-    return (False, idDict)
-
-
-def remove_from_archive(archive_file: str | Path, url: str) -> bool:
-    """
-    Remove the downloaded video record from the archive file.
-
-    Args:
-        archive_file (str): Archive file path.
-        url (str): URL to check and remove.
-
-    Returns:
-        bool: True if the record removed, False otherwise.
-
-    """
-    if not url or not archive_file:
-        return False
-
-    archive_path: Path = Path(archive_file) if not isinstance(archive_file, Path) else archive_file
-    if not archive_path.exists():
-        return False
-
-    idDict = get_archive_id(url=url)
-    archive_id: str | None = idDict.get("archive_id")
-
-    if not archive_id:
-        return False
-
-    lines: list[str] = archive_path.read_text(encoding="utf-8").splitlines()
-    new_lines: list[str] = [line for line in lines if archive_id not in line]
-
-    if len(lines) == len(new_lines):
-        return False
-
-    archive_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    return True
-
-
-def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
-    """
-    Load a JSON or JSON5 file and return the contents as a dictionary
-
-    Args:
-        file (str): File path
-        check_type (type): Type to check the loaded file against.
-
-    Returns tuple:
-        dict|list: Dictionary or list of the file contents. Empty dict if the file could not be loaded.
-        bool: True if the file was loaded successfully.
-        str: Error message if the file could not be loaded.
-
-    """
-    try:
-        with open(file) as json_data:
-            opts = json.load(json_data)
-
-        if check_type:
-            assert isinstance(opts, check_type)
-
-        return (opts, True, "")
-    except Exception:
-        with open(file) as json_data:
-            from pyjson5 import load as json5_load
-
-            try:
-                opts = json5_load(json_data)
-
-                if check_type:
-                    assert isinstance(opts, check_type)
-
-                return (opts, True, "")
-            except AssertionError:
-                return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.")
-            except Exception as e:
-                return ({}, False, f"{e}")
-
 
 def check_id(file: Path) -> bool | str:
     """
@@ -1107,7 +1000,7 @@ def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
         raise ValueError(msg) from e
 
 
-def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+def get_archive_id(url: str) -> dict[str, str | None]:
     """
     Get the archive ID for a given URL.
 
@@ -1115,8 +1008,11 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
         url (str): URL to check.
 
     Returns:
-        bool: True if the video is already downloaded.
-        dict: Video information.
+        dict: {
+            "id": str | None,
+            "ie_key": str | None,
+            "archive_id": str | None
+        }
 
     """
     global YTDLP_INFO_CLS  # noqa: PLW0603
@@ -1455,3 +1351,133 @@ def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
             folders.extend(list_folders(entry, base, depth_limit))
 
     return folders
+
+
+def archive_add(file: str | Path, ids: list[str], skip_check: bool = False) -> bool:
+    """
+    Add IDs to an archive file.
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to add.
+        skip_check (bool): If True, skip checking for existing IDs.
+
+    """
+    if not ids:
+        return False
+
+    path: Path = Path(file) if not isinstance(file, Path) else file
+    existing_ids: set[str] = set()
+
+    if not skip_check and path.exists():
+        with path.open("r", encoding="utf-8") as f:
+            for line in f:
+                s = line.strip()
+
+                if not s or len(s.split()) < 2:
+                    continue
+
+                existing_ids.add(s)
+
+    new_ids: list[str] = []
+    for raw in ids:
+        s: str = str(raw).strip()
+
+        if not s or len(s.split()) < 2 or s in existing_ids or s in new_ids:
+            continue
+
+        new_ids.append(s)
+
+    if not new_ids:
+        return False
+
+    try:
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        with path.open("a", encoding="utf-8") as f:
+            f.write("".join(f"{x}\n" for x in new_ids))
+
+        return True
+    except OSError as e:
+        LOG.error(f"Failed to write to archive file '{path!s}'. {e!s}")
+        return False
+
+
+def archive_read(file: str | Path, ids: list[str] | None = None) -> list[str]:
+    """
+    Read IDs from an archive file with optional filtering.
+
+    - If `ids` is empty, return all IDs present in the archive file.
+    - If `ids` is provided, return only the ids that exist in the archive file,
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): Optional list of IDs to query; empty list returns all.
+
+    Returns:
+        list[str]: List of ids found in the archive file filtered by `ids` if provided.
+
+    """
+    path: Path = Path(file) if not isinstance(file, Path) else file
+    if not path.exists():
+        return []
+
+    ids_set: set[str] | None = (
+        {s.strip() for s in ids if str(s).strip() and len(str(s).strip().split()) < 2} if ids else None
+    )
+
+    found: list[str] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            s: str = line.strip()
+
+            if not s or len(s.split()) < 2:
+                continue
+
+            if ids_set is None or s in ids_set:
+                found.append(s)
+
+    return found
+
+
+def archive_delete(file: str | Path, ids: list[str]) -> bool:
+    """
+    Delete the given IDs from an archive file.
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to remove.
+
+    Returns:
+        bool: True if deletion succeeded (or nothing to do), False on error.
+
+    """
+    path: Path = Path(file) if not isinstance(file, Path) else file
+
+    if not path.exists() or not ids:
+        return False
+
+    remove_ids: set[str] = {x.strip() for x in ids if str(x).strip() and len(str(x).strip().split()) < 2}
+    if not remove_ids:
+        return True
+
+    changed = False
+    kept_lines: list[str] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            s: str = line.strip()
+
+            if not s or len(s.split()) < 2 or s in remove_ids:
+                changed = True
+                continue
+
+            kept_lines.append(line)
+
+    if not changed:
+        return True
+
+    with path.open("w", encoding="utf-8") as f:
+        f.writelines(kept_lines)
+
+    return True

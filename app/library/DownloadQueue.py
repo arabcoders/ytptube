@@ -24,12 +24,13 @@ from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import (
+    archive_read,
     arg_converter,
     calc_download_path,
     dt_delta,
     extract_info,
     extract_ytdlp_logs,
-    is_downloaded,
+    get_archive_id,
     load_cookies,
     str_to_dt,
     ytdlp_reject,
@@ -39,7 +40,7 @@ from .YTDLPOpts import YTDLPOpts
 if TYPE_CHECKING:
     from app.library.Presets import Preset
 
-LOG = logging.getLogger("DownloadQueue")
+LOG: logging.Logger = logging.getLogger("DownloadQueue")
 
 
 class DownloadQueue(metaclass=Singleton):
@@ -665,12 +666,15 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
-            downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive"), url=item.url)
-            if downloaded is True and id_dict:
-                message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
-                LOG.error(message)
-                await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
-                return {"status": "error", "msg": message}
+            if archive_file := yt_conf.get("download_archive"):
+                idDict: dict = get_archive_id(item.url)
+                if (archive_id := idDict.get("archive_id")) and len(archive_read(archive_file, [archive_id])) > 0:
+                    message: str = (
+                        f"'{idDict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
+                    )
+                    LOG.error(message)
+                    await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
+                    return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
 
@@ -1028,23 +1032,6 @@ class DownloadQueue(metaclass=Singleton):
 
         if self.event:
             self.event.set()
-
-    def _is_downloaded(self, url: str, file: str | None = None) -> tuple[bool, dict | None]:
-        """
-        Check if the url has been downloaded already.
-
-        Args:
-            url (str): The url to check.
-            file (str | None): The archive file to check.
-
-        Returns:
-            tuple: A tuple with the status of the operation and the id of the downloaded item.
-
-        """
-        if not url or not file:
-            return False, None
-
-        return is_downloaded(file, url)
 
     async def _check_for_stale(self):
         """

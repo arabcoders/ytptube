@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from email.utils import formatdate
 from typing import Any
 
-from app.library.Utils import clean_item
+from app.library.Utils import clean_item, get_archive_id
 
 LOG = logging.getLogger("ItemDTO")
 
@@ -247,6 +247,20 @@ class ItemDTO:
 
     def name(self) -> str:
         return f'id="{self.id}", title="{self.title}"'
+
+    def get_archive_id(self) -> str | None:
+        """
+        Get the archive ID for the download URL.
+
+        Returns:
+        str | None: The archive ID if available, None otherwise.
+
+        """
+        if not self.info:
+            return None
+
+        idDict: dict = get_archive_id(self.url)
+        return idDict.get("archive_id")
 
     @staticmethod
     def removed_fields() -> tuple:

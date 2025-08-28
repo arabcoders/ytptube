@@ -30,7 +30,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_SOCKET_TIMEOUT             | The timeout for the yt-dlp socket connection variable              | `30`                               |
 | YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                               |
 | YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db`         |
-| YTP_MANUAL_ARCHIVE             | The path to the manual archive file                                | `{config_path}/manual_archive.log` |
 | YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                             |
 | YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`                     |
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                            |

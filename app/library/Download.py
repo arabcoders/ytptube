@@ -17,7 +17,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
+from .Utils import delete_dir, extract_info, extract_ytdlp_logs, get_archive_id, load_cookies
 from .ytdlp import YTDLP
 from .YTDLPOpts import YTDLPOpts
 
@@ -263,21 +263,19 @@ class Download:
                     self.info_dict = info
 
             if self.is_live:
-                hasDeletedOptions = False
                 deletedOpts: list = []
                 for opt in self.bad_live_options:
                     if opt in params:
                         params.pop(opt, None)
-                        hasDeletedOptions = True
                         deletedOpts.append(opt)
 
-                if hasDeletedOptions:
+                if len(deletedOpts) > 0:
                     self.logger.warning(
                         f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted."
                     )
 
             if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
-                msg = f"Failed to extract any formats for '{self.info.url}'."
+                msg: str = f"Failed to extract any formats for '{self.info.url}'."
                 if filtered_logs := extract_ytdlp_logs(self.logs):
                     msg += " " + ", ".join(filtered_logs)
 
@@ -642,6 +640,34 @@ class Download:
             return True
 
         return False
+
+    def get_ytdlp_opts(self) -> YTDLPOpts:
+        """
+        Get the yt-dlp options used for this download task.
+
+        Returns:
+            YTDLPOpts: The yt-dlp options instance.
+
+        """
+        params: YTDLPOpts = YTDLPOpts.get_instance().preset(name=self.info.preset)
+        if self.info.cli:
+            params.add_cli(self.info.cli, from_user=True)
+
+        return params
+
+    def get_archive_id(self) -> str | None:
+        """
+        Get the archive ID for the download URL.
+
+        Returns:
+        str | None: The archive ID if available, None otherwise.
+
+        """
+        if not self.info or not self.info.url:
+            return None
+
+        idDict: dict = get_archive_id(self.info.url)
+        return idDict.get("archive_id")
 
     def __getstate__(self):
         state = self.__dict__.copy()

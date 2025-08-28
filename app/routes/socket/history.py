@@ -1,16 +1,11 @@
 import logging
 import time
-from datetime import UTC, datetime
-from pathlib import Path
 
-import anyio
-
-from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import RouteType, route
-from app.library.Utils import is_downloaded
+from app.library.Utils import archive_add, archive_read, get_archive_id
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -80,7 +75,7 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
 
 
 @route(RouteType.SOCKET, "archive_item", "archive_item")
-async def archive_item(config: Config, data: dict):
+async def archive_item(data: dict):
     if not isinstance(data, dict) or "url" not in data:
         return
 
@@ -94,40 +89,23 @@ async def archive_item(config: Config, data: dict):
 
     params = params.get_all()
 
-    file: str = params.get("download_archive", None)
-
-    if not file:
+    if not (file := params.get("download_archive")):
         return
 
-    exists, idDict = is_downloaded(file, data["url"])
-    if exists or "archive_id" not in idDict or idDict["archive_id"] is None:
+    idDict = get_archive_id(url=data["url"])
+    if not idDict.get("archive_id"):
+        LOG.warning(f"URL '{data['url']}' does not have an archive ID.")
         return
 
-    async with await anyio.open_file(file, "a") as f:
-        await f.write(f"{idDict['archive_id']}\n")
+    archive_id: str = idDict.get("archive_id")
 
-    manual_archive: str = config.manual_archive
-    if not manual_archive:
+    if len(archive_read(file, [archive_id])) > 0:
+        LOG.info(f"URL '{data['url']}' already archived.")
         return
 
-    manual_archive = Path(manual_archive)
+    archive_add(file, [archive_id])
 
-    if not manual_archive.exists():
-        manual_archive.touch(exist_ok=True)
-
-    previouslyArchived = False
-    async with await anyio.open_file(manual_archive) as f:
-        async for line in f:
-            if idDict["archive_id"] in line:
-                previouslyArchived = True
-                break
-
-    if not previouslyArchived:
-        async with await anyio.open_file(manual_archive, "a") as f:
-            await f.write(f"{idDict['archive_id']} - at: {datetime.now(UTC).isoformat()}\n")
-            LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
-    else:
-        LOG.info(f"URL '{data['url']}' with id '{idDict['archive_id']}' already archived.")
+    LOG.info(f"Archiving url '{data['url']}' with id '{archive_id}'.")
 
 
 @route(RouteType.SOCKET, "item_start", "item_start")
