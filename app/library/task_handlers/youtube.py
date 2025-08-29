@@ -126,7 +126,6 @@ class YoutubeHandler:
                 has_items = True
 
                 if archive_id in YoutubeHandler.queued:
-                    LOG.debug(f"Item '{vid}' is already queued for download. Skipping.")
                     continue
 
                 items.append({"id": vid, "url": url, "title": title, "published": published, "archive_id": archive_id})

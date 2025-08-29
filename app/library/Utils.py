@@ -63,7 +63,7 @@ REMOVE_KEYS: list = [
 
 YTDLP_INFO_CLS: YTDLP = None
 
-ALLOWED_SUBS_EXTENSIONS: tuple[str, str, str] = (".srt", ".vtt", ".ass")
+ALLOWED_SUBS_EXTENSIONS: set[str] = {".srt", ".vtt", ".ass"}
 
 FILES_TYPE: list = [
     {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$", re.IGNORECASE), "type": "video"},

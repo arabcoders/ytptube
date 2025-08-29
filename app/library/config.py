@@ -386,23 +386,18 @@ class Config:
 
         opts_file: Path = Path(self.config_path) / "ytdlp.cli"
         if opts_file.exists() and opts_file.stat().st_size > 2:
-            LOG.error("The global config file 'ytdlp.cli' file is deprecated and will be removed in future releases.")
+            LOG.warning(
+                "Usage of 'ytdlp.cli' global config file is deprecated and will be removed in future releases. please migrate to presets."
+            )
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
                 if self.ytdlp_cli:
                     self._ytdlp_cli_mutable = self.ytdlp_cli
                     try:
-                        removed_options: list = []
-                        arg_converter(args=self.ytdlp_cli, level=True, removed_options=removed_options)
-                        if len(removed_options) > 0:
-                            LOG.warning(
-                                "Removed the following options: '%s' from '%s'", ", ".join(removed_options), opts_file
-                            )
+                        arg_converter(args=self.ytdlp_cli, level=True)
                     except Exception as e:
                         msg = f"Failed to parse yt-dlp cli options from '{opts_file}'. '{e!s}'."
                         raise ValueError(msg) from e
-                else:
-                    LOG.warning(f"Empty yt-dlp custom options file '{opts_file}'.")
 
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
@@ -513,8 +508,8 @@ class Config:
         Returns:
             dict: The yt-dlp command line options.
 
-        Todo:
-            Rename to get_ytdlp_opts() to match the system.
+        Deprecated:
+            Usage of global ytdlp.cli file is deprecated, please use presets instead.
 
         """
         try:

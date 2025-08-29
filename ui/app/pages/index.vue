@@ -85,6 +85,7 @@
               The <strong>Basic mode</strong> (which limited the interface to the new download form) is being removed.
               Everything except what is available behind configurable flag will become part of the standard interface.
             </li>
+            <li>The <strong>archive.manual.log</strong> feature has been removed.</li>
           </ul>
           <p>
             These changes help reduce confusion from multiple sources of truth. Going forward, <strong>presets</strong>

@@ -180,7 +180,6 @@ class Download:
         try:
             params: dict = (
                 self.info.get_ytdlp_opts()
-                .add({"break_on_existing": True})
                 .add(
                     config={
                         "color": "no_color",

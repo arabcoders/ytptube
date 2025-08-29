@@ -413,7 +413,7 @@ class DownloadQueue(metaclass=Singleton):
 
         try:
             _item: Download = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
-            err_msg: str = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
+            err_msg: str = f"Removing {_item.info.name()} from history list."
             LOG.warning(err_msg)
             await self.clear([_item.info._id], remove_file=False)
         except KeyError:
@@ -423,7 +423,7 @@ class DownloadQueue(metaclass=Singleton):
             _item: Download = self.queue.get(
                 key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url"))
             )
-            err_msg: str = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
+            err_msg: str = f"Item {_item.info.name()} is already in download queue."
             LOG.info(err_msg)
             return {"status": "error", "msg": err_msg}
         except KeyError:
@@ -977,7 +977,7 @@ class DownloadQueue(metaclass=Singleton):
 
             if entry.info.status not in ("finished", "skip", "cancelled"):
                 if not entry.info.error:
-                    entry.info.error = f"Download failed with status '{entry.info.status}'."
+                    entry.info.error = f"Download ended with unexpected status '{entry.info.status}'."
                 entry.info.status = "error"
         except Exception as e:
             entry.info.status = "error"
@@ -1005,9 +1005,11 @@ class DownloadQueue(metaclass=Singleton):
             if entry.info.status == "finished" and entry.info.filename:
                 nTitle = "Download Completed"
                 nMessage = f"Completed '{entry.info.title}' download."
+                if entry.info.is_archivable and not entry.info.is_archived:
+                    entry.info.is_archived = True
+
                 _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
 
-            await asyncio.sleep(0.5)
             self.done.put(entry)
             _tasks.append(
                 self._notify.emit(
@@ -1115,7 +1117,6 @@ class DownloadQueue(metaclass=Singleton):
                     )
                 )
             except Exception as e:
-                item.info.archive_status()
                 self.done.put(item)
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")

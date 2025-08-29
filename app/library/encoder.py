@@ -5,8 +5,6 @@ from pathlib import Path
 from yt_dlp.networking.impersonate import ImpersonateTarget
 from yt_dlp.utils import DateRange
 
-from .ItemDTO import ItemDTO
-
 
 class Encoder(json.JSONEncoder):
     """
@@ -16,6 +14,8 @@ class Encoder(json.JSONEncoder):
     """
 
     def default(self, o):
+        from .ItemDTO import ItemDTO
+
         if isinstance(o, Path):
             return str(o)
 
