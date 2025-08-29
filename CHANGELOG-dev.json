@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250830-db57d6de",
-        "date": "2025-08-29T22:02:13+00:00",
+        "tag": "dev-20250830-ed4bb1e4",
+        "date": "2025-08-29T22:50:42+00:00",
         "commits": [
+            {
+                "sha": "ed4bb1e4",
+                "message": "finalizing removed features",
+                "author": "arabcoders",
+                "date": "2025-08-29T22:50:42+00:00",
+                "full_sha": "ed4bb1e4403961d05509ba9054faa6652399f35b"
+            },
             {
                 "sha": "db57d6de",
                 "message": "Refactor code for improved type hinting; add unarchive functionality to tasks API and UI.",
@@ -1516,7 +1523,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "db57d6de115d8faae2b3cac5b3b37f972773b675"
+        "full_sha": "ed4bb1e4403961d05509ba9054faa6652399f35b"
     },
     {
         "tag": "dev-20250616-c07465a6",

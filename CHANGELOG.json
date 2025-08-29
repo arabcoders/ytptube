@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "db57d6de115d8faae2b3cac5b3b37f972773b675",
-    "date": "2025-08-29T22:02:13+00:00",
+    "full_sha": "ed4bb1e4403961d05509ba9054faa6652399f35b",
+    "date": "2025-08-29T22:50:42+00:00",
     "commits": [
+      {
+        "sha": "ed4bb1e4",
+        "full_sha": "ed4bb1e4403961d05509ba9054faa6652399f35b",
+        "message": "finalizing removed features",
+        "author": "arabcoders",
+        "date": "2025-08-29T22:50:42+00:00"
+      },
       {
         "sha": "db57d6de",
         "full_sha": "db57d6de115d8faae2b3cac5b3b37f972773b675",
