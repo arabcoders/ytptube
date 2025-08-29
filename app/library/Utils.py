@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from Crypto.Cipher import AES
 from yt_dlp.utils import age_restricted, match_str
@@ -203,7 +203,7 @@ def extract_info(
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
-    data = YTDLP(params=params).extract_info(url, download=False)
+    data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
 
     if data and follow_redirect and "_type" in data and "url" == data["_type"]:
         return extract_info(
@@ -261,6 +261,7 @@ def merge_dict(source: dict, destination: dict) -> dict:
             destination_copy[key] = copy.deepcopy(value)
 
     return destination_copy
+
 
 def check_id(file: Path) -> bool | str:
     """
@@ -1185,14 +1186,11 @@ def load_modules(root_path: Path, directory: Path):
 
     package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
 
-    LOG.debug(f"Loading routes from '{directory}' with package name '{package_name}'.")
-
     for _, name, _ in pkgutil.iter_modules([directory]):
         full_name: str = f"{package_name}.{name}"
         if name.startswith("_"):
             continue
         try:
-            LOG.debug(f"Loading module '{full_name}'.")
             importlib.import_module(full_name)
         except ImportError as e:
             LOG.error(f"Failed to import module '{full_name}': {e}")
@@ -1367,7 +1365,7 @@ def archive_add(file: str | Path, ids: list[str], skip_check: bool = False) -> b
         skip_check (bool): If True, skip checking for existing IDs.
 
     """
-    if not ids:
+    if not ids or not file:
         return False
 
     path: Path = Path(file) if not isinstance(file, Path) else file
@@ -1423,12 +1421,15 @@ def archive_read(file: str | Path, ids: list[str] | None = None) -> list[str]:
         list[str]: List of ids found in the archive file filtered by `ids` if provided.
 
     """
+    if not file:
+        return []
+
     path: Path = Path(file) if not isinstance(file, Path) else file
-    if not path.exists():
+    if not file or not path.exists():
         return []
 
     ids_set: set[str] | None = (
-        {s.strip() for s in ids if str(s).strip() and len(str(s).strip().split()) < 2} if ids else None
+        {s.strip() for s in ids if str(s).strip() and len(str(s).strip().split()) >= 2} if ids else None
     )
 
     found: list[str] = []
@@ -1457,12 +1458,15 @@ def archive_delete(file: str | Path, ids: list[str]) -> bool:
         bool: True if deletion succeeded (or nothing to do), False on error.
 
     """
-    path: Path = Path(file) if not isinstance(file, Path) else file
-
-    if not path.exists() or not ids:
+    if not file or not ids:
         return False
 
-    remove_ids: set[str] = {x.strip() for x in ids if str(x).strip() and len(str(x).strip().split()) < 2}
+    path: Path = Path(file) if not isinstance(file, Path) else file
+
+    if not path.exists():
+        return False
+
+    remove_ids: set[str] = {x.strip() for x in ids if str(x).strip() and len(str(x).strip().split()) >= 2}
     if not remove_ids:
         return True
 

@@ -24,18 +24,15 @@ from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import (
-    archive_read,
     arg_converter,
     calc_download_path,
     dt_delta,
     extract_info,
     extract_ytdlp_logs,
-    get_archive_id,
     load_cookies,
     str_to_dt,
     ytdlp_reject,
 )
-from .YTDLPOpts import YTDLPOpts
 
 if TYPE_CHECKING:
     from app.library.Presets import Preset
@@ -659,22 +656,18 @@ class DownloadQueue(metaclass=Singleton):
                     "level": logging.WARNING,
                     "name": "callback-logger",
                 },
-                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
+                **item.get_ytdlp_opts().get_all(),
             }
 
             if yt_conf.get("external_downloader"):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
-            if archive_file := yt_conf.get("download_archive"):
-                idDict: dict = get_archive_id(item.url)
-                if (archive_id := idDict.get("archive_id")) and len(archive_read(archive_file, [archive_id])) > 0:
-                    message: str = (
-                        f"'{idDict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
-                    )
-                    LOG.error(message)
-                    await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
-                    return {"status": "error", "msg": message}
+            if item.is_archived():
+                message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
+                LOG.error(message)
+                await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
+                return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
 
@@ -1016,7 +1009,8 @@ class DownloadQueue(metaclass=Singleton):
                 nMessage = f"Completed '{entry.info.title}' download."
                 _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
 
-            self.done.put(value=entry)
+            await asyncio.sleep(0.2)
+            self.done.put(entry)
             _tasks.append(
                 self._notify.emit(
                     Events.ITEM_MOVED,
@@ -1122,6 +1116,7 @@ class DownloadQueue(metaclass=Singleton):
                     )
                 )
             except Exception as e:
+                item.info.archive_status()
                 self.done.put(item)
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")

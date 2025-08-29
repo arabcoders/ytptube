@@ -6,9 +6,10 @@ from dataclasses import dataclass, field
 from email.utils import formatdate
 from typing import Any
 
-from app.library.Utils import clean_item, get_archive_id
+from app.library.Utils import archive_add, archive_delete, archive_read, clean_item, get_archive_id
+from app.library.YTDLPOpts import YTDLPOpts
 
-LOG = logging.getLogger("ItemDTO")
+LOG: logging.Logger = logging.getLogger("ItemDTO")
 
 
 @dataclass(kw_only=True)
@@ -92,29 +93,6 @@ class Item:
         """
         return Item.format({**self.serialize(), **kwargs})
 
-    def __repr__(self):
-        from .config import Config
-        from .Utils import calc_download_path, strip_newline
-
-        data = {}
-        for k, v in self.serialize().items():
-            if not v and k not in ("auto_start"):
-                continue
-
-            if k == "cli":
-                data[k] = strip_newline(v)
-            elif k == "extras":
-                data[k] = f"{len(v)} items"
-            elif k == "cookies":
-                data[k] = f"{len(v)}/chars"
-            elif k == "folder":
-                data[k] = calc_download_path(base_path=Config.get_instance().download_path, folder=v)
-            else:
-                data[k] = v
-
-        items = "".join(f'{k}="{v}", ' for k, v in data.items() if v)
-        return f"Item({items.strip(', ')})"
-
     @staticmethod
     def format(item: dict) -> "Item":
         """
@@ -137,16 +115,14 @@ class Item:
             msg = "url param is required."
             raise ValueError(msg)
 
-        data = {
-            "url": url,
-        }
+        data: dict[str, str] = {"url": url}
 
-        preset = item.get("preset")
+        preset: str | None = item.get("preset")
         if preset and isinstance(preset, str) and preset != Item._default_preset():
             from .Presets import Presets
 
             if not Presets.get_instance().has(preset):
-                msg = f"Preset '{preset}' does not exist."
+                msg: str = f"Preset '{preset}' does not exist."
                 raise ValueError(msg)
 
             data["preset"] = preset
@@ -163,19 +139,19 @@ class Item:
         if "auto_start" in item and isinstance(item.get("auto_start"), bool):
             data["auto_start"] = bool(item.get("auto_start"))
 
-        extras = item.get("extras")
+        extras: dict | None = item.get("extras")
         if extras and isinstance(extras, dict) and len(extras) > 0:
             data["extras"] = extras
 
         if item.get("requeued") and isinstance(item.get("requeued"), bool):
             data["requeued"] = item.get("requeued")
 
-        cli = item.get("cli")
+        cli: str | None = item.get("cli")
         if cli and len(cli) > 2:
             from .Utils import arg_converter
 
             try:
-                removed_options = []
+                removed_options: list = []
                 arg_converter(args=cli, level=True, removed_options=removed_options)
                 if len(removed_options) > 0:
                     LOG.warning("Removed the following options '%s' for '%s'.", ", ".join(removed_options), url)
@@ -187,6 +163,55 @@ class Item:
 
         return Item(**data)
 
+    def get_archive_id(self) -> str | None:
+        if not self.url:
+            return None
+
+        idDict: dict = get_archive_id(self.url)
+        return idDict.get("archive_id")
+
+    def get_ytdlp_opts(self) -> YTDLPOpts:
+        params: YTDLPOpts = YTDLPOpts.get_instance()
+
+        if self.preset:
+            params = params.preset(name=self.preset)
+
+        if self.cli:
+            params = params.add_cli(self.cli, from_user=True)
+
+        return params
+
+    def get_archive_file(self) -> str | None:
+        return self.get_ytdlp_opts().get_all().get("download_archive")
+
+    def is_archived(self) -> bool:
+        archive_id: str | None = self.get_archive_id()
+        archive_file: str | None = self.get_archive_file()
+        return len(archive_read(archive_file, [archive_id])) > 0 if archive_file and archive_id else False
+
+    def __repr__(self) -> str:
+        from .config import Config
+        from .Utils import calc_download_path, strip_newline
+
+        data = {}
+        for k, v in self.serialize().items():
+            if not v and k not in ("auto_start"):
+                continue
+
+            if k == "cli":
+                data[k] = strip_newline(v)
+            elif k == "extras":
+                data[k] = f"{len(v)} items"
+            elif k == "cookies":
+                data[k] = f"{len(v)}/chars"
+            elif k == "folder":
+                data[k] = calc_download_path(base_path=Config.get_instance().download_path, folder=v)
+            else:
+                data[k] = v
+
+        items = "".join(f'{k}="{v}", ' for k, v in data.items() if v)
+        return f"Item({items.strip(', ')})"
+
 
 @dataclass(kw_only=True)
 class ItemDTO:
@@ -196,30 +221,55 @@ class ItemDTO:
     """
 
     _id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
-
+    """ Unique identifier for the item. """
     error: str | None = None
+    """ Error message if the item failed. """
     id: str
+    """ The ID of the item yt-dlp """
     title: str
+    """ The title of the item. """
     url: str
-    quality: str | None = None
-    format: str | None = None
+    """ The URL of the item. """
     preset: str = "default"
+    """ The preset to be used for the item. """
     folder: str
+    """ The folder to save the item to. """
     download_dir: str | None = None
+    """ The full path to the download directory. """
     temp_dir: str | None = None
+    """ The full path to the temporary directory. """
     status: str | None = None
+    """ The status of the item. """
     cookies: str | None = None
+    """ The cookies to be used for the item. """
     template: str | None = None
+    """ The output template to be used for the item. """
     template_chapter: str | None = None
+    """ The output template for chapters to be used for the item. """
     timestamp: float = field(default_factory=lambda: time.time_ns())
+    """ The timestamp of the item. """
     is_live: bool | None = None
+    """ If the item is a live stream. """
     datetime: str = field(default_factory=lambda: str(formatdate(time.time())))
+    """ The datetime of the item. """
     live_in: str | None = None
+    """ The time until the live stream starts. """
     file_size: int | None = None
+    """ The file size of the item. """
     options: dict = field(default_factory=dict)
+    """ The options used for the item. """
     extras: dict = field(default_factory=dict)
+    """ Extra data associated with the item. """
     cli: str = ""
+    """ The command options for yt-dlp to be used for this download. """
     auto_start: bool = True
+    """ If the item should be started automatically. """
+    is_archivable: bool | None = None
+    """ If the item can be archived. """
+    is_archived: bool | None = None
+    """ If the item has been archived. """
+    archive_id: str | None = None
+    """ The archive ID of the item. """
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
@@ -232,7 +282,13 @@ class ItemDTO:
     speed: str | None = None
     eta: str | None = None
 
+    _recomputed: bool = False
+    _archive_file: str | None = None
+
     def serialize(self) -> dict:
+        if "finished" == self.status and not self._recomputed:
+            self.archive_status()
+
         item, _ = clean_item(self.__dict__.copy(), ItemDTO.removed_fields())
         return item
 
@@ -256,11 +312,95 @@ class ItemDTO:
         str | None: The archive ID if available, None otherwise.
 
         """
-        if not self.info:
+        if self.archive_id:
+            return self.archive_id
+
+        if not self.url:
             return None
 
         idDict: dict = get_archive_id(self.url)
-        return idDict.get("archive_id")
+        self.archive_id = idDict.get("archive_id")
+
+        return self.archive_id
+
+    def get_ytdlp_opts(self) -> YTDLPOpts:
+        """
+        Get the yt-dlp options for the item.
+
+        Returns:
+            YTDLPOpts: The yt-dlp options for the item.
+
+        """
+        params: YTDLPOpts = YTDLPOpts.get_instance()
+
+        if self.preset:
+            params = params.preset(name=self.preset)
+
+        if self.cli:
+            params = params.add_cli(self.cli, from_user=True)
+
+        return params
+
+    def archive_status(self, force: bool = False) -> None:
+        if not force and (self._recomputed or not self.archive_id):
+            return
+
+        if "finished" == self.status:
+            self._recomputed = True
+
+        self.is_archivable = bool(self._archive_file)
+        if not self.is_archivable:
+            self.is_archived = False
+        else:
+            self.is_archived = len(archive_read(self._archive_file, [self.archive_id])) > 0
+
+    def get_archive_file(self) -> str | None:
+        """
+        Get the archive file path from the yt-dlp options.
+
+        Returns:
+            str | None: The archive file path if available, None otherwise.
+
+        """
+        if self._archive_file or self._recomputed or not self.archive_id:
+            return self._archive_file
+
+        self._archive_file = self.get_ytdlp_opts().get_all().get("download_archive")
+        if self._archive_file:
+            self._archive_file = self._archive_file.strip()
+
+        return self._archive_file
+
+    def archive_add(self) -> bool:
+        """
+        Archive the item by adding its archive ID to the download archive file.
+
+        Returns:
+            bool: True if the item was archived, False otherwise.
+
+        """
+        if self.is_archived or not self.is_archivable or not self.archive_id or not self._archive_file:
+            return False
+
+        self.is_archived = archive_add(self._archive_file, [self.archive_id])
+
+        return self.is_archived
+
+    def archive_delete(self) -> bool:
+        """
+        Remove the item's archive ID from the download archive file.
+
+        Returns:
+            bool: True if the item was removed from the archive, False otherwise.
+
+        """
+        if not self.is_archivable or not self.is_archived or not self.archive_id or not self._archive_file:
+            return False
+
+        archive_delete(self._archive_file, [self.archive_id])
+        self.is_archived = False
+
+        return True
 
     @staticmethod
     def removed_fields() -> tuple:
@@ -275,4 +415,11 @@ class ItemDTO:
             "output_template_chapter",
             "config",
             "temp_path",
+            "_recomputed",
+            "_archive_file",
         )
+
+    def __post_init__(self):
+        self.get_archive_id()
+        self.get_archive_file()
+        self.archive_status()

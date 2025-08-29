@@ -203,25 +203,23 @@
                           <span>Local Information</span>
                         </NuxtLink>
 
-                        <template v-if="item.status != 'finished' || !item.filename">
-                          <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
-                            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                            <span>Add to download form</span>
-                          </NuxtLink>
-                        </template>
+                        <hr class="dropdown-divider" />
+                        <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                          <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                          <span>Add to download form</span>
+                        </NuxtLink>
 
-                        <template v-if="'finished' !== item.status && config.app?.keep_archive">
+                        <template v-if="item.is_archivable && !item.is_archived">
                           <hr class="dropdown-divider" />
                           <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
                             <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                            <span>Archive Item</span>
+                            <span>Add to archive</span>
                           </NuxtLink>
                         </template>
 
-                        <template v-if="'finished' === item.status && item.filename && config.app?.keep_archive">
+                        <template v-if="item.is_archivable && item.is_archived">
                           <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                          <NuxtLink class="dropdown-item has-text-danger" @click="removeFromArchiveDialog(item)">
                             <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                             <span>Remove from archive</span>
                           </NuxtLink>
@@ -380,15 +378,13 @@
                     <span>Local Information</span>
                   </NuxtLink>
 
-                  <template v-if="item.status != 'finished' || !item.filename">
-                    <hr class="dropdown-divider" />
-                    <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
-                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                      <span>Add to download form</span>
-                    </NuxtLink>
-                  </template>
+                  <hr class="dropdown-divider" />
+                  <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                    <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                    <span>Add to download form</span>
+                  </NuxtLink>
 
-                  <template v-if="'finished' !== item.status && config.app?.keep_archive && !config.app.basic_mode">
+                  <template v-if="item.is_archivable && !item.is_archived">
                     <hr class="dropdown-divider" />
                     <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
@@ -396,10 +392,9 @@
                     </NuxtLink>
                   </template>
 
-                  <template
-                    v-if="'finished' === item.status && item.filename && config.app?.keep_archive && !config.app.basic_mode">
+                  <template v-if="item.is_archivable && item.is_archived">
                     <hr class="dropdown-divider" />
-                    <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                    <NuxtLink class="dropdown-item has-text-danger" @click="removeFromArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                       <span>Remove from archive</span>
                     </NuxtLink>
@@ -862,7 +857,6 @@ const removeFromArchiveDialog = (item: StoreItem) => {
 }
 
 const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
-  console.log('Removing from archive:', item, opts)
   try {
     const req = await request(`/api/history/${item._id}/archive`, { method: 'DELETE' })
     const data = await req.json()

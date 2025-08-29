@@ -82,6 +82,12 @@ type StoreItem = {
   speed?: number | null
   /** Time remaining for the item download if available */
   eta?: number | null
+  /** If the item can be archived */
+  is_archivable?: boolean
+  /** If the item is archived */
+  is_archived?: boolean
+  /** Item archive ID */
+  archive_id?: string | null
 }
 
 export type { ItemStatus, StoreItem }

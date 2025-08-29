@@ -14,7 +14,6 @@ from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.Presets import Preset, Presets
 from app.library.router import route
-from app.library.Utils import archive_add, archive_delete, archive_read, get_archive_id
 
 if TYPE_CHECKING:
     from library.Download import Download
@@ -100,14 +99,8 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, co
     if not item.info:
         return web.json_response(data={"error": "item has no info."}, status=web.HTTPNotFound.status_code)
 
-    is_archived = False
-    params: dict = item.get_ytdlp_opts().get_all()
-    if (archive_file := params.get("download_archive")) and (archive_id := item.get_archive_id()):
-        is_archived: bool = len(archive_read(archive_file, [archive_id])) > 0
-
-    info = {
+    info: dict = {
         **item.info.serialize(),
-        "is_archived": is_archived,
         "ffprobe": {},
     }
 
@@ -267,14 +260,14 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
 
 @route("POST", r"api/history/{id}/archive", "history.item.archive.add")
-async def item_archive_add(request: Request, queue: DownloadQueue) -> Response:
+async def item_archive_add(request: Request, queue: DownloadQueue, notify: EventBus) -> Response:
     """
     Manually mark an item as archived.
 
     Args:
         request (Request): The request object.
         queue (DownloadQueue): The download queue instance.
-        config (Config): The configuration instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -290,28 +283,33 @@ async def item_archive_add(request: Request, queue: DownloadQueue) -> Response:
     except KeyError:
         return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
 
-    params: dict = item.get_ytdlp_opts().get_all()
-
-    if not (archive_file := params.get("download_archive")):
+    if not item.info.is_archivable:
         return web.json_response(
             data={"error": f"item '{item.info.title}' does not have an archive file."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    idDict = get_archive_id(url=item.info.url)
-    if not (archive_id := idDict.get("archive_id")):
+    if not item.info.archive_id:
         return web.json_response(
             data={"error": f"item '{item.info.title}' does not have an archive ID."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    if len(archive_read(archive_file, [archive_id])) > 0:
+    if item.info.is_archived:
         return web.json_response(
             data={"error": f"item '{item.info.title}' already archived."},
             status=web.HTTPConflict.status_code,
         )
 
-    archive_add(archive_file, [archive_id])
+    if not item.info.archive_add():
+        return web.json_response(
+            data={"error": f"item '{item.info.title}' could not be added to archive."},
+            status=web.HTTPInternalServerError.status_code,
+        )
+
+    item.info.archive_status(force=True)
+    queue.done.put(item, no_notify=True)
+    await notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
         data={"message": f"item '{item.info.title}' archived."},
@@ -320,13 +318,14 @@ async def item_archive_add(request: Request, queue: DownloadQueue) -> Response:
 
 
 @route("DELETE", r"api/history/{id}/archive", "history.item.archive.delete")
-async def item_archive_delete(request: Request, queue: DownloadQueue) -> Response:
+async def item_archive_delete(request: Request, queue: DownloadQueue, notify: EventBus) -> Response:
     """
     Remove an item from the archive.
 
     Args:
         request (Request): The request object.
         queue (DownloadQueue): The download queue instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -342,38 +341,35 @@ async def item_archive_delete(request: Request, queue: DownloadQueue) -> Respons
     except KeyError:
         return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
 
-    url: str = item.info.url
-    title: str = f" '{item.info.title}'"
-    params: dict = item.get_ytdlp_opts().get_all()
-
-    if not (archive_file := params.get("download_archive")):
+    if not item.info.is_archivable:
         return web.json_response(
-            data={"error": "Archive file is not configured."},
+            data={"error": f"item '{item.info.title}' does not have an archive file."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    archive_file = Path(archive_file)
-
-    if not archive_file.exists():
+    if not item.info.archive_id:
         return web.json_response(
-            data={"error": f"Archive file '{archive_file}' does not exist."},
-            status=web.HTTPNotFound.status_code,
-        )
-
-    idDict = get_archive_id(url=url)
-    if not (archive_id := idDict.get("archive_id")):
-        return web.json_response(
-            data={"error": "item does not have an archive ID."},
+            data={"error": f"item '{item.info.title}' does not have an archive ID."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    if not archive_delete(archive_file, [archive_id]):
+    if not item.info.is_archived:
         return web.json_response(
-            data={"error": f"item{title} not found in '{archive_file}' archive."},
-            status=web.HTTPNotFound.status_code,
+            data={"error": f"item '{item.info.title}' not archived."},
+            status=web.HTTPConflict.status_code,
         )
+
+    if not item.info.archive_delete():
+        return web.json_response(
+            data={"error": f"item '{item.info.title}' not found in archive file."},
+            status=web.HTTPInternalServerError.status_code,
+        )
+
+    item.info.archive_status(force=True)
+    queue.done.put(item, no_notify=True)
+    await notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
-        data={"message": f"item{title} removed from '{archive_file}' archive."},
+        data={"message": f"item '{item.info.title}' removed from archive."},
         status=web.HTTPOk.status_code,
     )

@@ -121,8 +121,8 @@ class DataStore:
 
         return items
 
-    def put(self, value: Download) -> Download:
-        if "error" == value.info.status:
+    def put(self, value: Download, no_notify: bool = False) -> Download:
+        if "error" == value.info.status and not no_notify:
             from app.library.Events import EventBus, Events
 
             asyncio.create_task(EventBus.get_instance().emit(Events.ITEM_ERROR, value.info), name="emit_item_error")
@@ -181,16 +181,18 @@ class DataStore:
             except AttributeError:
                 pass
 
+        encoded: str = stored.json()
+
         self._connection.execute(
             sqlStatement.strip(),
             (
                 stored._id,
                 str(type),
                 stored.url,
-                stored.json(),
+                encoded,
                 str(type),
                 stored.url,
-                stored.json(),
+                encoded,
                 datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
