@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250829-e6aa56a0",
-        "date": "2025-08-29T16:29:34+00:00",
+        "tag": "dev-20250829-da8358ba",
+        "date": "2025-08-29T19:11:14+00:00",
         "commits": [
+            {
+                "sha": "da8358ba",
+                "message": "Further updates on how we handle archive status",
+                "author": "arabcoders",
+                "date": "2025-08-29T19:11:14+00:00",
+                "full_sha": "da8358bad6630c639c06bc6d9be676a149806201"
+            },
             {
                 "sha": "e6aa56a0",
                 "message": "refactor DeprecatedNotice component for improved state management",
@@ -1502,7 +1509,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "e6aa56a008fffaa3d63b1b7afb59b0dfc9cddfe6"
+        "full_sha": "da8358bad6630c639c06bc6d9be676a149806201"
     },
     {
         "tag": "dev-20250616-c07465a6",
