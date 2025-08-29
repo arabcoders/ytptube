@@ -193,7 +193,7 @@ class Item:
         from .config import Config
         from .Utils import calc_download_path, strip_newline
 
-        data = {}
+        data: dict = {}
         for k, v in self.serialize().items():
             if not v and k not in ("auto_start"):
                 continue
@@ -209,7 +209,7 @@ class Item:
             else:
                 data[k] = v
 
-        items = "".join(f'{k}="{v}", ' for k, v in data.items() if v)
+        items: str = "".join(f'{k}="{v}", ' for k, v in data.items() if v is not None)
         return f"Item({items.strip(', ')})"
 
 

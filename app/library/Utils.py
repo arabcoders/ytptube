@@ -1472,12 +1472,18 @@ def archive_delete(file: str | Path, ids: list[str]) -> bool:
 
     changed = False
     kept_lines: list[str] = []
+    removed_ids: list[str] = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:
             s: str = line.strip()
 
-            if not s or len(s.split()) < 2 or s in remove_ids:
+            if not s or len(s.split()) < 2:
                 changed = True
+                continue
+
+            if s in remove_ids:
+                changed = True
+                removed_ids.append(s)
                 continue
 
             kept_lines.append(line)

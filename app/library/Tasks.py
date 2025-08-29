@@ -72,7 +72,7 @@ class Task:
         return (True, f"Task '{self.name}' items marked as downloaded.")
 
     def unmark(self) -> tuple[bool, str]:
-        ret = self._mark_logic()
+        ret: tuple[bool, str] | set[tuple[Path, set[str]]] = self._mark_logic()
         if isinstance(ret, tuple):
             return ret
 
@@ -422,6 +422,7 @@ class Tasks(metaclass=Singleton):
                         "folder": folder,
                         "template": template,
                         "cli": cli,
+                        "auto_start": task.auto_start,
                     }
                 )
             )
@@ -549,7 +550,11 @@ class HandleTask:
             if handler is None:
                 return None
 
-        return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
+        try:
+            return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
+        except Exception as e:
+            LOG.exception(e)
+            raise
 
     def _discover(self) -> list[type]:
         import importlib

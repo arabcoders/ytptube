@@ -194,9 +194,14 @@
 
                           <hr class="dropdown-divider" />
 
-                          <NuxtLink class="dropdown-item has-text-danger" @click="archiveItems(item)">
+                          <NuxtLink class="dropdown-item" @click="archiveAll(item)">
                             <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                            <span>Archive all</span>
+                            <span>Archive All</span>
+                          </NuxtLink>
+
+                          <NuxtLink class="dropdown-item" @click="unarchiveAll(item)">
+                            <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                            <span>Unarchive All</span>
                           </NuxtLink>
 
                           <hr class="dropdown-divider" />
@@ -313,9 +318,14 @@
 
                   <hr class="dropdown-divider" />
 
-                  <NuxtLink class="dropdown-item has-text-danger" @click="archiveItems(item)">
+                  <NuxtLink class="dropdown-item" @click="archiveAll(item)">
                     <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span>Archive all</span>
+                    <span>Archive All</span>
+                  </NuxtLink>
+
+                  <NuxtLink class="dropdown-item" @click="unarchiveAll(item)">
+                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                    <span>Unarchive All</span>
                   </NuxtLink>
                 </Dropdown>
               </div>
@@ -370,6 +380,7 @@ const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const { confirmDialog: cDialog } = useDialog()
 const display_style = useStorage<string>("tasks_display_style", "cards")
 
 const tasks = ref<Array<task_item>>([])
@@ -428,7 +439,7 @@ watch(() => config.app.basic_mode, async v => {
     return
   }
   await navigateTo('/')
-},{ immediate: true })
+}, { immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
@@ -764,17 +775,18 @@ const get_tags = (name: string): Array<string> => {
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
 
-const archiveItems = async (item: task_item) => {
-  dialog_confirm.value.visible = true
-  dialog_confirm.value.title = 'Archive All videos'
-  dialog_confirm.value.message = `Archive all items for '${item.name}' task? This will mark all items as downloaded and update the archive file.`
-  dialog_confirm.value.confirm = async () => await archiveAll(item)
-}
-
 const archiveAll = async (item: task_item) => {
   try {
-    dialog_confirm.value.visible = false
+    const { status } = await cDialog({
+      message: `Mark all '${item.name}' items as downloaded in download archive?`
+    })
+
+    if (true !== status) {
+      return;
+    }
+
     item.in_progress = true
+
     const response = await request(`/api/tasks/${item.id}/mark`, { method: 'POST' })
     const data = await response.json()
 
@@ -786,6 +798,35 @@ const archiveAll = async (item: task_item) => {
     toast.success(data.message)
   } catch (e: any) {
     toast.error(`Failed to archive items. ${e.message || 'Unknown error.'}`)
+    return
+  } finally {
+    item.in_progress = false
+  }
+}
+
+const unarchiveAll = async (item: task_item) => {
+  try {
+    const { status } = await cDialog({
+      message: `Remove all '${item.name}' items from download archive?`
+    })
+
+    if (true !== status) {
+      return;
+    }
+
+    item.in_progress = true
+
+    const response = await request(`/api/tasks/${item.id}/mark`, { method: 'DELETE' })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success(data.message)
+  } catch (e: any) {
+    toast.error(`Failed to remove items from archive. ${e.message || 'Unknown error.'}`)
     return
   } finally {
     item.in_progress = false

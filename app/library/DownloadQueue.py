@@ -85,7 +85,7 @@ class DownloadQueue(metaclass=Singleton):
         self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "DownloadQueue":
         """
         Get the instance of the DownloadQueue.
 
@@ -98,7 +98,7 @@ class DownloadQueue(metaclass=Singleton):
 
         return DownloadQueue._instance
 
-    def attach(self, _: web.Application):
+    def attach(self, _: web.Application) -> None:
         """
         Attach the download queue to the application.
 
@@ -134,13 +134,11 @@ class DownloadQueue(metaclass=Singleton):
         await self.done.test()
         return True
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """
         Initialize the download queue.
         """
-        LOG.info(
-            f"Using '{self.config.max_workers}' worker/s for downloading. Can be configured via `YTP_MAX_WORKERS` environment variable."
-        )
+        LOG.info(f"Using '{self.config.max_workers}' workers for downloading.")
         asyncio.create_task(self._download_pool(), name="download_pool")
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
@@ -156,11 +154,11 @@ class DownloadQueue(metaclass=Singleton):
         """
         status: dict[str, str] = {"status": "ok"}
         started = False
-        tasks = []
+        tasks: list = []
 
         for item_id in ids:
             try:
-                item = self.queue.get(key=item_id)
+                item: Download = self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -173,7 +171,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = True
-            updated = self.queue.put(item)
+            updated: Download = self.queue.put(item)
             tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
             tasks.append(
                 self._notify.emit(
@@ -207,11 +205,11 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         status: dict[str, str] = {"status": "ok"}
-        tasks = []
+        tasks: list = []
 
         for item_id in ids:
             try:
-                item = self.queue.get(key=item_id)
+                item: Download = self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -229,7 +227,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = False
-            updated = self.queue.put(item)
+            updated: Download = self.queue.put(item)
             tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
             tasks.append(
                 self._notify.emit(
@@ -414,20 +412,20 @@ class DownloadQueue(metaclass=Singleton):
         LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
 
         try:
-            _item = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
-            if _item is not None:
-                err_msg = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
-                LOG.warning(err_msg)
-                await self.clear([_item.info._id], remove_file=False)
+            _item: Download = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+            err_msg: str = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
+            LOG.warning(err_msg)
+            await self.clear([_item.info._id], remove_file=False)
         except KeyError:
             pass
 
         try:
-            _item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
-            if _item is not None:
-                err_msg = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
-                LOG.info(err_msg)
-                return {"status": "error", "msg": err_msg}
+            _item: Download = self.queue.get(
+                key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url"))
+            )
+            err_msg: str = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
+            LOG.info(err_msg)
+            return {"status": "error", "msg": err_msg}
         except KeyError:
             pass
 
@@ -600,10 +598,10 @@ class DownloadQueue(metaclass=Singleton):
         if event_type.startswith("url"):
             return await self.add(item=item.new_with(url=entry.get("url")), already=already)
 
-        if not event_type.startswith("video"):
-            return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
+        if event_type.startswith("video"):
+            return await self._add_video(entry=entry, item=item, logs=logs)
 
-        return await self._add_video(entry=entry, item=item, logs=logs)
+        return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
 
     async def add(self, item: Item, already: set | None = None):
         """
@@ -683,7 +681,7 @@ class DownloadQueue(metaclass=Singleton):
 
             LOG.info(f"Checking '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else 'no cookies'}.")
 
-            entry = await asyncio.wait_for(
+            entry: dict | None = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
                     functools.partial(
@@ -1009,7 +1007,7 @@ class DownloadQueue(metaclass=Singleton):
                 nMessage = f"Completed '{entry.info.title}' download."
                 _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
 
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.5)
             self.done.put(entry)
             _tasks.append(
                 self._notify.emit(
@@ -1055,7 +1053,8 @@ class DownloadQueue(metaclass=Singleton):
         if self.is_paused() or self.done.empty():
             return
 
-        LOG.debug("Checking history queue for queued live stream links.")
+        if self.config.debug:
+            LOG.debug("Checking history queue for queued live stream links.")
 
         time_now = datetime.now(tz=UTC)
 
