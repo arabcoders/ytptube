@@ -150,7 +150,7 @@
                     <template v-if="!config.app.basic_mode">
                       <hr class="dropdown-divider" />
 
-                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
+                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                         <span class="icon"><i class="fa-solid fa-info" /></span>
                         <span>yt-dlp Information</span>
                       </NuxtLink>
@@ -275,7 +275,7 @@
                     <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
                     v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
@@ -319,7 +319,7 @@ import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 
 const emitter = defineEmits<{
-  (e: 'getInfo', url: string, preset: string): void
+  (e: 'getInfo', url: string, preset: string, cli: string): void
   (e: 'getItemInfo', id: string): void
   (e: 'clear_search'): void
 }>()

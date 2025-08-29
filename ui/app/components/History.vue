@@ -193,7 +193,7 @@
                           </NuxtLink>
                           <hr class="dropdown-divider" />
                         </template>
-                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
+                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>yt-dlp Information</span>
                         </NuxtLink>
@@ -368,7 +368,7 @@
                     <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
                     v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
@@ -466,7 +466,7 @@ import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 
 const emitter = defineEmits<{
-  (e: 'getInfo', url: string, preset: string): void
+  (e: 'getInfo', url: string, preset: string, cli: string): void
   (e: 'add_new', item: Partial<StoreItem>): void
   (e: 'getItemInfo', id: string): void
   (e: 'clear_search'): void
@@ -737,7 +737,7 @@ const addArchiveDialog = (item: StoreItem) => {
 
 const archiveItem = async (item: StoreItem, opts = {}) => {
   try {
-    const req = await request(`/api/archive/${item._id}`, {
+    const req = await request(`/api/history/${item._id}/archive`, {
       credentials: 'include',
       method: 'POST',
     })
@@ -871,10 +871,7 @@ const removeFromArchiveDialog = (item: StoreItem) => {
 const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
   console.log('Removing from archive:', item, opts)
   try {
-    const req = await request(`/api/archive/${item._id}`, {
-      credentials: 'include',
-      method: 'DELETE',
-    })
+    const req = await request(`/api/history/${item._id}/archive`, { credentials: 'include', method: 'DELETE' })
     const data = await req.json()
     if (!req.ok) {
       toast.error(data.error)

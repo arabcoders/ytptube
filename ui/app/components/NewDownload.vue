@@ -167,14 +167,9 @@
                 </NuxtLink>
                 <hr class="dropdown-divider" />
 
-                <NuxtLink class="dropdown-item" @click="emitter('getInfo', form.url, form.preset)">
+                <NuxtLink class="dropdown-item" @click="emitter('getInfo', form.url, form.preset, form.cli)">
                   <span class="icon has-text-info"><i class="fa-solid fa-info" /></span>
                   <span>yt-dlp Information</span>
-                </NuxtLink>
-
-                <NuxtLink class="dropdown-item" @click="removeFromArchive(form.url)">
-                  <span class="icon has-text-warning"><i class="fa-solid fa-box-archive" /></span>
-                  <span>Remove from archive</span>
                 </NuxtLink>
 
                 <hr class="dropdown-divider" />
@@ -194,20 +189,12 @@
                   </button>
                 </div>
                 <div class="control">
-                  <button type="button" class="button is-info" @click="emitter('getInfo', form.url, form.preset)"
+                  <button type="button" class="button is-info"
+                    @click="emitter('getInfo', form.url, form.preset, form.cli)"
                     :class="{ 'is-loading': !socket.isConnected }"
                     :disabled="!socket.isConnected || addInProgress || !form?.url">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Information</span>
-                  </button>
-                </div>
-
-                <div class="control">
-                  <button type="button" class="button is-warning" @click="removeFromArchive(form.url)"
-                    :class="{ 'is-loading': !socket.isConnected }"
-                    :disabled="!socket.isConnected || addInProgress || !form?.url">
-                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span>Remove from archive</span>
                   </button>
                 </div>
 
@@ -248,7 +235,7 @@ import type { AutoCompleteOptions } from '~/types/autocomplete';
 
 const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
-  (e: 'getInfo', url: string, preset: string | undefined): void
+  (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void
   (e: 'clear_form'): void
   (e: 'remove_archive', url: string): void
 }>()
@@ -496,27 +483,6 @@ const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\
 const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
 const get_preset = (name: string | undefined) => config.presets.find(item => item.name === name)
 const expand_description = (e: Event) => toggleClass(e.target as HTMLElement, ['is-ellipsis', 'is-pre-wrap'])
-
-const removeFromArchive = async (url: string) => {
-  try {
-    const req = await request(`/api/archive/0`, {
-      credentials: 'include',
-      method: 'DELETE',
-      body: JSON.stringify({ url }),
-    })
-
-    const data = await req.json()
-
-    if (!req.ok) {
-      toast.error(data.error)
-      return
-    }
-
-    toast.success(data.message ?? `Removed item from archive.`)
-  } catch (e: any) {
-    toast.error(`Error: ${e.message}`)
-  }
-}
 
 const get_output_template = () => {
   if (form.value.preset && !hasFormatInConfig.value) {

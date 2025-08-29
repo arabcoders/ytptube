@@ -96,15 +96,16 @@
     </div>
 
     <NewDownload v-if="config.showForm || config.app.basic_mode"
-      @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :item="item_form"
-      @clear_form="item_form = {}" @remove_archive="" />
-    <Queue @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :thumbnails="show_thumbnail"
-      :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
-    <History @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)"
+      @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+      :item="item_form" @clear_form="item_form = {}" @remove_archive="" />
+    <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+      :thumbnails="show_thumbnail" :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+      @clear_search="query = ''" />
+    <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
       @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
-    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
-      @closeModel="close_info()" />
+    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :cli="info_view.cli"
+      :useUrl="info_view.useUrl" @closeModel="close_info()" />
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :html_message="dialog_confirm.html_message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       @cancel="() => dialog_confirm.visible = false" />
@@ -128,8 +129,9 @@ const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const info_view = ref({
   url: '',
   preset: '',
+  cli: '',
   useUrl: false,
-}) as Ref<{ url: string, preset: string, useUrl: boolean }>
+}) as Ref<{ url: string, preset: string, cli: string, useUrl: boolean }>
 const item_form = ref<item_request | object>({})
 const query = ref()
 const toggleFilter = ref(false)
@@ -198,10 +200,11 @@ const close_info = () => {
   info_view.value.useUrl = false
 }
 
-const view_info = (url: string, useUrl: boolean = false, preset: string = '') => {
+const view_info = (url: string, useUrl: boolean = false, preset: string = '', cli: string = '') => {
   info_view.value.url = url
   info_view.value.useUrl = useUrl
   info_view.value.preset = preset
+  info_view.value.cli = cli
 }
 
 watch(() => info_view.value.url, v => {

@@ -25,8 +25,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
     - [GET /api/history](#get-apihistory)
-    - [DELETE /api/archive/{id}](#delete-apiarchiveid)
-    - [POST /api/archive/{id}](#post-apiarchiveid)
+    - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
+    - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
     - [GET /api/tasks](#get-apitasks)
     - [PUT /api/tasks](#put-apitasks)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
@@ -361,17 +361,11 @@ or an error:
 
 ---
 
-### DELETE /api/archive/{id}
-**Purpose**: Remove an item's URL from the yt-dlp archive file, allowing it to be re-downloaded.
+### DELETE /api/history/{id}/archive
+**Purpose**: Remove an item from archive file, allowing it to be re-downloaded.
 
 **Path Parameter**:
-- `id`: Item ID from the history (if body `url` is not provided).
-
-**Body (optional)**:
-```json
-{ "url": "https://..." }
-```
-If `url` is provided, it is used directly; otherwise the route resolves the item by `id` and uses its URL.
+- `id`: Item ID from the history.
 
 **Response**:
 ```json
@@ -387,8 +381,8 @@ or an error:
 
 ---
 
-### POST /api/archive/{id}
-**Purpose**: Manually mark an item as archived by writing its archive ID to the archive file.
+### POST /api/history/{id}/archive
+**Purpose**: Add item to the archive file preventing it from being downloaded.
 
 **Path Parameter**:
 - `id`: Item ID from the history.
