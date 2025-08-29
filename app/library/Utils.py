@@ -388,6 +388,10 @@ def arg_converter(
 
     default_opts = _default_opts([]).ydl_opts
 
+    if args:
+        # important to ignore external config files.
+        args = "--ignore-config " + args
+
     opts = yt_dlp.parse_options(shlex.split(args)).ydl_opts
     diff = {k: v for k, v in opts.items() if default_opts[k] != v} if not keep_defaults else opts.items()
     if "postprocessors" in diff:

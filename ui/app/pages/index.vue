@@ -63,6 +63,38 @@
       </div>
     </div>
 
+    <div v-if="config.is_loaded" class="columns is-multiline">
+      <div class="column is-12">
+        <DeprecatedNotice :version="config.app.app_version" title="Deprecation Notice" tone="warning"
+          icon="fas fa-exclamation-triangle fa-fade fa-spin-10">
+          <p>
+            The following environment variables and features are deprecated and will be removed in future releases:
+          </p>
+          <ul>
+            <li>
+              The environment variables <code>YTP_KEEP_ARCHIVE</code> and <code>YTP_SOCKET_TIMEOUT</code> will no
+              longer be user-configurable. Their behavior will be part of the <strong>default presets</strong>. To keep
+              your current behavior <strong>and avoid re-downloading</strong>, please add the following <strong>Command
+                options for yt-dlp</strong> to your presets:
+              <code>--socket-timeout 30 --download-archive /config/archive.log</code>
+            </li>
+            <li>
+              The global yt-dlp config file <code>/config/ytdlp.cli</code> is deprecated and will be removed. Please
+              migrate any global options into your presets.
+            </li>
+            <li>
+              The <strong>Basic mode</strong> (which limited the interface to the new download form) is being removed.
+              Everything except what is available behind configurable flag will become part of the standard interface.
+            </li>
+          </ul>
+          <p>
+            These changes help reduce confusion from multiple sources of truth. Going forward, <strong>presets</strong>
+            and the <strong>Command options for yt-dlp</strong> will be the single source of truth.
+          </p>
+        </DeprecatedNotice>
+      </div>
+    </div>
+
     <NewDownload v-if="config.showForm || config.app.basic_mode"
       @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :item="item_form"
       @clear_form="item_form = {}" @remove_archive="" />
@@ -81,6 +113,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import DeprecatedNotice from '~/components/DeprecatedNotice.vue'
 import type { item_request } from '~/types/item'
 import type { StoreItem } from '~/types/store'
 

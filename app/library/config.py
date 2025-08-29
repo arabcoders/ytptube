@@ -384,23 +384,16 @@ class Config:
             except Exception as e:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
-        ytdl_options = {}
         opts_file: Path = Path(self.config_path) / "ytdlp.cli"
         if opts_file.exists() and opts_file.stat().st_size > 2:
-            LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
+            LOG.error("The global config file 'ytdlp.cli' file is deprecated and will be removed in future releases.")
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
                 if self.ytdlp_cli:
                     self._ytdlp_cli_mutable = self.ytdlp_cli
                     try:
-                        removed_options = []
-                        ytdl_options = arg_converter(args=self.ytdlp_cli, level=True, removed_options=removed_options)
-
-                        try:
-                            LOG.debug("Parsed yt-dlp cli options '%s'.", ytdl_options)
-                        except Exception:
-                            pass
-
+                        removed_options: list = []
+                        arg_converter(args=self.ytdlp_cli, level=True, removed_options=removed_options)
                         if len(removed_options) > 0:
                             LOG.warning(
                                 "Removed the following options: '%s' from '%s'", ", ".join(removed_options), opts_file
@@ -410,8 +403,6 @@ class Config:
                         raise ValueError(msg) from e
                 else:
                     LOG.warning(f"Empty yt-dlp custom options file '{opts_file}'.")
-        else:
-            LOG.info(f"No yt-dlp custom options found at '{opts_file}'.")
 
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
