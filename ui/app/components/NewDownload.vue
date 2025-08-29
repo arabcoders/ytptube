@@ -351,7 +351,6 @@ const addDownload = async () => {
   try {
     addInProgress.value = true
     const response = await request('/api/history', {
-      credentials: 'include',
       method: 'POST',
       body: JSON.stringify(request_data),
     })

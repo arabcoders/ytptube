@@ -29,8 +29,7 @@
                 <span class="icon"><i class="fas fa-pause" /></span>
                 <span v-if="!isMobile">Pause</span>
               </button>
-              <button class="button is-danger" @click="socket.emit('resume', {})" v-else
-                v-tooltip.bottom="'Resume downloading.'">
+              <button class="button is-danger" @click="resumeDownload" v-else v-tooltip.bottom="'Resume downloading.'">
                 <span class="icon"><i class="fas fa-play" /></span>
                 <span v-if="!isMobile">Resume</span>
               </button>
@@ -174,6 +173,8 @@ watch(() => stateStore.queue, () => {
 }, { deep: true })
 
 
+const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' })
+
 const pauseDownload = () => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.html_message = `
@@ -188,8 +189,8 @@ const pauseDownload = () => {
       <li>If you are in middle of adding a playlist/channel, it will break and stop adding more items.</li>
     </ul>
   </span>`
-  dialog_confirm.value.confirm = () => {
-    socket.emit('pause', {})
+  dialog_confirm.value.confirm = async () => {
+    await request('/api/system/pause', { method: 'POST' })
     dialog_confirm.value.visible = false
   }
 }

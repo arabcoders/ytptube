@@ -611,9 +611,6 @@ const deleteSelectedItems = () => {
       continue
     }
     const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
-    if ('finished' === item.status) {
-      socket.emit('archive_item', item)
-    }
     socket.emit('item_delete', {
       id: item._id,
       remove_file: config.app.remove_files,
@@ -737,10 +734,7 @@ const addArchiveDialog = (item: StoreItem) => {
 
 const archiveItem = async (item: StoreItem, opts = {}) => {
   try {
-    const req = await request(`/api/history/${item._id}/archive`, {
-      credentials: 'include',
-      method: 'POST',
-    })
+    const req = await request(`/api/history/${item._id}/archive`, { method: 'POST' })
     const data = await req.json()
     dialog_confirm.value.visible = false
     if (!req.ok) {
@@ -832,8 +826,7 @@ const downloadSelected = async () => {
   try {
     const response = await request('/api/file/download', {
       method: 'POST',
-      credentials: 'include',
-      body: JSON.stringify(files_list),
+      body: JSON.stringify(files_list)
     })
     const json = await response.json()
     if (!response.ok) {
@@ -871,7 +864,7 @@ const removeFromArchiveDialog = (item: StoreItem) => {
 const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
   console.log('Removing from archive:', item, opts)
   try {
-    const req = await request(`/api/history/${item._id}/archive`, { credentials: 'include', method: 'DELETE' })
+    const req = await request(`/api/history/${item._id}/archive`, { method: 'DELETE' })
     const data = await req.json()
     if (!req.ok) {
       toast.error(data.error)

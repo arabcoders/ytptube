@@ -170,7 +170,7 @@ const filters = reactive({
 const reload = async (): Promise<void> => {
   try {
     isLoading.value = true
-    const resp = await request('/api/yt-dlp/options', { credentials: 'include' })
+    const resp = await request('/api/yt-dlp/options')
     if (!resp.ok) {
       return
     }

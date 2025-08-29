@@ -1,36 +1,11 @@
 import logging
-import time
 
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import RouteType, route
-from app.library.Utils import archive_add, archive_read, get_archive_id
-from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-@route(RouteType.SOCKET, "pause", "pause_downloads")
-async def pause(notify: EventBus, queue: DownloadQueue):
-    queue.pause()
-    await notify.emit(
-        Events.PAUSED,
-        data={"paused": True, "at": time.time()},
-        title="Downloads Paused",
-        message="Non-active downloads have been paused.",
-    )
-
-
-@route(RouteType.SOCKET, "resume", "resume_downloads")
-async def resume(notify: EventBus, queue: DownloadQueue):
-    queue.resume()
-    await notify.emit(
-        Events.RESUMED,
-        data={"paused": False, "at": time.time()},
-        title="Downloads Resumed",
-        message="Resumed all downloads.",
-    )
 
 
 @route(RouteType.SOCKET, "add_url", "add_url")
@@ -72,40 +47,6 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
         return
 
     await queue.clear([id], remove_file=bool(data.get("remove_file", False)))
-
-
-@route(RouteType.SOCKET, "archive_item", "archive_item")
-async def archive_item(data: dict):
-    if not isinstance(data, dict) or "url" not in data:
-        return
-
-    params: YTDLPOpts = YTDLPOpts.get_instance()
-
-    if "preset" in data and isinstance(data["preset"], str):
-        params.preset(name=data["preset"])
-
-    if "cli" in data and isinstance(data["cli"], str) and len(data["cli"]) > 1:
-        params.add_cli(data["cli"], from_user=True)
-
-    params = params.get_all()
-
-    if not (file := params.get("download_archive")):
-        return
-
-    idDict = get_archive_id(url=data["url"])
-    if not idDict.get("archive_id"):
-        LOG.warning(f"URL '{data['url']}' does not have an archive ID.")
-        return
-
-    archive_id: str = idDict.get("archive_id")
-
-    if len(archive_read(file, [archive_id])) > 0:
-        LOG.info(f"URL '{data['url']}' already archived.")
-        return
-
-    archive_add(file, [archive_id])
-
-    LOG.info(f"Archiving url '{data['url']}' with id '{archive_id}'.")
 
 
 @route(RouteType.SOCKET, "item_start", "item_start")

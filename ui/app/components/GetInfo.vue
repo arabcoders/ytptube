@@ -81,7 +81,7 @@ onMounted(async (): Promise<void> => {
 
   try {
     isLoading.value = true
-    const response = await request(url, { credentials: 'include' })
+    const response = await request(url)
     const body = await response.text()
 
     try {
