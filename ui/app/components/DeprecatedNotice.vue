@@ -1,14 +1,13 @@
 <template>
-  <div v-if="isLoaded && !isDismissed">
-    <Message :message_class="messageClass" :title="title" :icon="icon" :useClose="true" @close="dismiss">
-      <slot />
-    </Message>
-  </div>
+  <Message :message_class="messageClass" :title="title" :icon="icon" :useClose="true" @close="() => dismissed = true"
+    v-if="!isDismissed">
+    <slot />
+  </Message>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watchEffect } from 'vue'
-import { useStorage, type RemovableRef } from '@vueuse/core'
+import { computed } from 'vue'
+import { useStorage } from '@vueuse/core'
 import Message from "~/components/Message.vue";
 
 const props = withDefaults(defineProps<{
@@ -26,30 +25,10 @@ const props = withDefaults(defineProps<{
 
 const config = useConfigStore()
 const isDev = computed(() => 'development' === config.app?.app_env)
-const isLoaded = computed(() => config.is_loaded)
 
 const storageKeyComputed = computed<string>(() => `${props.storageKey}:${props.version}`)
-
-const dismissedDev = ref<boolean>(false)
-let dismissedProd: RemovableRef<boolean> | null = null
-
-watchEffect(() => {
-  if (!isLoaded.value || isDev.value) {
-    return
-  }
-  dismissedProd = useStorage<boolean>(storageKeyComputed, false)
-})
-
-const isDismissed = computed(() => {
-  // include dependencies so recompute on env/load/version changes
-  void isLoaded.value; void isDev.value; void storageKeyComputed.value
-  return isDev.value ? dismissedDev.value : (dismissedProd?.value ?? false)
-})
-
-const dismiss = () => {
-  if (isDev.value) dismissedDev.value = true
-  else if (dismissedProd) dismissedProd.value = true
-}
+const dismissed = useStorage<boolean>(storageKeyComputed, false)
+const isDismissed = computed(() => dismissed.value)
 
 const messageClass = computed(() => {
   switch (props.tone) {
@@ -64,4 +43,25 @@ const messageClass = computed(() => {
       return 'is-warning has-background-warning-90 has-text-dark'
   }
 })
+
+onMounted(() => {
+  if (!isDev.value) {
+    return
+  }
+  document.addEventListener('keydown', handle_event)
+})
+
+onBeforeUnmount(() => {
+  if (!isDev.value) {
+    return
+  }
+  document.removeEventListener('keydown', handle_event)
+})
+
+const handle_event = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.altKey && 'd' === e.key.toLowerCase()) {
+    e.preventDefault()
+    dismissed.value = !dismissed.value
+  }
+}
 </script>
