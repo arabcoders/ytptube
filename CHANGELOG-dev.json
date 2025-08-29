@@ -1,8 +1,50 @@
 [
     {
-        "tag": "dev-20250828-9d4984b7",
-        "date": "2025-08-28T00:25:56+00:00",
+        "tag": "dev-20250829-e2b4a8ca",
+        "date": "2025-08-29T16:00:26+00:00",
         "commits": [
+            {
+                "sha": "e2b4a8ca",
+                "message": "moved socket event pause/resume to api/system/",
+                "author": "arabcoders",
+                "date": "2025-08-29T16:00:26+00:00",
+                "full_sha": "e2b4a8caa3a43c0222123ea976721d84561a1569"
+            },
+            {
+                "sha": "20cfc006",
+                "message": "migrated /api/archive to /api/history/{id}/archive",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "20cfc00640d14120d616814de55b2c2660895400"
+            },
+            {
+                "sha": "fd999211",
+                "message": "add deprecated notice.",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "fd999211ef624b01b72fc328f72beadde5c4c6af"
+            },
+            {
+                "sha": "deed79b8",
+                "message": "major refactor of archive_file handling",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "deed79b8d28419aef7e81457dd659094be03d556"
+            },
+            {
+                "sha": "29b7748b",
+                "message": "add is_archived to both local info and yt-dlp info",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "29b7748b8a454e546db528be739aac196c2c5898"
+            },
+            {
+                "sha": "f8e3a2f6",
+                "message": "update API.md",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "f8e3a2f6e62c01e364b0736a1398a077b8958c79"
+            },
             {
                 "sha": "9b08a17c",
                 "message": "Update yt-dlp to 2025.8.27",
@@ -1453,7 +1495,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9d4984b7a18eb88c9816c7fae019260faa9580d4"
+        "full_sha": "e2b4a8caa3a43c0222123ea976721d84561a1569"
     },
     {
         "tag": "dev-20250616-c07465a6",

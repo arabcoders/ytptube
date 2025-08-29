@@ -1,9 +1,51 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "9d4984b7a18eb88c9816c7fae019260faa9580d4",
-    "date": "2025-08-28T00:25:56+00:00",
+    "full_sha": "e2b4a8caa3a43c0222123ea976721d84561a1569",
+    "date": "2025-08-29T16:00:26+00:00",
     "commits": [
+      {
+        "sha": "e2b4a8ca",
+        "full_sha": "e2b4a8caa3a43c0222123ea976721d84561a1569",
+        "message": "moved socket event pause/resume to api/system/",
+        "author": "arabcoders",
+        "date": "2025-08-29T16:00:26+00:00"
+      },
+      {
+        "sha": "20cfc006",
+        "full_sha": "20cfc00640d14120d616814de55b2c2660895400",
+        "message": "migrated /api/archive to /api/history/{id}/archive",
+        "author": "arabcoders",
+        "date": "2025-08-29T15:41:13+00:00"
+      },
+      {
+        "sha": "fd999211",
+        "full_sha": "fd999211ef624b01b72fc328f72beadde5c4c6af",
+        "message": "add deprecated notice.",
+        "author": "arabcoders",
+        "date": "2025-08-29T15:41:13+00:00"
+      },
+      {
+        "sha": "deed79b8",
+        "full_sha": "deed79b8d28419aef7e81457dd659094be03d556",
+        "message": "major refactor of archive_file handling",
+        "author": "arabcoders",
+        "date": "2025-08-29T15:41:13+00:00"
+      },
+      {
+        "sha": "29b7748b",
+        "full_sha": "29b7748b8a454e546db528be739aac196c2c5898",
+        "message": "add is_archived to both local info and yt-dlp info",
+        "author": "arabcoders",
+        "date": "2025-08-29T15:41:13+00:00"
+      },
+      {
+        "sha": "f8e3a2f6",
+        "full_sha": "f8e3a2f6e62c01e364b0736a1398a077b8958c79",
+        "message": "update API.md",
+        "author": "arabcoders",
+        "date": "2025-08-29T15:41:13+00:00"
+      },
       {
         "sha": "9b08a17c",
         "full_sha": "9b08a17ce2698b9dd6bce89813432056796e1220",
