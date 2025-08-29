@@ -1,8 +1,127 @@
 [
     {
-        "tag": "master-20250827-3de3471b",
-        "date": "2025-08-26T22:02:17+00:00",
+        "tag": "master-20250830-aaab5a72",
+        "date": "2025-08-29T23:29:02+00:00",
         "commits": [
+            {
+                "sha": "2c797c68",
+                "message": "updated external packages",
+                "author": "arabcoders",
+                "date": "2025-08-29T22:58:24+00:00",
+                "full_sha": "2c797c6824b3903d75096b5c6674ad949cd92d7f"
+            },
+            {
+                "sha": "ed4bb1e4",
+                "message": "finalizing removed features",
+                "author": "arabcoders",
+                "date": "2025-08-29T22:50:42+00:00",
+                "full_sha": "ed4bb1e4403961d05509ba9054faa6652399f35b"
+            },
+            {
+                "sha": "db57d6de",
+                "message": "Refactor code for improved type hinting; add unarchive functionality to tasks API and UI.",
+                "author": "arabcoders",
+                "date": "2025-08-29T22:02:13+00:00",
+                "full_sha": "db57d6de115d8faae2b3cac5b3b37f972773b675"
+            },
+            {
+                "sha": "da8358ba",
+                "message": "Further updates on how we handle archive status",
+                "author": "arabcoders",
+                "date": "2025-08-29T19:11:14+00:00",
+                "full_sha": "da8358bad6630c639c06bc6d9be676a149806201"
+            },
+            {
+                "sha": "e6aa56a0",
+                "message": "refactor DeprecatedNotice component for improved state management",
+                "author": "arabcoders",
+                "date": "2025-08-29T16:29:34+00:00",
+                "full_sha": "e6aa56a008fffaa3d63b1b7afb59b0dfc9cddfe6"
+            },
+            {
+                "sha": "e2b4a8ca",
+                "message": "moved socket event pause/resume to api/system/",
+                "author": "arabcoders",
+                "date": "2025-08-29T16:00:26+00:00",
+                "full_sha": "e2b4a8caa3a43c0222123ea976721d84561a1569"
+            },
+            {
+                "sha": "20cfc006",
+                "message": "migrated /api/archive to /api/history/{id}/archive",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "20cfc00640d14120d616814de55b2c2660895400"
+            },
+            {
+                "sha": "fd999211",
+                "message": "add deprecated notice.",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "fd999211ef624b01b72fc328f72beadde5c4c6af"
+            },
+            {
+                "sha": "deed79b8",
+                "message": "major refactor of archive_file handling",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "deed79b8d28419aef7e81457dd659094be03d556"
+            },
+            {
+                "sha": "29b7748b",
+                "message": "add is_archived to both local info and yt-dlp info",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "29b7748b8a454e546db528be739aac196c2c5898"
+            },
+            {
+                "sha": "f8e3a2f6",
+                "message": "update API.md",
+                "author": "arabcoders",
+                "date": "2025-08-29T15:41:13+00:00",
+                "full_sha": "f8e3a2f6e62c01e364b0736a1398a077b8958c79"
+            },
+            {
+                "sha": "9b08a17c",
+                "message": "Update yt-dlp to 2025.8.27",
+                "author": "ArabCoders",
+                "date": "2025-08-28T00:23:57+00:00",
+                "full_sha": "9b08a17ce2698b9dd6bce89813432056796e1220"
+            },
+            {
+                "sha": "283ed74f",
+                "message": "handle redirection for thumbnails.",
+                "author": "arabcoders",
+                "date": "2025-08-27T16:52:35+00:00",
+                "full_sha": "283ed74f71d4433f588015926a5705ef17b3b480"
+            },
+            {
+                "sha": "19b78c95",
+                "message": "correctly mark status as cancelled.",
+                "author": "arabcoders",
+                "date": "2025-08-27T16:52:15+00:00",
+                "full_sha": "19b78c9564947f8ff091c46fd8056d38b2b71025"
+            },
+            {
+                "sha": "309d4ca0",
+                "message": "Update default placeholder for save_in dynamically based on selected preset.",
+                "author": "arabcoders",
+                "date": "2025-08-27T14:21:55+00:00",
+                "full_sha": "309d4ca01329976775827557689006222710f318"
+            },
+            {
+                "sha": "bfe4ea63",
+                "message": "add cancelled as accepted status",
+                "author": "arabcoders",
+                "date": "2025-08-27T14:14:49+00:00",
+                "full_sha": "bfe4ea63540781f90f0aa444b4a96b4a04e9e3cc"
+            },
+            {
+                "sha": "71bd40a2",
+                "message": "added new endpoint to get urls archive ids",
+                "author": "arabcoders",
+                "date": "2025-08-27T13:28:19+00:00",
+                "full_sha": "71bd40a2e8174853b80dddbc35ad38052e4477a9"
+            },
             {
                 "sha": "21c7b0f2",
                 "message": "Fixes #384",
@@ -1411,7 +1530,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3de3471bd5518ca521dc0acec748c836a98a2dc5"
+        "full_sha": "aaab5a72e89d8f2b131484cbf9980d944ae46d3e"
     },
     {
         "tag": "master-20250616-c07465a6",
