@@ -19,7 +19,7 @@ from .ItemDTO import Item
 from .Scheduler import Scheduler
 from .Services import Services
 from .Singleton import Singleton
-from .Utils import extract_info, init_class, validate_url
+from .Utils import archive_add, archive_delete, extract_info, init_class, validate_url
 from .YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("tasks")
@@ -47,51 +47,69 @@ class Task:
     def get(self, key: str, default: Any = None) -> Any:
         return self.serialize().get(key, default)
 
-    def mark(self) -> tuple[bool, str]:
-        if not self.url:
-            return False, "No URL found in task parameters."
+    def get_ytdlp_opts(self) -> YTDLPOpts:
+        params: YTDLPOpts = YTDLPOpts.get_instance()
 
-        params: YTDLPOpts = YTDLPOpts.get_instance().preset(name=self.preset)
+        if self.preset:
+            params = params.preset(name=self.preset)
+
         if self.cli:
-            params.add_cli(self.cli, from_user=True)
+            params = params.add_cli(self.cli, from_user=True)
 
-        params = params.get_all()
-        if not (_archive := params.get("download_archive", None)):
-            return False, "No archive file found in task parameters."
+        return params
 
-        _archive: Path = Path(_archive)
-        if not _archive.parent.exists():
-            _archive.parent.mkdir(parents=True, exist_ok=True)
+    def mark(self) -> tuple[bool, str]:
+        ret = self._mark_logic()
+        if isinstance(ret, tuple):
+            return ret
 
-        if not _archive.exists():
-            _archive.touch()
+        archive_file: Path = ret.get("file")
+        items: set[str] = ret.get("items", set())
 
-        _info = extract_info(params, self.url, no_archive=True, follow_redirect=True)
-        if not _info or not isinstance(_info, dict):
-            return False, "Failed to extract information from URL."
+        if len(items) < 1 or not archive_add(archive_file, list(items)):
+            return (True, "No new items to mark as downloaded.")
 
-        if "playlist" != _info.get("_type"):
-            return False, "Expected a playlist type from extract_info."
+        return (True, f"Task '{self.name}' items marked as downloaded.")
 
-        archived_items: list[str] = []
-        with _archive.open() as f:
-            for line in f:
-                line = line.strip()
-                if not line or not isinstance(line, str) or line.startswith("#"):
-                    continue
+    def unmark(self) -> tuple[bool, str]:
+        ret: tuple[bool, str] | set[tuple[Path, set[str]]] = self._mark_logic()
+        if isinstance(ret, tuple):
+            return ret
 
-                archived_items.append(line)
+        archive_file: Path = ret.get("file")
+        items: set[str] = ret.get("items", set())
 
-        def _process(item: dict) -> bool:
-            status = False
+        if len(items) < 1 or not archive_delete(archive_file, list(items)):
+            return (True, "No items to remove from archive file.")
+
+        return (True, f"Removed '{self.name}' items from archive file.")
+
+    def _mark_logic(self) -> tuple[bool, str] | set[tuple[Path, set[str]]]:
+        if not self.url:
+            return (False, "No URL found in task parameters.")
+
+        params: dict = self.get_ytdlp_opts().get_all()
+        if not (archive_file := params.get("download_archive")):
+            return (False, "No archive file found.")
+
+        archive_file: Path = Path(archive_file)
+
+        ie_info: dict | None = extract_info(params, self.url, no_archive=True, follow_redirect=True)
+        if not ie_info or not isinstance(ie_info, dict):
+            return (False, "Failed to extract information from URL.")
+
+        if "playlist" != ie_info.get("_type"):
+            return (False, "Expected a playlist type from extract_info.")
+
+        items: set[str] = set()
+
+        def _process(item: dict):
             for entry in item.get("entries", []):
                 if not isinstance(entry, dict):
                     continue
 
                 if "playlist" == entry.get("_type"):
-                    _status = _process(entry)
-                    if status is False:
-                        status = _status
+                    _process(entry)
                     continue
 
                 if entry.get("_type") not in ("video", "url"):
@@ -100,26 +118,13 @@ class Task:
                 if not entry.get("id") or not entry.get("ie_key"):
                     continue
 
-                archive_id = f'{entry.get("ie_key","").lower()} {entry.get("id")}'
+                archive_id: str = f"{entry.get('ie_key', '').lower()} {entry.get('id')}"
 
-                if archive_id in archived_items:
-                    continue
+                items.add(archive_id)
 
-                archived_items.append(archive_id)
-                status = True
+        _process(ie_info)
 
-            return status
-
-        updated = _process(_info)
-
-        if not updated:
-            return True, "No new items to mark as downloaded."
-
-        with _archive.open("a") as f:
-            for item in archived_items:
-                f.write(f"{item}\n")
-
-        return True, f"Task '{self.name}' marked as downloaded. Updated archive file '{_archive}'."
+        return {"file": archive_file, "items": items}
 
 
 class Tasks(metaclass=Singleton):
@@ -417,6 +422,7 @@ class Tasks(metaclass=Singleton):
                         "folder": folder,
                         "template": template,
                         "cli": cli,
+                        "auto_start": task.auto_start,
                     }
                 )
             )
@@ -544,7 +550,11 @@ class HandleTask:
             if handler is None:
                 return None
 
-        return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
+        try:
+            return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
+        except Exception as e:
+            LOG.exception(e)
+            raise
 
     def _discover(self) -> list[type]:
         import importlib

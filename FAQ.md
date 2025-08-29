@@ -18,7 +18,6 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_CONFIG_PATH                | Path to where the config files will be stored.                     | `/config`                          |
 | YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                             |
 | YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                            |
-| YTP_KEEP_ARCHIVE               | Keep history of downloaded videos                                  | `true`                             |
 | YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                          |
 | YTP_PORT                       | Which port to bind to                                              | `8081`                             |
 | YTP_LOG_LEVEL                  | Log level                                                          | `info`                             |
@@ -27,10 +26,8 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_ACCESS_LOG                 | Whether to log access to the web server                            | `true`                             |
 | YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`                            |
 | YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                             |
-| YTP_SOCKET_TIMEOUT             | The timeout for the yt-dlp socket connection variable              | `30`                               |
 | YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                               |
 | YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db`         |
-| YTP_MANUAL_ARCHIVE             | The path to the manual archive file                                | `{config_path}/manual_archive.log` |
 | YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                             |
 | YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`                     |
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                            |
@@ -196,27 +193,6 @@ you and also enable the fallback by using the follow extractor args
 
 Use this alternative extractor args in case the extractor fails to get the pot tokens from the bgutil provider server. 
 For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
-
-# How to set global settings for yt-dlp?
-
-You can create a file named `ytdlp.cli` in the `/config` folder, and add your desired global settings there. 
-
-> [!IMPORTANT]
-> We strongly recommend to use presets instead of global settings, as presets are more convenient.
-
-The `ytdlp.cli` file usage is deprecated and likely will be removed in `v1.0.0` release.
-
-# Updating yt-dlp
-
-The engine which powers the actual video downloads in YTPTube is [yt-dlp](https://github.com/yt-dlp/yt-dlp). Since video 
-sites regularly updated, frequent updates of yt-dlp are required to keep up.
-
-We have added the `YTP_YTDLP_AUTO_UPDATE` environment variable, which is enabled by default. This feature allows the 
-container to automatically update `yt-dlp` to the latest version whenever the container starts. If a new version is 
-available, it will be downloaded and applied automatically. To disable this automatic update, set the 
-`YTP_YTDLP_AUTO_UPDATE` environment variable to `false`.
-
-We will no longer release new versions of YTPTube for every new version of yt-dlp.
 
 # Troubleshooting and submitting issues
 

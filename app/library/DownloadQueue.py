@@ -29,17 +29,15 @@ from .Utils import (
     dt_delta,
     extract_info,
     extract_ytdlp_logs,
-    is_downloaded,
     load_cookies,
     str_to_dt,
     ytdlp_reject,
 )
-from .YTDLPOpts import YTDLPOpts
 
 if TYPE_CHECKING:
     from app.library.Presets import Preset
 
-LOG = logging.getLogger("DownloadQueue")
+LOG: logging.Logger = logging.getLogger("DownloadQueue")
 
 
 class DownloadQueue(metaclass=Singleton):
@@ -87,7 +85,7 @@ class DownloadQueue(metaclass=Singleton):
         self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
 
     @staticmethod
-    def get_instance():
+    def get_instance() -> "DownloadQueue":
         """
         Get the instance of the DownloadQueue.
 
@@ -100,7 +98,7 @@ class DownloadQueue(metaclass=Singleton):
 
         return DownloadQueue._instance
 
-    def attach(self, _: web.Application):
+    def attach(self, _: web.Application) -> None:
         """
         Attach the download queue to the application.
 
@@ -136,13 +134,11 @@ class DownloadQueue(metaclass=Singleton):
         await self.done.test()
         return True
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """
         Initialize the download queue.
         """
-        LOG.info(
-            f"Using '{self.config.max_workers}' worker/s for downloading. Can be configured via `YTP_MAX_WORKERS` environment variable."
-        )
+        LOG.info(f"Using '{self.config.max_workers}' workers for downloading.")
         asyncio.create_task(self._download_pool(), name="download_pool")
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
@@ -158,11 +154,11 @@ class DownloadQueue(metaclass=Singleton):
         """
         status: dict[str, str] = {"status": "ok"}
         started = False
-        tasks = []
+        tasks: list = []
 
         for item_id in ids:
             try:
-                item = self.queue.get(key=item_id)
+                item: Download = self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -175,7 +171,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = True
-            updated = self.queue.put(item)
+            updated: Download = self.queue.put(item)
             tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
             tasks.append(
                 self._notify.emit(
@@ -209,11 +205,11 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         status: dict[str, str] = {"status": "ok"}
-        tasks = []
+        tasks: list = []
 
         for item_id in ids:
             try:
-                item = self.queue.get(key=item_id)
+                item: Download = self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -231,7 +227,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = False
-            updated = self.queue.put(item)
+            updated: Download = self.queue.put(item)
             tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
             tasks.append(
                 self._notify.emit(
@@ -416,20 +412,20 @@ class DownloadQueue(metaclass=Singleton):
         LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
 
         try:
-            _item = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
-            if _item is not None:
-                err_msg = f"Item '{_item.info.id}' - '{_item.info.title}' already exists. Removing from history."
-                LOG.warning(err_msg)
-                await self.clear([_item.info._id], remove_file=False)
+            _item: Download = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+            err_msg: str = f"Removing {_item.info.name()} from history list."
+            LOG.warning(err_msg)
+            await self.clear([_item.info._id], remove_file=False)
         except KeyError:
             pass
 
         try:
-            _item = self.queue.get(key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url")))
-            if _item is not None:
-                err_msg = f"Item ID '{_item.info.id}' - '{_item.info.title}' already in download queue."
-                LOG.info(err_msg)
-                return {"status": "error", "msg": err_msg}
+            _item: Download = self.queue.get(
+                key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url"))
+            )
+            err_msg: str = f"Item {_item.info.name()} is already in download queue."
+            LOG.info(err_msg)
+            return {"status": "error", "msg": err_msg}
         except KeyError:
             pass
 
@@ -494,7 +490,7 @@ class DownloadQueue(metaclass=Singleton):
                 nEvent = Events.ITEM_MOVED
                 nStore = "history"
                 nTitle = "Upcoming Premiere" if is_premiere else "Upcoming Live Stream"
-                nMessage = f"{'Premiere video' if is_premiere else 'Stream' } '{dlInfo.info.title}' is not available yet. {text_logs}"
+                nMessage = f"{'Premiere video' if is_premiere else 'Stream'} '{dlInfo.info.title}' is not available yet. {text_logs}"
 
                 dlInfo.info.status = "not_live"
                 dlInfo.info.msg = nMessage.replace(f" '{dlInfo.info.title}'", "")
@@ -535,7 +531,7 @@ class DownloadQueue(metaclass=Singleton):
                         LOG.error(f"Failed to parse live_in date '{release_in}'. {e!s}")
                         dlInfo.info.error += f" Failed to parse live_in date '{release_in}'."
                 else:
-                    dlInfo.info.error += f" Delaying download by '{300+dl.extras.get('duration',0)}' seconds."
+                    dlInfo.info.error += f" Delaying download by '{300 + dl.extras.get('duration', 0)}' seconds."
 
                 nMessage = f"'{dlInfo.info.title}': '{dlInfo.info.error.strip()}'."
 
@@ -602,10 +598,10 @@ class DownloadQueue(metaclass=Singleton):
         if event_type.startswith("url"):
             return await self.add(item=item.new_with(url=entry.get("url")), already=already)
 
-        if not event_type.startswith("video"):
-            return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
+        if event_type.startswith("video"):
+            return await self._add_video(entry=entry, item=item, logs=logs)
 
-        return await self._add_video(entry=entry, item=item, logs=logs)
+        return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
 
     async def add(self, item: Item, already: set | None = None):
         """
@@ -658,16 +654,15 @@ class DownloadQueue(metaclass=Singleton):
                     "level": logging.WARNING,
                     "name": "callback-logger",
                 },
-                **YTDLPOpts.get_instance().preset(name=item.preset).add_cli(args=item.cli, from_user=True).get_all(),
+                **item.get_ytdlp_opts().get_all(),
             }
 
             if yt_conf.get("external_downloader"):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
-            downloaded, id_dict = self._is_downloaded(file=yt_conf.get("download_archive", None), url=item.url)
-            if downloaded is True and id_dict:
-                message = f"'{id_dict.get('id')}': The URL '{item.url}' is already downloaded and recorded in archive."
+            if item.is_archived():
+                message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
                 await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
                 return {"status": "error", "msg": message}
@@ -686,7 +681,7 @@ class DownloadQueue(metaclass=Singleton):
 
             LOG.info(f"Checking '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else 'no cookies'}.")
 
-            entry = await asyncio.wait_for(
+            entry: dict | None = await asyncio.wait_for(
                 fut=asyncio.get_running_loop().run_in_executor(
                     None,
                     functools.partial(
@@ -980,9 +975,9 @@ class DownloadQueue(metaclass=Singleton):
             self._active[entry.info._id] = entry
             await entry.start()
 
-            if entry.info.status not in ("finished", "skip"):
+            if entry.info.status not in ("finished", "skip", "cancelled"):
                 if not entry.info.error:
-                    entry.info.error = f"Download failed with status '{entry.info.status}'."
+                    entry.info.error = f"Download ended with unexpected status '{entry.info.status}'."
                 entry.info.status = "error"
         except Exception as e:
             entry.info.status = "error"
@@ -1010,9 +1005,12 @@ class DownloadQueue(metaclass=Singleton):
             if entry.info.status == "finished" and entry.info.filename:
                 nTitle = "Download Completed"
                 nMessage = f"Completed '{entry.info.title}' download."
+                if entry.info.is_archivable and not entry.info.is_archived:
+                    entry.info.is_archived = True
+
                 _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
 
-            self.done.put(value=entry)
+            self.done.put(entry)
             _tasks.append(
                 self._notify.emit(
                     Events.ITEM_MOVED,
@@ -1028,23 +1026,6 @@ class DownloadQueue(metaclass=Singleton):
 
         if self.event:
             self.event.set()
-
-    def _is_downloaded(self, url: str, file: str | None = None) -> tuple[bool, dict | None]:
-        """
-        Check if the url has been downloaded already.
-
-        Args:
-            url (str): The url to check.
-            file (str | None): The archive file to check.
-
-        Returns:
-            tuple: A tuple with the status of the operation and the id of the downloaded item.
-
-        """
-        if not url or not file:
-            return False, None
-
-        return is_downloaded(file, url)
 
     async def _check_for_stale(self):
         """
@@ -1074,7 +1055,8 @@ class DownloadQueue(metaclass=Singleton):
         if self.is_paused() or self.done.empty():
             return
 
-        LOG.debug("Checking history queue for queued live stream links.")
+        if self.config.debug:
+            LOG.debug("Checking history queue for queued live stream links.")
 
         time_now = datetime.now(tz=UTC)
 

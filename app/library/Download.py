@@ -19,7 +19,6 @@ from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
 from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
 from .ytdlp import YTDLP
-from .YTDLPOpts import YTDLPOpts
 
 
 class Terminator:
@@ -27,19 +26,19 @@ class Terminator:
 
 
 class NestedLogger:
-    debug_messages = ["[debug] ", "[download] "]
+    debug_messages: list[str] = ["[debug] ", "[download] "]
 
-    def __init__(self, logger: logging.Logger):
-        self.logger = logger
+    def __init__(self, logger: logging.Logger) -> None:
+        self.logger: logging.Logger = logger
 
-    def debug(self, msg: str):
-        levelno = logging.DEBUG if any(msg.startswith(x) for x in self.debug_messages) else logging.INFO
+    def debug(self, msg: str) -> None:
+        levelno: int = logging.DEBUG if any(msg.startswith(x) for x in self.debug_messages) else logging.INFO
         self.logger.log(level=levelno, msg=re.sub(r"^\[(debug|info)\] ", "", msg, flags=re.IGNORECASE))
 
-    def error(self, msg):
+    def error(self, msg) -> None:
         self.logger.error(msg)
 
-    def warning(self, msg):
+    def warning(self, msg) -> None:
         self.logger.warning(msg)
 
 
@@ -110,7 +109,6 @@ class Download:
         self.template = info.template
         self.template_chapter = info.template_chapter
         self.download_info_expires = int(config.download_info_expires)
-        self.preset = info.preset
         self.info = info
         self.id = info._id
         self.debug = bool(config.debug)
@@ -125,14 +123,14 @@ class Download:
         self.temp_disabled = bool(config.temp_disabled)
         self.is_live = bool(info.is_live) or info.live_in is not None
         self.info_dict = info_dict
-        self.logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
+        self.logger: logging.Logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
         self.started_time = 0
-        self.queue_time = datetime.now(tz=UTC)
+        self.queue_time: datetime = datetime.now(tz=UTC)
         self.logs = logs if logs else []
 
     def _progress_hook(self, data: dict):
         if self.debug:
-            d_copy = deepcopy(data)
+            d_copy: dict = deepcopy(data)
             for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
                 d_copy["info_dict"].pop(k, None)
 
@@ -148,7 +146,7 @@ class Download:
 
     def _postprocessor_hook(self, data: dict):
         if self.debug:
-            d_copy = deepcopy(data)
+            d_copy: dict = deepcopy(data)
             for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
                 d_copy["info_dict"].pop(k, None)
 
@@ -181,10 +179,7 @@ class Download:
 
         try:
             params: dict = (
-                YTDLPOpts.get_instance()
-                .preset(self.preset)
-                .add({"break_on_existing": True})
-                .add_cli(args=self.info.cli, from_user=True)
+                self.info.get_ytdlp_opts()
                 .add(
                     config={
                         "color": "no_color",
@@ -263,31 +258,30 @@ class Download:
                     self.info_dict = info
 
             if self.is_live:
-                hasDeletedOptions = False
                 deletedOpts: list = []
                 for opt in self.bad_live_options:
                     if opt in params:
                         params.pop(opt, None)
-                        hasDeletedOptions = True
                         deletedOpts.append(opt)
 
-                if hasDeletedOptions:
+                if len(deletedOpts) > 0:
                     self.logger.warning(
                         f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted."
                     )
 
             if isinstance(self.info_dict, dict) and len(self.info_dict.get("formats", [])) < 1:
-                msg = f"Failed to extract any formats for '{self.info.url}'."
+                msg: str = f"Failed to extract any formats for '{self.info.url}'."
                 if filtered_logs := extract_ytdlp_logs(self.logs):
                     msg += " " + ", ".join(filtered_logs)
 
                 raise ValueError(msg)  # noqa: TRY301
 
             self.logger.info(
-                f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" started.'
+                f'Task {self.info.name()}, preset="{self.info.preset}", cookies="{bool(params.get("cookiefile"))}" started.'
             )
 
-            self.logger.debug(f"Params before passing to yt-dlp. {params}")
+            if self.debug:
+                self.logger.debug(f"Params before passing to yt-dlp. {params}")
 
             params["logger"] = NestedLogger(self.logger)
 
@@ -337,7 +331,7 @@ class Download:
                     self.logger.error(f"Failed to delete cookie file: {cookie_file}. {e}")
 
         self.logger.info(
-            f'Task id="{self.info.id}" PID="{os.getpid()}" title="{self.info.title}" preset="{self.preset}" cookies="{bool(params.get("cookiefile"))}" completed.'
+            f'Task {self.info.name()} preset="{self.info.preset}" cookies="{bool(params.get("cookiefile"))}" completed.'
         )
 
     async def start(self):
@@ -361,7 +355,9 @@ class Download:
 
         ret = await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
 
-        if self.final_update:
+        if self.final_update or self.cancelled:
+            if self.cancelled:
+                self.info.status = "cancelled"
             return ret
 
         self.status_queue.put(Terminator())
@@ -373,9 +369,11 @@ class Download:
 
         for i in range(drain_count):
             try:
-                self.logger.debug(f"(50/{i}) Draining the status queue...")
+                if self.debug:
+                    self.logger.debug(f"(50/{i}) Draining the status queue...")
                 if self.final_update:
-                    self.logger.debug("(50/{i}) Draining stopped. Final update received.")
+                    if self.debug:
+                        self.logger.debug("(50/{i}) Draining stopped. Final update received.")
                     break
                 next_status = self.status_queue.get(timeout=0.1)
                 if next_status is None or isinstance(next_status, Terminator):
@@ -499,12 +497,10 @@ class Download:
             return
 
         if str(tmp_dir) == str(self.temp_dir):
-            self.logger.warning(
-                f"Attempted to delete video temp folder '{self.temp_path}', but it is the same as main temp folder."
-            )
+            self.logger.warning(f"Refusing to delete video temp folder '{self.temp_path}' as it's temp root.")
             return
 
-        status = delete_dir(tmp_dir)
+        status: bool = delete_dir(tmp_dir)
         if by_pass:
             tmp_dir.mkdir(parents=True, exist_ok=True)
             self.logger.info(f"Temp folder '{self.temp_path}' emptied.")
@@ -523,7 +519,7 @@ class Download:
             await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
             return
 
-        self.tmpfilename = status.get("tmpfilename")
+        self.tmpfilename: str | None = status.get("tmpfilename")
 
         fl = None
         if "final_name" in status:
@@ -560,7 +556,7 @@ class Download:
 
         if "downloaded_bytes" in status and status.get("downloaded_bytes", 0) > 0:
             self.info.downloaded_bytes = status.get("downloaded_bytes")
-            total = status.get("total_bytes") or status.get("total_bytes_estimate")
+            total: float | None = status.get("total_bytes") or status.get("total_bytes_estimate")
             if total:
                 try:
                     self.info.percent = status["downloaded_bytes"] / total * 100
@@ -617,7 +613,7 @@ class Download:
             return False
 
         if self.started_time < 1:
-            self.logger.debug(f"Download task '{self.info.title}: {self.info.id}' not started yet.")
+            self.logger.debug(f"Download task '{self.info.name()}' not started yet.")
             return False
 
         if int(time.time()) - self.started_time < 300:
@@ -633,7 +629,7 @@ class Download:
             return True
 
         if self.info.status not in ["finished", "error", "cancelled", "downloading", "postprocessing"]:
-            status = self.info.status if self.info.status else "unknown"
+            status: str = self.info.status if self.info.status else "unknown"
             self.logger.warning(
                 f"Download task '{self.info.title}: {self.info.id}' has been stuck in '{status}' state for '{int(time.time()) - self.started_time}' seconds."
             )

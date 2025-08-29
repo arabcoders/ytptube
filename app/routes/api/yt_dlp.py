@@ -1,12 +1,9 @@
-import asyncio
 import json
 import logging
 import time
 from collections import OrderedDict
-from pathlib import Path
 from typing import Any
 
-import anyio
 from aiohttp import web
 from aiohttp.web import Request, Response
 
@@ -14,7 +11,14 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.Presets import Presets
 from app.library.router import route
-from app.library.Utils import REMOVE_KEYS, arg_converter, extract_info, validate_url
+from app.library.Utils import (
+    REMOVE_KEYS,
+    archive_read,
+    arg_converter,
+    extract_info,
+    get_archive_id,
+    validate_url,
+)
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -199,6 +203,14 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             "expires": time.time() + 300,
         }
 
+        is_archived = False
+        if (archive_file := ytdlp_opts.get("download_archive")) and (
+            archive_id := get_archive_id(url=url).get("archive_id")
+        ):
+            is_archived: bool = len(archive_read(archive_file, [archive_id])) > 0
+
+        data["is_archived"] = is_archived
+
         data = OrderedDict(sorted(data.items(), key=lambda item: len(str(item[1]))))
 
         cache.set(key=key, value=data, ttl=300)
@@ -217,87 +229,6 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         )
 
 
-@route("GET", "api/yt-dlp/archive/recheck/", "archive_recheck")
-async def archive_recheck(cache: Cache) -> Response:
-    """
-    Recheck the manual archive entries.
-
-    Args:
-        cache (Cache): The cache instance.
-
-    Returns:
-        Response: The response object
-
-    """
-    config: Config = Config.get_instance()
-    if not config.manual_archive:
-        return web.json_response(data={"error": "Manual archive is not enabled."}, status=web.HTTPNotFound.status_code)
-
-    manual_archive = Path(config.manual_archive)
-    if not manual_archive.exists():
-        return web.json_response(
-            data={"error": "Manual archive file not found.", "file": manual_archive},
-            status=web.HTTPNotFound.status_code,
-        )
-
-    tasks: list = []
-    response: list = []
-
-    def info_wrapper(id: str, url: str) -> tuple[str, dict]:
-        try:
-            return (
-                id,
-                extract_info(
-                    config={
-                        "proxy": config.get_ytdlp_args().get("proxy", None),
-                        "simulate": True,
-                        "dump_single_json": True,
-                    },
-                    url=url,
-                    no_archive=True,
-                ),
-            )
-        except Exception as e:
-            return (id, {"error": str(e)})
-
-    async with await anyio.open_file(manual_archive) as f:
-        # line format is "youtube ID - at: ISO8601"
-        async for line in f:
-            line = line.strip()
-
-            if not line or not line.startswith("youtube"):
-                continue
-
-            id = line.split(" ")[1].strip()
-
-            if not id:
-                continue
-
-            url = f"https://www.youtube.com/watch?v={id}"
-            key = cache.hash(id)
-
-            if cache.has(key):
-                data = cache.get(key)
-                response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
-                continue
-
-            tasks.append(
-                asyncio.get_event_loop().run_in_executor(None, lambda i=id, url=url: info_wrapper(id=i, url=url))
-            )
-
-    if len(tasks) > 0:
-        results = await asyncio.gather(*tasks)
-        for data in results:
-            if not data:
-                continue
-
-            id, info = data
-            cache.set(key=cache.hash(id), value=info, ttl=3600 * 6)
-            response.append({id: bool(data.get("id", None)) if isinstance(data, dict) else False})
-
-    return web.json_response(data=response, status=web.HTTPOk.status_code)
-
-
 @route("GET", "api/yt-dlp/options/", "get_options")
 async def get_options() -> Response:
     """
@@ -309,6 +240,37 @@ async def get_options() -> Response:
     """
     from app.library.ytdlp import ytdlp_options
 
-    return web.json_response(
-        body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code
-    )
+    return web.json_response(body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code)
+
+
+@route("POST", "api/yt-dlp/archive_id/", "get_archive_ids")
+async def get_archive_ids(request: Request) -> Response:
+    """
+    Get the yt-dlp CLI options.
+
+    Returns:
+        Response: The response object with the yt-dlp CLI options.
+
+    """
+    from app.library.Utils import get_archive_id
+
+    data = (await request.json()) if request.body_exists else None
+    if not data or not isinstance(data, list):
+        return web.json_response(
+            data={"error": "Invalid request. expecting list with URLs."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    response = []
+
+    for i, url in enumerate(data):
+        dct = {"index": i, "url": url}
+        try:
+            validate_url(url)
+            dct.update(get_archive_id(url))
+        except ValueError as e:
+            dct.update({"id": None, "ie_key": None, "archive_id": None, "error": str(e)})
+
+        response.append(dct)
+
+    return web.json_response(data=response, status=web.HTTPOk.status_code)

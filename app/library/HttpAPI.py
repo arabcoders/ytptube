@@ -97,7 +97,7 @@ class HttpAPI:
 
         app.on_shutdown.append(self.on_shutdown)
 
-    def add_routes(self, app: web.Application):
+    def add_routes(self, app: web.Application) -> None:
         """
         Add the routes to the application.
 
@@ -133,7 +133,8 @@ class HttpAPI:
             elif "" == base_path or not routePath.rstrip("/").startswith(base_path.rstrip("/")):
                 route.path = f"{base_path}/{route.path.lstrip('/')}"
 
-            LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
+            if self.config.debug:
+                LOG.debug(f"Add ({route.name}) {route.method}: {route.path}.")
 
             app.router.add_route(route.method, route.path, handler=_handle(route.handler), name=route.name)
 

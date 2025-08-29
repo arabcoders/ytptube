@@ -1,41 +1,11 @@
 import logging
-import time
-from datetime import UTC, datetime
-from pathlib import Path
 
-import anyio
-
-from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import RouteType, route
-from app.library.Utils import is_downloaded
-from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-@route(RouteType.SOCKET, "pause", "pause_downloads")
-async def pause(notify: EventBus, queue: DownloadQueue):
-    queue.pause()
-    await notify.emit(
-        Events.PAUSED,
-        data={"paused": True, "at": time.time()},
-        title="Downloads Paused",
-        message="Non-active downloads have been paused.",
-    )
-
-
-@route(RouteType.SOCKET, "resume", "resume_downloads")
-async def resume(notify: EventBus, queue: DownloadQueue):
-    queue.resume()
-    await notify.emit(
-        Events.RESUMED,
-        data={"paused": False, "at": time.time()},
-        title="Downloads Resumed",
-        message="Resumed all downloads.",
-    )
 
 
 @route(RouteType.SOCKET, "add_url", "add_url")
@@ -77,57 +47,6 @@ async def item_delete(queue: DownloadQueue, notify: EventBus, sid: str, data: di
         return
 
     await queue.clear([id], remove_file=bool(data.get("remove_file", False)))
-
-
-@route(RouteType.SOCKET, "archive_item", "archive_item")
-async def archive_item(config: Config, data: dict):
-    if not isinstance(data, dict) or "url" not in data:
-        return
-
-    params: YTDLPOpts = YTDLPOpts.get_instance()
-
-    if "preset" in data and isinstance(data["preset"], str):
-        params.preset(name=data["preset"])
-
-    if "cli" in data and isinstance(data["cli"], str) and len(data["cli"]) > 1:
-        params.add_cli(data["cli"], from_user=True)
-
-    params = params.get_all()
-
-    file: str = params.get("download_archive", None)
-
-    if not file:
-        return
-
-    exists, idDict = is_downloaded(file, data["url"])
-    if exists or "archive_id" not in idDict or idDict["archive_id"] is None:
-        return
-
-    async with await anyio.open_file(file, "a") as f:
-        await f.write(f"{idDict['archive_id']}\n")
-
-    manual_archive: str = config.manual_archive
-    if not manual_archive:
-        return
-
-    manual_archive = Path(manual_archive)
-
-    if not manual_archive.exists():
-        manual_archive.touch(exist_ok=True)
-
-    previouslyArchived = False
-    async with await anyio.open_file(manual_archive) as f:
-        async for line in f:
-            if idDict["archive_id"] in line:
-                previouslyArchived = True
-                break
-
-    if not previouslyArchived:
-        async with await anyio.open_file(manual_archive, "a") as f:
-            await f.write(f"{idDict['archive_id']} - at: {datetime.now(UTC).isoformat()}\n")
-            LOG.info(f"Archiving url '{data['url']}' with id '{idDict['archive_id']}'.")
-    else:
-        LOG.info(f"URL '{data['url']}' with id '{idDict['archive_id']}' already archived.")
 
 
 @route(RouteType.SOCKET, "item_start", "item_start")

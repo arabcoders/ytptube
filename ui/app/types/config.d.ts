@@ -45,7 +45,9 @@ type AppConfig = {
   /** App branch name, e.g. "main" or "develop" */
   app_branch: string
   /** When the app started */
-  started: number
+  started: number,
+  /** Application environment, e.g. "production", "development" */
+  app_env: string
 }
 
 type Preset = {

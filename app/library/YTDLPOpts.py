@@ -200,7 +200,8 @@ class YTDLPOpts:
             if data["format"] == "-best":
                 data["format"] = data["format"][1:]
 
-        LOG.debug(f"Final yt-dlp options: '{data!s}'.")
+        if self._config.debug:
+            LOG.debug(f"Final yt-dlp options: '{data!s}'.")
 
         return data
 

@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from Crypto.Cipher import AES
 from yt_dlp.utils import age_restricted, match_str
@@ -63,7 +63,7 @@ REMOVE_KEYS: list = [
 
 YTDLP_INFO_CLS: YTDLP = None
 
-ALLOWED_SUBS_EXTENSIONS: tuple[str] = (".srt", ".vtt", ".ass")
+ALLOWED_SUBS_EXTENSIONS: set[str] = {".srt", ".vtt", ".ass"}
 
 FILES_TYPE: list = [
     {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$", re.IGNORECASE), "type": "video"},
@@ -203,7 +203,7 @@ def extract_info(
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
-    data = YTDLP(params=params).extract_info(url, download=False)
+    data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
 
     if data and follow_redirect and "_type" in data and "url" == data["_type"]:
         return extract_info(
@@ -263,112 +263,6 @@ def merge_dict(source: dict, destination: dict) -> dict:
     return destination_copy
 
 
-def is_downloaded(archive_file: str, url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
-    """
-    Check if the video is already downloaded.
-
-    Args:
-        archive_file (str): Archive file path.
-        url (str): URL to check.
-
-    Returns:
-        bool: True if the video is already downloaded.
-        dict: Video information.
-
-    """
-    idDict = {"id": None, "ie_key": None, "archive_id": None}
-
-    if not url or not archive_file:
-        return (False, idDict)
-
-    if not Path(archive_file).exists():
-        return (False, idDict)
-
-    idDict = get_archive_id(url=url)
-
-    if idDict.get("archive_id"):
-        with open(archive_file) as f:
-            for line in f:
-                if idDict["archive_id"] in line:
-                    return (True, idDict)
-
-    return (False, idDict)
-
-
-def remove_from_archive(archive_file: str | Path, url: str) -> bool:
-    """
-    Remove the downloaded video record from the archive file.
-
-    Args:
-        archive_file (str): Archive file path.
-        url (str): URL to check and remove.
-
-    Returns:
-        bool: True if the record removed, False otherwise.
-
-    """
-    if not url or not archive_file:
-        return False
-
-    archive_path: Path = Path(archive_file) if not isinstance(archive_file, Path) else archive_file
-    if not archive_path.exists():
-        return False
-
-    idDict = get_archive_id(url=url)
-    archive_id: str | None = idDict.get("archive_id")
-
-    if not archive_id:
-        return False
-
-    lines: list[str] = archive_path.read_text(encoding="utf-8").splitlines()
-    new_lines: list[str] = [line for line in lines if archive_id not in line]
-
-    if len(lines) == len(new_lines):
-        return False
-
-    archive_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
-    return True
-
-
-def load_file(file: str, check_type=None) -> tuple[dict | list, bool, str]:
-    """
-    Load a JSON or JSON5 file and return the contents as a dictionary
-
-    Args:
-        file (str): File path
-        check_type (type): Type to check the loaded file against.
-
-    Returns tuple:
-        dict|list: Dictionary or list of the file contents. Empty dict if the file could not be loaded.
-        bool: True if the file was loaded successfully.
-        str: Error message if the file could not be loaded.
-
-    """
-    try:
-        with open(file) as json_data:
-            opts = json.load(json_data)
-
-        if check_type:
-            assert isinstance(opts, check_type)
-
-        return (opts, True, "")
-    except Exception:
-        with open(file) as json_data:
-            from pyjson5 import load as json5_load
-
-            try:
-                opts = json5_load(json_data)
-
-                if check_type:
-                    assert isinstance(opts, check_type)
-
-                return (opts, True, "")
-            except AssertionError:
-                return ({}, False, f"Failed to assert that the contents '{type(opts)}' are of type '{check_type}'.")
-            except Exception as e:
-                return ({}, False, f"{e}")
-
-
 def check_id(file: Path) -> bool | str:
     """
     Check if we are able to get an id from the file name.
@@ -405,13 +299,9 @@ def check_id(file: Path) -> bool | str:
 
 @lru_cache(maxsize=512)
 def is_private_address(hostname: str) -> bool:
-    try:
-        ip = socket.gethostbyname(hostname)
-        ip_obj = ipaddress.ip_address(ip)
-        return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
-    except socket.gaierror:
-        # Could not resolve - treat as invalid or restricted
-        return True
+    ip = socket.gethostbyname(hostname)
+    ip_obj = ipaddress.ip_address(ip)
+    return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
 
 
 def validate_url(url: str, allow_internal: bool = False) -> bool:
@@ -447,9 +337,19 @@ def validate_url(url: str, allow_internal: bool = False) -> bool:
         raise ValueError(msg)
 
     hostname: str | None = parsed_url.host
-    if allow_internal is False and (not hostname or is_private_address(hostname)):
-        msg = "Access to internal urls or private networks is not allowed."
+    if not hostname:
+        msg = "Invalid hostname."
         raise ValueError(msg)
+
+    if allow_internal is False:
+        try:
+            if is_private_address(hostname):
+                msg = "Access to internal urls or private networks is not allowed."
+                raise ValueError(msg)
+        except socket.gaierror as e:
+            LOG.error(f"Error resolving hostname '{hostname}': {e!s}")
+            msg = "Invalid hostname."
+            raise ValueError(msg) from e
 
     return True
 
@@ -488,6 +388,10 @@ def arg_converter(
             yt_dlp.options.create_parser = create_parser
 
     default_opts = _default_opts([]).ydl_opts
+
+    if args:
+        # important to ignore external config files.
+        args = "--ignore-config " + args
 
     opts = yt_dlp.parse_options(shlex.split(args)).ydl_opts
     diff = {k: v for k, v in opts.items() if default_opts[k] != v} if not keep_defaults else opts.items()
@@ -1101,7 +1005,7 @@ def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
         raise ValueError(msg) from e
 
 
-def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | None]]:
+def get_archive_id(url: str) -> dict[str, str | None]:
     """
     Get the archive ID for a given URL.
 
@@ -1109,8 +1013,11 @@ def get_archive_id(url: str) -> tuple[bool, dict[str | None, str | None, str | N
         url (str): URL to check.
 
     Returns:
-        bool: True if the video is already downloaded.
-        dict: Video information.
+        dict: {
+            "id": str | None,
+            "ie_key": str | None,
+            "archive_id": str | None
+        }
 
     """
     global YTDLP_INFO_CLS  # noqa: PLW0603
@@ -1279,14 +1186,11 @@ def load_modules(root_path: Path, directory: Path):
 
     package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
 
-    LOG.debug(f"Loading routes from '{directory}' with package name '{package_name}'.")
-
     for _, name, _ in pkgutil.iter_modules([directory]):
         full_name: str = f"{package_name}.{name}"
         if name.startswith("_"):
             continue
         try:
-            LOG.debug(f"Loading module '{full_name}'.")
             importlib.import_module(full_name)
         except ImportError as e:
             LOG.error(f"Failed to import module '{full_name}': {e}")
@@ -1449,3 +1353,145 @@ def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
             folders.extend(list_folders(entry, base, depth_limit))
 
     return folders
+
+
+def archive_add(file: str | Path, ids: list[str], skip_check: bool = False) -> bool:
+    """
+    Add IDs to an archive file.
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to add.
+        skip_check (bool): If True, skip checking for existing IDs.
+
+    """
+    if not ids or not file:
+        return False
+
+    path: Path = Path(file) if not isinstance(file, Path) else file
+    existing_ids: set[str] = set()
+
+    if not skip_check and path.exists():
+        with path.open("r", encoding="utf-8") as f:
+            for line in f:
+                s = line.strip()
+
+                if not s or len(s.split()) < 2:
+                    continue
+
+                existing_ids.add(s)
+
+    new_ids: list[str] = []
+    for raw in ids:
+        s: str = str(raw).strip()
+
+        if not s or len(s.split()) < 2 or s in existing_ids or s in new_ids:
+            continue
+
+        new_ids.append(s)
+
+    if not new_ids:
+        return False
+
+    try:
+        if not path.parent.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+        with path.open("a", encoding="utf-8") as f:
+            f.write("".join(f"{x}\n" for x in new_ids))
+
+        return True
+    except OSError as e:
+        LOG.error(f"Failed to write to archive file '{path!s}'. {e!s}")
+        return False
+
+
+def archive_read(file: str | Path, ids: list[str] | None = None) -> list[str]:
+    """
+    Read IDs from an archive file with optional filtering.
+
+    - If `ids` is empty, return all IDs present in the archive file.
+    - If `ids` is provided, return only the ids that exist in the archive file,
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): Optional list of IDs to query; empty list returns all.
+
+    Returns:
+        list[str]: List of ids found in the archive file filtered by `ids` if provided.
+
+    """
+    if not file:
+        return []
+
+    path: Path = Path(file) if not isinstance(file, Path) else file
+    if not file or not path.exists():
+        return []
+
+    ids_set: set[str] | None = (
+        {s.strip() for s in ids if str(s).strip() and len(str(s).strip().split()) >= 2} if ids else None
+    )
+
+    found: list[str] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            s: str = line.strip()
+
+            if not s or len(s.split()) < 2:
+                continue
+
+            if ids_set is None or s in ids_set:
+                found.append(s)
+
+    return found
+
+
+def archive_delete(file: str | Path, ids: list[str]) -> bool:
+    """
+    Delete the given IDs from an archive file.
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to remove.
+
+    Returns:
+        bool: True if deletion succeeded (or nothing to do), False on error.
+
+    """
+    if not file or not ids:
+        return False
+
+    path: Path = Path(file) if not isinstance(file, Path) else file
+
+    if not path.exists():
+        return False
+
+    remove_ids: set[str] = {x.strip() for x in ids if str(x).strip() and len(str(x).strip().split()) >= 2}
+    if not remove_ids:
+        return True
+
+    changed = False
+    kept_lines: list[str] = []
+    removed_ids: list[str] = []
+    with path.open("r", encoding="utf-8") as f:
+        for line in f:
+            s: str = line.strip()
+
+            if not s or len(s.split()) < 2:
+                changed = True
+                continue
+
+            if s in remove_ids:
+                changed = True
+                removed_ids.append(s)
+                continue
+
+            kept_lines.append(line)
+
+    if not changed:
+        return True
+
+    with path.open("w", encoding="utf-8") as f:
+        f.writelines(kept_lines)
+
+    return True

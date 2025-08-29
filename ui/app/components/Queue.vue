@@ -84,7 +84,8 @@
                     </span>
                   </div>
                   <div v-if="showThumbnails && item.extras?.thumbnail">
-                    <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                    <FloatingImage
+                      :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                       :title="item.title">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -98,12 +99,10 @@
                   </template>
                 </td>
                 <td class="has-text-centered is-text-overflow is-unselectable">
-                  <span class="icon-text">
-                    <span class="icon" :class="setIconColor(item)">
-                      <i class="fas fa-solid" :class="setIcon(item)" />
-                    </span>
-                    <span v-text="setStatus(item)" />
+                  <span class="icon" :class="setIconColor(item)">
+                    <i class="fas fa-solid" :class="setIcon(item)" />
                   </span>
+                  <span v-text="setStatus(item)" />
                 </td>
                 <td>
                   <div class="progress-bar is-unselectable">
@@ -151,7 +150,7 @@
                     <template v-if="!config.app.basic_mode">
                       <hr class="dropdown-divider" />
 
-                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
+                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                         <span class="icon"><i class="fa-solid fa-info" /></span>
                         <span>yt-dlp Information</span>
                       </NuxtLink>
@@ -206,13 +205,14 @@
               <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                <img @load="e => pImg(e)"
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))" />
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -226,12 +226,10 @@
                 </div>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <span class="icon-text">
-                  <span class="icon" :class="setIconColor(item)">
-                    <i class="fas fa-solid" :class="setIcon(item)" />
-                  </span>
-                  <span v-text="setStatus(item)" />
+                <span class="icon" :class="setIconColor(item)">
+                  <i class="fas fa-solid" :class="setIcon(item)" />
                 </span>
+                <span v-text="setStatus(item)" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon"><i class="fa-solid fa-sliders" /></span>
@@ -277,7 +275,7 @@
                     <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
                     v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
@@ -321,7 +319,7 @@ import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 
 const emitter = defineEmits<{
-  (e: 'getInfo', url: string, preset: string): void
+  (e: 'getInfo', url: string, preset: string, cli: string): void
   (e: 'getItemInfo', id: string): void
   (e: 'clear_search'): void
 }>()

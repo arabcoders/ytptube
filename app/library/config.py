@@ -103,9 +103,6 @@ class Config:
     archive_file: str = "{config_path}/archive.log"
     """The path to the download archive file."""
 
-    manual_archive: str = "{config_path}/archive.manual.log"
-    """The path to the manual archive file."""
-
     apprise_config: str = "{config_path}/apprise.yml"
     """The path to the Apprise configuration file."""
 
@@ -387,34 +384,20 @@ class Config:
             except Exception as e:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
-        ytdl_options = {}
         opts_file: Path = Path(self.config_path) / "ytdlp.cli"
         if opts_file.exists() and opts_file.stat().st_size > 2:
-            LOG.info(f"Loading yt-dlp custom options from '{opts_file}'.")
+            LOG.warning(
+                "Usage of 'ytdlp.cli' global config file is deprecated and will be removed in future releases. please migrate to presets."
+            )
             with open(opts_file) as f:
                 self.ytdlp_cli = f.read().strip()
                 if self.ytdlp_cli:
                     self._ytdlp_cli_mutable = self.ytdlp_cli
                     try:
-                        removed_options = []
-                        ytdl_options = arg_converter(args=self.ytdlp_cli, level=True, removed_options=removed_options)
-
-                        try:
-                            LOG.debug("Parsed yt-dlp cli options '%s'.", ytdl_options)
-                        except Exception:
-                            pass
-
-                        if len(removed_options) > 0:
-                            LOG.warning(
-                                "Removed the following options: '%s' from '%s'", ", ".join(removed_options), opts_file
-                            )
+                        arg_converter(args=self.ytdlp_cli, level=True)
                     except Exception as e:
                         msg = f"Failed to parse yt-dlp cli options from '{opts_file}'. '{e!s}'."
                         raise ValueError(msg) from e
-                else:
-                    LOG.warning(f"Empty yt-dlp custom options file '{opts_file}'.")
-        else:
-            LOG.info(f"No yt-dlp custom options found at '{opts_file}'.")
 
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
@@ -424,7 +407,7 @@ class Config:
                 LOG.info(f"Creating archive file '{archive_file}'.")
                 archive_file.touch(exist_ok=True)
 
-            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}'.")
+            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}' by default.")
             self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
 
         if self.temp_keep:
@@ -519,6 +502,16 @@ class Config:
         return "production" == self.app_env
 
     def get_ytdlp_args(self) -> dict:
+        """
+        Get the yt-dlp command line options as a dictionary.
+
+        Returns:
+            dict: The yt-dlp command line options.
+
+        Deprecated:
+            Usage of global ytdlp.cli file is deprecated, please use presets instead.
+
+        """
         try:
             return arg_converter(args=self._ytdlp_cli_mutable, level=True)
         except Exception as e:
@@ -537,6 +530,7 @@ class Config:
 
         ytdlp_args = self.get_ytdlp_args()
 
+        # TODO: this doesn't make sense, as each item might have it's own archive file or none at all.
         if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
             data["keep_archive"] = True
 
@@ -544,7 +538,7 @@ class Config:
         return data
 
     @staticmethod
-    def _ytdlp_version():
+    def _ytdlp_version() -> str:
         try:
             from yt_dlp.version import __version__ as YTDLP_VERSION
 

@@ -47,6 +47,7 @@ const emitter = defineEmits<{ (e: 'closeModel'): void }>()
 const props = defineProps<{
   link?: string
   preset?: string
+  cli?: string
   useUrl?: boolean
   externalModel?: boolean
 }>()
@@ -71,13 +72,16 @@ onMounted(async (): Promise<void> => {
     if (props.preset) {
       params.append('preset', props.preset)
     }
+    if (props.cli) {
+      params.append('args', props.cli)
+    }
     params.append('url', props.link || '')
     url += '?' + params.toString()
   }
 
   try {
     isLoading.value = true
-    const response = await request(url, { credentials: 'include' })
+    const response = await request(url)
     const body = await response.text()
 
     try {

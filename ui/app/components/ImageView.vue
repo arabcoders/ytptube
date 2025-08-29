@@ -50,7 +50,7 @@ onMounted(async () => {
   try {
     isLoading.value = true
 
-    const imgRequest = await request(url, { credentials: 'include' })
+    const imgRequest = await request(url)
     if (200 !== imgRequest.status) {
       return
     }

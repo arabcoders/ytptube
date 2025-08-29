@@ -29,8 +29,7 @@
                 <span class="icon"><i class="fas fa-pause" /></span>
                 <span v-if="!isMobile">Pause</span>
               </button>
-              <button class="button is-danger" @click="socket.emit('resume', {})" v-else
-                v-tooltip.bottom="'Resume downloading.'">
+              <button class="button is-danger" @click="resumeDownload" v-else v-tooltip.bottom="'Resume downloading.'">
                 <span class="icon"><i class="fas fa-play" /></span>
                 <span v-if="!isMobile">Resume</span>
               </button>
@@ -63,16 +62,50 @@
       </div>
     </div>
 
+    <div v-if="config.is_loaded" class="columns is-multiline">
+      <div class="column is-12">
+        <DeprecatedNotice :version="config.app.app_version" title="Deprecation Notice" tone="warning"
+          icon="fas fa-exclamation-triangle fa-fade fa-spin-10">
+          <p>
+            The following environment variables and features are deprecated and will be removed in future releases:
+          </p>
+          <ul>
+            <li>
+              The environment variables <code>YTP_KEEP_ARCHIVE</code> and <code>YTP_SOCKET_TIMEOUT</code> will no
+              longer be user-configurable. Their behavior will be part of the <strong>default presets</strong>. To keep
+              your current behavior <strong>and avoid re-downloading</strong>, please add the following <strong>Command
+                options for yt-dlp</strong> to your presets:
+              <code>--socket-timeout 30 --download-archive /config/archive.log</code>
+            </li>
+            <li>
+              The global yt-dlp config file <code>/config/ytdlp.cli</code> is deprecated and will be removed. Please
+              migrate any global options into your presets.
+            </li>
+            <li>
+              The <strong>Basic mode</strong> (which limited the interface to the new download form) is being removed.
+              Everything except what is available behind configurable flag will become part of the standard interface.
+            </li>
+            <li>The <strong>archive.manual.log</strong> feature has been removed.</li>
+          </ul>
+          <p>
+            These changes help reduce confusion from multiple sources of truth. Going forward, <strong>presets</strong>
+            and the <strong>Command options for yt-dlp</strong> will be the single source of truth.
+          </p>
+        </DeprecatedNotice>
+      </div>
+    </div>
+
     <NewDownload v-if="config.showForm || config.app.basic_mode"
-      @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :item="item_form"
-      @clear_form="item_form = {}" @remove_archive="" />
-    <Queue @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)" :thumbnails="show_thumbnail"
-      :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
-    <History @getInfo="(url: string, preset: string = '') => view_info(url, false, preset)"
+      @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+      :item="item_form" @clear_form="item_form = {}" @remove_archive="" />
+    <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+      :thumbnails="show_thumbnail" :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+      @clear_search="query = ''" />
+    <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
       @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
       @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
-    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :useUrl="info_view.useUrl"
-      @closeModel="close_info()" />
+    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :cli="info_view.cli"
+      :useUrl="info_view.useUrl" @closeModel="close_info()" />
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :html_message="dialog_confirm.html_message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       @cancel="() => dialog_confirm.visible = false" />
@@ -81,6 +114,7 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import DeprecatedNotice from '~/components/DeprecatedNotice.vue'
 import type { item_request } from '~/types/item'
 import type { StoreItem } from '~/types/store'
 
@@ -95,8 +129,9 @@ const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const info_view = ref({
   url: '',
   preset: '',
+  cli: '',
   useUrl: false,
-}) as Ref<{ url: string, preset: string, useUrl: boolean }>
+}) as Ref<{ url: string, preset: string, cli: string, useUrl: boolean }>
 const item_form = ref<item_request | object>({})
 const query = ref()
 const toggleFilter = ref(false)
@@ -139,6 +174,8 @@ watch(() => stateStore.queue, () => {
 }, { deep: true })
 
 
+const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' })
+
 const pauseDownload = () => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.html_message = `
@@ -153,8 +190,8 @@ const pauseDownload = () => {
       <li>If you are in middle of adding a playlist/channel, it will break and stop adding more items.</li>
     </ul>
   </span>`
-  dialog_confirm.value.confirm = () => {
-    socket.emit('pause', {})
+  dialog_confirm.value.confirm = async () => {
+    await request('/api/system/pause', { method: 'POST' })
     dialog_confirm.value.visible = false
   }
 }
@@ -165,10 +202,11 @@ const close_info = () => {
   info_view.value.useUrl = false
 }
 
-const view_info = (url: string, useUrl: boolean = false, preset: string = '') => {
+const view_info = (url: string, useUrl: boolean = false, preset: string = '', cli: string = '') => {
   info_view.value.url = url
   info_view.value.useUrl = useUrl
   info_view.value.preset = preset
+  info_view.value.cli = cli
 }
 
 watch(() => info_view.value.url, v => {

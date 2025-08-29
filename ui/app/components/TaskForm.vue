@@ -510,7 +510,7 @@ const convert_url = async (url: string): Promise<string> => {
 
   try {
     convertInProgress.value = true
-    const resp = await request('/api/yt-dlp/url/info?' + params.toString(), { credentials: 'include' })
+    const resp = await request('/api/yt-dlp/url/info?' + params.toString())
     const body = await resp.json()
     const channel_id = ag(body, 'channel_id', null)
     console.log('convert_url', { url, channel_id, body })

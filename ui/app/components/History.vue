@@ -118,7 +118,8 @@
                     </span>
                   </div>
                   <div v-if="showThumbnails && item.extras.thumbnail">
-                    <FloatingImage :image="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                    <FloatingImage
+                      :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                       :title="`[${item.preset}] - ${item.title}`">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
@@ -138,11 +139,8 @@
                   </div>
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
-                  <span class="icon-text">
-                    <span class="icon" :class="setIconColor(item)"><i
-                        :class="[setIcon(item), is_queued(item)]" /></span>
-                    <span>{{ setStatus(item) }}</span>
-                  </span>
+                  <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
+                  <span>{{ setStatus(item) }}</span>
                 </td>
                 <td class="is-vcentered has-text-centered is-unselectable">
                   <span class="user-hint" :date-datetime="item.datetime"
@@ -195,7 +193,7 @@
                           </NuxtLink>
                           <hr class="dropdown-divider" />
                         </template>
-                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)">
+                        <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>yt-dlp Information</span>
                         </NuxtLink>
@@ -205,25 +203,23 @@
                           <span>Local Information</span>
                         </NuxtLink>
 
-                        <template v-if="item.status != 'finished' || !item.filename">
-                          <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
-                            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                            <span>Add to download form</span>
-                          </NuxtLink>
-                        </template>
+                        <hr class="dropdown-divider" />
+                        <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                          <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                          <span>Add to download form</span>
+                        </NuxtLink>
 
-                        <template v-if="'finished' !== item.status && config.app?.keep_archive">
+                        <template v-if="item.is_archivable && !item.is_archived">
                           <hr class="dropdown-divider" />
                           <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
                             <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                            <span>Archive Item</span>
+                            <span>Add to archive</span>
                           </NuxtLink>
                         </template>
 
-                        <template v-if="'finished' === item.status && item.filename && config.app?.keep_archive">
+                        <template v-if="item.is_archivable && item.is_archived">
                           <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                          <NuxtLink class="dropdown-item has-text-danger" @click="removeFromArchiveDialog(item)">
                             <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                             <span>Remove from archive</span>
                           </NuxtLink>
@@ -276,20 +272,22 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                <img @load="e => pImg(e)"
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)" :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))"
+                <img @load="e => pImg(e)"
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
                 <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="uri('/api/thumbnail?url=' + encodePath(item.extras.thumbnail))" />
+                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -297,10 +295,8 @@
           <div class="card-content">
             <div class="columns is-mobile is-multiline">
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <span class="icon-text">
-                  <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
-                  <span>{{ setStatus(item) }}</span>
-                </span>
+                <span class="icon" :class="setIconColor(item)"><i :class="[setIcon(item), is_queued(item)]" /></span>
+                <span>{{ setStatus(item) }}</span>
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
                 <span class="icon"><i class="fa-solid fa-sliders" /></span>
@@ -370,7 +366,7 @@
                     <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset)"
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
                     v-if="!config.app.basic_mode">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
@@ -382,15 +378,13 @@
                     <span>Local Information</span>
                   </NuxtLink>
 
-                  <template v-if="item.status != 'finished' || !item.filename">
-                    <hr class="dropdown-divider" />
-                    <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
-                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                      <span>Add to download form</span>
-                    </NuxtLink>
-                  </template>
+                  <hr class="dropdown-divider" />
+                  <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                    <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                    <span>Add to download form</span>
+                  </NuxtLink>
 
-                  <template v-if="'finished' !== item.status && config.app?.keep_archive && !config.app.basic_mode">
+                  <template v-if="item.is_archivable && !item.is_archived">
                     <hr class="dropdown-divider" />
                     <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
@@ -398,10 +392,9 @@
                     </NuxtLink>
                   </template>
 
-                  <template
-                    v-if="'finished' === item.status && item.filename && config.app?.keep_archive && !config.app.basic_mode">
+                  <template v-if="item.is_archivable && item.is_archived">
                     <hr class="dropdown-divider" />
-                    <NuxtLink class="dropdown-item" @click="removeFromArchiveDialog(item)">
+                    <NuxtLink class="dropdown-item has-text-danger" @click="removeFromArchiveDialog(item)">
                       <span class="icon"><i class="fa-solid fa-box-archive" /></span>
                       <span>Remove from archive</span>
                     </NuxtLink>
@@ -468,7 +461,7 @@ import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 
 const emitter = defineEmits<{
-  (e: 'getInfo', url: string, preset: string): void
+  (e: 'getInfo', url: string, preset: string, cli: string): void
   (e: 'add_new', item: Partial<StoreItem>): void
   (e: 'getItemInfo', id: string): void
   (e: 'clear_search'): void
@@ -613,9 +606,6 @@ const deleteSelectedItems = () => {
       continue
     }
     const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
-    if ('finished' === item.status) {
-      socket.emit('archive_item', item)
-    }
     socket.emit('item_delete', {
       id: item._id,
       remove_file: config.app.remove_files,
@@ -739,10 +729,7 @@ const addArchiveDialog = (item: StoreItem) => {
 
 const archiveItem = async (item: StoreItem, opts = {}) => {
   try {
-    const req = await request(`/api/archive/${item._id}`, {
-      credentials: 'include',
-      method: 'POST',
-    })
+    const req = await request(`/api/history/${item._id}/archive`, { method: 'POST' })
     const data = await req.json()
     dialog_confirm.value.visible = false
     if (!req.ok) {
@@ -834,8 +821,7 @@ const downloadSelected = async () => {
   try {
     const response = await request('/api/file/download', {
       method: 'POST',
-      credentials: 'include',
-      body: JSON.stringify(files_list),
+      body: JSON.stringify(files_list)
     })
     const json = await response.json()
     if (!response.ok) {
@@ -871,12 +857,8 @@ const removeFromArchiveDialog = (item: StoreItem) => {
 }
 
 const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
-  console.log('Removing from archive:', item, opts)
   try {
-    const req = await request(`/api/archive/${item._id}`, {
-      credentials: 'include',
-      method: 'DELETE',
-    })
+    const req = await request(`/api/history/${item._id}/archive`, { method: 'DELETE' })
     const data = await req.json()
     if (!req.ok) {
       toast.error(data.error)

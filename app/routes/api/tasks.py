@@ -94,7 +94,7 @@ async def tasks_add(request: Request, encoder: Encoder) -> Response:
 
 
 @route("POST", "api/tasks/{id}/mark", "tasks_mark")
-async def mark_task(request: Request, encoder: Encoder) -> Response:
+async def task_mark(request: Request, encoder: Encoder) -> Response:
     """
     Mark all items from task as downloaded.
 
@@ -111,15 +111,50 @@ async def mark_task(request: Request, encoder: Encoder) -> Response:
     if not task_id:
         return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
 
-    tasks = Tasks.get_instance()
+    tasks: Tasks = Tasks.get_instance()
     try:
-        task = tasks.get(task_id)
+        task: Task | None = tasks.get(task_id)
         if not task:
             return web.json_response(
                 data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
             )
 
         _status, _message = task.mark()
+        if not _status:
+            return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
+
+        return web.json_response(data={"message": _message}, status=web.HTTPOk.status_code, dumps=encoder.encode)
+    except ValueError as e:
+        return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+
+
+@route("DELETE", "api/tasks/{id}/mark", "tasks_unmark")
+async def task_unmark(request: Request, encoder: Encoder) -> Response:
+    """
+    Remove All tasks items from download archive.
+
+    Args:
+        request (Request): The request object.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object
+
+    """
+    task_id: str = request.match_info.get("id", None)
+
+    if not task_id:
+        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+
+    tasks: Tasks = Tasks.get_instance()
+    try:
+        task: Task | None = tasks.get(task_id)
+        if not task:
+            return web.json_response(
+                data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        _status, _message = task.unmark()
         if not _status:
             return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
 

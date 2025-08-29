@@ -110,9 +110,10 @@ class HttpSocket:
         load_modules(self.rootPath, self.rootPath / "routes" / "socket")
 
         for route in get_routes(RouteType.SOCKET).values():
-            LOG.debug(
-                f"Add ({route.name}) {route.method.value if isinstance(route.method,RouteType) else route.method}: {route.path}."
-            )
+            if self.config.debug:
+                LOG.debug(
+                    f"Add ({route.name}) {route.method.value if isinstance(route.method, RouteType) else route.method}: {route.path}."
+                )
             self.sio.on(route.path)(HttpSocket._injector(route.handler, route.path))
 
     @staticmethod

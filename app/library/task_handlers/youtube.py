@@ -1,18 +1,19 @@
 import asyncio
 import logging
 import re
-from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+from xml.etree.ElementTree import Element
 
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
 from app.library.Tasks import Task
-from app.library.Utils import is_downloaded
-from app.library.YTDLPOpts import YTDLPOpts
+from app.library.Utils import archive_read
 
 if TYPE_CHECKING:
+    from xml.etree.ElementTree import Element
+
     from app.library.Download import Download
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -25,24 +26,22 @@ EventBus.get_instance().subscribe(
 
 
 class YoutubeHandler:
-    queued_ids: set[str] = set()
+    queued: set[str] = set()
     failure_count: dict[str, int] = {}
 
     FEED = "https://www.youtube.com/feeds/videos.xml?{type}={id}"
-    FEED_PLAYLIST = "https://www.youtube.com/feeds/videos.xml?playlist_id={id}"
 
     CHANNEL_REGEX = re.compile(r"^https?://(?:www\.)?youtube\.com/(?:channel/(?P<id>UC[0-9A-Za-z_-]{22})|)/?$")
 
     PLAYLIST_REGEX = re.compile(r"^https?://(?:www\.)?youtube\.com/(?:playlist\?list=(?P<id>[A-Za-z0-9_-]+)|).*$")
 
     @staticmethod
-    def can_handle(task: Task, config: Config) -> bool:
-        has, _ = YoutubeHandler.has_archive(task, config)
-        if not has:
-            LOG.debug(f"Task '{task.id}: {task.name}' does not have an archive file configured.")
+    def can_handle(task: Task) -> bool:
+        if not task.get_ytdlp_opts().get_all().get("download_archive"):
+            LOG.debug(f"Task '{task.name}' does not have an archive file configured.")
             return False
 
-        LOG.debug(f"Checking if task '{task.id}: {task.name}' can handle YouTube URL: {task.url}")
+        LOG.debug(f"Checking if task '{task.name}' is using parsable YouTube URL: {task.url}")
         return YoutubeHandler.parse(task.url) is not None
 
     @staticmethod
@@ -58,24 +57,24 @@ class YoutubeHandler:
             queue (DownloadQueue): The download queue instance.
 
         """
-        archive_file, params = YoutubeHandler.has_archive(task, config)
-        if not archive_file:
-            LOG.error(f"Task '{task.id}: {task.name}' does not have an archive file configured.")
+        params: dict = task.get_ytdlp_opts().get_all()
+        if not (archive_file := params.get("download_archive")):
+            LOG.error(f"Task '{task.name}' does not have an archive file.")
             return
 
         import httpx
         from defusedxml.ElementTree import fromstring
 
-        parsed = YoutubeHandler.parse(task.url)
+        parsed: dict[str, str] | None = YoutubeHandler.parse(task.url)
         if not parsed:
-            LOG.error(f"Cannot parse '{task.id}: {task.name}' URL: {task.url}")
+            LOG.error(f"Cannot parse '{task.name}' URL: {task.url}")
             return
 
-        feed_url = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
+        feed_url: str = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
 
-        LOG.debug(f"Fetching '{task.id}: {task.name}' feed.")
-        opts = {
-            "proxy": params.get("proxy", None),
+        LOG.debug(f"Fetching '{task.name}' feed.")
+        opts: dict[str, Any] = {
+            "proxy": params.get("proxy"),
             "headers": {
                 "User-Agent": params.get(
                     "user_agent",
@@ -84,108 +83,110 @@ class YoutubeHandler:
             },
         }
 
+        try:
+            from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
+
+            opts["transport"] = AsyncCurlTransport(
+                impersonate="chrome",
+                default_headers=True,
+                curl_options={CurlOpt.FRESH_CONNECT: True},
+            )
+            opts.pop("headers", None)
+        except Exception:
+            pass
+
         items: list = []
+        has_items = False
 
         async with httpx.AsyncClient(**opts) as client:
-            response = await client.request(method="GET", url=feed_url, timeout=120)
+            response: httpx.Response = await client.request(method="GET", url=feed_url, timeout=120)
             response.raise_for_status()
 
-            root = fromstring(response.text)
-            ns = {"atom": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
+            root: Element[str] = fromstring(response.text)
+            ns: dict[str, str] = {
+                "atom": "http://www.w3.org/2005/Atom",
+                "yt": "http://www.youtube.com/xml/schemas/2015",
+            }
 
             for entry in root.findall("atom:entry", ns):
-                vid_elem = entry.find("yt:videoId", ns)
-                title_elem = entry.find("atom:title", ns)
-                pub_elem = entry.find("atom:published", ns)
-                vid = vid_elem.text if vid_elem is not None else ""
-                title = title_elem.text if title_elem is not None else ""
-                published = pub_elem.text if pub_elem is not None else ""
-                items.append(
-                    {
-                        "id": vid,
-                        "url": f"https://www.youtube.com/watch?v={vid}",
-                        "title": title,
-                        "published": published,
-                    }
-                )
+                vid_elem: Element[str] | None = entry.find("yt:videoId", ns)
+                vid: str | None = vid_elem.text if vid_elem is not None else ""
+                if not vid:
+                    LOG.warning(f"Entry in '{task.name}' feed is missing a video ID. Skipping entry.")
+                    continue
+
+                archive_id: str = f"youtube {vid}"
+                url: str = f"https://www.youtube.com/watch?v={vid}"
+
+                title_elem: Element[str] | None = entry.find("atom:title", ns)
+                title: str | None = title_elem.text if title_elem is not None else ""
+
+                pub_elem: Element[str] | None = entry.find("atom:published", ns)
+                published: str | None = pub_elem.text if pub_elem is not None else ""
+                has_items = True
+
+                if archive_id in YoutubeHandler.queued:
+                    continue
+
+                items.append({"id": vid, "url": url, "title": title, "published": published, "archive_id": archive_id})
 
         if len(items) < 1:
-            LOG.warning(f"No entries found in '{task.id}: {task.name}' feed. URL: {feed_url}")
+            if not has_items:
+                LOG.warning(f"No entries found in '{task.name}' feed. URL: {feed_url}")
+            else:
+                LOG.debug(f"No new items found in '{task.name}' feed.")
             return
 
         filtered: list = []
+
+        downloaded: list[str] = archive_read(archive_file, [item["archive_id"] for item in items])
+
         for item in items:
-            status, _ = is_downloaded(archive_file, url=item["url"])
-            if status is True or item["id"] in YoutubeHandler.queued_ids:
+            YoutubeHandler.queued.add(item["archive_id"])
+            if item["archive_id"] in downloaded:
                 continue
 
             if queue.queue.exists(url=item["url"]):
-                LOG.debug(f"Item '{item['id']}' exists in the queue.")
-                YoutubeHandler.queued_ids.add(item["id"])
                 continue
 
             try:
                 done: Download = queue.done.get(url=item["url"])
                 if "error" != done.info.status:
-                    LOG.debug(f"Item '{item['id']}' exists in the download history.")
-                    YoutubeHandler.queued_ids.add(item["id"])
                     continue
             except KeyError:
                 pass
 
-            YoutubeHandler.queued_ids.add(item["id"])
+            if item["archive_id"] not in YoutubeHandler.failure_count:
+                YoutubeHandler.failure_count[item["archive_id"]] = 0
+
             filtered.append(item)
 
         if len(filtered) < 1:
-            LOG.debug(f"No new items found in '{task.id}: {task.name}' feed.")
+            LOG.debug(f"No new items found in '{task.name}' feed.")
             return
 
-        LOG.info(f"Found '{len(filtered)}' new items from '{task.id}: {task.name}' feed.")
+        LOG.info(f"Found '{len(filtered)}' new items from '{task.name}' feed.")
 
-        preset: str = str(task.preset or config.default_preset)
-        folder: str = task.folder if task.folder else ""
-        template: str = task.template if task.template else ""
-        cli: str = task.cli if task.cli else ""
+        rItem: Item = Item.format(
+            {
+                "url": feed_url,
+                "preset": str(task.preset or config.default_preset),
+                "folder": task.folder if task.folder else "",
+                "template": task.template if task.template else "",
+                "cli": task.cli if task.cli else "",
+                "auto_start": task.auto_start,
+                "extras": {"source_task": task.id},
+            }
+        )
 
         try:
             await asyncio.gather(
-                *[
-                    notify.emit(
-                        Events.ADD_URL,
-                        data=Item.format(
-                            {"url": item["url"], "preset": preset, "folder": folder, "template": template, "cli": cli}
-                        ).serialize(),
-                    )
-                    for item in filtered
-                ]
+                *[notify.emit(Events.ADD_URL, data=rItem.new_with(url=item["url"]).serialize()) for item in filtered]
             )
         except Exception as e:
-            LOG.error(f"Error while adding items from '{task.id}: {task.name}'. {e!s}")
+            LOG.exception(e)
+            LOG.error(f"Error while adding items from '{task.name}'. {e!s}")
             return
-
-    @staticmethod
-    def has_archive(task: Task, config: Config) -> tuple[Path | None, dict]:
-        archive_file: Path | None = Path(config.archive_file) if config.keep_archive else None
-        params: YTDLPOpts = YTDLPOpts.get_instance()
-
-        if task.preset:
-            params.preset(name=task.preset)
-
-        if task.cli:
-            params.add_cli(task.cli, from_user=True)
-
-        params = params.get_all()
-        if user_archive_file := params.get("download_archive", None):
-            archive_file = Path(user_archive_file)
-
-        if not archive_file:
-            return (None, params)
-
-        if not archive_file.exists():
-            archive_file.parent.mkdir(parents=True, exist_ok=True)
-            archive_file.touch(exist_ok=True)
-
-        return (archive_file, params)
 
     @staticmethod
     def parse(url: str) -> dict[str, str] | None:
@@ -222,29 +223,33 @@ class YoutubeHandler:
         if not item or not isinstance(item, ItemDTO):
             return
 
-        cls.queued_ids.add(item.id)
-
-        if item.id not in cls.queued_ids:
+        if not item.archive_id or not cls.failure_count.get(item.archive_id, None):
+            LOG.debug(f"Item '{item.name()}' not queued by the handler.")
             return
 
-        currentFailureCount: int = cls.failure_count.get(item.id, 0)
+        failCount: int = int(cls.failure_count.get(item.archive_id, 0))
 
-        LOG.info(f"Removing '{item.name()}' from queued IDs due to error. Failure count: '{currentFailureCount + 1}'.")
-        cls.queued_ids.remove(item.id)
+        LOG.info(f"Removing '{item.name()}' from queued IDs due to error. Failure count: '{failCount + 1}'.")
+        if item.archive_id in cls.queued:
+            cls.queued.remove(item.archive_id)
 
-        cls.failure_count[item.id] = cls.failure_count.get(item.id, 0) + 1
+        cls.failure_count[item.archive_id] = 1 + failCount
 
     @staticmethod
-    def tests() -> list[str]:
+    def tests() -> list[tuple[str, bool]]:
         """
-        Return a list of test URLs to validate the parsing logic.
+        Test cases for the URL parser.
+
+        Returns:
+            list[tuple[str, bool]]: A list of tuples containing the URL and expected result.
+
         """
         return [
-            "https://www.youtube.com/channel/UCabc123ABCDEFGHIJKLMN",
-            "https://youtube.com/c/MyCustomName",
-            "https://youtube.com/user/SomeUser123",
-            "https://youtube.com/@SomeHandle",
-            "https://youtube.com/playlist?list=PLxyz789ABCDEFGHIJ",
-            "https://youtube.com/watch?v=foo&list=PLxyz789ABCDEFGHIJ",
-            "https://youtube.com/watch?v=foo",
+            ("https://www.youtube.com/channel/UCabc123ABCDEFGHIJKLMN", True),
+            ("https://youtube.com/c/MyCustomName", False),
+            ("https://youtube.com/user/SomeUser123", False),
+            ("https://youtube.com/@SomeHandle", False),
+            ("https://youtube.com/playlist?list=PLxyz789ABCDEFGHIJ", True),
+            ("https://youtube.com/watch?v=foo&list=PLxyz789ABCDEFGHIJ", True),
+            ("https://youtube.com/watch?v=foo", False),
         ]

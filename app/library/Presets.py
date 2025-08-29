@@ -8,7 +8,6 @@ from typing import Any
 from aiohttp import web
 
 from .config import Config
-from .encoder import Encoder
 from .Events import EventBus, Events
 from .Singleton import Singleton
 from .Utils import arg_converter, init_class
@@ -92,6 +91,7 @@ class Preset:
         return self.__dict__
 
     def json(self) -> str:
+        from .encoder import Encoder
         return Encoder().encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
