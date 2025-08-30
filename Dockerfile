@@ -5,7 +5,7 @@ WORKDIR /app
 COPY ui ./
 RUN if [ ! -f "/app/exported/index.html" ]; then npm install --production --prefer-offline --frozen-lockfile && npm run generate; else echo "Skipping UI build, already built."; fi
 
-FROM python:3.13-slim AS python_builder
+FROM python:3.13-bookworm AS python_builder
 
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
@@ -15,18 +15,19 @@ ENV PIP_NO_CACHE_DIR=off
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV UV_CACHE_DIR=/root/.cache/uv
 ENV DEBIAN_FRONTEND=noninteractive
+ENV UV_INSTALL_DIR=/usr/bin
 
 # Install build dependencies and uv
 # RUN apt-get update && apt-get install -y --no-install-recommends build-essential libffi-dev libssl-dev curl ca-certificates pkg-config && pip install --no-cache-dir uv
-RUN pip install --no-cache-dir uv
+RUN echo 1 && curl -LsSf https://astral.sh/uv/install.sh | sh
 
 WORKDIR /opt/
 
 COPY ./pyproject.toml ./uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/pip,id=pip-cache \
   --mount=type=cache,target=/root/.cache/uv,id=uv-cache \
-  uv -vv venv --system-site-packages --relocatable ./python && \
-  VIRTUAL_ENV=/opt/python uv -vv sync --link-mode=copy --active
+  uv venv --system-site-packages --relocatable ./python && \
+  VIRTUAL_ENV=/opt/python uv sync --link-mode=copy --active
 
 FROM python:3.13-slim
 
