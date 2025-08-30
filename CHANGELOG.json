@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ec43b0290c9ba69d0dbaff30e09f8c7f98cd3fab",
+    "date": "2025-08-30T19:57:34+00:00",
+    "commits": [
+      {
+        "sha": "ec43b029",
+        "full_sha": "ec43b0290c9ba69d0dbaff30e09f8c7f98cd3fab",
+        "message": "test new build system",
+        "author": "arabcoders",
+        "date": "2025-08-30T19:57:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.0",
     "full_sha": "c5e3899c267657a9be6b1efea320124a3719b9fb",
     "date": "2025-08-30T17:57:55+00:00",
