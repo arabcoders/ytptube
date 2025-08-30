@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (aaab5a72)",
-    "full_sha": "aaab5a72e89d8f2b131484cbf9980d944ae46d3e",
-    "date": "2025-08-29T23:29:02+00:00",
+    "tag": "Unreleased (c5e3899c)",
+    "full_sha": "c5e3899c267657a9be6b1efea320124a3719b9fb",
+    "date": "2025-08-30T17:57:55+00:00",
     "commits": [
+      {
+        "sha": "1c9a8938",
+        "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368",
+        "message": "Reimplemented Archive feature",
+        "author": "arabcoders",
+        "date": "2025-08-30T17:45:17+00:00"
+      },
       {
         "sha": "2c797c68",
         "full_sha": "2c797c6824b3903d75096b5c6674ad949cd92d7f",
@@ -122,20 +129,6 @@
         "message": "added new endpoint to get urls archive ids",
         "author": "arabcoders",
         "date": "2025-08-27T13:28:19+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368",
-    "date": "2025-08-30T17:45:17+00:00",
-    "commits": [
-      {
-        "sha": "1c9a8938",
-        "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368",
-        "message": "Reimplemented Archive feature",
-        "author": "arabcoders",
-        "date": "2025-08-30T17:45:17+00:00"
       }
     ]
   },
