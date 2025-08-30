@@ -1,4 +1,4 @@
-name: Build Docker (native multi-arch)
+name: Build Docker Containers
 
 on:
   workflow_dispatch:
@@ -29,14 +29,14 @@ env:
 
 jobs:
   docker-build-arch:
-    name: Build image (${{ matrix.arch }})
+    name: Build Container (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
             arch: amd64
-          - os: ubuntu-24.04-arm64
+          - os: ubuntu-latest
             arch: arm64
     permissions:
       packages: write
@@ -93,7 +93,7 @@ jobs:
             -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
             app/library/version.py
 
-      - name: Docker meta (arch-suffixed)
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -124,7 +124,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push (native per-arch)
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -148,7 +148,7 @@ jobs:
       packages: write
       contents: read
     steps:
-      - name: Docker meta (final tags)
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:

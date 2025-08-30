@@ -1,4 +1,4 @@
-name: Build PR (docker amd64)
+name: Test Build PR
 
 on:
   pull_request:
