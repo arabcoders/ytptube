@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250830-fbaf8e54",
-        "date": "2025-08-30T20:08:09+00:00",
+        "tag": "dev-20250830-ae6c86d5",
+        "date": "2025-08-30T20:25:16+00:00",
         "commits": [
+            {
+                "sha": "ae6c86d5",
+                "message": "Add permissions section to build PR workflow",
+                "author": "arabcoders",
+                "date": "2025-08-30T20:25:16+00:00",
+                "full_sha": "ae6c86d5d887b91e6f512f1e776bc3b0fe7b7bc3"
+            },
             {
                 "sha": "fbaf8e54",
                 "message": "updates",
@@ -1551,7 +1558,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fbaf8e5404ce7caf197cb41bda658be107627d6c"
+        "full_sha": "ae6c86d5d887b91e6f512f1e776bc3b0fe7b7bc3"
     },
     {
         "tag": "dev-20250616-c07465a6",
