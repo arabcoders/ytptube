@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unreleased (2a1cd0a6)",
+    "full_sha": "2a1cd0a632723708ad50a62dd48fb42a6d6a87b0",
+    "date": "2025-08-30T23:14:55+00:00",
+    "commits": [
+      {
+        "sha": "974efc70",
+        "full_sha": "974efc700dc5e53d07a34cda14f0794ba9e25b2e",
+        "message": "allow updating github release notes",
+        "author": "arabcoders",
+        "date": "2025-08-30T23:12:44+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.1",
     "full_sha": "7185bae58d2df5b15567306a3d807e926692f96d",
     "date": "2025-08-30T22:52:57+00:00",
