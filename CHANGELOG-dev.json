@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250831-1a2d5bc7",
-        "date": "2025-08-30T22:17:17+00:00",
+        "tag": "dev-20250831-e7614b8e",
+        "date": "2025-08-30T22:21:45+00:00",
         "commits": [
+            {
+                "sha": "e7614b8e",
+                "message": "add DEBIAN_FRONTEND",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:21:45+00:00",
+                "full_sha": "e7614b8ebf66444ed7a288710d6560079fa2c729"
+            },
             {
                 "sha": "1a2d5bc7",
                 "message": "rebase our docker containers on top of debian.",
@@ -1572,7 +1579,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1a2d5bc74e18fcf4a794d4edc3b0432d0b8c242e"
+        "full_sha": "e7614b8ebf66444ed7a288710d6560079fa2c729"
     },
     {
         "tag": "dev-20250616-c07465a6",
