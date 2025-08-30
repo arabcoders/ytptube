@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250830-2c797c68",
-        "date": "2025-08-29T22:58:24+00:00",
+        "tag": "dev-20250830-1c9a8938",
+        "date": "2025-08-30T17:45:17+00:00",
         "commits": [
+            {
+                "sha": "1c9a8938",
+                "message": "Reimplemented Archive feature",
+                "author": "arabcoders",
+                "date": "2025-08-30T17:45:17+00:00",
+                "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368"
+            },
             {
                 "sha": "2c797c68",
                 "message": "updated external packages",
@@ -1530,7 +1537,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2c797c6824b3903d75096b5c6674ad949cd92d7f"
+        "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368"
     },
     {
         "tag": "dev-20250616-c07465a6",

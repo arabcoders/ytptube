@@ -126,6 +126,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368",
+    "date": "2025-08-30T17:45:17+00:00",
+    "commits": [
+      {
+        "sha": "1c9a8938",
+        "full_sha": "1c9a893865e075fbab484ce3d96c18b2c1514368",
+        "message": "Reimplemented Archive feature",
+        "author": "arabcoders",
+        "date": "2025-08-30T17:45:17+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.8.12",
     "full_sha": "3de3471bd5518ca521dc0acec748c836a98a2dc5",
     "date": "2025-08-26T22:02:17+00:00",
