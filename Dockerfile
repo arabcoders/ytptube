@@ -17,9 +17,8 @@ ENV UV_CACHE_DIR=/root/.cache/uv
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies and uv
-RUN apt-get update && apt-get install -y --no-install-recommends \
-  build-essential libffi-dev libssl-dev curl ca-certificates pkg-config \
-  && pip install --no-cache-dir uv
+# RUN apt-get update && apt-get install -y --no-install-recommends build-essential libffi-dev libssl-dev curl ca-certificates pkg-config && pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv
 
 WORKDIR /opt/
 
