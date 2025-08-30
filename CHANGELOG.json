@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d84096c1c899aa5b390e2dc3d5cf52e9dde2c10e",
-    "date": "2025-08-30T22:31:08+00:00",
+    "full_sha": "acc6d54db22d7c679edbb0cc5e020f8d14e4ddd2",
+    "date": "2025-08-30T22:48:16+00:00",
     "commits": [
+      {
+        "sha": "acc6d54d",
+        "full_sha": "acc6d54db22d7c679edbb0cc5e020f8d14e4ddd2",
+        "message": "pip is so slow using arm64 during build",
+        "author": "arabcoders",
+        "date": "2025-08-30T22:48:16+00:00"
+      },
       {
         "sha": "d84096c1",
         "full_sha": "d84096c1c899aa5b390e2dc3d5cf52e9dde2c10e",

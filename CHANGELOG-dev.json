@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250831-d84096c1",
-        "date": "2025-08-30T22:31:08+00:00",
+        "tag": "dev-20250831-acc6d54d",
+        "date": "2025-08-30T22:48:16+00:00",
         "commits": [
+            {
+                "sha": "acc6d54d",
+                "message": "pip is so slow using arm64 during build",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:48:16+00:00",
+                "full_sha": "acc6d54db22d7c679edbb0cc5e020f8d14e4ddd2"
+            },
             {
                 "sha": "d84096c1",
                 "message": "lets see if uv able to get pre-built to speed up builds",
@@ -1586,7 +1593,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d84096c1c899aa5b390e2dc3d5cf52e9dde2c10e"
+        "full_sha": "acc6d54db22d7c679edbb0cc5e020f8d14e4ddd2"
     },
     {
         "tag": "dev-20250616-c07465a6",
