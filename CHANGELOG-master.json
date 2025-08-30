@@ -1,8 +1,64 @@
 [
     {
-        "tag": "master-20250830-c5e3899c",
-        "date": "2025-08-30T17:57:55+00:00",
+        "tag": "master-20250831-7185bae5",
+        "date": "2025-08-30T22:52:57+00:00",
         "commits": [
+            {
+                "sha": "acc6d54d",
+                "message": "pip is so slow using arm64 during build",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:48:16+00:00",
+                "full_sha": "acc6d54db22d7c679edbb0cc5e020f8d14e4ddd2"
+            },
+            {
+                "sha": "d84096c1",
+                "message": "lets see if uv able to get pre-built to speed up builds",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:31:08+00:00",
+                "full_sha": "d84096c1c899aa5b390e2dc3d5cf52e9dde2c10e"
+            },
+            {
+                "sha": "e7614b8e",
+                "message": "add DEBIAN_FRONTEND",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:21:45+00:00",
+                "full_sha": "e7614b8ebf66444ed7a288710d6560079fa2c729"
+            },
+            {
+                "sha": "1a2d5bc7",
+                "message": "rebase our docker containers on top of debian.",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:17:17+00:00",
+                "full_sha": "1a2d5bc74e18fcf4a794d4edc3b0432d0b8c242e"
+            },
+            {
+                "sha": "4690d3a3",
+                "message": "rebase on top of debian instead of alpine",
+                "author": "arabcoders",
+                "date": "2025-08-30T21:27:15+00:00",
+                "full_sha": "4690d3a3072419abe7c19444857461039acfb3ac"
+            },
+            {
+                "sha": "ae6c86d5",
+                "message": "Add permissions section to build PR workflow",
+                "author": "arabcoders",
+                "date": "2025-08-30T20:25:16+00:00",
+                "full_sha": "ae6c86d5d887b91e6f512f1e776bc3b0fe7b7bc3"
+            },
+            {
+                "sha": "fbaf8e54",
+                "message": "updates",
+                "author": "arabcoders",
+                "date": "2025-08-30T20:08:09+00:00",
+                "full_sha": "fbaf8e5404ce7caf197cb41bda658be107627d6c"
+            },
+            {
+                "sha": "ec43b029",
+                "message": "test new build system",
+                "author": "arabcoders",
+                "date": "2025-08-30T19:57:34+00:00",
+                "full_sha": "ec43b0290c9ba69d0dbaff30e09f8c7f98cd3fab"
+            },
             {
                 "sha": "1c9a8938",
                 "message": "Reimplemented Archive feature",
@@ -1537,7 +1593,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c5e3899c267657a9be6b1efea320124a3719b9fb"
+        "full_sha": "7185bae58d2df5b15567306a3d807e926692f96d"
     },
     {
         "tag": "master-20250616-c07465a6",
