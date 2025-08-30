@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250830-ae6c86d5",
-        "date": "2025-08-30T20:25:16+00:00",
+        "tag": "dev-20250831-1a2d5bc7",
+        "date": "2025-08-30T22:17:17+00:00",
         "commits": [
+            {
+                "sha": "1a2d5bc7",
+                "message": "rebase our docker containers on top of debian.",
+                "author": "arabcoders",
+                "date": "2025-08-30T22:17:17+00:00",
+                "full_sha": "1a2d5bc74e18fcf4a794d4edc3b0432d0b8c242e"
+            },
+            {
+                "sha": "4690d3a3",
+                "message": "rebase on top of debian instead of alpine",
+                "author": "arabcoders",
+                "date": "2025-08-30T21:27:15+00:00",
+                "full_sha": "4690d3a3072419abe7c19444857461039acfb3ac"
+            },
             {
                 "sha": "ae6c86d5",
                 "message": "Add permissions section to build PR workflow",
@@ -1558,7 +1572,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ae6c86d5d887b91e6f512f1e776bc3b0fe7b7bc3"
+        "full_sha": "1a2d5bc74e18fcf4a794d4edc3b0432d0b8c242e"
     },
     {
         "tag": "dev-20250616-c07465a6",
