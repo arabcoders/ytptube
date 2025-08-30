@@ -1,0 +1,52 @@
+name: Build PR (docker amd64)
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - "**.md"
+      - ".github/ISSUE_TEMPLATE/**"
+
+env:
+  PNPM_VERSION: 10
+  NODE_VERSION: 20
+
+jobs:
+  build-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: "ui/pnpm-lock.yaml"
+
+      - name: Install frontend dependencies & Build
+        working-directory: ui
+        run: |
+          pnpm install --production --prefer-offline --frozen-lockfile
+          pnpm run generate
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build commit to check (amd64 only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          cache-from: type=gha,scope=${{ github.workflow }}
+          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+          provenance: false
+
