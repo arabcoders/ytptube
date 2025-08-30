@@ -1357,141 +1357,51 @@ def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
 
 def archive_add(file: str | Path, ids: list[str], skip_check: bool = False) -> bool:
     """
-    Add IDs to an archive file.
+    Add IDs to an archive file (delegates to the global Archiver).
 
     Args:
         file (str|Path): The archive file path.
         ids (list[str]): List of IDs to add.
         skip_check (bool): If True, skip checking for existing IDs.
 
+    Returns:
+        bool: True if any new IDs were appended, False otherwise.
+
     """
-    if not ids or not file:
-        return False
+    from app.library.Archiver import Archiver
 
-    path: Path = Path(file) if not isinstance(file, Path) else file
-    existing_ids: set[str] = set()
-
-    if not skip_check and path.exists():
-        with path.open("r", encoding="utf-8") as f:
-            for line in f:
-                s = line.strip()
-
-                if not s or len(s.split()) < 2:
-                    continue
-
-                existing_ids.add(s)
-
-    new_ids: list[str] = []
-    for raw in ids:
-        s: str = str(raw).strip()
-
-        if not s or len(s.split()) < 2 or s in existing_ids or s in new_ids:
-            continue
-
-        new_ids.append(s)
-
-    if not new_ids:
-        return False
-
-    try:
-        if not path.parent.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-
-        with path.open("a", encoding="utf-8") as f:
-            f.write("".join(f"{x}\n" for x in new_ids))
-
-        return True
-    except OSError as e:
-        LOG.error(f"Failed to write to archive file '{path!s}'. {e!s}")
-        return False
+    return Archiver.get_instance().add(file, ids, skip_check)
 
 
 def archive_read(file: str | Path, ids: list[str] | None = None) -> list[str]:
     """
-    Read IDs from an archive file with optional filtering.
-
-    - If `ids` is empty, return all IDs present in the archive file.
-    - If `ids` is provided, return only the ids that exist in the archive file,
+    Read IDs from an archive file with optional filtering (delegates to Archiver).
 
     Args:
         file (str|Path): The archive file path.
-        ids (list[str]): Optional list of IDs to query; empty list returns all.
+        ids (list[str]|None): Optional list of IDs to query; None/empty returns all.
 
     Returns:
-        list[str]: List of ids found in the archive file filtered by `ids` if provided.
+        list[str]: IDs present in the archive, optionally filtered.
 
     """
-    if not file:
-        return []
+    from app.library.Archiver import Archiver
 
-    path: Path = Path(file) if not isinstance(file, Path) else file
-    if not file or not path.exists():
-        return []
-
-    ids_set: set[str] | None = (
-        {s.strip() for s in ids if str(s).strip() and len(str(s).strip().split()) >= 2} if ids else None
-    )
-
-    found: list[str] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            s: str = line.strip()
-
-            if not s or len(s.split()) < 2:
-                continue
-
-            if ids_set is None or s in ids_set:
-                found.append(s)
-
-    return found
+    return Archiver.get_instance().read(file, ids)
 
 
 def archive_delete(file: str | Path, ids: list[str]) -> bool:
     """
-    Delete the given IDs from an archive file.
+    Delete IDs from an archive file (delegates to Archiver).
 
     Args:
         file (str|Path): The archive file path.
         ids (list[str]): List of IDs to remove.
 
     Returns:
-        bool: True if deletion succeeded (or nothing to do), False on error.
+        bool: True on success (including no-op), False on error.
 
     """
-    if not file or not ids:
-        return False
+    from app.library.Archiver import Archiver
 
-    path: Path = Path(file) if not isinstance(file, Path) else file
-
-    if not path.exists():
-        return False
-
-    remove_ids: set[str] = {x.strip() for x in ids if str(x).strip() and len(str(x).strip().split()) >= 2}
-    if not remove_ids:
-        return True
-
-    changed = False
-    kept_lines: list[str] = []
-    removed_ids: list[str] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            s: str = line.strip()
-
-            if not s or len(s.split()) < 2:
-                changed = True
-                continue
-
-            if s in remove_ids:
-                changed = True
-                removed_ids.append(s)
-                continue
-
-            kept_lines.append(line)
-
-    if not changed:
-        return True
-
-    with path.open("w", encoding="utf-8") as f:
-        f.writelines(kept_lines)
-
-    return True
+    return Archiver.get_instance().delete(file, ids)
