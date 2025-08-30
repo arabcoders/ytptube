@@ -14,6 +14,7 @@ ENV PYTHONFAULTHANDLER=1
 ENV PIP_NO_CACHE_DIR=off
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV UV_CACHE_DIR=/root/.cache/uv
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install build dependencies and uv
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -43,6 +44,8 @@ ENV XDG_CACHE_HOME=/tmp
 ENV PYDEVD_DISABLE_FILE_VALIDATION=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONFAULTHANDLER=1
+
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
   apt-get update && apt-get install -y --no-install-recommends \

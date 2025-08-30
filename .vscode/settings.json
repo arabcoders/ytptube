@@ -85,6 +85,7 @@
     "muxdelay",
     "mweb",
     "nodesc",
+    "noninteractive",
     "noprogress",
     "onefile",
     "pathex",
