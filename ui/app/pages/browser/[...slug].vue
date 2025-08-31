@@ -56,6 +56,26 @@
       </div>
     </div>
 
+    <div class="columns is-multiline"
+      v-if="items && items.length > 0 && selectedElms.length > 0 && config.app.browser_control_enabled">
+      <div class="column is-half-mobile">
+        <button type="button" class="button is-fullwidth is-danger" @click="confirm_delete">
+          <span class="icon-text is-block">
+            <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+            <span>Delete selected</span>
+          </span>
+        </button>
+      </div>
+      <div class="column is-half-mobile">
+        <button type="button" class="button is-fullwidth is-link">
+          <span class="icon-text is-block">
+            <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
+            <span>Move selected</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
     <div class="columns is-multiline">
       <div class="column is-12" v-if="items && items.length > 0">
         <div :class="{ 'table-container': table_container }">
@@ -63,6 +83,9 @@
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
               <tr class="has-text-centered is-unselectable">
+                <th width="5%" v-if="config.app.browser_control_enabled">
+                  <input type="checkbox" v-model="masterSelectAll" />
+                </th>
                 <th width="6%" @click="changeSort('type')">
                   #
                   <span class="icon" v-if="'type' === sort_by">
@@ -70,7 +93,7 @@
                       :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
                   </span>
                 </th>
-                <th width="70%" @click="changeSort('name')">
+                <th width="65%" @click="changeSort('name')">
                   Name
                   <span class="icon" v-if="'name' === sort_by">
                     <i class="fas"
@@ -100,6 +123,9 @@
             </thead>
             <tbody>
               <tr v-for="item in filteredItems" :key="item.path">
+                <td class="has-text-centered is-vcentered" v-if="config.app.browser_control_enabled">
+                  <input type="checkbox" v-model="selectedElms" :value="item.path" />
+                </td>
                 <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
                   <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
                 </td>
@@ -181,6 +207,7 @@
         </Message>
       </div>
     </div>
+
     <div class="modal is-active" v-if="model_item">
       <div class="modal-background" @click="closeModel"></div>
       <div class="modal-content is-unbounded-model">
@@ -192,6 +219,9 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closeModel"></button>
     </div>
+    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
+      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
+      :html_message="dialog_confirm.html_message" @cancel="dialog_confirm = reset_dialog()" />
   </div>
 </template>
 
@@ -205,11 +235,15 @@ const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
+const dialog = useDialog()
 
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const sort_by = useStorage('sort_by', 'name')
 const sort_order = useStorage('sort_order', 'asc')
+
+const selectedElms = ref<string[]>([])
+const masterSelectAll = ref(false)
 
 const isLoading = ref<boolean>(false)
 const initialLoad = ref<boolean>(true)
@@ -225,12 +259,31 @@ const table_container = ref<boolean>(false)
 const search = ref<string>('')
 const show_filter = ref<boolean>(false)
 
+const reset_dialog = () => ({
+  visible: false,
+  title: 'Confirm Action',
+  confirm: (opts: any) => { },
+  message: '',
+  html_message: '',
+  options: [],
+});
+
+const dialog_confirm = ref(reset_dialog())
+
+watch(masterSelectAll, v => {
+  if (v) {
+    selectedElms.value = filteredItems.value.map(i => i.path)
+  } else {
+    selectedElms.value = []
+  }
+})
+
 watch(() => config.app.basic_mode, async v => {
   if (!config.isLoaded() || !v) {
     return
   }
   await navigateTo('/')
-},{ immediate: true })
+}, { immediate: true })
 
 
 const filteredItems = computed<FileItem[]>(() => {
@@ -523,8 +576,14 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('rename' === action) {
-    const newName = prompt('Enter new name for the item:', item.name)
-    if (!newName) {
+    const { status, value: newName } = await dialog.promptDialog({
+      title: 'Rename Item',
+      message: `Enter new name for '${item.name}':`,
+      initial: item.name,
+      confirmText: 'Rename',
+      cancelText: 'Cancel',
+    })
+    if (true !== status) {
       return
     }
 
@@ -533,7 +592,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    await actionRequest(item, 'rename', { new_name: new_name }, (item, action, data) => {
+    await actionRequest(item, 'rename', { new_name: new_name }, (item, _, data) => {
       item.name = data.new_name
       item.path = item.path.replace(/[^/]+$/, data.new_name)
       toast.success(`Renamed '${item.name}'.`)
@@ -543,7 +602,15 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
 
   if ('delete' === action) {
     const msg = item.is_dir ? `Delete '${item.name}' and all its contents?` : `Delete file '${item.name}'?`
-    if (false === confirm(msg)) {
+    const { status } = await dialog.confirmDialog({
+      title: 'Delete Confirmation',
+      message: msg,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmColor: 'is-danger',
+    })
+
+    if (true !== status) {
       return
     }
 
@@ -556,8 +623,15 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('move' === action) {
-    const newPath = prompt('Enter new path:', item.path.replace(/[^/]+$/, ''))
-    if (!newPath) {
+    const { status, value: newPath } = await dialog.promptDialog({
+      title: 'Move Item',
+      message: `Enter new path for '${item.name}':`,
+      initial: item.path.replace(/[^/]+$/, ''),
+      confirmText: 'Move',
+      cancelText: 'Cancel',
+    })
+
+    if (true !== status) {
       return
     }
 
@@ -590,13 +664,13 @@ const actionRequest = async (
   }
 
   try {
-    const response = await request(`/api/file/action/${encodePath(item.path)}`, {
+    const response = await request(`/api/file/actions`, {
       method: 'POST',
-      body: JSON.stringify({
+      body: JSON.stringify([{
         path: item.path,
         action: action,
         ...data
-      }),
+      }]),
     })
 
     if (!response.ok) {
@@ -605,9 +679,21 @@ const actionRequest = async (
       return
     }
 
-    if (cb && typeof cb === 'function') {
-      cb(item, action, data)
-    }
+    const json = await response.json() as Array<{ path: string, status: boolean, error?: string }>
+    json.forEach(i => {
+      if (i.path !== item.path) {
+        return
+      }
+
+      if (true !== i.status) {
+        toast.error(`Failed to perform action: ${i.error || 'Unknown error'}`)
+        return
+      }
+
+      if (cb && typeof cb === 'function') {
+        cb(item, action, data)
+      }
+    });
 
     return response
   } catch (error: any) {
@@ -615,4 +701,26 @@ const actionRequest = async (
     toast.error(`Failed to perform action: ${error.message}`)
   }
 }
+
+const confirm_delete = () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No items selected.')
+    return
+  }
+  dialog_confirm.value.visible = true
+  dialog_confirm.value.title = 'Delete Confirmation'
+
+  dialog_confirm.value.html_message = `Delete the following items?<ul>` + selectedElms.value.map(p => {
+    const item = items.value.find(i => i.path === p)
+    if (!item) {
+      return ''
+    }
+    const color = item.type === 'dir' ? 'has-text-primary is-bold' : ''
+
+    return `<li><span class="icon"><i class="fa-solid ${setIcon(item)}"></i></span> <span class="${color}">${item.name}</span></li>`
+  }).join('') + `</ul>`
+
+  // dialog_confirm.value.confirm = async () => await deleteSelected()
+}
+
 </script>

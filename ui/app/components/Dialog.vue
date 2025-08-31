@@ -71,7 +71,9 @@
             <template v-else-if="state.current?.type === 'confirm' || state.current?.type === 'prompt'">
               <div class="field is-grouped">
                 <div class="control">
-                  <button class="button is-primary" @click="onEnter">
+                  <button class="button" @click="onEnter"
+                  :class="state.current?.opts.confirmColor ?? 'is-primary'"
+                  :disabled="localInput === (state.current?.opts as PromptOptions)?.initial">
                     <span class="icon-text">
                       <span class="icon"><i class="fas fa-check" /></span>
                       <span>{{ (state.current?.opts as any)?.confirmText ?? 'OK' }}</span>
@@ -97,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue'
-import { useDialog } from '~/composables/useDialog'
+import { useDialog, type PromptOptions } from '~/composables/useDialog'
 
 const { state, confirm, cancel } = useDialog()
 
