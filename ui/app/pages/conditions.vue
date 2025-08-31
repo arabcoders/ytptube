@@ -13,12 +13,14 @@
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;">
                 <span class="icon"><i class="fas fa-add" /></span>
+                <span v-if="!isMobile">New Condition</span>
               </button>
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent(false)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="items && items.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -121,6 +123,7 @@ const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const items = ref<ConditionItem[]>([])
 const item = ref<Partial<ConditionItem>>({})

@@ -240,7 +240,7 @@
                   v-rtime="item.datetime" />
               </div>
               <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
-                v-if="item.downloaded_bytes">
+                v-if="item.downloaded_bytes" v-tooltip="`Saving to: ${makePath(item)}`">
                 {{ formatBytes(item.downloaded_bytes) }}
               </div>
 
@@ -598,4 +598,15 @@ watch(embed_url, v => {
   }
   document.querySelector('body')?.setAttribute('style', `opacity: ${v ? 1 : bg_opacity.value}`)
 })
+
+const makePath = (item: StoreItem) => {
+  const parts = [
+    eTrim(item.download_dir, '/').replace(config.app.download_path, ''),
+  ]
+  if (item?.filename) {
+    parts.push(eTrim(item.filename, '/'))
+  }
+
+  return '/' + sTrim(parts.filter(p => !!p).map(p => p.replace(/\\/g, '/').replace(/\/+/g, '/')).join('/'), '/')
+}
 </script>

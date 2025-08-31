@@ -14,20 +14,26 @@
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;"
                 v-tooltip.bottom="'Toggle add form'">
                 <span class="icon"><i class="fas fa-add" /></span>
+                <span v-if="!isMobile">New Preset</span>
               </button>
             </p>
 
             <p class="control">
               <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'cards' ? 'list' : 'cards'">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+                <span class="icon">
+                  <i class="fa-solid"
+                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                <span v-if="!isMobile">
+                  {{ display_style === 'list' ? 'List' : 'Grid' }}
+                </span>
               </button>
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="presets && presets.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -214,6 +220,7 @@ const socket = useSocketStore()
 const box = useConfirm()
 
 const display_style = useStorage<string>('preset_display_style', 'cards')
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const presets = ref<Preset[]>([])
 const preset = ref<Partial<Preset>>({})

@@ -46,9 +46,9 @@
               <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
                 @click="() => changeDisplay()">
                 <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
                 <span v-if="!isMobile">
-                  {{ display_style === 'cards' ? 'Cards' : 'List' }}
+                  {{ display_style === 'list' ? 'List' : 'Grid' }}
                 </span>
               </button>
             </p>
@@ -123,8 +123,9 @@ const stateStore = useStateStore()
 const socket = useSocketStore()
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
-const display_style = useStorage<string>('display_style', 'cards')
+const display_style = useStorage<string>('display_style', 'grid')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const info_view = ref({
   url: '',
@@ -143,7 +144,6 @@ const dialog_confirm = ref({
   options: [],
 })
 
-const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -217,7 +217,7 @@ watch(() => info_view.value.url, v => {
   document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
 })
 
-const changeDisplay = () => display_style.value = display_style.value === 'cards' ? 'list' : 'cards'
+const changeDisplay = () => display_style.value = display_style.value === 'grid' ? 'list' : 'grid'
 
 const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
   if (!item) {

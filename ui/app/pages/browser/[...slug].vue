@@ -29,6 +29,7 @@
             <div class="control">
               <button class="button is-danger is-light" @click="toggleFilter" v-tooltip.bottom="'Filter content'">
                 <span class="icon"><i class="fas fa-filter" /></span>
+                <span v-if="!isMobile">Filter</span>
               </button>
             </div>
 
@@ -37,12 +38,14 @@
                 :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading"
                 v-tooltip.bottom="'Create new directory'" v-if="config.app.browser_control_enabled">
                 <span class="icon"><i class="fas fa-folder-plus" /></span>
+                <span v-if="!isMobile">New Folder</span>
               </button>
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading">
                 <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -201,6 +204,7 @@ const route = useRoute()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)

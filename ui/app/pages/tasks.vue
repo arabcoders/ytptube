@@ -20,6 +20,7 @@
               <button class="button is-danger is-light" v-tooltip.bottom="'Filter'"
                 @click="toggleFilter = !toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
+                <span v-if="!isMobile">Filter</span>
               </button>
             </p>
 
@@ -27,14 +28,19 @@
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm"
                 v-tooltip.bottom="'Toggle Add form'">
                 <span class="icon"><i class="fas fa-add" /></span>
+                <span v-if="!isMobile">New Task</span>
               </button>
             </p>
 
             <p class="control">
               <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'cards' ? 'list' : 'cards'">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+                <span class="icon">
+                  <i class="fa-solid"
+                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                <span v-if="!isMobile">
+                  {{ display_style === 'list' ? 'List' : 'Grid' }}
+                </span>
               </button>
             </p>
 
@@ -42,6 +48,7 @@
               <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading" v-if="tasks && tasks.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -382,6 +389,7 @@ const config = useConfigStore()
 const socket = useSocketStore()
 const { confirmDialog: cDialog } = useDialog()
 const display_style = useStorage<string>("tasks_display_style", "cards")
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const tasks = ref<Array<task_item>>([])
 const task = ref<task_item | Object>({})
