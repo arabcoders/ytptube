@@ -222,7 +222,7 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
 }
 
 const deleteItem = async (cond: ConditionItem): Promise<void> => {
-  if (!box.confirm(`Delete '${cond.name}'?`, true)) {
+  if (true !== (await box.confirm(`Delete '${cond.name}'?`, true))) {
     return
   }
 

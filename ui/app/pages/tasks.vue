@@ -579,7 +579,7 @@ const deleteSelected = async () => {
 }
 
 const deleteItem = async (item: task_item) => {
-  if (true !== box.confirm(`Delete '${item.name}' task?`, true)) {
+  if (true !== (await box.confirm(`Delete '${item.name}' task?`, true))) {
     return
   }
 
@@ -696,7 +696,7 @@ const runSelected = async () => {
 }
 
 const runNow = async (item: task_item, mass: boolean = false) => {
-  if (!mass && true !== box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`)) {
+  if (!mass && true !== (await box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`))) {
     return
   }
 

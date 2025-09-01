@@ -507,16 +507,16 @@ const updateProgress = (item: StoreItem): string => {
   return string
 }
 
-const confirmCancel = (item: StoreItem) => {
-  if (true !== box.confirm(`Cancel '${item.title}'?`)) {
+const confirmCancel = async (item: StoreItem) => {
+  if (true !== (await box.confirm(`Cancel '${item.title}'?`))) {
     return false
   }
   cancelItems(item._id)
   return true
 }
 
-const cancelSelected = () => {
-  if (true !== box.confirm(`Cancel '${selectedElms.value.length}' selected items?`)) {
+const cancelSelected = async () => {
+  if (true !== (await box.confirm(`Cancel '${selectedElms.value.length}' selected items?`))) {
     return false
   }
   cancelItems(selectedElms.value)
@@ -543,7 +543,7 @@ const cancelItems = (item: string | string[]) => {
 const startItem = (item: StoreItem) => socket.emit('item_start', item._id)
 const pauseItem = (item: StoreItem) => socket.emit('item_pause', item._id)
 
-const startItems = () => {
+const startItems = async () => {
   if (1 > selectedElms.value.length) {
     return
   }
@@ -559,13 +559,13 @@ const startItems = () => {
     toast.error('No eligible items to start.')
     return
   }
-  if (true !== box.confirm(`Start '${filtered.length}' selected items?`)) {
+  if (true !== (await box.confirm(`Start '${filtered.length}' selected items?`))) {
     return false
   }
   filtered.forEach(id => socket.emit('item_start', id))
 }
 
-const pauseSelected = () => {
+const pauseSelected = async () => {
   if (1 > selectedElms.value.length) {
     return
   }
@@ -581,7 +581,7 @@ const pauseSelected = () => {
     toast.error('No eligible items to pause.')
     return
   }
-  if (true !== box.confirm(`Pause '${filtered.length}' selected items?`)) {
+  if (true !== (await box.confirm(`Pause '${filtered.length}' selected items?`))) {
     return false
   }
   filtered.forEach(id => socket.emit('item_pause', id))

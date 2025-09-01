@@ -311,7 +311,7 @@ const updatePresets = async (items: Preset[]): Promise<boolean | undefined> => {
 }
 
 const deleteItem = async (item: Preset) => {
-  if (true !== box.confirm(`Delete preset '${item.name}'?`, true)) {
+  if (true !== (await box.confirm(`Delete preset '${item.name}'?`, true))) {
     return
   }
 

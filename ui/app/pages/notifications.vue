@@ -312,7 +312,7 @@ const updateData = async (items: notification[]) => {
 }
 
 const deleteItem = async (item: notification) => {
-  if (true !== box.confirm(`Delete '${item.name}'?`)) {
+  if (true !== (await box.confirm(`Delete '${item.name}'?`))) {
     return
   }
 
@@ -373,7 +373,7 @@ const join_events = (events: string[]) =>
   !events || events.length < 1 ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
 
 const sendTest = async () => {
-  if (true !== box.confirm('Send test notification?')) {
+  if (true !== (await box.confirm('Send test notification?'))) {
     return
   }
 
