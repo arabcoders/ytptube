@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (2a1cd0a6)",
-    "full_sha": "2a1cd0a632723708ad50a62dd48fb42a6d6a87b0",
-    "date": "2025-08-30T23:14:55+00:00",
-    "commits": [
-      {
-        "sha": "974efc70",
-        "full_sha": "974efc700dc5e53d07a34cda14f0794ba9e25b2e",
-        "message": "allow updating github release notes",
-        "author": "arabcoders",
-        "date": "2025-08-30T23:12:44+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "c9af30edda997db990ea6d617da70b2f4be30893",
-    "date": "2025-09-01T16:35:35+00:00",
+    "tag": "v0.9.2",
+    "full_sha": "984d47e946e186fe8fba69ce629fef641b84f255",
+    "date": "2025-09-01T16:56:16+00:00",
     "commits": [
       {
         "sha": "c9af30ed",
@@ -59,6 +45,13 @@
         "message": "wip",
         "author": "arabcoders",
         "date": "2025-08-31T19:05:11+00:00"
+      },
+      {
+        "sha": "974efc70",
+        "full_sha": "974efc700dc5e53d07a34cda14f0794ba9e25b2e",
+        "message": "allow updating github release notes",
+        "author": "arabcoders",
+        "date": "2025-08-30T23:12:44+00:00"
       }
     ]
   },
