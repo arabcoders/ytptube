@@ -2,7 +2,6 @@
 code {
   color: var(--bulma-code) !important
 }
-
 </style>
 
 <template>

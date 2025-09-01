@@ -76,17 +76,11 @@ class YTDLPOpts:
         if from_user:
             bad_options: dict[str, str] = {k: v for d in REMOVE_KEYS for k, v in d.items()}
 
-        removed_options: list = []
-
         for key, value in config.items():
             if from_user and key in bad_options:
-                removed_options.append(bad_options[key])
                 continue
 
             self._item_opts[key] = value
-
-        if len(removed_options) > 0:
-            LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
 
         return self
 
@@ -175,15 +169,7 @@ class YTDLPOpts:
 
         if len(self._item_cli) > 0:
             try:
-                removed_options: list = []
-                user_cli: dict = arg_converter(
-                    args="\n".join(self._item_cli),
-                    level=True,
-                    removed_options=removed_options,
-                )
-
-                if len(removed_options) > 0:
-                    LOG.warning("Removed the following options: '%s'.", ", ".join(removed_options))
+                user_cli: dict = arg_converter(args="\n".join(self._item_cli), level=True)
             except Exception as e:
                 msg = f"Invalid command options for yt-dlp were given. '{e!s}'."
                 raise ValueError(msg) from e

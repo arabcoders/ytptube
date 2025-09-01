@@ -1,21 +1,48 @@
 import { useStorage } from '@vueuse/core'
+import { useDialog } from './useDialog'
+
+const dialog = useDialog()
 
 const reduceConfirm = useStorage<boolean>('reduce_confirm', false)
 
-function confirm(msg: string, force: boolean = false): boolean {
+const confirm = async (msg: string, force: boolean = false) => {
   if (false === force && true === reduceConfirm.value) {
     return true
   }
 
-  return window.confirm(msg)
+  const { status } = await dialog.confirmDialog({
+    title: 'Please Confirm',
+    message: msg,
+    cancelText: 'Cancel',
+    confirmText: 'OK',
+  })
+
+  return status
 }
 
-function alert(msg: string): boolean {
-  return window.confirm(msg)
+const alert = async (msg: string) => {
+  const { status } = await dialog.alertDialog({
+    title: 'Alert',
+    message: msg,
+    confirmText: 'OK',
+  })
+  return status
 }
 
-function prompt(msg: string, defaultValue: string = ''): string | null {
-  return window.prompt(msg, defaultValue)
+const prompt = async (msg: string, defaultValue: string = '') => {
+  const { status, value } = await dialog.promptDialog({
+    title: 'Input Required',
+    message: msg,
+    initial: defaultValue,
+    cancelText: 'Cancel',
+    confirmText: 'OK',
+  })
+
+  if (status) {
+    return value
+  }
+
+  return null
 }
 
 export default function useConfirm() {

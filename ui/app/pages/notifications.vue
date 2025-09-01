@@ -14,19 +14,25 @@
               <button class="button is-primary" @click="resetForm(false); toggleForm = true"
                 v-tooltip="'Add new notification target.'">
                 <span class="icon"><i class="fas fa-add"></i></span>
+                <span v-if="!isMobile">New Notification</span>
               </button>
             </p>
             <p class="control" v-if="notifications.length > 0">
               <button class="button is-warning" @click="sendTest" v-tooltip="'Send test notification.'"
                 :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading">
                 <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                <span v-if="!isMobile">Send Test</span>
               </button>
             </p>
             <p class="control" v-if="notifications.length > 0">
               <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'cards' ? 'list' : 'cards'">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-table': display_style === 'cards', 'fa-table-list': display_style === 'list' }" /></span>
+                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+                <span class="icon">
+                  <i class="fa-solid"
+                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                <span v-if="!isMobile">
+                  {{ display_style === 'list' ? 'List' : 'Grid' }}
+                </span>
               </button>
             </p>
 
@@ -203,6 +209,7 @@ const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const display_style = useStorage<string>("tasks_display_style", "cards")
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const allowedEvents = ref<string[]>([])
 const notifications = ref<notification[]>([])
@@ -305,7 +312,7 @@ const updateData = async (items: notification[]) => {
 }
 
 const deleteItem = async (item: notification) => {
-  if (true !== box.confirm(`Delete '${item.name}'?`)) {
+  if (true !== (await box.confirm(`Delete '${item.name}'?`))) {
     return
   }
 
@@ -366,7 +373,7 @@ const join_events = (events: string[]) =>
   !events || events.length < 1 ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
 
 const sendTest = async () => {
-  if (true !== box.confirm('Send test notification?')) {
+  if (true !== (await box.confirm('Send test notification?'))) {
     return
   }
 

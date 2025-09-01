@@ -151,11 +151,7 @@ class Item:
             from .Utils import arg_converter
 
             try:
-                removed_options: list = []
-                arg_converter(args=cli, level=True, removed_options=removed_options)
-                if len(removed_options) > 0:
-                    LOG.warning("Removed the following options '%s' for '%s'.", ", ".join(removed_options), url)
-
+                arg_converter(args=cli, level=True)
                 data["cli"] = cli
             except Exception as e:
                 msg = f"Failed to parse command options for yt-dlp. {e!s}"

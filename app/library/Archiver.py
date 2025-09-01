@@ -26,6 +26,7 @@ class _Entry:
         self.size: int = -1
         self.mtime: float = -1.0
         self.loaded: bool = False
+        self.last_check: float = 0.0
 
 
 class Archiver(metaclass=ThreadSafe):
@@ -45,7 +46,8 @@ class Archiver(metaclass=ThreadSafe):
         self._cache: dict[str, _Entry] = {}
         self._locks: dict[str, threading.RLock] = {}
         self._global_lock = threading.RLock()
-        self._stats_check: bool = False
+        self._stats_check: bool = True
+        self._stats_ttl: float = 0.2
         self._initialized = True
 
     @classmethod
@@ -130,7 +132,13 @@ class Archiver(metaclass=ThreadSafe):
             if not self._stats_check:
                 return entry
 
+            if self._stats_ttl > 0:
+                now = time.monotonic()
+                if (now - (entry.last_check or 0.0)) < self._stats_ttl:
+                    return entry
+
             st: os.stat_result | None = self._stat(key)
+            entry.last_check = time.monotonic()
 
             if not st:
                 self._cache[key] = _Entry()
@@ -148,6 +156,7 @@ class Archiver(metaclass=ThreadSafe):
                 entry.size = -1
                 entry.mtime = -1
                 entry.loaded = True
+                entry.last_check = time.monotonic()
                 self._cache[key] = entry
                 return entry
 
@@ -178,6 +187,7 @@ class Archiver(metaclass=ThreadSafe):
                 entry.size = st.st_size
                 entry.mtime = st.st_mtime
             entry.loaded = True
+            entry.last_check = time.monotonic()
             self._cache[key] = entry
             return entry
 
@@ -284,6 +294,7 @@ class Archiver(metaclass=ThreadSafe):
             st: os.stat_result | None = self._stat(key)
             if st:
                 entry.size, entry.mtime = st.st_size, st.st_mtime
+                entry.last_check = time.monotonic()
 
             return True
 
@@ -353,12 +364,12 @@ class Archiver(metaclass=ThreadSafe):
             st: os.stat_result | None = self._stat(key)
             if st:
                 entry.size, entry.mtime = st.st_size, st.st_mtime
+                entry.last_check = time.monotonic()
 
             self._cache[key] = entry
 
             return True
 
-    # Global configuration
     @classmethod
     def set_skip_read_stat_checks(cls, skip: bool = True) -> None:
         """
@@ -375,3 +386,17 @@ class Archiver(metaclass=ThreadSafe):
         inst = cls.get_instance()
         with inst._global_lock:
             inst._stats_check = not skip
+
+    @classmethod
+    def set_read_stat_ttl(cls, seconds: float = 0.0) -> None:
+        """
+        Set a short TTL to throttle os.stat checks on reads.
+
+        Args:
+            seconds (float): Minimum time between successive stat() calls per file
+                when checking for external changes. Use 0 to disable throttling.
+
+        """
+        inst = cls.get_instance()
+        with inst._global_lock:
+            inst._stats_ttl = max(0.0, float(seconds))

@@ -373,7 +373,7 @@ const importItem = async () => {
     }
 
     if (form.name || form.request?.url) {
-      if (false === box.confirm('Overwrite the current form fields?', true)) {
+      if (false === (await box.confirm('Overwrite the current form fields?', true))) {
         return
       }
     }

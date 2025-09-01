@@ -409,7 +409,7 @@ const importItem = async (): Promise<void> => {
     }
 
     if (form.url || form.timer) {
-      if (false === box.confirm('Overwrite the current form fields?', true)) {
+      if (false === (await box.confirm('Overwrite the current form fields?', true))) {
         return
       }
     }

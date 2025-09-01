@@ -588,7 +588,7 @@ const hasDownloaded = computed(() => {
   return false
 })
 
-const deleteSelectedItems = () => {
+const deleteSelectedItems = async () => {
   if (selectedElms.value.length < 1) {
     toast.error('No items selected.')
     return
@@ -597,7 +597,7 @@ const deleteSelectedItems = () => {
   if (true === config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-  if (false === box.confirm(msg, config.app.remove_files)) {
+  if (false === (await box.confirm(msg, config.app.remove_files))) {
     return
   }
   for (const key in selectedElms.value) {
@@ -614,9 +614,9 @@ const deleteSelectedItems = () => {
   selectedElms.value = []
 }
 
-const clearCompleted = () => {
+const clearCompleted = async () => {
   let msg = 'Clear all completed downloads?'
-  if (false === box.confirm(msg)) {
+  if (false === (await box.confirm(msg))) {
     return
   }
   for (const key in stateStore.history) {
@@ -626,8 +626,8 @@ const clearCompleted = () => {
   }
 }
 
-const clearIncomplete = () => {
-  if (false === box.confirm('Clear all in-complete downloads?')) {
+const clearIncomplete = async () => {
+  if (false === (await box.confirm('Clear all in-complete downloads?'))) {
     return
   }
   for (const key in stateStore.history) {
@@ -706,8 +706,8 @@ const setStatus = (item: StoreItem) => {
   return item.status
 }
 
-const retryIncomplete = () => {
-  if (false === box.confirm('Retry all incomplete downloads?')) {
+const retryIncomplete = async () => {
+  if (false === (await box.confirm('Retry all incomplete downloads?'))) {
     return false
   }
   for (const key in stateStore.history) {
@@ -746,12 +746,12 @@ const archiveItem = async (item: StoreItem, opts = {}) => {
   socket.emit('item_delete', { id: item._id, remove_file: false })
 }
 
-const removeItem = (item: StoreItem) => {
+const removeItem = async (item: StoreItem) => {
   let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${item.title || item.id || item.url || '??'}'?`
   if (item.status === 'finished' && config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-  if (false === box.confirm(msg, Boolean(item.filename && config.app.remove_files))) {
+  if (false === (await box.confirm(msg, Boolean(item.filename && config.app.remove_files)))) {
     return false
   }
   socket.emit('item_delete', {

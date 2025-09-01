@@ -343,7 +343,7 @@ const importItem = async (): Promise<void> => {
       return
     }
 
-    if ((form.filter || form.cli) && !box.confirm('Overwrite the current form fields?', true)) {
+    if ((form.filter || form.cli) && !(await box.confirm('Overwrite the current form fields?', true))) {
       return
     }
 
