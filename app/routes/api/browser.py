@@ -135,7 +135,24 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
     req_path: str = request.match_info.get("path")
     req_path: str = "/" if not req_path else unquote_plus(req_path)
 
-    test: Path = Path(config.download_path).joinpath(req_path)
+    # Normalize requested path to always be inside download root.
+    raw_req: str = (req_path or "").strip()
+    root_dir: Path = Path(config.download_path).resolve()
+    if raw_req in ("", "/"):
+        test: Path = root_dir
+        rel_for_listing = "/"
+    else:
+        # Strip leading slash so joinpath doesn't ignore the base path.
+        test = root_dir.joinpath(raw_req.lstrip("/")).resolve(strict=False)
+        rel_for_listing = raw_req.lstrip("/")
+
+    try:
+        test.relative_to(root_dir)
+    except Exception:
+        return web.json_response(
+            data={"error": f"path '{req_path}' does not exist."}, status=web.HTTPNotFound.status_code
+        )
+
     if not test.exists():
         return web.json_response(
             data={"error": f"path '{req_path}' does not exist."}, status=web.HTTPNotFound.status_code
@@ -149,8 +166,8 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
     try:
         return web.json_response(
             data={
-                "path": req_path,
-                "contents": get_files(base_path=Path(config.download_path), dir=req_path),
+                "path": rel_for_listing,
+                "contents": get_files(base_path=root_dir, dir=rel_for_listing),
             },
             status=web.HTTPOk.status_code,
             dumps=encoder.encode,
@@ -235,13 +252,14 @@ async def path_actions(request: Request, config: Config) -> Response:
                 rel: str = str(op_path).strip("/")
         except Exception:
             rel = str(op_path)
-        entry: dict = {
-            "path": rel if rel else "/",
-            "status": ok,
-            "error": error,
-        }
+        if not rel or rel == ".":
+            rel = "/"
+
+        entry: dict = {"path": rel, "status": ok, "error": error}
+
         if action:
             entry["action"] = action
+
         if extra:
             norm_extra: dict = {}
             for k, v in extra.items():
@@ -253,6 +271,7 @@ async def path_actions(request: Request, config: Config) -> Response:
                 else:
                     norm_extra[k] = v
             entry.update(norm_extra)
+
         operations_status.append(entry)
 
     # perform each action
@@ -289,7 +308,7 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
         except Exception as e:
             LOG.exception(e)
-            record(req_path, ok=False, error=str(e), action=action)
+            record(req_path, ok=False, error=str(e), action=action, extra={"item": params})
             continue
 
         if "directory" != action:
@@ -299,6 +318,38 @@ async def path_actions(request: Request, config: Config) -> Response:
 
             if not path.is_relative_to(rootPath):
                 record(path, ok=False, error="Path outside download root.", action=action)
+                continue
+
+        if "directory" == action:
+            new_dir = params.get("new_dir").lstrip("/").strip()
+            if not new_dir:
+                record(path, ok=False, error="New directory name is required.", action=action)
+                continue
+
+            new_path = path.joinpath(*new_dir.split("/"))
+            try:
+                new_path = new_path.resolve(strict=False)
+            except Exception:
+                record(path, ok=False, error="Invalid directory path.", action=action, extra={"new_dir": new_dir})
+                continue
+
+            root_real = Path(config.download_path).resolve()
+            if not new_path.is_relative_to(root_real):
+                record(path, ok=False, error="Destination outside root.", action=action, extra={"new_dir": new_path})
+                continue
+
+            if new_path.exists():
+                dst = new_path.relative_to(config.download_path)
+                record(path, ok=False, error="Directory already exists.", action=action, extra={"new_dir": dst})
+                continue
+
+            try:
+                new_path.mkdir(parents=True, exist_ok=True)
+                record(path, ok=True, action=action, extra={"new_dir": new_path.relative_to(config.download_path)})
+                LOG.info(f"Created directory '{new_path.relative_to(config.download_path)}'")
+            except OSError as e:
+                LOG.exception(e)
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
 
         if "rename" == action:
@@ -315,16 +366,16 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
 
             try:
-                path.rename(new_path)
+                renamed = path.rename(new_path)
                 LOG.info(
-                    f"Renamed '{path.relative_to(config.download_path)}' to '{new_path.relative_to(config.download_path)}'"
+                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'"
                 )
             except OSError as e:
                 LOG.exception(e)
-                record(path, ok=False, error=str(e), action=action, extra={"new_path": new_path})
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
-                record(path, ok=True, action=action, extra={"new_path": new_path})
+                record(path, ok=True, action=action, extra={"new_path": renamed})
 
         if "delete" == action:
             try:
@@ -340,7 +391,7 @@ async def path_actions(request: Request, config: Config) -> Response:
                 LOG.info(f"Deleted '{path.relative_to(config.download_path)}'")
             except OSError as e:
                 LOG.exception(e)
-                record(path, ok=False, error=str(e), action=action)
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
                 record(path, ok=True, action=action, extra={"deleted": True})
@@ -348,46 +399,54 @@ async def path_actions(request: Request, config: Config) -> Response:
         if "move" == action:
             new_path = params.get("new_path")
             if not new_path:
-                record(path, ok=False, error="New path is required for move action.", action=action)
+                record(path, ok=False, error="New path is required for move.", action=action, extra={"item": params})
                 continue
 
-            new_path = Path(config.download_path).joinpath(unquote_plus(new_path))
-            if not new_path.exists() or not new_path.is_dir():
-                record(path, ok=False, error="Destination path is invalid.", action=action, extra={"move_to": new_path})
-                continue
+            raw_new: str = unquote_plus(str(new_path)).strip()
+            target_dir = (
+                Path(config.download_path)
+                if not raw_new or raw_new in ("/", ".")
+                else Path(config.download_path).joinpath(raw_new.lstrip("/"))
+            )
 
             try:
-                dest = new_path.joinpath(path.name)
-                path.rename(dest)
-            except OSError as e:
-                LOG.exception(e)
-                record(path, ok=False, error=str(e), action=action, extra={"moved_to": dest})
-                continue
-            else:
-                record(path, ok=True, action=action, extra={"moved_to": dest})
-
-        if "directory" == action:
-            new_dir = params.get("new_dir").lstrip("/").strip()
-            if not new_dir:
-                record(path, ok=False, error="New directory name is required for directory action.", action=action)
-                continue
-
-            new_path = path.joinpath(*new_dir.split("/"))
-            if new_path.exists():
+                target_dir = target_dir.resolve()
+            except Exception:
                 record(
-                    new_path, ok=False, error="Directory already exists.", action=action, extra={"created": new_path}
+                    path, ok=False, error="Destination path is invalid.", action=action, extra={"new_path": target_dir}
                 )
                 continue
 
+            root_real = Path(config.download_path).resolve()
+            if not target_dir.exists() or not target_dir.is_dir():
+                record(
+                    path, ok=False, error="Destination path is invalid.", action=action, extra={"new_path": target_dir}
+                )
+                continue
+
+            if not target_dir.is_relative_to(root_real):
+                record(
+                    path,
+                    ok=False,
+                    error="Destination outside download root.",
+                    action=action,
+                    extra={"new_path": target_dir},
+                )
+                continue
+
+            if path.parent == target_dir:
+                record(path, ok=False, error="Source and destination are the same.", action=action)
+                continue
+
             try:
-                new_path.mkdir(parents=True, exist_ok=True)
-                LOG.info(f"Created directory '{new_path.relative_to(config.download_path)}'")
+                dest = target_dir.joinpath(path.name)
+                path.rename(dest)
             except OSError as e:
                 LOG.exception(e)
-                record(new_path, ok=False, error=str(e), action=action, extra={"created": new_path})
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
             else:
-                record(new_path, ok=True, action=action, extra={"created": new_path})
+                record(path, ok=True, action=action, extra={"new_path": dest})
 
     return web.json_response(data=operations_status, status=web.HTTPOk.status_code)
 

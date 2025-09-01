@@ -46,6 +46,10 @@ export type ConfirmOptions = BaseOptions & {
    * Text for the confirm button
    */
   cancelText?: string
+  /**
+   * Raw HTML content to include in the dialog message.
+   */
+  rawHTML?: string
 }
 
 export type AlertOptions = BaseOptions & {}

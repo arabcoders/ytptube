@@ -27,7 +27,7 @@
             </div>
 
             <div class="control">
-              <button class="button is-danger is-light" @click="toggleFilter" v-tooltip.bottom="'Filter content'">
+              <button class="button is-danger is-light" @click="toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
                 <span v-if="!isMobile">Filter</span>
               </button>
@@ -35,8 +35,7 @@
 
             <p class="control">
               <button class="button is-info is-light" @click="createDirectory(path)"
-                :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading"
-                v-tooltip.bottom="'Create new directory'" v-if="config.app.browser_control_enabled">
+                v-if="config.app.browser_control_enabled">
                 <span class="icon"><i class="fas fa-folder-plus" /></span>
                 <span v-if="!isMobile">New Folder</span>
               </button>
@@ -56,21 +55,22 @@
       </div>
     </div>
 
-    <div class="columns is-multiline"
-      v-if="items && items.length > 0 && selectedElms.length > 0 && config.app.browser_control_enabled">
+    <div class="columns is-multiline" v-if="config.app.browser_control_enabled">
       <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-danger" @click="confirm_delete">
+        <button type="button" class="button is-fullwidth is-danger" @click="deleteSelected"
+          :disabled="selectedElms.length < 1 || isLoading || items.length < 1">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-            <span>Delete selected</span>
+            <span>Delete {{ selectedElms.length > 0 ? selectedElms.length : '' }} items</span>
           </span>
         </button>
       </div>
       <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-link">
+        <button type="button" class="button is-fullwidth is-link" @click="moveSelected"
+          :disabled="selectedElms.length < 1 || isLoading || items.length < 1">
           <span class="icon-text is-block">
             <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
-            <span>Move selected</span>
+            <span>Move {{ selectedElms.length > 0 ? selectedElms.length : '' }} items</span>
           </span>
         </button>
       </div>
@@ -417,6 +417,10 @@ const reloadContent = async (dir: string = '/', fromMounted: boolean = false): P
     }
 
     items.value = []
+    search.value = ''
+    selectedElms.value = []
+    show_filter.value = false
+    masterSelectAll.value = false
 
     const data = await response.json() as FileBrowserResponse
 
@@ -554,8 +558,15 @@ const createDirectory = async (dir: string): Promise<void> => {
     return
   }
 
-  const newDir = prompt('Enter new directory name:', '')
-  if (!newDir) {
+  const { status, value: newDir } = await dialog.promptDialog({
+    title: 'Create New Directory',
+    message: `Enter name for new directory in '${dir || '/'}':`,
+    initial: '',
+    confirmText: 'Create',
+    cancelText: 'Cancel',
+  })
+
+  if (true !== status || !newDir) {
     return
   }
 
@@ -564,7 +575,7 @@ const createDirectory = async (dir: string): Promise<void> => {
     return
   }
 
-  await actionRequest({ path: dir } as FileItem, 'directory', { new_dir: new_dir }, (item, action, data) => {
+  await actionRequest({ path: dir || '/' } as FileItem, 'directory', { new_dir: new_dir }, (item, action, data) => {
     reloadContent(path.value, true)
     toast.success(`Successfully created '${new_dir}'.`)
   })
@@ -626,7 +637,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
     const { status, value: newPath } = await dialog.promptDialog({
       title: 'Move Item',
       message: `Enter new path for '${item.name}':`,
-      initial: item.path.replace(/[^/]+$/, ''),
+      initial: item.path.replace(/[^/]+$/, '') || '/',
       confirmText: 'Move',
       cancelText: 'Cancel',
     })
@@ -635,7 +646,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    let new_path = sTrim(newPath, '/')
+    let new_path = sTrim(newPath, '/') || '/'
     if (!new_path || new_path === item.path) {
       return
     }
@@ -702,25 +713,135 @@ const actionRequest = async (
   }
 }
 
-const confirm_delete = () => {
+const massAction = async (items: Array<{ path: string, action: string }>, cb: (item: any) => void): Promise<any> => {
+  if (!config.app.browser_control_enabled) {
+    return
+  }
+
+  if (!items || items.length < 1) {
+    return
+  }
+
+  try {
+    const response = await request(`/api/file/actions`, {
+      method: 'POST',
+      body: JSON.stringify(items),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      toast.error(`Failed to perform action: ${error.error || 'Unknown error'}`)
+      return
+    }
+
+    const json = await response.json() as Array<{ path: string, status: boolean, error?: string }>
+    json.forEach(i => {
+      if (true !== i.status) {
+        toast.error(`Failed to perform action on '${i.path}': ${i.error || 'Unknown error'}`)
+        return
+      }
+
+      if (cb && typeof cb === 'function') {
+        cb(i)
+      }
+    });
+
+    return response
+  } catch (error: any) {
+    console.error(error)
+    toast.error(`Failed to perform action: ${error.message}`)
+  }
+}
+
+const deleteSelected = async () => {
   if (selectedElms.value.length < 1) {
     toast.error('No items selected.')
     return
   }
-  dialog_confirm.value.visible = true
-  dialog_confirm.value.title = 'Delete Confirmation'
 
-  dialog_confirm.value.html_message = `Delete the following items?<ul>` + selectedElms.value.map(p => {
+  const rawHTML = `<ul>` + selectedElms.value.map(p => {
     const item = items.value.find(i => i.path === p)
     if (!item) {
       return ''
     }
-    const color = item.type === 'dir' ? 'has-text-primary is-bold' : ''
+    const color = 'dir' === item.type ? 'has-text-danger is-bold' : ''
 
     return `<li><span class="icon"><i class="fa-solid ${setIcon(item)}"></i></span> <span class="${color}">${item.name}</span></li>`
   }).join('') + `</ul>`
 
-  // dialog_confirm.value.confirm = async () => await deleteSelected()
+
+  const { status } = await dialog.confirmDialog({
+    title: 'Delete Confirmation',
+    message: `Delete the following items?`,
+    rawHTML: rawHTML,
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    confirmColor: 'is-danger',
+  })
+
+  if (true !== status) {
+    selectedElms.value = []
+    return
+  }
+
+  const actions = [] as Array<{ action: string, path: string }>
+  selectedElms.value.forEach(p => {
+    const item = items.value.find(i => i.path === p)
+    if (!item) {
+      return;
+    }
+
+    actions.push({ path: item.path, action: 'delete' })
+  })
+
+  await massAction(actions, i => {
+    const item = items.value.find(it => it.path === i.path)
+    if (!item) {
+      return
+    }
+    items.value = items.value.filter(it => it.path !== i.path)
+    toast.warning(`Deleted '${item.name}'.`)
+  })
+}
+
+const moveSelected = async () => {
+  if (selectedElms.value.length < 1) {
+    toast.error('No items selected.')
+    return
+  }
+
+  const { status, value: newPath } = await dialog.promptDialog({
+    title: 'Move Items',
+    message: `Enter new path for selected items:`,
+    initial: path.value || '/',
+    confirmText: 'Move',
+    confirmColor: 'is-danger',
+    cancelText: 'Cancel',
+  })
+
+  if (true !== status || !newPath || newPath === path.value) {
+    selectedElms.value = []
+    return
+  }
+
+  const actions = [] as Array<{ action: string, path: string, new_path: string }>
+  selectedElms.value.forEach(p => {
+    const item = items.value.find(i => i.path === p)
+    if (!item) {
+      return;
+    }
+
+    actions.push({
+      path: item.path,
+      action: 'move',
+      new_path: sTrim(newPath, '/') || '/',
+    })
+  })
+
+  await massAction(actions, i => {
+    items.value = items.value.filter(it => it.path !== i.path)
+    toast.success(`Moved '${i.path}' to '${sTrim(newPath, '/')}'.`)
+  })
 }
 
 </script>
