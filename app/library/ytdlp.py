@@ -1,11 +1,8 @@
-import logging
 from typing import Any
 
 import yt_dlp
 
 import app.postprocessors  # noqa: F401
-
-LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class _ArchiveProxy:
@@ -26,7 +23,6 @@ class _ArchiveProxy:
             from app.library.Archiver import Archiver
 
             status: bool = item in Archiver.get_instance().read(self._file, [item])
-            LOG.debug(f"ArchiveProxy: '{item}' in '{self._file}': {'yes' if status else 'no'}.")
             return status
         except Exception:
             return False
@@ -39,7 +35,6 @@ class _ArchiveProxy:
             from app.library.Archiver import Archiver
 
             status: bool = Archiver.get_instance().add(self._file, [item])
-            LOG.debug(f"ArchiveProxy: Added '{item}' to '{self._file}': {'yes' if status else 'no'}.")
             return status
         except Exception:
             return False
