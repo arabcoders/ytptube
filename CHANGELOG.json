@@ -14,6 +14,55 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "c9af30edda997db990ea6d617da70b2f4be30893",
+    "date": "2025-09-01T16:35:35+00:00",
+    "commits": [
+      {
+        "sha": "c9af30ed",
+        "full_sha": "c9af30edda997db990ea6d617da70b2f4be30893",
+        "message": "Refactor arg_converter usage to remove logging of removed options in Item and YTDLPOpts classes",
+        "author": "arabcoders",
+        "date": "2025-09-01T16:35:35+00:00"
+      },
+      {
+        "sha": "28e3062b",
+        "full_sha": "28e3062bef9f988dee67fac0c7ce5c9e3c461298",
+        "message": "Enhance file browser API and dialog components",
+        "author": "arabcoders",
+        "date": "2025-09-01T16:35:25+00:00"
+      },
+      {
+        "sha": "2695bb40",
+        "full_sha": "2695bb40fc444daf5dde0f2222cf98d40d551184",
+        "message": "Migrated useConfirm to internally uses useDialog for eventual migration",
+        "author": "arabcoders",
+        "date": "2025-09-01T14:33:21+00:00"
+      },
+      {
+        "sha": "cf382f09",
+        "full_sha": "cf382f0963dffe99eb848a1c4c1d3aea97ab46bf",
+        "message": "add short ttl on archiver read",
+        "author": "arabcoders",
+        "date": "2025-09-01T14:14:44+00:00"
+      },
+      {
+        "sha": "bf1c7957",
+        "full_sha": "bf1c79577ffbcc0e5e33f56750ad8497fa3ac17e",
+        "message": "wip",
+        "author": "arabcoders",
+        "date": "2025-08-31T22:01:50+00:00"
+      },
+      {
+        "sha": "e0227c17",
+        "full_sha": "e0227c177253880a3437a9aee330f0737c16abe5",
+        "message": "wip",
+        "author": "arabcoders",
+        "date": "2025-08-31T19:05:11+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.1",
     "full_sha": "7185bae58d2df5b15567306a3d807e926692f96d",
     "date": "2025-08-30T22:52:57+00:00",
