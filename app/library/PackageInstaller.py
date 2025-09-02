@@ -10,16 +10,6 @@ import httpx
 
 LOG: logging.Logger = logging.getLogger("package_installer")
 
-if base_dir := os.environ.get("YTP_CONFIG_PATH"):
-    base_dir = Path(base_dir)
-    user_site: Path = base_dir / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
-
-    if not user_site.exists():
-        user_site.mkdir(parents=True, exist_ok=True)
-
-    if user_site.is_dir() and str(user_site) not in sys.path:
-        sys.path.insert(0, str(user_site))
-
 
 def parse_version(v: str) -> tuple[int, ...]:
     return tuple(int("".join(filter(str.isdigit, part)) or "0") for part in v.strip().split("."))
@@ -49,16 +39,23 @@ class Packages:
 class PackageInstaller:
     user_site: Path | None = None
 
-    def __init__(self):
-        if base_dir := os.environ.get("YTP_CONFIG_PATH"):
+    def __init__(self, pkg_path: Path | None = None):
+        if pkg_path:
+            self.user_site = pkg_path
+
+        if not self.user_site and (base_dir := os.environ.get("YTP_CONFIG_PATH")):
             base_dir = Path(base_dir)
             self.user_site = base_dir / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
             self.user_site.mkdir(parents=True, exist_ok=True)
 
-            if str(self.user_site) not in sys.path:
-                sys.path.insert(0, str(self.user_site))
+        if not self.user_site:
+            LOG.error("No valid package path provided or found in environment. Aborting.")
+            return
 
-    def action(self, pkg: str, upgrade: bool = False):
+        if str(self.user_site) not in sys.path:
+            sys.path.insert(0, str(self.user_site))
+
+    def action(self, pkg: str, upgrade: bool = False) -> None:
         version: str | None = None
         if "==" in pkg:
             pkg, version = pkg.split("==", 1)
@@ -89,7 +86,7 @@ class PackageInstaller:
             return None
 
     def _get_latest_version(self, pkg: str) -> str | None:
-        url = f"https://pypi.org/pypi/{pkg}/json"
+        url: str = f"https://pypi.org/pypi/{pkg}/json"
         try:
             with httpx.Client(timeout=5.0) as client:
                 resp = client.get(url)
@@ -100,7 +97,7 @@ class PackageInstaller:
             LOG.warning(f"Error while querying PyPI for '{pkg}': {e}")
         return None
 
-    def _install_pkg(self, pkg: str, version: str | None = None):
+    def _install_pkg(self, pkg: str, version: str | None = None) -> bool:
         cmd: list[str] = [
             sys.executable,
             "-m",
@@ -130,6 +127,8 @@ class PackageInstaller:
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
             self.out(out=proc.stdout, err=proc.stderr)
+
+            return 0 == proc.returncode
         except subprocess.CalledProcessError as e:
             LOG.error(f"Failed to install '{pkg}' (exit {e.returncode}). {e!s}")
             self.out(out=e.stdout, err=e.stderr)
@@ -163,8 +162,8 @@ class PackageInstaller:
             return True
 
         # Handle yt-dlp version format differences
-        current_parts = current.split(".")
-        target_parts = target.split(".")
+        current_parts: list[str] = current.split(".")
+        target_parts: list[str] = target.split(".")
 
         if len(current_parts) == len(target_parts):
             # Normalize parts by zero-padding single digits

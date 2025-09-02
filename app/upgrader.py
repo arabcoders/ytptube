@@ -10,20 +10,9 @@ import logging
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from library.PackageInstaller import PackageInstaller, Packages
 
 LOG: logging.Logger = logging.getLogger("upgrader")
-
-if base_dir := os.environ.get("YTP_CONFIG_PATH"):
-    base_dir = Path(base_dir)
-    user_site: Path = base_dir / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
-
-    if not user_site.exists():
-        user_site.mkdir(parents=True, exist_ok=True)
-
-    if user_site.is_dir() and str(user_site) not in sys.path:
-        sys.path.insert(0, str(user_site))
 
 
 class Upgrader:
@@ -34,15 +23,52 @@ class Upgrader:
         else:
             os.environ.update({"YTP_CONFIG_PATH": str(config_path)})
 
-        if config_path.exists():
-            envFile: Path = config_path / ".env"
-            if envFile.exists():
-                LOG.debug(f"loading environment variables from '{envFile}'.")
-                load_dotenv(str(envFile))
-        else:
+        if not config_path.exists():
             LOG.error(f"config path '{config_path}' doesn't exists.")
+            return
 
-        pkg_installer = PackageInstaller()
+        envFile: Path = config_path / ".env"
+        if envFile.exists():
+            from dotenv import load_dotenv
+
+            LOG.debug(f"loading environment variables from '{envFile}'.")
+            load_dotenv(str(envFile))
+
+        user_site: Path = config_path / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
+
+        if not user_site.exists():
+            user_site.mkdir(parents=True, exist_ok=True)
+
+        if user_site.is_dir():
+            if str(user_site) not in sys.path:
+                sys.path.insert(0, str(user_site))
+
+            from app.library.version import APP_VERSION
+
+            user_site_ver: Path = user_site / ".version"
+            if not user_site_ver.exists() or user_site_ver.read_text().strip() != APP_VERSION:
+                self.clean_up(user_site, user_site_ver, APP_VERSION)
+
+        self.check(config_path, user_site)
+
+    def clean_up(self, user_site: Path, user_site_ver: Path, app_version: str) -> None:
+        LOG.info(f"Cleaning up user site packages at '{user_site}' for app version '{app_version}'.")
+        from app.library.Utils import delete_dir
+
+        if not delete_dir(user_site):
+            LOG.error(f"Failed to clean up user site packages at '{user_site}'.")
+            return
+
+        try:
+            user_site.mkdir(parents=True, exist_ok=True)
+            user_site_ver.write_text(app_version)
+            LOG.info(f"User site packages cleaned up and ready for app version '{app_version}'.")
+        except Exception as e:
+            LOG.exception(e)
+            LOG.error(f"Failed to recreate user site packages at '{user_site}'. '{e!s}'.")
+
+    def check(self, config_path: Path, user_site: Path) -> None:
+        pkg_installer = PackageInstaller(pkg_path=user_site)
 
         ytdlp_auto_update: bool = os.environ.get("YTP_YTDLP_AUTO_UPDATE", "true").strip().lower() == "true"
         ytdlp_version: str | None = os.environ.get("YTP_YTDLP_VERSION", "").strip() or None
