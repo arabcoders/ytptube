@@ -46,7 +46,7 @@
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            Send notifications to your servers based on specified events.
+            Send notifications to your webhooks based on specified events or presets.
           </span>
         </div>
       </div>
@@ -76,14 +76,19 @@
               <tbody>
                 <tr v-for="item in notifications" :key="item.id">
                   <td class="is-text-overflow is-vcentered">
-                    <div>
+                    <div class="is-bold">
                       {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                      <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
+                      <NuxtLink  target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                     </div>
                     <div class="is-unselectable">
                       <span class="icon-text">
                         <span class="icon"><i class="fa-solid fa-list-ul" /></span>
                         <span>On: {{ join_events(item.on) }}</span>
+                      </span>
+                      &nbsp;
+                      <span class="icon-text">
+                        <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                        <span>Presets: {{ join_presets(item.presets) }}</span>
                       </span>
                     </div>
                   </td>
@@ -139,6 +144,10 @@
                       <span class="icon"><i class="fa-solid fa-list-ul" /></span>
                       <span>On: {{ join_events(item.on) }}</span>
                     </p>
+                    <p>
+                      <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                      <span>Presets: {{ join_presets(item.presets) }}</span>
+                    </p>
                     <p v-if="item.request?.headers && item.request.headers.length > 0">
                       <span class="icon"><i class="fa-solid fa-heading" /></span>
                       <span>{{item.request.headers.map(h => h.key).join(', ')}}</span>
@@ -186,14 +195,21 @@
             to ensure that the exported data does not contain any sensitive information for sharing.
           </li>
           <li>
-            When you set the request type as <code>Form</code>, the event data will be JSON encoded and sent as the
-            and sent as <code>...&data_key=json_string</code>, only the <code>data</code> field will be JSON encoded.
+            When you set the request type as <code>Form</code>, the event data will be JSON encoded and sent as
+            <code>...&data_key=json_string</code>, only the <code>data</code> field will be JSON encoded.
             The other keys <code>id</code>, <code>event</code> and <code>created_at</code> will be sent as they are.
           </li>
           <li>We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the request.</li>
           <li>Support for <code>Apprise URLs</code> is in beta and subject to many changes to come, currently the
-            message field fallback to JSON encoded string of the event if there there is custom message set by us for
-            that particular event.</li>
+            message field fallback to JSON encoded string of the event if no custom message set by us for that
+            particular event.</li>
+          <li>
+            If you have selected specific presets or events, this will take priority, For example, if you limited the
+            target to <code>default</code> preset and selected <code>ALL</code> events, only events that reference the
+            <code>default</code> preset will be sent to that target. Like wise, if you have limited both events and
+            presets, then ONLY events that satisfy both conditions will be sent to that target. Only the
+            <code>test</code> events can bypass these conditions.
+          </li>
         </ul>
       </Message>
     </div>
@@ -213,17 +229,15 @@ const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const allowedEvents = ref<string[]>([])
 const notifications = ref<notification[]>([])
-const target = ref<notification>({
+
+const defaultState = (): notification => ({
   name: '',
   on: [],
-  request: {
-    method: 'POST',
-    url: '',
-    type: 'json',
-    headers: [],
-    data_key: '',
-  },
+  presets: [],
+  request: { method: 'POST', url: '', type: 'json', headers: [], data_key: 'data' },
 })
+
+const target = ref<notification>(defaultState())
 const targetRef = ref<string | null>('')
 const toggleForm = ref(false)
 const isLoading = ref(false)
@@ -274,17 +288,7 @@ const reloadContent = async (fromMounted = false) => {
 }
 
 const resetForm = (closeForm = false) => {
-  target.value = {
-    name: '',
-    on: [],
-    request: {
-      method: 'POST',
-      url: '',
-      type: 'json',
-      headers: [],
-      data_key: '',
-    },
-  }
+  target.value = defaultState()
   targetRef.value = null
   if (closeForm) {
     toggleForm.value = false
@@ -331,13 +335,7 @@ const deleteItem = async (item: notification) => {
   toast.success('Notification target deleted.')
 }
 
-const updateItem = async ({
-  reference,
-  item,
-}: {
-  reference: string | null;
-  item: notification;
-}) => {
+const updateItem = async ({ reference, item }: { reference: string | null, item: notification }) => {
   if (reference) {
     const index = notifications.value.findIndex(i => i?.id === reference)
     if (0 <= index) {
@@ -369,8 +367,8 @@ const editItem = (item: notification) => {
   toggleForm.value = true
 }
 
-const join_events = (events: string[]) =>
-  !events || events.length < 1 ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
+const join_events = (events: Array<string>) => !events || events.length < 1 ? 'ALL' : events.map(e => ucFirst(e)).join(', ')
+const join_presets = (presets: Array<string>) => !presets || presets.length < 1 ? 'ALL' : presets.map(e => ucFirst(e)).join(', ')
 
 const sendTest = async () => {
   if (true !== (await box.confirm('Send test notification?'))) {

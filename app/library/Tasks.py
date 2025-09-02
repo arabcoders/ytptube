@@ -434,13 +434,13 @@ class Tasks(metaclass=Singleton):
             _tasks = [
                 self._notify.emit(
                     Events.TASK_DISPATCHED,
-                    data=status,
+                    data={**status, "preset": task.preset} if status else {"preset": task.preset},
                     title=f"Task '{task.name}' dispatched",
                     message=f"Task '{task.name}' dispatched at '{timeNow}'.",
                 ),
                 self._notify.emit(
                     Events.LOG_SUCCESS,
-                    data={"lowPriority": True},
+                    data={"preset": task.preset, "lowPriority": True},
                     title="Task completed",
                     message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
                 ),
@@ -451,6 +451,7 @@ class Tasks(metaclass=Singleton):
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             await self._notify.emit(
                 Events.LOG_ERROR,
+                data={"preset": task.preset},
                 title="Task failed",
                 message=f"Failed to execute '{task.name}'. '{e!s}'",
             )

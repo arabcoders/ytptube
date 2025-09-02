@@ -15,7 +15,8 @@ from .BackgroundWorker import BackgroundWorker
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
-from .ItemDTO import ItemDTO
+from .ItemDTO import Item, ItemDTO
+from .Presets import Preset, Presets
 from .Singleton import Singleton
 from .Utils import validate_uuid
 
@@ -71,7 +72,8 @@ class Target:
 
     id: str
     name: str
-    on: list[str]
+    on: list[str] = field(default_factory=list)
+    presets: list[str] = field(default_factory=list)
     request: TargetRequest
 
     def serialize(self) -> dict:
@@ -79,6 +81,7 @@ class Target:
             "id": self.id,
             "name": self.name,
             "on": self.on,
+            "presets": self.presets,
             "request": self.request.serialize(),
         }
 
@@ -144,11 +147,11 @@ class Notification(metaclass=Singleton):
         Notification._instance = self
         config: Config = config or Config.get_instance()
 
-        self._debug = config.debug
+        self._debug: bool = config.debug
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
         self._encoder: Encoder = encoder or Encoder()
-        self._version = config.app_version
+        self._version: str = config.app_version
         self._offload: BackgroundWorker = background_worker or BackgroundWorker.get_instance()
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
@@ -212,7 +215,7 @@ class Notification(metaclass=Singleton):
         if not self._file.exists() or self._file.stat().st_size < 1:
             return self
 
-        targets = []
+        targets: list = []
 
         try:
             LOG.info(f"Loading '{self._file}'.")
@@ -255,6 +258,7 @@ class Notification(metaclass=Singleton):
             id=target.get("id"),
             name=target.get("name"),
             on=target.get("on", []),
+            presets=target.get("presets", []),
             request=TargetRequest(
                 type=target.get("request", {}).get("type", "json"),
                 method=target.get("request", {}).get("method", "POST"),
@@ -317,8 +321,8 @@ class Notification(metaclass=Singleton):
                 msg = "Invalid notification target. Invalid 'on' event list found."
                 raise ValueError(msg)
 
-            removed_events = []
-            all_events = NotificationEvents.get_events().values()
+            removed_events: list = []
+            all_events: dict[str, str] = NotificationEvents.get_events().values()
             for e in target["on"]:
                 if e not in all_events:
                     removed_events.append(e)
@@ -327,6 +331,24 @@ class Notification(metaclass=Singleton):
 
             if len(removed_events) > 0 and len(target["on"]) < 1:
                 msg: str = f"Invalid notification target. Invalid events '{', '.join(removed_events)}' found."
+                raise ValueError(msg)
+
+        if "presets" in target:
+            if not isinstance(target["presets"], list):
+                msg = "Invalid notification target. Invalid 'presets' list found."
+                raise ValueError(msg)
+
+            removed_presets: list = []
+            all_presets: list[Preset] = Presets.get_instance().get_all()
+
+            for p in target["presets"]:
+                if p not in [ap.name for ap in all_presets]:
+                    removed_presets.append(p)
+                    target["presets"].remove(p)
+                    continue
+
+            if len(removed_presets) > 0 and len(target["presets"]) < 1:
+                msg: str = f"Invalid notification target. Invalid presets '{', '.join(removed_presets)}' found."
                 raise ValueError(msg)
 
         if "headers" in target["request"]:
@@ -360,6 +382,9 @@ class Notification(metaclass=Singleton):
             if len(target.on) > 0 and ev.event not in target.on and "test" != ev.event:
                 continue
 
+            if "test" != ev.event and not self._check_preset(target, ev):
+                continue
+
             if not target.request.url.startswith("http"):
                 apprise_targets.append(target)
             else:
@@ -372,6 +397,29 @@ class Notification(metaclass=Singleton):
             return await asyncio.gather(*tasks)
 
         return tasks
+
+    def _check_preset(self, target: Target, ev: Event) -> bool:
+        if len(target.presets) < 1:
+            return True
+
+        if not isinstance(ev.data, (Item, ItemDTO, dict)):
+            return False
+
+        preset_name: str | None = None
+
+        if isinstance(ev.data, Item):
+            preset_name = ev.data.preset
+
+        if isinstance(ev.data, ItemDTO):
+            preset_name = ev.data.preset
+
+        if isinstance(ev.data, dict):
+            preset_name = ev.data.get("preset", None)
+
+        if not preset_name:
+            return False
+
+        return preset_name in target.presets
 
     async def _apprise(self, target: list[Target], ev: Event) -> dict:
         if not target or not isinstance(target, list):
@@ -406,7 +454,7 @@ class Notification(metaclass=Singleton):
         try:
             LOG.info(f"Sending Notification event '{ev.event}: {ev.id}' to '{target.name}'.")
 
-            reqBody = {
+            reqBody: dict[str, Any] = {
                 "method": target.request.method.upper(),
                 "url": target.request.url,
                 "headers": {
@@ -423,7 +471,7 @@ class Notification(metaclass=Singleton):
                 for h in target.request.headers:
                     reqBody["headers"][h.key] = h.value
 
-            body_key = "json" if "json" == target.request.type.lower() else "data"
+            body_key: str = "json" if "json" == target.request.type.lower() else "data"
             reqBody[body_key] = self._deep_unpack(ev.serialize())
 
             if "data" != target.request.data_key:
@@ -437,11 +485,15 @@ class Notification(metaclass=Singleton):
 
             response = await self._client.request(**reqBody)
 
-            respData = {"url": target.request.url, "status": response.status_code, "text": response.text}
+            respData: dict[str, Any] = {
+                "url": target.request.url,
+                "status": response.status_code,
+                "text": response.text,
+            }
 
-            msg = f"Notification target '{target.name}' Responded to event '{ev.event}: {ev.id}' with status '{response.status_code}'."
+            msg: str = f"Notification target '{target.name}' Responded to event '{ev.event}: {ev.id}' with status '{response.status_code}'."
             if self._debug and respData.get("text"):
-                msg += f" body '{respData.get('text','??')}'."
+                msg += f" body '{respData.get('text', '??')}'."
 
             LOG.info(msg)
 
@@ -449,7 +501,7 @@ class Notification(metaclass=Singleton):
         except Exception as e:
             err_msg = str(e)
             if not err_msg:
-                err_msg = type(e).__name__
+                err_msg: str = type(e).__name__
             LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'.")
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 

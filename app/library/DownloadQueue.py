@@ -494,7 +494,12 @@ class DownloadQueue(metaclass=Singleton):
 
                 dlInfo.info.status = "not_live"
                 dlInfo.info.msg = nMessage.replace(f" '{dlInfo.info.title}'", "")
-                await self._notify.emit(Events.LOG_INFO, data={"lowPriority": True}, title=nTitle, message=nMessage)
+                await self._notify.emit(
+                    Events.LOG_INFO,
+                    data={"preset": dlInfo.info.preset, "lowPriority": True},
+                    title=nTitle,
+                    message=nMessage,
+                )
 
                 itemDownload: Download = self.done.put(dlInfo)
             elif len(entry.get("formats", [])) < 1:
@@ -511,7 +516,12 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo.info.status = "error"
                 itemDownload = self.done.put(dlInfo)
 
-                await self._notify.emit(Events.LOG_WARNING, data={"logs": text_logs}, title=nTitle, message=nMessage)
+                await self._notify.emit(
+                    Events.LOG_WARNING,
+                    data={"preset": dlInfo.info.preset, "logs": text_logs},
+                    title=nTitle,
+                    message=nMessage,
+                )
             elif is_premiere and self.config.prevent_live_premiere:
                 nStore = "history"
                 nTitle = "Premiere Video"
@@ -546,7 +556,9 @@ class DownloadQueue(metaclass=Singleton):
                     nStore = "history"
                     nEvent = Events.ITEM_MOVED
                     nTitle = "Premiering right now"
-                    await self._notify.emit(Events.LOG_INFO, title=nTitle, message=nMessage)
+                    await self._notify.emit(
+                        Events.LOG_INFO, data={"preset": dlInfo.info.preset}, title=nTitle, message=nMessage
+                    )
             else:
                 nEvent = Events.ITEM_ADDED
                 nTitle = "Item Added"
@@ -559,7 +571,9 @@ class DownloadQueue(metaclass=Singleton):
 
             await self._notify.emit(
                 nEvent,
-                data={"to": nStore, "item": itemDownload.info} if Events.ITEM_MOVED == nEvent else itemDownload.info,
+                data={"to": nStore, "preset": itemDownload.info.preset, "item": itemDownload.info}
+                if Events.ITEM_MOVED == nEvent
+                else itemDownload.info,
                 title=nTitle,
                 message=nMessage,
             )
@@ -664,7 +678,9 @@ class DownloadQueue(metaclass=Singleton):
             if item.is_archived():
                 message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
-                await self._notify.emit(Events.LOG_INFO, title="Already Downloaded", message=message)
+                await self._notify.emit(
+                    Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
+                )
                 return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
@@ -777,7 +793,7 @@ class DownloadQueue(metaclass=Singleton):
                 self.done.put(item)
                 await self._notify.emit(
                     Events.ITEM_MOVED,
-                    data={"to": "history", "item": item.info},
+                    data={"to": "history", "preset": item.info.preset, "item": item.info},
                     title="Download Cancelled",
                     message=f"Download '{item.info.title}' has been cancelled.",
                 )
@@ -1014,7 +1030,7 @@ class DownloadQueue(metaclass=Singleton):
             _tasks.append(
                 self._notify.emit(
                     Events.ITEM_MOVED,
-                    data={"to": "history", "item": entry.info},
+                    data={"to": "history", "preset": entry.info.preset, "item": entry.info},
                     title=nTitle,
                     message=nMessage,
                 )

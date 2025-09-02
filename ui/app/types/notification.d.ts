@@ -15,7 +15,8 @@ type notification = {
   id?: string;
   name: string;
   request: notificationRequest;
-  on: string[];
+  on: Array<string>;
+  presets: Array<string>;
   raw?: boolean;
 };
 
