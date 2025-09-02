@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088",
-    "date": "2025-09-02T15:58:32+00:00",
+    "full_sha": "a528bf33ec3b7f89e995160f51809dbac3bb2960",
+    "date": "2025-09-02T16:41:27+00:00",
     "commits": [
+      {
+        "sha": "a528bf33",
+        "full_sha": "a528bf33ec3b7f89e995160f51809dbac3bb2960",
+        "message": "Updated the autocomplete support to be more smarter",
+        "author": "arabcoders",
+        "date": "2025-09-02T16:41:27+00:00"
+      },
       {
         "sha": "6cf4f6b9",
         "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088",
