@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (a5d91e58)",
-    "full_sha": "a5d91e58faf310e4c39bab226a7c9bfb26f7910b",
-    "date": "2025-09-02T16:54:34+00:00",
+    "tag": "Unreleased (c528e2b5)",
+    "full_sha": "c528e2b5576ba309d68ece3c32ddf367ddd074be",
+    "date": "2025-09-02T19:59:22+00:00",
     "commits": [
+      {
+        "sha": "691f0d5b",
+        "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9",
+        "message": "FEAT: Make it possible to limit notify target to specific presets.",
+        "author": "arabcoders",
+        "date": "2025-09-02T19:36:31+00:00"
+      },
       {
         "sha": "a528bf33",
         "full_sha": "a528bf33ec3b7f89e995160f51809dbac3bb2960",
@@ -31,20 +38,6 @@
         "message": "Refactor logging setup and enhance user site directory management in PackageInstaller and Upgrader",
         "author": "arabcoders",
         "date": "2025-09-02T01:59:07+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9",
-    "date": "2025-09-02T19:36:31+00:00",
-    "commits": [
-      {
-        "sha": "691f0d5b",
-        "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9",
-        "message": "FEAT: Make it possible to limit notify target to specific presets.",
-        "author": "arabcoders",
-        "date": "2025-09-02T19:36:31+00:00"
       }
     ]
   },

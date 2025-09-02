@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250902-a5d91e58",
-        "date": "2025-09-02T16:54:34+00:00",
+        "tag": "master-20250902-c528e2b5",
+        "date": "2025-09-02T19:59:22+00:00",
         "commits": [
+            {
+                "sha": "691f0d5b",
+                "message": "FEAT: Make it possible to limit notify target to specific presets.",
+                "author": "arabcoders",
+                "date": "2025-09-02T19:36:31+00:00",
+                "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9"
+            },
             {
                 "sha": "a528bf33",
                 "message": "Updated the autocomplete support to be more smarter",
@@ -1670,7 +1677,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a5d91e58faf310e4c39bab226a7c9bfb26f7910b"
+        "full_sha": "c528e2b5576ba309d68ece3c32ddf367ddd074be"
     },
     {
         "tag": "master-20250616-c07465a6",
