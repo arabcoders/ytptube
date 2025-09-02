@@ -35,18 +35,19 @@ class Upgrader:
             load_dotenv(str(envFile))
 
         user_site: Path = config_path / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
+        user_site_ver: Path = user_site / ".version"
+
+        from app.library.version import APP_VERSION
 
         if not user_site.exists():
             user_site.mkdir(parents=True, exist_ok=True)
+            user_site_ver.write_text(APP_VERSION)
 
         if user_site.is_dir():
             if str(user_site) not in sys.path:
                 sys.path.insert(0, str(user_site))
 
-            from app.library.version import APP_VERSION
-
-            user_site_ver: Path = user_site / ".version"
-            if not user_site_ver.exists() or user_site_ver.read_text().strip() != APP_VERSION:
+            if not user_site_ver.exists() or APP_VERSION != user_site_ver.read_text().strip():
                 self.clean_up(user_site, user_site_ver, APP_VERSION)
 
         self.check(config_path, user_site)

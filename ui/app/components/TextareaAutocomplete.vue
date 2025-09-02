@@ -1,9 +1,10 @@
 <template>
   <div class="dropdown" :class="{ 'is-active': showList && filteredOptions.length }" style="width:100%;">
     <div class="control" style="width:100%;">
-      <textarea :id="id" v-model="localValue" @input="onInput" @focus="showList = true" @blur="hideList" @keydown="onKeydown"
-        class="textarea" :placeholder="placeholder" autocomplete="off" style="width:100%; position:relative; z-index:2;"
-        rows="4" :disabled="disabled" />
+      <textarea :id="id" ref="textareaRef" v-model="localValue" @input="onInput" @focus="onFocus" @blur="hideList"
+        @keydown="onKeydown" @keyup="updateCaret" @click="updateCaret" @mouseup="updateCaret"
+        class="textarea" :placeholder="placeholder" autocomplete="off"
+        style="width:100%; position:relative; z-index:2;" rows="4" :disabled="disabled" />
     </div>
     <div class="dropdown-menu" role="menu" style="width:100%; z-index:3;">
       <div class="dropdown-content" style="width:100%; max-height:11em; overflow-y:auto;">
@@ -31,6 +32,8 @@ const props = defineProps<{
 
 const model = defineModel<string>()
 const localValue = ref(model.value || '')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const caretIndex = ref(0)
 const showList = ref(false)
 const highlightedIndex = ref(-1)
 const dropdownItems = ref<HTMLElement[]>([])
@@ -38,12 +41,35 @@ const dropdownItems = ref<HTMLElement[]>([])
 watch(model, val => localValue.value = val || '')
 watch(localValue, val => model.value = val)
 
+// Compute token at caret position
+const getCurrentToken = (value: string, caret: number) => {
+  const left = value.slice(0, caret)
+  const right = value.slice(caret)
+  const leftMatch = left.match(/(\S+)$/)
+  const rightMatch = right.match(/^(\S+)/)
+  const leftToken: string = (leftMatch?.[1] ?? '') as string
+  const rightToken: string = (rightMatch?.[1] ?? '') as string
+  const token = leftToken + rightToken
+  const start = leftMatch ? caret - leftToken.length : caret
+  const end = rightMatch ? caret + rightToken.length : caret
+  return { token, start, end }
+}
+
 const filteredOptions = computed(() => {
-  const lastWord = localValue.value.split(/\s+/).pop() || ''
-  if (!lastWord) {
-    return props.options
+  const { token } = getCurrentToken(localValue.value, caretIndex.value)
+  // Hide suggestions once '=' is present in the current token
+  if (!token || token.includes('=')) {
+    return []
   }
-  const val = lastWord.toLowerCase()
+  // Only suggest when typing a long flag starting with `--`
+  if (!token.startsWith('--')) {
+    return []
+  }
+  // Hide suggestions if token exactly matches an option value
+  if (props.options.some(opt => opt.value === token)) {
+    return []
+  }
+  const val = token.toLowerCase()
   const startsWithFlag = []
   const includesFlag = []
   const includesDesc = []
@@ -62,25 +88,53 @@ const filteredOptions = computed(() => {
 })
 
 const appendFlag = (flag: string) => {
-  // Only replace the last word if the cursor is at the end and the last word is not followed by a space
   const value = localValue.value
-  const cursorAtEnd = true // textarea autocomplete only works at end
-  const match = value.match(/(\S+)$/)
-  if (match && cursorAtEnd && !value.endsWith(' ')) {
-    // Replace last word
-    localValue.value = value.slice(0, match.index) + flag
+  const caret = caretIndex.value
+  const { token, start, end } = getCurrentToken(value, caret)
+  if (token) {
+    // Replace only the flag part of the token, preserving any '=value' suffix in the same token
+    const eqPos = token.indexOf('=')
+    const after = eqPos !== -1 ? token.slice(eqPos) : ''
+    localValue.value = value.slice(0, start) + flag + after + value.slice(end)
+    nextTick(() => {
+      const pos = start + flag.length + after.length
+      if (textareaRef.value) {
+        textareaRef.value.selectionStart = textareaRef.value.selectionEnd = pos
+        caretIndex.value = pos
+      }
+    })
   } else {
-    // Just append
-    localValue.value += (value && !value.endsWith(' ') ? ' ' : '') + flag
+    // No token at caret: append at caret position
+    const needsSpace = caret > 0 && value[caret - 1] !== ' '
+    localValue.value = value.slice(0, caret) + (needsSpace ? ' ' : '') + flag + value.slice(caret)
+    nextTick(() => {
+      const pos = caret + (needsSpace ? 1 : 0) + flag.length
+      if (textareaRef.value) {
+        textareaRef.value.selectionStart = textareaRef.value.selectionEnd = pos
+        caretIndex.value = pos
+      }
+    })
   }
   showList.value = false
   highlightedIndex.value = -1
 }
 
+const updateCaret = () => {
+  caretIndex.value = textareaRef.value ? (textareaRef.value.selectionStart ?? localValue.value.length) : localValue.value.length
+}
+
+const onFocus = () => {
+  updateCaret()
+  showList.value = true
+}
+
 const onInput = () => {
-  const lastWord = localValue.value.split(/\s+/).pop() || ''
-  showList.value = lastWord.length > 0
-  highlightedIndex.value = (showList.value && filteredOptions.value.length && lastWord.length > 0) ? 0 : -1
+  updateCaret()
+  const { token } = getCurrentToken(localValue.value, caretIndex.value)
+  const hasEqual = token.includes('=')
+  const isFlagTrigger = token.startsWith('--') && !hasEqual
+  showList.value = isFlagTrigger && filteredOptions.value.length > 0
+  highlightedIndex.value = showList.value ? 0 : -1
 }
 
 // Reset scroll position when filtered options change
@@ -91,12 +145,21 @@ watch(filteredOptions, () => {
     if (dropdown) {
       dropdown.scrollTop = 0
     }
+    const items = document.querySelectorAll('.dropdown-item')
+    dropdownItems.value = Array.from(items) as HTMLElement[]
   })
 })
 
 const hideList = () => setTimeout(() => { showList.value = false; highlightedIndex.value = -1 }, 100)
 
 const onKeydown = (e: KeyboardEvent) => {
+  // Track caret and allow ESC to immediately close suggestions and restore normal keys
+  updateCaret()
+  if (e.key === 'Escape') {
+    showList.value = false
+    highlightedIndex.value = -1
+    return
+  }
   if (!showList.value || !filteredOptions.value.length) {
     return
   }
@@ -132,20 +195,18 @@ const onKeydown = (e: KeyboardEvent) => {
       if (el) el.scrollIntoView({ block: 'nearest' })
     })
   } else if (e.key === 'Enter' || e.key === 'Tab') {
-    const lastWord = localValue.value.split(/\s+/).pop() || ''
+    const { token } = getCurrentToken(localValue.value, caretIndex.value)
+    const hasEqual = token.includes('=')
+    const isFlagTrigger = token.startsWith('--') && !hasEqual
     const selected = highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length ?
       filteredOptions.value[highlightedIndex.value] : undefined
     // Only autocomplete if there's a partial word being typed
-    if (selected && lastWord.trim().length > 0) {
+    if (selected && isFlagTrigger) {
       e.preventDefault()
       appendFlag(selected.value)
     }
   }
 
-  // Keep dropdownItems ref in sync with rendered items
-  watch(filteredOptions, () => nextTick(() => {
-    const items = document.querySelectorAll('.dropdown-item')
-    dropdownItems.value = Array.from(items) as HTMLElement[]
-  }))
+  // dropdownItems is updated via a single top-level watch(filteredOptions)
 }
 </script>
