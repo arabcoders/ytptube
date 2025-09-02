@@ -7,12 +7,16 @@ import time
 from logging.handlers import TimedRotatingFileHandler
 from multiprocessing.managers import SyncManager
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import coloredlogs
 from dotenv import load_dotenv
 
 from .Utils import FileLogFormatter, arg_converter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
+
+if TYPE_CHECKING:
+    from subprocess import CompletedProcess
 
 
 class Config:
@@ -558,8 +562,8 @@ class Config:
         try:
             import subprocess
 
-            branch_result = subprocess.run(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
+            branch_result: CompletedProcess[str] = subprocess.run(
+                ["git", "-c", f"safe.directory={git_path.parent!s}", "rev-parse", "--abbrev-ref", "HEAD"],  # noqa: S607
                 cwd=os.path.dirname(git_path),
                 capture_output=True,
                 text=True,
@@ -576,8 +580,8 @@ class Config:
                 logging.warning("Git branch name is empty.")
                 return
 
-            commit_result = subprocess.run(
-                ["git", "log", "-1", "--format=%ct_%H"],  # noqa: S607
+            commit_result: CompletedProcess[str] = subprocess.run(
+                ["git", "-c", f"safe.directory={git_path.parent!s}", "log", "-1", "--format=%ct_%H"],  # noqa: S607
                 cwd=os.path.dirname(git_path),
                 capture_output=True,
                 text=True,

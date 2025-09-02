@@ -8,7 +8,17 @@ from pathlib import Path
 
 import httpx
 
-LOG = logging.getLogger("package_installer")
+LOG: logging.Logger = logging.getLogger("package_installer")
+
+if base_dir := os.environ.get("YTP_CONFIG_PATH"):
+    base_dir = Path(base_dir)
+    user_site: Path = base_dir / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
+
+    if not user_site.exists():
+        user_site.mkdir(parents=True, exist_ok=True)
+
+    if user_site.is_dir() and str(user_site) not in sys.path:
+        sys.path.insert(0, str(user_site))
 
 
 def parse_version(v: str) -> tuple[int, ...]:
@@ -113,13 +123,16 @@ class PackageInstaller:
             cmd.extend(["--disable-pip-version-check", pkg])
 
         try:
-            subprocess.run(
+            proc: subprocess.CompletedProcess[bytes] = subprocess.run(
                 cmd,
                 check=True,
+                capture_output=True,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
             )
+            self.out(out=proc.stdout, err=proc.stderr)
         except subprocess.CalledProcessError as e:
-            LOG.error(f"Failed to install package '{pkg}'. Error: {e}")
+            LOG.error(f"Failed to install '{pkg}' (exit {e.returncode}). {e!s}")
+            self.out(out=e.stdout, err=e.stderr)
             raise
 
     def check(self, pkgs: Packages):
@@ -165,3 +178,12 @@ class PackageInstaller:
                 return True
 
         return False
+
+    def out(self, out: bytes | str | None = None, err=bytes | str | None) -> None:
+        if out:
+            for line in (line.strip() for line in out.strip().splitlines() if line.strip()):
+                LOG.info(line.decode() if isinstance(line, bytes) else line)
+
+        if err:
+            for line in (line.strip() for line in err.strip().splitlines() if line.strip()):
+                LOG.warning(line.decode() if isinstance(line, bytes) else line)
