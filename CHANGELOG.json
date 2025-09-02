@@ -35,6 +35,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9",
+    "date": "2025-09-02T19:36:31+00:00",
+    "commits": [
+      {
+        "sha": "691f0d5b",
+        "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9",
+        "message": "FEAT: Make it possible to limit notify target to specific presets.",
+        "author": "arabcoders",
+        "date": "2025-09-02T19:36:31+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.2",
     "full_sha": "984d47e946e186fe8fba69ce629fef641b84f255",
     "date": "2025-09-01T16:56:16+00:00",
