@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250901-c9af30ed",
-        "date": "2025-09-01T16:35:35+00:00",
+        "tag": "dev-20250902-fa155766",
+        "date": "2025-09-02T01:59:07+00:00",
         "commits": [
+            {
+                "sha": "fa155766",
+                "message": "Refactor logging setup and enhance user site directory management in PackageInstaller and Upgrader",
+                "author": "arabcoders",
+                "date": "2025-09-02T01:59:07+00:00",
+                "full_sha": "fa155766080f126f495644df6f179f7564a129d2"
+            },
             {
                 "sha": "c9af30ed",
                 "message": "Refactor arg_converter usage to remove logging of removed options in Item and YTDLPOpts classes",
@@ -1642,7 +1649,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c9af30edda997db990ea6d617da70b2f4be30893"
+        "full_sha": "fa155766080f126f495644df6f179f7564a129d2"
     },
     {
         "tag": "dev-20250616-c07465a6",
