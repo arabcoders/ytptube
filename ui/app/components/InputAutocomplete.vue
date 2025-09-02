@@ -34,21 +34,38 @@ const props = defineProps<{
 const model = defineModel<string>()
 
 const onInput = () => {
-  if (false === showList.value) {
-    showList.value = true
-  }
-  highlightedIndex.value = filteredOptions.value.length ? 0 : -1
+  showList.value = isFlagTrigger.value && filteredOptions.value.length > 0
+  highlightedIndex.value = showList.value ? 0 : -1
 }
 
 const showList = ref(false)
 const highlightedIndex = ref(-1)
 const dropdownItemRefs = ref<(HTMLElement | null)[]>([])
 
+// Extract the last non-space token and its bounds
+const getLastToken = (value: string) => {
+  const m = (value || '').match(/(\S+)$/)
+  const token: string = m?.[1] ?? ''
+  const start = m ? (m.index as number) : value.length
+  const end = m ? start + token.length : value.length
+  return { token, start, end }
+}
+
 const filteredOptions = computed(() => {
-  if (!model.value) {
+  const value = model.value || ''
+  if (!value) {
     return props.options
   }
-  const val = model.value.toLowerCase()
+  const { token } = getLastToken(value)
+  // Hide suggestions when token has '=' or doesn't start with '--'
+  if (!token || token.includes('=') || !token.startsWith('--')) {
+    return []
+  }
+  // Hide suggestions if token exactly matches an option value
+  if (props.options.some(opt => opt.value === token)) {
+    return []
+  }
+  const val = token.toLowerCase()
   const startsWithFlag = []
   const includesFlag = []
   const includesDesc = []
@@ -67,7 +84,16 @@ const filteredOptions = computed(() => {
 })
 
 const selectOption = (val: string) => {
-  model.value = val
+  const value = model.value || ''
+  const { token, start, end } = getLastToken(value)
+  if (token) {
+    // Preserve any '=value' suffix already typed for this token
+    const eqPos = token.indexOf('=')
+    const after = eqPos !== -1 ? token.slice(eqPos) : ''
+    model.value = value.slice(0, start) + val + after + value.slice(end)
+  } else {
+    model.value = val
+  }
   showList.value = false
   highlightedIndex.value = -1
 }
@@ -81,8 +107,8 @@ const hideList = () => {
 }
 
 const onFocus = () => {
-  showList.value = true
-  highlightedIndex.value = filteredOptions.value.length ? 0 : -1
+  showList.value = isFlagTrigger.value && filteredOptions.value.length > 0
+  highlightedIndex.value = showList.value ? 0 : -1
 }
 
 const setDropdownItemRef = (el: Element | ComponentPublicInstance | null, idx: number) => {
@@ -100,8 +126,21 @@ watch(filteredOptions, () => {
   })
 })
 
+const isFlagTrigger = computed(() => {
+  const { token } = getLastToken(model.value || '')
+  if (!token || !token.startsWith('--') || token.includes('=')) return false
+  // Suppress if exact match
+  return !props.options.some(opt => opt.value === token)
+})
+
 const handleKeydown = (e: KeyboardEvent) => {
-  if (!filteredOptions.value.length) {
+  // Escape closes dropdown and lets arrows navigate the input
+  if (e.key === 'Escape') {
+    showList.value = false
+    highlightedIndex.value = -1
+    return
+  }
+  if (!showList.value || !filteredOptions.value.length) {
     return
   }
 
@@ -126,7 +165,7 @@ const handleKeydown = (e: KeyboardEvent) => {
   } else if (e.key === 'Enter' || e.key === 'Tab') {
     const selected = highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length ?
       filteredOptions.value[highlightedIndex.value] : undefined
-    if (selected) {
+    if (selected && isFlagTrigger.value) {
       e.preventDefault()
       selectOption(selected.value)
     }
