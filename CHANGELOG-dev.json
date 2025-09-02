@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250902-7faa3109",
-        "date": "2025-09-02T02:03:42+00:00",
+        "tag": "dev-20250902-6cf4f6b9",
+        "date": "2025-09-02T15:58:32+00:00",
         "commits": [
+            {
+                "sha": "6cf4f6b9",
+                "message": "Cleanup user python packages dir after each version change.",
+                "author": "arabcoders",
+                "date": "2025-09-02T15:58:32+00:00",
+                "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088"
+            },
             {
                 "sha": "7faa3109",
                 "message": "updated external packages.",
@@ -1656,7 +1663,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7faa3109a0451b6555d40e98d5d60f6b06ffc5ee"
+        "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088"
     },
     {
         "tag": "dev-20250616-c07465a6",

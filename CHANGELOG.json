@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7faa3109a0451b6555d40e98d5d60f6b06ffc5ee",
-    "date": "2025-09-02T02:03:42+00:00",
+    "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088",
+    "date": "2025-09-02T15:58:32+00:00",
     "commits": [
+      {
+        "sha": "6cf4f6b9",
+        "full_sha": "6cf4f6b988e194954bf7b7f9780fc0924db09088",
+        "message": "Cleanup user python packages dir after each version change.",
+        "author": "arabcoders",
+        "date": "2025-09-02T15:58:32+00:00"
+      },
       {
         "sha": "7faa3109",
         "full_sha": "7faa3109a0451b6555d40e98d5d60f6b06ffc5ee",
