@@ -48,7 +48,7 @@
                     </button>
                   </div>
                 </div>
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>You can use this field to populate the data, using shared string.</span>
                 </span>
@@ -63,7 +63,7 @@
                     <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress" required>
                     <span class="icon is-small is-left"><i class="fa-solid fa-user" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The notification target name, this is used to identify the target in the logs and
                       notifications.</span>
@@ -81,11 +81,13 @@
                       required>
                     <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">The URL to send the notification to. It can be regular http/https endpoint.
-                      or <NuxtLink target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">
-                        Apprise</NuxtLink> URL.</span>
+                    <span>
+                      The URL to send the notification to. It can be regular http/https endpoint. or <NuxtLink
+                        target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">Apprise
+                      </NuxtLink> URL.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -105,7 +107,7 @@
                     </div>
                     <span class="icon is-small is-left"><i class="fa-solid fa-tv" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
                       The request method to use when sending the notification. This can be any of the standard HTTP
@@ -130,7 +132,7 @@
                     </div>
                     <span class="icon is-small is-left"><i class="fa-solid fa-tv" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
                       The request type to use when sending the notification. This can be <code>JSON</code> or
@@ -140,7 +142,7 @@
                 </div>
               </div>
 
-              <div class="column is-12-mobile" :class="{ 'is-6-tablet': !isApprise, 'is-12': isApprise }">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="on">
                     Select Events
@@ -158,7 +160,7 @@
                     </div>
                     <span class="icon is-small is-left"><i class="fa-solid fa-paper-plane" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
                       Subscribe to the events you want to listen for. When the event is triggered, the notification will
@@ -169,7 +171,43 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="on">
+                    Select Presets
+                    <template v-if="form.presets.length > 0">
+                      - <NuxtLink @click="form.presets = []">Clear selection</NuxtLink>
+                    </template>
+                  </label>
+                  <div class="control has-icons-left">
+                    <div class="select is-multiple is-fullwidth">
+                      <select id="on" class="is-fullwidth" v-model="form.presets" :disabled="addInProgress" multiple>
+                        <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
+                          <option v-for="item in filter_presets(false)" :key="item.id" :value="item.name">
+                            {{ item.name }}
+                          </option>
+                        </optgroup>
+                        <optgroup label="Default presets">
+                          <option v-for="item in filter_presets(true)" :key="item.id" :value="item.name">
+                            {{ item.name }}
+                          </option>
+                        </optgroup>
+                      </select>
+                    </div>
+                    <span class="icon is-small is-left"><i class="fa-solid fa-sliders" /></span>
+                  </div>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>
+                      Select the presets you want to listen for. If you select presets, only events that reference those
+                      presets will trigger the notification. If no presets are selected, the notification will be sent
+                      for all presets.
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-12" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline" for="data_key">
                     Data field
@@ -179,7 +217,7 @@
                       :disabled="addInProgress" required>
                     <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
                       The field name to use when sending the notification. This is used to identify the data in the
@@ -206,7 +244,7 @@
                             <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
                           </div>
                         </div>
-                        <span class="help">
+                        <span class="help is-bold">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>The header key to send with the notification.</span>
                         </span>
@@ -219,7 +257,7 @@
                             <span class="icon is-small is-left"><i class="fa-solid fa-v" /></span>
                           </div>
                         </div>
-                        <span class="help">
+                        <span class="help is-bold">
                           <span class="icon"><i class="fa-solid fa-info" /></span>
                           <span>The header value to send with the notification.</span>
                         </span>
@@ -234,7 +272,7 @@
                       </div>
                     </template>
                   </div>
-                  <span class="help">
+                  <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-exclamation" /></span>
                     <span class="has-text-danger">
                       If header key or value is empty, the header will not be sent.
@@ -274,6 +312,7 @@ import type { notification, notificationImport } from '~/types/notification'
 const emitter = defineEmits(['cancel', 'submit'])
 const toast = useNotification()
 const box = useConfirm()
+const config = useConfigStore()
 
 const props = defineProps({
   reference: {
@@ -396,7 +435,17 @@ const importItem = async () => {
 
     if (item.on) {
       form.on = item.on
+    }
 
+    if (item.presets) {
+      item.presets.forEach(p => {
+        if (!config.presets.find(cp => cp.name === p)) {
+          return
+        }
+        if (!form.presets.includes(p)) {
+          form.presets.push(p)
+        }
+      })
     }
 
     import_string.value = ''
@@ -407,4 +456,5 @@ const importItem = async () => {
 }
 
 const isApprise = computed(() => form.request.url && !form.request.url.startsWith('http'))
+const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
 </script>

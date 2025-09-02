@@ -15,18 +15,21 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
         await notify.emit(Events.LOG_ERROR, title="Invalid request", message="No URL provided.", to=sid)
         return
 
+    item: Item = Item.format(data)
     try:
-        status = await queue.add(item=Item.format(data))
+        status = await queue.add(item=item)
         await notify.emit(
             event=Events.ITEM_STATUS,
             title="Adding URL",
             message=f"Adding URL '{url}' to the download queue.",
-            data=status,
+            data={**status, "preset": item.preset} if status else {"preset": item.preset},
             to=sid,
         )
     except ValueError as e:
         LOG.exception(e)
-        await notify.emit(Events.LOG_ERROR, title="Error Adding URL", message=str(e), to=sid)
+        await notify.emit(
+            Events.LOG_ERROR, data={"preset": item.preset}, title="Error Adding URL", message=str(e), to=sid
+        )
 
 
 @route(RouteType.SOCKET, "item_cancel", "item_cancel")
