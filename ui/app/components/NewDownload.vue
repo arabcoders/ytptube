@@ -64,7 +64,7 @@
                 </div>
                 <div class="control is-expanded">
                   <input type="text" class="input is-fullwidth" id="path" v-model="form.folder"
-                    :placeholder="get_download_folder()" :disabled="!socket.isConnected || addInProgress"
+                    :placeholder="getDefault('folder', '/')" :disabled="!socket.isConnected || addInProgress"
                     list="folders">
                 </div>
               </div>
@@ -105,7 +105,7 @@
 
               <DLInput id="output_template" type="string" label="Output template" v-model="form.template"
                 icon="fa-solid fa-file" :disabled="!socket.isConnected || addInProgress"
-                :placeholder="get_output_template()">
+                :placeholder="getDefault('template', config.app.output_template || '%(title)s.%(ext)s')">
                 <template #help>
                   <span class="help is-bold is-unselectable">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -123,7 +123,7 @@
                   <span>Command options for yt-dlp</span>
                 </label>
                 <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                  :disabled="!socket.isConnected || addInProgress" />
+                  :placeholder="getDefault('cli', '')" :disabled="!socket.isConnected || addInProgress" />
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>
@@ -138,7 +138,8 @@
 
             <div class="column is-6-tablet is-12-mobile">
               <DLInput id="ytdlpCookies" type="text" label="Cookies for yt-dlp" v-model="form.cookies"
-                icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress">
+                icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress"
+                :placeholder="getDefault('cookies', '')">
                 <template #help>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -483,24 +484,34 @@ const filter_presets = (flag: boolean = true) => config.presets.filter(item => i
 const get_preset = (name: string | undefined) => config.presets.find(item => item.name === name)
 const expand_description = (e: Event) => toggleClass(e.target as HTMLElement, ['is-ellipsis', 'is-pre-wrap'])
 
-const get_output_template = () => {
-  if (form.value.preset && !hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.value.preset)
-    if (preset && preset.template) {
-      return preset.template
-    }
+const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {
+  if (false !== hasFormatInConfig.value || !form.value.preset) {
+    return ret
   }
-  return config.app.output_template || '%(title)s.%(ext)s'
-}
 
-const get_download_folder = (): string => {
-  if (form.value.preset && false === hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.value.preset)
-    if (preset?.folder) {
-      return preset.folder.replace(config.app.download_path, '')
-    }
+  const preset = config.presets.find(p => p.name === form.value.preset)
+
+  if (!preset) {
+    return ret
   }
-  return '/'
+
+  if (type === 'cookies' && preset.cookies) {
+    return preset.cookies
+  }
+
+  if (type === 'cli' && preset.cli) {
+    return preset.cli
+  }
+
+  if (type === 'template' && preset.template) {
+    return preset.template
+  }
+
+  if (type === 'folder' && preset.folder) {
+    return preset.folder.replace(config.app.download_path, '') || ret
+  }
+
+  return ret
 }
 
 const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))

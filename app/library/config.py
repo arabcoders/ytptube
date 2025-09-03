@@ -164,7 +164,7 @@ class Config:
     console_enabled: bool = False
     "Enable direct access to yt-dlp console."
 
-    browser_enabled: bool = False
+    browser_enabled: bool = True
     "Enable file browser access."
 
     browser_control_enabled: bool = False

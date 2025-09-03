@@ -3,48 +3,48 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
-| Environment Variable           | Description                                                        | Default                            |
-| ------------------------------ | ------------------------------------------------------------------ | ---------------------------------- |
-| YTP_OUTPUT_TEMPLATE            | The template for the filenames of the downloaded videos            | `%(title)s.%(ext)s`                |
-| YTP_DEFAULT_PRESET             | The default preset to use for the download                         | `default`                          |
-| YTP_INSTANCE_TITLE             | The title of the instance                                          | `empty string`                     |
-| YTP_FILE_LOGGING               | Whether to log to file                                             | `false`                            |
-| YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                          | `/downloads`                       |
-| YTP_MAX_WORKERS                | How many works to use for downloads                                | `1`                                |
-| YTP_AUTH_USERNAME              | Username for basic authentication                                  | `empty string`                     |
-| YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `empty string`                     |
-| YTP_CONSOLE_ENABLED            | Whether to enable the console                                      | `false`                            |
-| YTP_REMOVE_FILES               | Remove the actual file when clicking the remove button             | `false`                            |
-| YTP_CONFIG_PATH                | Path to where the config files will be stored.                     | `/config`                          |
-| YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                             |
-| YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                            |
-| YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                          |
-| YTP_PORT                       | Which port to bind to                                              | `8081`                             |
-| YTP_LOG_LEVEL                  | Log level                                                          | `info`                             |
-| YTP_STREAMER_VCODEC            | The video codec to use for in-browser streaming                    | `libx264`                          |
-| YTP_STREAMER_ACODEC            | The audio codec to use for in-browser streaming                    | `aac`                              |
-| YTP_ACCESS_LOG                 | Whether to log access to the web server                            | `true`                             |
-| YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`                            |
-| YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                             |
-| YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                               |
-| YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db`         |
-| YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                             |
-| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`                     |
-| YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                            |
-| YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                            |
-| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`                     |
-| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                            |
-| YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                            |
-| YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                             |
-| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                            |
-| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`                     |
-| YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                                |
-| YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                            |
-| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`                     |
-| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                                |
-| YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`                            |
-| YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                                |
-
+| Environment Variable           | Description                                                        | Default                    |
+| ------------------------------ | ------------------------------------------------------------------ | -------------------------- |
+| TZ                             | The timezone to use for the application                            | `(not_set)`                |
+| YTP_OUTPUT_TEMPLATE            | The template for the filenames of the downloaded videos            | `%(title)s.%(ext)s`        |
+| YTP_DEFAULT_PRESET             | The default preset to use for the download                         | `default`                  |
+| YTP_INSTANCE_TITLE             | The title of the instance                                          | `empty string`             |
+| YTP_FILE_LOGGING               | Whether to log to file                                             | `false`                    |
+| YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                          | `/downloads`               |
+| YTP_MAX_WORKERS                | How many works to use for downloads                                | `1`                        |
+| YTP_AUTH_USERNAME              | Username for basic authentication                                  | `empty string`             |
+| YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `empty string`             |
+| YTP_CONSOLE_ENABLED            | Whether to enable the console                                      | `false`                    |
+| YTP_REMOVE_FILES               | Remove the actual file when clicking the remove button             | `false`                    |
+| YTP_CONFIG_PATH                | Path to where the config files will be stored.                     | `/config`                  |
+| YTP_TEMP_PATH                  | Path to where tmp files are stored.                                | `/tmp`                     |
+| YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it   | `false`                    |
+| YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`                  |
+| YTP_PORT                       | Which port to bind to                                              | `8081`                     |
+| YTP_LOG_LEVEL                  | Log level                                                          | `info`                     |
+| YTP_STREAMER_VCODEC            | The video codec to use for in-browser streaming                    | `libx264`                  |
+| YTP_STREAMER_ACODEC            | The audio codec to use for in-browser streaming                    | `aac`                      |
+| YTP_ACCESS_LOG                 | Whether to log access to the web server                            | `true`                     |
+| YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`                    |
+| YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                     |
+| YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                       |
+| YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db` |
+| YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                     |
+| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`             |
+| YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                    |
+| YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                    |
+| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`             |
+| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `true`                     |
+| YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                    |
+| YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                     |
+| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                    |
+| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`             |
+| YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                        |
+| YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`                    |
+| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`             |
+| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                        |
+| YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`                    |
+| YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                        |
 
 # Browser extensions & bookmarklets
 

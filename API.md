@@ -27,6 +27,9 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/history](#get-apihistory)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
+    - [GET /api/archiver](#get-apiarchiver)
+    - [POST /api/archiver](#post-apiarchiver)
+    - [DELETE /api/archiver](#delete-apiarchiver)
     - [GET /api/tasks](#get-apitasks)
     - [PUT /api/tasks](#put-apitasks)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
@@ -398,6 +401,81 @@ or an error:
 
 - `404 Not Found` if the item or archive file does not exist.
 - `409 Conflict` if the item is already archived.
+
+---
+
+### GET /api/archiver
+**Purpose**: Read entries from the download archive associated with a preset.
+
+**Query Parameters**:
+- `preset` (required): Preset name.
+- `ids` (optional): Comma-separated list of archive IDs to filter. If omitted, returns all entries.
+
+**Response**:
+```json
+{
+  "file": "/path/to/archive.log",
+  "items": ["youtube ABC123", "vimeo XYZ789"],
+  "count": 2
+}
+```
+or an error:
+```json
+{ "error": "Preset '<name>' does not provide a download_archive." }
+```
+
+- `400 Bad Request` if `preset` is missing/invalid or the preset has no `download_archive`.
+
+---
+
+### POST /api/archiver
+**Purpose**: Append archive IDs to the download archive resolved by a preset.
+
+**Body**:
+```json
+{
+  "preset": "<preset-name>",
+  "items": ["youtube ABC123", "vimeo XYZ789"],
+  "skip_check": false
+}
+```
+
+**Response**:
+```json
+{
+  "file": "/path/to/archive.log",
+  "status": true,
+  "items": ["youtube ABC123", "vimeo XYZ789"]
+}
+```
+Notes:
+- Returns `200 OK` if any new entries were added, `304 Not Modified` if no-op (all already present or invalid).
+- `400 Bad Request` if `preset` is missing/invalid, the preset has no `download_archive`, or `items` is empty.
+
+---
+
+### DELETE /api/archiver
+**Purpose**: Remove archive IDs from the download archive resolved by a preset.
+
+**Body**:
+```json
+{
+  "preset": "<preset-name>",
+  "items": ["youtube ABC123", "vimeo XYZ789"]
+}
+```
+
+**Response**:
+```json
+{
+  "file": "/path/to/archive.log",
+  "status": true,
+  "items": ["youtube ABC123", "vimeo XYZ789"]
+}
+```
+Notes:
+- Returns `200 OK` if the archive file changed, `304 Not Modified` if it was unchanged.
+- `400 Bad Request` if `preset` is missing/invalid, the preset has no `download_archive`, or `items` is empty.
 
 ---
 
