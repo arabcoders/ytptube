@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250903-ab854539",
-        "date": "2025-09-03T16:37:59+00:00",
+        "tag": "master-20250904-2c7ba8e1",
+        "date": "2025-09-03T21:02:29+00:00",
         "commits": [
+            {
+                "sha": "bdb6d0e3",
+                "message": "FEAT: Update default presets",
+                "author": "arabcoders",
+                "date": "2025-09-03T20:49:19+00:00",
+                "full_sha": "bdb6d0e36a1e8cc2a48049b6cfe23e6560315b7c"
+            },
+            {
+                "sha": "881b7373",
+                "message": "Lock nuxt to 4.0.3, there is regression in 4.1.0",
+                "author": "arabcoders",
+                "date": "2025-09-03T20:48:33+00:00",
+                "full_sha": "881b7373eb072cba8417fad204c7df031854b766"
+            },
+            {
+                "sha": "9d5d6595",
+                "message": "FEAT: new TwitchHandler",
+                "author": "arabcoders",
+                "date": "2025-09-03T19:45:33+00:00",
+                "full_sha": "9d5d6595fc5caf497a1a68d714128014525c4581"
+            },
+            {
+                "sha": "2799d3c0",
+                "message": "fixed issue with cards vs grid naming",
+                "author": "arabcoders",
+                "date": "2025-09-03T19:45:07+00:00",
+                "full_sha": "2799d3c0d7500dc1a1e6dd1bad26611759f86b2d"
+            },
+            {
+                "sha": "ff9e173e",
+                "message": "FEAT: Enhance URL handling in Item class to support YouTube video IDs",
+                "author": "arabcoders",
+                "date": "2025-09-03T18:04:28+00:00",
+                "full_sha": "ff9e173e1819ad2c16fce0133bf52daa1ea2595a"
+            },
+            {
+                "sha": "551daf6b",
+                "message": "removed sentry as we really don't use it for anything.",
+                "author": "arabcoders",
+                "date": "2025-09-03T18:04:12+00:00",
+                "full_sha": "551daf6b707363ac19c492c13f182b977387917f"
+            },
             {
                 "sha": "53949b17",
                 "message": "FEAT: Enable file browser feature by default and remove related environment variable",
@@ -1719,7 +1761,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ab8545392e7e5b0dde8c174e82d06f9cda4ccb5d"
+        "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a"
     },
     {
         "tag": "master-20250616-c07465a6",

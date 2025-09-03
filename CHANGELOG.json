@@ -1,57 +1,8 @@
 [
   {
-    "tag": "Unreleased (ab854539)",
-    "full_sha": "ab8545392e7e5b0dde8c174e82d06f9cda4ccb5d",
-    "date": "2025-09-03T16:37:59+00:00",
-    "commits": [
-      {
-        "sha": "53949b17",
-        "full_sha": "53949b177af095099633e296905075911550d721",
-        "message": "FEAT: Enable file browser feature by default and remove related environment variable",
-        "author": "arabcoders",
-        "date": "2025-09-03T16:34:55+00:00"
-      },
-      {
-        "sha": "aab690a8",
-        "full_sha": "aab690a82294aba855dc6f4e1290095f66afdc2c",
-        "message": "reflect preset options in tasks page.",
-        "author": "arabcoders",
-        "date": "2025-09-03T16:25:08+00:00"
-      },
-      {
-        "sha": "063f62be",
-        "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5",
-        "message": "Expose archiver as an API endpoint.",
-        "author": "arabcoders",
-        "date": "2025-09-03T16:01:41+00:00"
-      },
-      {
-        "sha": "0abaf98b",
-        "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
-        "message": "FEAT: Enhance DownloadQueue to handle archived items",
-        "author": "arabcoders",
-        "date": "2025-09-03T15:36:08+00:00"
-      },
-      {
-        "sha": "86952200",
-        "full_sha": "86952200b5699dcf4ecc8c6749bdcd082d9344be",
-        "message": "FEAT: Enhance item retrieval in DataStore and DownloadQueue with flexible attribute search",
-        "author": "arabcoders",
-        "date": "2025-09-03T15:35:40+00:00"
-      },
-      {
-        "sha": "88451f80",
-        "full_sha": "88451f804407bdc7aa2d836d112148c988a45f5c",
-        "message": "Reflect preset settings in new download form.",
-        "author": "arabcoders",
-        "date": "2025-09-03T14:00:07+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "bdb6d0e36a1e8cc2a48049b6cfe23e6560315b7c",
-    "date": "2025-09-03T20:49:19+00:00",
+    "tag": "Unreleased (2c7ba8e1)",
+    "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a",
+    "date": "2025-09-03T21:02:29+00:00",
     "commits": [
       {
         "sha": "bdb6d0e3",
@@ -94,6 +45,48 @@
         "message": "removed sentry as we really don't use it for anything.",
         "author": "arabcoders",
         "date": "2025-09-03T18:04:12+00:00"
+      },
+      {
+        "sha": "53949b17",
+        "full_sha": "53949b177af095099633e296905075911550d721",
+        "message": "FEAT: Enable file browser feature by default and remove related environment variable",
+        "author": "arabcoders",
+        "date": "2025-09-03T16:34:55+00:00"
+      },
+      {
+        "sha": "aab690a8",
+        "full_sha": "aab690a82294aba855dc6f4e1290095f66afdc2c",
+        "message": "reflect preset options in tasks page.",
+        "author": "arabcoders",
+        "date": "2025-09-03T16:25:08+00:00"
+      },
+      {
+        "sha": "063f62be",
+        "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5",
+        "message": "Expose archiver as an API endpoint.",
+        "author": "arabcoders",
+        "date": "2025-09-03T16:01:41+00:00"
+      },
+      {
+        "sha": "0abaf98b",
+        "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
+        "message": "FEAT: Enhance DownloadQueue to handle archived items",
+        "author": "arabcoders",
+        "date": "2025-09-03T15:36:08+00:00"
+      },
+      {
+        "sha": "86952200",
+        "full_sha": "86952200b5699dcf4ecc8c6749bdcd082d9344be",
+        "message": "FEAT: Enhance item retrieval in DataStore and DownloadQueue with flexible attribute search",
+        "author": "arabcoders",
+        "date": "2025-09-03T15:35:40+00:00"
+      },
+      {
+        "sha": "88451f80",
+        "full_sha": "88451f804407bdc7aa2d836d112148c988a45f5c",
+        "message": "Reflect preset settings in new download form.",
+        "author": "arabcoders",
+        "date": "2025-09-03T14:00:07+00:00"
       }
     ]
   },
