@@ -15,7 +15,6 @@ export const useConfigStore = defineStore('config', () => {
       basic_mode: true,
       default_preset: 'default',
       instance_title: null,
-      sentry_dsn: null,
       console_enabled: false,
       browser_enabled: false,
       browser_control_enabled: false,
@@ -27,6 +26,7 @@ export const useConfigStore = defineStore('config', () => {
       app_build_date: '',
       app_branch: '',
       started: 0,
+      app_env: 'production',
     },
     presets: [
       {

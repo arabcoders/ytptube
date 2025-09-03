@@ -158,7 +158,6 @@ import 'assets/css/style.css'
 import 'assets/css/all.css'
 import { useStorage } from '@vueuse/core'
 import moment from 'moment'
-import * as Sentry from '@sentry/nuxt'
 import type { YTDLPOption } from '~/types/ytdlp'
 import { useDialog } from '~/composables/useDialog'
 import Dialog from '~/components/Dialog.vue'
@@ -248,14 +247,6 @@ const applyPreferredColorScheme = (scheme: string) => {
     }
   }
 }
-
-watch(() => config.app.sentry_dsn, dsn => {
-  if (!dsn) {
-    return
-  }
-  console.warn('Loading sentry module.')
-  Sentry.init({ dsn: dsn })
-})
 
 onMounted(async () => {
   try {

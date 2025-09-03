@@ -152,9 +152,6 @@ class Config:
     file_logging: bool = True
     "Enable file logging."
 
-    sentry_dsn: str | None = None
-    "The Sentry DSN to use for error reporting."
-
     secret_key: str
     "The secret key to use for the application."
 
@@ -266,7 +263,6 @@ class Config:
         "basic_mode",
         "default_preset",
         "instance_title",
-        "sentry_dsn",
         "console_enabled",
         "browser_enabled",
         "browser_control_enabled",
@@ -540,6 +536,17 @@ class Config:
 
         data["ytdlp_version"] = Config._ytdlp_version()
         return data
+
+    def get_replacer(self) -> dict:
+        """
+        Get the variables that can be used in Command options for yt-dlp.
+
+        Returns:
+            dict: The replacer variables.
+
+        """
+        keys: tuple[str] = ("download_path", "temp_path", "config_path")
+        return {k: getattr(self, k) for k in keys}
 
     @staticmethod
     def _ytdlp_version() -> str:

@@ -22,8 +22,6 @@ type AppConfig = {
   default_preset: string
   /** Instance title for the app, null if not set */
   instance_title: string | null
-  /** Sentry DSN for error tracking, null if not configured */
-  sentry_dsn: string | null
   /** Indicates if the console is enabled */
   console_enabled: boolean
   /** Indicates if the file browser is enabled */
@@ -47,7 +45,7 @@ type AppConfig = {
   /** When the app started */
   started: number,
   /** Application environment, e.g. "production", "development" */
-  app_env: string
+  app_env: "production" | "development"
 }
 
 type Preset = {
