@@ -1,8 +1,36 @@
 [
     {
-        "tag": "dev-20250903-53949b17",
-        "date": "2025-09-03T16:34:55+00:00",
+        "tag": "dev-20250903-9d5d6595",
+        "date": "2025-09-03T19:45:33+00:00",
         "commits": [
+            {
+                "sha": "9d5d6595",
+                "message": "FEAT: new TwitchHandler",
+                "author": "arabcoders",
+                "date": "2025-09-03T19:45:33+00:00",
+                "full_sha": "9d5d6595fc5caf497a1a68d714128014525c4581"
+            },
+            {
+                "sha": "2799d3c0",
+                "message": "fixed issue with cards vs grid naming",
+                "author": "arabcoders",
+                "date": "2025-09-03T19:45:07+00:00",
+                "full_sha": "2799d3c0d7500dc1a1e6dd1bad26611759f86b2d"
+            },
+            {
+                "sha": "ff9e173e",
+                "message": "FEAT: Enhance URL handling in Item class to support YouTube video IDs",
+                "author": "arabcoders",
+                "date": "2025-09-03T18:04:28+00:00",
+                "full_sha": "ff9e173e1819ad2c16fce0133bf52daa1ea2595a"
+            },
+            {
+                "sha": "551daf6b",
+                "message": "removed sentry as we really don't use it for anything.",
+                "author": "arabcoders",
+                "date": "2025-09-03T18:04:12+00:00",
+                "full_sha": "551daf6b707363ac19c492c13f182b977387917f"
+            },
             {
                 "sha": "53949b17",
                 "message": "FEAT: Enable file browser feature by default and remove related environment variable",
@@ -1719,7 +1747,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "53949b177af095099633e296905075911550d721"
+        "full_sha": "9d5d6595fc5caf497a1a68d714128014525c4581"
     },
     {
         "tag": "dev-20250616-c07465a6",
