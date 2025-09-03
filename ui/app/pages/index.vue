@@ -86,6 +86,12 @@
               The <strong>Basic mode</strong> (which limited the interface to the new download form) is being removed.
               Everything except what is available behind configurable flag will become part of the standard interface.
             </li>
+            <li>
+              The file browser feature will be enabled by <strong>default</strong>, and the associated environment
+              variable <code>YTP_BROWSER_ENABLED</code> will be removed, We will keep the
+              <code>YTP_BROWSER_CONTROL_ENABLED</code> to control whether you want to enable the file management
+              features or not. it will default to <code>false</code>.
+            </li>
             <li>The <strong>archive.manual.log</strong> feature has been removed.</li>
           </ul>
           <p>

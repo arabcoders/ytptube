@@ -34,7 +34,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                    |
 | YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                    |
 | YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`             |
-| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `false`                    |
+| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `true`                     |
 | YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                    |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                     |
 | YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                    |
