@@ -504,6 +504,10 @@ class HandleTask:
             if not task.handler_enabled:
                 continue
 
+            if not task.get_ytdlp_opts().get_all().get("download_archive"):
+                LOG.debug(f"Task '{task.name}' does not have an archive file configured.")
+                continue
+
             try:
                 handler = self._find_handler(task)
                 if handler is None:
@@ -565,6 +569,9 @@ class HandleTask:
         handlers: list[type] = []
 
         for _, module_name, _ in pkgutil.iter_modules(handlers_pkg.__path__):
+            if module_name.startswith("_"):
+                continue
+
             module = importlib.import_module(f"{handlers_pkg.__name__}.{module_name}")
             for _, cls in inspect.getmembers(module, inspect.isclass):
                 if cls.__module__ != module.__name__:
