@@ -96,6 +96,32 @@ class DataStore:
         msg: str = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
+    def get_item(self, **kwargs) -> Download | None:
+        """
+        Get a specific item from the datastore based on provided attributes.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments representing attributes of the ItemDTO.
+            If no attributes are provided, the method returns None.
+            If any attribute matches, the corresponding Download object is returned.
+
+        Returns:
+            Download | None: The requested item if found, otherwise None.
+
+        """
+        if not kwargs:
+            return None
+
+        for i in self._dict:
+            if not self._dict[i].info:
+                continue
+
+            info = self._dict[i].info.__dict__
+            if any((key in info and info == value) for key, value in kwargs.items()):
+                return self._dict[i]
+
+        return None
+
     def get_by_id(self, id: str) -> Download | None:
         return self._dict.get(id, None)
 
