@@ -19,33 +19,34 @@ DEFAULT_PRESETS: list[dict[int, dict[str, str | bool]]] = [
         "id": "3e163c6c-64eb-4448-924f-814b629b3810",
         "name": "default",
         "default": True,
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log",
         "description": "Default preset for yt-dlp. It will download whatever yt-dlp decides is the best quality for the video and audio.",
     },
     {
         "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48d",
         "name": "Mobile",
-        "cli": '-t mp4 --merge-output-format mp4 --add-chapters --remux-video mp4 \n--embed-metadata --embed-thumbnail \n--postprocessor-args "-movflags +faststart"',
+        "cli": '--socket-timeout 30 --download-archive %(config_path)s/archive.log\n-t mp4 --merge-output-format mp4 --add-chapters --remux-video mp4 \n--embed-metadata --embed-thumbnail \n--postprocessor-args "-movflags +faststart"',
         "default": True,
         "description": "This preset is designed for mobile devices. It will download the best quality video and audio in mp4 format, merge them, and add chapters, metadata, and thumbnail.",
     },
     {
         "id": "441675ed-b739-40f0-a0b0-1ecfcb9dc48b",
         "name": "1080p",
-        "cli": "-S vcodec:h264 --format 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log\n-S vcodec:h264 --format 'bv[height<=1080][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
         "default": True,
         "description": "Download the best quality video and audio in mp4 format for 1080p resolution.",
     },
     {
         "id": "9719fcc3-4cf2-4d88-b1e4-74dff3dba00e",
         "name": "720p",
-        "cli": "-S vcodec:h264 --format 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log\n-S vcodec:h264 --format 'bv[height<=720][ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b[ext=webm]'",
         "default": True,
         "description": "Download the best quality video and audio in mp4 format for 720p resolution.",
     },
     {
         "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
         "name": "Audio Only",
-        "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log\n--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
         "default": True,
         "description": "This preset is designed to download only the audio of the video. It will extract the audio, add chapters, metadata, and thumbnail.",
     },
@@ -55,7 +56,7 @@ DEFAULT_PRESETS: list[dict[int, dict[str, str | bool]]] = [
         "description": 'This preset generate specific filename format and metadata to work with yt-dlp info reader plugins for jellyfin/emby and plex and to make play state sync work for WatchState.\n\nThere is one more step you need to do via Other > Terminal if you have it enabled or directly from container shell\n\nyt-dlp -I0 --write-info-json --write-thumbnail --convert-thumbnails jpg --paths /downloads/youtube -o "%(channel|Unknown_title)s [%(channel_id|Unknown_id)s]/%(title).180B [%(channel_id|Unknown_id)s].%(ext)s" -- https://www.youtube.com/channel/UCClfFsWcT3N2I7VTXXyt84A\n\nChange the url to the channel you want to download.\n\nFor more information please visit \nhttps://github.com/arabcoders/watchstate/blob/master/FAQ.md#how-to-get-watchstate-working-with-youtube-contentlibrary',
         "folder": "youtube",
         "template": "%(channel)s %(channel_id|Unknown_id)s/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(extractor)s-%(id)s].%(ext)s",
-        "cli": "--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log\n--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
         "default": True,
     },
 ]
@@ -92,6 +93,7 @@ class Preset:
 
     def json(self) -> str:
         from .encoder import Encoder
+
         return Encoder().encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:

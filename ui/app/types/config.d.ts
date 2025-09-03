@@ -4,8 +4,6 @@ import type { DLField } from "./dl_fields"
 type AppConfig = {
   /** Path where downloaded files will be saved */
   download_path: string
-  /** Indicates if the app should keep an archive of downloaded files */
-  keep_archive: boolean
   /** Indicates if files should be removed after download */
   remove_files: boolean
   /** Indicates if the UI should update the title with the current download status */

@@ -72,25 +72,16 @@
           </p>
           <ul>
             <li>
-              The environment variables <code>YTP_KEEP_ARCHIVE</code> and <code>YTP_SOCKET_TIMEOUT</code> will no
-              longer be user-configurable. Their behavior will be part of the <strong>default presets</strong>. To keep
-              your current behavior <strong>and avoid re-downloading</strong>, please add the following <strong>Command
-                options for yt-dlp</strong> to your presets:
-              <code>--socket-timeout 30 --download-archive /config/archive.log</code>
+              The following ENVs <strong>YTP_KEEP_ARCHIVE</strong> and <strong>YTP_SOCKET_TIMEOUT</strong> will be
+              removed.
+              Their behavior will be part of the <strong>default presets</strong>. To keep your current behavior
+              <strong>and avoid re-downloading</strong>, please add the following <strong>Command options for
+                yt-dlp</strong> to your presets:
+              <code>--socket-timeout 30 --download-archive %(config_path)s/archive.log</code>
             </li>
             <li>
-              The global yt-dlp config file <code>/config/ytdlp.cli</code> is deprecated and will be removed. Please
-              migrate any global options into your presets.
-            </li>
-            <li>
-              The <strong>Basic mode</strong> (which limited the interface to the new download form) is being removed.
-              Everything except what is available behind configurable flag will become part of the standard interface.
-            </li>
-            <li>
-              The file browser feature will be enabled by <strong>default</strong>, and the associated environment
-              variable <code>YTP_BROWSER_ENABLED</code> will be removed, We will keep the
-              <code>YTP_BROWSER_CONTROL_ENABLED</code> to control whether you want to enable the file management
-              features or not. it will default to <code>false</code>.
+              The global yt-dlp config file <strong>/config/ytdlp.cli</strong> will be removed. Please migrate to
+              presets.
             </li>
             <li>The <strong>archive.manual.log</strong> feature has been removed.</li>
           </ul>
@@ -98,6 +89,22 @@
             These changes help reduce confusion from multiple sources of truth. Going forward, <strong>presets</strong>
             and the <strong>Command options for yt-dlp</strong> will be the single source of truth.
           </p>
+          <p>
+            Notable changes in <strong>v0.10.x</strong>:
+          </p>
+          <ul>
+            <li>
+              The file browser feature is going to be enabled by default. and the associated ENV
+              <strong>YTP_BROWSER_ENABLED</strong> will be removed, <strong>YTP_BROWSER_CONTROL_ENABLED</strong> will
+              remain and
+              will default to <strong>false</strong>.
+            </li>
+            <li>
+              The <strong>Basic mode</strong> (which limited the interface to just the new download form) along it's
+              associated ENV <strong>YTP_BASIC_MODE</strong> is being removed. Everything except what is available
+              behind configurable flag will become part of the standard interface.
+            </li>
+          </ul>
         </DeprecatedNotice>
       </div>
     </div>

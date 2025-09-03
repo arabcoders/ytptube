@@ -22,7 +22,7 @@ class YTDLPOpts:
     """The command options for yt-dlp from preset."""
 
     def __init__(self):
-        self._config = Config.get_instance()
+        self._config: Config = Config.get_instance()
 
     @staticmethod
     def get_instance() -> "YTDLPOpts":
@@ -96,7 +96,7 @@ class YTDLPOpts:
 
         """
         preset: Preset | None = Presets.get_instance().get(name)
-        if not preset or "default" == name:
+        if not preset:
             return self
 
         if preset.cli:
@@ -169,7 +169,11 @@ class YTDLPOpts:
 
         if len(self._item_cli) > 0:
             try:
-                user_cli: dict = arg_converter(args="\n".join(self._item_cli), level=True)
+                user_cli = "\n".join(self._item_cli)
+                for k, v in self._config.get_replacers().items():
+                    user_cli = user_cli.replace(f"%({k})s", v if isinstance(v, str) else str(v))
+
+                user_cli: dict = arg_converter(args=user_cli, level=True)
             except Exception as e:
                 msg = f"Invalid command options for yt-dlp were given. '{e!s}'."
                 raise ValueError(msg) from e
