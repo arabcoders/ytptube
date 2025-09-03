@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250903-9d5d6595",
-        "date": "2025-09-03T19:45:33+00:00",
+        "tag": "dev-20250903-bdb6d0e3",
+        "date": "2025-09-03T20:49:19+00:00",
         "commits": [
+            {
+                "sha": "bdb6d0e3",
+                "message": "FEAT: Update default presets",
+                "author": "arabcoders",
+                "date": "2025-09-03T20:49:19+00:00",
+                "full_sha": "bdb6d0e36a1e8cc2a48049b6cfe23e6560315b7c"
+            },
+            {
+                "sha": "881b7373",
+                "message": "Lock nuxt to 4.0.3, there is regression in 4.1.0",
+                "author": "arabcoders",
+                "date": "2025-09-03T20:48:33+00:00",
+                "full_sha": "881b7373eb072cba8417fad204c7df031854b766"
+            },
             {
                 "sha": "9d5d6595",
                 "message": "FEAT: new TwitchHandler",
@@ -1747,7 +1761,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9d5d6595fc5caf497a1a68d714128014525c4581"
+        "full_sha": "bdb6d0e36a1e8cc2a48049b6cfe23e6560315b7c"
     },
     {
         "tag": "dev-20250616-c07465a6",
