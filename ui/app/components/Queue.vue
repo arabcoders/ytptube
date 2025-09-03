@@ -12,7 +12,7 @@
 
   <div v-if="showQueue">
     <div class="columns is-multiline is-mobile has-text-centered" v-if="filteredItems.length > 0">
-      <div class="column is-half-mobile" v-if="'cards' === display_style">
+      <div class="column is-half-mobile" v-if="'grid' === display_style">
         <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
             <span class="icon">
@@ -36,7 +36,7 @@
           <span>Pause</span>
         </button>
       </div>
-      <div class="column is-half-mobile" v-if="('cards' === display_style || hasSelected)">
+      <div class="column is-half-mobile" v-if="('grid' === display_style || hasSelected)">
         <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
           <span class="icon"><i class="fa-solid fa-eject" /></span>
           <span>Cancel</span>
@@ -115,7 +115,7 @@
                     :data-datetime="item.datetime" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered is-items-center">
-                  <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
+                  <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s"
                     :button_classes="'is-small'" label="Actions">
                     <template v-if="isEmbedable(item.url)">
                       <NuxtLink class="dropdown-item has-text-danger"
@@ -265,7 +265,7 @@
                 </button>
               </div>
               <div class="column is-half-mobile">
-                <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
+                <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s" label="Actions">
                   <template v-if="isEmbedable(item.url)">
                     <NuxtLink class="dropdown-item has-text-danger"
                       @click="embed_url = getEmbedable(item.url) as string">
@@ -337,7 +337,7 @@ const toast = useNotification()
 
 const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
-const display_style = useStorage('display_style', 'cards')
+const display_style = useStorage('display_style', 'grid')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 

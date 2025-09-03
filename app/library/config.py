@@ -152,9 +152,6 @@ class Config:
     file_logging: bool = True
     "Enable file logging."
 
-    sentry_dsn: str | None = None
-    "The Sentry DSN to use for error reporting."
-
     secret_key: str
     "The secret key to use for the application."
 
@@ -266,7 +263,6 @@ class Config:
         "basic_mode",
         "default_preset",
         "instance_title",
-        "sentry_dsn",
         "console_enabled",
         "browser_enabled",
         "browser_control_enabled",
@@ -406,6 +402,9 @@ class Config:
         self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
 
         if self.keep_archive:
+            LOG.warning(
+                "The global 'keep_archive' option is deprecated and will be removed in future releases. please use presets instead."
+            )
             archive_file: Path = Path(self.archive_file)
             if not archive_file.exists():
                 LOG.info(f"Creating archive file '{archive_file}'.")
@@ -540,6 +539,17 @@ class Config:
 
         data["ytdlp_version"] = Config._ytdlp_version()
         return data
+
+    def get_replacers(self) -> dict:
+        """
+        Get the variables that can be used in Command options for yt-dlp.
+
+        Returns:
+            dict: The replacer variables.
+
+        """
+        keys: tuple[str] = ("download_path", "temp_path", "config_path")
+        return {k: getattr(self, k) for k in keys}
 
     @staticmethod
     def _ytdlp_version() -> str:

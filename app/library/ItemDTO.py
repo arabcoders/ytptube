@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -114,6 +115,12 @@ class Item:
         if not url or not isinstance(url, str):
             msg = "url param is required."
             raise ValueError(msg)
+
+        url = url.strip()
+
+        # If it's only a YouTube video ID, convert to a full URL.
+        if len(url) >= 11 and re.fullmatch(r"[A-Za-z0-9_-]{11}", url):
+            url = f"https://www.youtube.com/watch?v={url}"
 
         data: dict[str, str] = {"url": url}
 

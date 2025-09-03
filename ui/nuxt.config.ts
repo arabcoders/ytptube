@@ -30,8 +30,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       APP_ENV: process.env.NODE_ENV,
-      wss: process.env.NUXT_PUBLIC_WSS ?? '',
-      sentry: process.env.NUXT_PUBLIC_SENTRY_DSN ?? '',
+      wss: process.env.NUXT_PUBLIC_WSS ?? ''
     }
   },
   build: {
@@ -61,7 +60,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
-    '@sentry/nuxt/module',
   ],
 
   nitro: {

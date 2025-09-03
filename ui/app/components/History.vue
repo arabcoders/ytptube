@@ -13,7 +13,7 @@
 
   <div v-if="showCompleted">
     <div class="columns is-multiline is-mobile has-text-centered" v-if="hasItems">
-      <div class="column is-half-mobile" v-if="display_style === 'cards'">
+      <div class="column is-half-mobile" v-if="display_style === 'grid'">
         <button type="button" class="button is-fullwidth is-ghost is-inverted"
           @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
@@ -176,7 +176,7 @@
                       </button>
                     </div>
                     <div class="control is-expanded" v-if="item.url && !config.app.basic_mode">
-                      <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s"
+                      <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s"
                         :button_classes="'is-small'" label="Actions">
                         <template v-if="'finished' === item.status && item.filename">
                           <NuxtLink @click="playVideo(item)" class="dropdown-item">
@@ -481,7 +481,7 @@ const box = useConfirm()
 const showCompleted = useStorage<boolean>('showCompleted', true)
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false)
 const direction = useStorage<'asc' | 'desc'>('sortCompleted', 'desc')
-const display_style = useStorage<'cards' | 'list'>('display_style', 'cards')
+const display_style = useStorage<'grid' | 'list'>('display_style', 'grid')
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 
@@ -622,6 +622,9 @@ const clearCompleted = async () => {
   for (const key in stateStore.history) {
     if ('finished' === ag(stateStore.get('history', key, {} as StoreItem), 'status')) {
       socket.emit('item_delete', { id: stateStore.history[key]?._id, remove_file: false, })
+      if (selectedElms.value.includes(stateStore.history[key]?._id || '')) {
+        selectedElms.value = selectedElms.value.filter(i => i !== stateStore.history[key]?._id)
+      }
     }
   }
 }
@@ -636,6 +639,11 @@ const clearIncomplete = async () => {
         id: stateStore.history[key]?._id,
         remove_file: false,
       })
+
+      if (selectedElms.value.includes(stateStore.history[key]?._id || '')) {
+        selectedElms.value = selectedElms.value.filter(i => i !== stateStore.history[key]?._id)
+      }
+
     }
   }
 }
@@ -698,7 +706,7 @@ const setStatus = (item: StoreItem) => {
     if (item.extras?.is_premiere) {
       return 'Premiere'
     }
-    return display_style.value === 'cards' ? 'Stream' : 'Live'
+    return display_style.value === 'grid' ? 'Stream' : 'Live'
   }
   if ('skip' === item.status) {
     return 'Skipped'
@@ -754,10 +762,15 @@ const removeItem = async (item: StoreItem) => {
   if (false === (await box.confirm(msg, Boolean(item.filename && config.app.remove_files)))) {
     return false
   }
+
   socket.emit('item_delete', {
     id: item._id,
     remove_file: config.app.remove_files
   })
+
+  if (selectedElms.value.includes(item._id || '')) {
+    selectedElms.value = selectedElms.value.filter(i => i !== item._id)
+  }
 }
 
 const retryItem = (item: StoreItem, re_add = false) => {
@@ -773,6 +786,11 @@ const retryItem = (item: StoreItem, re_add = false) => {
   }
 
   socket.emit('item_delete', { id: item._id, remove_file: false })
+
+  if (selectedElms.value.includes(item._id || '')) {
+    selectedElms.value = selectedElms.value.filter(i => i !== item._id)
+  }
+
   if (true === re_add) {
     toast.info('Cleared the item from history, and added it to the new download form.')
     emitter('add_new', item_req)

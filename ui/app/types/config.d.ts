@@ -4,8 +4,6 @@ import type { DLField } from "./dl_fields"
 type AppConfig = {
   /** Path where downloaded files will be saved */
   download_path: string
-  /** Indicates if the app should keep an archive of downloaded files */
-  keep_archive: boolean
   /** Indicates if files should be removed after download */
   remove_files: boolean
   /** Indicates if the UI should update the title with the current download status */
@@ -22,8 +20,6 @@ type AppConfig = {
   default_preset: string
   /** Instance title for the app, null if not set */
   instance_title: string | null
-  /** Sentry DSN for error tracking, null if not configured */
-  sentry_dsn: string | null
   /** Indicates if the console is enabled */
   console_enabled: boolean
   /** Indicates if the file browser is enabled */
@@ -47,7 +43,7 @@ type AppConfig = {
   /** When the app started */
   started: number,
   /** Application environment, e.g. "production", "development" */
-  app_env: string
+  app_env: "production" | "development"
 }
 
 type Preset = {
