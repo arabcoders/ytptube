@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250902-691f0d5b",
-        "date": "2025-09-02T19:36:31+00:00",
+        "tag": "dev-20250903-0abaf98b",
+        "date": "2025-09-03T15:36:08+00:00",
         "commits": [
+            {
+                "sha": "0abaf98b",
+                "message": "FEAT: Enhance DownloadQueue to handle archived items",
+                "author": "arabcoders",
+                "date": "2025-09-03T15:36:08+00:00",
+                "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e"
+            },
+            {
+                "sha": "86952200",
+                "message": "FEAT: Enhance item retrieval in DataStore and DownloadQueue with flexible attribute search",
+                "author": "arabcoders",
+                "date": "2025-09-03T15:35:40+00:00",
+                "full_sha": "86952200b5699dcf4ecc8c6749bdcd082d9344be"
+            },
+            {
+                "sha": "88451f80",
+                "message": "Reflect preset settings in new download form.",
+                "author": "arabcoders",
+                "date": "2025-09-03T14:00:07+00:00",
+                "full_sha": "88451f804407bdc7aa2d836d112148c988a45f5c"
+            },
             {
                 "sha": "691f0d5b",
                 "message": "FEAT: Make it possible to limit notify target to specific presets.",
@@ -1677,7 +1698,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "691f0d5bfc472a6e5ecf8e2ee9854b049c6145b9"
+        "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e"
     },
     {
         "tag": "dev-20250616-c07465a6",

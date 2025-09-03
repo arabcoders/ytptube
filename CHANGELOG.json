@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
+    "date": "2025-09-03T15:36:08+00:00",
+    "commits": [
+      {
+        "sha": "0abaf98b",
+        "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
+        "message": "FEAT: Enhance DownloadQueue to handle archived items",
+        "author": "arabcoders",
+        "date": "2025-09-03T15:36:08+00:00"
+      },
+      {
+        "sha": "86952200",
+        "full_sha": "86952200b5699dcf4ecc8c6749bdcd082d9344be",
+        "message": "FEAT: Enhance item retrieval in DataStore and DownloadQueue with flexible attribute search",
+        "author": "arabcoders",
+        "date": "2025-09-03T15:35:40+00:00"
+      },
+      {
+        "sha": "88451f80",
+        "full_sha": "88451f804407bdc7aa2d836d112148c988a45f5c",
+        "message": "Reflect preset settings in new download form.",
+        "author": "arabcoders",
+        "date": "2025-09-03T14:00:07+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.3",
     "full_sha": "c528e2b5576ba309d68ece3c32ddf367ddd074be",
     "date": "2025-09-02T19:59:22+00:00",
