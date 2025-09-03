@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250902-c528e2b5",
-        "date": "2025-09-02T19:59:22+00:00",
+        "tag": "master-20250903-ab854539",
+        "date": "2025-09-03T16:37:59+00:00",
         "commits": [
+            {
+                "sha": "53949b17",
+                "message": "FEAT: Enable file browser feature by default and remove related environment variable",
+                "author": "arabcoders",
+                "date": "2025-09-03T16:34:55+00:00",
+                "full_sha": "53949b177af095099633e296905075911550d721"
+            },
+            {
+                "sha": "aab690a8",
+                "message": "reflect preset options in tasks page.",
+                "author": "arabcoders",
+                "date": "2025-09-03T16:25:08+00:00",
+                "full_sha": "aab690a82294aba855dc6f4e1290095f66afdc2c"
+            },
+            {
+                "sha": "063f62be",
+                "message": "Expose archiver as an API endpoint.",
+                "author": "arabcoders",
+                "date": "2025-09-03T16:01:41+00:00",
+                "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5"
+            },
+            {
+                "sha": "0abaf98b",
+                "message": "FEAT: Enhance DownloadQueue to handle archived items",
+                "author": "arabcoders",
+                "date": "2025-09-03T15:36:08+00:00",
+                "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e"
+            },
+            {
+                "sha": "86952200",
+                "message": "FEAT: Enhance item retrieval in DataStore and DownloadQueue with flexible attribute search",
+                "author": "arabcoders",
+                "date": "2025-09-03T15:35:40+00:00",
+                "full_sha": "86952200b5699dcf4ecc8c6749bdcd082d9344be"
+            },
+            {
+                "sha": "88451f80",
+                "message": "Reflect preset settings in new download form.",
+                "author": "arabcoders",
+                "date": "2025-09-03T14:00:07+00:00",
+                "full_sha": "88451f804407bdc7aa2d836d112148c988a45f5c"
+            },
             {
                 "sha": "691f0d5b",
                 "message": "FEAT: Make it possible to limit notify target to specific presets.",
@@ -1677,7 +1719,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c528e2b5576ba309d68ece3c32ddf367ddd074be"
+        "full_sha": "ab8545392e7e5b0dde8c174e82d06f9cda4ccb5d"
     },
     {
         "tag": "master-20250616-c07465a6",

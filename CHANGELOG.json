@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "aab690a82294aba855dc6f4e1290095f66afdc2c",
-    "date": "2025-09-03T16:25:08+00:00",
+    "tag": "Unreleased (ab854539)",
+    "full_sha": "ab8545392e7e5b0dde8c174e82d06f9cda4ccb5d",
+    "date": "2025-09-03T16:37:59+00:00",
     "commits": [
+      {
+        "sha": "53949b17",
+        "full_sha": "53949b177af095099633e296905075911550d721",
+        "message": "FEAT: Enable file browser feature by default and remove related environment variable",
+        "author": "arabcoders",
+        "date": "2025-09-03T16:34:55+00:00"
+      },
       {
         "sha": "aab690a8",
         "full_sha": "aab690a82294aba855dc6f4e1290095f66afdc2c",
