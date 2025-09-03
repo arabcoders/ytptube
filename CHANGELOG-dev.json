@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250903-0abaf98b",
-        "date": "2025-09-03T15:36:08+00:00",
+        "tag": "dev-20250903-063f62be",
+        "date": "2025-09-03T16:01:41+00:00",
         "commits": [
+            {
+                "sha": "063f62be",
+                "message": "Expose archiver as an API endpoint.",
+                "author": "arabcoders",
+                "date": "2025-09-03T16:01:41+00:00",
+                "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5"
+            },
             {
                 "sha": "0abaf98b",
                 "message": "FEAT: Enhance DownloadQueue to handle archived items",
@@ -1698,7 +1705,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e"
+        "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5"
     },
     {
         "tag": "dev-20250616-c07465a6",

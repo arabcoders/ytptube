@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
-    "date": "2025-09-03T15:36:08+00:00",
+    "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5",
+    "date": "2025-09-03T16:01:41+00:00",
     "commits": [
+      {
+        "sha": "063f62be",
+        "full_sha": "063f62bebb0f058be097f5c8ea4bfa1bb329bff5",
+        "message": "Expose archiver as an API endpoint.",
+        "author": "arabcoders",
+        "date": "2025-09-03T16:01:41+00:00"
+      },
       {
         "sha": "0abaf98b",
         "full_sha": "0abaf98b5321b2587f5566a87030ef4f5b4e9f1e",
