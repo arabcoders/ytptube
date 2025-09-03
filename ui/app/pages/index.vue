@@ -67,7 +67,8 @@
         <DeprecatedNotice :version="config.app.app_version" title="Deprecation Notice" tone="warning"
           icon="fas fa-exclamation-triangle fa-fade fa-spin-10">
           <p>
-            The following environment variables and features are deprecated and will be removed in future releases:
+            The following environment variables and features are deprecated and will be removed in
+            <strong class="has-text-danger">v0.10.x</strong>
           </p>
           <ul>
             <li>

@@ -484,26 +484,6 @@ const filter_presets = (flag: boolean = true) => config.presets.filter(item => i
 const get_preset = (name: string | undefined) => config.presets.find(item => item.name === name)
 const expand_description = (e: Event) => toggleClass(e.target as HTMLElement, ['is-ellipsis', 'is-pre-wrap'])
 
-const get_output_template = () => {
-  if (form.value.preset && !hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.value.preset)
-    if (preset && preset.template) {
-      return preset.template
-    }
-  }
-  return config.app.output_template || '%(title)s.%(ext)s'
-}
-
-const get_download_folder = (): string => {
-  if (form.value.preset && false === hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.value.preset)
-    if (preset?.folder) {
-      return preset.folder.replace(config.app.download_path, '')
-    }
-  }
-  return '/'
-}
-
 const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {
   if (false !== hasFormatInConfig.value || !form.value.preset) {
     return ret

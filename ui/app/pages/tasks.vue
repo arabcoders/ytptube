@@ -55,7 +55,8 @@
         </div>
         <div class="is-hidden-mobile">
           <span class="subtitle">
-            The task runner is simple queue system that allows you to schedule downloads to run at the specific time.
+            The task runner is simple queue system that allows you to poll channels or playlists for new content at
+            specified intervals.
           </span>
         </div>
       </div>
@@ -361,9 +362,10 @@
         <Message title="Tips" class="is-info is-background-info-80" icon="fas fa-info-circle">
           <span>
             <ul>
-              <li>If you are adding a big channel or playlist and you want to skip all old videos, please click on
-                <code>Actions > Archive All</code> button to mark all videos as downloaded. otherwise, it will try to
-                download all videos.
+              <li>
+                If you don't wish to download <strong>ALL</strong> content from a channel or playlist, click on
+                <code> <span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
+                  class="fa-solid fa-box-archive" /></span> Archive All</code> to archive all existing content.
               </li>
             </ul>
           </span>

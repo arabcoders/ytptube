@@ -160,13 +160,13 @@
                     Save in
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
+                    <input type="text" class="input" id="folder" :placeholder="getDefault('folder', '/')"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Current download folder: <code>{{ get_download_folder() }}</code>. All folders
-                      are sub-folders of <code>{{ config.app.download_path }}</code>.</span>
+                    <span class="is-bold">All folders are sub-folders of
+                      <code>{{ config.app.download_path }}</code>.</span>
                   </span>
                 </div>
               </div>
@@ -179,11 +179,12 @@
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="output_template" :disabled="addInProgress"
-                      placeholder="Leave empty to use default template." v-model="form.template">
+                      :placeholder="getDefault('template', config.app.output_template || '%(title)s.%(ext)s')"
+                      v-model="form.template">
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Current output format: <code>{{ get_output_template() }}</code>.</span>
+                    <span class="is-bold">The template to use for the output file name.</span>
                   </span>
                 </div>
               </div>
@@ -237,7 +238,7 @@
                     <span>Command options for yt-dlp</span>
                   </label>
                   <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                    :disabled="addInProgress" />
+                    :placeholder="getDefault('cli', '')" :disabled="addInProgress" />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
@@ -282,10 +283,8 @@
             <li>RSS monitoring runs every hour alongside the actual task execution. Regardless if the task has timer set
               or not. To opt out of RSS monitoring for a specific task, simply disable the <code>Enable Handler</code>
               option. To have the task only monitor RSS feed, <b>do not set timer</b>.</li>
-            <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in command options
-              for ytdlp.cli, preset or task. If you don't have <code>--download-archive</code> set but
-              <code>YTP_KEEP_ARCHIVE</code> environment option is set to <code>true</code> which is the default, It will
-              also work.
+            <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in <code>Command options
+            for yt-dlp</code> via the task itself, or preset. command options
             </li>
           </ul>
         </span>
@@ -463,26 +462,6 @@ const hasFormatInConfig = computed<boolean>(() => !!form.cli && /(?<!\S)(-f|--fo
 
 const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
 
-const get_download_folder = (): string => {
-  if (form.preset && false === hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.preset)
-    if (preset?.folder) {
-      return preset.folder.replace(config.app.download_path, '')
-    }
-  }
-  return '/'
-}
-
-const get_output_template = (): string => {
-  if (form.preset && false === hasFormatInConfig.value) {
-    const preset = config.presets.find(p => p.name === form.preset)
-    if (preset?.template) {
-      return preset.template
-    }
-  }
-  return config.app.output_template || '%(title)s.%(ext)s'
-}
-
 const is_yt_handle = (url: string): boolean => {
   if (!url || '' === url) {
     return false
@@ -513,7 +492,6 @@ const convert_url = async (url: string): Promise<string> => {
     const resp = await request('/api/yt-dlp/url/info?' + params.toString())
     const body = await resp.json()
     const channel_id = ag(body, 'channel_id', null)
-    console.log('convert_url', { url, channel_id, body })
 
     if (channel_id) {
       return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`)
@@ -526,6 +504,36 @@ const convert_url = async (url: string): Promise<string> => {
   }
 
   return url
+}
+
+const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {
+  if (false !== hasFormatInConfig.value || !form.preset) {
+    return ret
+  }
+
+  const preset = config.presets.find(p => p.name === form.preset)
+
+  if (!preset) {
+    return ret
+  }
+
+  if (type === 'cookies' && preset.cookies) {
+    return preset.cookies
+  }
+
+  if (type === 'cli' && preset.cli) {
+    return preset.cli
+  }
+
+  if (type === 'template' && preset.template) {
+    return preset.template
+  }
+
+  if (type === 'folder' && preset.folder) {
+    return preset.folder.replace(config.app.download_path, '') || ret
+  }
+
+  return ret
 }
 
 </script>
