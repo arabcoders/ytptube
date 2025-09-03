@@ -676,11 +676,43 @@ class DownloadQueue(metaclass=Singleton):
                 item.extras.update({"external_downloader": True})
 
             if item.is_archived():
+                if archive_id := item.get_archive_id():
+                    store_type, _ = self.get_item(archive_id=archive_id)
+                    if not store_type:
+                        dlInfo = Download(
+                            info=ItemDTO(
+                                id=archive_id.split()[1],
+                                title=archive_id,
+                                url=item.url,
+                                preset=item.preset,
+                                folder=item.folder,
+                                status="skip",
+                                cookies=item.cookies,
+                                template=item.template,
+                                msg="URL is already downloaded.",
+                                extras=item.extras,
+                            )
+                        )
+
+                        if archive_file := dlInfo.info.get_ytdlp_opts().get_all().get("download_archive"):
+                            dlInfo.info.msg += f" Found in archive '{archive_file}'."
+
+                        self.done.put(dlInfo)
+
+                        await self._notify.emit(
+                            Events.ITEM_MOVED,
+                            data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                            title="Download History Update",
+                            message=f"Download history updated with '{item.url}'.",
+                        )
+                        return {"status": "ok"}
+
                 message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
                 await self._notify.emit(
                     Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
                 )
+
                 return {"status": "error", "msg": message}
 
             started: float = time.perf_counter()
@@ -908,26 +940,24 @@ class DownloadQueue(metaclass=Singleton):
 
         return items
 
-    def get_item(self, id: str) -> Download | None:
+    def get_item(self, **kwargs) -> tuple[StoreType, Download] | tuple[None, None]:
         """
         Get a specific item from the download queue or history.
 
         Args:
-            id (str): The ID of the item to retrieve.
+            **kwargs: The key-value pair to search for. Supported keys are 'id', 'url'.
 
         Returns:
-            Download | None: The requested item if found, otherwise None.
+            (StoreType, Download) | None: The requested item if found, otherwise None.
 
         """
-        try:
-            return self.queue.get(key=id)
-        except KeyError:
-            pass
+        if item := self.queue.get_item(**kwargs):
+            return (StoreType.QUEUE, item)
 
-        try:
-            return self.done.get(key=id)
-        except KeyError:
-            return None
+        if item := self.done.get_item(**kwargs):
+            return (StoreType.HISTORY, item)
+
+        return (None, None)
 
     async def _download_pool(self) -> None:
         """
