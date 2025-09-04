@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (bb37f7b6)",
-    "full_sha": "bb37f7b6ba471d5db1624a4d8d326a01427c7393",
-    "date": "2025-09-04T14:28:57+00:00",
+    "tag": "Unreleased (71ba8ea7)",
+    "full_sha": "71ba8ea7f7a2edd7cbba3589d7767446a29f835c",
+    "date": "2025-09-04T14:30:20+00:00",
     "commits": [
+      {
+        "sha": "b01c0049",
+        "full_sha": "b01c0049ae0ab17730916dd3dbab1f9479f4813e",
+        "message": "renamed screenshot",
+        "author": "arabcoders",
+        "date": "2025-09-04T14:29:40+00:00"
+      },
       {
         "sha": "91d4bf72",
         "full_sha": "91d4bf729673391802bbad213c4b021eb7eb5f9f",
@@ -17,20 +24,6 @@
         "message": "add build sha to .version file to be able to cleanup user python packages on master/dev builds.",
         "author": "arabcoders",
         "date": "2025-09-04T14:03:38+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "b01c0049ae0ab17730916dd3dbab1f9479f4813e",
-    "date": "2025-09-04T14:29:40+00:00",
-    "commits": [
-      {
-        "sha": "b01c0049",
-        "full_sha": "b01c0049ae0ab17730916dd3dbab1f9479f4813e",
-        "message": "renamed screenshot",
-        "author": "arabcoders",
-        "date": "2025-09-04T14:29:40+00:00"
       }
     ]
   },
