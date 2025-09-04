@@ -18,18 +18,17 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Schedule channels or playlists to be downloaded automatically.
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.
-* Queue multiple URLs.
+* Queue multiple URLs at once.
 * Powerful presets system for applying `yt-dlp` options.
 * File browser.
 * A built in video player **with support for sidecar external subtitles**.
 * Basic authentication support.
 * Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
-* Bundled `pot provider`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide)
+* Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide)
 * Automatic updates for `yt-dlp` and custom `pip` packages.
-* Basic mode UI for non-technical users.
 * Conditions feature.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-* A Bundled executable version for Windows, macOS and Linux.
+* A bundled executable version for Windows, macOS and Linux. `For non-docker users`.
 
 Please read the [FAQ](FAQ.md) for more information.
 

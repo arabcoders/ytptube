@@ -28,13 +28,10 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`                    |
 | YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                     |
 | YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                       |
-| YTP_DB_FILE                    | The path to the SQLite database file                               | `{config_path}/ytptube.db` |
 | YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                     |
 | YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`             |
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`                    |
-| YTP_BASIC_MODE                 | Whether to run WebUI in basic mode                                 | `false`                    |
 | YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`             |
-| YTP_BROWSER_ENABLED            | Whether to enable the file browser                                 | `true`                     |
 | YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`                    |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                     |
 | YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`                    |
