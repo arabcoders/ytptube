@@ -37,18 +37,20 @@ class Upgrader:
         user_site: Path = config_path / f"python{sys.version_info.major}.{sys.version_info.minor}-packages"
         user_site_ver: Path = user_site / ".version"
 
-        from app.library.version import APP_VERSION
+        from app.library.version import APP_COMMIT_SHA, APP_VERSION
+
+        version: str = f"{APP_VERSION}-{APP_COMMIT_SHA[:8]}"
 
         if not user_site.exists():
             user_site.mkdir(parents=True, exist_ok=True)
-            user_site_ver.write_text(APP_VERSION)
+            user_site_ver.write_text(version)
 
         if user_site.is_dir():
             if str(user_site) not in sys.path:
                 sys.path.insert(0, str(user_site))
 
-            if not user_site_ver.exists() or APP_VERSION != user_site_ver.read_text().strip():
-                self.clean_up(user_site, user_site_ver, APP_VERSION)
+            if not user_site_ver.exists() or version != user_site_ver.read_text().strip():
+                self.clean_up(user_site, user_site_ver, version)
 
         self.check(config_path, user_site)
 
