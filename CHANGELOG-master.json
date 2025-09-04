@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20250904-2c7ba8e1",
-        "date": "2025-09-03T21:02:29+00:00",
+        "tag": "master-20250904-bb37f7b6",
+        "date": "2025-09-04T14:28:57+00:00",
         "commits": [
+            {
+                "sha": "91d4bf72",
+                "message": "minor update to FAQ/README",
+                "author": "arabcoders",
+                "date": "2025-09-04T14:17:26+00:00",
+                "full_sha": "91d4bf729673391802bbad213c4b021eb7eb5f9f"
+            },
+            {
+                "sha": "de338e44",
+                "message": "add build sha to .version file to be able to cleanup user python packages on master/dev builds.",
+                "author": "arabcoders",
+                "date": "2025-09-04T14:03:38+00:00",
+                "full_sha": "de338e4492953fc7ccb1554d08ba8c69012fe920"
+            },
             {
                 "sha": "bdb6d0e3",
                 "message": "FEAT: Update default presets",
@@ -1761,7 +1775,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a"
+        "full_sha": "bb37f7b6ba471d5db1624a4d8d326a01427c7393"
     },
     {
         "tag": "master-20250616-c07465a6",
