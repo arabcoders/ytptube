@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     transpile: ['vue-toastification'],
   },
   app: {
-    baseURL: 'production' == process.env.NODE_ENV ? '' : '/',
+    baseURL: 'production' == process.env.NODE_ENV ? '/_base_path/' : '/',
     buildAssetsDir: "assets",
     head: {
       "meta": [

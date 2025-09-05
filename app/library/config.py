@@ -359,6 +359,9 @@ class Config:
         if isinstance(self.pictures_backends, str) and self.pictures_backends:
             self.pictures_backends = self.pictures_backends.split(",")
 
+        if not self.base_path.endswith("/"):
+            self.base_path += "/"
+
         numeric_level = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):
             msg = f"Invalid log level '{self.log_level}' specified."
@@ -371,7 +374,7 @@ class Config:
             encoding="utf-8",
         )
 
-        LOG = logging.getLogger("config")
+        LOG: logging.Logger = logging.getLogger("config")
 
         if self.debug:
             try:

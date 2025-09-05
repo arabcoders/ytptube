@@ -263,14 +263,14 @@ class HttpAPI:
             response: Response = await handler(request)
 
             contentType: str | None = response.headers.get("content-type", None)
-            if contentType and "/" != base_path and contentType.startswith("text/html"):
+            if contentType and contentType.startswith("text/html"):
                 rewrite_path: str = base_path.rstrip("/")
                 async with await anyio.open_file(response._path, "rb") as f:
                     content = await f.read()
                     content: str = (
                         content.decode("utf-8")
                         .replace('<base href="/">', f'<base href="{rewrite_path}/">')
-                        .replace('baseURL:""', f'baseURL:"{rewrite_path}/"')
+                        .replace("/_base_path/", f"{rewrite_path}/")
                     )
 
                 new_response = web.Response(text=content, content_type="text/html")
