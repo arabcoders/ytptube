@@ -28,6 +28,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "adb72f4584be3f85ef60c24dbbc291bec48134e5",
+    "date": "2025-09-05T09:54:41+00:00",
+    "commits": [
+      {
+        "sha": "adb72f45",
+        "full_sha": "adb72f4584be3f85ef60c24dbbc291bec48134e5",
+        "message": "better base_path support.",
+        "author": "arabcoders",
+        "date": "2025-09-05T09:54:41+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.4",
     "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a",
     "date": "2025-09-03T21:02:29+00:00",
