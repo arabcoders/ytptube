@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250908-2ae1f5b6",
-        "date": "2025-09-08T14:28:55+00:00",
+        "tag": "dev-20250908-f417041f",
+        "date": "2025-09-08T14:48:04+00:00",
         "commits": [
+            {
+                "sha": "f417041f",
+                "message": "made  condition.cli optional",
+                "author": "arabcoders",
+                "date": "2025-09-08T14:48:04+00:00",
+                "full_sha": "f417041f530193e2b2f773b35e1f803a448b8a99"
+            },
             {
                 "sha": "2ae1f5b6",
                 "message": "update external packages.",
@@ -1824,7 +1831,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2ae1f5b6ad68d8073656f9370f52c75abd1493bb"
+        "full_sha": "f417041f530193e2b2f773b35e1f803a448b8a99"
     },
     {
         "tag": "dev-20250616-c07465a6",
