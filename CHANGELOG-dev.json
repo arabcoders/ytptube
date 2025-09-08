@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250908-f417041f",
-        "date": "2025-09-08T14:48:04+00:00",
+        "tag": "dev-20250908-ae1b6dd4",
+        "date": "2025-09-08T15:07:24+00:00",
         "commits": [
+            {
+                "sha": "ae1b6dd4",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-09-08T15:07:24+00:00",
+                "full_sha": "ae1b6dd4700e6400d07891b17fea55c2cd3b2994"
+            },
             {
                 "sha": "f417041f",
                 "message": "made  condition.cli optional",
@@ -1831,7 +1838,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f417041f530193e2b2f773b35e1f803a448b8a99"
+        "full_sha": "ae1b6dd4700e6400d07891b17fea55c2cd3b2994"
     },
     {
         "tag": "dev-20250616-c07465a6",
