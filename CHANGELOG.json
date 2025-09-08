@@ -29,9 +29,37 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "801fb29cba06c85af7c0f4f62e5f4fb365cd171a",
-    "date": "2025-09-06T00:23:21+00:00",
+    "full_sha": "2ae1f5b6ad68d8073656f9370f52c75abd1493bb",
+    "date": "2025-09-08T14:28:55+00:00",
     "commits": [
+      {
+        "sha": "2ae1f5b6",
+        "full_sha": "2ae1f5b6ad68d8073656f9370f52c75abd1493bb",
+        "message": "update external packages.",
+        "author": "arabcoders",
+        "date": "2025-09-08T14:28:55+00:00"
+      },
+      {
+        "sha": "d0a11cbc",
+        "full_sha": "d0a11cbcd61ef55ca9f1f447514ea4798dec149e",
+        "message": "make it possible to ignore item download via conditions",
+        "author": "arabcoders",
+        "date": "2025-09-08T14:25:40+00:00"
+      },
+      {
+        "sha": "0d6532df",
+        "full_sha": "0d6532df5dc240e783e9c73ecd7fd8bf6d09a0dd",
+        "message": "update conditions to support extras options.",
+        "author": "arabcoders",
+        "date": "2025-09-08T14:25:40+00:00"
+      },
+      {
+        "sha": "fca82b3c",
+        "full_sha": "fca82b3cc94fd6c7df098303fc226ec754ef1277",
+        "message": "show rss feed logs",
+        "author": "arabcoders",
+        "date": "2025-09-08T14:25:40+00:00"
+      },
       {
         "sha": "c27ce91a",
         "full_sha": "c27ce91a13cf3cb2813150beab5f4919a1f5b626",

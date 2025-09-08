@@ -1,8 +1,36 @@
 [
     {
-        "tag": "dev-20250906-801fb29c",
-        "date": "2025-09-06T00:23:21+00:00",
+        "tag": "dev-20250908-2ae1f5b6",
+        "date": "2025-09-08T14:28:55+00:00",
         "commits": [
+            {
+                "sha": "2ae1f5b6",
+                "message": "update external packages.",
+                "author": "arabcoders",
+                "date": "2025-09-08T14:28:55+00:00",
+                "full_sha": "2ae1f5b6ad68d8073656f9370f52c75abd1493bb"
+            },
+            {
+                "sha": "d0a11cbc",
+                "message": "make it possible to ignore item download via conditions",
+                "author": "arabcoders",
+                "date": "2025-09-08T14:25:40+00:00",
+                "full_sha": "d0a11cbcd61ef55ca9f1f447514ea4798dec149e"
+            },
+            {
+                "sha": "0d6532df",
+                "message": "update conditions to support extras options.",
+                "author": "arabcoders",
+                "date": "2025-09-08T14:25:40+00:00",
+                "full_sha": "0d6532df5dc240e783e9c73ecd7fd8bf6d09a0dd"
+            },
+            {
+                "sha": "fca82b3c",
+                "message": "show rss feed logs",
+                "author": "arabcoders",
+                "date": "2025-09-08T14:25:40+00:00",
+                "full_sha": "fca82b3cc94fd6c7df098303fc226ec754ef1277"
+            },
             {
                 "sha": "c27ce91a",
                 "message": "Update yt-dlp to 2025.9.5",
@@ -1796,7 +1824,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "801fb29cba06c85af7c0f4f62e5f4fb365cd171a"
+        "full_sha": "2ae1f5b6ad68d8073656f9370f52c75abd1493bb"
     },
     {
         "tag": "dev-20250616-c07465a6",
