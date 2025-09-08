@@ -1,36 +1,8 @@
 [
   {
-    "tag": "Unreleased (71ba8ea7)",
-    "full_sha": "71ba8ea7f7a2edd7cbba3589d7767446a29f835c",
-    "date": "2025-09-04T14:30:20+00:00",
-    "commits": [
-      {
-        "sha": "b01c0049",
-        "full_sha": "b01c0049ae0ab17730916dd3dbab1f9479f4813e",
-        "message": "renamed screenshot",
-        "author": "arabcoders",
-        "date": "2025-09-04T14:29:40+00:00"
-      },
-      {
-        "sha": "91d4bf72",
-        "full_sha": "91d4bf729673391802bbad213c4b021eb7eb5f9f",
-        "message": "minor update to FAQ/README",
-        "author": "arabcoders",
-        "date": "2025-09-04T14:17:26+00:00"
-      },
-      {
-        "sha": "de338e44",
-        "full_sha": "de338e4492953fc7ccb1554d08ba8c69012fe920",
-        "message": "add build sha to .version file to be able to cleanup user python packages on master/dev builds.",
-        "author": "arabcoders",
-        "date": "2025-09-04T14:03:38+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "ae1b6dd4700e6400d07891b17fea55c2cd3b2994",
-    "date": "2025-09-08T15:07:24+00:00",
+    "tag": "Unreleased (125a1a81)",
+    "full_sha": "125a1a81a06b8b343c1ec87b32093519e67d0a43",
+    "date": "2025-09-08T16:20:05+00:00",
     "commits": [
       {
         "sha": "ae1b6dd4",
@@ -87,6 +59,27 @@
         "message": "better base_path support.",
         "author": "arabcoders",
         "date": "2025-09-05T09:54:41+00:00"
+      },
+      {
+        "sha": "b01c0049",
+        "full_sha": "b01c0049ae0ab17730916dd3dbab1f9479f4813e",
+        "message": "renamed screenshot",
+        "author": "arabcoders",
+        "date": "2025-09-04T14:29:40+00:00"
+      },
+      {
+        "sha": "91d4bf72",
+        "full_sha": "91d4bf729673391802bbad213c4b021eb7eb5f9f",
+        "message": "minor update to FAQ/README",
+        "author": "arabcoders",
+        "date": "2025-09-04T14:17:26+00:00"
+      },
+      {
+        "sha": "de338e44",
+        "full_sha": "de338e4492953fc7ccb1554d08ba8c69012fe920",
+        "message": "add build sha to .version file to be able to cleanup user python packages on master/dev builds.",
+        "author": "arabcoders",
+        "date": "2025-09-04T14:03:38+00:00"
       }
     ]
   },
