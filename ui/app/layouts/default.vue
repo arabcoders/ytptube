@@ -56,7 +56,7 @@
         </div>
         <div class="navbar-end">
           <div class="navbar-item has-dropdown" v-if="!config.app.basic_mode">
-            <a class="navbar-link" @click="e => openMenu(e)">
+            <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
               <span class="icon"><i class="fas fa-tools" /></span>
               <span>Other</span>
             </a>

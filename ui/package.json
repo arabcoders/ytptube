@@ -33,5 +33,11 @@
       "esbuild",
       "@parcel/watcher"
     ]
+  },
+  "overrides": {
+    "supports-color": "10.2.0",
+    "strip-ansi": "7.1.0",
+    "ansi-styles": "6.2.0",
+    "ansi-regex": "6.2.0"
   }
 }

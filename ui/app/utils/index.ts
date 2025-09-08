@@ -1,9 +1,6 @@
 import { useStorage } from '@vueuse/core'
-import type { convert_args_response } from "~/types/responses";
-import type { StoreItem } from "~/types/store";
-
-const runtimeConfig = useRuntimeConfig()
-const toast = useNotification()
+import type { convert_args_response } from '~/types/responses'
+import type { StoreItem } from '~/types/store'
 
 const AG_SEPARATOR = '.'
 
@@ -303,6 +300,8 @@ const dirname = (filePath: string): string => {
  * @param store - Whether to persist the notification (optional).
  */
 const copyText = (str: string, notify: boolean = true, store: boolean = false): void => {
+  const toast = useNotification()
+
   if (navigator.clipboard) {
     navigator.clipboard.writeText(str).then(() => {
       if (notify) toast.success('Text copied to clipboard.')
@@ -321,6 +320,7 @@ const copyText = (str: string, notify: boolean = true, store: boolean = false): 
   document.body.removeChild(el)
 
   if (notify) {
+    const toast = useNotification()
     toast.success('Text copied to clipboard.', { store })
   }
 }
@@ -548,6 +548,8 @@ const cleanObject = <T extends Record<string, any>>(item: T, fields: string[] = 
  * @returns The fully prefixed URI.
  */
 const uri = (u: string): string => {
+  const runtimeConfig = useRuntimeConfig()
+
   if (!u || '/' === runtimeConfig.app.baseURL || !u.startsWith('/')) {
     return u
   }
