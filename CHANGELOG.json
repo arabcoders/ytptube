@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (125a1a81)",
-    "full_sha": "125a1a81a06b8b343c1ec87b32093519e67d0a43",
-    "date": "2025-09-08T16:20:05+00:00",
+    "tag": "Unreleased (c968ce3e)",
+    "full_sha": "c968ce3ed240842f6cb3f3d22fd4aaf6475d53f4",
+    "date": "2025-09-08T21:26:27+00:00",
     "commits": [
+      {
+        "sha": "a39a0093",
+        "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf",
+        "message": "updated external packages",
+        "author": "arabcoders",
+        "date": "2025-09-08T21:13:43+00:00"
+      },
       {
         "sha": "ae1b6dd4",
         "full_sha": "ae1b6dd4700e6400d07891b17fea55c2cd3b2994",
@@ -80,20 +87,6 @@
         "message": "add build sha to .version file to be able to cleanup user python packages on master/dev builds.",
         "author": "arabcoders",
         "date": "2025-09-04T14:03:38+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf",
-    "date": "2025-09-08T21:13:43+00:00",
-    "commits": [
-      {
-        "sha": "a39a0093",
-        "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf",
-        "message": "updated external packages",
-        "author": "arabcoders",
-        "date": "2025-09-08T21:13:43+00:00"
       }
     ]
   },
