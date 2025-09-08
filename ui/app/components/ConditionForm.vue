@@ -321,6 +321,11 @@ const checkInfo = async (): Promise<void> => {
     }
   }
 
+  if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
+    toast.error('Either command options for yt-dlp or at least one extra option is required.')
+    return
+  }
+
   if (form.cli && '' !== form.cli.trim()) {
     const options = await convertOptions(form.cli)
     if (options === null) {

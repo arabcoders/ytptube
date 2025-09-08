@@ -199,9 +199,8 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
     addInProgress.value = true
 
     const validItems = newItems.map(({ id, name, filter, cli, extras }) => {
-      if (!name || !filter || !cli) {
-        toast.error('Name, filter and cli are required.')
-        throw new Error('Missing fields')
+      if (!name || !filter) {
+        throw new Error('Name and filter are required.')
       }
       return { id, name, filter, cli, extras }
     })
