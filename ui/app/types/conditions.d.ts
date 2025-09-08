@@ -3,7 +3,7 @@ export type ConditionItem = {
   name: string
   filter: string
   cli: string
-  [key: string]: any
+  extras: Record<string, any>
 }
 
 export type ImportedConditionItem = ConditionItem & {

@@ -107,6 +107,60 @@
                   </span>
                 </div>
               </div>
+
+              <div class="column is-12">
+                <div class="field">
+                  <label class="label is-inline">
+                    <span class="icon"><i class="fa-solid fa-plus-square" /></span>
+                    Extra Options
+                  </label>
+                  <div class="content">
+                    <div v-if="form.extras && Object.keys(form.extras).length > 0" class="mb-3">
+                      <div v-for="(value, key) in form.extras" :key="key" class="field is-grouped mb-2">
+                        <div class="control">
+                          <input type="text" class="input" :value="key" @input="updateExtraKey($event, key)"
+                            :disabled="addInProgress" placeholder="key_name">
+                        </div>
+                        <div class="control is-expanded">
+                          <input type="text" class="input" :value="value" @input="updateExtraValue(key, $event)"
+                            :disabled="addInProgress" placeholder="value">
+                        </div>
+                        <div class="control">
+                          <button type="button" class="button is-danger" @click="removeExtra(key)"
+                            :disabled="addInProgress">
+                            <span class="icon"><i class="fa-solid fa-times" /></span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field is-grouped">
+                      <div class="control">
+                        <input type="text" class="input" v-model="newExtraKey" :disabled="addInProgress"
+                          placeholder="new_key" @keyup.enter="addExtra">
+                      </div>
+                      <div class="control is-expanded">
+                        <input type="text" class="input" v-model="newExtraValue" :disabled="addInProgress"
+                          placeholder="new_value" @keyup.enter="addExtra">
+                      </div>
+                      <div class="control">
+                        <button type="button" class="button is-primary" @click="addExtra"
+                          :disabled="addInProgress || !newExtraKey || !newExtraValue">
+                          <span class="icon"><i class="fa-solid fa-plus" /></span>
+                          <span>Add</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>
+                      For advanced users only. This feature is meant to be expanded later. the only supported key right
+                      now. <code>ignore_download</code> with value of <code>true</code>. Keys must be lowercase with
+                      underscores (e.g., custom_field).</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -231,6 +285,8 @@ const config = useConfigStore()
 
 const form = reactive<ConditionItem>(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
+const newExtraKey = ref('')
+const newExtraValue = ref('')
 const test_data = ref<{
   show: boolean,
   url: string,
@@ -240,6 +296,11 @@ const test_data = ref<{
 }>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } })
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
+
+// Initialize extras if not present
+if (!form.extras) {
+  form.extras = {}
+}
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
@@ -272,10 +333,10 @@ const checkInfo = async (): Promise<void> => {
   const copy: ConditionItem = JSON.parse(JSON.stringify(form))
 
   for (const key in copy) {
-    if (typeof copy[key] !== 'string') {
+    if (typeof (copy as any)[key] !== 'string') {
       continue
     }
-    copy[key] = copy[key].trim()
+    (copy as any)[key] = (copy as any)[key].trim()
   }
 
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) })
@@ -343,7 +404,7 @@ const importItem = async (): Promise<void> => {
       return
     }
 
-    if ((form.filter || form.cli) && !(await box.confirm('Overwrite the current form fields?', true))) {
+    if ((form.filter || form.cli || Object.keys(form.extras).length > 0) && !(await box.confirm('Overwrite the current form fields?', true))) {
       return
     }
 
@@ -357,6 +418,10 @@ const importItem = async (): Promise<void> => {
 
     if (item.cli) {
       form.cli = item.cli
+    }
+
+    if (item.extras) {
+      form.extras = { ...item.extras }
     }
 
     import_string.value = ''
@@ -391,4 +456,95 @@ const logic_test = computed(() => {
     return false
   }
 })
+
+// Extras management functions
+const validateKey = (key: string): boolean => {
+  // Key must be lowercase with underscores only
+  return /^[a-z][a-z0-9_]*$/.test(key)
+}
+
+const parseValue = (value: string): string | number | boolean => {
+  // Try to parse as number
+  if (!isNaN(Number(value)) && !isNaN(parseFloat(value))) {
+    return Number(value)
+  }
+
+  // Try to parse as boolean
+  if (value.toLowerCase() === 'true') {
+    return true
+  }
+  if (value.toLowerCase() === 'false') {
+    return false
+  }
+
+  // Return as string
+  return value
+}
+
+const addExtra = (): void => {
+  const key = newExtraKey.value.trim()
+  const value = newExtraValue.value.trim()
+
+  if (!key || !value) {
+    toast.error('Both key and value are required.')
+    return
+  }
+
+  if (!validateKey(key)) {
+    toast.error('Key must be lowercase and contain only letters, numbers, and underscores (e.g., custom_field).')
+    return
+  }
+
+  if (form.extras[key]) {
+    toast.error(`Key '${key}' already exists.`)
+    return
+  }
+
+  form.extras[key] = parseValue(value)
+  newExtraKey.value = ''
+  newExtraValue.value = ''
+}
+
+const removeExtra = (key: string): void => {
+  delete form.extras[key]
+}
+
+const updateExtraKey = (event: Event, oldKey: string): void => {
+  const target = event.target as HTMLInputElement
+  const newKey = target.value.trim()
+
+  if (!newKey) {
+    return
+  }
+
+  if (!validateKey(newKey)) {
+    toast.error('Key must be lowercase and contain only letters, numbers, and underscores.')
+    target.value = oldKey // Reset to old value
+    return
+  }
+
+  if (newKey !== oldKey) {
+    if (form.extras[newKey]) {
+      toast.error(`Key '${newKey}' already exists.`)
+      target.value = oldKey // Reset to old value
+      return
+    }
+
+    // Move the value to the new key
+    const value = form.extras[oldKey]
+    delete form.extras[oldKey]
+    form.extras[newKey] = value
+  }
+}
+
+const updateExtraValue = (key: string, event: Event): void => {
+  const target = event.target as HTMLInputElement
+  const value = target.value.trim()
+
+  if (value) {
+    form.extras[key] = parseValue(value)
+  } else {
+    form.extras[key] = ''
+  }
+}
 </script>

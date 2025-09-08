@@ -119,13 +119,15 @@
 <script setup lang="ts">
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
+type ConditionItemWithUI = ConditionItem & { raw?: boolean }
+
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-const items = ref<ConditionItem[]>([])
+const items = ref<ConditionItemWithUI[]>([])
 const item = ref<Partial<ConditionItem>>({})
 const itemRef = ref<string | null | undefined>("")
 const toggleForm = ref(false)
@@ -188,12 +190,12 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
   try {
     addInProgress.value = true
 
-    const validItems = newItems.map(({ id, name, filter, cli }) => {
+    const validItems = newItems.map(({ id, name, filter, cli, extras }) => {
       if (!name || !filter || !cli) {
         toast.error('Name, filter and cli are required.')
         throw new Error('Missing fields')
       }
-      return { id, name, filter, cli }
+      return { id, name, filter, cli, extras }
     })
 
     const response = await request('/api/conditions', {
