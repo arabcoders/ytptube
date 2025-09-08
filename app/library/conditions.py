@@ -27,7 +27,7 @@ class Condition:
     filter: str
     """The filter to run on info dict."""
 
-    cli: str
+    cli: str = ""
     """If matched append this to the download request and retry."""
 
     extras: dict[str, Any] = field(default_factory=dict)

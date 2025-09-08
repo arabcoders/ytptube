@@ -85,6 +85,12 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
                 status=web.HTTPBadRequest.status_code,
             )
 
+        if not item.get("cli"):
+            item["cli"] = ""
+
+        if not item.get("extras"):
+            item["extras"] = {}
+
         if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
             item["id"] = str(uuid.uuid4())
 
