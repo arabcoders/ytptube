@@ -84,6 +84,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf",
+    "date": "2025-09-08T21:13:43+00:00",
+    "commits": [
+      {
+        "sha": "a39a0093",
+        "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf",
+        "message": "updated external packages",
+        "author": "arabcoders",
+        "date": "2025-09-08T21:13:43+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.4",
     "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a",
     "date": "2025-09-03T21:02:29+00:00",
