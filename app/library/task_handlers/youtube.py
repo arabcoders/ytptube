@@ -34,10 +34,10 @@ class YoutubeHandler(BaseHandler):
     @staticmethod
     def can_handle(task: Task) -> bool:
         if not task.get_ytdlp_opts().get_all().get("download_archive"):
-            LOG.debug(f"Task '{task.name}' does not have an archive file configured.")
+            LOG.debug(f"'{task.name}': Task does not have an archive file configured.")
             return False
 
-        LOG.debug(f"Checking if task '{task.name}' is using parsable YouTube URL: {task.url}")
+        LOG.debug(f"'{task.name}': Checking if task URL is parsable YouTube URL: {task.url}")
         return YoutubeHandler.parse(task.url) is not None
 
     @staticmethod
@@ -56,16 +56,15 @@ class YoutubeHandler(BaseHandler):
 
         parsed: dict[str, str] | None = YoutubeHandler.parse(task.url)
         if not parsed:
-            LOG.error(f"Cannot parse '{task.name}' URL: {task.url}")
+            LOG.error(f"'{task.name}': Cannot parse task URL: {task.url}")
             return
 
         params: dict = task.get_ytdlp_opts().get_all()
 
         feed_url: str = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
-        LOG.debug(f"Fetching '{task.name}' feed.")
+        LOG.info(f"'{task.name}': Fetching feed.")
 
         items: list = []
-        has_items = False
 
         response = await YoutubeHandler.request(url=feed_url, ytdlp_opts=params)
         response.raise_for_status()
@@ -76,11 +75,12 @@ class YoutubeHandler(BaseHandler):
             "yt": "http://www.youtube.com/xml/schemas/2015",
         }
 
+        real_count: int = 0
         for entry in root.findall("atom:entry", ns):
             vid_elem: Element[str] | None = entry.find("yt:videoId", ns)
             vid: str | None = vid_elem.text if vid_elem is not None else ""
             if not vid:
-                LOG.warning(f"Entry in '{task.name}' feed is missing a video ID. Skipping entry.")
+                LOG.warning(f"'{task.name}': Entry in the feed is missing a video ID. Skipping.")
                 continue
 
             url: str = f"https://www.youtube.com/watch?v={vid}"
@@ -88,7 +88,7 @@ class YoutubeHandler(BaseHandler):
             id_dict: dict[str, str | None] = get_archive_id(url)
             archive_id: str | None = id_dict.get("archive_id")
             if not archive_id:
-                LOG.warning(f"Could not compute archive ID for video '{vid}' in '{task.name}' feed. Skipping entry.")
+                LOG.warning(f"'{task.name}': Could not compute archive ID for video '{vid}' in feed. Skipping.")
                 continue
 
             title_elem: Element[str] | None = entry.find("atom:title", ns)
@@ -96,7 +96,7 @@ class YoutubeHandler(BaseHandler):
 
             pub_elem: Element[str] | None = entry.find("atom:published", ns)
             published: str | None = pub_elem.text if pub_elem is not None else ""
-            has_items = True
+            real_count += 1
 
             if archive_id in YoutubeHandler.queued:
                 continue
@@ -104,10 +104,10 @@ class YoutubeHandler(BaseHandler):
             items.append({"id": vid, "url": url, "title": title, "published": published, "archive_id": archive_id})
 
         if len(items) < 1:
-            if not has_items:
-                LOG.warning(f"No entries found in '{task.name}' feed. URL: {feed_url}")
+            if real_count < 1:
+                LOG.warning(f"'{task.name}': No entries found the RSS feed. URL: {feed_url}")
             else:
-                LOG.debug(f"No new items found in '{task.name}' feed.")
+                LOG.info(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
             return
 
         filtered: list = []
@@ -135,10 +135,10 @@ class YoutubeHandler(BaseHandler):
             filtered.append(item)
 
         if len(filtered) < 1:
-            LOG.debug(f"No new items found in '{task.name}' feed.")
+            LOG.info(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
             return
 
-        LOG.info(f"Found '{len(filtered)}' new items from '{task.name}' feed.")
+        LOG.info(f"'{task.name}': Found '{len(filtered)}/{real_count}' new items from feed.")
 
         rItem: Item = Item.format(
             {
@@ -158,7 +158,7 @@ class YoutubeHandler(BaseHandler):
             )
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Error while adding items from '{task.name}'. {e!s}")
+            LOG.error(f"'{task.name}': Error while adding items from task feed. {e!s}")
             return
 
     @staticmethod

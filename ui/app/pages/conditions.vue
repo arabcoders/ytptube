@@ -64,6 +64,14 @@
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>{{ cond.cli }}</span>
                   </p>
+                  <p class="is-text-overflow" v-if="cond.extras && Object.keys(cond.extras).length > 0">
+                    <span class="icon"><i class="fa-solid fa-list" /></span>
+                    <span>Extras:
+                      <span v-for="(value, key) in cond.extras" :key="key" class="tag is-info mr-2">
+                        <strong>{{ key }}</strong>: {{ value }}
+                      </span>
+                    </span>
+                  </p>
                 </div>
               </div>
               <div class="card-content" v-if="cond?.raw">
@@ -119,13 +127,15 @@
 <script setup lang="ts">
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 
+type ConditionItemWithUI = ConditionItem & { raw?: boolean }
+
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-const items = ref<ConditionItem[]>([])
+const items = ref<ConditionItemWithUI[]>([])
 const item = ref<Partial<ConditionItem>>({})
 const itemRef = ref<string | null | undefined>("")
 const toggleForm = ref(false)
@@ -188,12 +198,11 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
   try {
     addInProgress.value = true
 
-    const validItems = newItems.map(({ id, name, filter, cli }) => {
-      if (!name || !filter || !cli) {
-        toast.error('Name, filter and cli are required.')
-        throw new Error('Missing fields')
+    const validItems = newItems.map(({ id, name, filter, cli, extras }) => {
+      if (!name || !filter) {
+        throw new Error('Name and filter are required.')
       }
-      return { id, name, filter, cli }
+      return { id, name, filter, cli, extras }
     })
 
     const response = await request('/api/conditions', {
@@ -276,7 +285,7 @@ const exportItem = (cond: ConditionItem): void => {
   const userData: ImportedConditionItem = {
     ...Object.fromEntries(Object.entries(clone).filter(([_, v]) => !!v)),
     _type: 'condition',
-    _version: '1.0',
+    _version: '1.1',
   } as ImportedConditionItem
 
   copyText(encode(userData))

@@ -27,8 +27,11 @@ class Condition:
     filter: str
     """The filter to run on info dict."""
 
-    cli: str
+    cli: str = ""
     """If matched append this to the download request and retry."""
+
+    extras: dict[str, Any] = field(default_factory=dict)
+    """Any extra data to store with the condition."""
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -137,6 +140,10 @@ class Conditions(metaclass=Singleton):
                     item["id"] = str(uuid.uuid4())
                     need_save = True
 
+                if "extras" not in item:
+                    item["extras"] = {}
+                    need_save = True
+
                 item: Condition = init_class(Condition, item)
 
                 self._items.append(item)
@@ -145,7 +152,7 @@ class Conditions(metaclass=Singleton):
                 continue
 
         if need_save:
-            LOG.info("Saving conditions due to format, or id change.")
+            LOG.info("Saving conditions due changes.")
             self.save(self._items)
 
         return self
@@ -203,15 +210,16 @@ class Conditions(metaclass=Singleton):
             msg = f"Invalid filter. '{e!s}'."
             raise ValueError(msg) from e
 
-        if not item.get("cli"):
-            msg = "No command options for yt-dlp were found."
-            raise ValueError(msg)
+        if item.get("cli"):
+            try:
+                arg_converter(args=item.get("cli"))
+            except Exception as e:
+                msg = f"Invalid command options for yt-dlp. '{e!s}'."
+                raise ValueError(msg) from e
 
-        try:
-            arg_converter(args=item.get("cli"))
-        except Exception as e:
-            msg = f"Invalid command options for yt-dlp. '{e!s}'."
-            raise ValueError(msg) from e
+        if not isinstance(item.get("extras"), dict):
+            msg = "Extras must be a dictionary."
+            raise ValueError(msg)  # noqa: TRY004
 
         return True
 

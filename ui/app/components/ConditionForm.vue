@@ -107,6 +107,60 @@
                   </span>
                 </div>
               </div>
+
+              <div class="column is-12">
+                <div class="field">
+                  <label class="label is-inline">
+                    <span class="icon"><i class="fa-solid fa-plus-square" /></span>
+                    Extra Options
+                  </label>
+                  <div class="content">
+                    <div v-if="form.extras && Object.keys(form.extras).length > 0" class="mb-3">
+                      <div v-for="(value, key) in form.extras" :key="key" class="field is-grouped mb-2">
+                        <div class="control">
+                          <input type="text" class="input" :value="key" @input="updateExtraKey($event, key)"
+                            :disabled="addInProgress" placeholder="key_name">
+                        </div>
+                        <div class="control is-expanded">
+                          <input type="text" class="input" :value="value" @input="updateExtraValue(key, $event)"
+                            :disabled="addInProgress" placeholder="value">
+                        </div>
+                        <div class="control">
+                          <button type="button" class="button is-danger" @click="removeExtra(key)"
+                            :disabled="addInProgress">
+                            <span class="icon"><i class="fa-solid fa-times" /></span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field is-grouped">
+                      <div class="control">
+                        <input type="text" class="input" v-model="newExtraKey" :disabled="addInProgress"
+                          placeholder="new_key" @keyup.enter="addExtra">
+                      </div>
+                      <div class="control is-expanded">
+                        <input type="text" class="input" v-model="newExtraValue" :disabled="addInProgress"
+                          placeholder="new_value" @keyup.enter="addExtra">
+                      </div>
+                      <div class="control">
+                        <button type="button" class="button is-primary" @click="addExtra"
+                          :disabled="addInProgress || !newExtraKey || !newExtraValue">
+                          <span class="icon"><i class="fa-solid fa-plus" /></span>
+                          <span>Add</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>
+                      For advanced users only. This feature is meant to be expanded later. the only supported key right
+                      now. <code>ignore_download</code> with value of <code>true</code>. Keys must be lowercase with
+                      underscores (e.g., custom_field).</span>
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -231,6 +285,8 @@ const config = useConfigStore()
 
 const form = reactive<ConditionItem>(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
+const newExtraKey = ref('')
+const newExtraValue = ref('')
 const test_data = ref<{
   show: boolean,
   url: string,
@@ -241,10 +297,14 @@ const test_data = ref<{
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 
+// Initialize extras if not present
+if (!form.extras) {
+  form.extras = {}
+}
+
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
-  .flatMap(opt => opt.flags
-    .filter(flag => flag.startsWith('--'))
+  .flatMap(opt => opt.flags.filter(flag => flag.startsWith('--'))
     .map(flag => ({ value: flag, description: opt.description || '' }))),
   { immediate: true }
 )
@@ -252,13 +312,18 @@ watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
 watch(() => form.filter, () => test_data.value.changed = true)
 
 const checkInfo = async (): Promise<void> => {
-  const required: (keyof ConditionItem)[] = ['name', 'filter', 'cli']
+  const required: (keyof ConditionItem)[] = ['name', 'filter']
 
   for (const key of required) {
     if (!form[key]) {
       toast.error(`The ${key} field is required.`)
       return
     }
+  }
+
+  if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
+    toast.error('Either command options for yt-dlp or at least one extra option is required.')
+    return
   }
 
   if (form.cli && '' !== form.cli.trim()) {
@@ -272,10 +337,10 @@ const checkInfo = async (): Promise<void> => {
   const copy: ConditionItem = JSON.parse(JSON.stringify(form))
 
   for (const key in copy) {
-    if (typeof copy[key] !== 'string') {
+    if (typeof (copy as any)[key] !== 'string') {
       continue
     }
-    copy[key] = copy[key].trim()
+    (copy as any)[key] = (copy as any)[key].trim()
   }
 
   emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) })
@@ -343,7 +408,7 @@ const importItem = async (): Promise<void> => {
       return
     }
 
-    if ((form.filter || form.cli) && !(await box.confirm('Overwrite the current form fields?', true))) {
+    if ((form.filter || form.cli || Object.keys(form.extras).length > 0) && !(await box.confirm('Overwrite the current form fields?', true))) {
       return
     }
 
@@ -357,6 +422,10 @@ const importItem = async (): Promise<void> => {
 
     if (item.cli) {
       form.cli = item.cli
+    }
+
+    if (item.extras) {
+      form.extras = { ...item.extras }
     }
 
     import_string.value = ''
@@ -391,4 +460,82 @@ const logic_test = computed(() => {
     return false
   }
 })
+
+const validateKey = (key: string): boolean => /^[a-z][a-z0-9_]*$/.test(key)
+
+const parseValue = (value: string): string | number | boolean => {
+  if (!isNaN(Number(value)) && !isNaN(parseFloat(value))) {
+    return Number(value)
+  }
+
+  if ('true' === value.toLowerCase()) {
+    return true
+  }
+  if ('false' === value.toLowerCase()) {
+    return false
+  }
+
+  return value
+}
+
+const addExtra = (): void => {
+  const key = newExtraKey.value.trim()
+  const value = newExtraValue.value.trim()
+
+  if (!key || !value) {
+    toast.error('Both key and value are required.')
+    return
+  }
+
+  if (!validateKey(key)) {
+    toast.error('Key must be lower_case.')
+    return
+  }
+
+  if (form.extras[key]) {
+    toast.error(`Key '${key}' already exists.`)
+    return
+  }
+
+  form.extras[key] = parseValue(value)
+  newExtraKey.value = ''
+  newExtraValue.value = ''
+}
+
+const removeExtra = (key: string): void => {
+  delete form.extras[key]
+}
+
+const updateExtraKey = (event: Event, oldKey: string): void => {
+  const target = event.target as HTMLInputElement
+  const newKey = target.value.trim()
+
+  if (!newKey) {
+    return
+  }
+
+  if (!validateKey(newKey)) {
+    toast.error('Key must be lowercase and contain only letters, numbers, and underscores.')
+    target.value = oldKey
+    return
+  }
+
+  if (newKey !== oldKey) {
+    if (form.extras[newKey]) {
+      toast.error(`Key '${newKey}' already exists.`)
+      target.value = oldKey
+      return
+    }
+
+    const value = form.extras[oldKey]
+    delete form.extras[oldKey]
+    form.extras[newKey] = value
+  }
+}
+
+const updateExtraValue = (key: string, event: Event): void => {
+  const target = event.target as HTMLInputElement
+  const value = target.value.trim()
+  form.extras[key] = value ? parseValue(value) : ''
+}
 </script>

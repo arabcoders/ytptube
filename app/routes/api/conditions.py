@@ -71,19 +71,25 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
 
         if not item.get("name"):
             return web.json_response(
-                {"error": "name is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                {"error": "Name is required.", "data": item}, status=web.HTTPBadRequest.status_code
             )
 
         if not item.get("filter"):
             return web.json_response(
-                {"error": "filter is required.", "data": item}, status=web.HTTPBadRequest.status_code
+                {"error": "Filter is required.", "data": item}, status=web.HTTPBadRequest.status_code
+            )
+
+        if not item.get("cli") and len(item.get("extras", {}).keys()) < 1:
+            return web.json_response(
+                {"error": "A Condition Must have cli options or extras", "data": item},
+                status=web.HTTPBadRequest.status_code,
             )
 
         if not item.get("cli"):
-            return web.json_response(
-                {"error": "command options for yt-dlp is required.", "data": item},
-                status=web.HTTPBadRequest.status_code,
-            )
+            item["cli"] = ""
+
+        if not item.get("extras"):
+            item["extras"] = {}
 
         if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
             item["id"] = str(uuid.uuid4())
