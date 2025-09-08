@@ -64,6 +64,14 @@
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>{{ cond.cli }}</span>
                   </p>
+                  <p class="is-text-overflow" v-if="cond.extras && Object.keys(cond.extras).length > 0">
+                    <span class="icon"><i class="fa-solid fa-list" /></span>
+                    <span>Extras:
+                      <span v-for="(value, key) in cond.extras" :key="key" class="tag is-info mr-2">
+                        <strong>{{ key }}</strong>: {{ value }}
+                      </span>
+                    </span>
+                  </p>
                 </div>
               </div>
               <div class="card-content" v-if="cond?.raw">
@@ -278,7 +286,7 @@ const exportItem = (cond: ConditionItem): void => {
   const userData: ImportedConditionItem = {
     ...Object.fromEntries(Object.entries(clone).filter(([_, v]) => !!v)),
     _type: 'condition',
-    _version: '1.0',
+    _version: '1.1',
   } as ImportedConditionItem
 
   copyText(encode(userData))

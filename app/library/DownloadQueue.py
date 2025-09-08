@@ -24,6 +24,7 @@ from .Presets import Presets
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .Utils import (
+    archive_add,
     arg_converter,
     calc_download_path,
     dt_delta,
@@ -675,8 +676,10 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
+            archive_id = item.get_archive_id()
+
             if item.is_archived():
-                if archive_id := item.get_archive_id():
+                if archive_id:
                     store_type, _ = self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
@@ -750,7 +753,55 @@ class DownloadQueue(metaclass=Singleton):
 
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
                 already.pop()
-                LOG.info(f"Matched '{condition.name}' for '{item.url}' Adding '{condition.cli}' to request.")
+
+                item_title = entry.get("title") or entry.get("id") or item.url
+                message = f"Condition '{condition.name}' matched for '{item_title}'."
+
+                if condition.cli:
+                    message += f" Re-queuing with '{condition.cli}'."
+
+                LOG.info(message)
+
+                if condition.extras.get("ignore_download", False):
+                    extra_msg: str = ""
+                    if yt_conf.get("download_archive") and not condition.extras.get("no_archive", False):
+                        archive_add(yt_conf.get("download_archive"), [archive_id])
+                        extra_msg = f" and added to archive '{yt_conf.get('download_archive')}'"
+
+                    log_message = f"Ignoring download of '{item_title}' as per condition '{condition.name}'{extra_msg}."
+
+                    store_type, _ = self.get_item(archive_id=archive_id)
+                    if not store_type:
+                        dlInfo = Download(
+                            info=ItemDTO(
+                                id=entry.get("id"),
+                                title=item_title,
+                                url=item.url,
+                                preset=item.preset,
+                                folder=item.folder,
+                                status="skip",
+                                cookies=item.cookies,
+                                template=item.template,
+                                msg=log_message,
+                                extras=item.extras,
+                            )
+                        )
+                        self.done.put(dlInfo)
+
+                    LOG.info(log_message)
+                    await asyncio.gather(
+                        *[
+                            self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message),
+                            self._notify.emit(
+                                Events.ITEM_MOVED,
+                                data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                                title="Download History Update",
+                                message=f"Download history updated with '{item.url}'.",
+                            ),
+                        ]
+                    )
+                    return {"status": "ok"}
+
                 return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
             _status, _msg = ytdlp_reject(entry=entry, yt_params=yt_conf)

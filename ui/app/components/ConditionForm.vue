@@ -304,8 +304,7 @@ if (!form.extras) {
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
-  .flatMap(opt => opt.flags
-    .filter(flag => flag.startsWith('--'))
+  .flatMap(opt => opt.flags.filter(flag => flag.startsWith('--'))
     .map(flag => ({ value: flag, description: opt.description || '' }))),
   { immediate: true }
 )
@@ -313,7 +312,7 @@ watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
 watch(() => form.filter, () => test_data.value.changed = true)
 
 const checkInfo = async (): Promise<void> => {
-  const required: (keyof ConditionItem)[] = ['name', 'filter', 'cli']
+  const required: (keyof ConditionItem)[] = ['name', 'filter']
 
   for (const key of required) {
     if (!form[key]) {
@@ -457,27 +456,20 @@ const logic_test = computed(() => {
   }
 })
 
-// Extras management functions
-const validateKey = (key: string): boolean => {
-  // Key must be lowercase with underscores only
-  return /^[a-z][a-z0-9_]*$/.test(key)
-}
+const validateKey = (key: string): boolean => /^[a-z][a-z0-9_]*$/.test(key)
 
 const parseValue = (value: string): string | number | boolean => {
-  // Try to parse as number
   if (!isNaN(Number(value)) && !isNaN(parseFloat(value))) {
     return Number(value)
   }
 
-  // Try to parse as boolean
-  if (value.toLowerCase() === 'true') {
+  if ('true' === value.toLowerCase()) {
     return true
   }
-  if (value.toLowerCase() === 'false') {
+  if ('false' === value.toLowerCase()) {
     return false
   }
 
-  // Return as string
   return value
 }
 
@@ -491,7 +483,7 @@ const addExtra = (): void => {
   }
 
   if (!validateKey(key)) {
-    toast.error('Key must be lowercase and contain only letters, numbers, and underscores (e.g., custom_field).')
+    toast.error('Key must be lower_case.')
     return
   }
 
@@ -519,18 +511,17 @@ const updateExtraKey = (event: Event, oldKey: string): void => {
 
   if (!validateKey(newKey)) {
     toast.error('Key must be lowercase and contain only letters, numbers, and underscores.')
-    target.value = oldKey // Reset to old value
+    target.value = oldKey
     return
   }
 
   if (newKey !== oldKey) {
     if (form.extras[newKey]) {
       toast.error(`Key '${newKey}' already exists.`)
-      target.value = oldKey // Reset to old value
+      target.value = oldKey
       return
     }
 
-    // Move the value to the new key
     const value = form.extras[oldKey]
     delete form.extras[oldKey]
     form.extras[newKey] = value
@@ -540,11 +531,6 @@ const updateExtraKey = (event: Event, oldKey: string): void => {
 const updateExtraValue = (key: string, event: Event): void => {
   const target = event.target as HTMLInputElement
   const value = target.value.trim()
-
-  if (value) {
-    form.extras[key] = parseValue(value)
-  } else {
-    form.extras[key] = ''
-  }
+  form.extras[key] = value ? parseValue(value) : ''
 }
 </script>

@@ -210,15 +210,12 @@ class Conditions(metaclass=Singleton):
             msg = f"Invalid filter. '{e!s}'."
             raise ValueError(msg) from e
 
-        if not item.get("cli"):
-            msg = "No command options for yt-dlp were found."
-            raise ValueError(msg)
-
-        try:
-            arg_converter(args=item.get("cli"))
-        except Exception as e:
-            msg = f"Invalid command options for yt-dlp. '{e!s}'."
-            raise ValueError(msg) from e
+        if item.get("cli"):
+            try:
+                arg_converter(args=item.get("cli"))
+            except Exception as e:
+                msg = f"Invalid command options for yt-dlp. '{e!s}'."
+                raise ValueError(msg) from e
 
         if not isinstance(item.get("extras"), dict):
             msg = "Extras must be a dictionary."
