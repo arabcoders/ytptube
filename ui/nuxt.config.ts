@@ -60,7 +60,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
-    '@nuxt/eslint',
+    process.env.NODE_ENV === 'development' ? '@nuxt/eslint' : '',
   ],
 
   nitro: {
