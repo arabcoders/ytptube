@@ -91,6 +91,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be",
+    "date": "2025-09-10T23:13:53+00:00",
+    "commits": [
+      {
+        "sha": "ff28899a",
+        "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be",
+        "message": "fix @nuxt/eslint import",
+        "author": "arabcoders",
+        "date": "2025-09-10T23:13:53+00:00"
+      },
+      {
+        "sha": "fae1d7c5",
+        "full_sha": "fae1d7c577c533c7b51edb67bdf503db21b0efc3",
+        "message": "improved match_str by implementing extended subset.",
+        "author": "arabcoders",
+        "date": "2025-09-10T23:09:48+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.4",
     "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a",
     "date": "2025-09-03T21:02:29+00:00",

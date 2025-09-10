@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250909-a39a0093",
-        "date": "2025-09-08T21:13:43+00:00",
+        "tag": "dev-20250911-ff28899a",
+        "date": "2025-09-10T23:13:53+00:00",
         "commits": [
+            {
+                "sha": "ff28899a",
+                "message": "fix @nuxt/eslint import",
+                "author": "arabcoders",
+                "date": "2025-09-10T23:13:53+00:00",
+                "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be"
+            },
+            {
+                "sha": "fae1d7c5",
+                "message": "improved match_str by implementing extended subset.",
+                "author": "arabcoders",
+                "date": "2025-09-10T23:09:48+00:00",
+                "full_sha": "fae1d7c577c533c7b51edb67bdf503db21b0efc3"
+            },
             {
                 "sha": "a39a0093",
                 "message": "updated external packages",
@@ -1845,7 +1859,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a39a009395dfb39ffb9a1becc0a61d6358caafcf"
+        "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be"
     },
     {
         "tag": "dev-20250616-c07465a6",
