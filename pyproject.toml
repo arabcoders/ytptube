@@ -79,9 +79,7 @@ indent-width = 4
 target-version = "py311"
 
 [project.optional-dependencies]
-installer = [
-  "pyinstaller",
-]
+installer = ["pyinstaller"]
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -200,3 +198,8 @@ docstring-code-line-length = "dynamic"
 
 [tool.uv]
 link-mode = "copy"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["app/tests"]
+addopts = "-v --tb=short"

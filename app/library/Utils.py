@@ -16,9 +16,10 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from Crypto.Cipher import AES
-from yt_dlp.utils import age_restricted, match_str
+from yt_dlp.utils import age_restricted
 
 from .LogWrapper import LogWrapper
+from .mini_filter import match_str
 from .ytdlp import YTDLP
 
 LOG: logging.Logger = logging.getLogger("Utils")

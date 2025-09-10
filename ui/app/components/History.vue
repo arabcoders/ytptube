@@ -504,7 +504,7 @@ const dialog_confirm = ref<{
   options: [],
 })
 
-const showThumbnails = computed(() => (props.thumbnails || true) && !hideThumbnail.value)
+const showThumbnails = computed(() => (props.thumbnails ?? true) && !hideThumbnail.value)
 
 const playVideo = (item: StoreItem) => { video_item.value = item }
 const closeVideo = () => { video_item.value = null }

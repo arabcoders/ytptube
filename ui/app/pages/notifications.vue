@@ -78,7 +78,7 @@
                   <td class="is-text-overflow is-vcentered">
                     <div class="is-bold">
                       {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                      <NuxtLink  target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
+                      <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                     </div>
                     <div class="is-unselectable">
                       <span class="icon-text">
@@ -150,7 +150,7 @@
                     </p>
                     <p v-if="item.request?.headers && item.request.headers.length > 0">
                       <span class="icon"><i class="fa-solid fa-heading" /></span>
-                      <span>{{item.request.headers.map(h => h.key).join(', ')}}</span>
+                      <span>{{ item.request.headers.map(h => h.key).join(', ') }}</span>
                     </p>
                   </div>
                 </div>

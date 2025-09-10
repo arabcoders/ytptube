@@ -149,6 +149,8 @@ const defaultTitle = computed(() => {
       return 'Confirm'
     case 'prompt':
       return 'Input required'
+    default:
+      return 'Dialog'
   }
 })
 </script>

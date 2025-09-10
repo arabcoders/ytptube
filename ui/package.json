@@ -7,7 +7,12 @@
     "dev": "nuxt dev --host",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint . --max-warnings 50",
+    "lint:fix": "eslint . --fix --max-warnings 50",
+    "test": "vitest run",
+    "test_watch": "vitest"
   },
   "web-types": "./web-types.json",
   "dependencies": {
@@ -39,5 +44,12 @@
     "strip-ansi": "7.1.0",
     "ansi-styles": "6.2.0",
     "ansi-regex": "6.2.0"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^0.7.4",
+    "@types/node": "^22.7.8",
+    "@typescript-eslint/parser": "^8.43.0",
+    "vitest": "^3.2.4",
+    "vue-eslint-parser": "^10.2.0"
   }
 }

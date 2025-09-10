@@ -5,7 +5,7 @@
     <nav class="navbar is-mobile is-dark">
 
       <div class="navbar-brand pl-5">
-        <NuxtLink class="navbar-item is-text-overflow" to="/" @click.native="(e: MouseEvent) => changeRoute(e)"
+        <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
           v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
           <span class="is-text-overflow">
             <span class="icon"><i class="fas fa-home" /></span>
@@ -25,30 +25,30 @@
 
       <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
         <div class="navbar-start" v-if="!config.app.basic_mode">
-          <NuxtLink class="navbar-item" to="/browser" @click.native="(e: MouseEvent) => changeRoute(e)"
+          <NuxtLink class="navbar-item" to="/browser" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-if="config.app.browser_enabled">
             <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
             <span>Files</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/presets" @click.native="(e: MouseEvent) => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/presets" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-sliders" /></span>
             <span>Presets</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/tasks" @click.native="(e: MouseEvent) => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-tasks" /></span>
             <span>Tasks</span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/notifications" @click.native="(e: MouseEvent) => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon-text">
               <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
               <span>Notifications</span>
             </span>
           </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/conditions" @click.native="(e: MouseEvent) => changeRoute(e)">
+          <NuxtLink class="navbar-item" to="/conditions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-filter" /></span>
             <span>Conditions</span>
           </NuxtLink>
@@ -62,13 +62,13 @@
             </a>
 
             <div class="navbar-dropdown">
-              <NuxtLink class="navbar-item" to="/logs" @click.native="(e: MouseEvent) => changeRoute(e)"
+              <NuxtLink class="navbar-item" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
                 v-if="config.app.file_logging">
                 <span class="icon"><i class="fa-solid fa-file-lines" /></span>
                 <span>Logs</span>
               </NuxtLink>
 
-              <NuxtLink class="navbar-item" to="/console" @click.native="(e: MouseEvent) => changeRoute(e)"
+              <NuxtLink class="navbar-item" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
                 v-if="config.app.console_enabled">
                 <span class="icon"><i class="fa-solid fa-terminal" /></span>
                 <span>Console</span>

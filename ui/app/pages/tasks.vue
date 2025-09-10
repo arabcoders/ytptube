@@ -780,7 +780,7 @@ const exportItem = async (item: task_item) => {
 const get_tags = (name: string): Array<string> => {
   const regex = /\[(.*?)\]/g;
   const matches = name.match(regex);
-  return !matches ? [] : matches.map(tag => tag.replace(/[\[\]]/g, '').trim());
+  return !matches ? [] : matches.map(tag => tag.replace(/[[\]]/g, '').trim());
 }
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();

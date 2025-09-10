@@ -60,6 +60,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
+    '@nuxt/eslint',
   ],
 
   nitro: {
