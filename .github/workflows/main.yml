@@ -73,6 +73,8 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: ui
+        env:
+          NODE_ENV: development
         run: pnpm install --frozen-lockfile
 
       - name: Prepare frontend (nuxt prepare)
@@ -92,6 +94,12 @@ jobs:
       - name: Run frontend tests
         working-directory: ui
         run: pnpm run test:ci
+
+      - name: Remove dev dependencies
+        working-directory: ui
+        env:
+          NODE_ENV: production
+        run: pnpm install --frozen-lockfile --prod
 
       - name: Build frontend
         working-directory: ui
