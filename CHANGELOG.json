@@ -92,9 +92,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be",
-    "date": "2025-09-10T23:13:53+00:00",
+    "full_sha": "7a50cb34d8d9b9e84360c19d06139d062d45b4c9",
+    "date": "2025-09-11T18:49:39+00:00",
     "commits": [
+      {
+        "sha": "7a50cb34",
+        "full_sha": "7a50cb34d8d9b9e84360c19d06139d062d45b4c9",
+        "message": "fix linter issues",
+        "author": "arabcoders",
+        "date": "2025-09-11T18:49:39+00:00"
+      },
+      {
+        "sha": "669256fa",
+        "full_sha": "669256fa69da86af78bafb8c3d5c04d377c27a95",
+        "message": "fixes",
+        "author": "arabcoders",
+        "date": "2025-09-11T13:18:09+00:00"
+      },
       {
         "sha": "ff28899a",
         "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be",
