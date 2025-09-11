@@ -468,7 +468,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "invalid_type.json"
             conditions = Conditions(file=file_path)
 
-            with pytest.raises(ValueError, match="Unexpected.*item type"):
+            with pytest.raises(ValueError, match=r"Unexpected.*item type"):
                 conditions.validate("invalid type")
 
     def test_save_conditions(self):

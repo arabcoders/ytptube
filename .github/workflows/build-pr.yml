@@ -39,7 +39,7 @@ jobs:
         run: uv sync
 
       - name: Run Python linting
-        run: uv tool run ruff check app/
+        run: uv run ruff check app/
 
       - name: Run Python tests
         run: uv run pytest app/tests/ -v --tb=short
