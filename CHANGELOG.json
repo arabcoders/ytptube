@@ -92,9 +92,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f",
-    "date": "2025-09-11T19:32:36+00:00",
+    "full_sha": "3b10148d4da4734f7cb91bd73c13f86710f32f21",
+    "date": "2025-09-11T19:57:27+00:00",
     "commits": [
+      {
+        "sha": "3b10148d",
+        "full_sha": "3b10148d4da4734f7cb91bd73c13f86710f32f21",
+        "message": "add eslint as dev dependency",
+        "author": "arabcoders",
+        "date": "2025-09-11T19:57:27+00:00"
+      },
+      {
+        "sha": "d21642c1",
+        "full_sha": "d21642c1e34a88f1bdd540d2d457ab6294fe5a45",
+        "message": "another attempt at fixing ci",
+        "author": "arabcoders",
+        "date": "2025-09-11T19:55:41+00:00"
+      },
       {
         "sha": "c3d360cb",
         "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f",
