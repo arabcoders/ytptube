@@ -52,10 +52,10 @@ class HttpSocket:
             ping_timeout=5,
         )
         encoder = encoder or Encoder()
-        self.rootPath = root_path
+        self.rootPath: Path = root_path
 
-        def emit(e: Event, _, **kwargs):
-            return self.sio.emit(event=e.event, data=encoder.encode(e), **kwargs)
+        async def event_handler(e: Event, _, **kwargs):
+            await self.sio.emit(event=e.event, data=encoder.encode(e), **kwargs)
 
         services = Services.get_instance()
         services.add_all(
@@ -73,7 +73,7 @@ class HttpSocket:
             }
         )
 
-        self._notify.subscribe("frontend", emit, f"{__class__.__name__}.emit")
+        self._notify.subscribe("frontend", event_handler, f"{__class__.__name__}.emit")
 
     @staticmethod
     def ws_event(func):  # type: ignore
@@ -101,11 +101,12 @@ class HttpSocket:
         app.on_shutdown.append(self.on_shutdown)
 
         self.sio.attach(app, socketio_path=f"{self.config.base_path.rstrip('/')}/socket.io")
-        self._notify.subscribe(
-            Events.ADD_URL,
-            lambda data, _, **kwargs: self.queue.add(item=Item.format(data.data)),  # noqa: ARG005
-            f"{__class__.__name__}.add",
-        )
+
+        async def event_handler(data: Event, _):
+            if data and data.data:
+                await self.queue.add(item=Item.format(data.data))
+
+        self._notify.subscribe(Events.ADD_URL, event_handler, f"{__class__.__name__}.add")
 
         load_modules(self.rootPath, self.rootPath / "routes" / "socket")
 

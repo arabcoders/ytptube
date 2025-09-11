@@ -40,7 +40,7 @@ async def downloads_pause(queue: DownloadQueue, encoder: Encoder, notify: EventB
     queue.pause()
 
     msg = "Non-active downloads have been paused."
-    await notify.emit(
+    notify.emit(
         Events.PAUSED,
         data={"paused": True, "at": time.time()},
         title="Downloads Paused",
@@ -75,7 +75,7 @@ async def downloads_resume(queue: DownloadQueue, encoder: Encoder, notify: Event
     queue.resume()
 
     msg = "Resumed all downloads."
-    await notify.emit(
+    notify.emit(
         Events.RESUMED,
         data={"paused": False, "at": time.time()},
         title="Downloads Resumed",
@@ -109,7 +109,7 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
     app = request.app
 
     async def do_shutdown():
-        await notify.emit(
+        notify.emit(
             Events.SHUTDOWN,
             data={"app": app},
             title="Application Shutdown",

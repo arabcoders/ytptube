@@ -90,6 +90,9 @@ installer = ["pyinstaller"]
 select = [
   "ALL", # include all the rules, including new ones
 ]
+# Ignore some rules in test files.
+per-file-ignores = { "test_*.py" = ["D"] }
+
 ignore = [
   #### modules
   "ANN", # flake8-annotations
@@ -206,7 +209,4 @@ testpaths = ["app/tests"]
 addopts = "-v --tb=short"
 
 [dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-    "ruff>=0.13.0",
-]
+dev = ["pytest>=8.4.2", "pytest-asyncio>=1.1.0", "ruff>=0.13.0"]

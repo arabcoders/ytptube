@@ -68,7 +68,7 @@ class Conditions(metaclass=Singleton):
             except Exception:
                 pass
 
-        def event_handler(_, __):
+        async def event_handler(_, __):
             msg = "Not implemented"
             raise Exception(msg)
 

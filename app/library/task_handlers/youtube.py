@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 from typing import TYPE_CHECKING
@@ -153,9 +152,8 @@ class YoutubeHandler(BaseHandler):
         )
 
         try:
-            await asyncio.gather(
-                *[notify.emit(Events.ADD_URL, data=rItem.new_with(url=item["url"]).serialize()) for item in filtered]
-            )
+            for item in filtered:
+                notify.emit(Events.ADD_URL, data=rItem.new_with(url=item["url"]).serialize())
         except Exception as e:
             LOG.exception(e)
             LOG.error(f"'{task.name}': Error while adding items from task feed. {e!s}")

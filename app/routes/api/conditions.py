@@ -114,7 +114,7 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
             status=web.HTTPInternalServerError.status_code,
         )
 
-    await notify.emit(Events.CONDITIONS_UPDATE, data=items)
+    notify.emit(Events.CONDITIONS_UPDATE, data=items)
     return web.json_response(data=items, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 

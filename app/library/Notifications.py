@@ -505,13 +505,12 @@ class Notification(metaclass=Singleton):
             LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'.")
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 
-    def emit(self, e: Event, _, **__):
+    def emit(self, e: Event, _, **__) -> None:
         if len(self._targets) < 1 or not NotificationEvents.is_valid(e.event):
-            return self.noop()
+            return
 
         self._offload.submit(self.send, e)
-
-        return self.noop()
+        return
 
     def _deep_unpack(self, data: dict) -> dict:
         for k, v in data.items():

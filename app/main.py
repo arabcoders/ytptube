@@ -38,7 +38,7 @@ ROOT_PATH: Path = Path(__file__).parent.absolute()
 
 class Main:
     def __init__(self, is_native: bool = False):
-        self._config = Config.get_instance(is_native=is_native)
+        self._config: Config = Config.get_instance(is_native=is_native)
         self._app = web.Application()
         self._app.on_shutdown.append(self.on_shutdown)
         self._background_worker = BackgroundWorker()
@@ -98,7 +98,7 @@ class Main:
             raise
 
     async def on_shutdown(self, _: web.Application):
-        await EventBus.get_instance().emit(
+        EventBus.get_instance().emit(
             Events.SHUTDOWN,
             data={"app": self._app},
             title="Application Shutdown",
@@ -112,12 +112,15 @@ class Main:
         host = host or self._config.host
         port = port or self._config.port
 
-        EventBus.get_instance().sync_emit(
+        EventBus.get_instance().emit(
             Events.STARTUP,
             data={"app": self._app},
             title="Application Startup",
             message="The application is starting up.",
         )
+        if self._config.debug:
+            EventBus.get_instance().debug_enable()
+
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
@@ -131,7 +134,7 @@ class Main:
         DLFields.get_instance().attach(self._app)
         self._background_worker.attach(self._app)
 
-        EventBus.get_instance().sync_emit(
+        EventBus.get_instance().emit(
             Events.LOADED,
             data={"app": self._app},
             title="Application Loaded",
@@ -147,13 +150,11 @@ class Main:
 
             loop = asyncio.get_event_loop()
 
-            EventBus.get_instance().sync_emit(
+            EventBus.get_instance().emit(
                 Events.STARTED,
                 data={"app": self._app},
                 title="Application Started",
                 message="The application has started successfully.",
-                loop=loop,
-                wait=False,
             )
 
             if loop and self._config.debug:

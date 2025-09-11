@@ -37,7 +37,7 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
         depth_limit=config.download_path_depth-1,
     )
 
-    await notify.emit(
+    notify.emit(
         Events.CONNECTED,
         data=data,
         title="Client connected",
@@ -78,7 +78,7 @@ async def subscribe(config: Config, notify: EventBus, sio: socketio.AsyncServer,
 
     """
     if not isinstance(data, str) or not data:
-        await notify.emit(
+        notify.emit(
             Events.LOG_ERROR,
             title="Subscription Error",
             message="Invalid event type was expecting a string.",
