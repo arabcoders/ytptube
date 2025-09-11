@@ -49,7 +49,5 @@ export default withNuxt(
   },
   {
     files: ['**/*.vue'],
-    rules: {
-      'vue/no-parsing-error': 'off'
-    }
+    rules: {    }
   })

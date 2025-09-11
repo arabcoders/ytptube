@@ -147,12 +147,6 @@
   "css.styleSheets": [
     "ui/app/assets/css/*.css"
   ],
-  "spellright.language": [
-    "en"
-  ],
-  "spellright.documentTypes": [
-    "latex"
-  ],
   "search.exclude": {
     "ui/.nuxt": true,
     "ui/.output": true,
@@ -161,5 +155,6 @@
     "ui/node_modules": true,
     "ui/.out": true,
     "**/.venv": true,
-  }
+  },
+  "eslint.format.enable": true
 }
