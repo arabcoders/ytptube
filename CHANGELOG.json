@@ -92,9 +92,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8",
-    "date": "2025-09-11T18:55:46+00:00",
+    "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f",
+    "date": "2025-09-11T19:32:36+00:00",
     "commits": [
+      {
+        "sha": "c3d360cb",
+        "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f",
+        "message": "added ruff as dev dependency",
+        "author": "arabcoders",
+        "date": "2025-09-11T19:32:36+00:00"
+      },
       {
         "sha": "ed605737",
         "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8",

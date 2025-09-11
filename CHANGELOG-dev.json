@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250911-ed605737",
-        "date": "2025-09-11T18:55:46+00:00",
+        "tag": "dev-20250911-c3d360cb",
+        "date": "2025-09-11T19:32:36+00:00",
         "commits": [
+            {
+                "sha": "c3d360cb",
+                "message": "added ruff as dev dependency",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:32:36+00:00",
+                "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f"
+            },
             {
                 "sha": "ed605737",
                 "message": "use uv tool run for ruff",
@@ -1880,7 +1887,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8"
+        "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f"
     },
     {
         "tag": "dev-20250616-c07465a6",
