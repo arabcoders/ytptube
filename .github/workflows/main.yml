@@ -31,6 +31,8 @@ env:
 jobs:
   test:
     name: Run Tests & Prepare Frontend
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

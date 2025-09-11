@@ -440,7 +440,7 @@ class TestConditions:
                 "id": str(uuid.uuid4()),
                 "name": "invalid_cli_test",
                 "filter": "duration > 60",
-                "cli": "--invalid-option-that-doesnt-exist"
+                "cli": "--invalid-option-that-does-not-exist"
             }
 
             with pytest.raises(ValueError, match="Invalid command options"):
