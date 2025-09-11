@@ -92,9 +92,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7a50cb34d8d9b9e84360c19d06139d062d45b4c9",
-    "date": "2025-09-11T18:49:39+00:00",
+    "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8",
+    "date": "2025-09-11T18:55:46+00:00",
     "commits": [
+      {
+        "sha": "ed605737",
+        "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8",
+        "message": "use uv tool run for ruff",
+        "author": "arabcoders",
+        "date": "2025-09-11T18:55:46+00:00"
+      },
       {
         "sha": "7a50cb34",
         "full_sha": "7a50cb34d8d9b9e84360c19d06139d062d45b4c9",
