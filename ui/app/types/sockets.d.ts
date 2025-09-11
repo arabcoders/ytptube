@@ -1,8 +1,8 @@
 export type Event = {
-  id: str
-  created_at: str
-  event: str
-  title: str | null = null
-  message: str | null = null
-  data: Any = { }
+  id: string
+  created_at: string
+  event: string
+  title: string | null
+  message: string | null
+  data: Record<string, unknown>
 }

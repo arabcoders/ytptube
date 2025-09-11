@@ -33,7 +33,7 @@ export default withNuxt(
       'vue/first-attribute-linebreak': 'off',
       'vue/attribute-hyphenation': 'off',
       'vue/v-on-event-hyphenation': 'off',
-      'vue/block-order':'off',
+      'vue/block-order': 'off',
       'vue/prop-name-casing': 'off',
       'vue/no-v-html': 'off',
 
@@ -44,10 +44,11 @@ export default withNuxt(
 
       'no-undef': 'off',
       'no-unused-vars': 'off',
-      'vue/no-unused-vars': 'off'
+      'vue/no-unused-vars': 'off',
+      "@typescript-eslint/no-explicit-any": 'off',
     }
   },
   {
     files: ['**/*.vue'],
-    rules: {    }
+    rules: {}
   })

@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import re
 import tempfile
 import uuid
@@ -6,6 +7,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from app.library.Utils import (
     FileLogFormatter,
@@ -89,42 +92,210 @@ class TestCalcDownloadPath:
     def test_calc_download_path_base_only(self):
         """Test calculating download path with only base path."""
         result = calc_download_path(str(self.base_path), create_path=False)
-        assert result == str(self.base_path)
+        assert result == str(self.base_path), "Should return base path when no folder is provided"
 
     def test_calc_download_path_with_folder(self):
         """Test calculating download path with folder."""
         folder = "test_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=False)
         expected = str(self.base_path / folder)
-        assert result == expected
+        assert result == expected, "Should append folder to base path"
 
     def test_calc_download_path_creates_directory(self):
         """Test that the function creates directories when create_path=True."""
         folder = "new_folder"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / folder
-        assert result == str(expected_path)
-        assert expected_path.exists()
+        assert result == str(expected_path), "Should return the new path"
+        assert expected_path.exists(), "Directory should be created"
 
     def test_calc_download_path_path_object(self):
         """Test with Path object as input."""
         folder = "test_folder"
         result = calc_download_path(self.base_path, folder, create_path=False)
         expected = str(self.base_path / folder)
-        assert result == expected
+        assert result == expected, "Should handle Path object for base path"
 
     def test_calc_download_path_nested_folder(self):
         """Test with nested folder structure."""
         folder = "parent/child"
         result = calc_download_path(str(self.base_path), folder, create_path=True)
         expected_path = self.base_path / "parent" / "child"
-        assert result == str(expected_path)
-        assert expected_path.exists()
+        assert result == str(expected_path), "Should handle nested folder structure"
+        assert expected_path.exists(), "Nested directories should be created"
 
     def test_calc_download_path_none_folder(self):
         """Test with None folder."""
         result = calc_download_path(str(self.base_path), None, create_path=False)
-        assert result == str(self.base_path)
+        assert result == str(self.base_path), "Should return base path when folder is None"
+
+    def test_calc_download_path_removes_leading_slash(self):
+        """Test that leading slash is removed from folder."""
+        folder = "/test_folder"
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        expected = str(self.base_path / "test_folder")
+        assert result == expected, "Should remove leading slash from folder"
+
+    def test_calc_download_path_path_traversal_dotdot(self):
+        """Test path traversal prevention with .. sequences."""
+        folder = "../outside"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_path_traversal_nested_dotdot(self):
+        """Test path traversal prevention with nested .. sequences."""
+        folder = "safe/../../outside"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_path_traversal_multiple_dotdot(self):
+        """Test path traversal prevention with multiple .. sequences."""
+        folder = "../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_path_traversal_absolute_path(self):
+        """Test that absolute paths are made safe by removing leading slash."""
+        folder = "/etc/passwd"
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        expected = str(self.base_path / "etc/passwd")
+        assert result == expected, "Should remove leading slash and treat as relative path"
+
+    def test_calc_download_path_path_traversal_absolute_with_dotdot(self):
+        """Test path traversal with absolute path containing .. sequences."""
+        folder = "/../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_path_traversal_mixed(self):
+        """Test path traversal prevention with mixed safe/unsafe paths."""
+        folder = "safe/../../../unsafe"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_path_traversal_url_encoded(self):
+        """Test path traversal prevention with URL encoded sequences."""
+        folder = "safe%2F..%2F..%2Funsafe"  # safe/../unsafe encoded
+        # This should be handled at a higher level, but let's test it anyway
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        expected = str(self.base_path / folder)  # Should be treated as literal filename
+        assert result == expected, "URL encoded sequences should be treated as literal"
+
+    def test_calc_download_path_safe_nested_paths(self):
+        """Test that legitimate nested paths work correctly."""
+        folder = "videos/2024/january"
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / "videos" / "2024" / "january"
+        assert result == str(expected_path), "Should handle legitimate nested paths"
+        assert expected_path.exists(), "Nested directories should be created"
+
+    def test_calc_download_path_safe_dotfiles(self):
+        """Test that paths with legitimate dot files work."""
+        folder = ".hidden/folder"
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / ".hidden" / "folder"
+        assert result == str(expected_path), "Should handle dot files correctly"
+        assert expected_path.exists(), "Hidden directories should be created"
+
+    def test_calc_download_path_empty_folder(self):
+        """Test with empty string folder."""
+        folder = ""
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        assert result == str(self.base_path), "Should return base path for empty folder"
+
+    def test_calc_download_path_whitespace_folder(self):
+        """Test with whitespace-only folder."""
+        folder = "   "
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / "   "
+        assert result == str(expected_path), "Should handle whitespace folder names"
+
+    def test_calc_download_path_unicode_folder(self):
+        """Test with Unicode characters in folder name."""
+        folder = "测试文件夹/русский/العربية"
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / "测试文件夹" / "русский" / "العربية"
+        assert result == str(expected_path), "Should handle Unicode folder names"
+        assert expected_path.exists(), "Unicode directories should be created"
+
+    def test_calc_download_path_special_characters(self):
+        """Test with special characters in folder name."""
+        folder = "folder-with_special.chars(123)"
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / folder
+        assert result == str(expected_path), "Should handle special characters"
+        assert expected_path.exists(), "Directory with special chars should be created"
+
+    def test_calc_download_path_null_byte_attack(self):
+        """Test that null bytes are prevented."""
+        folder = "folder\x00../../../etc/passwd"
+        # Any exception is acceptable for null byte attacks
+        with pytest.raises((ValueError, Exception)):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_null_byte_at_end(self):
+        """Test that null bytes at end are prevented."""
+        folder = "../../../etc/passwd\x00"
+        # Any exception is acceptable for null byte attacks
+        with pytest.raises((ValueError, Exception)):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_newline_attack(self):
+        """Test that newlines in path traversal are prevented."""
+        folder = "folder\n../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_carriage_return_attack(self):
+        """Test that carriage returns in path traversal are prevented."""
+        folder = "folder\r../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_tab_attack(self):
+        """Test that tabs in path traversal are prevented."""
+        folder = "folder\t../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_vertical_tab_attack(self):
+        """Test that vertical tabs in path traversal are prevented."""
+        folder = "folder\x0b../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_form_feed_attack(self):
+        """Test that form feeds in path traversal are prevented."""
+        folder = "folder\x0c../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_url_encoded_safe(self):
+        """Test that URL encoded sequences are treated as literals (safe)."""
+        folder = "folder%00../../../etc/passwd"  # %00 is URL encoded null
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_url_encoded_traversal_safe(self):
+        """Test that URL encoded path traversal is treated as literal (safe)."""
+        folder = "folder..%2F..%2F..%2Fetc%2Fpasswd"  # ..%2F = ../ encoded
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        expected = str(self.base_path / folder)  # Should be treated as literal filename
+        assert result == expected, "URL encoded sequences should be treated as literal filename"
+
+    def test_calc_download_path_backslash_attack(self):
+        """Test that backslashes in path traversal are handled correctly."""
+        folder = "folder\\..\\..\\..\\etc\\passwd"
+        # On Unix systems, backslashes are treated as literal characters in filenames
+        result = calc_download_path(str(self.base_path), folder, create_path=False)
+        expected = str(self.base_path / folder)
+        assert result == expected, "Backslashes should be treated as literal characters on Unix"
+
+    def test_calc_download_path_mixed_separators_attack(self):
+        """Test path traversal with mixed separators."""
+        folder = "folder/../../../etc/passwd"
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
 
 
 class TestMergeDict:
@@ -173,6 +344,303 @@ class TestMergeDict:
         """Test merging two empty dictionaries."""
         result = merge_dict({}, {})
         assert result == {}
+
+    # Parameter Pollution Security Tests
+
+    def test_merge_dict_blocks_class_pollution(self):
+        """Test that __class__ attribute pollution is blocked."""
+        source = {"__class__": "malicious_class", "safe": "value"}
+        destination = {"existing": "data"}
+        result = merge_dict(source, destination)
+
+        assert "__class__" not in result, "__class__ should be filtered out"
+        assert result["safe"] == "value", "Safe values should be preserved"
+        assert result["existing"] == "data", "Existing data should be preserved"
+
+    def test_merge_dict_blocks_dict_pollution(self):
+        """Test that __dict__ attribute pollution is blocked."""
+        source = {"__dict__": {"injected": "payload"}, "normal": "data"}
+        destination = {"target": "value"}
+        result = merge_dict(source, destination)
+
+        assert "__dict__" not in result, "__dict__ should be filtered out"
+        assert result["normal"] == "data", "Normal data should be preserved"
+        assert result["target"] == "value", "Target data should be preserved"
+
+    def test_merge_dict_blocks_globals_pollution(self):
+        """Test that __globals__ attribute pollution is blocked."""
+        source = {"__globals__": {"malicious": "code"}, "data": "safe"}
+        destination = {"existing": "value"}
+        result = merge_dict(source, destination)
+
+        assert "__globals__" not in result, "__globals__ should be filtered out"
+        assert result["data"] == "safe", "Safe data should be preserved"
+
+    def test_merge_dict_blocks_builtins_pollution(self):
+        """Test that __builtins__ attribute pollution is blocked."""
+        source = {"__builtins__": {"eval": "dangerous"}, "normal": "value"}
+        destination = {"target": "data"}
+        result = merge_dict(source, destination)
+
+        assert "__builtins__" not in result, "__builtins__ should be filtered out"
+        assert result["normal"] == "value", "Normal values should be preserved"
+
+    def test_merge_dict_blocks_multiple_dunder_pollution(self):
+        """Test that multiple dangerous dunder attributes are blocked."""
+        source = {
+            "__class__": "malicious",
+            "__dict__": {"bad": "data"},
+            "__globals__": {"evil": "code"},
+            "__builtins__": {"dangerous": "function"},
+            "safe_key": "safe_value",
+        }
+        destination = {"existing": "data"}
+        result = merge_dict(source, destination)
+
+        # All dangerous attributes should be filtered out
+        dangerous_keys = ["__class__", "__dict__", "__globals__", "__builtins__"]
+        for key in dangerous_keys:
+            assert key not in result, f"{key} should be filtered out"
+
+        # Safe data should be preserved
+        assert result["safe_key"] == "safe_value"
+        assert result["existing"] == "data"
+
+    def test_merge_dict_nested_dunder_pollution(self):
+        """Test that nested dangerous attributes are handled correctly."""
+        source = {"nested": {"__class__": "malicious_nested", "safe_nested": "value"}, "normal": "data"}
+        destination = {"nested": {"existing_nested": "original"}}
+        result = merge_dict(source, destination)
+
+        # Nested dangerous attributes should be filtered out
+        assert "__class__" not in result["nested"], "Nested __class__ should be filtered"
+        # Safe nested data should be preserved
+        assert result["nested"]["safe_nested"] == "value"
+        assert result["nested"]["existing_nested"] == "original"
+
+    def test_merge_dict_prototype_pollution_attempt(self):
+        """Test protection against prototype pollution attempts."""
+        source = {"__proto__": {"polluted": True}, "constructor": {"prototype": {"polluted": True}}, "safe": "data"}
+        destination = {"existing": "value"}
+        result = merge_dict(source, destination)
+
+        # These should be treated as regular keys (not filtered unless explicitly in the filter list)
+        # The function filters Python-specific dangerous attributes, not JavaScript ones
+        assert result["safe"] == "data"
+        assert result["existing"] == "value"
+
+    def test_merge_dict_special_method_pollution(self):
+        """Test with various Python special methods."""
+        source = {
+            "__init__": "malicious_init",
+            "__new__": "malicious_new",
+            "__call__": "malicious_call",
+            "__getattr__": "malicious_getattr",
+            "__setattr__": "malicious_setattr",
+            "safe": "value",
+        }
+        destination = {"target": "data"}
+        result = merge_dict(source, destination)
+
+        # These are not in the current filter list, so they should pass through
+        # This test documents current behavior - may need updating if more filters are added
+        assert result["safe"] == "value"
+        assert result["target"] == "data"
+
+    def test_merge_dict_list_pollution_safe(self):
+        """Test that list merging doesn't allow dangerous manipulation."""
+        source = {"items": ["new1", "new2"]}
+        destination = {"items": ["old1", "old2"]}
+        result = merge_dict(source, destination)
+
+        # Lists should be concatenated safely (destination + source)
+        assert result["items"] == ["old1", "old2", "new1", "new2"]
+
+    def test_merge_dict_deep_nested_pollution(self):
+        """Test with deeply nested dangerous attributes."""
+        source = {
+            "level1": {
+                "level2": {
+                    "__class__": "deep_malicious",
+                    "level3": {"__globals__": "very_deep_malicious"},
+                    "safe_deep": "value",
+                }
+            }
+        }
+        destination = {"level1": {"level2": {"existing": "data"}}}
+        result = merge_dict(source, destination)
+
+        # The function should now properly filter all dangerous keys recursively
+        assert "__class__" not in result["level1"]["level2"], "Deep __class__ should be filtered"
+        assert "__globals__" not in result["level1"]["level2"]["level3"], "Very deep __globals__ should be filtered"
+
+        # Safe data should be preserved
+        assert result["level1"]["level2"]["safe_deep"] == "value"
+        assert result["level1"]["level2"]["existing"] == "data"
+
+    def test_merge_dict_type_validation(self):
+        """Test that non-dict parameters are properly rejected."""
+        # Test with non-dict source
+        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+            merge_dict("not_a_dict", {"key": "value"})
+
+        # Test with non-dict destination
+        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+            merge_dict({"key": "value"}, "not_a_dict")
+
+        # Test with both non-dict
+        with pytest.raises(TypeError, match="Both source and destination must be dictionaries"):
+            merge_dict("not_a_dict", ["also_not_dict"])
+
+    def test_merge_dict_immutability(self):
+        """Test that original dictionaries are not modified (immutability)."""
+        original_source = {"a": 1, "nested": {"b": 2}}
+        original_destination = {"c": 3, "nested": {"d": 4}}
+
+        # Make copies to compare later
+        source_copy = copy.deepcopy(original_source)
+        destination_copy = copy.deepcopy(original_destination)
+
+        result = merge_dict(original_source, original_destination)
+
+        # Original dictionaries should be unchanged
+        assert original_source == source_copy, "Source should not be modified"
+        assert original_destination == destination_copy, "Destination should not be modified"
+
+        # Result should be different from both originals
+        assert result != original_source
+        assert result != original_destination
+
+    def test_merge_dict_custom_max_depth(self):
+        """Test custom max_depth parameter."""
+        # Create a deep nested structure
+        deep_source = {}
+        current = deep_source
+        for _ in range(10):
+            current["level"] = {}
+            current = current["level"]
+        current["data"] = "deep_value"
+
+        # Test with default max_depth (50) - should work
+        result = merge_dict(deep_source, {})
+        assert self._get_nested_value(result, ["level"] * 10 + ["data"]) == "deep_value"
+
+        # Test with custom max_depth (5) - should raise RecursionError
+        with pytest.raises(RecursionError, match="Recursion depth limit exceeded \\(5\\)"):
+            merge_dict(deep_source, {}, max_depth=5)
+
+        # Test with higher max_depth (20) - should work
+        result = merge_dict(deep_source, {}, max_depth=20)
+        assert self._get_nested_value(result, ["level"] * 10 + ["data"]) == "deep_value"
+
+    def test_merge_dict_custom_max_list_size(self):
+        """Test custom max_list_size parameter."""
+        large_list = list(range(5000))
+        source = {"data": large_list}
+
+        # Test with default max_list_size (10000) - should preserve full list
+        result = merge_dict(source, {})
+        assert len(result["data"]) == 5000
+        assert result["data"] == large_list
+
+        # Test with custom max_list_size (1000) - should truncate
+        result = merge_dict(source, {}, max_list_size=1000)
+        assert len(result["data"]) == 1000
+        assert result["data"] == large_list[:1000]
+
+        # Test with higher max_list_size (10000) - should preserve full list
+        result = merge_dict(source, {}, max_list_size=10000)
+        assert len(result["data"]) == 5000
+        assert result["data"] == large_list
+
+    def test_merge_dict_list_merging_with_size_limits(self):
+        """Test list merging respects size limits."""
+        source = {"items": list(range(3000))}
+        destination = {"items": list(range(2000, 5000))}  # 3000 items
+
+        # Total would be 6000 items, but limit is 4000
+        result = merge_dict(source, destination, max_list_size=4000)
+
+        # Should have original destination (3000) + truncated source (1000) = 4000
+        assert len(result["items"]) == 4000
+
+        # First 3000 should be from destination
+        assert result["items"][:3000] == list(range(2000, 5000))
+        # Next 1000 should be from source (truncated)
+        assert result["items"][3000:] == list(range(1000))
+
+    def test_merge_dict_nested_with_limits(self):
+        """Test nested merging with both depth and size limits."""
+        # Create nested structure that exceeds depth limit
+        deep_source = {"level1": {"level2": {"level3": {"level4": {"data": "deep"}}}}}
+
+        # Create structure with large list
+        list_source = {"level1": {"large_data": list(range(2000))}}
+
+        destination = {"level1": {"existing": "data"}}
+
+        # Test with restrictive limits
+        result = merge_dict(list_source, destination, max_depth=10, max_list_size=1000)
+
+        assert result["level1"]["existing"] == "data"
+        assert len(result["level1"]["large_data"]) == 1000
+        assert result["level1"]["large_data"] == list(range(1000))
+
+        # Test depth limit exceeded
+        with pytest.raises(RecursionError):
+            merge_dict(deep_source, destination, max_depth=3)
+
+    def test_merge_dict_zero_limits(self):
+        """Test behavior with zero limits."""
+        source = {"data": [1, 2, 3]}
+        destination = {"existing": "value"}
+
+        # Zero max_list_size should result in empty lists
+        result = merge_dict(source, destination, max_list_size=0)
+        assert result["existing"] == "value"
+        assert result["data"] == []  # Truncated to empty
+
+        # Zero max_depth should fail immediately on any nesting
+        with pytest.raises(RecursionError):
+            merge_dict({"nested": {"data": "value"}}, {}, max_depth=0)
+
+    def test_merge_dict_extreme_limits(self):
+        """Test with very high limits."""
+        # Create moderately nested structure
+        source = {"a": {"b": {"c": {"data": "nested"}}}}
+
+        # Very high limits should work normally
+        result = merge_dict(source, {}, max_depth=10000, max_list_size=1000000)
+        assert result["a"]["b"]["c"]["data"] == "nested"
+
+    def test_merge_dict_limits_with_circular_reference_protection(self):
+        """Test that limits work together with circular reference protection."""
+        source = {"data": {}}
+        source["data"]["circular"] = source  # Create circular reference
+
+        # Should fail with ValueError (circular reference) before hitting depth limit
+        with pytest.raises(ValueError, match="Circular reference detected"):
+            merge_dict(source, {}, max_depth=100)
+
+    def test_merge_dict_backward_compatibility(self):
+        """Test that existing code works without specifying new parameters."""
+        source = {"a": 1, "nested": {"b": 2}}
+        destination = {"c": 3, "nested": {"d": 4}}
+
+        # Should work exactly as before with default parameters
+        result = merge_dict(source, destination)
+
+        assert result["a"] == 1
+        assert result["c"] == 3
+        assert result["nested"]["b"] == 2
+        assert result["nested"]["d"] == 4
+
+    def _get_nested_value(self, data: dict, keys: list):
+        """Helper to get value from deeply nested dict."""
+        current = data
+        for key in keys:
+            current = current[key]
+        return current
 
 
 class TestIsPrivateAddress:
@@ -590,6 +1058,7 @@ class TestCheckId:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_check_id_with_youtube_id(self):
@@ -620,8 +1089,11 @@ class TestArgConverter:
     def test_arg_converter_basic(self):
         """Test basic arg_converter functionality."""
         try:
-            result = arg_converter("--quiet")
+            result = arg_converter("--quiet --match-filters 'duration<2min' --download-archive archive.txt")
             assert isinstance(result, dict)
+            assert result.get("quiet") is True, "quiet should be True"
+            assert result.get("download_archive") == "archive.txt"
+            assert "match_filter" in result, "match_filters should be in result"
         except (ModuleNotFoundError, AttributeError, ImportError):
             # Expected when yt_dlp is not available or differs
             assert True
@@ -650,6 +1122,7 @@ class TestGetPossibleImages:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_possible_images(self):
@@ -706,6 +1179,7 @@ class TestGetFile:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_file_exists(self):
@@ -775,6 +1249,7 @@ class TestGetFiles:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_get_files_root(self):
@@ -800,10 +1275,12 @@ class TestReadLogfile:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_read_logfile_nonexistent(self):
         """Test reading non-existent log file."""
+
         async def test():
             result = await read_logfile(self.log_file)
             assert isinstance(result, dict)
@@ -834,6 +1311,7 @@ class TestTailLog:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_tail_log_nonexistent(self):
@@ -864,6 +1342,7 @@ class TestLoadCookies:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_cookies_invalid_file(self):
@@ -974,6 +1453,7 @@ class TestInitClass:
 
     def test_init_class_basic(self):
         """Test basic class initialization."""
+
         @dataclass
         class TestClass:
             name: str = ""
@@ -1006,6 +1486,7 @@ class TestLoadModules:
     def teardown_method(self):
         """Clean up after tests."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def test_load_modules_basic(self):

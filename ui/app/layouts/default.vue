@@ -251,7 +251,7 @@ const applyPreferredColorScheme = (scheme: string) => {
 onMounted(async () => {
   try {
     await handleImage(bg_enable.value)
-  } catch (e) { }
+  } catch { }
 
   try {
     const opts = await request('/api/yt-dlp/options')
@@ -260,11 +260,11 @@ onMounted(async () => {
     }
     const data: Array<YTDLPOption> = await opts.json()
     config.ytdlp_options = data
-  } catch (e) { }
+  } catch { }
 
   try {
     applyPreferredColorScheme(selectedTheme.value)
-  } catch (e) { }
+  } catch { }
 })
 
 watch(selectedTheme, value => {
@@ -274,7 +274,7 @@ watch(selectedTheme, value => {
       return
     }
     applyPreferredColorScheme(value)
-  } catch (e) { }
+  } catch { }
 })
 
 const reloadPage = () => window.location.reload()
@@ -362,7 +362,7 @@ const loadImage = async (force = false) => {
   }
 }
 
-const changeRoute = async (_: MouseEvent, callback: Function | null = null) => {
+const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) => {
   showMenu.value = false
   document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
   if (callback) {

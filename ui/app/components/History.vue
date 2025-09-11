@@ -615,7 +615,7 @@ const deleteSelectedItems = async () => {
 }
 
 const clearCompleted = async () => {
-  let msg = 'Clear all completed downloads?'
+  const msg = 'Clear all completed downloads?'
   if (false === (await box.confirm(msg))) {
     return
   }
@@ -774,7 +774,7 @@ const removeItem = async (item: StoreItem) => {
 }
 
 const retryItem = (item: StoreItem, re_add = false) => {
-  let item_req: Partial<StoreItem> = {
+  const item_req: Partial<StoreItem> = {
     url: item.url,
     preset: item.preset,
     folder: item.folder,
@@ -801,10 +801,12 @@ const retryItem = (item: StoreItem, re_add = false) => {
 
 const pImg = (e: Event) => {
   const target = e.target as HTMLImageElement
-  target.naturalHeight > target.naturalWidth && target.classList.add('image-portrait')
+  if (target.naturalHeight > target.naturalWidth) {
+    target.classList.add('image-portrait')
+  }
 }
 
-watch(video_item, v => {
+watch(video_item, (v) => {
   if (!bg_enable.value) {
     return
   }
@@ -823,7 +825,7 @@ const downloadSelected = async () => {
     toast.error('No items selected.')
     return
   }
-  let files_list: string[] = []
+  const files_list: string[] = []
   for (const key in selectedElms.value) {
     const item_id = selectedElms.value[key]
     if (!item_id) {

@@ -505,7 +505,8 @@ const addExtra = (): void => {
 }
 
 const removeExtra = (key: string): void => {
-  delete form.extras[key]
+  const { [key]: _, ...rest } = form.extras
+  form.extras = rest
 }
 
 const updateExtraKey = (event: Event, oldKey: string): void => {
@@ -530,8 +531,8 @@ const updateExtraKey = (event: Event, oldKey: string): void => {
     }
 
     const value = form.extras[oldKey]
-    delete form.extras[oldKey]
-    form.extras[newKey] = value
+    const { [oldKey]: _, ...rest } = form.extras
+    form.extras = { ...rest, [newKey]: value }
   }
 }
 

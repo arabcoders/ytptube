@@ -94,7 +94,7 @@ function _match_one(filterPart: string, dct: Record<string, any>): boolean {
   };
 
   const cmpOps = Object.keys(COMPARISON_OPERATORS)
-    .map(op => op.replace(/([.*+?^${}()|\[\]\\])/g, "\\$1"))
+    .map(op => op.replace(/([.*+?^${}()|[\]\\])/g, "\\$1"))
     .join("|");
 
   const operatorRe = new RegExp(
@@ -209,7 +209,7 @@ class MatchFilterParser {
       [/\s+/, null],
     ];
     const regex = new RegExp(
-      tokenSpec.map(([pat, name], i) => `(?<T${i}>${pat.source})`).join("|"),
+      tokenSpec.map(([pat, _name], i) => `(?<T${i}>${pat.source})`).join("|"),
       "g"
     );
     const tokens: [string, string][] = [];

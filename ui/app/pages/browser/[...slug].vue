@@ -262,7 +262,7 @@ const show_filter = ref<boolean>(false)
 const reset_dialog = () => ({
   visible: false,
   title: 'Confirm Action',
-  confirm: (opts: any) => { },
+  confirm: (_opts: any) => { },
   message: '',
   html_message: '',
   options: [],
@@ -317,8 +317,8 @@ const sortedItems = (items: FileItem[]): FileItem[] => {
 
   if (sort_by.value === 'date') {
     return items.sort((a, b) => {
-      let aDate = new Date(a.mtime)
-      let bDate = new Date(b.mtime)
+      const aDate = new Date(a.mtime)
+      const bDate = new Date(b.mtime)
       return 'asc' === sort_order.value ? aDate.getTime() - bDate.getTime() : bDate.getTime() - aDate.getTime()
     })
   }
@@ -479,7 +479,7 @@ const makeBreadCrumb = (path: string): { name: string, link: string, path: strin
 
   path = path.replace(/^\/+/, '').replace(/\/+$/, '')
 
-  let links = []
+  const links = []
   links.push({
     name: 'Home',
     link: baseLink,
@@ -487,9 +487,9 @@ const makeBreadCrumb = (path: string): { name: string, link: string, path: strin
   })
 
   // -- explode path and create links
-  let parts = path.split('/')
+  const parts = path.split('/')
   parts.forEach((part, index) => {
-    let path = baseLink + parts.slice(0, index + 1).join('/')
+    const path = baseLink + parts.slice(0, index + 1).join('/')
     links.push({
       name: part,
       link: path,
@@ -570,12 +570,12 @@ const createDirectory = async (dir: string): Promise<void> => {
     return
   }
 
-  let new_dir = sTrim(newDir, '/')
+  const new_dir = sTrim(newDir, '/')
   if (!new_dir || new_dir === dir) {
     return
   }
 
-  await actionRequest({ path: dir || '/' } as FileItem, 'directory', { new_dir: new_dir }, (item, action, data) => {
+  await actionRequest({ path: dir || '/' } as FileItem, 'directory', { new_dir: new_dir }, (_item, _action, _data) => {
     reloadContent(path.value, true)
     toast.success(`Successfully created '${new_dir}'.`)
   })
@@ -598,7 +598,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    let new_name = newName.trim()
+    const new_name = newName.trim()
     if (!new_name || new_name === item.name) {
       return
     }
@@ -625,7 +625,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    await actionRequest(item, 'delete', {}, (item, action, data) => {
+    await actionRequest(item, 'delete', {}, (item, _action, _data) => {
       items.value = items.value.filter(i => i.path !== item.path)
       toast.warning(`Deleted '${item.name}'.`)
     })
@@ -646,7 +646,7 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    let new_path = sTrim(newPath, '/') || '/'
+    const new_path = sTrim(newPath, '/') || '/'
     if (!new_path || new_path === item.path) {
       return
     }

@@ -377,7 +377,7 @@ const checkInfo = async () => {
   if (!isApprise.value) {
     try {
       new URL(form.request.url)
-    } catch (_) {
+    } catch {
       toast.error('Invalid URL')
       return
     }

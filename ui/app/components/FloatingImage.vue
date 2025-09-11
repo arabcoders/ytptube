@@ -35,7 +35,7 @@ const url = ref<string | null>(null)
 const error = ref(false)
 const isPreloading = ref(false)
 
-let loadTimer: ReturnType<typeof setTimeout> | null = null
+const loadTimer: ReturnType<typeof setTimeout> | null = null
 const cancelRequest = new AbortController()
 
 const defaultLoader = async (): Promise<void> => {

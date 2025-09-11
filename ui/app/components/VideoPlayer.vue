@@ -238,14 +238,14 @@ onMounted(async () => {
     sources.value.push({
       src,
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
-      onerror: (e: Event) => src_error(),
+      onerror: (_e: Event) => src_error(),
     })
   } else {
     const src = makeDownload(config, props.item, 'api/download')
     sources.value.push({
       src,
       type: response.mimetype,
-      onerror: e => src_error(),
+      onerror: (_e: Event) => src_error(),
     })
   }
 

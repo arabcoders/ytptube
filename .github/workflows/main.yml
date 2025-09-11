@@ -26,29 +26,39 @@ env:
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
   PNPM_VERSION: 10
   NODE_VERSION: 20
+  PYTHON_VERSION: "3.11"
 
 jobs:
-  docker-build-arch:
-    name: Build Container (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            arch: amd64
-          - os: ubuntu-latest
-            arch: arm64
-    permissions:
-      packages: write
-      contents: write
-    env:
-      ARCH: ${{ matrix.arch }}
+  test:
+    name: Run Tests & Prepare Frontend
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # Python setup and testing
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Run Python linting
+        run: uv run ruff check app/
+
+      - name: Run Python tests
+        run: uv run pytest app/tests/ -v --tb=short
+
+      # Frontend setup and testing
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -61,12 +71,33 @@ jobs:
           cache: pnpm
           cache-dependency-path: "ui/pnpm-lock.yaml"
 
-      - name: Install frontend dependencies & Build
+      - name: Install frontend dependencies
         working-directory: ui
-        run: |
-          pnpm install --production --prefer-offline --frozen-lockfile
-          pnpm run generate
+        run: pnpm install --frozen-lockfile
 
+      - name: Prepare frontend (nuxt prepare)
+        working-directory: ui
+        env:
+          NODE_ENV: development
+        run: pnpm nuxt prepare
+
+      - name: Run frontend linting
+        working-directory: ui
+        run: pnpm run lint
+
+      - name: Run frontend type checking
+        working-directory: ui
+        run: pnpm run typecheck
+
+      - name: Run frontend tests
+        working-directory: ui
+        run: pnpm run test:ci
+
+      - name: Build frontend
+        working-directory: ui
+        run: pnpm run generate
+
+      # Generate changelog and version files
       - name: Install GitPython
         run: pip install gitpython
 
@@ -92,6 +123,42 @@ jobs:
             -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
             -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
             app/library/version.py
+
+      # Upload built frontend as artifact for docker builds
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: ui/exported/
+          retention-days: 1
+
+  docker-build-arch:
+    name: Build Container (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    needs: [test]
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+          - os: ubuntu-latest
+            arch: arm64
+    permissions:
+      packages: write
+      contents: write
+    env:
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: ui/exported/
 
       - name: Docker meta
         id: meta

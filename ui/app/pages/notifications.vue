@@ -403,10 +403,11 @@ const exportItem = async (item: notification) => {
     _version: '1.0',
   }
 
-  const keys = ['id', 'raw']
+  const keys = ['id', 'raw'] as const
   keys.forEach(k => {
     if (Object.prototype.hasOwnProperty.call(data, k)) {
-      delete (data as any)[k]
+      const { [k]: _, ...rest } = data as any
+      Object.assign(data, rest)
     }
   })
 

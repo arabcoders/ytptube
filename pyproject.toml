@@ -157,6 +157,7 @@ ignore = [
   "LOG015",
   "PLC0415",
   "S603",
+  "D203",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -203,3 +204,8 @@ link-mode = "copy"
 pythonpath = ["."]
 testpaths = ["app/tests"]
 addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
