@@ -1,8 +1,85 @@
 [
     {
-        "tag": "master-20250909-c968ce3e",
-        "date": "2025-09-08T21:26:27+00:00",
+        "tag": "master-20250912-049b9a4e",
+        "date": "2025-09-12T00:02:03+00:00",
         "commits": [
+            {
+                "sha": "2eba728d",
+                "message": "Refactor event handlers to be asynchronous across multiple modules",
+                "author": "arabcoders",
+                "date": "2025-09-11T23:55:11+00:00",
+                "full_sha": "2eba728dd2c51a437fe22e9a7ddcdaf6e443bde3"
+            },
+            {
+                "sha": "12768c0c",
+                "message": "update perms",
+                "author": "arabcoders",
+                "date": "2025-09-11T20:27:51+00:00",
+                "full_sha": "12768c0c82949e0b666bb4b5ac95d874b40bb424"
+            },
+            {
+                "sha": "75c3ef09",
+                "message": "vue-tsc to dev",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:59:02+00:00",
+                "full_sha": "75c3ef09846fe94dfb59e5bc783173d2ebde1667"
+            },
+            {
+                "sha": "3b10148d",
+                "message": "add eslint as dev dependency",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:57:27+00:00",
+                "full_sha": "3b10148d4da4734f7cb91bd73c13f86710f32f21"
+            },
+            {
+                "sha": "d21642c1",
+                "message": "another attempt at fixing ci",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:55:41+00:00",
+                "full_sha": "d21642c1e34a88f1bdd540d2d457ab6294fe5a45"
+            },
+            {
+                "sha": "c3d360cb",
+                "message": "added ruff as dev dependency",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:32:36+00:00",
+                "full_sha": "c3d360cbb90a0c390f42e9ee687c34f779ca3a0f"
+            },
+            {
+                "sha": "ed605737",
+                "message": "use uv tool run for ruff",
+                "author": "arabcoders",
+                "date": "2025-09-11T18:55:46+00:00",
+                "full_sha": "ed6057378745e4e6482b21c210f009c3a4c63ae8"
+            },
+            {
+                "sha": "7a50cb34",
+                "message": "fix linter issues",
+                "author": "arabcoders",
+                "date": "2025-09-11T18:49:39+00:00",
+                "full_sha": "7a50cb34d8d9b9e84360c19d06139d062d45b4c9"
+            },
+            {
+                "sha": "669256fa",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-09-11T13:18:09+00:00",
+                "full_sha": "669256fa69da86af78bafb8c3d5c04d377c27a95"
+            },
+            {
+                "sha": "ff28899a",
+                "message": "fix @nuxt/eslint import",
+                "author": "arabcoders",
+                "date": "2025-09-10T23:13:53+00:00",
+                "full_sha": "ff28899afa7debf38a3c4eefaa4c0cf57d0a12be"
+            },
+            {
+                "sha": "fae1d7c5",
+                "message": "improved match_str by implementing extended subset.",
+                "author": "arabcoders",
+                "date": "2025-09-10T23:09:48+00:00",
+                "full_sha": "fae1d7c577c533c7b51edb67bdf503db21b0efc3"
+            },
             {
                 "sha": "a39a0093",
                 "message": "updated external packages",
@@ -1845,7 +1922,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c968ce3ed240842f6cb3f3d22fd4aaf6475d53f4"
+        "full_sha": "049b9a4e384cac4595099bb5f7d64b737ad2d01a"
     },
     {
         "tag": "master-20250616-c07465a6",
