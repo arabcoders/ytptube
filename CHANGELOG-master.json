@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20250912-2323739c",
-        "date": "2025-09-12T19:59:26+00:00",
+        "tag": "master-20250912-0de61566",
+        "date": "2025-09-12T20:41:14+00:00",
         "commits": [
+            {
+                "sha": "9380d92a",
+                "message": "fix version tagging",
+                "author": "arabcoders",
+                "date": "2025-09-12T20:36:48+00:00",
+                "full_sha": "9380d92af8820ecc975c61c53bbaa7b0a2aac260"
+            },
             {
                 "sha": "393cc672",
                 "message": "More tests",
@@ -1957,7 +1964,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2323739c499e1df8b4bf06991dcefdf8d846e5ba"
+        "full_sha": "0de61566fbafd775de3f384755378c8ba9d6b951"
     },
     {
         "tag": "master-20250616-c07465a6",
