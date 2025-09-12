@@ -175,7 +175,7 @@
                         <span class="icon"><i class="fa-solid fa-trash-can" /></span>
                       </button>
                     </div>
-                    <div class="control is-expanded" v-if="item.url && !config.app.basic_mode">
+                    <div class="control is-expanded" v-if="item.url">
                       <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s"
                         :button_classes="'is-small'" label="Actions">
                         <template v-if="'finished' === item.status && item.filename">
@@ -347,7 +347,7 @@
                 </a>
               </div>
 
-              <div class="column" v-if="!config.app.basic_mode">
+              <div class="column">
                 <Dropdown icons="fa-solid fa-cogs" label="Actions">
                   <template v-if="'finished' === item.status && item.filename">
                     <NuxtLink @click="playVideo(item)" class="dropdown-item">
@@ -366,14 +366,12 @@
                     <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
-                    v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
                   </NuxtLink>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
-                    v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
                     <span class="icon"><i class="fa-solid fa-info-circle" /></span>
                     <span>Local Information</span>
                   </NuxtLink>

@@ -61,7 +61,7 @@ class YoutubeHandler(BaseHandler):
         params: dict = task.get_ytdlp_opts().get_all()
 
         feed_url: str = YoutubeHandler.FEED.format(type=parsed["type"], id=parsed["id"])
-        LOG.info(f"'{task.name}': Fetching feed.")
+        LOG.debug(f"'{task.name}': Fetching feed.")
 
         items: list = []
 
@@ -106,7 +106,7 @@ class YoutubeHandler(BaseHandler):
             if real_count < 1:
                 LOG.warning(f"'{task.name}': No entries found the RSS feed. URL: {feed_url}")
             else:
-                LOG.info(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
+                LOG.debug(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
             return
 
         filtered: list = []
@@ -134,7 +134,7 @@ class YoutubeHandler(BaseHandler):
             filtered.append(item)
 
         if len(filtered) < 1:
-            LOG.info(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
+            LOG.debug(f"'{task.name}': Feed has '{real_count}' entries, all already downloaded/queued.")
             return
 
         LOG.info(f"'{task.name}': Found '{len(filtered)}/{real_count}' new items from feed.")

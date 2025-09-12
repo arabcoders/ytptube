@@ -47,44 +47,29 @@ class DownloadQueue(metaclass=Singleton):
     DownloadQueue class is a singleton class that manages the download queue and the download history.
     """
 
-    paused: asyncio.Event
-    """Event to pause the download queue."""
-
-    event: asyncio.Event
-    """Event to signal the download queue to start downloading."""
-
-    _active: dict[str, Download] = {}
-    """Dictionary of active downloads."""
-
-    _instance = None
-    """Instance of the DownloadQueue."""
-
-    queue: DataStore
-    """DataStore for the download queue."""
-
-    done: DataStore
-    """DataStore for the completed downloads."""
-
-    workers: asyncio.Semaphore
-    """Semaphore to limit the number of concurrent downloads."""
-
-    processors: asyncio.Semaphore
-    """Semaphore to limit the number of concurrent processors."""
-
     def __init__(self, connection: Connection, config: Config | None = None):
-        DownloadQueue._instance = self
-
-        self.config = config or Config.get_instance()
-        self._notify = EventBus.get_instance()
+        self.config: Config = config or Config.get_instance()
+        "Configuration instance."
+        self._notify: EventBus = EventBus.get_instance()
+        "Event bus instance."
         self.done = DataStore(type=StoreType.HISTORY, connection=connection)
+        "DataStore for the completed downloads."
         self.queue = DataStore(type=StoreType.QUEUE, connection=connection)
+        "DataStore for the download queue."
+        self.workers = asyncio.Semaphore(self.config.max_workers)
+        "Semaphore to limit the number of concurrent downloads."
+        self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
+        "Semaphore to limit the number of concurrent processors."
+        self.paused = asyncio.Event()
+        "Event to pause the download queue."
+        self.event = asyncio.Event()
+        "Event to signal the download queue to start downloading."
+        self._active: dict[str, Download] = {}
+        """Dictionary of active downloads."""
+
         self.done.load()
         self.queue.load()
-        self.paused = asyncio.Event()
         self.paused.set()
-        self.event = asyncio.Event()
-        self.workers = asyncio.Semaphore(self.config.max_workers)
-        self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
 
     @staticmethod
     def get_instance() -> "DownloadQueue":
@@ -95,10 +80,7 @@ class DownloadQueue(metaclass=Singleton):
             DownloadQueue: The instance of the DownloadQueue
 
         """
-        if not DownloadQueue._instance:
-            DownloadQueue._instance = DownloadQueue()
-
-        return DownloadQueue._instance
+        return DownloadQueue()
 
     def attach(self, _: web.Application) -> None:
         """
@@ -639,7 +621,7 @@ class DownloadQueue(metaclass=Singleton):
                 item.template = _preset.template
 
         yt_conf = {}
-        cookie_file = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
+        cookie_file: Path = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
 
         LOG.info(f"Adding '{item.__repr__()}'.")
 
@@ -780,16 +762,12 @@ class DownloadQueue(metaclass=Singleton):
                         self.done.put(dlInfo)
 
                     LOG.info(log_message)
-                    await asyncio.gather(
-                        *[
-                            self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message),
-                            self._notify.emit(
-                                Events.ITEM_MOVED,
-                                data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
-                                title="Download History Update",
-                                message=f"Download history updated with '{item.url}'.",
-                            ),
-                        ]
+                    self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message)
+                    self._notify.emit(
+                        Events.ITEM_MOVED,
+                        data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                        title="Download History Update",
+                        message=f"Download history updated with '{item.url}'.",
                     )
                     return {"status": "ok"}
 
@@ -1209,6 +1187,5 @@ class DownloadQueue(metaclass=Singleton):
             return
 
         if exc := task.exception():
-
             task_name: str = task.get_name() if task.get_name() else "unknown_task"
             LOG.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {traceback.format_exc()}")

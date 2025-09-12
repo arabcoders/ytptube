@@ -209,4 +209,9 @@ testpaths = ["app/tests"]
 addopts = "-v --tb=short"
 
 [dependency-groups]
-dev = ["pytest>=8.4.2", "pytest-asyncio>=1.1.0", "ruff>=0.13.0"]
+dev = [
+  "debugpy>=1.8.16",
+  "pytest>=8.4.2",
+  "pytest-asyncio>=1.1.0",
+  "ruff>=0.13.0",
+]

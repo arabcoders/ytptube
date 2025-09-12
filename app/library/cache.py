@@ -11,12 +11,8 @@ class Cache(metaclass=ThreadSafe):
         """
         Initialize the Cache.
         """
-        # Prevent reinitialization in singleton context.
-        if hasattr(self, "_initialized") and self._initialized:
-            return
         self._cache: dict[str, tuple[Any, float | None]] = {}
         self._lock = threading.Lock()
-        self._initialized = True
 
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """

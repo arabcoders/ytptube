@@ -6,11 +6,11 @@ from .Utils import StreamingError, get_file_sidecar
 
 
 class Playlist:
-    _url: str = None
-
     def __init__(self, download_path: Path, url: str):
         self.url: str = url
+        "The base URL for the playlist."
         self.download_path: Path = download_path
+        "The path where files are downloaded."
 
     async def make(self, file: Path) -> str:
         ref: str = Path(str(file.relative_to(self.download_path)).strip("/"))

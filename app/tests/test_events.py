@@ -627,10 +627,7 @@ class TestEventBus:
 
     def setup_method(self):
         """Clear EventBus listeners and reset singleton before each test."""
-        # Reset singleton instance to allow mocking to work
-        EventBus._instance = None
-        bus = EventBus.get_instance()
-        bus.clear()
+        EventBus._reset_singleton()
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
@@ -656,9 +653,6 @@ class TestEventBus:
 
     def test_event_bus_initialization(self):
         """Test EventBus initialization with new clean design."""
-        # Reset singleton to ensure fresh instance
-        EventBus._instance = None
-
         # Create EventBus with clean initialization
         bus = EventBus()
 

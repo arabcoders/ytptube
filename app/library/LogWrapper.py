@@ -59,11 +59,9 @@ class LogWrapper:
 
     """
 
-    targets: list[LogTarget] = []
-    """A list of dictionaries where each dictionary represents a logging target with its level and type."""
-
     def __init__(self):
         self.targets: list[LogTarget] = []
+        """A list of dictionaries where each dictionary represents a logging target with its level and type."""
 
     def add_target(self, target: logging.Logger | Callable, level: int = logging.DEBUG, name: str | None = None):
         """

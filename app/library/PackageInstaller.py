@@ -37,9 +37,10 @@ class Packages:
 
 
 class PackageInstaller:
-    user_site: Path | None = None
-
     def __init__(self, pkg_path: Path | None = None):
+        self.user_site: Path | None = None
+        "Where to install user packages."
+
         if pkg_path:
             self.user_site = pkg_path
 

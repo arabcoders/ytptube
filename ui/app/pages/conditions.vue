@@ -104,8 +104,10 @@
     <div class="column is-12" v-if="items && items.length > 0 && !toggleForm">
       <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
         <ul>
-          <li>The filtering rely on yt-dlp <code>--match-filter</code> logic, whatever works there works here as well
-            and uses the same logic boolean and operators.</li>
+          <li>Filtering is based on yt-dlp’s <code>--match-filter</code> logic. Any expression that works with yt-dlp
+            will also work here, including the same boolean operators. We added extended support for the <code>OR</code>
+            ( <code>||</code> ) operator, which yt-dlp does not natively support. This allows you to combine multiple
+            conditions more flexibly.</li>
           <li>
             The primary use case for this feature is to apply custom cli arguments to specific returned info.
           </li>
@@ -116,7 +118,8 @@
           </li>
           <li>
             The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the
-            information button, and check the data to craft your filter.
+            information button, and check the data to craft your filter. You will get instant feedback if the
+            filter matches or not.
           </li>
         </ul>
       </Message>
@@ -130,7 +133,6 @@ import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
 type ConditionItemWithUI = ConditionItem & { raw?: boolean }
 
 const toast = useNotification()
-const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
@@ -143,13 +145,6 @@ const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
 const remove_keys = ['in_progress', 'raw']
-
-watch(() => config.app.basic_mode, async v => {
-  if (!config.isLoaded() || !v) {
-    return
-  }
-  await navigateTo("/")
-}, { immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {

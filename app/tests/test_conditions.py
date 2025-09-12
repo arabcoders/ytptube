@@ -21,7 +21,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.library.conditions import Condition, Conditions
-from app.library.Singleton import Singleton
 
 
 class TestCondition:
@@ -112,11 +111,7 @@ class TestConditions:
 
     def setup_method(self):
         """Set up test fixtures by clearing singleton instances."""
-        # Clear singleton instances before each test
-        Singleton._instances.clear()
-        # Reset class variable
-        Conditions._items = []
-        Conditions._instance = None
+        Conditions._reset_singleton()
 
     def test_conditions_singleton(self):
         """Test that Conditions follows singleton pattern."""

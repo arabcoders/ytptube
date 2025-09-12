@@ -129,9 +129,6 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
         Response: The response object.
 
     """
-    if not config.browser_enabled:
-        return web.json_response(data={"error": "File browser is disabled."}, status=web.HTTPForbidden.status_code)
-
     req_path: str = request.match_info.get("path")
     req_path: str = "/" if not req_path else unquote_plus(req_path)
 
@@ -190,9 +187,6 @@ async def path_actions(request: Request, config: Config) -> Response:
         Response: The response object.
 
     """
-    if not config.browser_enabled:
-        return web.json_response(data={"error": "File browser is disabled."}, status=web.HTTPForbidden.status_code)
-
     if not config.browser_control_enabled:
         return web.json_response(
             data={"error": "File browser actions is disabled."}, status=web.HTTPForbidden.status_code

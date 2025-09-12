@@ -7,19 +7,20 @@ import time
 from logging.handlers import TimedRotatingFileHandler
 from multiprocessing.managers import SyncManager
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import coloredlogs
 from dotenv import load_dotenv
 
-from .Utils import FileLogFormatter, arg_converter
+from .Singleton import Singleton
+from .Utils import FileLogFormatter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
 if TYPE_CHECKING:
     from subprocess import CompletedProcess
 
 
-class Config:
+class Config(metaclass=Singleton):
     app_env: str = "production"
     """The application environment, can be 'production' or 'development'."""
 
@@ -95,9 +96,6 @@ class Config:
     debugpy_port: int = 5678
     """The port to use for the debugpy server."""
 
-    socket_timeout: int = 30
-    """The socket timeout to use for yt-dlp."""
-
     extract_info_timeout: int = 70
     """The timeout to use for extracting video information."""
 
@@ -131,17 +129,11 @@ class Config:
     app_branch: str = APP_BRANCH
     "The branch of the application."
 
-    __instance = None
-    "The instance of the class."
-
     started: int = 0
     "The time the application was started."
 
     ignore_ui: bool = False
     "Ignore the UI and run the application in the background."
-
-    basic_mode: bool = False
-    "Run the frontend in basic mode."
 
     default_preset: str = "default"
     "The default preset to use when no preset is specified."
@@ -161,20 +153,11 @@ class Config:
     console_enabled: bool = False
     "Enable direct access to yt-dlp console."
 
-    browser_enabled: bool = True
-    "Enable file browser access."
-
     browser_control_enabled: bool = False
     "Enable file browser control access."
 
     ytdlp_auto_update: bool = True
     """Enable in-place auto update of yt-dlp package."""
-
-    ytdlp_cli: str = ""
-    """The command line options to use for yt-dlp."""
-
-    _ytdlp_cli_mutable: str = ""
-    """The command line options to use for yt-dlp."""
 
     ytdlp_version: str | None = None
     """The version of yt-dlp to use, if not set, the latest version will be used."""
@@ -206,11 +189,8 @@ class Config:
     "The variables that are set manually."
 
     _immutable: tuple = (
-        "__instance",
         "ytdl_options",
         "started",
-        "ytdlp_cli",
-        "_ytdlp_cli_mutable",
         "is_native",
         "app_version",
         "app_commit_sha",
@@ -222,7 +202,6 @@ class Config:
     _int_vars: tuple = (
         "port",
         "max_workers",
-        "socket_timeout",
         "extract_info_timeout",
         "debugpy_port",
         "playlist_items_concurrency",
@@ -241,10 +220,8 @@ class Config:
         "ignore_ui",
         "ui_update_title",
         "pip_ignore_updates",
-        "basic_mode",
         "file_logging",
         "console_enabled",
-        "browser_enabled",
         "browser_control_enabled",
         "ytdlp_auto_update",
         "prevent_premiere_live",
@@ -260,13 +237,10 @@ class Config:
         "remove_files",
         "ui_update_title",
         "max_workers",
-        "basic_mode",
         "default_preset",
         "instance_title",
         "console_enabled",
-        "browser_enabled",
         "browser_control_enabled",
-        "ytdlp_cli",
         "file_logging",
         "base_path",
         "is_native",
@@ -284,8 +258,7 @@ class Config:
 
     @staticmethod
     def get_instance(is_native: bool = False) -> "Config":
-        """Static access method."""
-        cls: Config = Config(is_native) if not Config.__instance else Config.__instance
+        cls = Config(is_native)
         cls.is_native = is_native or cls.is_native
         return cls
 
@@ -297,13 +270,6 @@ class Config:
         return Config._manager
 
     def __init__(self, is_native: bool = False):
-        """Virtually private constructor."""
-        if Config.__instance is not None:
-            msg = "This class is a singleton. Use Config.get_instance() instead."
-            raise Exception(msg)
-
-        Config.__instance = self
-
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
         self.is_native = is_native
@@ -362,7 +328,7 @@ class Config:
         if not self.base_path.endswith("/"):
             self.base_path += "/"
 
-        numeric_level = getattr(logging, self.log_level.upper(), None)
+        numeric_level: int | None = getattr(logging, self.log_level.upper(), None)
         if not isinstance(numeric_level, int):
             msg = f"Invalid log level '{self.log_level}' specified."
             raise TypeError(msg)
@@ -383,55 +349,26 @@ class Config:
                 debugpy.listen(("0.0.0.0", self.debugpy_port), in_process_debug_adapter=True)
                 LOG.info(f"starting debugpy server on '0.0.0.0:{self.debugpy_port}'.")
             except ImportError:
-                LOG.error("debugpy package not found, please install it with 'pip install debugpy'.")
+                LOG.error("debugpy package not found, install it with 'uv sync'.")
             except Exception as e:
                 LOG.error(f"Error starting debugpy server at '0.0.0.0:{self.debugpy_port}'. {e}")
 
-        opts_file: Path = Path(self.config_path) / "ytdlp.cli"
-        if opts_file.exists() and opts_file.stat().st_size > 2:
-            LOG.warning(
-                "Usage of 'ytdlp.cli' global config file is deprecated and will be removed in future releases. please migrate to presets."
-            )
-            with open(opts_file) as f:
-                self.ytdlp_cli = f.read().strip()
-                if self.ytdlp_cli:
-                    self._ytdlp_cli_mutable = self.ytdlp_cli
-                    try:
-                        arg_converter(args=self.ytdlp_cli, level=True)
-                    except Exception as e:
-                        msg = f"Failed to parse yt-dlp cli options from '{opts_file}'. '{e!s}'."
-                        raise ValueError(msg) from e
-
-        self._ytdlp_cli_mutable += f"\n--socket-timeout {self.socket_timeout}"
-
-        if self.keep_archive:
-            LOG.warning(
-                "The global 'keep_archive' option is deprecated and will be removed in future releases. please use presets instead."
-            )
-            archive_file: Path = Path(self.archive_file)
-            if not archive_file.exists():
-                LOG.info(f"Creating archive file '{archive_file}'.")
-                archive_file.touch(exist_ok=True)
-
-            LOG.info(f"keep archive option is enabled. Using archive file '{archive_file}' by default.")
-            self._ytdlp_cli_mutable += f"\n--download-archive {archive_file.as_posix()!s}"
+        if (Path(self.config_path) / "ytdlp.cli").exists():
+            LOG.error("Support for ./ytdlp.cli file is removed, migrate to presets and remove the file.")
 
         if self.temp_keep:
-            LOG.info("Keep temp files option is enabled.")
+            LOG.warning("Keep temp files option is enabled.")
 
         if self.auth_password and self.auth_username:
-            LOG.warning(f"Basic authentication enabled with username '{self.auth_username}'.")
-
-        if self.basic_mode:
-            LOG.info("The frontend is running in basic mode.")
+            LOG.info(f"Authentication enabled with username '{self.auth_username}'.")
 
         if self.file_logging:
-            log_level_file = getattr(logging, self.log_level_file.upper(), None)
+            log_level_file: int | None = getattr(logging, self.log_level_file.upper(), None)
             if not isinstance(log_level_file, int):
                 msg = f"Invalid file log level '{self.log_level_file}' specified."
                 raise TypeError(msg)
 
-            loggingPath = Path(self.config_path) / "logs"
+            loggingPath: Path = Path(self.config_path) / "logs"
             if not loggingPath.exists():
                 loggingPath.mkdir(parents=True, exist_ok=True)
 
@@ -459,15 +396,17 @@ class Config:
 
         self.started = time.time()
 
-        logging.getLogger("httpcore").setLevel(logging.INFO)
-        for _tool in ("httpx", "urllib3.connectionpool", "apprise"):
-            logging.getLogger(_tool).setLevel(logging.WARNING)
+        _log_levels = (
+            ("httpx", logging.WARNING),
+            ("urllib3.connectionpool", logging.WARNING),
+            ("apprise", logging.WARNING),
+            ("httpcore", logging.INFO),
+        )
+        for _tool, _level in _log_levels:
+            logging.getLogger(_tool).setLevel(_level)
 
-        # check env
         if self.app_env not in ("production", "development"):
-            msg: str = (
-                f"Invalid application environment '{self.app_env}' specified. Must be 'production' or 'development'."
-            )
+            msg: str = f"Invalid app environment '{self.app_env}' specified. Must be 'production' or 'development'."
             raise ValueError(msg)
 
         if "dev-master" == self.app_version:
@@ -481,7 +420,7 @@ class Config:
             if attribute.startswith("_"):
                 continue
 
-            value = getattr(vClass, attribute)
+            value: Any = getattr(vClass, attribute)
             if not callable(value):
                 attrs[attribute] = value
 
@@ -507,23 +446,6 @@ class Config:
         """
         return "production" == self.app_env
 
-    def get_ytdlp_args(self) -> dict:
-        """
-        Get the yt-dlp command line options as a dictionary.
-
-        Returns:
-            dict: The yt-dlp command line options.
-
-        Deprecated:
-            Usage of global ytdlp.cli file is deprecated, please use presets instead.
-
-        """
-        try:
-            return arg_converter(args=self._ytdlp_cli_mutable, level=True)
-        except Exception as e:
-            msg = f"Invalid ytdlp.cli options for yt-dlp. '{e!s}'."
-            raise ValueError(msg) from e
-
     def frontend(self) -> dict:
         """
         Returns configuration variables relevant to the frontend.
@@ -532,23 +454,17 @@ class Config:
             dict: A dictionary with the frontend configuration
 
         """
-        data = {k: getattr(self, k) for k in self._frontend_vars}
-
-        ytdlp_args = self.get_ytdlp_args()
-
-        # TODO: this doesn't make sense, as each item might have it's own archive file or none at all.
-        if not data.get("keep_archive", False) and ytdlp_args.get("download_archive", None):
-            data["keep_archive"] = True
+        data: dict[str, Any] = {k: getattr(self, k) for k in self._frontend_vars}
 
         data["ytdlp_version"] = Config._ytdlp_version()
         return data
 
-    def get_replacers(self) -> dict:
+    def get_replacers(self) -> dict[str, str]:
         """
         Get the variables that can be used in Command options for yt-dlp.
 
         Returns:
-            dict: The replacer variables.
+            dict[str, str]: The replacer variables.
 
         """
         keys: tuple[str] = ("download_path", "temp_path", "config_path")

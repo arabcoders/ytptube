@@ -9,20 +9,17 @@ LOG: logging.Logger = logging.getLogger("YTDLPOpts")
 
 
 class YTDLPOpts:
-    _item_opts: dict = {}
-    """The item options."""
-
-    _preset_opts: dict = {}
-    """The preset options."""
-
-    _item_cli: list = []
-    """The command options for yt-dlp from item."""
-
-    _preset_cli: str = ""
-    """The command options for yt-dlp from preset."""
-
     def __init__(self):
         self._config: Config = Config.get_instance()
+        "The config instance."
+        self._item_opts: dict = {}
+        "The item options."
+        self._preset_opts: dict = {}
+        "The preset options."
+        self._item_cli: list = []
+        "The command options for yt-dlp from item."
+        self._preset_cli: str = ""
+        "The command options for yt-dlp from preset."
 
     @staticmethod
     def get_instance() -> "YTDLPOpts":
@@ -47,7 +44,7 @@ class YTDLPOpts:
             YTDLPOpts: The instance of the class
 
         """
-        if not args or len(args) < 2 or not isinstance(args, str):
+        if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
         try:
@@ -155,9 +152,6 @@ class YTDLPOpts:
             self._item_cli = []
 
         merge: list[str] = []
-        if self._config._ytdlp_cli_mutable and len(self._config._ytdlp_cli_mutable) > 1:
-            merge.append(self._config._ytdlp_cli_mutable)
-
         if self._preset_cli and len(self._preset_cli) > 1:
             merge.append(self._preset_cli)
 

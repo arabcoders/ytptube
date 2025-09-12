@@ -53,6 +53,7 @@
     "Errno",
     "esac",
     "euuo",
+    "eventbus",
     "excepthook",
     "faststart",
     "Fetc",
@@ -132,6 +133,7 @@
     "SUPPRESSHELP",
     "tebibytes",
     "testpaths",
+    "threadsafe",
     "tiktok",
     "timespec",
     "tmpfilename",
@@ -169,5 +171,10 @@
     "**/.venv": true,
   },
   "eslint.format.enable": true,
-  "eslint.ignoreUntitled": true
+  "eslint.ignoreUntitled": true,
+  "python.testing.pytestArgs": [
+    "app/tests"
+  ],
+  "python.testing.unittestEnabled": true,
+  "python.testing.pytestEnabled": true
 }

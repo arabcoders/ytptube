@@ -57,7 +57,7 @@ class HttpSocket:
         async def event_handler(e: Event, _, **kwargs):
             await self.sio.emit(event=e.event, data=encoder.encode(e), **kwargs)
 
-        services = Services.get_instance()
+        services: Services = Services.get_instance()
         services.add_all(
             {
                 k: v

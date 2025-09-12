@@ -153,13 +153,8 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         preset: str = params.get("preset", config.default_preset)
         key: str = cache.hash(url + str(preset))
         if not cache.has(key):
-            opts = {}
-            if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
-                opts["proxy"] = ytdlp_proxy
-            ytdlp_opts = YTDLPOpts.get_instance().preset(name=preset).add(opts).get_all()
-
-            data = extract_info(
-                config=ytdlp_opts,
+            data: dict = extract_info(
+                config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
                 url=url,
                 debug=False,
                 no_archive=True,
@@ -182,7 +177,7 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         )
 
     try:
-        status = match_str(cond, data)
+        status: bool = match_str(cond, data)
     except Exception as e:
         LOG.exception(e)
         return web.json_response(

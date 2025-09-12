@@ -105,22 +105,20 @@ class Presets(metaclass=Singleton):
     This class is used to manage the presets.
     """
 
-    _items: list[Preset] = []
-    """The list of presets."""
-
-    _instance = None
-    """The instance of the class."""
-
-    _config: Config = None
-
-    _default: list[Preset] = []
-
     def __init__(self, file: str | Path | None = None, config: Config | None = None):
-        Presets._instance = self
+        self._items: list[Preset] = []
+        "The list of presets."
+
+        self._config: Config = None
+        "The config instance."
+
+        self._default: list[Preset] = []
+        "The list of default presets."
 
         self._config = config or Config.get_instance()
 
         self._file: Path = Path(file) if file else Path(self._config.config_path).joinpath("presets.json")
+        "The path to the presets file."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -136,25 +134,20 @@ class Presets(metaclass=Singleton):
                 LOG.error(f"Failed to parse default preset ':{i}'. '{e!s}'.")
                 continue
 
-        async def event_handler(_, __):
-            msg = "Not implemented"
-            raise Exception(msg)
-
-        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.add")
-
     @staticmethod
-    def get_instance() -> "Presets":
+    def get_instance(file: str | Path | None = None, config: Config | None = None) -> "Presets":
         """
         Get the instance of the class.
+
+        Args:
+            file (str|Path|None): The path to the presets file.
+            config (Config|None): The config instance.
 
         Returns:
             Presets: The instance of the class
 
         """
-        if not Presets._instance:
-            Presets._instance = Presets()
-
-        return Presets._instance
+        return Presets(file=file, config=config)
 
     async def on_shutdown(self, _: web.Application):
         pass
@@ -175,6 +168,12 @@ class Presets(metaclass=Singleton):
         if not self.get(self._config.default_preset):
             LOG.error(f"Default preset '{self._config.default_preset}' not found, using 'default' preset.")
             self._config.default_preset = "default"
+
+        async def event_handler(_, __):
+            msg = "Not implemented"
+            raise Exception(msg)
+
+        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.add")
 
     def get_all(self) -> list[Preset]:
         """Return the items."""

@@ -29,9 +29,7 @@ class TestCache:
 
     def setup_method(self):
         """Set up test fixtures."""
-        # Clear any existing cache instance
-        if hasattr(Cache, "_instances"):
-            Cache._instances.clear()
+        Cache._reset_singleton()
         self.cache = Cache()
 
     def test_singleton_behavior(self):

@@ -14,6 +14,7 @@ class _ArchiveProxy:
 
     def __init__(self, file: str | None):
         self._file: str | None = file
+        "The archive file path."
 
     def __contains__(self, item: str) -> bool:
         if not self._file or not item:

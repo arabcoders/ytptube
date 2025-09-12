@@ -11,12 +11,12 @@ from .Download import Download
 from .ItemDTO import ItemDTO
 from .Utils import init_class
 
-LOG = logging.getLogger("datastore")
+LOG: logging.Logger = logging.getLogger("datastore")
 
 
 class StoreType(str, Enum):
-    HISTORY = "done"
-    QUEUE = "queue"
+    HISTORY: str = "done"
+    QUEUE: str = "queue"
 
     @classmethod
     def all(cls) -> list[str]:
@@ -53,19 +53,13 @@ class DataStore:
     Persistent queue.
     """
 
-    _type: StoreType = None
-    """Type of the store, e.g., DONE, QUEUE, PENDING."""
-
-    _dict: OrderedDict[str, Download] = None
-    """Ordered dictionary to store Download objects."""
-
-    _connection: Connection
-    """SQLite connection to the database."""
-
     def __init__(self, type: StoreType, connection: Connection):
-        self._dict = OrderedDict()
-        self._type = type
-        self._connection = connection
+        self._dict: OrderedDict[str, Download] = OrderedDict()
+        "The dictionary of items."
+        self._type: StoreType = type
+        "The type of the datastore."
+        self._connection: Connection = connection
+        "The database connection."
 
     def load(self) -> None:
         for id, item in self.saved_items():
@@ -136,7 +130,7 @@ class DataStore:
         )
 
         for row in cursor:
-            rowDate = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+            rowDate: datetime = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             data: dict = json.loads(row["data"])
             data.pop("_id", None)
             item: ItemDTO = init_class(ItemDTO, data)

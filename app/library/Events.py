@@ -194,14 +194,13 @@ class Event:
 
 
 class EventListener:
-    name: str
-    is_coroutine: bool = False
-    call_back: callable
-
     def __init__(self, name: str, callback: callable):
-        self.name = name
-        self.call_back = callback
-        self.is_coroutine = asyncio.iscoroutinefunction(callback)
+        self.name: str = name
+        "The name of the listener."
+        self.call_back: callable = callback
+        "The callback function to call when the event is emitted."
+        self.is_coroutine: bool = asyncio.iscoroutinefunction(callback)
+        "Whether the callback is a coroutine function or not."
 
     async def handle(self, event: Event, **kwargs):
         if self.is_coroutine:
@@ -215,20 +214,15 @@ class EventBus(metaclass=Singleton):
     This class is used to subscribe to and emit events to the registered listeners.
     """
 
-    _instance = None
-    """the instance of the EventsSubscriber"""
-
-    _listeners: dict[str, list[str, EventListener]] = {}
-    """The listeners for the events."""
-
-    debug: bool = False
-    """Whether to log debug messages or not."""
-
-    _offload: BackgroundWorker = None
-    """The background worker to offload tasks to."""
-
     def __init__(self):
-        EventBus._instance = self
+        self._listeners: dict[str, list[str, EventListener]] = {}
+        "The listeners for the events."
+
+        self.debug: bool = False
+        "Whether to log debug messages or not."
+
+        self._offload: BackgroundWorker = None
+        "The background worker to offload tasks to."
 
     @staticmethod
     def get_instance() -> "EventBus":
@@ -239,10 +233,7 @@ class EventBus(metaclass=Singleton):
             EventsSubscriber: The instance of the EventsSubscriber
 
         """
-        if not EventBus._instance:
-            EventBus._instance = EventBus()
-
-        return EventBus._instance
+        return EventBus()
 
     def subscribe(self, event: str | list | tuple, callback: Awaitable, name: str | None = None) -> "EventBus":
         """
