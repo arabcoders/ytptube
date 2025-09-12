@@ -100,21 +100,13 @@ class DLFields(metaclass=Singleton):
     This class is used to manage the DLFields.
     """
 
-    _items: list[DLField] = []
-    """The list of items."""
-
-    _instance = None
-    """The instance of the class."""
-
-    _config: Config = None
-    """The config instance."""
-
     def __init__(self, file: str | Path | None = None, config: Config | None = None):
-        DLFields._instance = self
-
-        self._config = config or Config.get_instance()
-
-        self._file: Path = Path(file) if file else Path(self._config.config_path).joinpath("dl_fields.json")
+        self._items: list[DLField] = []
+        "The list of items."
+        config: Config = config or Config.get_instance()
+        "The configuration instance."
+        self._file: Path = Path(file) if file else Path(config.config_path).joinpath("dl_fields.json")
+        "The path to the file where the items are stored."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -122,14 +114,8 @@ class DLFields(metaclass=Singleton):
             except Exception:
                 pass
 
-        async def event_handler(_, __):
-            msg = "Not implemented"
-            raise Exception(msg)
-
-        EventBus.get_instance().subscribe(Events.DLFIELDS_ADD, event_handler, f"{__class__.__name__}.add")
-
     @staticmethod
-    def get_instance() -> "DLFields":
+    def get_instance(file: str | Path | None = None, config: Config | None = None) -> "DLFields":
         """
         Get the instance of the class.
 
@@ -137,10 +123,7 @@ class DLFields(metaclass=Singleton):
             DLFields: The instance of the class
 
         """
-        if not DLFields._instance:
-            DLFields._instance = DLFields()
-
-        return DLFields._instance
+        return DLFields(file=file, config=config)
 
     async def on_shutdown(self, _: web.Application):
         pass
@@ -157,6 +140,12 @@ class DLFields(metaclass=Singleton):
 
         """
         self.load()
+
+        async def event_handler(_, __):
+            msg = "Not implemented"
+            raise Exception(msg)
+
+        EventBus.get_instance().subscribe(Events.DLFIELDS_ADD, event_handler, f"{__class__.__name__}.add")
 
     def get_all(self) -> list[DLField]:
         """Return the items."""

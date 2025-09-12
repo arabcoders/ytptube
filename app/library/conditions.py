@@ -14,7 +14,7 @@ from .mini_filter import match_str
 from .Singleton import Singleton
 from .Utils import arg_converter, init_class
 
-LOG = logging.getLogger("conditions")
+LOG: logging.Logger = logging.getLogger("conditions")
 
 
 @dataclass(kw_only=True)
@@ -49,18 +49,14 @@ class Conditions(metaclass=Singleton):
     This class is used to manage the download conditions.
     """
 
-    _items: list[Condition] = []
-    """The list of items."""
-
-    _instance = None
-    """The instance of the class."""
-
     def __init__(self, file: Path | str | None = None, config: Config | None = None):
-        Conditions._instance = self
+        self._items: list[Condition] = []
+        "The list of items."
 
         config = config or Config.get_instance()
 
         self._file: Path = Path(file) if file else Path(config.config_path) / "conditions.json"
+        "The path to the file where the items are stored."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -68,14 +64,8 @@ class Conditions(metaclass=Singleton):
             except Exception:
                 pass
 
-        async def event_handler(_, __):
-            msg = "Not implemented"
-            raise Exception(msg)
-
-        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.save")
-
     @staticmethod
-    def get_instance() -> "Conditions":
+    def get_instance(file: Path | str | None = None, config: Config | None = None) -> "Conditions":
         """
         Get the instance of the class.
 
@@ -83,10 +73,7 @@ class Conditions(metaclass=Singleton):
             Conditions: The instance of the class
 
         """
-        if not Conditions._instance:
-            Conditions._instance = Conditions()
-
-        return Conditions._instance
+        return Conditions(file=file, config=config)
 
     async def on_shutdown(self, _: web.Application):
         pass
@@ -103,6 +90,12 @@ class Conditions(metaclass=Singleton):
 
         """
         self.load()
+
+        async def event_handler(_, __):
+            msg = "Not implemented"
+            raise Exception(msg)
+
+        EventBus.get_instance().subscribe(Events.CONDITIONS_ADD, event_handler, f"{__class__.__name__}.save")
 
     def get_all(self) -> list[Condition]:
         """Return the items."""

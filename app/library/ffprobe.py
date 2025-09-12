@@ -277,7 +277,7 @@ async def ffprobe(file: str) -> FFProbeResult:
         msg = "ffprobe not found."
         raise OSError(msg) from e
 
-    args = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(f)]
+    args: list[str] = ["-v", "quiet", "-of", "json", "-show_streams", "-show_format", str(f)]
 
     p = await asyncio.create_subprocess_exec(
         "ffprobe",
@@ -287,13 +287,13 @@ async def ffprobe(file: str) -> FFProbeResult:
         creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
     )
 
-    exitCode = await p.wait()
+    exitCode: int = await p.wait()
 
     data, err = await p.communicate()
     if 0 == exitCode:
         parsed: dict = json.loads(data.decode("utf-8"))
     else:
-        msg = f"ffprobe returned with non-0 exit code. '{err.decode('utf-8')}'"
+        msg: str = f"ffprobe returned with non-0 exit code. '{err.decode('utf-8')}'"
         raise FFProbeError(msg)
 
     result = FFProbeResult()

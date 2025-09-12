@@ -8,6 +8,7 @@ class Singleton(type):
     """
 
     _instances: dict[type, Any] = {}
+    "The singleton instances."
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         if cls not in cls._instances:
@@ -30,7 +31,10 @@ class ThreadSafe(type):
     """
 
     _instances: dict[type, Any] = {}
+    "The singleton instances."
+
     _lock = threading.Lock()
+    "A lock to ensure thread-safe singleton creation."
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
         with cls._lock:

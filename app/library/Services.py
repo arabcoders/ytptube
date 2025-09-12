@@ -9,42 +9,37 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Services(metaclass=Singleton):
-    _dct: dict[str, T] = {}
-
-    _instance = None
-    """The instance of the class."""
+    def __init__(self):
+        self._services: dict[str, T] = {}
 
     @staticmethod
     def get_instance() -> "Services":
-        if Services._instance is None:
-            Services._instance = Services()
-
-        return Services._instance
+        return Services()
 
     def add(self, name: str, service: T):
-        self._dct[name] = service
+        self._services[name] = service
 
     def add_all(self, services: dict[str, T]):
         for name, service in services.items():
             self.add(name, service)
 
     def get(self, name: str) -> T | None:
-        return self._dct.get(name)
+        return self._services.get(name)
 
     def has(self, name: str) -> bool:
-        return name in self._dct
+        return name in self._services
 
     def remove(self, name: str):
-        if name not in self._dct:
+        if name not in self._services:
             return
 
-        self._dct.pop(name, None)
+        self._services.pop(name, None)
 
     def clear(self):
-        self._dct.clear()
+        self._services.clear()
 
     def get_all(self) -> dict[str, T]:
-        return self._dct.copy()
+        return self._services.copy()
 
     async def handle_async(self, handler: callable, **kwargs) -> Any:
         context = {**self.get_all(), **kwargs}

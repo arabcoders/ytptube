@@ -47,22 +47,8 @@ class Download:
     Download task.
     """
 
-    id: str = None
-    download_dir: str = None
-    temp_dir: str = None
-    temp_disabled: bool = False
-    "Disable the temporary files feature."
-    template: str = None
-    template_chapter: str = None
-    info: ItemDTO = None
-    debug: bool = False
     temp_path: str = None
-    cancelled: bool = False
-    is_live: bool = False
-    info_dict: dict = None
-    "yt-dlp metadata dict."
     update_task = None
-
     cancel_in_progress: bool = False
     final_update = False
 
@@ -86,12 +72,6 @@ class Download:
     )
     "Fields to be extracted from yt-dlp progress hook."
 
-    temp_keep: bool = False
-    "Keep temp folder after download."
-
-    logs: list = []
-    "Logs from yt-dlp."
-
     def __init__(self, info: ItemDTO, info_dict: dict = None, logs: list | None = None):
         """
         Initialize download task.
@@ -104,29 +84,52 @@ class Download:
         """
         config: Config = Config.get_instance()
 
-        self.download_dir = info.download_dir
-        self.temp_dir = info.temp_dir
-        self.template = info.template
-        self.template_chapter = info.template_chapter
+        self.download_dir: str = info.download_dir
+        "Download directory."
+        self.temp_dir: str | None = info.temp_dir
+        "Temporary directory."
+        self.template: str | None = info.template
+        "Filename template."
+        self.template_chapter: str | None = info.template_chapter
+        "Chapter filename template."
         self.download_info_expires = int(config.download_info_expires)
-        self.info = info
-        self.id = info._id
+        "Time in seconds before the download info is considered expired."
+        self.info: ItemDTO = info
+        "ItemDTO object."
+        self.id: str = info._id
+        "Download ID."
         self.debug = bool(config.debug)
+        "Debug mode."
         self.debug_ytdl = bool(config.ytdlp_debug)
+        "Debug mode for yt-dlp."
         self.cancelled = False
+        "Download cancelled."
         self.tmpfilename = None
+        "Temporary filename."
         self.status_queue = None
+        "Status queue."
         self.proc = None
-        self._notify = EventBus.get_instance()
+        "yt-dlp process."
+        self._notify: EventBus = EventBus.get_instance()
+        "Event bus instance."
         self.max_workers = int(config.max_workers)
+        "Maximum number of concurrent downloads."
         self.temp_keep = bool(config.temp_keep)
+        "Keep temp folder after download."
         self.temp_disabled = bool(config.temp_disabled)
-        self.is_live = bool(info.is_live) or info.live_in is not None
-        self.info_dict = info_dict
+        "Disable the temporary files feature."
+        self.is_live: bool = bool(info.is_live) or info.live_in is not None
+        "Is the download a live stream."
+        self.info_dict: dict = info_dict
+        "yt-dlp metadata dict."
         self.logger: logging.Logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
+        "Logger for the download task."
         self.started_time = 0
+        "Time when the download started."
         self.queue_time: datetime = datetime.now(tz=UTC)
+        "Time when the download was queued."
         self.logs = logs if logs else []
+        "Logs from yt-dlp."
 
     def _progress_hook(self, data: dict):
         if self.debug:

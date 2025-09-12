@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import coloredlogs
 from dotenv import load_dotenv
 
+from .Singleton import Singleton
 from .Utils import FileLogFormatter, arg_converter
 from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     from subprocess import CompletedProcess
 
 
-class Config:
+class Config(metaclass=Singleton):
     app_env: str = "production"
     """The application environment, can be 'production' or 'development'."""
 
@@ -131,9 +132,6 @@ class Config:
     app_branch: str = APP_BRANCH
     "The branch of the application."
 
-    __instance = None
-    "The instance of the class."
-
     started: int = 0
     "The time the application was started."
 
@@ -206,7 +204,6 @@ class Config:
     "The variables that are set manually."
 
     _immutable: tuple = (
-        "__instance",
         "ytdl_options",
         "started",
         "ytdlp_cli",
@@ -284,8 +281,7 @@ class Config:
 
     @staticmethod
     def get_instance(is_native: bool = False) -> "Config":
-        """Static access method."""
-        cls: Config = Config(is_native) if not Config.__instance else Config.__instance
+        cls = Config(is_native)
         cls.is_native = is_native or cls.is_native
         return cls
 
@@ -297,13 +293,6 @@ class Config:
         return Config._manager
 
     def __init__(self, is_native: bool = False):
-        """Virtually private constructor."""
-        if Config.__instance is not None:
-            msg = "This class is a singleton. Use Config.get_instance() instead."
-            raise Exception(msg)
-
-        Config.__instance = self
-
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
         self.is_native = is_native

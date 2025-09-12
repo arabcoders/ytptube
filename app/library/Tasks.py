@@ -132,12 +132,6 @@ class Tasks(metaclass=Singleton):
     This class is used to manage the tasks.
     """
 
-    _tasks: list[Task] = []
-    """The tasks."""
-
-    _instance = None
-    """The instance of the Tasks."""
-
     def __init__(
         self,
         file: str | None = None,
@@ -146,19 +140,28 @@ class Tasks(metaclass=Singleton):
         encoder: Encoder | None = None,
         scheduler: Scheduler | None = None,
     ):
-        Tasks._instance = self
-
+        self._tasks: list[Task] = []
+        "The tasks."
         config = config or Config.get_instance()
 
         self._debug: bool = config.debug
+        "Debug mode."
         self._default_preset: str = config.default_preset
+        "The default preset."
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("tasks.json")
+        "The tasks file."
         self._encoder: Encoder = encoder or Encoder()
+        "The JSON encoder."
         self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+        "The event loop."
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
+        "The scheduler."
         self._notify: EventBus = EventBus.get_instance()
+        "The event bus."
         self._task_handler = HandleTask(self._scheduler, self, config)
+        "The task handler."
         self._downloadQueue = DownloadQueue.get_instance()
+        "The download queue."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -167,7 +170,13 @@ class Tasks(metaclass=Singleton):
                 pass
 
     @staticmethod
-    def get_instance() -> "Tasks":
+    def get_instance(
+        file: str | None = None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        config: Config | None = None,
+        encoder: Encoder | None = None,
+        scheduler: Scheduler | None = None,
+    ) -> "Tasks":
         """
         Get the instance of the class.
 
@@ -175,10 +184,7 @@ class Tasks(metaclass=Singleton):
             Tasks: The instance of the class.
 
         """
-        if not Tasks._instance:
-            Tasks._instance = Tasks()
-
-        return Tasks._instance
+        return Tasks(file=file, loop=loop, config=config, encoder=encoder, scheduler=scheduler)
 
     async def on_shutdown(self, _: web.Application):
         self.clear(shutdown=True)
@@ -454,17 +460,17 @@ class Tasks(metaclass=Singleton):
 
 
 class HandleTask:
-    _tasks: Tasks
-    _handlers: list[type]
-    _scheduler: Scheduler
-    _config: Config
-    _task_name: str
-
     def __init__(self, scheduler: Scheduler, tasks: Tasks, config: Config) -> None:
-        self._tasks = tasks
-        self._scheduler = scheduler
-        self._config = config
+        self._handlers: list[type] = []
+        "The available handlers."
+        self._tasks: Tasks = tasks
+        "The tasks manager."
+        self._scheduler: Scheduler = scheduler
+        "The scheduler."
+        self._config: Config = config
+        "The configuration."
         self._task_name: str = f"{__class__.__name__}._dispatcher"
+        "The task name for the scheduler."
 
     def load(self) -> None:
         self._handlers: list[type] = self._discover()
@@ -496,24 +502,36 @@ class HandleTask:
             self._scheduler.remove(self._task_name)
 
     def _dispatcher(self):
+        s: dict[list[str]] = {"h": [], "d": [], "u": [], "f": []}
+
         for task in self._tasks.get_all():
             if not task.handler_enabled:
+                s["d"].append(task.name)
                 continue
 
             if not task.get_ytdlp_opts().get_all().get("download_archive"):
                 LOG.debug(f"Task '{task.name}' does not have an archive file configured.")
+                s["f"].append(task.name)
                 continue
 
             try:
                 handler = self._find_handler(task)
                 if handler is None:
+                    s["u"].append(task.name)
                     continue
 
                 coro = self.dispatch(task, handler=handler)
                 t = asyncio.create_task(coro, name=f"task-{task.id}")
                 t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
+                s["h"].append(task.name)
             except Exception as e:
                 LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
+                s["f"].append(task.name)
+
+        if len(self._tasks.get_all()) > 0:
+            LOG.info(
+                f"Task Handler summary: Handled: {len(s['h'])}, Unhandled: {len(s['u'])}, Disabled: {len(s['d'])}, Failed: {len(s['f'])}."
+            )
 
     def _handle_exception(self, fut: asyncio.Task, task: Task) -> None:
         if fut.cancelled():

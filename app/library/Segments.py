@@ -11,22 +11,32 @@ from aiohttp import web
 from .config import Config
 from .ffprobe import ffprobe
 
-LOG = logging.getLogger("player.segments")
+LOG: logging.Logger = logging.getLogger("player.segments")
 
 
 class Segments:
     def __init__(self, download_path: str, index: int, duration: float, vconvert: bool, aconvert: bool):
-        config = Config.get_instance()
-        self.download_path = download_path
+        config: Config = Config.get_instance()
+        self.download_path: str = download_path
+        "The path where files are downloaded."
         self.index = int(index)
+        "The index of the segment."
         self.duration = float(duration)
+        "The duration of the segment."
         self.vconvert = bool(vconvert)
+        "Whether to convert video."
         self.aconvert = bool(aconvert)
-        self.vcodec = config.streamer_vcodec
-        self.acodec = config.streamer_acodec
+        "Whether to convert audio."
+        self.vcodec: str = config.streamer_vcodec
+        "The video codec to use."
+        self.acodec: str = config.streamer_acodec
+        "The audio codec to use."
+
         # sadly due to unforeseen circumstances, we have to convert the video for now.
         self.vconvert = True
+        "Whether to convert video."
         self.aconvert = True
+        "Whether to convert audio."
 
     async def build_ffmpeg_args(self, file: Path) -> list[str]:
         try:

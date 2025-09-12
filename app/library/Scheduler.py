@@ -15,25 +15,15 @@ class Scheduler(metaclass=Singleton):
     This class is used to manage the schedule.
     """
 
-    _jobs: dict[str, Cron] = {}
-    """The scheduled jobs."""
-
-    _instance = None
-    """The instance of the class."""
-
     def __init__(self, loop: asyncio.AbstractEventLoop | None = None):
-        Scheduler._instance = self
+        self._jobs: dict[str, Cron] = {}
+        "The scheduled jobs."
 
         self._loop = loop or asyncio.get_event_loop()
-
-        async def event_handler(data, _):
-            if data and data.data:
-                self.add(**data.data)
-
-        EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{__class__.__name__}.add")
+        "The event loop to use."
 
     @staticmethod
-    def get_instance() -> "Scheduler":
+    def get_instance(loop: asyncio.AbstractEventLoop | None = None) -> "Scheduler":
         """
         Get the instance of the class.
 
@@ -41,9 +31,7 @@ class Scheduler(metaclass=Singleton):
             Scheduler: The instance of the class
 
         """
-        if not Scheduler._instance:
-            Scheduler._instance = Scheduler()
-        return Scheduler._instance
+        return Scheduler(loop=loop)
 
     async def on_shutdown(self, _: web.Application):
         """
@@ -69,6 +57,12 @@ class Scheduler(metaclass=Singleton):
 
     def attach(self, app: web.Application):
         app.on_shutdown.append(self.on_shutdown)
+
+        async def event_handler(data, _):
+            if data and data.data:
+                self.add(**data.data)
+
+        EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{__class__.__name__}.add")
 
     def get_all(self) -> dict[str, Cron]:
         """Return the jobs."""

@@ -61,10 +61,13 @@ REMOVE_KEYS: list = [
         "opt_list_impersonate_targets": "--list-impersonate-targets",
     },
 ]
+"Keys to remove from yt-dlp options at various levels."
 
 YTDLP_INFO_CLS: YTDLP = None
+"Cached YTDLP info class."
 
 ALLOWED_SUBS_EXTENSIONS: set[str] = {".srt", ".vtt", ".ass"}
+"Allowed subtitle file extensions."
 
 FILES_TYPE: list = [
     {"rx": re.compile(r"\.(avi|ts|mkv|mp4|mp3|mpv|ogm|m4v|webm|m4b)$", re.IGNORECASE), "type": "video"},
@@ -74,11 +77,15 @@ FILES_TYPE: list = [
     {"rx": re.compile(r"\.(txt|nfo|md|json|yml|yaml|plexmatch)$", re.IGNORECASE), "type": "text"},
     {"rx": re.compile(r"\.(nfo|json|jpg|torrent|\.info\.json)$", re.IGNORECASE), "type": "metadata"},
 ]
+"File type patterns for sidecar files."
 
 TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
+"Regex to find tags in templates."
 DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
+"Regex to match ISO 8601 datetime strings."
 
 T = TypeVar("T")
+"Generic type variable."
 
 
 class StreamingError(Exception):
@@ -111,11 +118,11 @@ def calc_download_path(base_path: str | Path, folder: str | None = None, create_
 
     folder = folder.removeprefix("/")
 
-    realBasePath = base_path.resolve()
-    download_path = Path(realBasePath).joinpath(folder).resolve(strict=False)
+    realBasePath: Path = base_path.resolve()
+    download_path: Path = Path(realBasePath).joinpath(folder).resolve(strict=False)
 
     if not str(download_path).startswith(str(realBasePath)):
-        msg = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
+        msg: str = f'Folder "{folder}" must resolve inside the base download folder "{realBasePath}".'
         raise Exception(msg)
 
     try:
@@ -165,7 +172,7 @@ def extract_info(
     }
 
     # Remove keys that are not needed for info extraction.
-    keys_to_remove = [key for key in params if str(key).startswith("write") or key in ["postprocessors"]]
+    keys_to_remove: list = [key for key in params if str(key).startswith("write") or key in ["postprocessors"]]
     for key in keys_to_remove:
         params.pop(key, None)
 
@@ -175,8 +182,8 @@ def extract_info(
         params["quiet"] = True
 
     log_wrapper = LogWrapper()
-    idDict = get_archive_id(url=url)
-    archive_id = f".{idDict['id']}" if idDict.get("id") else None
+    idDict: dict[str, str | None] = get_archive_id(url=url)
+    archive_id: str | None = f".{idDict['id']}" if idDict.get("id") else None
 
     log_wrapper.add_target(
         target=logging.getLogger(f"yt-dlp{archive_id if archive_id else '.extract_info'}"),
@@ -244,7 +251,7 @@ def _is_safe_key(key: any) -> bool:
         return False
 
     # Block only truly dangerous dunder patterns
-    key_stripped = key.strip()
+    key_stripped: str = key.strip()
 
     # Block dunder attributes (starts AND ends with __)
     return not (key_stripped.startswith("__") and key_stripped.endswith("__"))
@@ -279,7 +286,7 @@ def merge_dict(
 
     # Prevent deep recursion DoS
     if _depth > max_depth:
-        msg = f"Recursion depth limit exceeded ({max_depth})"
+        msg: str = f"Recursion depth limit exceeded ({max_depth})"
         raise RecursionError(msg)
 
     # Initialize circular reference tracking
@@ -294,10 +301,10 @@ def merge_dict(
         raise ValueError(msg)
 
     # Track current objects
-    current_seen = _seen | {source_id, dest_id}
+    current_seen: set[Any | int] = _seen | {source_id, dest_id}
 
     # Create a clean copy of destination with only safe keys
-    destination_copy = {}
+    destination_copy: dict = {}
     for k, v in destination.items():
         if _is_safe_key(k):
             # Prevent memory DoS from large lists
@@ -311,7 +318,7 @@ def merge_dict(
         if not _is_safe_key(key):
             continue
 
-        destination_value = destination_copy.get(key)
+        destination_value: Any | None = destination_copy.get(key)
 
         # Recursively merge dictionaries with safety checks
         if isinstance(value, dict) and isinstance(destination_value, dict):
@@ -325,8 +332,8 @@ def merge_dict(
             combined_size = len(value) + len(destination_value)
             if combined_size > max_list_size:
                 # Truncate to stay within limits
-                available_space = max_list_size - len(destination_value)
-                truncated_value = value[: max(0, available_space)]
+                available_space: int = max_list_size - len(destination_value)
+                truncated_value: list = value[: max(0, available_space)]
                 destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(truncated_value)
             else:
                 destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(value)
@@ -354,11 +361,13 @@ def check_id(file: Path) -> bool | str:
         bool|str: False if no file found, else the file path.
 
     """
-    match = re.search(r"(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])", file.stem, re.IGNORECASE)
+    match: re.Match[str] | None = re.search(
+        r"(?<=\[)(?:youtube-)?(?P<id>[a-zA-Z0-9\-_]{11})(?=\])", file.stem, re.IGNORECASE
+    )
     if not match:
         return False
 
-    id = match.groupdict().get("id")
+    id: str | None = match.groupdict().get("id")
 
     try:
         for f in file.parent.iterdir():
@@ -378,8 +387,8 @@ def check_id(file: Path) -> bool | str:
 
 @lru_cache(maxsize=512)
 def is_private_address(hostname: str) -> bool:
-    ip = socket.gethostbyname(hostname)
-    ip_obj = ipaddress.ip_address(ip)
+    ip: str = socket.gethostbyname(hostname)
+    ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address = ipaddress.ip_address(ip)
     return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_link_local
 
 
@@ -545,7 +554,7 @@ def get_file_sidecar(file: Path) -> list[dict]:
         list: List of sidecar files.
 
     """
-    files = {}
+    files: dict = {}
 
     for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
         if f == file or f.is_file() is False or f.stem.startswith("."):
@@ -557,15 +566,15 @@ def get_file_sidecar(file: Path) -> list[dict]:
         content_type = "Unknown"
         for pattern in FILES_TYPE:
             if pattern["rx"].search(f.name):
-                content_type = pattern["type"]
+                content_type: str = pattern["type"]
                 break
 
         if content_type == "subtitle":
             if f.suffix not in ALLOWED_SUBS_EXTENSIONS:
                 continue
-            lg = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
-            lang = lg.groupdict().get("lang") if lg else "und"
-            content = {"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"}
+            lg: re.Match[str] | None = re.search(r"\.(?P<lang>\w{2,3})\.\w{3}$", f.name)
+            lang: str | None = lg.groupdict().get("lang") if lg else "und"
+            content: dict[str, Any] = {"file": f, "lang": lang, "name": f"{f.suffix[1:].upper()} ({i}) - {lang}"}
         else:
             content = {"file": f}
 
@@ -574,7 +583,7 @@ def get_file_sidecar(file: Path) -> list[dict]:
 
         files[content_type].append(content)
 
-    images = get_possible_images(str(file.parent))
+    images: list[dict] = get_possible_images(str(file.parent))
     if len(images) > 0:
         if "image" not in files:
             files["image"] = []
@@ -586,7 +595,7 @@ def get_file_sidecar(file: Path) -> list[dict]:
 
 @lru_cache(maxsize=512)
 def get_possible_images(dir: str) -> list[dict]:
-    images = []
+    images: list = []
 
     path_loc = Path(dir, "test.jpg")
 
@@ -615,7 +624,7 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
     format_name = metadata.get("format_name", "")
 
     # Define mappings for HTML5-compatible video types
-    format_to_mime = {
+    format_to_mime: dict[str, str] = {
         "matroska": "video/x-matroska",  # Default for MKV
         "webm": "video/webm",  # MKV can also be WebM
         "mp4": "video/mp4",
@@ -628,7 +637,7 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
         for fmt in format_name.split(","):
             fmt = fmt.strip().lower()
             if fmt in format_to_mime:
-                selected = format_to_mime[fmt]
+                selected: str = format_to_mime[fmt]
 
         if selected:
             return selected
@@ -668,7 +677,7 @@ def get_file(download_path: str | Path, file: str | Path) -> tuple[Path, int]:
         LOG.error(f"Error calculating download path. {e!s}")
         return (Path(file), 404)
 
-    possibleFile = check_id(file=realFile)
+    possibleFile: bool | str = check_id(file=realFile)
     if not possibleFile:
         return (realFile, 404)
 
@@ -775,7 +784,7 @@ def get(
         return default() if callable(default) else default
 
     # Split the path by the separator and traverse the data structure.
-    segments = path.split(separator)
+    segments: list[str] = path.split(separator)
     for segment in segments:
         if isinstance(data, dict):
             if segment in data:
@@ -873,7 +882,7 @@ def get_files(base_path: Path | str, dir: str | None = None):
         if not content_type:
             content_type = "download"
 
-        stat = file.stat()
+        stat: os.stat_result = file.stat()
 
         contents.append(
             {
@@ -897,9 +906,6 @@ def get_files(base_path: Path | str, dir: str | None = None):
 def clean_item(item: dict, keys: list | tuple) -> tuple[dict, bool]:
     """
     Remove given keys from a dictionary.
-    This function modifies the dictionary in place and returns a tuple
-    containing the modified dictionary and a boolean indicating
-    whether any keys were removed.
 
     Args:
         item (dict): The item to clean.
@@ -913,6 +919,7 @@ def clean_item(item: dict, keys: list | tuple) -> tuple[dict, bool]:
 
     """
     status = False
+    item = copy.deepcopy(item)
 
     if not isinstance(item, dict):
         msg = "Item must be a dictionary."
@@ -946,7 +953,7 @@ def strip_newline(string: str) -> str:
     if not string:
         return ""
 
-    res = re.sub(r"(\r\n|\r|\n)", " ", string)
+    res: str = re.sub(r"(\r\n|\r|\n)", " ", string)
 
     return res.strip() if res else ""
 
@@ -978,34 +985,34 @@ async def read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
     try:
         async with await open_file(file, "rb") as f:
             await f.seek(0, os.SEEK_END)
-            file_size = await f.tell()
+            file_size: int = await f.tell()
 
             block_size = 1024
-            block_end = file_size
-            buffer = b""
-            lines = []
+            block_end: int = file_size
+            buffer: bytes = b""
+            lines: list = []
 
-            required_count = offset + limit + 1
+            required_count: int = offset + limit + 1
 
             while len(lines) < required_count and block_end > 0:
-                block_start = max(0, block_end - block_size)
+                block_start: int = max(0, block_end - block_size)
                 await f.seek(block_start)
-                chunk = await f.read(block_end - block_start)
-                buffer = chunk + buffer  # prepend the chunk
+                chunk: bytes = await f.read(block_end - block_start)
+                buffer: bytes = chunk + buffer  # prepend the chunk
                 lines = buffer.splitlines()
                 block_end = block_start
 
             if len(lines) > offset + limit:
-                next_offset = offset + limit
+                next_offset: int = offset + limit
                 end_is_reached = False
             else:
                 next_offset = None
                 end_is_reached = True
 
             for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
-                line_bytes = line if isinstance(line, bytes) else line.encode()
-                msg = line.decode(errors="replace")
-                dt_match = DT_PATTERN.match(msg)
+                line_bytes: bytes | str = line if isinstance(line, bytes) else line.encode()
+                msg: str = line.decode(errors="replace")
+                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
                 result.append(
                     {
                         "id": sha256(line_bytes).hexdigest(),
@@ -1041,13 +1048,13 @@ async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
         async with await open_file(file, "rb") as f:
             await f.seek(0, os.SEEK_END)
             while True:
-                line = await f.readline()
+                line: bytes = await f.readline()
                 if not line:
                     await asyncio_sleep(sleep_time)
                     continue
 
-                msg = line.decode(errors="replace")
-                dt_match = DT_PATTERN.match(msg)
+                msg: str = line.decode(errors="replace")
+                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
 
                 await emitter(
                     {
@@ -1101,7 +1108,7 @@ def get_archive_id(url: str) -> dict[str, str | None]:
     """
     global YTDLP_INFO_CLS  # noqa: PLW0603
 
-    idDict = {
+    idDict: dict[str, None] = {
         "id": None,
         "ie_key": None,
         "archive_id": None,
@@ -1158,7 +1165,7 @@ def dt_delta(delta: timedelta) -> str:
     hours, rem = divmod(rem, 3600)
     minutes, secs = divmod(rem, 60)
 
-    parts = []
+    parts: list[str] = []
     if days:
         parts.append(f"{days}d")
     if hours:
@@ -1269,6 +1276,7 @@ def load_modules(root_path: Path, directory: Path):
         full_name: str = f"{package_name}.{name}"
         if name.startswith("_"):
             continue
+
         try:
             importlib.import_module(full_name)
         except ImportError as e:
@@ -1375,37 +1383,6 @@ def ytdlp_reject(entry: dict, yt_params: dict) -> tuple[bool, str]:
         return (False, f'Video "{entry.get("title", "unknown")}" is age restricted.')
 
     return (True, "")
-
-
-def find_unpickleable(obj, name="root", seen=None):
-    import pickle
-
-    if seen is None:
-        seen = set()
-
-    if id(obj) in seen:
-        return
-
-    seen.add(id(obj))
-
-    try:
-        pickle.dumps(obj)
-    except Exception as e:
-        LOG.error(f"[UNPICKLEABLE] {name}: {e}")
-
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                find_unpickleable(v, f"{name}[{repr(k)!s}]", seen)
-        elif hasattr(obj, "__dict__"):
-            for attr in vars(obj):
-                try:
-                    value = getattr(obj, attr)
-                    find_unpickleable(value, f"{name}.{attr}", seen)
-                except Exception as ie:
-                    LOG.error(f"[ERROR] Accessing {name}.{attr}: {ie}")
-        elif isinstance(obj, list | tuple | set):
-            for idx, item in enumerate(obj):
-                find_unpickleable(item, f"{name}[{idx}]", seen)
 
 
 def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:

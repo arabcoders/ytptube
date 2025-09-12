@@ -22,7 +22,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.library.dl_fields import DLField, DLFields, FieldType
-from app.library.Singleton import Singleton
 
 
 class TestFieldType:
@@ -156,12 +155,7 @@ class TestDLFields:
 
     def setup_method(self):
         """Set up test fixtures."""
-        # Clear singleton instances before each test
-        Singleton._instances.clear()
-        if hasattr(DLFields, "_instances"):
-            DLFields._instances.clear()
-        # Also clear the class-level _items list
-        DLFields._items = []
+        DLFields._reset_singleton()
 
     @pytest.fixture
     def temp_file(self):
@@ -219,11 +213,9 @@ class TestDLFields:
         assert fields1 is fields2
 
     @patch("app.library.dl_fields.Config")
-    @patch("app.library.dl_fields.EventBus")
-    def test_dl_fields_initialization(self, mock_event_bus, mock_config):
+    def test_dl_fields_initialization(self, mock_config):
         """Test DLFields initialization."""
         mock_config.get_instance.return_value.config_path = "/tmp"
-        mock_event_bus.get_instance.return_value.subscribe = MagicMock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file = Path(temp_dir) / "test_fields.json"
@@ -231,8 +223,6 @@ class TestDLFields:
             fields = DLFields(file=str(temp_file))
 
             assert fields._file == temp_file
-            assert fields._config is not None
-            mock_event_bus.get_instance.return_value.subscribe.assert_called_once()
 
     @patch("app.library.dl_fields.Config")
     def test_dl_fields_load_empty_file(self, mock_config, temp_file):

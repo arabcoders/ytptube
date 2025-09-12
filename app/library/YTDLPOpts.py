@@ -9,20 +9,17 @@ LOG: logging.Logger = logging.getLogger("YTDLPOpts")
 
 
 class YTDLPOpts:
-    _item_opts: dict = {}
-    """The item options."""
-
-    _preset_opts: dict = {}
-    """The preset options."""
-
-    _item_cli: list = []
-    """The command options for yt-dlp from item."""
-
-    _preset_cli: str = ""
-    """The command options for yt-dlp from preset."""
-
     def __init__(self):
         self._config: Config = Config.get_instance()
+        "The config instance."
+        self._item_opts: dict = {}
+        "The item options."
+        self._preset_opts: dict = {}
+        "The preset options."
+        self._item_cli: list = []
+        "The command options for yt-dlp from item."
+        self._preset_cli: str = ""
+        "The command options for yt-dlp from preset."
 
     @staticmethod
     def get_instance() -> "YTDLPOpts":

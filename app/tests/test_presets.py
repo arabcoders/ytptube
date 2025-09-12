@@ -99,13 +99,6 @@ class TestPresets:
     def setup_method(self):
         """Set up test environment before each test."""
         # Reset singleton completely
-        Presets._instance = None
-
-    def teardown_method(self):
-        """Clean up after each test."""
-        # Reset singleton completely
-        Presets.get_instance()._items.clear()
-        Presets._instance = None
         Presets._reset_singleton()
 
     @patch("app.library.Presets.Config")

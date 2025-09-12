@@ -40,19 +40,15 @@ class Archiver(metaclass=ThreadSafe):
     """
 
     def __init__(self) -> None:
-        if getattr(self, "_initialized", False):
-            return
-
         self._cache: dict[str, _Entry] = {}
         self._locks: dict[str, threading.RLock] = {}
         self._global_lock = threading.RLock()
         self._stats_check: bool = True
         self._stats_ttl: float = 0.2
-        self._initialized = True
 
-    @classmethod
-    def get_instance(cls) -> "Archiver":
-        return cls()
+    @staticmethod
+    def get_instance() -> "Archiver":
+        return Archiver()
 
     def _key(self, file: str | Path) -> str:
         """

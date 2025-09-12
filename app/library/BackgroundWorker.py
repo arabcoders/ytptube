@@ -22,15 +22,17 @@ class BackgroundWorker(metaclass=Singleton):
     It is designed to run in a separate thread and uses asyncio to handle asynchronous tasks.
     """
 
-    _instance = None
-    """The instance of the Notification class."""
-
-    thread: threading.Thread
-    """The thread that runs the background worker."""
-
     def __init__(self):
-        self.queue = Queue()
+        self.queue: Queue = Queue()
+        "The queue to hold the tasks."
         self.running = True
+        "Whether the background worker is running or not."
+        self.thread: threading.Thread = None
+        "The thread that runs the background worker."
+
+    @staticmethod
+    def get_instance() -> "BackgroundWorker":
+        return BackgroundWorker()
 
     def attach(self, app: web.Application):
         app.on_shutdown.append(self.on_shutdown)
@@ -48,13 +50,6 @@ class BackgroundWorker(metaclass=Singleton):
             LOG.debug("Background worker has been shut down.")
         except Exception as e:
             LOG.error(f"Failed to shut down background worker: {e}")
-
-    @staticmethod
-    def get_instance() -> "BackgroundWorker":
-        if BackgroundWorker._instance is None:
-            BackgroundWorker._instance = BackgroundWorker()
-
-        return BackgroundWorker._instance
 
     def _run(self):
         asyncio.set_event_loop(asyncio.new_event_loop())

@@ -26,7 +26,6 @@ from app.library.Utils import (
     encrypt_data,
     extract_info,
     extract_ytdlp_logs,
-    find_unpickleable,
     get,
     get_archive_id,
     get_file,
@@ -1422,30 +1421,6 @@ class TestYtdlpReject:
         passed, message = ytdlp_reject(entry, yt_params)
         assert isinstance(passed, bool)
         assert isinstance(message, str)
-
-
-class TestFindUnpickleable:
-    """Test the find_unpickleable function."""
-
-    def test_find_unpickleable_simple(self):
-        """Test with simple pickleable object."""
-        obj = {"key": "value", "number": 42}
-
-        try:
-            find_unpickleable(obj)
-            # Should not find any unpickleable items
-        except Exception:
-            # Function might raise exceptions for complex objects
-            pass
-
-    def test_find_unpickleable_complex(self):
-        """Test with complex object."""
-        obj = {"func": lambda x: x}  # Lambda is not pickleable
-
-        try:
-            find_unpickleable(obj)
-        except Exception:
-            pass
 
 
 class TestInitClass:

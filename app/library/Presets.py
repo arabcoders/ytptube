@@ -105,24 +105,20 @@ class Presets(metaclass=Singleton):
     This class is used to manage the presets.
     """
 
-    _items: list[Preset] = []
-    """The list of presets."""
-
-    _instance = None
-    """The instance of the class."""
-
-    _config: Config = None
-    """The config instance."""
-
-    _default: list[Preset] = []
-    """The list of default presets."""
-
     def __init__(self, file: str | Path | None = None, config: Config | None = None):
-        Presets._instance = self
+        self._items: list[Preset] = []
+        "The list of presets."
+
+        self._config: Config = None
+        "The config instance."
+
+        self._default: list[Preset] = []
+        "The list of default presets."
 
         self._config = config or Config.get_instance()
 
         self._file: Path = Path(file) if file else Path(self._config.config_path).joinpath("presets.json")
+        "The path to the presets file."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -139,18 +135,19 @@ class Presets(metaclass=Singleton):
                 continue
 
     @staticmethod
-    def get_instance() -> "Presets":
+    def get_instance(file: str | Path | None = None, config: Config | None = None) -> "Presets":
         """
         Get the instance of the class.
+
+        Args:
+            file (str|Path|None): The path to the presets file.
+            config (Config|None): The config instance.
 
         Returns:
             Presets: The instance of the class
 
         """
-        if not Presets._instance:
-            Presets._instance = Presets()
-
-        return Presets._instance
+        return Presets(file=file, config=config)
 
     async def on_shutdown(self, _: web.Application):
         pass

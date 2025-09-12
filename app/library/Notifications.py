@@ -130,12 +130,6 @@ class NotificationEvents:
 
 
 class Notification(metaclass=Singleton):
-    _targets: list[Target] = []
-    """Notification targets to send events to."""
-
-    _instance = None
-    """The instance of the Notification class."""
-
     def __init__(
         self,
         file: str | None = None,
@@ -144,15 +138,23 @@ class Notification(metaclass=Singleton):
         config: Config | None = None,
         background_worker: BackgroundWorker | None = None,
     ):
-        Notification._instance = self
+        self._targets: list[Target] = []
+        "Notification targets to send events to."
+
         config: Config = config or Config.get_instance()
 
         self._debug: bool = config.debug
+        "Debug mode."
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
+        "File to store notification targets."
         self._client: httpx.AsyncClient = client or httpx.AsyncClient()
+        "HTTP client to send requests."
         self._encoder: Encoder = encoder or Encoder()
+        "Encoder to encode data."
         self._version: str = config.app_version
+        "Application version."
         self._offload: BackgroundWorker = background_worker or BackgroundWorker.get_instance()
+        "Background worker to offload tasks to."
 
         if self._file.exists() and "600" != self._file.stat().st_mode:
             try:
@@ -161,11 +163,19 @@ class Notification(metaclass=Singleton):
                 pass
 
     @staticmethod
-    def get_instance() -> "Notification":
-        if Notification._instance is None:
-            Notification._instance = Notification()
-
-        return Notification._instance
+    def get_instance(
+        file: str | None = None,
+        client: httpx.AsyncClient | None = None,
+        encoder: Encoder | None = None,
+        config: Config | None = None,
+        background_worker: BackgroundWorker | None = None,
+    ) -> "Notification":
+        """
+        Get the instance of the class.
+        """
+        return Notification(
+            file=file, client=client, encoder=encoder, config=config, background_worker=background_worker
+        )
 
     def attach(self, _: web.Application):
         """
