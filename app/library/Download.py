@@ -10,6 +10,7 @@ from copy import deepcopy
 from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
+from typing import Any
 
 import yt_dlp.utils
 
@@ -128,10 +129,10 @@ class Download:
         "Time when the download started."
         self.queue_time: datetime = datetime.now(tz=UTC)
         "Time when the download was queued."
-        self.logs = logs if logs else []
+        self.logs: list[str] = logs if logs else []
         "Logs from yt-dlp."
 
-    def _progress_hook(self, data: dict):
+    def _progress_hook(self, data: dict) -> None:
         if self.debug:
             d_copy: dict = deepcopy(data)
             for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
@@ -147,7 +148,7 @@ class Download:
             }
         )
 
-    def _postprocessor_hook(self, data: dict):
+    def _postprocessor_hook(self, data: dict) -> None:
         if self.debug:
             d_copy: dict = deepcopy(data)
             for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
@@ -159,7 +160,7 @@ class Download:
             if "__finaldir" in data.get("info_dict", {}) and "filepath" in data.get("info_dict", {}):
                 filename = str(Path(data["info_dict"]["__finaldir"]) / Path(data["info_dict"]["filepath"]).name)
             else:
-                filename = data.get("info_dict", {}).get("filepath", data.get("filename"))
+                filename: str | None = data.get("info_dict", {}).get("filepath", data.get("filename"))
 
             self.logger.debug(f"Final filename: '{filename}'.")
             self.status_queue.put({"id": self.id, "action": "moved", "status": "finished", "final_name": filename})
@@ -168,13 +169,13 @@ class Download:
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
         self.status_queue.put({"id": self.id, "action": "postprocessing", **dataDict, "status": "postprocessing"})
 
-    def post_hooks(self, filename: str | None = None):
+    def post_hooks(self, filename: str | None = None) -> None:
         if not filename:
             return
 
         self.status_queue.put({"id": self.id, "filename": filename})
 
-    def _download(self):
+    def _download(self) -> None:
         if not self._notify:
             self._notify = EventBus.get_instance()
 
@@ -227,11 +228,11 @@ class Download:
 
                     load_cookies(cookie_file)
                 except Exception as e:
-                    err_msg = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
+                    err_msg: str = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
                     self.logger.error(err_msg)
                     raise ValueError(err_msg) from e
 
-            # Safe-guard incase downloading take too long and the info expires.
+            # Safe-guard in-case downloading take too long and the info expires.
             if self.info_dict and isinstance(self.info_dict, dict) and self.download_info_expires > 0:
                 _ts: int | None = self.info_dict.get("epoch", self.info_dict.get("timestamp", None))
                 _ts = datetime.fromtimestamp(_ts, tz=UTC) if _ts else None
@@ -242,14 +243,14 @@ class Download:
             if not self.info_dict or not isinstance(self.info_dict, dict):
                 self.logger.info(f"Extracting info for '{self.info.url}'.")
                 self.logs = []
-                ie_params = params.copy()
+                ie_params: dict = params.copy()
                 ie_params["callback"] = {
                     "func": lambda _, msg: self.logs.append(msg),
                     "level": logging.WARNING,
                     "name": "callback-logger",
                 }
 
-                info = extract_info(
+                info: dict = extract_info(
                     config=params,
                     url=self.info.url,
                     debug=self.debug,
@@ -337,8 +338,8 @@ class Download:
             f'Task {self.info.name()} preset="{self.info.preset}" cookies="{bool(params.get("cookiefile"))}" completed.'
         )
 
-    async def start(self):
-        self.status_queue = Config.get_manager().Queue()
+    async def start(self) -> None:
+        self.status_queue: multiprocessing.Queue[Any] = Config.get_manager().Queue()
 
         # Create temp dir for each download.
         if not self.temp_disabled:
@@ -479,7 +480,7 @@ class Download:
 
         return False
 
-    def delete_temp(self, by_pass: bool = False):
+    def delete_temp(self, by_pass: bool = False) -> None:
         if self.temp_disabled or self.temp_keep is True or not self.temp_path:
             return
 
@@ -508,7 +509,7 @@ class Download:
         else:
             self.logger.info(f"Temp folder '{self.temp_path}' deletion is {'success' if status else 'failed'}.")
 
-    async def _process_status_update(self, status):
+    async def _process_status_update(self, status) -> None:
         if status.get("id") != self.id or len(status) < 2:
             self.logger.warning(f"Received invalid status update. {status}")
             return
@@ -587,7 +588,7 @@ class Download:
         if not self.final_update or fl:
             self._notify.emit(Events.ITEM_UPDATED, data=self.info)
 
-    async def progress_update(self):
+    async def progress_update(self) -> None:
         """
         Update status of download task and notify the client.
         """
@@ -638,11 +639,11 @@ class Download:
 
         return False
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
+    def __getstate__(self) -> dict[str, Any]:
+        state: dict[str, Any] = self.__dict__.copy()
 
         # Exclude (unpickleable) keys during pickling, this issue arise mostly on Windows.
-        excluded_keys = ("_notify",)
+        excluded_keys: tuple[str] = ("_notify",)
         for key in excluded_keys:
             if key in state:
                 state[key] = None

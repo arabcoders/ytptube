@@ -44,7 +44,7 @@ class YTDLPOpts:
             YTDLPOpts: The instance of the class
 
         """
-        if not args or len(args) < 2 or not isinstance(args, str):
+        if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
         try:
