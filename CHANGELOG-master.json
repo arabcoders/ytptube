@@ -1,8 +1,43 @@
 [
     {
-        "tag": "master-20250912-049b9a4e",
-        "date": "2025-09-12T00:02:03+00:00",
+        "tag": "master-20250912-2323739c",
+        "date": "2025-09-12T19:59:26+00:00",
         "commits": [
+            {
+                "sha": "393cc672",
+                "message": "More tests",
+                "author": "arabcoders",
+                "date": "2025-09-12T19:43:20+00:00",
+                "full_sha": "393cc6729c259f2bf65e17d8e7f28f009dc726d5"
+            },
+            {
+                "sha": "f490c781",
+                "message": "removed deprecated features and flags",
+                "author": "arabcoders",
+                "date": "2025-09-12T17:38:09+00:00",
+                "full_sha": "f490c781793f535488f1dea6f8ebcf1f87d9721d"
+            },
+            {
+                "sha": "669f70d9",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-09-12T16:34:12+00:00",
+                "full_sha": "669f70d9b8f536efa0a973055b2bdd8e5e70b3c8"
+            },
+            {
+                "sha": "5d1eed87",
+                "message": "updated tests",
+                "author": "arabcoders",
+                "date": "2025-09-12T14:09:02+00:00",
+                "full_sha": "5d1eed876bf5084ed8c85d4f8800391f1f72d1cd"
+            },
+            {
+                "sha": "63f6ca0c",
+                "message": "fixed last calls to emit that were awaiting",
+                "author": "arabcoders",
+                "date": "2025-09-12T08:45:22+00:00",
+                "full_sha": "63f6ca0cf4b0d94fef39e298b36c16c74934e58c"
+            },
             {
                 "sha": "2eba728d",
                 "message": "Refactor event handlers to be asynchronous across multiple modules",
@@ -1922,7 +1957,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "049b9a4e384cac4595099bb5f7d64b737ad2d01a"
+        "full_sha": "2323739c499e1df8b4bf06991dcefdf8d846e5ba"
     },
     {
         "tag": "master-20250616-c07465a6",
