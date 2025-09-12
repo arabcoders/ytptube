@@ -15,6 +15,14 @@ class Singleton(type):
             cls._instances[cls] = instance
         return cls._instances[cls]
 
+    def _reset_singleton(cls) -> None:
+        """
+        Clear the singleton instance for the class.
+        Useful for testing purposes.
+        """
+        if cls in cls._instances:
+            del cls._instances[cls]
+
 
 class ThreadSafe(type):
     """
@@ -30,3 +38,12 @@ class ThreadSafe(type):
                 instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
         return cls._instances[cls]
+
+    def _reset_singleton(cls) -> None:
+        """
+        Clear the singleton instance for the class.
+        Useful for testing purposes.
+        """
+        with cls._lock:
+            if cls in cls._instances:
+                del cls._instances[cls]
