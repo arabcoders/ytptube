@@ -168,6 +168,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "63f6ca0cf4b0d94fef39e298b36c16c74934e58c",
+    "date": "2025-09-12T08:45:22+00:00",
+    "commits": [
+      {
+        "sha": "63f6ca0c",
+        "full_sha": "63f6ca0cf4b0d94fef39e298b36c16c74934e58c",
+        "message": "fixed last calls to emit that were awaiting",
+        "author": "arabcoders",
+        "date": "2025-09-12T08:45:22+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.9.4",
     "full_sha": "2c7ba8e1848f69ad1177ef62fb864843af68629a",
     "date": "2025-09-03T21:02:29+00:00",
