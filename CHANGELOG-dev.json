@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20250911-3b10148d",
-        "date": "2025-09-11T19:57:27+00:00",
+        "tag": "dev-20250912-2eba728d",
+        "date": "2025-09-11T23:55:11+00:00",
         "commits": [
+            {
+                "sha": "2eba728d",
+                "message": "Refactor event handlers to be asynchronous across multiple modules",
+                "author": "arabcoders",
+                "date": "2025-09-11T23:55:11+00:00",
+                "full_sha": "2eba728dd2c51a437fe22e9a7ddcdaf6e443bde3"
+            },
+            {
+                "sha": "12768c0c",
+                "message": "update perms",
+                "author": "arabcoders",
+                "date": "2025-09-11T20:27:51+00:00",
+                "full_sha": "12768c0c82949e0b666bb4b5ac95d874b40bb424"
+            },
+            {
+                "sha": "75c3ef09",
+                "message": "vue-tsc to dev",
+                "author": "arabcoders",
+                "date": "2025-09-11T19:59:02+00:00",
+                "full_sha": "75c3ef09846fe94dfb59e5bc783173d2ebde1667"
+            },
             {
                 "sha": "3b10148d",
                 "message": "add eslint as dev dependency",
@@ -1901,7 +1922,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3b10148d4da4734f7cb91bd73c13f86710f32f21"
+        "full_sha": "2eba728dd2c51a437fe22e9a7ddcdaf6e443bde3"
     },
     {
         "tag": "dev-20250616-c07465a6",
