@@ -2,6 +2,7 @@ import logging
 import random
 import time
 from datetime import UTC, datetime
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
@@ -14,6 +15,7 @@ from app.library.cache import Cache
 from app.library.config import Config
 from app.library.router import route
 from app.library.Utils import validate_url
+from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
         Response: The response object.
 
     """
-    url = request.query.get("url")
+    url: str | None = request.query.get("url")
     if not url:
         return web.json_response(data={"error": "URL is required."}, status=web.HTTPForbidden.status_code)
 
@@ -43,14 +45,27 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
         return web.json_response(data={"error": str(e)}, status=web.HTTPForbidden.status_code)
 
     try:
-
-        ytdlp_args = config.get_ytdlp_args()
-        opts = {
-            "proxy": ytdlp_args.get("proxy", None),
+        ytdlp_args: dict = YTDLPOpts.get_instance().preset(name=config.default_preset).get_all()
+        opts: dict[str, Any] = {
             "headers": {
-                "User-Agent": ytdlp_args.get("user_agent", request.headers.get("User-Agent", random_user_agent())),
+                "User-Agent": request.headers.get("User-Agent", ytdlp_args.get("user_agent", random_user_agent())),
             },
         }
+
+        if proxy := ytdlp_args.get("proxy"):
+            opts["proxy"] = proxy
+
+        try:
+            from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
+
+            opts["transport"] = AsyncCurlTransport(
+                impersonate="chrome",
+                default_headers=True,
+                curl_options={CurlOpt.FRESH_CONNECT: True},
+            )
+            opts.pop("headers", None)
+        except Exception:
+            pass
 
         async with httpx.AsyncClient(**opts) as client:
             LOG.debug(f"Fetching thumbnail from '{url}'.")
@@ -115,13 +130,16 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                 },
             )
 
-        ytdlp_args = config.get_ytdlp_args()
-        opts = {
-            "proxy": ytdlp_args.get("proxy", None),
+        ytdlp_args: dict = YTDLPOpts.get_instance().preset(name=config.default_preset).get_all()
+        opts: dict[str, Any] = {
             "headers": {
-                "User-Agent": ytdlp_args.get("user_agent", random_user_agent()),
+                "User-Agent": request.headers.get("User-Agent", ytdlp_args.get("user_agent", random_user_agent())),
             },
         }
+
+        if proxy := ytdlp_args.get("proxy"):
+            opts["proxy"] = proxy
+
         try:
             from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
 
@@ -166,7 +184,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
                     status=web.HTTPInternalServerError.status_code,
                 )
 
-            data = {
+            data: dict[str, Any] = {
                 "content": response.content,
                 "backend": urlparse(backend).netloc,
                 "headers": {

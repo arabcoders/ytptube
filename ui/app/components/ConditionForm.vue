@@ -83,7 +83,8 @@
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp <code>[--match-filters]</code> logic.</span>
+                    <span>yt-dlp <code>--match-filters</code> logic with <code>OR</code>, <code>||</code>
+                      support.</span>
                   </span>
                 </div>
               </div>
@@ -211,7 +212,7 @@
                     </div>
                   </div>
                 </div>
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>The url to test the filter against.</span>
                 </span>
@@ -226,9 +227,10 @@
                   <input type="text" class="input" id="filter" v-model="form.filter" :disabled="test_data.in_progress"
                     placeholder="availability = 'needs_auth' & channel_id = 'channel_id'" required>
                 </div>
-                <span class="help">
+                <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>The yt-dlp <code>[--match-filters]</code> filter logic.</span><br>
+                  <span>yt-dlp <code>--match-filters</code> logic with <code>OR</code>, <code>||</code>
+                    support.</span>
                 </span>
               </div>
 

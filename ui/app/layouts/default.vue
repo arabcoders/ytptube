@@ -24,9 +24,8 @@
       </div>
 
       <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
-        <div class="navbar-start" v-if="!config.app.basic_mode">
-          <NuxtLink class="navbar-item" to="/browser" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            v-if="config.app.browser_enabled">
+        <div class="navbar-start">
+          <NuxtLink class="navbar-item" to="/browser" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
             <span>Files</span>
           </NuxtLink>
@@ -55,7 +54,7 @@
 
         </div>
         <div class="navbar-end">
-          <div class="navbar-item has-dropdown" v-if="!config.app.basic_mode">
+          <div class="navbar-item has-dropdown">
             <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
               <span class="icon"><i class="fas fa-tools" /></span>
               <span>Other</span>

@@ -14,20 +14,14 @@ type AppConfig = {
   ytdlp_version: string
   /** Maximum number of concurrent download workers */
   max_workers: number
-  /** Indicates if the app is in basic mode, which may limit some features */
-  basic_mode: boolean
   /** Default preset name, e.g. "default" */
   default_preset: string
   /** Instance title for the app, null if not set */
   instance_title: string | null
   /** Indicates if the console is enabled */
   console_enabled: boolean
-  /** Indicates if the file browser is enabled */
-  browser_enabled: boolean
   /** Indicates if the file browser control is enabled */
   browser_control_enabled: boolean
-  /** Command options for yt-dlp */
-  ytdlp_cli: string
   /** Indicates if file logging is enabled */
   file_logging: boolean
   /** Indicates if the app is running in a native environment (e.g., Electron) */

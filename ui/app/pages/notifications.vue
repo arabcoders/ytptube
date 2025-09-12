@@ -221,7 +221,6 @@ import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
 
 const toast = useNotification()
-const config = useConfigStore()
 const socket = useSocketStore()
 const box = useConfirm()
 const display_style = useStorage<string>("tasks_display_style", "cards")
@@ -243,13 +242,6 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
-
-watch(() => config.app.basic_mode, async v => {
-  if (!config.isLoaded() || !v) {
-    return
-  }
-  await navigateTo('/')
-}, { immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {

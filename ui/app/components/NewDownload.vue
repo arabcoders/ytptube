@@ -25,7 +25,7 @@
               </div>
             </div>
 
-            <div class="column is-4-tablet is-12-mobile" v-if="!config.app.basic_mode">
+            <div class="column is-4-tablet is-12-mobile">
               <div class="field has-addons">
                 <div class="control" @click="show_description = !show_description">
                   <label class="button is-static">
@@ -54,7 +54,7 @@
               </div>
             </div>
 
-            <div class="column is-6-tablet is-12-mobile" v-if="!config.app.basic_mode">
+            <div class="column is-6-tablet is-12-mobile">
               <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
                 <div class="control">
                   <label class="button is-static">
@@ -70,7 +70,7 @@
               </div>
             </div>
 
-            <div class="column" v-if="!config.app.basic_mode">
+            <div class="column">
               <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
                 :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
@@ -79,7 +79,7 @@
             </div>
 
             <div class="column is-12"
-              v-if="show_description && !config.app.basic_mode && !hasFormatInConfig && get_preset(form.preset)?.description">
+              v-if="show_description && !hasFormatInConfig && get_preset(form.preset)?.description">
               <div class="is-overflow-auto" style="max-height: 150px;">
                 <div class="is-ellipsis is-clickable" @click="expand_description">
                   <span class="icon"><i class="fa-solid fa-info" /></span> {{ get_preset(form.preset)?.description }}
@@ -88,7 +88,7 @@
             </div>
           </div>
 
-          <div class="columns is-multiline is-mobile" v-if="showAdvanced && !config.app.basic_mode">
+          <div class="columns is-multiline is-mobile" v-if="showAdvanced">
             <div class="column is-3-tablet is-12-mobile">
               <DLInput id="force_download" type="bool" label="Force download"
                 v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
@@ -137,7 +137,7 @@
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <DLInput id="ytdlpCookies" type="text" label="Cookies for yt-dlp" v-model="form.cookies"
+              <DLInput id="ytdlpCookies" type="text" label="Cookies" v-model="form.cookies"
                 icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress"
                 :placeholder="getDefault('cookies', '')">
                 <template #help>
@@ -290,37 +290,35 @@ const addDownload = async () => {
     return false;
   }
 
-  if (false === config.app.basic_mode) {
-    if (dlFields.value && Object.keys(dlFields.value).length > 0) {
-      const joined = []
-      for (const [key, value] of Object.entries(dlFields.value)) {
-        if (false === is_valid(key)) {
-          continue
-        }
-
-        if ([undefined, null, '', false].includes(value as any)) {
-          continue
-        }
-
-        const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
-        if (form_cli && keyRegex.test(form_cli)) {
-          continue;
-        }
-
-        joined.push(true === value ? `${key}` : `${key} ${value}`)
+  if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+    const joined = []
+    for (const [key, value] of Object.entries(dlFields.value)) {
+      if (false === is_valid(key)) {
+        continue
       }
 
-      if (joined.length > 0) {
-        form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+      if ([undefined, null, '', false].includes(value as any)) {
+        continue
       }
 
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
+      if (form_cli && keyRegex.test(form_cli)) {
+        continue;
+      }
+
+      joined.push(true === value ? `${key}` : `${key} ${value}`)
     }
 
-    if (form_cli && form_cli.trim()) {
-      const options = await convertOptions(form_cli)
-      if (null === options) {
-        return
-      }
+    if (joined.length > 0) {
+      form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+    }
+
+  }
+
+  if (form_cli && form_cli.trim()) {
+    const options = await convertOptions(form_cli)
+    if (null === options) {
+      return
     }
   }
 
@@ -333,12 +331,12 @@ const addDownload = async () => {
 
     const data = {
       url: url,
-      preset: config.app.basic_mode ? config.app.default_preset : form.value.preset,
-      folder: config.app.basic_mode ? null : form.value.folder,
-      template: config.app.basic_mode ? null : form.value.template,
-      cookies: config.app.basic_mode ? '' : form.value.cookies,
-      cli: config.app.basic_mode ? null : form_cli,
-      auto_start: config.app.basic_mode ? true : auto_start.value
+      preset: form.value.preset || config.app.default_preset,
+      folder: form.value.folder,
+      template: form.value.template,
+      cookies: form.value.cookies,
+      cli: form_cli,
+      auto_start: auto_start.value
     } as item_request
 
     if (form.value?.extras && Object.keys(form.value.extras).length > 0) {

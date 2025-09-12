@@ -26,7 +26,7 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
 * Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide)
 * Automatic updates for `yt-dlp` and custom `pip` packages.
-* Conditions feature.
+* Conditions feature to apply custom options based on `yt-dlp` returned info.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
 * A bundled executable version for Windows, macOS and Linux. `For non-docker users`.
 

@@ -11,13 +11,10 @@ export const useConfigStore = defineStore('config', () => {
       output_template: '',
       ytdlp_version: '',
       max_workers: 1,
-      basic_mode: true,
       default_preset: 'default',
       instance_title: null,
       console_enabled: false,
-      browser_enabled: false,
       browser_control_enabled: false,
-      ytdlp_cli: '',
       file_logging: false,
       is_native: false,
       app_version: '',
@@ -30,7 +27,7 @@ export const useConfigStore = defineStore('config', () => {
     presets: [
       {
         'name': 'default',
-        'description': 'Default preset for downloads',
+        'description': 'Default preset',
         'folder': '',
         'template': '',
         'cookies': '',

@@ -24,7 +24,7 @@
               </button>
             </p>
 
-            <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
+            <p class="control">
               <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused">
                 <span class="icon"><i class="fas fa-pause" /></span>
                 <span v-if="!isMobile">Pause</span>
@@ -35,7 +35,7 @@
               </button>
             </p>
 
-            <p class="control" v-if="!config.app.basic_mode && false === config.app.basic_mode">
+            <p class="control">
               <button class="button is-primary has-tooltip-bottom" @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
                 <span v-if="!isMobile">New Download</span>
@@ -62,54 +62,7 @@
       </div>
     </div>
 
-    <div v-if="config.is_loaded" class="columns is-multiline">
-      <div class="column is-12">
-        <DeprecatedNotice :version="config.app.app_version" title="Deprecation Notice" tone="warning"
-          icon="fas fa-exclamation-triangle fa-fade fa-spin-10">
-          <p>
-            The following environment variables and features are deprecated and will be removed in
-            <strong class="has-text-danger">v0.10.x</strong>
-          </p>
-          <ul>
-            <li>
-              The following ENVs <strong>YTP_KEEP_ARCHIVE</strong> and <strong>YTP_SOCKET_TIMEOUT</strong> will be
-              removed.
-              Their behavior will be part of the <strong>default presets</strong>. To keep your current behavior
-              <strong>and avoid re-downloading</strong>, please add the following <strong>Command options for
-                yt-dlp</strong> to your presets:
-              <code>--socket-timeout 30 --download-archive %(config_path)s/archive.log</code>
-            </li>
-            <li>
-              The global yt-dlp config file <strong>/config/ytdlp.cli</strong> will be removed. Please migrate to
-              presets.
-            </li>
-            <li>The <strong>archive.manual.log</strong> feature has been removed.</li>
-          </ul>
-          <p>
-            These changes help reduce confusion from multiple sources of truth. Going forward, <strong>presets</strong>
-            and the <strong>Command options for yt-dlp</strong> will be the single source of truth.
-          </p>
-          <p>
-            Notable changes in <strong>v0.10.x</strong>:
-          </p>
-          <ul>
-            <li>
-              The file browser feature is going to be enabled by default. and the associated ENV
-              <strong>YTP_BROWSER_ENABLED</strong> will be removed, <strong>YTP_BROWSER_CONTROL_ENABLED</strong> will
-              remain and
-              will default to <strong>false</strong>.
-            </li>
-            <li>
-              The <strong>Basic mode</strong> (which limited the interface to just the new download form) along it's
-              associated ENV <strong>YTP_BASIC_MODE</strong> is being removed. Everything except what is available
-              behind configurable flag will become part of the standard interface.
-            </li>
-          </ul>
-        </DeprecatedNotice>
-      </div>
-    </div>
-
-    <NewDownload v-if="config.showForm || config.app.basic_mode"
+    <NewDownload v-if="config.showForm"
       @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
       :item="item_form" @clear_form="item_form = {}" />
     <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
@@ -128,7 +81,6 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import DeprecatedNotice from '~/components/DeprecatedNotice.vue'
 import type { item_request } from '~/types/item'
 import type { StoreItem } from '~/types/store'
 

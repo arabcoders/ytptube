@@ -147,19 +147,17 @@
                       </NuxtLink>
                     </template>
 
-                    <template v-if="!config.app.basic_mode">
-                      <hr class="dropdown-divider" />
+                    <hr class="dropdown-divider" />
 
-                      <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
-                        <span class="icon"><i class="fa-solid fa-info" /></span>
-                        <span>yt-dlp Information</span>
-                      </NuxtLink>
+                    <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
+                      <span class="icon"><i class="fa-solid fa-info" /></span>
+                      <span>yt-dlp Information</span>
+                    </NuxtLink>
 
-                      <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
-                        <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                        <span>Local Information</span>
-                      </NuxtLink>
-                    </template>
+                    <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                      <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                      <span>Local Information</span>
+                    </NuxtLink>
                   </Dropdown>
                 </td>
               </tr>
@@ -272,17 +270,15 @@
                       <span class="icon"><i class="fa-solid fa-play" /></span>
                       <span>Play video</span>
                     </NuxtLink>
-                    <hr class="dropdown-divider" v-if="!config.app.basic_mode" />
+                    <hr class="dropdown-divider" />
                   </template>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)"
-                    v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>yt-dlp Information</span>
                   </NuxtLink>
 
-                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)"
-                    v-if="!config.app.basic_mode">
+                  <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
                     <span class="icon"><i class="fa-solid fa-info-circle" /></span>
                     <span>Local Information</span>
                   </NuxtLink>

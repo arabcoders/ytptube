@@ -150,9 +150,6 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             }
             return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
-        if ytdlp_proxy := config.get_ytdlp_args().get("proxy", None):
-            opts = opts.add({"proxy": ytdlp_proxy})
-
         logs: list = []
 
         ytdlp_opts: dict = {
@@ -203,13 +200,14 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             "expires": time.time() + 300,
         }
 
-        is_archived = False
-        if (archive_file := ytdlp_opts.get("download_archive")) and (
-            archive_id := get_archive_id(url=url).get("archive_id")
-        ):
-            is_archived: bool = len(archive_read(archive_file, [archive_id])) > 0
+        data["is_archived"] = False
 
-        data["is_archived"] = is_archived
+        archive_file: str | None = ytdlp_opts.get("download_archive")
+        data["archive_file"] = archive_file if archive_file else None
+
+        if archive_file and (archive_id := get_archive_id(url=url).get("archive_id")):
+            data["archive_id"] = archive_id
+            data["is_archived"] = len(archive_read(archive_file, [archive_id])) > 0
 
         data = OrderedDict(sorted(data.items(), key=lambda item: len(str(item[1]))))
 

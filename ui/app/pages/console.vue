@@ -81,13 +81,6 @@ watch(() => isLoading.value, async value => {
   focusInput()
 }, { immediate: true })
 
-watch(() => config.app.basic_mode, async () => {
-  if (!config.isLoaded() || !config.app.basic_mode) {
-    return
-  }
-  await navigateTo('/')
-}, { immediate: true })
-
 watch(() => config.app.console_enabled, async () => {
   if (config.app.console_enabled) {
     return
@@ -108,7 +101,7 @@ const runCommand = async () => {
     return
   }
 
-  if (config.app.basic_mode || !config.app.console_enabled) {
+  if (true !== config.app.console_enabled) {
     await navigateTo('/')
     toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
     return
@@ -182,13 +175,6 @@ const writer = (s: string) => {
 }
 
 const loader = () => isLoading.value = false
-
-watch(() => config.app.basic_mode, async () => {
-  if (!config.app.basic_mode) {
-    return
-  }
-  await navigateTo('/')
-})
 
 onMounted(async () => {
   document.addEventListener('resize', handle_event);

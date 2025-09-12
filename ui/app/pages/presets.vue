@@ -39,8 +39,8 @@
           </div>
         </div>
         <div class="is-hidden-mobile">
-          <span class="subtitle">Custom presets. The presets are simply pre-defined yt-dlp settings
-            that you want to apply to given download.</span>
+          <span class="subtitle">Presets are pre-defined command options for yt-dlp that you want to apply to given
+            download.</span>
         </div>
       </div>
     </div>
@@ -192,16 +192,7 @@
         <div class="column is-12">
           <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
             <ul>
-              <li>
-                When you export preset, it doesn't include <code>Cookies</code> field for security reasons.
-              </li>
-              <li>
-                If you have created a global <code>config/ytdlp.cli</code> file, it will be appended to your exported
-                preset
-                <code><i class="fa-solid fa-terminal" /> Command options for yt-dlp</code> field for better
-                compatibility
-                and completeness.
-              </li>
+              <li>When you export preset, it doesn't include <code>Cookies</code> field for security reasons.</li>
             </ul>
           </Message>
         </div>
@@ -232,13 +223,6 @@ const addInProgress = ref(false)
 const remove_keys = ['raw', 'toggle_description']
 
 const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
-
-watch(() => config.app.basic_mode, async v => {
-  if (!config.isLoaded() || !v) {
-    return
-  }
-  await navigateTo('/')
-}, { immediate: true })
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
@@ -389,11 +373,6 @@ const exportItem = (item: Preset) => {
     if (data[key]) {
       userData[key] = data[key]
     }
-  }
-
-  if (config?.app?.ytdlp_cli) {
-    const val = `# exported from ytdlp.cli #\n${config.app.ytdlp_cli}\n# exported from ytdlp.cli #\n`
-    userData.cli = userData.cli ? val + '\n' + userData.cli : val
   }
 
   userData['_type'] = 'preset'

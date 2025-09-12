@@ -489,9 +489,7 @@ class Download:
             and self.info.downloaded_bytes
             and self.info.downloaded_bytes > 0
         ):
-            self.logger.warning(
-                f"Keeping temp folder '{self.temp_path}', as the reported status is not finished '{self.info.status}'."
-            )
+            self.logger.warning(f"Keeping temp folder '{self.temp_path}'. {self.info.status=}.")
             return
 
         tmp_dir = Path(self.temp_path)

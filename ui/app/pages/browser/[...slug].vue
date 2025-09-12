@@ -49,9 +49,6 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
-          <span class="subtitle">Files Browser</span>
-        </div>
       </div>
     </div>
 
@@ -278,14 +275,6 @@ watch(masterSelectAll, v => {
   }
 })
 
-watch(() => config.app.basic_mode, async v => {
-  if (!config.isLoaded() || !v) {
-    return
-  }
-  await navigateTo('/')
-}, { immediate: true })
-
-
 const filteredItems = computed<FileItem[]>(() => {
   if (!search.value) {
     return sortedItems(items.value)
@@ -334,20 +323,6 @@ const sortedItems = (items: FileItem[]): FileItem[] => {
 
 const model_item = ref<any>()
 const closeModel = (): void => { model_item.value = null }
-
-watch(() => config.app.basic_mode, async () => {
-  if (!config.app.basic_mode) {
-    return
-  }
-  await navigateTo('/')
-})
-
-watch(() => config.app.browser_enabled, async () => {
-  if (config.app.browser_enabled) {
-    return
-  }
-  await navigateTo('/')
-})
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {

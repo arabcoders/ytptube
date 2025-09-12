@@ -152,9 +152,6 @@ class YTDLPOpts:
             self._item_cli = []
 
         merge: list[str] = []
-        if self._config._ytdlp_cli_mutable and len(self._config._ytdlp_cli_mutable) > 1:
-            merge.append(self._config._ytdlp_cli_mutable)
-
         if self._preset_cli and len(self._preset_cli) > 1:
             merge.append(self._preset_cli)
 
