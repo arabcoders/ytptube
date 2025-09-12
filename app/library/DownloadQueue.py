@@ -639,7 +639,7 @@ class DownloadQueue(metaclass=Singleton):
                 item.template = _preset.template
 
         yt_conf = {}
-        cookie_file = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
+        cookie_file: Path = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
 
         LOG.info(f"Adding '{item.__repr__()}'.")
 
@@ -780,16 +780,12 @@ class DownloadQueue(metaclass=Singleton):
                         self.done.put(dlInfo)
 
                     LOG.info(log_message)
-                    await asyncio.gather(
-                        *[
-                            self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message),
-                            self._notify.emit(
-                                Events.ITEM_MOVED,
-                                data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
-                                title="Download History Update",
-                                message=f"Download history updated with '{item.url}'.",
-                            ),
-                        ]
+                    self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message)
+                    self._notify.emit(
+                        Events.ITEM_MOVED,
+                        data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                        title="Download History Update",
+                        message=f"Download history updated with '{item.url}'.",
                     )
                     return {"status": "ok"}
 

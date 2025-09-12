@@ -431,23 +431,18 @@ class Tasks(metaclass=Singleton):
             timeNow = datetime.now(UTC).isoformat()
             ended: float = time.time()
             LOG.info(f"Task '{task.name}' completed at '{timeNow}' took '{ended - started:.2f}' seconds.")
-
-            _tasks = [
-                self._notify.emit(
-                    Events.TASK_DISPATCHED,
-                    data={**status, "preset": task.preset} if status else {"preset": task.preset},
-                    title=f"Task '{task.name}' dispatched",
-                    message=f"Task '{task.name}' dispatched at '{timeNow}'.",
-                ),
-                self._notify.emit(
-                    Events.LOG_SUCCESS,
-                    data={"preset": task.preset, "lowPriority": True},
-                    title="Task completed",
-                    message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
-                ),
-            ]
-
-            await asyncio.gather(*_tasks)
+            self._notify.emit(
+                Events.TASK_DISPATCHED,
+                data={**status, "preset": task.preset} if status else {"preset": task.preset},
+                title=f"Task '{task.name}' dispatched",
+                message=f"Task '{task.name}' dispatched at '{timeNow}'.",
+            )
+            self._notify.emit(
+                Events.LOG_SUCCESS,
+                data={"preset": task.preset, "lowPriority": True},
+                title="Task completed",
+                message=f"Task '{task.name}' completed in '{ended - started:.2f}'.",
+            )
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
             self._notify.emit(
