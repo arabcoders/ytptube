@@ -1,4 +1,4 @@
-name: Build Native wrappers
+name: native-build
 
 on:
   workflow_dispatch:

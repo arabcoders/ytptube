@@ -1,4 +1,4 @@
-name: Build Docker Containers
+name: build-docker-containers
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ env:
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
   PNPM_VERSION: 10
   NODE_VERSION: 20
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.13"
 
 jobs:
   test:
@@ -107,7 +107,6 @@ jobs:
         working-directory: ui
         run: pnpm run generate
 
-      # Generate changelog and version files
       - name: Install GitPython
         run: pip install gitpython
 
@@ -115,26 +114,6 @@ jobs:
         run: |
           python3 .github/scripts/generate_changelog.py -p . -f ./ui/exported/CHANGELOG.json
 
-      - name: Update app/library/version.py
-        run: |
-          VERSION="${GITHUB_REF##*/}"
-          SHA=$(git rev-parse HEAD)
-          DATE=$(date -u +"%Y%m%d")
-          BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')
-
-          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
-          echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
-          echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
-
-          sed -i \
-            -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
-            -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
-            -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
-            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
-            app/library/version.py
-
-      # Upload built frontend as artifact for docker builds
       - name: Upload frontend build
         uses: actions/upload-artifact@v4
         with:
@@ -169,6 +148,28 @@ jobs:
         with:
           name: frontend-build
           path: ui/exported/
+
+      - name: Update app/library/version.py
+        run: |
+          VERSION="${GITHUB_REF##*/}"
+          SHA=$(git rev-parse HEAD)
+          DATE=$(date -u +"%Y%m%d")
+          BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')
+
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
+          echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
+          echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+          
+          sed -i \
+            -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
+            -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
+            -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
+            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
+            app/library/version.py
+
+          echo "Updated version info:"
+          cat app/library/version.py
 
       - name: Docker meta
         id: meta

@@ -1,4 +1,4 @@
-name: delete builds
+name: delete-builds
 
 on:
   workflow_dispatch:
