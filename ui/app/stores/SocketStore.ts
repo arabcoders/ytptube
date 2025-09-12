@@ -1,6 +1,4 @@
-import { io } from "socket.io-client";
-import type { Socket as IOSocket, SocketOptions } from "socket.io-client"
-import type { ManagerOptions } from "socket.io-client";
+import { io, type Socket as IOSocket, type SocketOptions, type ManagerOptions } from "socket.io-client"
 import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
 
@@ -29,7 +27,7 @@ export const useSocketStore = defineStore('socket', () => {
   }
 
   const connect = () => {
-    let opts = {
+    const opts = {
       transports: ['websocket', 'polling'],
       withCredentials: true,
     } as Partial<ManagerOptions & SocketOptions>

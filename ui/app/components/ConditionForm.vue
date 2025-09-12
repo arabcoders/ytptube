@@ -99,7 +99,7 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are
+                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all options are
                       supported <NuxtLink target="_blank"
                         to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
                         are ignored</NuxtLink>. Use with caution.
@@ -454,7 +454,9 @@ const logic_test = computed(() => {
   }
 
   try {
-    return match_str(form.filter, test_data.value.data.data, true)
+    const st = match_str(form.filter, test_data.value.data.data)
+    console.log('Logic test:', st, form.filter, test_data.value.data.data)
+    return st
   } catch (e: any) {
     console.error(e)
     return false
@@ -503,7 +505,8 @@ const addExtra = (): void => {
 }
 
 const removeExtra = (key: string): void => {
-  delete form.extras[key]
+  const { [key]: _, ...rest } = form.extras
+  form.extras = rest
 }
 
 const updateExtraKey = (event: Event, oldKey: string): void => {
@@ -528,8 +531,8 @@ const updateExtraKey = (event: Event, oldKey: string): void => {
     }
 
     const value = form.extras[oldKey]
-    delete form.extras[oldKey]
-    form.extras[newKey] = value
+    const { [oldKey]: _, ...rest } = form.extras
+    form.extras = { ...rest, [newKey]: value }
   }
 }
 

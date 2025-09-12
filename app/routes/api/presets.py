@@ -96,5 +96,5 @@ async def presets_add(request: Request, encoder: Encoder, notify: EventBus) -> R
             status=web.HTTPInternalServerError.status_code,
         )
 
-    await notify.emit(Events.PRESETS_UPDATE, data=presets)
+    notify.emit(Events.PRESETS_UPDATE, data=presets)
     return web.json_response(data=presets, status=web.HTTPOk.status_code, dumps=encoder.encode)

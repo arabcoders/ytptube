@@ -427,7 +427,6 @@ const setStatus = (item: StoreItem): string => {
     return 'Streaming'
   }
   if ('preparing' === item.status) {
-    // @ts-ignore
     return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..'
   }
   if (!item.status) {
@@ -494,7 +493,6 @@ const updateProgress = (item: StoreItem): string => {
     return 'Post-processors are running.'
   }
   if ('preparing' === item.status) {
-    // @ts-ignore
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
   }
   if (null != item.status) {
@@ -547,7 +545,7 @@ const startItems = async () => {
   if (1 > selectedElms.value.length) {
     return
   }
-  let filtered: string[] = []
+  const filtered: string[] = []
   selectedElms.value.forEach(id => {
     const item = stateStore.get('queue', id) as StoreItem
     if (item && !item.auto_start && !item.status) {
@@ -569,7 +567,7 @@ const pauseSelected = async () => {
   if (1 > selectedElms.value.length) {
     return
   }
-  let filtered: string[] = []
+  const filtered: string[] = []
   selectedElms.value.forEach(id => {
     const item = stateStore.get('queue', id) as StoreItem
     if (item && item.auto_start && !item.status) {
@@ -589,7 +587,9 @@ const pauseSelected = async () => {
 
 const pImg = (e: Event) => {
   const target = e.target as HTMLImageElement
-  target.naturalHeight > target.naturalWidth ? target.classList.add('image-portrait') : null
+  if (target.naturalHeight > target.naturalWidth) {
+    target.classList.add('image-portrait')
+  }
 }
 
 watch(embed_url, v => {

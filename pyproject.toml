@@ -79,9 +79,7 @@ indent-width = 4
 target-version = "py311"
 
 [project.optional-dependencies]
-installer = [
-  "pyinstaller",
-]
+installer = ["pyinstaller"]
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
@@ -92,6 +90,9 @@ installer = [
 select = [
   "ALL", # include all the rules, including new ones
 ]
+# Ignore some rules in test files.
+per-file-ignores = { "test_*.py" = ["D"] }
+
 ignore = [
   #### modules
   "ANN", # flake8-annotations
@@ -159,6 +160,7 @@ ignore = [
   "LOG015",
   "PLC0415",
   "S603",
+  "D203",
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -200,3 +202,11 @@ docstring-code-line-length = "dynamic"
 
 [tool.uv]
 link-mode = "copy"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["app/tests"]
+addopts = "-v --tb=short"
+
+[dependency-groups]
+dev = ["pytest>=8.4.2", "pytest-asyncio>=1.1.0", "ruff>=0.13.0"]

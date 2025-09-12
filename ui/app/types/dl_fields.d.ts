@@ -20,7 +20,7 @@ type DLField = {
   icon?: string;
 
   /** The order of the field, used to sort the fields in the UI. */
-  order: number = 1;
+  order: number;
 
   /** The default value of the field, It's currently unused */
   value: string;

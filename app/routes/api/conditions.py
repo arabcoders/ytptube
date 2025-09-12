@@ -10,6 +10,7 @@ from app.library.conditions import Condition, Conditions
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.mini_filter import match_str
 from app.library.router import route
 from app.library.Utils import extract_info, init_class, validate_uuid
 from app.library.YTDLPOpts import YTDLPOpts
@@ -113,7 +114,7 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
             status=web.HTTPInternalServerError.status_code,
         )
 
-    await notify.emit(Events.CONDITIONS_UPDATE, data=items)
+    notify.emit(Events.CONDITIONS_UPDATE, data=items)
     return web.json_response(data=items, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
@@ -181,8 +182,6 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         )
 
     try:
-        from yt_dlp.utils import match_str
-
         status = match_str(cond, data)
     except Exception as e:
         LOG.exception(e)

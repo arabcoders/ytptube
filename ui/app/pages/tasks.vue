@@ -394,7 +394,7 @@ const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const tasks = ref<Array<task_item>>([])
-const task = ref<task_item | Object>({})
+const task = ref<task_item | Record<string, unknown>>({})
 const taskRef = ref<string>('')
 const toggleForm = ref<boolean>(false)
 const isLoading = ref<boolean>(true)
@@ -409,7 +409,7 @@ const table_container = ref(false)
 const reset_dialog = () => ({
   visible: false,
   title: 'Confirm Action',
-  confirm: (opts: any) => { },
+  confirm: (_opts: any) => { },
   message: '',
   html_message: '',
   options: [],
@@ -649,7 +649,7 @@ onMounted(async () => {
 const tryParse = (expression: string) => {
   try {
     return moment(CronExpressionParser.parse(expression).next().toISOString()).fromNow()
-  } catch (e) {
+  } catch {
     return "Invalid"
   }
 }
@@ -706,7 +706,7 @@ const runNow = async (item: task_item, mass: boolean = false) => {
     item.in_progress = true
   }
 
-  let data = {
+  const data = {
     url: item.url,
     preset: item.preset,
   } as task_item
@@ -754,7 +754,7 @@ const statusHandler = async (stream: string) => {
 const exportItem = async (item: task_item) => {
   const info = JSON.parse(JSON.stringify(item))
 
-  let data = {
+  const data = {
     name: info.name,
     url: info.url,
     preset: info.preset,
@@ -780,7 +780,7 @@ const exportItem = async (item: task_item) => {
 const get_tags = (name: string): Array<string> => {
   const regex = /\[(.*?)\]/g;
   const matches = name.match(regex);
-  return !matches ? [] : matches.map(tag => tag.replace(/[\[\]]/g, '').trim());
+  return !matches ? [] : matches.map(tag => tag.replace(/[[\]]/g, '').trim());
 }
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();

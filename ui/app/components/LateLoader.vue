@@ -29,8 +29,9 @@ function onIdle(cb: () => void): void {
   }
 }
 
-const { stop } = useIntersectionObserver(targetEl, ([{ isIntersecting }]) => {
-  if (isIntersecting) {
+const { stop } = useIntersectionObserver(targetEl, (entries) => {
+  const entry = entries[0]
+  if (entry?.isIntersecting) {
     if (unrenderTimer) clearTimeout(unrenderTimer)
 
     renderTimer = setTimeout(() => { shouldRender.value = true }, props.unrender ? 200 : 0)

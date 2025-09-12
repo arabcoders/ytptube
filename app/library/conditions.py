@@ -10,6 +10,7 @@ from aiohttp import web
 from .config import Config
 from .encoder import Encoder
 from .Events import EventBus, Events
+from .mini_filter import match_str
 from .Singleton import Singleton
 from .Utils import arg_converter, init_class
 
@@ -67,7 +68,7 @@ class Conditions(metaclass=Singleton):
             except Exception:
                 pass
 
-        def event_handler(_, __):
+        async def event_handler(_, __):
             msg = "Not implemented"
             raise Exception(msg)
 
@@ -183,8 +184,6 @@ class Conditions(metaclass=Singleton):
             bool: True if valid, False otherwise.
 
         """
-        from yt_dlp.utils import match_str
-
         if not isinstance(item, dict):
             if not isinstance(item, Condition):
                 msg = f"Unexpected '{type(item).__name__}' item type."
@@ -306,8 +305,6 @@ class Conditions(metaclass=Singleton):
         if len(self._items) < 1 or not info or not isinstance(info, dict) or len(info) < 1:
             return None
 
-        from yt_dlp.utils import match_str
-
         for item in self.get_all():
             if not item.filter:
                 LOG.error(f"Filter is empty for '{item.name}'.")
@@ -342,7 +339,5 @@ class Conditions(metaclass=Singleton):
         item = self.get(name)
         if not item or not item.filter:
             return None
-
-        from yt_dlp.utils import match_str
 
         return item if match_str(item.filter, info) else None

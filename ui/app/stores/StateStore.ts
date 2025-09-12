@@ -22,7 +22,8 @@ export const useStateStore = defineStore('state', () => {
 
   const remove = (type: StateType, key: KeyType): void => {
     if (state[type][key]) {
-      delete state[type][key]
+      const { [key]: _, ...rest } = state[type]
+      state[type] = rest
     }
   }
 
@@ -45,7 +46,8 @@ export const useStateStore = defineStore('state', () => {
   const move = (fromType: StateType, toType: StateType, key: KeyType): void => {
     if (state[fromType][key]) {
       state[toType][key] = state[fromType][key]
-      delete state[fromType][key]
+      const { [key]: _, ...rest } = state[fromType]
+      state[fromType] = rest
     }
   }
 

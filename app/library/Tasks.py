@@ -193,11 +193,12 @@ class Tasks(metaclass=Singleton):
 
         """
         self.load()
-        self._notify.subscribe(
-            Events.TASKS_ADD,
-            lambda data, _, **kwargs: self.save(**data.data),  # noqa: ARG005
-            f"{__class__.__name__}.add",
-        )
+
+        async def event_handler(data, _):
+            if data and data.data:
+                self.save(data.data)
+
+        self._notify.subscribe(Events.TASKS_ADD, event_handler, f"{__class__.__name__}.add")
         self._task_handler.load()
 
     def get_all(self) -> list[Task]:
@@ -449,7 +450,7 @@ class Tasks(metaclass=Singleton):
             await asyncio.gather(*_tasks)
         except Exception as e:
             LOG.error(f"Failed to execute '{task.name}' at '{timeNow}'. '{e!s}'.")
-            await self._notify.emit(
+            self._notify.emit(
                 Events.LOG_ERROR,
                 data={"preset": task.preset},
                 title="Task failed",

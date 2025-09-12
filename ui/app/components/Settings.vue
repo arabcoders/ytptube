@@ -144,6 +144,7 @@ import { useStorage } from '@vueuse/core'
 import { POSITION } from 'vue-toastification'
 
 defineProps<{ isLoading: boolean }>()
+defineEmits<{ (e: 'reload_bg'): void }>()
 
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)

@@ -154,7 +154,7 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are
+                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all options are
                       supported <NuxtLink target="_blank"
                         to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
                         are ignored</NuxtLink>. Use with caution.

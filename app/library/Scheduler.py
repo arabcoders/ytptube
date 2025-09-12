@@ -26,11 +26,11 @@ class Scheduler(metaclass=Singleton):
 
         self._loop = loop or asyncio.get_event_loop()
 
-        EventBus.get_instance().subscribe(
-            Events.SCHEDULE_ADD,
-            lambda data, _, **kwargs: self.add(**data.data),  # noqa: ARG005
-            f"{__class__.__name__}.add",
-        )
+        async def event_handler(data, _):
+            if data and data.data:
+                self.add(**data.data)
+
+        EventBus.get_instance().subscribe(Events.SCHEDULE_ADD, event_handler, f"{__class__.__name__}.add")
 
     @staticmethod
     def get_instance() -> "Scheduler":

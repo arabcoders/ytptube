@@ -234,6 +234,7 @@ const request = (url: string, options: RequestInit = {}): Promise<Response> => {
  * @returns A string without ANSI escape sequences.
  */
 const removeANSIColors = (text: string): string => {
+  // eslint-disable-next-line no-control-regex
   return text?.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '') ?? text
 }
 
@@ -601,6 +602,7 @@ const sleep = (seconds: number): Promise<void> => new Promise(resolve => setTime
  *
  * @returns The result of the test function.
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
 const awaiter = async (test: Function, timeout_ms: number = 20 * 1000, frequency: number = 200) => {
   if (typeof (test) != "function") {
     throw new Error("test should be a function in awaiter(test, [timeout_ms], [frequency])")

@@ -111,7 +111,7 @@
 
     <NewDownload v-if="config.showForm || config.app.basic_mode"
       @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-      :item="item_form" @clear_form="item_form = {}" @remove_archive="" />
+      :item="item_form" @clear_form="item_form = {}" />
     <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
       :thumbnails="show_thumbnail" :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
       @clear_search="query = ''" />

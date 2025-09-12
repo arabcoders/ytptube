@@ -16,9 +16,10 @@ from pathlib import Path
 from typing import Any, TypeVar
 
 from Crypto.Cipher import AES
-from yt_dlp.utils import age_restricted, match_str
+from yt_dlp.utils import age_restricted
 
 from .LogWrapper import LogWrapper
+from .mini_filter import match_str
 from .ytdlp import YTDLP
 
 LOG: logging.Logger = logging.getLogger("Utils")
@@ -225,38 +226,116 @@ def extract_info(
     return YTDLP.sanitize_info(data) if sanitize_info else data
 
 
-def merge_dict(source: dict, destination: dict) -> dict:
+def _is_safe_key(key: any) -> bool:
     """
-    Merge data from source into destination safely.
+    Check if a dictionary key is safe for merging.
+
+    Blocks:
+    - All dunder attributes (__*__)
+    - Non-string keys (for consistency)
+    - Keys that could be dangerous variations
+    """
+    # Only allow string keys
+    if not isinstance(key, str):
+        return False
+
+    # Block empty keys and whitespace-only keys
+    if not key or not key.strip():
+        return False
+
+    # Block only truly dangerous dunder patterns
+    key_stripped = key.strip()
+
+    # Block dunder attributes (starts AND ends with __)
+    return not (key_stripped.startswith("__") and key_stripped.endswith("__"))
+
+
+def merge_dict(
+    source: dict, destination: dict, max_depth: int = 50, max_list_size: int = 10000, _depth: int = 0, _seen: set = None
+) -> dict:
+    """
+    Merge data from source into destination safely with protection against DoS attacks.
 
     Args:
         source (dict): Source data
         destination (dict): Destination data
+        max_depth (int): Maximum recursion depth allowed (default: 50)
+        max_list_size (int): Maximum list size allowed (default: 10000)
+        _depth (int): Internal recursion depth counter
+        _seen (set): Internal circular reference tracker
 
     Returns:
         dict: The merged dictionary
+
+    Raises:
+        TypeError: If source or destination are not dictionaries
+        RecursionError: If recursion depth exceeds safety limit
+        ValueError: If circular reference is detected
 
     """
     if not isinstance(source, dict) or not isinstance(destination, dict):
         msg = "Both source and destination must be dictionaries."
         raise TypeError(msg)
 
-    destination_copy = copy.deepcopy(destination)
+    # Prevent deep recursion DoS
+    if _depth > max_depth:
+        msg = f"Recursion depth limit exceeded ({max_depth})"
+        raise RecursionError(msg)
+
+    # Initialize circular reference tracking
+    if _seen is None:
+        _seen = set()
+
+    # Check for circular references
+    source_id = id(source)
+    dest_id = id(destination)
+    if source_id in _seen or dest_id in _seen:
+        msg = "Circular reference detected"
+        raise ValueError(msg)
+
+    # Track current objects
+    current_seen = _seen | {source_id, dest_id}
+
+    # Create a clean copy of destination with only safe keys
+    destination_copy = {}
+    for k, v in destination.items():
+        if _is_safe_key(k):
+            # Prevent memory DoS from large lists
+            if isinstance(v, list) and len(v) > max_list_size:
+                destination_copy[k] = v[:max_list_size]  # Truncate large lists
+            else:
+                destination_copy[k] = copy.deepcopy(v)
 
     for key, value in source.items():
-        if key in {"__class__", "__dict__", "__globals__", "__builtins__"}:
+        # Skip unsafe keys
+        if not _is_safe_key(key):
             continue
 
         destination_value = destination_copy.get(key)
 
-        # Recursively merge dictionaries
+        # Recursively merge dictionaries with safety checks
         if isinstance(value, dict) and isinstance(destination_value, dict):
-            destination_copy[key] = merge_dict(value, destination_value)
+            destination_copy[key] = merge_dict(
+                value, destination_value, max_depth, max_list_size, _depth + 1, current_seen
+            )
 
-        # Safely extend lists without reference issues
+        # Safely extend lists with size limits
         elif isinstance(value, list) and isinstance(destination_value, list):
-            destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(value)
-
+            # Prevent memory DoS
+            combined_size = len(value) + len(destination_value)
+            if combined_size > max_list_size:
+                # Truncate to stay within limits
+                available_space = max_list_size - len(destination_value)
+                truncated_value = value[: max(0, available_space)]
+                destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(truncated_value)
+            else:
+                destination_copy[key] = copy.deepcopy(destination_value) + copy.deepcopy(value)
+        # For non-dict values or when destination doesn't have the key
+        elif isinstance(value, dict):
+            destination_copy[key] = merge_dict(value, {}, max_depth, max_list_size, _depth + 1, current_seen)
+        elif isinstance(value, list) and len(value) > max_list_size:
+            # Truncate large lists
+            destination_copy[key] = copy.deepcopy(value[:max_list_size])
         else:
             destination_copy[key] = copy.deepcopy(value)
 

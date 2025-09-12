@@ -1,9 +1,9 @@
 <template>
   <vTooltip @show="loadContent" @hide="stopTimer">
     <slot />
-    <template #popper class="p-0 m-0">
+    <template #popper>
       <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin" /></span>
-      <template v-else>
+      <div v-else>
         <div style="min-width: 300px; width: 25vw; height: auto;" class="m-1">
           <div class="is-block" style="word-break: all;" v-if="props.title">
             <span style="font-size: 120%;">{{ props.title }}</span>
@@ -14,7 +14,7 @@
               :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
           </figure>
         </div>
-      </template>
+      </div>
     </template>
   </vTooltip>
 </template>
@@ -35,7 +35,7 @@ const url = ref<string | null>(null)
 const error = ref(false)
 const isPreloading = ref(false)
 
-let loadTimer: ReturnType<typeof setTimeout> | null = null
+const loadTimer: ReturnType<typeof setTimeout> | null = null
 const cancelRequest = new AbortController()
 
 const defaultLoader = async (): Promise<void> => {

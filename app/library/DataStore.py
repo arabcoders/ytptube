@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import json
 import logging
@@ -151,7 +150,7 @@ class DataStore:
         if "error" == value.info.status and not no_notify:
             from app.library.Events import EventBus, Events
 
-            asyncio.create_task(EventBus.get_instance().emit(Events.ITEM_ERROR, value.info), name="emit_item_error")
+            EventBus.get_instance().emit(Events.ITEM_ERROR, value.info)
 
         self._dict.update({value.info._id: value})
         self._update_store_item(self._type, value.info)

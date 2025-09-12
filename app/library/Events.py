@@ -145,6 +145,9 @@ class Event:
     data: Any
     """The data that was passed to the event."""
 
+    extras: dict = field(default_factory=dict)
+    """Listeners can add extra data to the event."""
+
     def serialize(self) -> dict:
         """
         Serialize the event.
@@ -162,8 +165,19 @@ class Event:
             "data": self.data,
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Event(id={self.id}, created_at={self.created_at}, event={self.event}, title={self.title}, message={self.message} data={self.data})"
+
+    def put(self, key: str, value: Any) -> None:
+        """
+        Put extra data to the event.
+
+        Args:
+            key (str): The key of the extra data.
+            value (Any): The value of the extra data.
+
+        """
+        self.extras[key] = value
 
     def datatype(self) -> str:
         """
@@ -210,16 +224,11 @@ class EventBus(metaclass=Singleton):
     debug: bool = False
     """Whether to log debug messages or not."""
 
-    _offload: BackgroundWorker
+    _offload: BackgroundWorker = None
     """The background worker to offload tasks to."""
 
     def __init__(self):
         EventBus._instance = self
-
-        from .config import Config
-
-        self.debug = Config.get_instance().debug
-        self._offload = BackgroundWorker.get_instance()
 
     @staticmethod
     def get_instance() -> "EventBus":
@@ -305,84 +314,11 @@ class EventBus(metaclass=Singleton):
 
         return self
 
-    def sync_emit(
-        self,
-        event: str,
-        data: Any | None = None,
-        title: str | None = None,
-        message: str | None = None,
-        loop=None,
-        wait: bool = True,
-        **kwargs,
-    ):
-        """
-        Emit event and (optionally) wait for results.
-
-        Args:
-            event (str): The event to emit.
-            data (Any|None): The data to pass to the event.
-            title (str | None): The title of the event, if any.
-            message (str | None): The message of the event, if any.
-            loop (asyncio.AbstractEventLoop | None): The event loop to use. If None, the current running loop is used.
-            wait (bool): Whether to wait for the results of the event handlers. Defaults to True.
-            **kwargs: Additional keyword arguments to pass to the event
-
-        Returns:
-            list: The results are the return values of the coroutines. If the coroutine raises an exception,
-                  the exception is caught and logged. If event does not exist, an empty list is returned.
-                  If wait is False, a list of asyncio.Task objects is returned instead if we are in a running event loop,
-                  or the result of the coroutine if we are not in a running event loop.
-
-        """
-        if event not in self._listeners:
-            return []
-
-        if not data:
-            data = {}
-
-        async def emit_all():
-            ev = Event(event=event, title=title, message=message, data=data)
-            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
-
-            res: list = []
-
-            for h in self._listeners[event].values():
-                try:
-                    res.append(await h.handle(ev, **kwargs))
-                except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Failed to emit event '{event}' to '{h.name}'. Error message '{e!s}'.")
-
-            return res
-
-        try:
-            loop = loop or asyncio.get_running_loop()
-            in_same_loop: bool = asyncio.get_running_loop() is loop
-        except RuntimeError:
-            loop = None
-            in_same_loop = False
-
-        if loop is None or not loop.is_running():
-            return asyncio.run(emit_all())
-
-        if in_same_loop:
-            if wait:
-                msg = (
-                    "Calling EventsBus.sync_emit(...,wait=True) from within the running event loop would cause dead-lock. "
-                    "Use `await EventsBus.emit(...)` or `EventsBus.sync_emit(..., wait=False)`."
-                )
-                raise RuntimeError(msg)
-
-            return loop.create_task(emit_all())
-
-        fut = asyncio.run_coroutine_threadsafe(emit_all(), loop)
-        return fut.result() if wait else fut
-
-    async def emit(
+    def emit(
         self, event: str, data: Any | None = None, title: str | None = None, message: str | None = None, **kwargs
-    ) -> Awaitable:
+    ) -> None:
         """
-        Emit an event.
+        Emit an event to all registered listeners.
 
         Args:
             event (str): The event to emit.
@@ -390,44 +326,6 @@ class EventBus(metaclass=Singleton):
             title (str | None): The title of the event, if any.
             message (str | None): The message of the event, if any.
             **kwargs: The keyword arguments to pass to the event.
-
-        Returns:
-            Awaitable: The task that was created to run the event.
-
-        """
-        if event not in self._listeners:
-            return []
-
-        if not data:
-            data = {}
-
-        ev = Event(event=event, title=title, message=message, data=data)
-
-        if self.debug or event not in Events.only_debug():
-            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
-
-        tasks = []
-        for handler in self._listeners[event].values():
-            try:
-                tasks.append(handler.handle(ev, **kwargs))
-            except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
-
-        return asyncio.gather(*tasks)
-
-    def offload(
-        self, event: str, title: str | None = None, message: str | None = None, data: Any | None = None, **kwargs
-    ) -> None:
-        """
-        Offload an dispatching event to a background worker.
-
-        Args:
-            event (str): The event to offload.
-            data (Any|None): The data to pass to the event.
-            title (str | None): The title of the event, if any.
-            message (str | None): The message of the event, if any.
-            **kwargs: Additional keyword arguments to pass to the event.
 
         """
         if event not in self._listeners:
@@ -439,11 +337,57 @@ class EventBus(metaclass=Singleton):
         ev = Event(event=event, title=title, message=message, data=data)
 
         if self.debug or event not in Events.only_debug():
-            LOG.debug(f"Offloading event '{ev.id}: {ev.event}'.", extra={"data": data})
+            LOG.debug(f"Emitting event '{ev.id}: {ev.event}'.", extra={"data": data})
 
-        for handler in self._listeners[event].values():
-            try:
-                self._offload.submit(handler.handle, ev, **kwargs)
-            except Exception as e:
-                LOG.exception(e)
-                LOG.error(f"Failed to offload event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+        try:
+            loop = asyncio.get_running_loop()
+
+            for handler in self._listeners[event].values():
+                try:
+                    if handler.is_coroutine:
+                        coro = handler.call_back(ev, handler.name, **kwargs)
+                        if asyncio.iscoroutine(coro):
+                            loop.create_task(coro)
+                        else:
+                            LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
+                    else:
+                        loop.create_task(self._call(handler, ev, kwargs), name=f"sync-handler-{handler.name}-{ev.id}")
+                except Exception as e:
+                    LOG.exception(e)
+                    LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+        except RuntimeError:
+            LOG.debug(f"No event loop detected - using BackgroundWorker for {len(self._listeners[event])} handlers")
+            for handler in self._listeners[event].values():
+                try:
+                    if not self._offload:
+                        self._offload = BackgroundWorker.get_instance()
+
+                    self._offload.submit(handler.handle, ev, **kwargs)
+                except Exception as e:
+                    LOG.exception(e)
+                    LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+
+    def clear(self) -> None:
+        """
+        Clear all listeners. Useful for testing.
+        """
+        self._listeners.clear()
+
+    def debug_enable(self) -> None:
+        """
+        Enable debug logging.
+        """
+        self.debug = True
+
+    def debug_disable(self) -> None:
+        """
+        Disable debug logging.
+        """
+        self.debug = False
+
+    @staticmethod
+    def _call(h, event, kw):
+        async def call_handler():
+            return h.call_back(event, h.name, **kw)
+
+        return call_handler()

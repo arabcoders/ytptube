@@ -169,7 +169,7 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
 
     if updated:
         queue.done.put(item)
-        await notify.emit(Events.ITEM_UPDATED, data=item.info)
+        notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
         data=item.info,
@@ -309,7 +309,7 @@ async def item_archive_add(request: Request, queue: DownloadQueue, notify: Event
 
     item.info.archive_status(force=True)
     queue.done.put(item, no_notify=True)
-    await notify.emit(Events.ITEM_UPDATED, data=item.info)
+    notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
         data={"message": f"item '{item.info.title}' archived."},
@@ -367,7 +367,7 @@ async def item_archive_delete(request: Request, queue: DownloadQueue, notify: Ev
 
     item.info.archive_status(force=True)
     queue.done.put(item, no_notify=True)
-    await notify.emit(Events.ITEM_UPDATED, data=item.info)
+    notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
         data={"message": f"item '{item.info.title}' removed from archive."},

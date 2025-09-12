@@ -17,7 +17,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @route(RouteType.SOCKET, "cli_post", "socket_cli_post")
 async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
     if not config.console_enabled:
-        await notify.emit(
+        notify.emit(
             Events.LOG_ERROR,
             title="Feature disabled",
             message="Console feature is disabled.",
@@ -26,7 +26,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
         return
 
     if not data:
-        await notify.emit(Events.CLI_CLOSE, data={"exitcode": 0}, to=sid)
+        notify.emit(Events.CLI_CLOSE, data={"exitcode": 0}, to=sid)
         return
 
     import asyncio
@@ -93,7 +93,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
                 assert proc.stdout is not None
                 async for raw_line in proc.stdout:
                     line = raw_line.rstrip(b"\n")
-                    await notify.emit(
+                    notify.emit(
                         Events.CLI_OUTPUT,
                         data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
                         to=sid,
@@ -112,7 +112,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
 
                 if not chunk:
                     if buffer:
-                        await notify.emit(
+                        notify.emit(
                             Events.CLI_OUTPUT,
                             data={"type": "stdout", "line": buffer.decode("utf-8", errors="replace")},
                             to=sid,
@@ -123,7 +123,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
                 *lines, buffer = buffer.split(b"\n")
 
                 for line in lines:
-                    await notify.emit(
+                    notify.emit(
                         Events.CLI_OUTPUT,
                         data={"type": "stdout", "line": line.decode("utf-8", errors="replace")},
                         to=sid,
@@ -141,6 +141,6 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
     except Exception as e:
         LOG.error(f"CLI execute exception was thrown for client '{sid}'.")
         LOG.exception(e)
-        await notify.emit(Events.CLI_OUTPUT, data={"type": "stderr", "line": str(e)}, to=sid)
+        notify.emit(Events.CLI_OUTPUT, data={"type": "stderr", "line": str(e)}, to=sid)
     finally:
-        await notify.emit(Events.CLI_CLOSE, data={"exitcode": returncode}, to=sid)
+        notify.emit(Events.CLI_CLOSE, data={"exitcode": returncode}, to=sid)

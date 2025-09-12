@@ -39,13 +39,13 @@
                       :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="form.preset"
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
-                        <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
-                          {{ item.name }}
+                        <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
+                          {{ cPreset.name }}
                         </option>
                       </optgroup>
                       <optgroup label="Default presets">
-                        <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
-                          {{ item.name }}
+                        <option v-for="dPreset in filter_presets(true)" :key="dPreset.name" :value="dPreset.name">
+                          {{ dPreset.name }}
                         </option>
                       </optgroup>
                     </select>
@@ -127,7 +127,7 @@
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>
-                    <NuxtLink @click="showOptions = true" v-text="'View all options'" />. Not all options are supported
+                    <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all options are supported
                     <NuxtLink target="_blank"
                       to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
                       are ignored</NuxtLink>. Use with caution.
@@ -238,7 +238,6 @@ const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string | undefined, cli: string | undefined): void
   (e: 'clear_form'): void
-  (e: 'remove_archive', url: string): void
 }>()
 const config = useConfigStore()
 const socket = useSocketStore()
@@ -303,7 +302,7 @@ const addDownload = async () => {
           continue
         }
 
-        const keyRegex = new RegExp(`(^|\s)${key}(\s|$)`);
+        const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
         if (form_cli && keyRegex.test(form_cli)) {
           continue;
         }
@@ -514,5 +513,6 @@ const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string
   return ret
 }
 
+// eslint-disable-next-line vue/no-side-effects-in-computed-properties
 const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
 </script>

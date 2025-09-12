@@ -1,4 +1,4 @@
-name: Test Build PR
+name: Test PR
 
 permissions:
   contents: read
@@ -14,14 +14,37 @@ on:
 env:
   PNPM_VERSION: 10
   NODE_VERSION: 20
+  PYTHON_VERSION: "3.11"
 
 jobs:
-  build-pr:
+  test:
+    name: Run Tests & Build Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Python setup and testing
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Run Python linting
+        run: uv run ruff check app/
+
+      - name: Run Python tests
+        run: uv run pytest app/tests/ -v --tb=short
+
+      # Frontend setup and testing
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -34,16 +57,39 @@ jobs:
           cache: pnpm
           cache-dependency-path: "ui/pnpm-lock.yaml"
 
-      - name: Install frontend dependencies & Build
+      - name: Install frontend dependencies
         working-directory: ui
-        run: |
-          pnpm install --production --prefer-offline --frozen-lockfile
-          pnpm run generate
+        env:
+          NODE_ENV: development
+        run: pnpm install --frozen-lockfile
 
+      - name: Prepare frontend (nuxt prepare)
+        working-directory: ui
+        env:
+          NODE_ENV: development
+        run: pnpm nuxt prepare
+
+      - name: Run frontend linting
+        working-directory: ui
+        run: pnpm run lint
+
+      - name: Run frontend type checking
+        working-directory: ui
+        run: pnpm run typecheck
+
+      - name: Run frontend tests
+        working-directory: ui
+        run: pnpm run test:ci
+
+      - name: Build frontend
+        working-directory: ui
+        run: pnpm run generate
+
+      # Quick Docker build validation (no push, cache only)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build commit to check (amd64 only)
+      - name: Validate Docker build
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -52,4 +98,3 @@ jobs:
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
           provenance: false
-

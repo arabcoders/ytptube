@@ -100,8 +100,8 @@
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
                       <select id="method" class="is-fullwidth" v-model="form.request.method" :disabled="addInProgress">
-                        <option v-for="item, index in requestMethods" :key="`${index}-${item}`" :value="item">
-                          {{ item }}
+                        <option v-for="rMethod, index in requestMethods" :key="`${index}-${rMethod}`" :value="rMethod">
+                          {{ rMethod }}
                         </option>
                       </select>
                     </div>
@@ -125,8 +125,8 @@
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
                       <select id="type" class="is-fullwidth" v-model="form.request.type" :disabled="addInProgress">
-                        <option v-for="item, index in requestType" :key="`${index}-${item}`" :value="item">
-                          {{ ucFirst(item) }}
+                        <option v-for="rType, index in requestType" :key="`${index}-${rType}`" :value="rType">
+                          {{ ucFirst(rType) }}
                         </option>
                       </select>
                     </div>
@@ -153,8 +153,8 @@
                   <div class="control has-icons-left">
                     <div class="select is-multiple is-fullwidth">
                       <select id="on" class="is-fullwidth" v-model="form.on" :disabled="addInProgress" multiple>
-                        <option v-for="item, index in allowedEvents" :key="`${index}-${item}`" :value="item">
-                          {{ item }}
+                        <option v-for="aEvent, index in allowedEvents" :key="`${index}-${aEvent}`" :value="aEvent">
+                          {{ aEvent }}
                         </option>
                       </select>
                     </div>
@@ -183,13 +183,13 @@
                     <div class="select is-multiple is-fullwidth">
                       <select id="on" class="is-fullwidth" v-model="form.presets" :disabled="addInProgress" multiple>
                         <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
-                          <option v-for="item in filter_presets(false)" :key="item.id" :value="item.name">
-                            {{ item.name }}
+                          <option v-for="cPreset in filter_presets(false)" :key="cPreset.id" :value="cPreset.name">
+                            {{ cPreset.name }}
                           </option>
                         </optgroup>
                         <optgroup label="Default presets">
-                          <option v-for="item in filter_presets(true)" :key="item.id" :value="item.name">
-                            {{ item.name }}
+                          <option v-for="dPreset in filter_presets(true)" :key="dPreset.id" :value="dPreset.name">
+                            {{ dPreset.name }}
                           </option>
                         </optgroup>
                       </select>
@@ -377,7 +377,7 @@ const checkInfo = async () => {
   if (!isApprise.value) {
     try {
       new URL(form.request.url)
-    } catch (_) {
+    } catch {
       toast.error('Invalid URL')
       return
     }

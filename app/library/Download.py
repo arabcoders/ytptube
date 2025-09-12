@@ -350,7 +350,7 @@ class Download:
         self.proc.start()
         self.info.status = "preparing"
 
-        await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+        self._notify.emit(Events.ITEM_UPDATED, data=self.info)
         asyncio.create_task(self.progress_update(), name=f"update-{self.id}")
 
         ret = await asyncio.get_running_loop().run_in_executor(None, self.proc.join)
@@ -516,7 +516,7 @@ class Download:
             self.logger.debug(f"Status Update: {self.info._id=} {status=}")
 
         if isinstance(status, str):
-            await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+            self._notify.emit(Events.ITEM_UPDATED, data=self.info)
             return
 
         self.tmpfilename: str | None = status.get("tmpfilename")
@@ -547,7 +547,7 @@ class Download:
 
         if "error" == self.info.status and "error" in status:
             self.info.error = status.get("error")
-            await self._notify.emit(
+            self._notify.emit(
                 Events.LOG_ERROR,
                 data=self.info,
                 title="Download Error",
@@ -584,7 +584,7 @@ class Download:
                 self.logger.error(f"Failed to run ffprobe. {status.get}. {e}")
 
         if not self.final_update or fl:
-            await self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+            self._notify.emit(Events.ITEM_UPDATED, data=self.info)
 
     async def progress_update(self):
         """

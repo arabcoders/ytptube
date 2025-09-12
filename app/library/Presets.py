@@ -136,7 +136,7 @@ class Presets(metaclass=Singleton):
                 LOG.error(f"Failed to parse default preset ':{i}'. '{e!s}'.")
                 continue
 
-        def event_handler(_, __):
+        async def event_handler(_, __):
             msg = "Not implemented"
             raise Exception(msg)
 

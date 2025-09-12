@@ -3,6 +3,7 @@ import functools
 import glob
 import logging
 import time
+import traceback
 import uuid
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
@@ -107,9 +108,11 @@ class DownloadQueue(metaclass=Singleton):
             _ (web.Application): The application to attach the download queue to.
 
         """
-        self._notify.subscribe(
-            Events.STARTED, lambda _, __: self.initialize(), f"{__class__.__name__}.{__class__.initialize.__name__}"
-        )
+
+        async def event_handler(_, __):
+            await self.initialize()
+
+        self._notify.subscribe(Events.STARTED, event_handler, f"{__class__.__name__}.{__class__.initialize.__name__}")
 
         Scheduler.get_instance().add(
             timer="* * * * *",
@@ -155,7 +158,6 @@ class DownloadQueue(metaclass=Singleton):
         """
         status: dict[str, str] = {"status": "ok"}
         started = False
-        tasks: list = []
 
         for item_id in ids:
             try:
@@ -173,14 +175,12 @@ class DownloadQueue(metaclass=Singleton):
 
             item.info.auto_start = True
             updated: Download = self.queue.put(item)
-            tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
-            tasks.append(
-                self._notify.emit(
-                    Events.ITEM_RESUMED,
-                    data=item.info,
-                    title="Download Resumed",
-                    message=f"Download '{item.info.title}' has been resumed.",
-                )
+            self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
+            self._notify.emit(
+                Events.ITEM_RESUMED,
+                data=item.info,
+                title="Download Resumed",
+                message=f"Download '{item.info.title}' has been resumed.",
             )
             status[item_id] = "started"
             started = True
@@ -188,9 +188,6 @@ class DownloadQueue(metaclass=Singleton):
 
         if started:
             self.event.set()
-
-        if len(tasks) > 0:
-            await asyncio.gather(*tasks)
 
         return status
 
@@ -206,7 +203,6 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         status: dict[str, str] = {"status": "ok"}
-        tasks: list = []
 
         for item_id in ids:
             try:
@@ -229,20 +225,15 @@ class DownloadQueue(metaclass=Singleton):
 
             item.info.auto_start = False
             updated: Download = self.queue.put(item)
-            tasks.append(self._notify.emit(Events.ITEM_UPDATED, data=updated.info))
-            tasks.append(
-                self._notify.emit(
-                    Events.ITEM_PAUSED,
-                    data=item.info,
-                    title="Download Paused",
-                    message=f"Download '{item.info.title}' has been paused.",
-                )
+            self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
+            self._notify.emit(
+                Events.ITEM_PAUSED,
+                data=item.info,
+                title="Download Paused",
+                message=f"Download '{item.info.title}' has been paused.",
             )
             status[item_id] = "paused"
             LOG.debug(f"Item {item.info.name()} marked as paused.")
-
-        if len(tasks) > 0:
-            await asyncio.gather(*tasks)
 
         return status
 
@@ -495,7 +486,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 dlInfo.info.status = "not_live"
                 dlInfo.info.msg = nMessage.replace(f" '{dlInfo.info.title}'", "")
-                await self._notify.emit(
+                self._notify.emit(
                     Events.LOG_INFO,
                     data={"preset": dlInfo.info.preset, "lowPriority": True},
                     title=nTitle,
@@ -517,7 +508,7 @@ class DownloadQueue(metaclass=Singleton):
                 dlInfo.info.status = "error"
                 itemDownload = self.done.put(dlInfo)
 
-                await self._notify.emit(
+                self._notify.emit(
                     Events.LOG_WARNING,
                     data={"preset": dlInfo.info.preset, "logs": text_logs},
                     title=nTitle,
@@ -557,7 +548,7 @@ class DownloadQueue(metaclass=Singleton):
                     nStore = "history"
                     nEvent = Events.ITEM_MOVED
                     nTitle = "Premiering right now"
-                    await self._notify.emit(
+                    self._notify.emit(
                         Events.LOG_INFO, data={"preset": dlInfo.info.preset}, title=nTitle, message=nMessage
                     )
             else:
@@ -570,7 +561,7 @@ class DownloadQueue(metaclass=Singleton):
                 else:
                     LOG.debug(f"Item {itemDownload.info.name()} is not set to auto-start.")
 
-            await self._notify.emit(
+            self._notify.emit(
                 nEvent,
                 data={"to": nStore, "preset": itemDownload.info.preset, "item": itemDownload.info}
                 if Events.ITEM_MOVED == nEvent
@@ -702,7 +693,7 @@ class DownloadQueue(metaclass=Singleton):
 
                         self.done.put(dlInfo)
 
-                        await self._notify.emit(
+                        self._notify.emit(
                             Events.ITEM_MOVED,
                             data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
                             title="Download History Update",
@@ -712,7 +703,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.error(message)
-                await self._notify.emit(
+                self._notify.emit(
                     Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
                 )
 
@@ -866,7 +857,7 @@ class DownloadQueue(metaclass=Singleton):
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")
                 self.queue.delete(id)
-                await self._notify.emit(
+                self._notify.emit(
                     Events.ITEM_CANCELLED,
                     data=item.info,
                     title="Download Cancelled",
@@ -874,7 +865,7 @@ class DownloadQueue(metaclass=Singleton):
                 )
                 item.info.status = "cancelled"
                 self.done.put(item)
-                await self._notify.emit(
+                self._notify.emit(
                     Events.ITEM_MOVED,
                     data={"to": "history", "preset": item.info.preset, "item": item.info},
                     title="Download Cancelled",
@@ -949,7 +940,7 @@ class DownloadQueue(metaclass=Singleton):
             self.done.delete(id)
 
             _status: str = "Removed" if removed_files > 0 else "Cleared"
-            await self._notify.emit(
+            self._notify.emit(
                 Events.ITEM_DELETED,
                 data=item.info,
                 title=f"Download {_status}",
@@ -1086,7 +1077,6 @@ class DownloadQueue(metaclass=Singleton):
             await entry.close()
 
         if self.queue.exists(key=id):
-            _tasks = []
             LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
             self.queue.delete(key=id)
 
@@ -1096,7 +1086,7 @@ class DownloadQueue(metaclass=Singleton):
             if entry.is_cancelled() is True:
                 nTitle = "Download Cancelled"
                 nMessage = f"Cancelled '{entry.info.title}' download."
-                await self._notify.emit(Events.ITEM_CANCELLED, data=entry.info, title=nTitle, message=nMessage)
+                self._notify.emit(Events.ITEM_CANCELLED, data=entry.info, title=nTitle, message=nMessage)
                 entry.info.status = "cancelled"
 
             if entry.info.status == "finished" and entry.info.filename:
@@ -1105,19 +1095,15 @@ class DownloadQueue(metaclass=Singleton):
                 if entry.info.is_archivable and not entry.info.is_archived:
                     entry.info.is_archived = True
 
-                _tasks.append(self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage))
+                self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage)
 
             self.done.put(entry)
-            _tasks.append(
-                self._notify.emit(
-                    Events.ITEM_MOVED,
-                    data={"to": "history", "preset": entry.info.preset, "item": entry.info},
-                    title=nTitle,
-                    message=nMessage,
-                )
+            self._notify.emit(
+                Events.ITEM_MOVED,
+                data={"to": "history", "preset": entry.info.preset, "item": entry.info},
+                title=nTitle,
+                message=nMessage,
             )
-
-            await asyncio.gather(*_tasks)
         else:
             LOG.warning(f"Download '{id}' not found in queue.")
 
@@ -1223,7 +1209,6 @@ class DownloadQueue(metaclass=Singleton):
             return
 
         if exc := task.exception():
-            import traceback
 
             task_name: str = task.get_name() if task.get_name() else "unknown_task"
             LOG.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {traceback.format_exc()}")

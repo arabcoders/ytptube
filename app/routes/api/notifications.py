@@ -104,6 +104,6 @@ async def notification_test(encoder: Encoder, notify: EventBus) -> Response:
         Response: The response object.
 
     """
-    await notify.emit(Events.TEST, title="Test Notification", message="This is a test notification.")
+    notify.emit(Events.TEST, title="Test Notification", message="This is a test notification.")
 
     return web.json_response(data={}, status=web.HTTPOk.status_code, dumps=encoder.encode)

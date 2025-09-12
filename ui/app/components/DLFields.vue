@@ -270,7 +270,7 @@ const validateItem = (item: DLField, index: number): boolean => {
     return false
   }
 
-  if (!/^--[a-zA-Z0-9\-]+$/.test(item.field)) {
+  if (!/^--[a-zA-Z0-9-]+$/.test(item.field)) {
     toast.error(`${item.name || index}: Invalid field format, it must start with '--' and contain no spaces.`)
     return false
   }
@@ -278,6 +278,7 @@ const validateItem = (item: DLField, index: number): boolean => {
   return true
 }
 
+// eslint-disable-next-line vue/no-side-effects-in-computed-properties
 const sortedDLFields = computed(() => items.value.sort((a, b) => (a.order || 0) - (b.order || 0)))
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOptions.value = newOptions

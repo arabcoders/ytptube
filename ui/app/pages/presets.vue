@@ -379,7 +379,8 @@ const exportItem = (item: Preset) => {
 
   for (const key of keys) {
     if (key in data) {
-      delete data[key]
+      const { [key]: _, ...rest } = data
+      Object.assign(data, rest)
     }
   }
 

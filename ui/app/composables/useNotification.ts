@@ -16,6 +16,7 @@ export interface notificationOptions {
   force?: boolean,
   closeOnClick?: boolean,
   position?: POSITION
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   onClick?: (closeToast: Function) => void
   store?: boolean,
   lowPriority?: boolean
@@ -52,6 +53,7 @@ function notify(type: notificationType, message: string, opts?: notificationOpti
 
   opts.closeOnClick = toastDismissOnClick.value
   opts.position = toastPosition.value ?? POSITION.TOP_RIGHT
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   opts.onClick = (closeToast: Function) => {
     if (opts?.closeOnClick !== false) {
       closeToast()

@@ -26,11 +26,11 @@ class BaseHandler:
         if "failure_count" not in cls.__dict__:
             cls.failure_count = {}
 
-        EventBus.get_instance().subscribe(
-            Events.ITEM_ERROR,
-            lambda data, _, **__: cls.on_error(data.data),
-            f"{cls.__name__}.on_error",
-        )
+        async def event_handler(data, _):
+            if data and data.data:
+                await cls.on_error(data.data)
+
+        EventBus.get_instance().subscribe(Events.ITEM_ERROR, event_handler, f"{cls.__name__}.on_error")
 
     @staticmethod
     def can_handle(task: Task) -> bool:

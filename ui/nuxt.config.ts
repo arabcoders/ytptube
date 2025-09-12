@@ -14,8 +14,7 @@ try {
     }
   }
 }
-catch (e) {
-}
+catch { }
 
 export default defineNuxtConfig({
   ssr: false,
@@ -60,6 +59,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
+    process.env.NODE_ENV === 'development' ? '@nuxt/eslint' : '',
   ],
 
   nitro: {
@@ -76,6 +76,6 @@ export default defineNuxtConfig({
   telemetry: false,
   compatibilityDate: "2025-08-03",
   experimental: {
-    checkOutdatedBuildInterval: 1000 * 60 * 60,
+    checkOutdatedBuildInterval: 1000 * 60 * 10,
   }
 })

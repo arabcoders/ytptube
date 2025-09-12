@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# flake8: noqa: SIM115 S310 T201
+# flake8: noqa: S310 T201
 
 import argparse
 import os
