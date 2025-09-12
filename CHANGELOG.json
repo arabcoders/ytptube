@@ -169,9 +169,37 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "63f6ca0cf4b0d94fef39e298b36c16c74934e58c",
-    "date": "2025-09-12T08:45:22+00:00",
+    "full_sha": "393cc6729c259f2bf65e17d8e7f28f009dc726d5",
+    "date": "2025-09-12T19:43:20+00:00",
     "commits": [
+      {
+        "sha": "393cc672",
+        "full_sha": "393cc6729c259f2bf65e17d8e7f28f009dc726d5",
+        "message": "More tests",
+        "author": "arabcoders",
+        "date": "2025-09-12T19:43:20+00:00"
+      },
+      {
+        "sha": "f490c781",
+        "full_sha": "f490c781793f535488f1dea6f8ebcf1f87d9721d",
+        "message": "removed deprecated features and flags",
+        "author": "arabcoders",
+        "date": "2025-09-12T17:38:09+00:00"
+      },
+      {
+        "sha": "669f70d9",
+        "full_sha": "669f70d9b8f536efa0a973055b2bdd8e5e70b3c8",
+        "message": "fixes",
+        "author": "arabcoders",
+        "date": "2025-09-12T16:34:12+00:00"
+      },
+      {
+        "sha": "5d1eed87",
+        "full_sha": "5d1eed876bf5084ed8c85d4f8800391f1f72d1cd",
+        "message": "updated tests",
+        "author": "arabcoders",
+        "date": "2025-09-12T14:09:02+00:00"
+      },
       {
         "sha": "63f6ca0c",
         "full_sha": "63f6ca0cf4b0d94fef39e298b36c16c74934e58c",
