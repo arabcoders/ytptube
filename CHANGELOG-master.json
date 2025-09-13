@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250912-0de61566",
-        "date": "2025-09-12T20:41:14+00:00",
+        "tag": "master-20250914-871f9e80",
+        "date": "2025-09-13T22:46:49+00:00",
         "commits": [
+            {
+                "sha": "82cd085e",
+                "message": "exclude intel packages on arm builds",
+                "author": "arabcoders",
+                "date": "2025-09-13T22:38:39+00:00",
+                "full_sha": "82cd085ed56eac0fa0942d47fa512ad390cd1b99"
+            },
+            {
+                "sha": "1ce7c82d",
+                "message": "improve logic for codec selection",
+                "author": "arabcoders",
+                "date": "2025-09-13T22:30:34+00:00",
+                "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7"
+            },
+            {
+                "sha": "980b43f8",
+                "message": "update external packages.",
+                "author": "arabcoders",
+                "date": "2025-09-13T17:02:41+00:00",
+                "full_sha": "980b43f835410985e77eeb43bf2b62b80f9cc6bf"
+            },
+            {
+                "sha": "38e1828e",
+                "message": "support using gpu codecs for player",
+                "author": "arabcoders",
+                "date": "2025-09-13T16:49:48+00:00",
+                "full_sha": "38e1828ec36fdbb3f42dcb6451bb40c2d0fcc1ca"
+            },
+            {
+                "sha": "c91f1999",
+                "message": "extends tests",
+                "author": "arabcoders",
+                "date": "2025-09-13T15:35:41+00:00",
+                "full_sha": "c91f199939b40bcb34d841a385bc4ce3a01c977d"
+            },
+            {
+                "sha": "0b86df87",
+                "message": "add faq about remote storage.",
+                "author": "arabcoders",
+                "date": "2025-09-13T13:15:09+00:00",
+                "full_sha": "0b86df87c04f49f7b094f34b8e035de84710abd2"
+            },
             {
                 "sha": "9380d92a",
                 "message": "fix version tagging",
@@ -1964,7 +2006,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0de61566fbafd775de3f384755378c8ba9d6b951"
+        "full_sha": "871f9e803e619f9e1cd662160105b9e88820ac9e"
     },
     {
         "tag": "master-20250616-c07465a6",
