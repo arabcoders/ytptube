@@ -14,6 +14,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "38e1828ec36fdbb3f42dcb6451bb40c2d0fcc1ca",
+    "date": "2025-09-13T16:49:48+00:00",
+    "commits": [
+      {
+        "sha": "38e1828e",
+        "full_sha": "38e1828ec36fdbb3f42dcb6451bb40c2d0fcc1ca",
+        "message": "support using gpu codecs for player",
+        "author": "arabcoders",
+        "date": "2025-09-13T16:49:48+00:00"
+      },
+      {
+        "sha": "c91f1999",
+        "full_sha": "c91f199939b40bcb34d841a385bc4ce3a01c977d",
+        "message": "extends tests",
+        "author": "arabcoders",
+        "date": "2025-09-13T15:35:41+00:00"
+      },
+      {
+        "sha": "0b86df87",
+        "full_sha": "0b86df87c04f49f7b094f34b8e035de84710abd2",
+        "message": "add faq about remote storage.",
+        "author": "arabcoders",
+        "date": "2025-09-13T13:15:09+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.10.0",
     "full_sha": "2323739c499e1df8b4bf06991dcefdf8d846e5ba",
     "date": "2025-09-12T19:59:26+00:00",
