@@ -1383,7 +1383,7 @@ class TestStrToDt:
     def test_str_to_dt_basic(self):
         """Test basic string to datetime conversion."""
         try:
-            result = str_to_dt("2023-01-01 12:00:00")
+            result = str_to_dt("2023-01-02 12:00:00 UTC")
             assert isinstance(result, datetime)
         except ModuleNotFoundError:
             # Expected when dateparser is not available

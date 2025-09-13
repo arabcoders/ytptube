@@ -17,8 +17,7 @@ ENV UV_CACHE_DIR=/root/.cache/uv
 ENV DEBIAN_FRONTEND=noninteractive
 ENV UV_INSTALL_DIR=/usr/bin
 
-# Install build dependencies and uv
-# RUN apt-get update && apt-get install -y --no-install-recommends build-essential libffi-dev libssl-dev curl ca-certificates pkg-config && pip install --no-cache-dir uv
+SHELL ["/bin/bash","-lc"]
 RUN echo 1 && curl -LsSf https://astral.sh/uv/install.sh | sh
 
 WORKDIR /opt/
@@ -27,7 +26,7 @@ COPY ./pyproject.toml ./uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/pip,id=pip-cache \
   --mount=type=cache,target=/root/.cache/uv,id=uv-cache \
   uv venv --system-site-packages --relocatable ./python && \
-  VIRTUAL_ENV=/opt/python uv sync --link-mode=copy --active
+  VIRTUAL_ENV=/opt/python uv sync --no-dev --link-mode=copy --active
 
 FROM python:3.13-slim
 
@@ -48,8 +47,12 @@ ENV PYTHONFAULTHANDLER=1
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apt-get update && apt-get install -y --no-install-recommends \
-  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 \
+  apt-get update && \
+  ARCH="$(dpkg --print-architecture)" && \
+  EXTRA_PACKAGES="" && \
+  if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver i965-va-driver libmfx-gen1.2"; fi && \
+  apt-get install -y --no-install-recommends \
+  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app \
   && rm -rf /var/lib/apt/lists/*
 

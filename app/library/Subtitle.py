@@ -8,13 +8,13 @@ from pysubs2.time import ms_to_times
 
 from .Utils import ALLOWED_SUBS_EXTENSIONS
 
-LOG = logging.getLogger("player.subtitle")
+LOG: logging.Logger = logging.getLogger("player.subtitle")
 
 
 def ms_to_timestamp(ms: int) -> str:
     ms = max(0, ms)
     h, m, s, ms = ms_to_times(ms)
-    cs = ms // 10
+    cs: int = ms // 10
     return f"{h:01d}:{m:02d}:{s:02d}.{cs:02d}"
 
 
@@ -24,7 +24,7 @@ SubstationFormat.ms_to_timestamp = ms_to_timestamp
 class Subtitle:
     async def make(self, file: Path) -> str:
         if file.suffix not in ALLOWED_SUBS_EXTENSIONS:
-            msg = f"File '{file}' subtitle type is not supported."
+            msg: str = f"File '{file}' subtitle type is not supported."
             raise Exception(msg)
 
         if file.suffix == ".vtt":
