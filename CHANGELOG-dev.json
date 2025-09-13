@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250914-1ce7c82d",
-        "date": "2025-09-13T22:30:34+00:00",
+        "tag": "dev-20250914-82cd085e",
+        "date": "2025-09-13T22:38:39+00:00",
         "commits": [
+            {
+                "sha": "82cd085e",
+                "message": "exclude intel packages on arm builds",
+                "author": "arabcoders",
+                "date": "2025-09-13T22:38:39+00:00",
+                "full_sha": "82cd085ed56eac0fa0942d47fa512ad390cd1b99"
+            },
             {
                 "sha": "1ce7c82d",
                 "message": "improve logic for codec selection",
@@ -1999,7 +2006,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7"
+        "full_sha": "82cd085ed56eac0fa0942d47fa512ad390cd1b99"
     },
     {
         "tag": "dev-20250616-c07465a6",

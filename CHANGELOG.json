@@ -15,9 +15,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7",
-    "date": "2025-09-13T22:30:34+00:00",
+    "full_sha": "82cd085ed56eac0fa0942d47fa512ad390cd1b99",
+    "date": "2025-09-13T22:38:39+00:00",
     "commits": [
+      {
+        "sha": "82cd085e",
+        "full_sha": "82cd085ed56eac0fa0942d47fa512ad390cd1b99",
+        "message": "exclude intel packages on arm builds",
+        "author": "arabcoders",
+        "date": "2025-09-13T22:38:39+00:00"
+      },
       {
         "sha": "1ce7c82d",
         "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7",
