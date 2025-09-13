@@ -35,6 +35,11 @@ class TestBackgroundWorker:
         # Using a small helper to run the coroutine
         import asyncio
 
+        try:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+        except RuntimeError:
+            pass
+
         asyncio.get_event_loop().run_until_complete(worker.on_shutdown(app))
 
         # Give a short moment for the background thread to exit

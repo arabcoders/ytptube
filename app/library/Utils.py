@@ -1322,7 +1322,7 @@ def str_to_dt(time_str: str, now=None) -> datetime:
     """
     from dateparser import parse as _parse
 
-    dt = _parse(
+    dt: datetime | None = _parse(
         time_str,
         settings={
             "RELATIVE_BASE": now or datetime.now(tz=UTC),
@@ -1332,7 +1332,7 @@ def str_to_dt(time_str: str, now=None) -> datetime:
     )
 
     if dt is None:
-        msg = f"Couldn't parse date: {time_str!r}"
+        msg: str = f"Couldn't parse date: {time_str!r}"
         raise ValueError(msg)
 
     return dt

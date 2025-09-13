@@ -3,7 +3,7 @@ name = "ytptube"
 version = "1.0.0"
 description = "A WebUI for yt-dlp with concurrent downloads support, presets and scheduled tasks and many more."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 license = { text = "MIT" }
 authors = [{ name = "Abdulmohsen", email = "contact@arabcoders.org" }]
 dependencies = [
@@ -207,6 +207,9 @@ link-mode = "copy"
 pythonpath = ["."]
 testpaths = ["app/tests"]
 addopts = "-v --tb=short"
+filterwarnings = [
+  "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",
+]
 
 [dependency-groups]
 dev = [

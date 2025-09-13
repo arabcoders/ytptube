@@ -78,6 +78,9 @@ class Config(metaclass=Singleton):
     streamer_acodec: str = "aac"
     """The audio codec to use for streaming."""
 
+    vaapi_device: str = "/dev/dri/renderD128"
+    """VAAPI device path used for VAAPI encoder when available."""
+
     auth_username: str | None = None
     """The username to use for basic authentication."""
 
