@@ -15,9 +15,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "980b43f835410985e77eeb43bf2b62b80f9cc6bf",
-    "date": "2025-09-13T17:02:41+00:00",
+    "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7",
+    "date": "2025-09-13T22:30:34+00:00",
     "commits": [
+      {
+        "sha": "1ce7c82d",
+        "full_sha": "1ce7c82d9c911bd707197390a598085750da86d7",
+        "message": "improve logic for codec selection",
+        "author": "arabcoders",
+        "date": "2025-09-13T22:30:34+00:00"
+      },
       {
         "sha": "980b43f8",
         "full_sha": "980b43f835410985e77eeb43bf2b62b80f9cc6bf",
