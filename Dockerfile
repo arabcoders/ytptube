@@ -47,9 +47,12 @@ ENV PYTHONFAULTHANDLER=1
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
-  apt-get update && apt-get install -y --no-install-recommends \
-  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 \
-  vainfo intel-media-va-driver i965-va-driver libmfx-gen1.2 \
+  apt-get update && \
+  ARCH="$(dpkg --print-architecture)" && \
+  EXTRA_PACKAGES="" && \
+  if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver i965-va-driver libmfx-gen1.2"; fi && \
+  apt-get install -y --no-install-recommends \
+  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app \
   && rm -rf /var/lib/apt/lists/*
 
