@@ -49,7 +49,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
   apt-get update && apt-get install -y --no-install-recommends \
-  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 \
+  bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app \
   && rm -rf /var/lib/apt/lists/*
 
