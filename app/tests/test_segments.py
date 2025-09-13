@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+import logging
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -38,9 +39,7 @@ async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: py
     args = await seg.build_ffmpeg_args(media)
 
     # Compute expected symlink path used by Segments
-    tmpFile = Path(tempfile.gettempdir()).joinpath(
-        f"ytptube_stream.{hashlib.sha256(str(media).encode()).hexdigest()}"
-    )
+    tmpFile = Path(tempfile.gettempdir()).joinpath(f"ytptube_stream.{hashlib.sha256(str(media).encode()).hexdigest()}")
 
     # Start time is duration * index with 6 decimals for non-zero index
     assert "-ss" in args
@@ -105,9 +104,10 @@ class _FakeProc:
         self.stderr = _FakeStdout([])
         self.terminated = False
         self.killed = False
+        self._rc = 0
 
     async def wait(self) -> int:
-        return 0
+        return self._rc
 
     def terminate(self) -> None:
         self.terminated = True
@@ -129,6 +129,154 @@ class _FakeResp:
 
     async def write_eof(self) -> None:
         self.eof = True
+
+
+class _FakeProcFail(_FakeProc):
+    def __init__(self, err: bytes = b"") -> None:
+        # no stdout data, immediate failure
+        super().__init__([b""])
+        self.stderr = _FakeStdout([err, b""])
+        self._rc = 1
+
+
+@pytest.mark.asyncio
+async def test_build_ffmpeg_args_no_dri_falls_back_to_software(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    media = tmp_path / "file.mp4"
+    media.write_bytes(b"data")
+
+    async def fake_ffprobe(_file: Path):
+        return DummyFF(v=True, a=True)
+
+    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    # Simulate no /dev/dri present but GPU encoders otherwise available
+    monkeypatch.setattr("app.library.Segments.Segments._has_dri_devices", lambda: False)
+    monkeypatch.setattr(
+        "app.library.Segments.Segments._ffmpeg_encoders", lambda: {"h264_nvenc", "h264_qsv", "h264_amf"}
+    )
+
+    # reset encoder cache to ensure clean selection in this test
+    from app.library.Segments import Segments as _Seg
+
+    _Seg._cached_vcodec = None
+    _Seg._cache_initialized = False
+
+    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
+    # Make preferred list try GPUs first
+    seg.vcodec = ""  # empty configured value triggers GPU->software preference
+
+    args = await seg.build_ffmpeg_args(media)
+
+    # Expect software encoder selected
+    assert "-codec:v" in args
+    assert args[args.index("-codec:v") + 1] == "libx264"
+
+
+@pytest.mark.asyncio
+async def test_stream_gpu_failure_falls_back_to_software(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    async def fake_ffprobe(_file: Path):
+        return DummyFF(v=True, a=True)
+
+    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    # Allow GPU usage and advertise an NVENC encoder so first pick is GPU
+    monkeypatch.setattr("app.library.Segments.Segments._has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.library.Segments.Segments._ffmpeg_encoders", lambda: {"h264_nvenc"})
+
+    # First process fails (no data, rc=1), second succeeds and outputs bytes
+    proc_fail = _FakeProcFail(err=b"nvenc failure: encoder not available")
+    proc_ok = _FakeProc([b"gpu-fallback-", b"ok"])  # after fallback we stream this
+
+    calls: list[int] = []
+
+    async def fake_create_subprocess_exec(*_args: Any, **_kwargs: Any):
+        calls.append(1)
+        return proc_fail if len(calls) == 1 else proc_ok
+
+    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
+
+    # reset encoder cache to ensure we try GPU first
+    from app.library.Segments import Segments as _Seg
+
+    _Seg._cached_vcodec = None
+    _Seg._cache_initialized = False
+
+    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
+    # Encourage GPU preference
+    seg.vcodec = ""  # empty -> try GPUs first
+    resp = _FakeResp()
+    with caplog.at_level(logging.WARNING, logger="player.segments"):
+        await seg.stream(tmp_path / "file.mp4", resp)
+
+    # Ensure fallback path streamed data and closed properly
+    assert bytes(resp.data) == b"gpu-fallback-ok"
+    assert resp.eof is True
+    # Ensure we logged the reason for GPU failure
+    assert any("Hardware encoder failed" in r.message for r in caplog.records)
+    assert any("nvenc failure" in r.message for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_stream_gpu_fallback_switches_to_software_no_hw_flags(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    async def fake_ffprobe(_file: Path):
+        return DummyFF(v=True, a=True)
+
+    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    # Only QSV advertised so initial build sets QSV
+    monkeypatch.setattr("app.library.Segments.Segments._has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.library.Segments.Segments._ffmpeg_encoders", lambda: {"h264_qsv"})
+
+    # Fail first, succeed second
+    proc_fail = _FakeProcFail(err=b"qsv failure")
+    proc_ok = _FakeProc([b"ok"])  # after fallback we stream this
+
+    captured_args: list[list[str]] = []
+
+    async def fake_create_subprocess_exec(*args: Any, **_kwargs: Any):
+        captured_args.append(list(args[1:]))
+        return proc_fail if len(captured_args) == 1 else proc_ok
+
+    monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
+
+    # reset cache
+    from app.library.Segments import Segments as _Seg
+
+    _Seg._cached_vcodec = None
+    _Seg._cache_initialized = False
+
+    seg = Segments(download_path=str(tmp_path), index=0, duration=1.0, vconvert=True, aconvert=True)
+    seg.vcodec = "intel"
+    resp = _FakeResp()
+    await seg.stream(tmp_path / "file.mp4", resp)
+
+    # First call had QSV codec and QSV flags
+    first = captured_args[0]
+    assert "-codec:v" in first
+    assert first[first.index("-codec:v") + 1] == "h264_qsv"
+    assert "-init_hw_device" in first
+    assert "qsv=hw:/dev/dri/renderD128" in first
+    assert "-filter_hw_device" in first
+    assert first[first.index("-filter_hw_device") + 1] == "hw"
+    assert "-vf" in first
+    assert first[first.index("-vf") + 1] == (
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=nv12,hwupload=extra_hw_frames=64"
+    )
+
+    # Second call (fallback) must be software without any hardware-specific flags
+    second = captured_args[1]
+    assert "-codec:v" in second
+    assert second[second.index("-codec:v") + 1] == "libx264"
+    assert "-init_hw_device" not in second
+    assert "-filter_hw_device" not in second
+    if "-vf" in second:
+        assert (
+            second[second.index("-vf") + 1]
+            != "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=nv12,hwupload=extra_hw_frames=64"
+        )
+    assert "-pix_fmt" in second
+    assert second[second.index("-pix_fmt") + 1] == "yuv420p"
 
 
 @pytest.mark.asyncio
@@ -195,6 +343,6 @@ async def test_stream_cancelled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
     # Fail with CancelledError on write to hit inner disconnection branch
     resp = _FakeResp(fail_with=asyncio.CancelledError())
     await seg.stream(tmp_path / "file.mp4", resp)
-    # Inner branch treats it as client disconnected; no EOF and no termination
+    # Inner branch treats it as client disconnected; no EOF and we terminate ffmpeg
     assert resp.eof is False
-    assert proc.terminated is False
+    assert proc.terminated is True

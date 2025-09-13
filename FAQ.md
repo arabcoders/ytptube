@@ -28,7 +28,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_HOST                       | Which IP address to bind to                                        | `0.0.0.0`           |
 | YTP_PORT                       | Which port to bind to                                              | `8081`              |
 | YTP_LOG_LEVEL                  | Log level                                                          | `info`              |
-| YTP_STREAMER_VCODEC            | The video codec to use for in-browser streaming                    | `libx264`           |
+| YTP_STREAMER_VCODEC            | The video encoding codec, default to gpi and fallback to software  | `""`                |
 | YTP_STREAMER_ACODEC            | The audio codec to use for in-browser streaming                    | `aac`               |
 | YTP_ACCESS_LOG                 | Whether to log access to the web server                            | `true`              |
 | YTP_DEBUG                      | Whether to turn on debug mode                                      | `false`             |

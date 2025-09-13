@@ -72,8 +72,8 @@ class Config(metaclass=Singleton):
     max_workers: int = 1
     """The maximum number of workers to use for downloading."""
 
-    streamer_vcodec: str = "libx264"
-    """The video codec to use for streaming."""
+    streamer_vcodec: str = ""
+    """The video codec to use for streaming. If empty, auto-detect."""
 
     streamer_acodec: str = "aac"
     """The audio codec to use for streaming."""
