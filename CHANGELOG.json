@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df",
-    "date": "2025-09-14T16:43:52+00:00",
+    "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2",
+    "date": "2025-09-14T18:58:54+00:00",
     "commits": [
+      {
+        "sha": "7ad2bd63",
+        "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2",
+        "message": "[FEAT] Add per extractor limits. Closes #421",
+        "author": "arabcoders",
+        "date": "2025-09-14T18:58:54+00:00"
+      },
       {
         "sha": "a96be4c0",
         "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df",

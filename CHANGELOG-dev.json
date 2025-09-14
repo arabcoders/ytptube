@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250914-a96be4c0",
-        "date": "2025-09-14T16:43:52+00:00",
+        "tag": "dev-20250914-7ad2bd63",
+        "date": "2025-09-14T18:58:54+00:00",
         "commits": [
+            {
+                "sha": "7ad2bd63",
+                "message": "[FEAT] Add per extractor limits. Closes #421",
+                "author": "arabcoders",
+                "date": "2025-09-14T18:58:54+00:00",
+                "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2"
+            },
             {
                 "sha": "a96be4c0",
                 "message": "Add docs to footer",
@@ -2013,7 +2020,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df"
+        "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2"
     },
     {
         "tag": "dev-20250616-c07465a6",
