@@ -1,9 +1,3 @@
-# The origin of the project.
-
-The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
-rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
-project and what i wanted to achieve with it.
-
 # Environment variables
 
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
@@ -323,6 +317,12 @@ volumes:
 If you prefer, you can bypass YTPTube `download_path` and set it to `/` and completely manage your own mounts. However,
 please be aware that the file browser feature will expose whatever `download_path` is set to. **So, if you set it to `/`, 
 the file browser will expose the entire container filesystem.**
+
+# The origin of the project.
+
+The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
+rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
+project and what i wanted to achieve with it.
 
 # How to use hardware acceleration for video transcoding?
 
