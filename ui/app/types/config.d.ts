@@ -14,6 +14,8 @@ type AppConfig = {
   ytdlp_version: string
   /** Maximum number of concurrent download workers */
   max_workers: number
+  /** Maximum number of concurrent workers per extractor */
+  max_workers_per_extractor: number
   /** Default preset name, e.g. "default" */
   default_preset: string
   /** Instance title for the app, null if not set */
