@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2",
-    "date": "2025-09-14T18:58:54+00:00",
+    "full_sha": "2b669cc8c1d2ba16d3f461e7a3fa28ca4ed7f0b8",
+    "date": "2025-09-14T19:03:50+00:00",
     "commits": [
+      {
+        "sha": "2b669cc8",
+        "full_sha": "2b669cc8c1d2ba16d3f461e7a3fa28ca4ed7f0b8",
+        "message": "Update FAQ & README",
+        "author": "arabcoders",
+        "date": "2025-09-14T19:03:50+00:00"
+      },
       {
         "sha": "7ad2bd63",
         "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2",

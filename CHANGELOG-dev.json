@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250914-7ad2bd63",
-        "date": "2025-09-14T18:58:54+00:00",
+        "tag": "dev-20250914-2b669cc8",
+        "date": "2025-09-14T19:03:50+00:00",
         "commits": [
+            {
+                "sha": "2b669cc8",
+                "message": "Update FAQ & README",
+                "author": "arabcoders",
+                "date": "2025-09-14T19:03:50+00:00",
+                "full_sha": "2b669cc8c1d2ba16d3f461e7a3fa28ca4ed7f0b8"
+            },
             {
                 "sha": "7ad2bd63",
                 "message": "[FEAT] Add per extractor limits. Closes #421",
@@ -2020,7 +2027,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2"
+        "full_sha": "2b669cc8c1d2ba16d3f461e7a3fa28ca4ed7f0b8"
     },
     {
         "tag": "dev-20250616-c07465a6",
