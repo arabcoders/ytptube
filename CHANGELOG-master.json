@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20250914-871f9e80",
-        "date": "2025-09-13T22:46:49+00:00",
+        "tag": "master-20250914-5c862eb6",
+        "date": "2025-09-14T19:23:42+00:00",
         "commits": [
+            {
+                "sha": "d48faed4",
+                "message": "Minor design update",
+                "author": "arabcoders",
+                "date": "2025-09-14T19:15:43+00:00",
+                "full_sha": "d48faed4f70ac6d2f09b149af9867e5f9780347a"
+            },
+            {
+                "sha": "2b669cc8",
+                "message": "Update FAQ & README",
+                "author": "arabcoders",
+                "date": "2025-09-14T19:03:50+00:00",
+                "full_sha": "2b669cc8c1d2ba16d3f461e7a3fa28ca4ed7f0b8"
+            },
+            {
+                "sha": "7ad2bd63",
+                "message": "[FEAT] Add per extractor limits. Closes #421",
+                "author": "arabcoders",
+                "date": "2025-09-14T18:58:54+00:00",
+                "full_sha": "7ad2bd63584412010758fed1c4edcc21f4a318d2"
+            },
+            {
+                "sha": "a96be4c0",
+                "message": "Add docs to footer",
+                "author": "arabcoders",
+                "date": "2025-09-14T16:43:52+00:00",
+                "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df"
+            },
             {
                 "sha": "82cd085e",
                 "message": "exclude intel packages on arm builds",
@@ -2006,7 +2034,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "871f9e803e619f9e1cd662160105b9e88820ac9e"
+        "full_sha": "5c862eb6138749b3271df6484e6686680f403454"
     },
     {
         "tag": "master-20250616-c07465a6",
