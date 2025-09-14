@@ -167,11 +167,10 @@ class Item:
         return Item(**data)
 
     def get_archive_id(self) -> str | None:
-        if not self.url:
-            return None
+        return get_archive_id(self.url).get("archive_id") if self.url else None
 
-        idDict: dict = get_archive_id(self.url)
-        return idDict.get("archive_id")
+    def get_extractor(self) -> str | None:
+        return get_archive_id(self.url).get("ie_key") if self.url else None
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
         params: YTDLPOpts = YTDLPOpts.get_instance()
@@ -325,6 +324,15 @@ class ItemDTO:
         self.archive_id = idDict.get("archive_id")
 
         return self.archive_id
+
+    def get_extractor(self) -> str | None:
+        if self.archive_id:
+            return self.archive_id.split(" ")[0]
+
+        idDict: dict[str, str | None] = get_archive_id(self.url)
+        self.archive_id = idDict.get("archive_id")
+
+        return idDict.get("ie_key") if self.url else None
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
         """

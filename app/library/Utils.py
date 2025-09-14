@@ -87,6 +87,8 @@ DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}
 T = TypeVar("T")
 "Generic type variable."
 
+ARCHIVE_IDS_CACHE: dict[str, dict] = {}
+"Cache for archive IDs."
 
 class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
@@ -1114,6 +1116,9 @@ def get_archive_id(url: str) -> dict[str, str | None]:
         "archive_id": None,
     }
 
+    if url in ARCHIVE_IDS_CACHE:
+        return ARCHIVE_IDS_CACHE[url]
+
     if YTDLP_INFO_CLS is None:
         YTDLP_INFO_CLS = YTDLP(
             params={
@@ -1146,6 +1151,7 @@ def get_archive_id(url: str) -> dict[str, str | None]:
             LOG.exception(e)
             LOG.error(f"Error getting archive ID: {e}")
 
+    ARCHIVE_IDS_CACHE.update({url: idDict})
     return idDict
 
 
