@@ -121,24 +121,28 @@
           connection is functional.
         </p>
       </Message>
+      <Markdown @closeModel="() => doc.file = ''" :file="doc.file" v-if="doc.file" />
       <ClientOnly>
         <Dialog />
       </ClientOnly>
     </div>
 
     <div class="columns mt-3 is-mobile">
-      <div class="column is-8-mobile">
+      <div class="column">
         <div class="has-text-left" v-if="config.app?.app_version">
           © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-          <span class="has-tooltip" v-if="!isMobile"
+          <span class="has-tooltip"
             v-tooltip="`Build Date: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, commit: ${config.app?.app_commit_sha}`">
             &nbsp;({{ config?.app?.app_version || 'unknown' }})</span>
           - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
-          <span v-if="!isMobile">&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
+          <span>&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
           - <NuxtLink to="/changelog">CHANGELOG</NuxtLink>
+          - <NuxtLink @click="doc.file = '/api/docs/FAQ.md'">FAQ</NuxtLink>
+          - <NuxtLink @click="doc.file = '/api/docs/README.md'">README</NuxtLink>
+          - <NuxtLink @click="doc.file = '/api/docs/API.md'">API</NuxtLink>
         </div>
       </div>
-      <div class="column is-4-mobile" v-if="config.app?.started">
+      <div class="column is-narrow" v-if="config.app?.started">
         <div class="has-text-right">
           <span class="user-hint"
             v-tooltip="'App Started: ' + moment.unix(config.app?.started).format('YYYY-M-DD H:mm Z')">
@@ -161,6 +165,7 @@ import type { YTDLPOption } from '~/types/ytdlp'
 import { useDialog } from '~/composables/useDialog'
 import Dialog from '~/components/Dialog.vue'
 import Shutdown from '~/components/shutdown.vue'
+import Markdown from '~/components/Markdown.vue'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -174,6 +179,7 @@ const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const app_shutdown = ref<boolean>(false)
+const doc = ref<{ file: string }>({ file: '' })
 
 const applyPreferredColorScheme = (scheme: string) => {
   if (!scheme || scheme === 'auto') {

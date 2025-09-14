@@ -141,6 +141,7 @@
     "sstr",
     "startswith",
     "SUPPRESSHELP",
+    "tablehead",
     "tebibytes",
     "testpaths",
     "threadsafe",
