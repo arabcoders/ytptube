@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df",
+    "date": "2025-09-14T16:43:52+00:00",
+    "commits": [
+      {
+        "sha": "a96be4c0",
+        "full_sha": "a96be4c0feb151cca55085cabc1600bbb9c990df",
+        "message": "Add docs to footer",
+        "author": "arabcoders",
+        "date": "2025-09-14T16:43:52+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.10.1",
     "full_sha": "871f9e803e619f9e1cd662160105b9e88820ac9e",
     "date": "2025-09-13T22:46:49+00:00",
