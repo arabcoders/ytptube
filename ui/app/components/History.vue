@@ -272,7 +272,7 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img @load="e => pImg(e)"
+                <img @load="(e: Event) => pImg(e)"
                   :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
@@ -280,13 +280,13 @@
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="e => pImg(e)"
+                <img @load="(e: Event) => pImg(e)"
                   :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                   v-if="item.extras?.thumbnail" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
-                <img @load="e => pImg(e)" v-if="item.extras?.thumbnail"
+                <img @load="(e: Event) => pImg(e)" v-if="item.extras?.thumbnail"
                   :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
                 <img v-else src="/images/placeholder.png" />
               </template>

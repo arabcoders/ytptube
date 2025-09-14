@@ -18,6 +18,7 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Schedule channels or playlists to be downloaded automatically.
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.
+* Support for limits per extractor and overall global limit.
 * Queue multiple URLs at once.
 * Powerful presets system for applying `yt-dlp` options.
 * File browser.

@@ -2,6 +2,7 @@ import asyncio
 import functools
 import glob
 import logging
+import os
 import time
 import traceback
 import uuid
@@ -60,6 +61,8 @@ class DownloadQueue(metaclass=Singleton):
         "Semaphore to limit the number of concurrent downloads."
         self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
         "Semaphore to limit the number of concurrent processors."
+        self.limits: dict[str, asyncio.Semaphore] = {}
+        "Per-extractor semaphores to limit concurrent downloads per extractor."
         self.paused = asyncio.Event()
         "Event to pause the download queue."
         self.event = asyncio.Event()
@@ -81,6 +84,35 @@ class DownloadQueue(metaclass=Singleton):
 
         """
         return DownloadQueue()
+
+    def _get_limit(self, extractor: str) -> asyncio.Semaphore:
+        """
+        Get or create a semaphore for the given extractor.
+
+        Args:
+            extractor (str): The extractor name.
+
+        Returns:
+            asyncio.Semaphore: The semaphore for the extractor.
+
+        """
+        if extractor not in self.limits:
+            env_limit: str | None = os.environ.get(f"YTP_MAX_WORKERS_FOR_{extractor.upper()}")
+
+            # Determine effective limit
+            if env_limit and env_limit.isdigit() and 1 <= int(env_limit):
+                limit: int = min(int(env_limit), self.config.max_workers)
+            else:
+                if env_limit:
+                    LOG.warning(f"Invalid extractor limit '{env_limit}' for '{extractor}', using default limit.")
+                limit = self.config.max_workers_per_extractor
+
+            limit = min(limit, self.config.max_workers)
+
+            self.limits[extractor] = asyncio.Semaphore(limit)
+            LOG.info(f"Created limits container for extractor '{extractor}': {limit}")
+
+        return self.limits[extractor]
 
     def attach(self, _: web.Application) -> None:
         """
@@ -124,7 +156,9 @@ class DownloadQueue(metaclass=Singleton):
         """
         Initialize the download queue.
         """
-        LOG.info(f"Using '{self.config.max_workers}' workers for downloading.")
+        LOG.info(
+            f"Using '{self.config.max_workers}' workers for downloading and '{self.config.max_workers_per_extractor}' per extractor."
+        )
         asyncio.create_task(self._download_pool(), name="download_pool")
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
@@ -983,36 +1017,67 @@ class DownloadQueue(metaclass=Singleton):
         """
         Create a pool of workers to download the files.
         """
+        adaptive_sleep = 0.2  # Start with base sleep
+        max_sleep = 5.0  # Maximum sleep to avoid excessive delays
+
         while True:
             while not self.queue.has_downloads():
                 LOG.info("Waiting for item to download.")
                 await self.event.wait()
                 self.event.clear()
+                adaptive_sleep = 0.2
 
             if self.is_paused():
-                LOG.info("Download pool is paused.")
+                LOG.warning("Download pool is paused.")
                 await self.paused.wait()
                 LOG.info("Download pool resumed downloading.")
+                adaptive_sleep = 0.2
+
+            items_processed = 0
 
             for _id, entry in list(self.queue.items()):
                 if entry.started() or entry.is_cancelled() or entry.info.auto_start is False:
                     continue
 
+                extractor: str = entry.info.get_extractor() or "unknown"
+
+                # Live downloads bypass all limits.
                 if entry.is_live:
-                    task = asyncio.create_task(self._download_live(_id, entry), name=f"download_live_{_id}")
+                    task: asyncio.Task[None] = asyncio.create_task(
+                        self._download_live(_id, entry), name=f"download_live_{extractor}_{_id}"
+                    )
                     task.add_done_callback(self._handle_task_exception)
+                    items_processed += 1
                 else:
+                    _limit: asyncio.Semaphore = self._get_limit(extractor)
+
+                    # Skip this item in this iteration if no slots are available.
+                    if self.workers.locked() or _limit.locked():
+                        continue
+
                     await self.workers.acquire()
+                    await _limit.acquire()
 
-                    task = asyncio.create_task(self._download_file(_id, entry), name=f"download_file_{_id}")
+                    task: asyncio.Task[None] = asyncio.create_task(
+                        self._download_file(_id, entry), name=f"download_file_{extractor}_{_id}"
+                    )
 
-                    def _release_semaphore(t: asyncio.Task):
+                    def _release(t: asyncio.Task, sem=_limit) -> None:
+                        sem.release()
                         self.workers.release()
                         self._handle_task_exception(t)
 
-                    task.add_done_callback(_release_semaphore)
+                    task.add_done_callback(_release)
+                    items_processed += 1
 
-                await asyncio.sleep(0.5)
+            # No items could be processed, back off a bit to avoid busy-waiting.
+            if 0 == items_processed:
+                adaptive_sleep: float = min(adaptive_sleep * 1.5, max_sleep)
+                LOG.info(f"No download slots available. Backing off for {adaptive_sleep:.2f}s before next attempt.")
+            else:
+                adaptive_sleep = 0.2
+
+            await asyncio.sleep(adaptive_sleep)
 
     async def _download_live(self, _id: str, entry: Download) -> None:
         LOG.info(f"Creating temporary worker for entry '{entry.info.name()}'.")

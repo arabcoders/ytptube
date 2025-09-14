@@ -117,28 +117,28 @@ watch(toggleFilter, () => {
   }
 });
 
-onMounted(() => {
+const getTitle = (): string => {
   if (!config.app.ui_update_title) {
-    useHead({ title: 'YTPTube' })
-    return
+    return 'YTPTube'
   }
-  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers} | ${Object.keys(stateStore.history).length || 0} )` })
-})
+  return `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}:${config.app.max_workers_per_extractor} | ${Object.keys(stateStore.history).length || 0} )`
+}
+
+onMounted(() => useHead({ title: getTitle() }))
 
 watch(() => stateStore.history, () => {
   if (!config.app.ui_update_title) {
     return
   }
-  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}  | ${Object.keys(stateStore.history).length || 0} )` })
+  useHead({ title: getTitle() })
 }, { deep: true })
 
 watch(() => stateStore.queue, () => {
   if (!config.app.ui_update_title) {
     return
   }
-  useHead({ title: `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}  | ${Object.keys(stateStore.history).length || 0} )` })
+  useHead({ title: getTitle() })
 }, { deep: true })
-
 
 const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' })
 

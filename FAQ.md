@@ -1,9 +1,3 @@
-# The origin of the project.
-
-The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
-rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
-project and what i wanted to achieve with it.
-
 # Environment variables
 
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
@@ -17,7 +11,8 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_INSTANCE_TITLE             | The title of the instance                                          | `empty string`        |
 | YTP_FILE_LOGGING               | Whether to log to file                                             | `false`               |
 | YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                          | `/downloads`          |
-| YTP_MAX_WORKERS                | How many works to use for downloads                                | `1`                   |
+| YTP_MAX_WORKERS                | The maximum number of workers to use for downloading               | `20`                  |
+| YTP_MAX_WORKERS_PER_EXTRACTOR  | The maximum number of concurrent downloads per extractor           | `2`                   |
 | YTP_AUTH_USERNAME              | Username for basic authentication                                  | `empty string`        |
 | YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `empty string`        |
 | YTP_CONSOLE_ENABLED            | Whether to enable the console                                      | `false`               |
@@ -49,6 +44,12 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                   |
 | YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`               |
 | YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                   |
+
+> [!NOTE]
+> To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
+> The extractor name must be in uppercase, to know the extractor name, check the log for the specific extractor used for the download.
+> The limit should not exceed the `YTP_MAX_WORKERS` value as it will be ignored.
+
 
 # Browser extensions & bookmarklets
 
@@ -316,6 +317,12 @@ volumes:
 If you prefer, you can bypass YTPTube `download_path` and set it to `/` and completely manage your own mounts. However,
 please be aware that the file browser feature will expose whatever `download_path` is set to. **So, if you set it to `/`, 
 the file browser will expose the entire container filesystem.**
+
+# The origin of the project.
+
+The project first started as a fork [meTube](https://github.com/alexta69/metube), since then it has been completely 
+rewritten and redesigned. The original project was a great starting point, but it didn't align with my vision for the 
+project and what i wanted to achieve with it.
 
 # How to use hardware acceleration for video transcoding?
 

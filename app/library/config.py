@@ -69,8 +69,11 @@ class Config(metaclass=Singleton):
     base_path: str = "/"
     """The base path to use for the application."""
 
-    max_workers: int = 1
+    max_workers: int = 20
     """The maximum number of workers to use for downloading."""
+
+    max_workers_per_extractor: int = 2
+    """The maximum number of concurrent downloads per extractor."""
 
     streamer_vcodec: str = ""
     """The video codec to use for streaming. If empty, auto-detect."""
@@ -205,6 +208,7 @@ class Config(metaclass=Singleton):
     _int_vars: tuple = (
         "port",
         "max_workers",
+        "max_workers_per_extractor",
         "extract_info_timeout",
         "debugpy_port",
         "playlist_items_concurrency",
@@ -240,6 +244,7 @@ class Config(metaclass=Singleton):
         "remove_files",
         "ui_update_title",
         "max_workers",
+        "max_workers_per_extractor",
         "default_preset",
         "instance_title",
         "console_enabled",

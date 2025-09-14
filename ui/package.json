@@ -33,7 +33,11 @@
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.21",
     "vue-router": "^4.5.1",
-    "vue-toastification": "2.0.0-rc.5"
+    "vue-toastification": "2.0.0-rc.5",
+    "marked": "^16.2.1",
+    "marked-alert": "^2.1.2",
+    "marked-base-url": "^1.1.7",
+    "marked-gfm-heading-id": "^4.1.2"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
