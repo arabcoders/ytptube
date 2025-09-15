@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "215a023da819c2d169870b32a0cceb4391acb22a",
+    "date": "2025-09-15T16:34:03+00:00",
+    "commits": [
+      {
+        "sha": "215a023d",
+        "full_sha": "215a023da819c2d169870b32a0cceb4391acb22a",
+        "message": "Cache calls to frequently called functions",
+        "author": "arabcoders",
+        "date": "2025-09-15T16:34:03+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.10.2",
     "full_sha": "5c862eb6138749b3271df6484e6686680f403454",
     "date": "2025-09-14T19:23:42+00:00",
