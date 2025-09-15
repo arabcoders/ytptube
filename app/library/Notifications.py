@@ -1,9 +1,9 @@
 import asyncio
 import json
 import logging
+import traceback
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -464,36 +464,36 @@ class Notification(metaclass=Singleton):
         try:
             LOG.info(f"Sending Notification event '{ev.event}: {ev.id}' to '{target.name}'.")
 
-            reqBody: dict[str, Any] = {
-                "method": target.request.method.upper(),
-                "url": target.request.url,
-                "headers": {
-                    "User-Agent": f"YTPTube/{self._version}",
-                    "X-Event-Id": ev.id,
-                    "X-Event": ev.event,
-                    "Content-Type": "application/json"
-                    if "json" == target.request.type.lower()
-                    else "application/x-www-form-urlencoded",
-                },
+            headers: dict[str, str] = {
+                "User-Agent": f"YTPTube/{self._version}",
+                "X-Event-Id": ev.id,
+                "X-Event": ev.event,
+                "Content-Type": "application/json"
+                if "json" == target.request.type.lower()
+                else "application/x-www-form-urlencoded",
             }
 
             if len(target.request.headers) > 0:
-                for h in target.request.headers:
-                    reqBody["headers"][h.key] = h.value
+                headers.update({h.key: h.value for h in target.request.headers if h.key and h.value})
 
-            body_key: str = "json" if "json" == target.request.type.lower() else "data"
-            reqBody[body_key] = self._deep_unpack(ev.serialize())
+            payload: dict = ev.serialize()
 
             if "data" != target.request.data_key:
-                reqBody[body_key][target.request.data_key] = reqBody[body_key]["data"]
-                reqBody[body_key].pop("data", None)
+                payload[target.request.data_key] = payload["data"]
+                payload.pop("data", None)
 
             if "form" == target.request.type.lower():
-                reqBody[body_key][target.request.data_key] = self._encoder.encode(
-                    reqBody[body_key][target.request.data_key]
-                )
+                payload[target.request.data_key] = self._encoder.encode(payload[target.request.data_key])
+            else:
+                payload = self._encoder.encode(payload)
 
-            response = await self._client.request(**reqBody)
+            response = await self._client.request(
+                method=target.request.method.upper(),
+                url=target.request.url,
+                headers=headers,
+                data=payload if "form" == target.request.type.lower() else None,
+                content=payload if "json" == target.request.type.lower() else None,
+            )
 
             respData: dict[str, Any] = {
                 "url": target.request.url,
@@ -512,7 +512,9 @@ class Notification(metaclass=Singleton):
             err_msg = str(e)
             if not err_msg:
                 err_msg: str = type(e).__name__
-            LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'.")
+
+            tb = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            LOG.error(f"Error sending Notification event '{ev.event}: {ev.id}' to '{target.name}'. '{err_msg!s}'. {tb}")
             return {"url": target.request.url, "status": 500, "text": str(ev)}
 
     def emit(self, e: Event, _, **__) -> None:
@@ -521,19 +523,6 @@ class Notification(metaclass=Singleton):
 
         self._offload.submit(self.send, e)
         return
-
-    def _deep_unpack(self, data: dict) -> dict:
-        for k, v in data.items():
-            if isinstance(v, dict):
-                data[k] = self._deep_unpack(v)
-            if isinstance(v, list):
-                data[k] = [self._deep_unpack(i) for i in v]
-            if isinstance(v, datetime):
-                data[k] = v.isoformat()
-            if isinstance(v, object) and hasattr(v, "serialize"):
-                data[k] = v.serialize()
-
-        return data
 
     async def noop(self) -> None:
         return None

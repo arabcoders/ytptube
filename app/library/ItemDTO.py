@@ -1,13 +1,14 @@
-import json
 import logging
 import re
 import time
 import uuid
 from dataclasses import dataclass, field
 from email.utils import formatdate
+from pathlib import Path
 from typing import Any
 
-from app.library.Utils import archive_add, archive_delete, archive_read, clean_item, get_archive_id
+from app.library.encoder import Encoder
+from app.library.Utils import archive_add, archive_delete, archive_read, clean_item, get_archive_id, get_file
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("ItemDTO")
@@ -47,12 +48,37 @@ class Item:
     """If the item should be started automatically."""
 
     def serialize(self) -> dict:
+        """
+        Serialize the item to a dictionary.
+
+        Returns:
+            dict: The serialized item.
+
+        """
         return self.__dict__.copy()
 
     def json(self) -> str:
-        return json.dumps(self.serialize(), default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        """
+        Convert the item to a JSON string.
+
+        Returns:
+            str: The JSON string representation of the item.
+
+        """
+        return Encoder(sort_keys=True, indent=4).encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get a value from the item by key.
+
+        Args:
+            key (str): The key to get the value for.
+            default (Any): The default value to return if the key is not found.
+
+        Returns:
+            Any: The value for the key, or the default value if the key is not found
+
+        """
         return self.__dict__.get(key, default)
 
     def has_extras(self) -> bool:
@@ -77,6 +103,13 @@ class Item:
 
     @staticmethod
     def _default_preset() -> str:
+        """
+        Get the default preset from the configuration.
+
+        Returns:
+            str: The default preset name.
+
+        """
         from .config import Config
 
         return Config.get_instance().default_preset
@@ -167,12 +200,33 @@ class Item:
         return Item(**data)
 
     def get_archive_id(self) -> str | None:
+        """
+        Get the archive ID for the download URL.
+
+        Returns:
+            str | None: The archive ID if available, None otherwise.
+
+        """
         return get_archive_id(self.url).get("archive_id") if self.url else None
 
     def get_extractor(self) -> str | None:
+        """
+        Get the extractor key for the download URL.
+
+        Returns:
+            str | None: The extractor key if available, None otherwise.
+
+        """
         return get_archive_id(self.url).get("ie_key") if self.url else None
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
+        """
+        Get the yt-dlp options for the item.
+
+        Returns:
+            YTDLPOpts: The yt-dlp options for the item.
+
+        """
         params: YTDLPOpts = YTDLPOpts.get_instance()
 
         if self.preset:
@@ -184,14 +238,35 @@ class Item:
         return params
 
     def get_archive_file(self) -> str | None:
+        """
+        Get the archive file path from the yt-dlp options.
+
+        Returns:
+            str | None: The archive file path if available, None otherwise.
+
+        """
         return self.get_ytdlp_opts().get_all().get("download_archive")
 
     def is_archived(self) -> bool:
+        """
+        Check if the item has been archived.
+
+        Returns:
+            bool: True if the item has been archived, False otherwise.
+
+        """
         archive_id: str | None = self.get_archive_id()
         archive_file: str | None = self.get_archive_file()
         return len(archive_read(archive_file, [archive_id])) > 0 if archive_file and archive_id else False
 
     def __repr__(self) -> str:
+        """
+        Get a short string representation of the item.
+
+        Returns:
+            str: A short string representation of the item.
+
+        """
         from .config import Config
         from .Utils import calc_download_path, strip_newline
 
@@ -288,6 +363,13 @@ class ItemDTO:
     _archive_file: str | None = None
 
     def serialize(self) -> dict:
+        """
+        Serialize the item to a dictionary.
+
+        Returns:
+            dict: The serialized item.
+
+        """
         if "finished" == self.status and not self._recomputed:
             self.archive_status()
 
@@ -295,16 +377,83 @@ class ItemDTO:
         return item
 
     def json(self) -> str:
-        return json.dumps(self.serialize(), default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        """
+        Convert the item to a JSON string.
+
+        Returns:
+            str: The JSON string representation of the item.
+
+        """
+        return Encoder(sort_keys=True, indent=4).encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get a value from the item by key.
+
+        Args:
+            key (str): The key to get the value for.
+            default (Any): The default value to return if the key is not found.
+
+        Returns:
+            Any: The value for the key, or the default value if the key is not found
+
+        """
         return self.__dict__.get(key, default)
 
     def get_id(self) -> str:
+        """
+        Get the unique identifier for the item.
+
+        Returns:
+            str: The unique identifier for the item.
+
+        """
         return self._id
 
     def name(self) -> str:
+        """
+        Get a short string representation of the item.
+
+        Returns:
+            str: A short string representation of the item.
+
+        """
         return f'id="{self.id}", title="{self.title}"'
+
+    def get_file(self, download_path: Path | None = None) -> Path | None:
+        """
+        Get the file path of the downloaded item.
+
+        Args:
+            download_path (Path | None): The base download path. If None, it will be taken from the config.
+
+        Returns:
+            Path | None: The file path of the downloaded item, or None if not available.
+
+        """
+        if not self.filename:
+            return None
+
+        if not download_path:
+            from .config import Config
+
+            base_path = Path(Config.get_instance().download_path)
+        else:
+            base_path = download_path if isinstance(download_path, Path) else Path(download_path)
+
+        filename = base_path
+
+        if self.folder:
+            filename: Path = filename / self.folder
+
+        filename = filename / self.filename
+
+        try:
+            realFile, status = get_file(download_path=base_path, file=str(filename.relative_to(base_path)))
+        except Exception:
+            return None
+
+        return Path(realFile) if status in (200, 302) else None
 
     def get_archive_id(self) -> str | None:
         """
@@ -326,6 +475,13 @@ class ItemDTO:
         return self.archive_id
 
     def get_extractor(self) -> str | None:
+        """
+        Get the extractor key for the download URL.
+
+        Returns:
+            str | None: The extractor key if available, None otherwise.
+
+        """
         if self.archive_id:
             return self.archive_id.split(" ")[0]
 
@@ -353,6 +509,13 @@ class ItemDTO:
         return params
 
     def archive_status(self, force: bool = False) -> None:
+        """
+        Recompute the archive status of the item.
+
+        Args:
+            force (bool): If True, force recomputation even if already computed.
+
+        """
         if not force and (self._recomputed or not self.archive_id):
             return
 
@@ -415,7 +578,13 @@ class ItemDTO:
 
     @staticmethod
     def removed_fields() -> tuple:
-        """Fields that once existed but are no longer used."""
+        """
+        Fields that once existed but are no longer used.
+
+        Returns:
+            tuple: A tuple of field names that are no longer used.
+
+        """
         return (
             "thumbnail",
             "quality",
@@ -431,6 +600,9 @@ class ItemDTO:
         )
 
     def __post_init__(self):
+        """
+        Post-initialization to compute archive status if applicable.
+        """
         self.get_archive_id()
         self.get_archive_file()
         self.archive_status()

@@ -1251,6 +1251,9 @@ class DownloadQueue(metaclass=Singleton):
         if task.cancelled():
             return
 
-        if exc := task.exception():
-            task_name: str = task.get_name() if task.get_name() else "unknown_task"
-            LOG.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {traceback.format_exc()}")
+        if not (exc := task.exception()):
+            return
+
+        task_name: str = task.get_name() if task.get_name() else "unknown_task"
+        tb = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        LOG.error(f"Unhandled exception in background task '{task_name}': {exc!s}. {tb}")
