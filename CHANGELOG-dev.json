@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250916-387a071a",
-        "date": "2025-09-16T16:28:52+00:00",
+        "tag": "dev-20250916-4986aea3",
+        "date": "2025-09-16T19:41:53+00:00",
         "commits": [
+            {
+                "sha": "4986aea3",
+                "message": "fix an issue with objection mutation in timed_lru_cache cache",
+                "author": "arabcoders",
+                "date": "2025-09-16T19:41:53+00:00",
+                "full_sha": "4986aea300aaa7b366e7756cd78b3b7ecc246060"
+            },
             {
                 "sha": "387a071a",
                 "message": "update ui tests",
@@ -2076,7 +2083,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "387a071a5979f70556f4742146d43c1777aab94d"
+        "full_sha": "4986aea300aaa7b366e7756cd78b3b7ecc246060"
     },
     {
         "tag": "dev-20250616-c07465a6",
