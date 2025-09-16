@@ -138,7 +138,7 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
                 # Limit cache size
                 if len(cache) > max_size:
                     # Remove oldest entries
-                    oldest_keys = sorted(cache_expiry.keys(), key=lambda k: cache_expiry[k])[:len(cache) - max_size]
+                    oldest_keys = sorted(cache_expiry.keys(), key=lambda k: cache_expiry[k])[: len(cache) - max_size]
                     for old_key in oldest_keys:
                         cache.pop(old_key, None)
                         cache_expiry.pop(old_key, None)
@@ -153,6 +153,7 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
             def cache_info():
                 # Use functools._CacheInfo for compatibility with standard lru_cache
                 from functools import _CacheInfo
+
                 return _CacheInfo(hits=0, misses=len(cache), maxsize=max_size, currsize=len(cache))
 
             async_wrapper.cache_clear = cache_clear
@@ -626,18 +627,21 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
 
 
 @timed_lru_cache(ttl_seconds=60, max_size=256)
-def get_file_sidecar(file: Path) -> list[dict]:
+def get_file_sidecar(file: Path | None = None) -> dict[dict]:
     """
     Get sidecar files for the given file.
 
     Args:
-        file (Path): The video file.
+        file (Path|None): The video file.
 
     Returns:
-        list: List of sidecar files.
+        dict: A dictionary with sidecar files categorized by type.
 
     """
     files: dict = {}
+
+    if not file:
+        return files
 
     for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
         if f == file or f.is_file() is False or f.stem.startswith("."):

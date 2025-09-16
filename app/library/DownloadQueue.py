@@ -465,6 +465,7 @@ class DownloadQueue(metaclass=Singleton):
         dl = ItemDTO(
             id=str(entry.get("id")),
             title=str(entry.get("title")),
+            description=str(entry.get("description", "")),
             url=str(entry.get("webpage_url") or entry.get("url")),
             preset=item.preset,
             folder=item.folder,
@@ -982,6 +983,7 @@ class DownloadQueue(metaclass=Singleton):
             items["queue"][k] = self._active[k].info if k in self._active else v
 
         for k, v in self.done.saved_items():
+            v.get_file_sidecar()
             items["done"][k] = v
 
         for k, v in self.queue.items():
@@ -989,8 +991,11 @@ class DownloadQueue(metaclass=Singleton):
                 items["queue"][k] = self._active[k].info if k in self._active else v
 
         for k, v in self.done.items():
-            if k not in items["done"]:
-                items["done"][k] = v.info
+            if k in items["done"]:
+                continue
+
+            v.info.get_file_sidecar()
+            items["done"][k] = v.info
 
         return items
 

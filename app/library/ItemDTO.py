@@ -8,7 +8,15 @@ from pathlib import Path
 from typing import Any
 
 from app.library.encoder import Encoder
-from app.library.Utils import archive_add, archive_delete, archive_read, clean_item, get_archive_id, get_file
+from app.library.Utils import (
+    archive_add,
+    archive_delete,
+    archive_read,
+    clean_item,
+    get_archive_id,
+    get_file,
+    get_file_sidecar,
+)
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("ItemDTO")
@@ -305,6 +313,8 @@ class ItemDTO:
     """ The ID of the item yt-dlp """
     title: str
     """ The title of the item. """
+    description: str = ""
+    """ The description of the item. """
     url: str
     """ The URL of the item. """
     preset: str = "default"
@@ -347,6 +357,8 @@ class ItemDTO:
     """ If the item has been archived. """
     archive_id: str | None = None
     """ The archive ID of the item. """
+    sidecar: dict = field(default_factory=dict)
+    """ Sidecar data associated with the item. """
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
@@ -370,8 +382,11 @@ class ItemDTO:
             dict: The serialized item.
 
         """
-        if "finished" == self.status and not self._recomputed:
-            self.archive_status()
+        if "finished" == self.status:
+            if not self._recomputed:
+                self.archive_status()
+
+            self.get_file_sidecar()
 
         item, _ = clean_item(self.__dict__.copy(), ItemDTO.removed_fields())
         return item
@@ -576,6 +591,19 @@ class ItemDTO:
 
         return True
 
+    def get_file_sidecar(self) -> dict:
+        """
+        Get sidecar files associated with the item.
+
+        Returns:
+            dict: A dictionary with sidecar files categorized by type.
+
+        """
+        if filename := self.get_file():
+            self.sidecar = get_file_sidecar(filename)
+
+        return self.sidecar
+
     @staticmethod
     def removed_fields() -> tuple:
         """
@@ -606,3 +634,4 @@ class ItemDTO:
         self.get_archive_id()
         self.get_archive_file()
         self.archive_status()
+        self.get_file_sidecar()

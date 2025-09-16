@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -168,9 +169,6 @@ class TestItemDTO:
 
     def test_get_file_method(self):
         """Test ItemDTO get_file method returns correct path."""
-        from pathlib import Path
-        from unittest.mock import patch
-
         # Create ItemDTO with filename but no folder
         dto = ItemDTO(
             id="test-id",
@@ -238,3 +236,46 @@ class TestItemDTO:
 
             result = dto.get_file(download_path=Path("/custom"))
             assert result == Path("/custom/test_video.mp4")
+
+    def test_get_file_sidecar_populates_from_utils(self):
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="sidecar", title="Title", url="u", folder="f")
+
+        expected_sidecar = {
+            "subtitle": [
+                {
+                    "file": Path("/downloads/video.en.srt"),
+                    "lang": "en",
+                    "name": "SRT (0) - en",
+                }
+            ]
+        }
+
+        with (
+            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=Path("/downloads/video.mp4")) as mock_get_file,
+            patch("app.library.ItemDTO.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
+        ):
+            result = dto.get_file_sidecar()
+
+        mock_get_file.assert_called_once_with(dto)
+        mock_utils_sidecar.assert_called_once_with(Path("/downloads/video.mp4"))
+        assert result is expected_sidecar
+        assert dto.sidecar is expected_sidecar
+
+    def test_get_file_sidecar_returns_existing_when_no_file(self):
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="sidecar-none", title="Title", url="u", folder="f")
+
+        existing = {"existing": []}
+        dto.sidecar = existing
+
+        with (
+            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=None) as mock_get_file,
+            patch("app.library.ItemDTO.get_file_sidecar") as mock_utils_sidecar,
+        ):
+            result = dto.get_file_sidecar()
+
+        mock_get_file.assert_called_once_with(dto)
+        mock_utils_sidecar.assert_not_called()
+        assert result is existing
+        assert dto.sidecar is existing
