@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250916-ba2bfd6c",
-        "date": "2025-09-16T14:45:23+00:00",
+        "tag": "dev-20250916-387a071a",
+        "date": "2025-09-16T16:28:52+00:00",
         "commits": [
+            {
+                "sha": "387a071a",
+                "message": "update ui tests",
+                "author": "arabcoders",
+                "date": "2025-09-16T16:28:52+00:00",
+                "full_sha": "387a071a5979f70556f4742146d43c1777aab94d"
+            },
             {
                 "sha": "ba2bfd6c",
                 "message": "Use local downloaded thumbnail if avaliable instead of referencing external one",
@@ -2069,7 +2076,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ba2bfd6c9b36817728b51d5bb094ecbbdd081a24"
+        "full_sha": "387a071a5979f70556f4742146d43c1777aab94d"
     },
     {
         "tag": "dev-20250616-c07465a6",
