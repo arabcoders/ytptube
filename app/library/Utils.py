@@ -128,11 +128,20 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
 
                 # Check if we have a cached result that hasn't expired
                 if key in cache and key in cache_expiry and current_time < cache_expiry[key]:
-                    return cache[key]
+                    cached_result = cache[key]
+                    try:
+                        return copy.deepcopy(cached_result)
+                    except Exception:
+                        return cached_result
 
                 # Call the function and cache the result
                 result = await func(*args, **kwargs)
-                cache[key] = result
+                try:
+                    cached_value = copy.deepcopy(result)
+                except Exception:
+                    cached_value = result
+
+                cache[key] = cached_value
                 cache_expiry[key] = current_time + ttl_seconds
 
                 # Limit cache size
@@ -143,7 +152,10 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
                         cache.pop(old_key, None)
                         cache_expiry.pop(old_key, None)
 
-                return result
+                try:
+                    return copy.deepcopy(cached_value)
+                except Exception:
+                    return cached_value
 
             # Expose cache management methods
             def cache_clear():
@@ -161,7 +173,15 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
             return async_wrapper
 
         # For sync functions, use the original implementation
-        cached = lru_cache(maxsize=max_size)(func)
+
+        @lru_cache(maxsize=max_size)
+        def cached(*args, **kwargs):
+            result = func(*args, **kwargs)
+            try:
+                return copy.deepcopy(result)
+            except Exception:
+                return result
+
         cached_expiry = time.monotonic() + ttl_seconds
 
         @wraps(func)
@@ -170,7 +190,11 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
             if time.monotonic() >= cached_expiry:
                 cached.cache_clear()
                 cached_expiry = time.monotonic() + ttl_seconds
-            return cached(*args, **kwargs)
+            result = cached(*args, **kwargs)
+            try:
+                return copy.deepcopy(result)
+            except Exception:
+                return result
 
         # expose cache_clear, cache_info
         sync_wrapper.cache_clear = cached.cache_clear
