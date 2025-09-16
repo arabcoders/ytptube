@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250916-27893bcb",
-        "date": "2025-09-16T14:00:32+00:00",
+        "tag": "dev-20250916-ba2bfd6c",
+        "date": "2025-09-16T14:45:23+00:00",
         "commits": [
+            {
+                "sha": "ba2bfd6c",
+                "message": "Use local downloaded thumbnail if avaliable instead of referencing external one",
+                "author": "arabcoders",
+                "date": "2025-09-16T14:45:23+00:00",
+                "full_sha": "ba2bfd6c9b36817728b51d5bb094ecbbdd081a24"
+            },
             {
                 "sha": "27893bcb",
                 "message": "Add desc & sidecar to item data",
@@ -2062,7 +2069,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "27893bcbf930c83ddc03d129043f5f2457d0ba2a"
+        "full_sha": "ba2bfd6c9b36817728b51d5bb094ecbbdd081a24"
     },
     {
         "tag": "dev-20250616-c07465a6",
