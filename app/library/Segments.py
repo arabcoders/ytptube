@@ -10,15 +10,9 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from aiohttp import web
 
-from .config import Config
+from .config import SUPPORTED_CODECS, Config
 from .ffprobe import ffprobe
-from .SegmentEncoders import (
-    SUPPORTED_CODECS,
-    encoder_fallback_chain,
-    get_builder_for_codec,
-    has_dri_devices,
-    select_encoder,
-)
+from .SegmentEncoders import encoder_fallback_chain, get_builder_for_codec, has_dri_devices, select_encoder
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process

@@ -85,10 +85,6 @@ the `yt-dlp` output and attempt to download the media directly to your iOS devic
 starting point for those who want to download media directly to their iOS device. We provide no support for this use case
 other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
 
-
-
-
-
 # Authentication
 
 To enable basic authentication, set the `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` environment variables. And restart 
@@ -96,11 +92,6 @@ the container. This will prompt the user to enter the username and password befo
 As this is a simple basic authentication, if your browser doesn't show the prompt, you can use the following URL
 
 `http://username:password@your_ytptube_url:port`
-
-# Basic mode
-
-What does the basic mode do? it basically strips down the interface to the bare minimum, 
-to make it easier for non-technical users to use it.
 
 # I cant download anything
 

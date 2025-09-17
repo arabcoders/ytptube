@@ -117,10 +117,8 @@
                       {{ formatTime(item.extras.duration) }}
                     </span>
                   </div>
-                  <div v-if="showThumbnails && item.extras.thumbnail">
-                    <FloatingImage
-                      :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                      :title="`[${item.preset}] - ${item.title}`">
+                  <div v-if="showThumbnails && getImage(item)">
+                    <FloatingImage :image="getImage(item)" :title="`[${item.preset}] - ${item.title}`">
                       <div class="is-text-overflow">
                         <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                       </div>
@@ -272,22 +270,17 @@
             <figure class="image is-3by1">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
-                <img @load="(e: Event) => pImg(e)"
-                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                  v-if="item.extras?.thumbnail" />
+                <img @load="(e: Event) => pImg(e)" :src="getImage(item)" v-if="getImage(item)" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
-                <img @load="(e: Event) => pImg(e)"
-                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                  v-if="item.extras?.thumbnail" />
+                <img @load="(e: Event) => pImg(e)" :src="getImage(item)" v-if="getImage(item)" />
                 <img v-else src="/images/placeholder.png" />
               </span>
               <template v-else>
-                <img @load="(e: Event) => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
+                <img @load="(e: Event) => pImg(e)" v-if="getImage(item)" :src="getImage(item)" />
                 <img v-else src="/images/placeholder.png" />
               </template>
             </figure>
@@ -912,6 +905,18 @@ const makePath = (item: StoreItem) => {
     return ''
   }
   const real_path = eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/')
-  return real_path.replace(config.app.download_path, '').replace(/^\//, '')
+  return stripPath(config.app.download_path, real_path)
+}
+
+const getImage = (item: StoreItem): string => {
+  if (item.sidecar?.image && item.sidecar.image.length > 0) {
+    return uri('/api/download/' + encodeURIComponent(stripPath(config.app.download_path, item.sidecar.image[0]?.file || '')))
+  }
+
+  if (!item?.extras?.thumbnail) {
+    return '/images/placeholder.png'
+  }
+
+  return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))
 }
 </script>

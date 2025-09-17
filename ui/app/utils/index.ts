@@ -677,10 +677,18 @@ const enableOpacity = (): boolean => {
   return true
 }
 
+const stripPath = (base_path: string, real_path: string): string => {
+  if (!base_path) {
+    return real_path
+  }
+
+  return real_path.replace(base_path, '').replace(/^\//, '')
+}
+
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath
 }

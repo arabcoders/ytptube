@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -165,3 +166,116 @@ class TestItemDTO:
             ok2 = dto.archive_delete()
             assert ok2 is True
             m_del.assert_called_once()
+
+    def test_get_file_method(self):
+        """Test ItemDTO get_file method returns correct path."""
+        # Create ItemDTO with filename but no folder
+        dto = ItemDTO(
+            id="test-id",
+            title="Test Video",
+            url="https://youtube.com/watch?v=test123",
+            folder="",
+            status="finished",
+            filename="test_video.mp4",
+        )
+
+        # Test with no filename returns None
+        dto_no_file = ItemDTO(
+            id="test-id-2",
+            title="Test Video 2",
+            url="https://youtube.com/watch?v=test456",
+            folder="",
+            status="finished",
+        )
+        assert dto_no_file.get_file() is None
+
+        # Mock get_file function to return success (without custom download_path)
+        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+            mock_get_file.return_value = ("/downloads/test_video.mp4", 200)
+            mock_config.get_instance.return_value.download_path = "/downloads"
+
+            result = dto.get_file()
+            assert result == Path("/downloads/test_video.mp4")
+
+        # Test with folder
+        dto_with_folder = ItemDTO(
+            id="test-id-3",
+            title="Test Video 3",
+            url="https://youtube.com/watch?v=test789",
+            folder="media",
+            status="finished",
+            filename="test_video.mp4",
+        )
+
+        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+            mock_get_file.return_value = ("/downloads/media/test_video.mp4", 200)
+            mock_config.get_instance.return_value.download_path = "/downloads"
+
+            result = dto_with_folder.get_file()
+            assert result == Path("/downloads/media/test_video.mp4")
+
+        # Test with file not found
+        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+            mock_get_file.return_value = ("/downloads/test_video.mp4", 404)
+            mock_config.get_instance.return_value.download_path = "/downloads"
+
+            result = dto.get_file()
+            assert result is None
+
+        # Test with exception during file access
+        with patch("app.library.ItemDTO.get_file") as mock_get_file, patch("app.library.config.Config") as mock_config:
+            mock_get_file.side_effect = ValueError("File path error")
+            mock_config.get_instance.return_value.download_path = "/downloads"
+
+            result = dto.get_file()
+            assert result is None
+
+        # Test with custom download_path parameter (Config not imported in this case)
+        with patch("app.library.ItemDTO.get_file") as mock_get_file:
+            mock_get_file.return_value = ("/custom/test_video.mp4", 200)
+
+            result = dto.get_file(download_path=Path("/custom"))
+            assert result == Path("/custom/test_video.mp4")
+
+    def test_get_file_sidecar_populates_from_utils(self):
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="sidecar", title="Title", url="u", folder="f")
+
+        expected_sidecar = {
+            "subtitle": [
+                {
+                    "file": Path("/downloads/video.en.srt"),
+                    "lang": "en",
+                    "name": "SRT (0) - en",
+                }
+            ]
+        }
+
+        with (
+            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=Path("/downloads/video.mp4")) as mock_get_file,
+            patch("app.library.ItemDTO.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
+        ):
+            result = dto.get_file_sidecar()
+
+        mock_get_file.assert_called_once_with(dto)
+        mock_utils_sidecar.assert_called_once_with(Path("/downloads/video.mp4"))
+        assert result is expected_sidecar
+        assert dto.sidecar is expected_sidecar
+
+    def test_get_file_sidecar_returns_existing_when_no_file(self):
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="sidecar-none", title="Title", url="u", folder="f")
+
+        existing = {"existing": []}
+        dto.sidecar = existing
+
+        with (
+            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=None) as mock_get_file,
+            patch("app.library.ItemDTO.get_file_sidecar") as mock_utils_sidecar,
+        ):
+            result = dto.get_file_sidecar()
+
+        mock_get_file.assert_called_once_with(dto)
+        mock_utils_sidecar.assert_not_called()
+        assert result is existing
+        assert dto.sidecar is existing

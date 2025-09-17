@@ -7,9 +7,6 @@ import sys
 from pathlib import Path
 from typing import Any, Protocol
 
-SUPPORTED_CODECS: tuple[str] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264_videotoolbox", "h264_vaapi", "libx264")
-"Supported encoder names in order of preference."
-
 
 def has_dri_devices() -> bool:
     """
@@ -40,6 +37,7 @@ def ffmpeg_encoders() -> set[str]:
         set[str]: A set of available ffmpeg encoder names.
 
     """
+    from .config import SUPPORTED_CODECS
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
             ["ffmpeg", "-hide_banner", "-loglevel", "error", "-encoders"],  # noqa: S607
@@ -75,6 +73,7 @@ def select_encoder(configured: str) -> str:
         str: The selected concrete encoder name.
 
     """
+    from .config import SUPPORTED_CODECS
     configured = (configured or "").strip()
 
     avail: set[str] = ffmpeg_encoders()

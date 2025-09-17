@@ -1,12 +1,10 @@
 import asyncio
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from aiohttp import web
 from aiohttp.web import Request, Response
 
-from app.library.config import Config
 from app.library.Download import Download
 from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
@@ -73,7 +71,7 @@ async def item_delete(request: Request, queue: DownloadQueue, encoder: Encoder) 
 
 
 @route("GET", "api/history/{id}", "item_view")
-async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, config: Config) -> Response:
+async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
     """
     Update an item in the history.
 
@@ -82,7 +80,6 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, co
         queue (DownloadQueue): The download queue instance.
         encoder (Encoder): The encoder instance.
         notify (EventBus): The event bus instance.
-        config (Config): The configuration instance.
 
     Returns:
         Response: The response object.
@@ -104,23 +101,11 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder, co
         "ffprobe": {},
     }
 
-    if item.info.filename:
+    if "finished" == item.info.status and (filename := item.info.get_file()):
+        from app.library.ffprobe import ffprobe
+
         try:
-            from app.library.ffprobe import ffprobe
-            from app.library.Utils import get_file
-
-            filename = Path(config.download_path)
-            if item.info.folder:
-                filename: Path = filename / item.info.folder
-
-            filename: Path = filename / item.info.filename
-
-            if filename.exists():
-                realFile, status = get_file(
-                    download_path=config.download_path, file=str(filename.relative_to(config.download_path))
-                )
-                if status in (web.HTTPOk.status_code, web.HTTPFound.status_code):
-                    info["ffprobe"] = await ffprobe(str(realFile))
+            info["ffprobe"] = await ffprobe(filename)
         except Exception:
             pass
 

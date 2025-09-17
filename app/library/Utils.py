@@ -8,9 +8,10 @@ import os
 import re
 import shlex
 import socket
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
-from functools import lru_cache
+from functools import lru_cache, wraps
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
 from typing import Any, TypeVar
@@ -87,8 +88,6 @@ DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}
 T = TypeVar("T")
 "Generic type variable."
 
-ARCHIVE_IDS_CACHE: dict[str, dict] = {}
-"Cache for archive IDs."
 
 class StreamingError(Exception):
     """Raised when an error occurs during streaming."""
@@ -97,6 +96,112 @@ class StreamingError(Exception):
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+
+def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
+    """
+    Decorator that applies an LRU cache with a time-to-live (TTL) to a function.
+    Supports both synchronous and asynchronous functions.
+
+    Args:
+        ttl_seconds (int): Time-to-live in seconds.
+        max_size (int): Maximum size of the cache.
+
+    Returns:
+        Decorated function with caching capabilities.
+
+    """
+    import inspect
+
+    def decorator(func):
+        is_async = inspect.iscoroutinefunction(func)
+
+        if is_async:
+            # For async functions, we need to cache the actual result, not the coroutine
+            cache = {}
+            cache_expiry = {}
+
+            @wraps(func)
+            async def async_wrapper(*args, **kwargs):
+                key = str(args) + str(sorted(kwargs.items()))
+                current_time = time.monotonic()
+
+                # Check if we have a cached result that hasn't expired
+                if key in cache and key in cache_expiry and current_time < cache_expiry[key]:
+                    cached_result = cache[key]
+                    try:
+                        return copy.deepcopy(cached_result)
+                    except Exception:
+                        return cached_result
+
+                # Call the function and cache the result
+                result = await func(*args, **kwargs)
+                try:
+                    cached_value = copy.deepcopy(result)
+                except Exception:
+                    cached_value = result
+
+                cache[key] = cached_value
+                cache_expiry[key] = current_time + ttl_seconds
+
+                # Limit cache size
+                if len(cache) > max_size:
+                    # Remove oldest entries
+                    oldest_keys = sorted(cache_expiry.keys(), key=lambda k: cache_expiry[k])[: len(cache) - max_size]
+                    for old_key in oldest_keys:
+                        cache.pop(old_key, None)
+                        cache_expiry.pop(old_key, None)
+
+                try:
+                    return copy.deepcopy(cached_value)
+                except Exception:
+                    return cached_value
+
+            # Expose cache management methods
+            def cache_clear():
+                cache.clear()
+                cache_expiry.clear()
+
+            def cache_info():
+                # Use functools._CacheInfo for compatibility with standard lru_cache
+                from functools import _CacheInfo
+
+                return _CacheInfo(hits=0, misses=len(cache), maxsize=max_size, currsize=len(cache))
+
+            async_wrapper.cache_clear = cache_clear
+            async_wrapper.cache_info = cache_info
+            return async_wrapper
+
+        # For sync functions, use the original implementation
+
+        @lru_cache(maxsize=max_size)
+        def cached(*args, **kwargs):
+            result = func(*args, **kwargs)
+            try:
+                return copy.deepcopy(result)
+            except Exception:
+                return result
+
+        cached_expiry = time.monotonic() + ttl_seconds
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            nonlocal cached_expiry
+            if time.monotonic() >= cached_expiry:
+                cached.cache_clear()
+                cached_expiry = time.monotonic() + ttl_seconds
+            result = cached(*args, **kwargs)
+            try:
+                return copy.deepcopy(result)
+            except Exception:
+                return result
+
+        # expose cache_clear, cache_info
+        sync_wrapper.cache_clear = cached.cache_clear
+        sync_wrapper.cache_info = cached.cache_info
+        return sync_wrapper
+
+    return decorator
 
 
 def calc_download_path(base_path: str | Path, folder: str | None = None, create_path: bool = True) -> str:
@@ -387,7 +492,7 @@ def check_id(file: Path) -> bool | str:
     return False
 
 
-@lru_cache(maxsize=512)
+@timed_lru_cache(ttl_seconds=300, max_size=256)
 def is_private_address(hostname: str) -> bool:
     ip: str = socket.gethostbyname(hostname)
     ip_obj: ipaddress.IPv4Address | ipaddress.IPv6Address = ipaddress.ip_address(ip)
@@ -545,18 +650,22 @@ def validate_uuid(uuid_str: str, version: int = 4) -> bool:
         return False
 
 
-def get_file_sidecar(file: Path) -> list[dict]:
+@timed_lru_cache(ttl_seconds=60, max_size=256)
+def get_file_sidecar(file: Path | None = None) -> dict[dict]:
     """
     Get sidecar files for the given file.
 
     Args:
-        file (Path): The video file.
+        file (Path|None): The video file.
 
     Returns:
-        list: List of sidecar files.
+        dict: A dictionary with sidecar files categorized by type.
 
     """
     files: dict = {}
+
+    if not file:
+        return files
 
     for i, f in enumerate(file.parent.glob(f"{glob.escape(file.stem)}.*")):
         if f == file or f.is_file() is False or f.stem.startswith("."):
@@ -595,7 +704,6 @@ def get_file_sidecar(file: Path) -> list[dict]:
     return files
 
 
-@lru_cache(maxsize=512)
 def get_possible_images(dir: str) -> list[dict]:
     images: list = []
 
@@ -1093,6 +1201,7 @@ def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
         raise ValueError(msg) from e
 
 
+@timed_lru_cache(ttl_seconds=300, max_size=256)
 def get_archive_id(url: str) -> dict[str, str | None]:
     """
     Get the archive ID for a given URL.
@@ -1115,9 +1224,6 @@ def get_archive_id(url: str) -> dict[str, str | None]:
         "ie_key": None,
         "archive_id": None,
     }
-
-    if url in ARCHIVE_IDS_CACHE:
-        return ARCHIVE_IDS_CACHE[url]
 
     if YTDLP_INFO_CLS is None:
         YTDLP_INFO_CLS = YTDLP(
@@ -1151,7 +1257,6 @@ def get_archive_id(url: str) -> dict[str, str | None]:
             LOG.exception(e)
             LOG.error(f"Error getting archive ID: {e}")
 
-    ARCHIVE_IDS_CACHE.update({url: idDict})
     return idDict
 
 

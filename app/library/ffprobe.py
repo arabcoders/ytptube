@@ -10,12 +10,10 @@ import operator
 import os
 import subprocess  # qa: ignore
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import anyio
 
-if TYPE_CHECKING:
-    from app.library.cache import Cache
+from app.library.Utils import timed_lru_cache
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -238,7 +236,8 @@ class FFProbeResult:
         }
 
 
-async def ffprobe(file: str) -> FFProbeResult:
+@timed_lru_cache(ttl_seconds=300, max_size=128)
+async def ffprobe(file: Path|str) -> FFProbeResult:
     """
     Run ffprobe on a file and return the parsed data as a dictionary.
 
@@ -249,20 +248,11 @@ async def ffprobe(file: str) -> FFProbeResult:
         dict: A dictionary containing the parsed data.
 
     """
-    from app.library.Services import Services
-
-    f = Path(file)
+    f = Path(file) if isinstance(file, str) else file
 
     if not f.exists():
         msg = f"No such media file '{file}'."
         raise OSError(msg)
-
-    cache: Cache | None = Services.get_instance().get("cache")
-    cache_key: str = f"ffprobe:{f!s}:{f.stat().st_size}"
-
-    if cache and (cached := cache.get(cache_key)):
-        LOG.debug(f"ffprobe cache hit for '{cache_key}'")
-        return cached
 
     try:
         async with await anyio.open_file(os.devnull, "w") as tempf:
@@ -309,8 +299,5 @@ async def ffprobe(file: str) -> FFProbeResult:
             result.subtitle.append(stream)
         elif stream.is_attachment():
             result.attachment.append(stream)
-
-    if cache:
-        cache.set(cache_key, result, ttl=300)
 
     return result

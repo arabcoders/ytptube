@@ -44,6 +44,7 @@ from app.library.Utils import (
     str_to_dt,
     strip_newline,
     tail_log,
+    timed_lru_cache,
     validate_url,
     validate_uuid,
     ytdlp_reject,
@@ -63,6 +64,233 @@ class TestStreamingError:
         """Test that StreamingError inherits from Exception."""
         error = StreamingError("test")
         assert isinstance(error, Exception)
+
+
+class TestTimedLruCache:
+    """Test the timed_lru_cache decorator."""
+
+    def test_timed_lru_cache_basic_functionality(self):
+        """Test that timed_lru_cache caches function results."""
+        call_count = 0
+
+        @timed_lru_cache(ttl_seconds=60, max_size=10)
+        def test_function(x):
+            nonlocal call_count
+            call_count += 1
+            return x * 2
+
+        # First call should execute the function
+        result1 = test_function(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Second call with same argument should return cached result
+        result2 = test_function(5)
+        assert result2 == 10
+        assert call_count == 1  # Should not increment
+
+        # Different argument should execute the function again
+        result3 = test_function(10)
+        assert result3 == 20
+        assert call_count == 2
+
+    def test_timed_lru_cache_expiration(self):
+        """Test that cache expires after TTL."""
+        import time
+
+        call_count = 0
+
+        @timed_lru_cache(ttl_seconds=1, max_size=10)  # 1 second TTL
+        def test_function(x):
+            nonlocal call_count
+            call_count += 1
+            return x * 2
+
+        # First call
+        result1 = test_function(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Second call immediately should be cached
+        result2 = test_function(5)
+        assert result2 == 10
+        assert call_count == 1
+
+        # Wait for cache to expire
+        time.sleep(1.1)
+
+        # Call after expiration should execute function again
+        result3 = test_function(5)
+        assert result3 == 10
+        assert call_count == 2
+
+    def test_timed_lru_cache_methods_exposed(self):
+        """Test that cache_clear and cache_info methods are exposed."""
+        from app.library.Utils import timed_lru_cache
+
+        @timed_lru_cache(ttl_seconds=60, max_size=10)
+        def test_function(x):
+            return x * 2
+
+        # Test that methods exist
+        assert hasattr(test_function, "cache_clear")
+        assert hasattr(test_function, "cache_info")
+
+        # Call function to populate cache
+        test_function(5)
+
+        # Get cache info
+        info = test_function.cache_info()
+        assert info.hits == 0
+        assert info.misses == 1
+
+        # Call again to test hit
+        test_function(5)
+        info = test_function.cache_info()
+        assert info.hits == 1
+        assert info.misses == 1
+
+        # Clear cache
+        test_function.cache_clear()
+        info = test_function.cache_info()
+        assert info.hits == 0
+        assert info.misses == 0
+
+    def test_timed_lru_cache_max_size(self):
+        """Test that cache respects max_size limit."""
+        from app.library.Utils import timed_lru_cache
+
+        @timed_lru_cache(ttl_seconds=60, max_size=2)
+        def test_function(x):
+            return x * 2
+
+        # Fill cache to max size
+        test_function(1)
+        test_function(2)
+
+        info = test_function.cache_info()
+        assert info.misses == 2
+
+        # Adding another item should not exceed max size
+        test_function(3)
+        info = test_function.cache_info()
+        assert info.misses == 3
+
+        # Test that earlier entries may be evicted
+        test_function(1)  # This might be a cache miss due to LRU eviction
+
+
+class TestAsyncTimedLruCache:
+    """Test async functionality of timed_lru_cache decorator."""
+
+    @pytest.mark.asyncio
+    async def test_async_timed_lru_cache_basic(self):
+        """Test basic async caching functionality."""
+        from app.library.Utils import timed_lru_cache
+
+        call_count = 0
+
+        @timed_lru_cache(ttl_seconds=300, max_size=128)
+        async def async_test_func(x):
+            nonlocal call_count
+            call_count += 1
+            return x * 2
+
+        # First call should execute the function
+        result1 = await async_test_func(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Second call should use cached result
+        result2 = await async_test_func(5)
+        assert result2 == 10
+        assert call_count == 1  # Should not increment
+
+        # Different argument should execute function again
+        result3 = await async_test_func(3)
+        assert result3 == 6
+        assert call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_async_timed_lru_cache_expiry(self):
+        """Test that async cache entries expire after TTL."""
+        from app.library.Utils import timed_lru_cache
+
+        call_count = 0
+
+        @timed_lru_cache(ttl_seconds=0.1, max_size=128)  # 100ms TTL
+        async def async_expire_func(x):
+            nonlocal call_count
+            call_count += 1
+            return x * 3
+
+        # First call
+        result1 = await async_expire_func(2)
+        assert result1 == 6
+        assert call_count == 1
+
+        # Immediate second call should use cache
+        result2 = await async_expire_func(2)
+        assert result2 == 6
+        assert call_count == 1
+
+        # Wait for cache to expire
+        await asyncio.sleep(0.15)
+
+        # Third call should execute function again due to expiry
+        result3 = await async_expire_func(2)
+        assert result3 == 6
+        assert call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_async_cache_methods(self):
+        """Test that async cached functions expose cache management methods."""
+        from app.library.Utils import timed_lru_cache
+
+        @timed_lru_cache(ttl_seconds=300, max_size=128)
+        async def async_method_test(x):
+            return x + 1
+
+        # Test that cache methods exist
+        assert hasattr(async_method_test, "cache_clear")
+        assert hasattr(async_method_test, "cache_info")
+
+        # Test cache_info
+        info = async_method_test.cache_info()
+        assert hasattr(info, "hits")
+        assert hasattr(info, "misses")
+        assert hasattr(info, "maxsize")
+        assert hasattr(info, "currsize")
+        assert info.maxsize == 128
+
+        # Test cache_clear
+        await async_method_test(1)
+        async_method_test.cache_clear()
+        info_after_clear = async_method_test.cache_info()
+        assert info_after_clear.currsize == 0
+
+    @pytest.mark.asyncio
+    async def test_async_cache_max_size(self):
+        """Test that async cache respects max_size parameter."""
+        from app.library.Utils import timed_lru_cache
+
+        @timed_lru_cache(ttl_seconds=300, max_size=2)
+        async def async_limited_func(x):
+            return x * 4
+
+        # Fill cache beyond max_size
+        result1 = await async_limited_func(1)
+        result2 = await async_limited_func(2)
+        result3 = await async_limited_func(3)  # Should evict oldest entry
+
+        # Verify results
+        assert result1 == 4
+        assert result2 == 8
+        assert result3 == 12
+
+        # Check cache size is limited
+        info = async_limited_func.cache_info()
+        assert info.currsize <= 2
 
 
 class TestFileLogFormatter:

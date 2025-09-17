@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { MatchFilterParser } from './ytdlp'
+import { MatchFilterParser } from '../../app/utils/ytdlp'
 
 function normalize(filters: string[]): Set<string> {
   return new Set(filters.map(f => f.split("&").map(x => x.trim()).sort().join("&")));
