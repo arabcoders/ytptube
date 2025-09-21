@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250922-fe740d8a",
-        "date": "2025-09-21T21:09:47+00:00",
+        "tag": "dev-20250922-1dc37205",
+        "date": "2025-09-21T21:15:15+00:00",
         "commits": [
+            {
+                "sha": "1dc37205",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-09-21T21:15:15+00:00",
+                "full_sha": "1dc37205ba49c8eb78420e051403b9b982283828"
+            },
             {
                 "sha": "fe740d8a",
                 "message": "added minAge for npm packages",
@@ -2097,7 +2104,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fe740d8a262d91a37ac6918273e3312c17c7a4a5"
+        "full_sha": "1dc37205ba49c8eb78420e051403b9b982283828"
     },
     {
         "tag": "dev-20250616-c07465a6",
