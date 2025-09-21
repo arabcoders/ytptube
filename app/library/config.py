@@ -19,6 +19,9 @@ from .version import APP_BRANCH, APP_BUILD_DATE, APP_COMMIT_SHA, APP_VERSION
 if TYPE_CHECKING:
     from subprocess import CompletedProcess
 
+SUPPORTED_CODECS: tuple[str] = ("h264_qsv", "h264_nvenc", "h264_amf", "h264_videotoolbox", "h264_vaapi", "libx264")
+"Supported encoder names in order of preference."
+
 
 class Config(metaclass=Singleton):
     app_env: str = "production"
@@ -415,6 +418,11 @@ class Config(metaclass=Singleton):
 
         if self.app_env not in ("production", "development"):
             msg: str = f"Invalid app environment '{self.app_env}' specified. Must be 'production' or 'development'."
+            raise ValueError(msg)
+
+        if self.streamer_vcodec and self.streamer_vcodec not in SUPPORTED_CODECS:
+            supported = ", ".join(SUPPORTED_CODECS)
+            msg: str = f"Invalid video codec '{self.streamer_vcodec}' specified. Supported: '{supported}'."
             raise ValueError(msg)
 
         if "dev-master" == self.app_version:

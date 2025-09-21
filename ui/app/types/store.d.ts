@@ -1,4 +1,14 @@
 type ItemStatus = 'finished' | 'preparing' | 'error' | 'cancelled' | 'downloading' | 'postprocessing' | 'not_live' | 'skip' | null;
+
+type SideCar = {
+  file: string
+}
+
+type sideCarSubtitle = SideCar & {
+  lang: string
+  name: string
+}
+
 type StoreItem = {
   /** Unique identifier for the item */
   _id: string
@@ -42,6 +52,12 @@ type StoreItem = {
   auto_start: boolean
   /** Options for the item */
   options: Record<string, unknown>
+  /** Sidecar associated with the item. */
+  sidecar: {
+    Unknown?: Array<SideCar>
+    subtitle?: Array<sideCarSubtitle>
+    image?: Array<SideCar>
+  },
   /** Extras for the item */
   extras: {
     /** Which channel the item belongs to */

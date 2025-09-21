@@ -44,7 +44,7 @@
             </p>
 
             <!-- prompt input -->
-            <div v-if="state.current?.type === 'prompt'" class="field">
+            <div v-if="'prompt' === state.current?.type" class="field">
               <div class="control">
                 <input ref="inputEl" class="input" type="text" v-model="localInput"
                   :placeholder="(state.current?.opts as any)?.placeholder ?? ''" @keyup.stop />
@@ -61,8 +61,8 @@
           </section>
 
           <footer class="modal-card-foot p-4 is-justify-content-flex-end">
-            <template v-if="state.current?.type === 'alert'">
-              <button class="button is-danger" @click="onEnter">
+            <template v-if="'alert' === state.current?.type">
+              <button id="primaryButton" class="button is-danger" @click="onEnter">
                 <span class="icon-text">
                   <span class="icon"><i class="fas fa-check" /></span>
                   <span>{{ (state.current?.opts as any)?.confirmText ?? 'OK' }}</span>
@@ -70,10 +70,11 @@
               </button>
             </template>
 
-            <template v-else-if="state.current?.type === 'confirm' || state.current?.type === 'prompt'">
+            <template v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type">
               <div class="field is-grouped">
                 <div class="control">
-                  <button class="button" @click="onEnter" :class="state.current?.opts.confirmColor ?? 'is-primary'"
+                  <button id="primaryButton" class="button" @click="onEnter"
+                    :class="state.current?.opts.confirmColor ?? 'is-primary'"
                     :disabled="localInput === (state.current?.opts as PromptOptions)?.initial">
                     <span class="icon-text">
                       <span class="icon"><i class="fas fa-check" /></span>
@@ -114,7 +115,7 @@ watch(() => state.current, (cur) => {
     enableOpacity()
   }
 
-  localInput.value = cur?.type === 'prompt' ? (cur.opts as any).initial ?? '' : ''
+  localInput.value = 'prompt' === cur?.type ? (cur.opts as any).initial ?? '' : ''
 }, { immediate: true })
 
 const inputEl = ref<HTMLInputElement>()
@@ -123,12 +124,12 @@ const focusPrimary = () => {
   if (!root) {
     return
   }
-  const btn = root.querySelector<HTMLButtonElement>('.modal-card-foot .button.is-primary')
+  const btn = root.querySelector<HTMLButtonElement>('#primaryButton')
   btn?.focus()
 }
 const focusInput = async () => {
   await nextTick()
-  if (state.current?.type === 'prompt') {
+  if ('prompt' === state.current?.type) {
     requestAnimationFrame(() => inputEl.value?.focus({ preventScroll: true }))
     return
   }

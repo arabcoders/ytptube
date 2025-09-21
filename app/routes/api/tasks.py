@@ -6,10 +6,43 @@ from aiohttp.web import Request, Response
 
 from app.library.encoder import Encoder
 from app.library.router import route
-from app.library.Tasks import Task, Tasks
-from app.library.Utils import init_class, validate_uuid
+from app.library.Tasks import Task, TaskFailure, TaskResult, Tasks
+from app.library.Utils import init_class, validate_url, validate_uuid
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@route("POST", "api/tasks/inspect", "task_handler_inspect")
+async def task_handler_inspect(request: Request, tasks: Tasks, encoder: Encoder) -> Response:
+    data = await request.json()
+
+    url: str | None = data.get("url") if isinstance(data, dict) else None
+    if not url:
+        return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
+    try:
+        validate_url(url)
+    except ValueError as e:
+        return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
+
+    preset: str = data.get("preset", "") if isinstance(data, dict) else ""
+    handler_name: str | None = data.get("handler") if isinstance(data, dict) else None
+
+    try:
+        result: TaskResult | TaskFailure = await tasks.get_handler().inspect(
+            url=url, preset=preset, handler_name=handler_name
+        )
+    except Exception as e:
+        LOG.exception(e)
+        return web.json_response(
+            {"error": "Failed to inspect handler.", "message": str(e)},
+            status=web.HTTPInternalServerError.status_code,
+        )
+
+    return web.json_response(
+        data=result,
+        status=web.HTTPBadRequest.status_code if isinstance(result, TaskFailure) else web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
 
 
 @route("GET", "api/tasks/", "tasks")

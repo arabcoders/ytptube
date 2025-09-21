@@ -1,72 +1,29 @@
 # flake8: noqa: ARG004
-import logging
 from typing import Any
 
 import httpx
 from yt_dlp.utils.networking import random_user_agent
 
 from app.library.config import Config
-from app.library.DownloadQueue import DownloadQueue
-from app.library.Events import EventBus, Events
-from app.library.ItemDTO import ItemDTO
-from app.library.Tasks import Task
-
-LOG: logging.Logger = logging.getLogger(__name__)
+from app.library.Tasks import Task, TaskFailure, TaskResult
 
 
 class BaseHandler:
-    queued: set[str] = set()
-    failure_count: dict[str, int] = {}
-
-    def __init_subclass__(cls, **kwargs):
-        """Ensure each subclass has its own state containers."""
-        super().__init_subclass__(**kwargs)
-        if "queued" not in cls.__dict__:
-            cls.queued = set()
-        if "failure_count" not in cls.__dict__:
-            cls.failure_count = {}
-
-        async def event_handler(data, _):
-            if data and data.data:
-                await cls.on_error(data.data)
-
-        EventBus.get_instance().subscribe(Events.ITEM_ERROR, event_handler, f"{cls.__name__}.on_error")
-
     @staticmethod
     def can_handle(task: Task) -> bool:
         return False
 
     @staticmethod
-    async def handle(task: Task, notify: EventBus, config: Config, queue: DownloadQueue):
-        pass
+    async def extract(task: Task, config: Config | None = None) -> TaskResult | TaskFailure:
+        raise NotImplementedError
+
+    @classmethod
+    async def inspect(cls, task: Task, config: Config | None = None) -> TaskResult | TaskFailure:
+        return await cls.extract(task=task, config=config)
 
     @staticmethod
     def parse(url: str) -> Any | None:
         return None
-
-    @classmethod
-    async def on_error(cls, item: ItemDTO) -> None:
-        """
-        Handle errors by logging them and removing the queued ID if it exists.
-
-        Args:
-            item (ItemDTO): The error data containing the URL and other information.
-
-        """
-        if not item or not isinstance(item, ItemDTO):
-            return
-
-        if not item.archive_id or not cls.failure_count.get(item.archive_id, None):
-            LOG.debug(f"Item '{item.name()}' not queued by the handler.")
-            return
-
-        failCount: int = int(cls.failure_count.get(item.archive_id, 0))
-
-        LOG.info(f"Removing '{item.name()}' from queued IDs due to error. Failure count: '{failCount + 1}'.")
-        if item.archive_id in cls.queued:
-            cls.queued.remove(item.archive_id)
-
-        cls.failure_count[item.archive_id] = 1 + failCount
 
     @staticmethod
     def tests() -> list[tuple[str, bool]]:

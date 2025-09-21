@@ -40,6 +40,9 @@ dependencies = [
   "bgutil-ytdlp-pot-provider>=1.2.1",
   "pycryptodome>=3.23.0",
   "httpx-curl-cffi>=0.1.4",
+  "selenium>=4.35.0",
+  "parsel>=1.10.0",
+  "jmespath>=1.0.1",
 ]
 
 [tool.ruff]

@@ -5,8 +5,8 @@
 ![Docker pull](https://ghcr-badge.elias.eu.org/shield/arabcoders/ytptube/ytptube)
 
 **YTPTube** is a web-based GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp), designed to make downloading videos from 
-YouTube and other video platforms easier and more user-friendly. It supports downloading playlists, channels, and 
-live streams, and includes features like scheduling downloads, sending notifications, and a built-in video player.
+video platforms easier and user-friendly. It supports downloading playlists, channels, live streams and 
+includes features like scheduling downloads, sending notifications, and built-in video player.
 
 ![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)
 
@@ -16,6 +16,7 @@ live streams, and includes features like scheduling downloads, sending notificat
 * Random beautiful background.
 * Handles live and upcoming streams.
 * Schedule channels or playlists to be downloaded automatically.
+* Create your own custom task handler feeds for downloads, See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.
 * Support for limits per extractor and overall global limit.
@@ -38,7 +39,7 @@ Please read the [FAQ](FAQ.md) for more information.
 ## Run using docker command
 
 ```bash
-mkdir -p ./{config,downloads} && docker run -d --rm --user "$UID:${GID-$UID}" --name ytptube \
+mkdir -p ./{config,downloads} && docker run -d --rm --user "${UID}:${UID}" --name ytptube \
 -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
 ghcr.io/arabcoders/ytptube:latest
 ```
@@ -93,7 +94,7 @@ For simple API documentation, you can refer to the [API documentation](API.md).
 
 # Disclaimer
 
-This project is not affiliated with YouTube, yt-dlp, or any other service. It's a personal project that was created to
+This project is not affiliated with yt-dlp, or any other service. It's a personal project that was created to
 make downloading videos from the internet easier. It's not intended to be used for piracy or any other illegal activities.
 
 # Social contact

@@ -1,0 +1,456 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ytptube.app/schemas/task-definition.json",
+  "title": "YTPTube Generic Task Definition",
+  "type": "object",
+  "required": [
+    "name",
+    "match",
+    "parse"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable identifier for this definition."
+    },
+    "match": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "description": "Glob pattern matched against task URLs."
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "regex": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Regular expression applied to task URLs."
+              },
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Glob pattern applied to task URLs."
+              }
+            },
+            "anyOf": [
+              {
+                "required": [
+                  "regex"
+                ]
+              },
+              {
+                "required": [
+                  "glob"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "description": "Patterns that determine which tasks use this definition."
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "httpx",
+            "selenium"
+          ],
+          "default": "httpx",
+          "description": "Fetch engine to use (HTTPX or Selenium)."
+        },
+        "options": {
+          "type": "object",
+          "description": "Engine-specific configuration.",
+          "additionalProperties": true,
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Remote Selenium hub URL."
+            },
+            "browser": {
+              "type": "string",
+              "enum": [
+                "chrome"
+              ],
+              "description": "Selenium browser name (currently only chrome)."
+            },
+            "arguments": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "Browser launch arguments for Selenium."
+            },
+            "wait_for": {
+              "$ref": "#/definitions/waitFor"
+            },
+            "wait_timeout": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Seconds to wait for the wait_for selector."
+            },
+            "page_load_timeout": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Seconds to allow page load to complete."
+            }
+          }
+        }
+      },
+      "description": "Optional engine configuration (defaults to HTTPX)."
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST"
+          ],
+          "default": "GET",
+          "description": "HTTP method to use when fetching the page."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Override URL to fetch instead of the task URL."
+        },
+        "headers": {
+          "$ref": "#/definitions/stringMap",
+          "description": "Additional request headers."
+        },
+        "params": {
+          "$ref": "#/definitions/stringMap",
+          "description": "Query string parameters."
+        },
+        "data": {
+          "description": "Form payload for POST requests.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/stringMap"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "json": {
+          "description": "JSON payload for POST requests.",
+          "type": [
+            "object",
+            "array",
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        "timeout": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Timeout in seconds for the request."
+        }
+      },
+      "description": "Optional HTTP request overrides."
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "html",
+            "json"
+          ],
+          "default": "html",
+          "description": "Body format returned by the target URL."
+        }
+      }
+    },
+    "parse": {
+      "type": "object",
+      "minProperties": 1,
+      "description": "Field extraction rules and optional container definition.",
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "$ref": "#/definitions/container"
+        }
+      },
+      "patternProperties": {
+        "^(?!items$).+$": {
+          "$ref": "#/definitions/extractionRule"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "not": {
+              "required": [
+                "items"
+              ]
+            }
+          },
+          "then": {
+            "required": [
+              "link"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "stringMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "waitFor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "css",
+            "xpath"
+          ],
+          "description": "Selector type to wait for."
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Selector expression."
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Alias for expression for backwards compatibility."
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "expression"
+          ]
+        },
+        {
+          "required": [
+            "value"
+          ]
+        }
+      ]
+    },
+    "postFilter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "filter"
+      ],
+      "properties": {
+        "filter": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Regular expression applied after extraction."
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Named or numbered capture group to return."
+        }
+      }
+    },
+    "containerFields": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^.+$": {
+          "$ref": "#/definitions/extractionRule"
+        }
+      },
+      "required": [
+        "link"
+      ]
+    },
+    "container": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "css",
+            "xpath",
+            "jsonpath"
+          ],
+          "default": "css",
+          "description": "Selector type to use for locating repeatable elements."
+        },
+        "selector": {
+          "type": "string",
+          "minLength": 1,
+          "description": "CSS/XPath selector identifying each item container."
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Alias for selector."
+        },
+        "fields": {
+          "$ref": "#/definitions/containerFields"
+        }
+      },
+      "required": [
+        "fields"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "selector"
+          ]
+        },
+        {
+          "required": [
+            "expression"
+          ]
+        }
+      ]
+    },
+    "extractionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "expression"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "css",
+            "xpath",
+            "regex",
+            "jsonpath"
+          ],
+          "description": "Extraction strategy."
+        },
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Selector or pattern used to extract values."
+        },
+        "attribute": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Optional attribute or group to return."
+        },
+        "post_filter": {
+          "$ref": "#/definitions/postFilter"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "name": "example",
+      "match": [
+        "https://example.com/articles/*",
+        {
+          "regex": "https://example.com/post/[0-9]+"
+        }
+      ],
+      "engine": {
+        "type": "httpx"
+      },
+      "request": {
+        "method": "GET",
+        "headers": {
+          "User-Agent": "MyCustomAgent/1.0"
+        }
+      },
+      "parse": {
+        "link": {
+          "type": "css",
+          "expression": ".article a.link",
+          "attribute": "href"
+        },
+        "title": {
+          "type": "css",
+          "expression": ".article .title",
+          "attribute": "text"
+        },
+        "id": {
+          "type": "regex",
+          "expression": "id=(?P<id>[0-9]+)",
+          "post_filter": {
+            "filter": "(?P<id>[0-9]+)",
+            "value": "id"
+          }
+        }
+      }
+    },
+    {
+      "name": "container-example",
+      "match": [
+        "https://example.com/list"
+      ],
+      "parse": {
+        "items": {
+          "type": "css",
+          "selector": ".cards .card",
+          "fields": {
+            "link": {
+              "type": "css",
+              "expression": ".card-header a",
+              "attribute": "href"
+            },
+            "title": {
+              "type": "css",
+              "expression": ".card-header a",
+              "attribute": "text"
+            },
+            "poet": {
+              "type": "css",
+              "expression": "footer .card-footer-item:first-child a",
+              "attribute": "text"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

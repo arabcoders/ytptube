@@ -34,12 +34,14 @@
     "Cfmrc",
     "choco",
     "cifs",
+    "connectionpool",
     "consoletitle",
     "continuedl",
     "cookiesfrombrowser",
     "copyts",
     "creationflags",
     "cronsim",
+    "currsize",
     "dailymotion",
     "datas",
     "dateparser",
@@ -189,5 +191,13 @@
     "app/tests"
   ],
   "python.testing.unittestEnabled": true,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "**/var/config/tasks/*.json"
+      ],
+      "url": "./app/library/task_handlers/task_definition.schema.json"
+    }
+  ]
 }

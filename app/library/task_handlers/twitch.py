@@ -3,18 +3,13 @@ import re
 from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element
 
-from app.library.DownloadQueue import DownloadQueue
-from app.library.Events import EventBus, Events
-from app.library.ItemDTO import Item
-from app.library.Tasks import Task
-from app.library.Utils import archive_read, get_archive_id
+from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
+from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
-
-    from app.library.Download import Download
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -30,40 +25,23 @@ class TwitchHandler(BaseHandler):
         return TwitchHandler.parse(task.url) is not None
 
     @staticmethod
-    async def handle(task: Task, notify: EventBus, queue: DownloadQueue):
-        """
-        Fetch the RSS feed for a Twitch channel VODs, parse entries,
-        and enqueue new items that are not in the archive/queue already.
-
-        Args:
-            task (Task): The task containing the Twitch channel URL.
-            notify (EventBus): The event bus for notifications.
-            queue (DownloadQueue): The download queue instance.
-
-        """
+    async def _collect_feed(
+        task: Task,
+        params: dict,
+        handle_name: str,
+    ) -> tuple[str, list[dict[str, str]], bool]:
         from defusedxml.ElementTree import fromstring
 
-        handleName: str | None = TwitchHandler.parse(task.url)
-        if not handleName:
-            LOG.error(f"Cannot parse '{task.name}' URL: {task.url}")
-            return
-
-        params: dict = task.get_ytdlp_opts().get_all()
-        archive_file: str | None = params.get("download_archive")
-        if not archive_file:
-            LOG.error(f"Task '{task.name}' does not have an archive file.")
-            return
-
-        feed_url: str = TwitchHandler.FEED.format(handle=handleName)
+        feed_url: str = TwitchHandler.FEED.format(handle=handle_name)
 
         LOG.debug(f"Fetching '{task.name}' feed.")
         response = await TwitchHandler.request(url=feed_url, ytdlp_opts=params)
         response.raise_for_status()
 
-        items: list = []
+        root: Element[str] = fromstring(response.text)
+        items: list[dict[str, str]] = []
         has_items = False
 
-        root: Element[str] = fromstring(response.text)
         for entry in root.findall("channel/item"):
             link_elem: Element[str] | None = entry.find("link")
             url: str = link_elem.text.strip() if link_elem is not None and link_elem.text else ""
@@ -71,12 +49,14 @@ class TwitchHandler(BaseHandler):
                 LOG.warning(f"Entry in '{task.name}' feed is missing URL. Skipping entry.")
                 continue
 
-            m: re.Match[str] | None = re.search(r"^https?://(?:www\.)?twitch\.tv/videos/(?P<id>\d+)(?:[/?].*)?$", url)
-            if not m:
+            match: re.Match[str] | None = re.search(
+                r"^https?://(?:www\.)?twitch\.tv/videos/(?P<id>\d+)(?:[/?].*)?$", url
+            )
+            if not match:
                 LOG.warning(f"URL in '{task.name}' feed does not look like a VOD link: {url}")
                 continue
 
-            vid: str = m.group("id")
+            vid: str = match.group("id")
 
             title_elem: Element[str] | None = entry.find("title")
             title: str = title_elem.text.strip() if title_elem is not None and title_elem.text else ""
@@ -89,68 +69,34 @@ class TwitchHandler(BaseHandler):
                 LOG.warning(f"Could not compute archive ID for video '{vid}' in '{task.name}' feed. Skipping entry.")
                 continue
 
-            if archive_id in TwitchHandler.queued:
-                continue
-
             items.append({"id": vid, "url": url, "title": title, "archive_id": archive_id})
 
-        if len(items) < 1:
-            if not has_items:
-                LOG.warning(f"No entries found in '{task.name}' feed. URL: {feed_url}")
-            else:
-                LOG.debug(f"No new items found in '{task.name}' feed.")
-            return
+        return feed_url, items, has_items
 
-        filtered: list = []
+    @staticmethod
+    async def extract(task: Task) -> TaskResult | TaskFailure:
+        handle_name: str | None = TwitchHandler.parse(task.url)
+        if not handle_name:
+            return TaskFailure(message="Unrecognized Twitch channel URL.")
 
-        downloaded: list[str] = archive_read(archive_file, [item["archive_id"] for item in items])
-
-        for item in items:
-            TwitchHandler.queued.add(item["archive_id"])
-
-            if item["archive_id"] in downloaded:
-                continue
-
-            if queue.queue.exists(url=item["url"]):
-                continue
-
-            try:
-                done: Download = queue.done.get(url=item["url"])
-                if "error" != done.info.status:
-                    continue
-            except KeyError:
-                pass
-
-            if item["archive_id"] not in TwitchHandler.failure_count:
-                TwitchHandler.failure_count[item["archive_id"]] = 0
-
-            filtered.append(item)
-
-        if len(filtered) < 1:
-            LOG.debug(f"No new items found in '{task.name}' feed.")
-            return
-
-        LOG.info(f"Found '{len(filtered)}' new items from '{task.name}' feed.")
-
-        rItem: Item = Item.format(
-            {
-                "url": feed_url,
-                "preset": task.preset,
-                "folder": task.folder if task.folder else "",
-                "template": task.template if task.template else "",
-                "cli": task.cli if task.cli else "",
-                "auto_start": task.auto_start,
-                "extras": {"source_task": task.id},
-            }
-        )
+        params: dict = task.get_ytdlp_opts().get_all()
 
         try:
-            for item in filtered:
-                notify.emit(Events.ADD_URL, data=rItem.new_with(url=item["url"]).serialize())
-        except Exception as e:
-            LOG.exception(e)
-            LOG.error(f"Error while adding items from '{task.name}'. {e!s}")
-            return
+            feed_url, items, has_items = await TwitchHandler._collect_feed(task, params, handle_name)
+        except Exception as exc:
+            LOG.exception(exc)
+            return TaskFailure(message="Failed to fetch Twitch feed.", error=str(exc))
+
+        task_items: list[TaskItem] = []
+
+        for entry in items:
+            if not (url := entry.get("url")):
+                continue
+
+            archive_id: str = entry.get("archive_id")
+            task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id))
+
+        return TaskResult( items=task_items, metadata={ "feed_url": feed_url, "has_entries": has_items } )
 
     @staticmethod
     def parse(url: str) -> str | None:
