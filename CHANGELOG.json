@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4986aea300aaa7b366e7756cd78b3b7ecc246060",
-    "date": "2025-09-16T19:41:53+00:00",
+    "full_sha": "7dc5e55eb898e0c03191ca96315465e7b6701e7a",
+    "date": "2025-09-21T20:44:11+00:00",
     "commits": [
+      {
+        "sha": "7dc5e55e",
+        "full_sha": "7dc5e55eb898e0c03191ca96315465e7b6701e7a",
+        "message": "Refactored HandleTask to support a generic extractor and made it more testable",
+        "author": "arabcoders",
+        "date": "2025-09-21T20:44:11+00:00"
+      },
       {
         "sha": "4986aea3",
         "full_sha": "4986aea300aaa7b366e7756cd78b3b7ecc246060",
