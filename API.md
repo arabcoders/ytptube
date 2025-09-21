@@ -32,6 +32,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/archiver](#delete-apiarchiver)
     - [GET /api/tasks](#get-apitasks)
     - [PUT /api/tasks](#put-apitasks)
+    - [POST /api/tasks/inspect](#post-apitasksinspect)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [GET /api/player/playlist/{file:.\*}.m3u8](#get-apiplayerplaylistfilem3u8)
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
@@ -548,6 +549,62 @@ or on error
   "error": "text"
 }
 ```
+
+---
+
+### POST /api/tasks/inspect
+**Purpose**: Preview which handler matches a URL and review the items it would queue without dispatching downloads.
+
+**Body**:
+```json
+{
+  "url": "https://example.com/feed",            // required, validated URL
+  "preset": "news-preset",                     // optional preset override - In real scenarios, the preset come from the task.
+  "handler": "GenericTaskHandler"               // optional explicit handler class name, in real scenarios, the handler is resolved automatically.
+}
+```
+
+**Response (success)**:
+```json
+{
+  "matched": true,
+  "handler": "GenericTaskHandler",
+  "supported": true,
+  "items": [
+    {
+      "url": "https://example.com/video/1",
+      "title": "Example title",
+      "archive_id": "generic 1",
+      "metadata": {
+        "source_task": "...",
+        "source_handler": "GenericTaskHandler"
+      }
+    }
+  ],
+  "metadata": {
+    "raw_count": 3
+  }
+}
+```
+
+- Returns `200 OK` when inspection succeeds.
+- The `metadata` object is optional and may contain handler-specific keys.
+
+**Response (failure)**:
+```json
+{
+  "matched": false,
+  "handler": null,
+  "error": "No handler matched the supplied URL.",
+  "message": "No handler matched the supplied URL.",
+  "metadata": {
+    "supported": true
+  }
+}
+```
+
+- Returns `400 Bad Request` when the handler cannot process the URL or inspection fails.
+- When a handler is specified but does not support manual inspection, `supported` is `false` and the `message` explains the limitation.
 
 ---
 
