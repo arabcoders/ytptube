@@ -16,6 +16,7 @@ includes features like scheduling downloads, sending notifications, and built-in
 * Random beautiful background.
 * Handles live and upcoming streams.
 * Schedule channels or playlists to be downloaded automatically.
+* Create your own custom task handler feeds for downloads, See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.
 * Support for limits per extractor and overall global limit.

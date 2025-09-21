@@ -145,6 +145,125 @@ YTP_YTDLP_VERSION=2025.07.21 or master or nightly
 
 Then restart the container to apply the changes.
 
+# How can I monitor sites without RSS feeds?
+
+YTPTube includes a **generic task handler** that turns JSON definition files into site-specific scrapers. You can use it
+to watch pages that do not expose RSS or public APIs and automatically enqueue new links into the download queue.
+
+1. Create definition files under `/config/tasks/*.json` (for Docker this is the mounted `config/tasks/` folder).
+2. Keep your scheduled task in `tasks.json` pointing at the page you want to monitor and make sure it uses a preset that
+   enables a download archive (`--download-archive`).
+3. When the task runs, the handler scans the JSON files, picks the first definition whose `match` rule covers the task
+   URL, fetches the page, extracts items, and queues the unseen ones.
+
+### Definition schema
+
+Each file must contain a single JSON object with the following keys:
+
+```json5
+{
+  "name": "example",                  // Friendly identifier shown in logs
+  "match": [
+    "https://example.com/articles/*", // Glob strings, or objects with {"regex": "..."} or {"glob": "..."}
+    { "regex": "https://example.com/post/[0-9]+" }
+  ],
+  "engine": {                         // Optional, defaults to HTTPX
+    "type": "httpx",                  // "httpx" (default) or "selenium"
+    "options": {
+      "url": "http://selenium:4444/wd/hub", // Selenium-only: remote hub URL
+      "arguments": ["--headless", "--disable-gpu"],
+      "wait_for": { "type": "css", "expression": ".article" },
+      "wait_timeout": 15,
+      "page_load_timeout": 60
+    }
+  },
+  "request": {                      // Optional HTTP settings
+    "method": "GET",                // GET or POST
+    "url": "https://example.com/articles/latest", // Override the task URL if needed
+    "headers": { "User-Agent": "MyAgent/1.0" },
+    "params": { "page": 1 },
+    "data": null,
+    "json": null,
+    "timeout": 30
+  },
+  "response": {                      // Optional: how to interpret the body
+    "type": "html"                   // "html" (default) or "json"
+  },
+  "parse": {
+    "items": {                        // Optional container for per-item extraction
+      "selector": ".columns .card",   // Defaults to CSS; set "type": "xpath" to use XPath
+      "fields": {
+        "link": {                     // Required inside fields: the per-item URL
+          "type": "css",
+          "expression": ".card-header a",
+          "attribute": "href"
+        },
+        "title": {
+          "type": "css",
+          "expression": ".card-header a",
+          "attribute": "text"
+        },
+        "poet": {
+          "type": "css",
+          "expression": "footer .card-footer-item:first-child a",
+          "attribute": "text"
+        }
+      }
+    },
+    "page_title": {                    // Optional global field outside the container
+      "type": "css",
+      "expression": "title",
+      "attribute": "text"
+    }
+  }
+}
+```
+
+For JSON endpoints, switch the response format and use `jsonpath` selectors:
+
+```json5
+{
+  "response": { "type": "json" },
+  "parse": {
+    "items": {
+      "type": "jsonpath",
+      "selector": "items",
+      "fields": {
+        "link": { "type": "jsonpath", "expression": "url" },
+        "title": { "type": "jsonpath", "expression": "title" }
+      }
+    }
+  }
+}
+```
+
+### Parsing rules
+
+- Every definition must provide a `link` field either at the top level or inside `parse.items.fields`. Other fields are optional metadata attached to the queued item.
+- CSS and XPath rules may specify `attribute`:
+  - `text` / `inner_text` applies `normalize-space()`.
+  - `html` / `outer_html` returns the raw HTML fragment.
+  - Any other value reads that attribute from the element. When omitted, the handler uses text and, for `link`, falls
+    back to `href` automatically.
+- Regex rules scan the HTML fragment associated with the current scope (page-level or container). Set `attribute` to a named/numbered capture group or rely on the first group.
+- `post_filter` lets you run a final regex on the extracted value and pick a named (`value`) group.
+- When you declare `parse.items`, each matching container is processed independently so missing fields in one card do not shift values for the rest.
+- For JSON responses (`response.type = "json"`), set the container `type` and field `type` to `jsonpath` and supply [JMESPath](https://jmespath.org/) expressions. Relative values are resolved against each container object and converted to strings automatically.
+
+### Fetch engines
+
+- **httpx (default)**: supports custom headers, query params, JSON/body payloads, proxy inherited from the task preset,
+  and optional timeout.
+- **selenium**: uses a remote Chrome session. Provide the hub URL under `engine.options.url`; only Chrome is supported at
+  the moment. Optional keys: `arguments` (list or string), `wait_for` (type `css`/`xpath` + `expression`), `wait_timeout`,
+  and `page_load_timeout`.
+
+Definitions are reloaded automatically when files change, so you can tweak them without restarting YTPTube. Check
+`var/config/tasks/01-*.json` for sample files.
+
+> [!NOTE]
+> A machine-readable schema is available at `app/library/task_handlers/task_definition.schema.json` if you want to validate your JSON with editors or CI tools.
+
 # How to generate POT tokens?
 
 You need a pot provider server we already have the extractor `bgutil-ytdlp-pot-provider` pre-installed in the container.

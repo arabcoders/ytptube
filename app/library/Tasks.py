@@ -4,7 +4,8 @@ import json
 import logging
 import pkgutil
 import time
-from dataclasses import dataclass
+import uuid
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -15,11 +16,11 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus, Events
-from .ItemDTO import Item
+from .ItemDTO import Item, ItemDTO
 from .Scheduler import Scheduler
 from .Services import Services
 from .Singleton import Singleton
-from .Utils import archive_add, archive_delete, extract_info, init_class, validate_url
+from .Utils import archive_add, archive_delete, archive_read, extract_info, init_class, validate_url
 from .YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("tasks")
@@ -127,6 +128,95 @@ class Task:
         return {"file": archive_file, "items": items}
 
 
+def _split_inspect_metadata(metadata: dict[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split commonly consumed metadata keys from the rest.
+
+    Args:
+        metadata (dict[str, Any]|None): The metadata to split.
+
+    Returns:
+        tuple[dict[str, Any], dict[str, Any]]: The primary and extra metadata.
+
+    """
+    metadata = dict(metadata or {})
+    primary: dict[str, Any] = {}
+
+    for key in ("matched", "handler", "supported"):
+        if key in metadata:
+            primary[key] = metadata.pop(key)
+
+    return primary, metadata
+
+
+@dataclass(slots=True)
+class TaskItem:
+    url: str
+    "The URL of the item."
+    title: str | None = None
+    "The title of the item."
+    archive_id: str | None = None
+    "The archive ID of the item."
+    metadata: dict[str, Any] = field(default_factory=dict)
+    "Additional metadata related to the item."
+
+
+@dataclass(slots=True)
+class TaskResult:
+    items: list[TaskItem] = field(default_factory=list)
+    "The list of items."
+    metadata: dict[str, Any] = field(default_factory=dict)
+    "Additional metadata related to the result."
+
+    def serialize(self) -> dict[str, Any]:
+        """
+        Serialize the task result.
+
+        Returns:
+            dict[str, Any]: The serialized task result.
+
+        """
+        primary, extra = _split_inspect_metadata(self.metadata)
+        payload: dict[str, Any] = {**primary, "items": [asdict(item) for item in self.items]}
+
+        if extra:
+            payload["metadata"] = extra
+
+        return payload
+
+
+@dataclass(slots=True)
+class TaskFailure:
+    message: str
+    "A human-readable message describing the failure."
+    error: str | None = None
+    "An optional error code or string."
+    metadata: dict[str, Any] = field(default_factory=dict)
+    "Additional metadata related to the failure."
+
+    def serialize(self) -> dict[str, Any]:
+        """
+        Serialize the task failure.
+
+        Returns:
+            dict[str, Any]: The serialized task failure.
+
+        """
+        primary, extra = _split_inspect_metadata(self.metadata)
+        payload: dict[str, Any] = dict(primary)
+
+        if self.error:
+            payload["error"] = self.error
+
+        if self.message and (not self.error or self.message != self.error):
+            payload["message"] = self.message
+
+        if extra:
+            payload["metadata"] = extra
+
+        return payload
+
+
 class Tasks(metaclass=Singleton):
     """
     This class is used to manage the tasks.
@@ -199,6 +289,7 @@ class Tasks(metaclass=Singleton):
 
         """
         self.load()
+        Services.get_instance().add("tasks", self)
 
         async def event_handler(data, _):
             if data and data.data:
@@ -210,6 +301,10 @@ class Tasks(metaclass=Singleton):
     def get_all(self) -> list[Task]:
         """Return the tasks."""
         return self._tasks
+
+    def get_handler(self) -> "HandleTask":
+        """Expose the handle task helper."""
+        return self._task_handler
 
     def get(self, task_id: str) -> Task | None:
         """
@@ -471,8 +566,21 @@ class HandleTask:
         "The configuration."
         self._task_name: str = f"{__class__.__name__}._dispatcher"
         "The task name for the scheduler."
+        self._queued: dict[str, set[str]] = {}
+        "Queued archive IDs per handler."
+        self._failure_count: dict[str, dict[str, int]] = {}
+        "Failure counts per handler and archive ID."
+
+        EventBus.get_instance().subscribe(
+            Events.ITEM_ERROR,
+            self._handle_item_error,
+            f"{__class__.__name__}.item_error",
+        )
 
     def load(self) -> None:
+        """
+        Load the available handlers and schedule the dispatcher.
+        """
         self._handlers: list[type] = self._discover()
 
         timer: str = self._config.tasks_handler_timer
@@ -551,7 +659,7 @@ class HandleTask:
 
         return None
 
-    async def dispatch(self, task: Task, handler: type | None = None, **kwargs) -> Any | None:
+    async def dispatch(self, task: Task, handler: type | None = None, **kwargs) -> TaskResult | TaskFailure | None:  # noqa: ARG002
         """
         Dispatch a task to the appropriate handler.
 
@@ -561,7 +669,7 @@ class HandleTask:
             **kwargs: Additional context to pass to the handler.
 
         Returns:
-            Any|None: The result of the handler's execution, or None if no handler found.
+            TaskResult|TaskFailure|None: The extraction outcome, or None if no handler matched.
 
         """
         if not handler:
@@ -569,11 +677,224 @@ class HandleTask:
             if handler is None:
                 return None
 
+        services: Services = Services.get_instance()
+
         try:
-            return await Services.get_instance().handle_async(handler=handler.handle, task=task, **kwargs)
-        except Exception as e:
-            LOG.exception(e)
+            extraction: TaskResult | TaskFailure = await services.handle_async(
+                handler=handler.extract, task=task, config=self._config
+            )
+        except NotImplementedError:
+            LOG.error(f"Handler '{handler.__name__}' does not implement extract().")
+            return TaskFailure(message="Handler does not support extraction.")
+        except Exception as exc:
+            LOG.exception(exc)
             raise
+
+        if isinstance(extraction, TaskFailure):
+            LOG.error(f"Handler '{handler.__name__}' failed to extract items: {extraction.message}")
+            return extraction
+
+        if not isinstance(extraction, TaskResult):
+            LOG.error(
+                f"Handler '{handler.__name__}' returned unexpected result type '{type(extraction).__name__}'.",
+            )
+            return TaskFailure(
+                message="Handler returned invalid result type.", metadata={"type": type(extraction).__name__}
+            )
+
+        raw_items: list[TaskItem] = extraction.items or []
+        metadata: dict[str, Any] = extraction.metadata or {}
+
+        handler_name: str = handler.__name__
+        queued: set[str] = self._queued.setdefault(handler_name, set())
+        failures: dict[str, int] = self._failure_count.setdefault(handler_name, {})
+
+        params: dict = task.get_ytdlp_opts().get_all()
+        archive_file: str | None = params.get("download_archive")
+
+        download_queue: DownloadQueue = services.get("queue") or DownloadQueue.get_instance()
+        notify: EventBus = services.get("notify") or EventBus.get_instance()
+
+        archive_ids: list[str] = [
+            item.archive_id for item in raw_items if isinstance(item, TaskItem) and item.archive_id
+        ]
+        downloaded: list[str] = archive_read(archive_file, archive_ids) if archive_file else []
+
+        filtered: list[TaskItem] = []
+
+        for item in raw_items:
+            if not isinstance(item, TaskItem):
+                LOG.warning("Handler '{handler.__name__}' produced non-TaskItem entry: {item!r}")
+                continue
+
+            url: str = item.url
+            if not url:
+                continue
+
+            archive_id: str | None = item.archive_id
+            if not archive_id:
+                LOG.warning(f"'{task.name}': Item with URL '{url}' is missing an archive ID. Skipping.")
+                continue
+
+            if archive_id in queued:
+                continue
+
+            queued.add(archive_id)
+
+            if archive_file and archive_id in downloaded:
+                continue
+
+            if download_queue.queue.exists(url=url):
+                continue
+
+            try:
+                done = download_queue.done.get(url=url)
+                if "error" != done.info.status:
+                    continue
+            except KeyError:
+                pass
+
+            if archive_id not in failures:
+                failures[archive_id] = 0
+
+            filtered.append(item)
+
+        if not filtered:
+            if raw_items:
+                LOG.debug(
+                    f"Handler '{handler.__name__}' produced '{len(raw_items)}' for '{task.name}' items, none queued after filtering."
+                )
+            return TaskResult(items=[], metadata=metadata)
+
+        LOG.info(
+            f"Handler '{handler.__name__}' Found '{len(filtered)}' new items for '{task.name}' (raw={len(raw_items)})."
+        )
+
+        base_item = Item.format(
+            {
+                "url": task.url,
+                "preset": task.preset or self._config.default_preset,
+                "folder": task.folder or "",
+                "template": task.template or "",
+                "cli": task.cli or "",
+                "auto_start": task.auto_start,
+                "extras": {"source_task": task.id, "source_handler": handler.__name__},
+            }
+        )
+
+        for item in filtered:
+            metadata_entry: dict[str, Any] = item.metadata if isinstance(item.metadata, dict) else {}
+            extras: dict[str, Any] = base_item.extras.copy()
+            if metadata_entry:
+                extras["metadata"] = metadata_entry
+
+            notify.emit(
+                Events.ADD_URL,
+                data=base_item.new_with(url=item.url, extras=extras).serialize(),
+            )
+
+        return TaskResult(items=filtered, metadata=metadata)
+
+    async def inspect(
+        self,
+        url: str,
+        preset: str | None = None,
+        handler_name: str | None = None,
+    ) -> TaskResult | TaskFailure:
+        if not self._handlers:
+            self._handlers = self._discover()
+
+        task = Task(
+            id=str(uuid.uuid4()),
+            name="Inspector",
+            url=url,
+            preset=preset or self._config.default_preset,
+            auto_start=False,
+        )
+
+        services = Services.get_instance()
+
+        handler_cls: type | None
+        if handler_name:
+            handler_cls = next((cls for cls in self._handlers if cls.__name__.lower() == handler_name.lower()), None)
+            if handler_cls is None:
+                message: str = f"Handler '{handler_name}' not found."
+                return TaskFailure(
+                    message=message,
+                    error=message,
+                    metadata={"matched": False, "handler": handler_name},
+                )
+
+            try:
+                matched = services.handle_sync(handler=handler_cls.can_handle, task=task)
+            except Exception as exc:  # pragma: no cover - defensive
+                LOG.exception(exc)
+                message = str(exc)
+                return TaskFailure(
+                    message=message,
+                    error=message,
+                    metadata={"matched": False, "handler": handler_cls.__name__},
+                )
+
+            if not matched:
+                return TaskFailure(
+                    message="Handler cannot process the supplied URL.",
+                    metadata={"matched": False, "handler": handler_cls.__name__},
+                )
+        else:
+            handler_cls = self._find_handler(task)
+            if handler_cls is None:
+                message = "No handler matched the supplied URL."
+                return TaskFailure(
+                    message=message,
+                    error=message,
+                    metadata={"matched": False, "handler": None},
+                )
+
+        base_metadata: dict[str, Any] = {"matched": True, "handler": handler_cls.__name__}
+
+        try:
+            extraction: TaskResult | TaskFailure = await services.handle_async(
+                handler=handler_cls.extract, task=task, config=self._config
+            )
+        except NotImplementedError:
+            return TaskFailure(
+                message="Handler does not support manual inspection.",
+                metadata={**base_metadata, "supported": False},
+            )
+        except Exception as exc:
+            LOG.exception(exc)
+            message = str(exc)
+            return TaskFailure(
+                message=message,
+                error=message,
+                metadata={**base_metadata, "supported": True},
+            )
+
+        if isinstance(extraction, TaskFailure):
+            combined_failure_metadata: dict[str, Any] = {**base_metadata, "supported": True}
+            if extraction.metadata:
+                combined_failure_metadata.update(extraction.metadata)
+
+            failure_error = extraction.error if extraction.error else extraction.message
+
+            return TaskFailure(
+                message=extraction.message,
+                error=failure_error,
+                metadata=combined_failure_metadata,
+            )
+
+        if not isinstance(extraction, TaskResult):
+            LOG.error(
+                f"Handler '{handler_cls.__name__}' returned unexpected result type '{type(extraction).__name__}' during inspection.",
+            )
+            extraction = TaskResult()
+
+        combined_metadata: dict[str, Any] = {**base_metadata, "supported": True}
+        if extraction.metadata:
+            combined_metadata.update(extraction.metadata)
+
+        return TaskResult(items=list(extraction.items), metadata=combined_metadata)
 
     def _discover(self) -> list[type]:
         import importlib
@@ -591,7 +912,28 @@ class HandleTask:
                 if cls.__module__ != module.__name__:
                     continue
 
-                if callable(getattr(cls, "can_handle", None)) and callable(getattr(cls, "handle", None)):
+                if callable(getattr(cls, "can_handle", None)) and callable(getattr(cls, "extract", None)):
                     handlers.append(cls)
 
         return handlers
+
+    async def _handle_item_error(self, event, _name, **_kwargs):
+        item = getattr(event, "data", None)
+        if not isinstance(item, ItemDTO):
+            return
+
+        extras = getattr(item, "extras", {}) or {}
+        handler_name = extras.get("source_handler")
+        if not handler_name:
+            return
+
+        archive_id = item.archive_id
+        if not archive_id:
+            return
+
+        queued = self._queued.get(handler_name)
+        if queued:
+            queued.discard(archive_id)
+
+        failures = self._failure_count.setdefault(handler_name, {})
+        failures[archive_id] = failures.get(archive_id, 0) + 1
