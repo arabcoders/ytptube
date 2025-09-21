@@ -1,8 +1,8 @@
 [
   {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "7b645ad2ad0221104482cb2342369fd1951b8aab",
-    "date": "2025-09-21T21:31:43+00:00",
+    "tag": "Unreleased (dd3059d0)",
+    "full_sha": "dd3059d01ee58cd39e4872689035a9012745c7cc",
+    "date": "2025-09-21T21:38:51+00:00",
     "commits": [
       {
         "sha": "7b645ad2",
