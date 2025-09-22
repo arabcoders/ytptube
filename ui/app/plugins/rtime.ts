@@ -29,7 +29,14 @@ export default defineNuxtPlugin(nuxtApp => {
   nuxtApp.vueApp.directive('rtime', {
     mounted(el: RTimeElement, binding) {
       const intervalMs = parseInterval(binding.arg)
-      const update = () => el.textContent = moment(binding.value).fromNow()
+      const update = () => {
+        const val = binding.value
+        if (Number.isFinite(val)) {
+          el.textContent = moment.unix(val as number).fromNow()
+          return
+        }
+        el.textContent = moment(val).fromNow()
+      }
 
       update()
       el._next_timer = window.setInterval(update, intervalMs)
@@ -39,7 +46,14 @@ export default defineNuxtPlugin(nuxtApp => {
         if (null != el._next_timer) clearInterval(el._next_timer)
 
         const intervalMs = parseInterval(binding.arg)
-        const update = () => el.textContent = moment(binding.value).fromNow()
+        const update = () => {
+          const val = binding.value
+          if (Number.isFinite(val)) {
+            el.textContent = moment.unix(val as number).fromNow()
+            return
+          }
+          el.textContent = moment(val).fromNow()
+        }
 
         update()
         el._next_timer = window.setInterval(update, intervalMs)

@@ -262,7 +262,7 @@ Definitions are reloaded automatically when files change, so you can tweak them 
 `var/config/tasks/01-*.json` for sample files.
 
 > [!NOTE]
-> A machine-readable schema is available at `app/library/task_handlers/task_definition.schema.json` if you want to validate your JSON with editors or CI tools.
+> A machine-readable schema is available at `app/schema/task_definition.json` if you want to validate your JSON with editors or CI tools.
 
 # How to generate POT tokens?
 

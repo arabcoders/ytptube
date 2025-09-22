@@ -34,11 +34,23 @@
             <span class="icon"><i class="fa-solid fa-sliders" /></span>
             <span>Presets</span>
           </NuxtLink>
+          <div class="navbar-item has-dropdown">
+            <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
+              <span class="icon"><i class="fas fa-tasks" /></span>
+              <span>Tasks</span>
+            </a>
+            <div class="navbar-dropdown">
+              <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                <span class="icon"><i class="fa-solid fa-tasks" /></span>
+                <span>List</span>
+              </NuxtLink>
 
-          <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-            <span class="icon"><i class="fa-solid fa-tasks" /></span>
-            <span>Tasks</span>
-          </NuxtLink>
+              <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
+                <span>Definitions</span>
+              </NuxtLink>
+            </div>
+          </div>
 
           <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
             <span class="icon-text">

@@ -180,7 +180,7 @@ class Conditions(metaclass=Singleton):
         if not isinstance(item, dict):
             if not isinstance(item, Condition):
                 msg = f"Unexpected '{type(item).__name__}' item type."
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
             item = item.serialize()
 
@@ -211,7 +211,7 @@ class Conditions(metaclass=Singleton):
 
         if not isinstance(item.get("extras"), dict):
             msg = "Extras must be a dictionary."
-            raise ValueError(msg)  # noqa: TRY004
+            raise ValueError(msg)
 
         return True
 

@@ -1,0 +1,78 @@
+{
+  "$id": "https://ytptube.app/schema/dl_fields.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Download Field Definition",
+  "description": "Schema for custom yt-dlp field definitions used in YTPTube.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "description",
+      "field",
+      "kind"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the field (UUID)."
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable name for the field."
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the field."
+      },
+      "field": {
+        "type": "string",
+        "description": "yt-dlp field or CLI argument."
+      },
+      "kind": {
+        "type": "string",
+        "description": "Type of field (string, text, bool).",
+        "enum": [
+          "string",
+          "text",
+          "bool"
+        ]
+      },
+      "icon": {
+        "type": "string",
+        "description": "Font-awesome icon for the field.",
+        "default": ""
+      },
+      "order": {
+        "type": "integer",
+        "description": "Order for sorting fields in the UI.",
+        "default": 0
+      },
+      "value": {
+        "type": "string",
+        "description": "Default value for the field.",
+        "default": ""
+      },
+      "extras": {
+        "type": "object",
+        "description": "Additional options for the field.",
+        "default": {}
+      }
+    },
+    "additionalProperties": false,
+    "examples": [
+      {
+        "id": "acffe9f6-993b-42ad-94ff-4646f48a83a9",
+        "name": "Delete cache?",
+        "description": "Delete cache",
+        "field": "--no-continue",
+        "kind": "bool",
+        "icon": "fa-solid fa-trash-arrow-up",
+        "order": 1,
+        "value": "",
+        "extras": {}
+      }
+    ]
+  }
+}

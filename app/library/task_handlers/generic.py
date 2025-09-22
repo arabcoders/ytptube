@@ -608,6 +608,11 @@ class GenericTaskHandler(BaseHandler):
             cls._sources_mtime = current
 
     @classmethod
+    def refresh_definitions(cls, force: bool = False) -> None:
+        """Public helper to refresh cached task definitions."""
+        cls._refresh_definitions(force=force)
+
+    @classmethod
     def _find_definition(cls, url: str) -> TaskDefinition | None:
         """
         Find a task definition that matches the given URL.

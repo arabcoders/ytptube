@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ytptube.app/schemas/tasks.json",
+  "title": "YTPTube Scheduled Tasks",
+  "description": "Schema describing recurring download tasks stored in tasks.json.",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/task"
+  },
+  "definitions": {
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "url"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the task (UUIDv4)."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-friendly task label used throughout the UI."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://",
+          "description": "Playlist or channel URL monitored by the task."
+        },
+        "folder": {
+          "type": "string",
+          "description": "Optional download folder override for this task.",
+          "default": ""
+        },
+        "preset": {
+          "type": "string",
+          "description": "Preset name to apply; falls back to the global default when omitted.",
+          "default": ""
+        },
+        "timer": {
+          "type": "string",
+          "description": "Cron expression executed by the scheduler (five or six space-separated fields).",
+          "default": ""
+        },
+        "template": {
+          "type": "string",
+          "description": "Output filename template override for downloads created by this task.",
+          "default": ""
+        },
+        "cli": {
+          "type": "string",
+          "description": "Additional yt-dlp arguments appended to the download request.",
+          "default": ""
+        },
+        "auto_start": {
+          "type": "boolean",
+          "description": "Automatically queue new items discovered by the task.",
+          "default": true
+        },
+        "handler_enabled": {
+          "type": "boolean",
+          "description": "Controls whether the matched handler remains enabled for this task.",
+          "default": true
+        }
+      },
+      "examples": [
+        {
+          "id": "4d9be675-ecb8-4b42-9a84-8cee71a7a2e2",
+          "name": "Weekly playlist sync",
+          "url": "https://www.youtube.com/playlist?list=PL12345",
+          "preset": "default",
+          "timer": "0 */6 * * *",
+          "auto_start": true
+        }
+      ]
+    }
+  }
+}

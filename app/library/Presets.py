@@ -267,7 +267,7 @@ class Presets(metaclass=Singleton):
         if not isinstance(item, dict):
             if not isinstance(item, Preset):
                 msg = f"Unexpected '{type(item).__name__}' type was given."
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
             item = item.serialize()
 
