@@ -437,7 +437,7 @@ const isBusy = computed<boolean>(() => loading.value || submitting.value)
 const headerTitle = computed<string>(() => props.title)
 
 const guiLimitations = 'Only simple match globs, a single container selector and per-field extractors are exposed. ' +
-  'More advanced constructs require editing the JSON.'
+  'More advanced constructs require raw view mode.'
 
 const resetGuiState = (state: GuiState): void => {
   guiState.name = state.name
@@ -471,7 +471,7 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
     return null
   }
 
-  const entry = document as Record<string, unknown>
+  const entry = document
   const match = entry.match
   if (!Array.isArray(match) || match.some(item => 'string' !== typeof item)) {
     return null
@@ -614,7 +614,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
     doc.request = request
   }
 
-  return doc as TaskDefinitionDocument
+  return doc as unknown as TaskDefinitionDocument
 }
 
 const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
@@ -637,7 +637,7 @@ const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
   }
 
   const clone = JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument
-  const cloneRecord = clone as Record<string, unknown>
+  const cloneRecord = clone
 
   if ('name' in record && 'string' === typeof record.name) {
     cloneRecord.name = record.name

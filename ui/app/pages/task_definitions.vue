@@ -12,10 +12,16 @@
           <div class="field is-grouped">
 
             <p class="control">
-              <button class="button is-primary" @click="isEditorOpen ? closeEditor() : openCreate()"
-                v-tooltip.bottom="'Toggle Form'">
+              <button class="button is-primary" @click="isEditorOpen ? closeEditor() : openCreate()">
                 <span class="icon"><i class="fa-solid fa-add" /></span>
                 <span v-if="!isMobile">New Definition</span>
+              </button>
+            </p>
+
+            <p class="control">
+              <button @click="() => inspect = true" class="button is-primary is-light">
+                <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
+                <span v-if="!isMobile">Inspect</span>
               </button>
             </p>
 
@@ -178,6 +184,11 @@
           @import-existing="importExistingDefinition" />
       </div>
     </div>
+
+    <Modal v-if="inspect" @close="() => inspect = false" :contentClass="`modal-content-max`">
+      <TaskInspect />
+    </Modal>
+
   </main>
 </template>
 
@@ -237,6 +248,7 @@ const editorLoading = ref<boolean>(false)
 const editorSubmitting = ref<boolean>(false)
 const workingDefinition = ref<TaskDefinitionDocument | null>(null)
 const workingId = ref<string | null>(null)
+const inspect = ref<boolean>(false)
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid')
 
 const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
