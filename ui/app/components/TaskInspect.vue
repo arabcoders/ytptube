@@ -9,16 +9,30 @@ code {
     <h2 class="title is-5">Inspect Task Handler</h2>
     <form @submit.prevent="onSubmit">
       <div class="field">
-        <label class="label" for="url">URL <span class="has-text-danger">*</span></label>
-        <div class="control">
+        <label class="label" for="url">
+          <span class="icon-text">
+            <span class="icon"><i class="fas fa-link" /></span>
+            <span>URL</span>
+          </span>
+        </label>
+        <div class="control has-icons-left">
           <input id="url" v-model="url" type="url" class="input" :class="{ 'is-danger': urlError }"
             placeholder="https://..." required />
+          <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
         </div>
         <p v-if="urlError" class="help is-danger">{{ urlError }}</p>
+        <p v-else class="help is-bold">
+          Enter the URL of the resource you want to inspect.
+        </p>
       </div>
       <div class="field">
-        <label class="label" for="preset">Preset</label>
-        <div class="control">
+        <label class="label" for="preset">
+          <span class="icon-text">
+            <span class="icon"> <i class="fa-solid fa-list" /> </span>
+            <span>Preset</span>
+          </span>
+        </label>
+        <div class="control has-icons-left">
           <div class="select is-fullwidth">
             <select id="preset" class="is-fullwidth" v-model="preset">
               <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
@@ -33,13 +47,28 @@ code {
               </optgroup>
             </select>
           </div>
+          <span class="icon is-small is-left"><i class="fa-solid fa-list" /></span>
         </div>
+        <p class="help is-bold">
+          Select a preset to apply its settings during inspection. In real scenario, the preset will be based on what is
+          selected when creating the task.
+        </p>
       </div>
       <div class="field">
-        <label class="label" for="handler">Handler</label>
-        <div class="control">
-          <input id="handler" v-model="handler" type="text" class="input" placeholder="Optional handler name" />
+        <label class="label" for="handler">
+          <span class="icon-text">
+            <span class="icon"><i class="fa-solid fa-cogs" /></span>
+            <span>Handler (For testing)</span>
+          </span>
+        </label>
+        <div class="control has-icons-left">
+          <input id="handler" v-model="handler" type="text" class="input" placeholder="Handler class name" />
+          <span class="icon is-small is-left"><i class="fa-solid fa-cogs" /></span>
         </div>
+        <p class="help is-bold">
+          In real scenario, the system auto-detects the appropriate handler based on the URL. This field is for testing
+          purposes only.
+        </p>
       </div>
       <div class="field is-grouped is-grouped-right">
         <div class="control">
@@ -49,7 +78,7 @@ code {
           </button>
         </div>
         <div class="control">
-          <button class="button is-light" type="button" @click="onReset" :disabled="loading">
+          <button class="button is-warning" type="button" @click="onReset" :disabled="loading">
             <span class="icon"> <i class="fas fa-undo" /> </span>
             <span>Reset</span>
           </button>
@@ -57,18 +86,21 @@ code {
       </div>
     </form>
 
-    <div v-if="loading" class="has-text-info mt-3">
-      <span class="icon">
-        <i class="fas fa-spinner fa-spin"></i>
-      </span>
-      <span>Inspecting...</span>
-    </div>
+    <Message v-if="loading" class="has-background-info-90 has-text-dark mt-5">
+      <p>
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-spinner fa-spin" /></span>
+          <span>Inspecting.. please wait.</span>
+        </span>
+      </p>
+    </Message>
 
     <div v-if="response" class="mt-4">
-      <div v-if="response.error" class="notification is-danger">
-        <strong>Error:</strong> {{ response.error }}<br />
-        <span v-if="response.message">{{ response.message }}</span>
-      </div>
+      <Message v-if="response.error" message_class="has-background-danger-90 has-text-dark" title="Error"
+        icon="fas fa-exclamation-triangle">
+        <p>{{ response.error }}</p>
+        <p v-if="response.message">{{ response.message }}</p>
+      </Message>
       <div class="content" v-else>
         <h4>Result:</h4>
         <pre><code>{{ response }}</code></pre>

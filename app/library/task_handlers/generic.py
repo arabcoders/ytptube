@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
-import hashlib
 import json
 import logging
 import re
@@ -685,6 +684,12 @@ class GenericTaskHandler(BaseHandler):
 
         task_items: list[TaskItem] = []
 
+        def _generic_id(url):
+            import os
+            import urllib
+
+            return urllib.parse.unquote(os.path.splitext(url.rstrip("/").split("/")[-1])[0])
+
         for entry in raw_items:
             if not isinstance(entry, dict):
                 continue
@@ -698,7 +703,8 @@ class GenericTaskHandler(BaseHandler):
                 LOG.warning(
                     f"[{definition.name}]: '{task.name}': Could not compute archive ID for video '{url}' in feed. generating one."
                 )
-                archive_id = f"generic {hashlib.sha256(url.encode()).hexdigest()[:16]}"
+
+                archive_id = f"generic {_generic_id(url)}"
 
             metadata: dict[str, str] = {
                 k: v for k, v in entry.items() if k not in {"link", "url", "title", "published", "archive_id"}
