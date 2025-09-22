@@ -84,6 +84,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
+    "date": "2025-09-22T23:16:20+00:00",
+    "commits": [
+      {
+        "sha": "29d30b5f",
+        "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
+        "message": "Added inspect task handler UI Elements",
+        "author": "arabcoders",
+        "date": "2025-09-22T23:16:20+00:00"
+      },
+      {
+        "sha": "09c02674",
+        "full_sha": "09c0267404fa5057b26a25140cbeb644124e1da4",
+        "message": "Added Web UI for task definitions",
+        "author": "arabcoders",
+        "date": "2025-09-22T22:41:22+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.10.2",
     "full_sha": "5c862eb6138749b3271df6484e6686680f403454",
     "date": "2025-09-14T19:23:42+00:00",

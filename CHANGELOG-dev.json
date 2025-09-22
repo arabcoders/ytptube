@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20250922-7b645ad2",
-        "date": "2025-09-21T21:31:43+00:00",
+        "tag": "dev-20250923-29d30b5f",
+        "date": "2025-09-22T23:16:20+00:00",
         "commits": [
+            {
+                "sha": "29d30b5f",
+                "message": "Added inspect task handler UI Elements",
+                "author": "arabcoders",
+                "date": "2025-09-22T23:16:20+00:00",
+                "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c"
+            },
+            {
+                "sha": "09c02674",
+                "message": "Added Web UI for task definitions",
+                "author": "arabcoders",
+                "date": "2025-09-22T22:41:22+00:00",
+                "full_sha": "09c0267404fa5057b26a25140cbeb644124e1da4"
+            },
             {
                 "sha": "7b645ad2",
                 "message": "add /api/tasks/inspect to API.md",
@@ -2111,7 +2125,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7b645ad2ad0221104482cb2342369fd1951b8aab"
+        "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c"
     },
     {
         "tag": "dev-20250616-c07465a6",
