@@ -85,9 +85,30 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
-    "date": "2025-09-22T23:16:20+00:00",
+    "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e",
+    "date": "2025-09-23T16:13:07+00:00",
     "commits": [
+      {
+        "sha": "520ba86a",
+        "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e",
+        "message": "Allow internal requests. Closes #425",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
+      {
+        "sha": "021c0908",
+        "full_sha": "021c0908e1e089edf7084d7175403c1801553c0a",
+        "message": "Added new NFO Maker preset",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
+      {
+        "sha": "3e407991",
+        "full_sha": "3e4079915ced2da98f7d4fb0156ca38d5164d532",
+        "message": "when we are extracting non supported site, use compatible generic archive_id",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
       {
         "sha": "29d30b5f",
         "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
