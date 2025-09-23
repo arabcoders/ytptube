@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01",
+    "date": "2025-09-23T18:34:31+00:00",
+    "commits": [
+      {
+        "sha": "03cd3312",
+        "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01",
+        "message": "Bundles deno runtime. Closes #426",
+        "author": "arabcoders",
+        "date": "2025-09-23T18:34:31+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.11.0",
     "full_sha": "b10574912129d1c7769ca74a4a7daa28bd43ca30",
     "date": "2025-09-23T16:49:09+00:00",

@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250923-1ba6c04c",
-        "date": "2025-09-23T16:38:31+00:00",
+        "tag": "dev-20250923-03cd3312",
+        "date": "2025-09-23T18:34:31+00:00",
         "commits": [
+            {
+                "sha": "03cd3312",
+                "message": "Bundles deno runtime. Closes #426",
+                "author": "arabcoders",
+                "date": "2025-09-23T18:34:31+00:00",
+                "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01"
+            },
             {
                 "sha": "1ba6c04c",
                 "message": "remove some logging from DownloadQueue",
@@ -2160,7 +2167,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9"
+        "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01"
     },
     {
         "tag": "dev-20250616-c07465a6",
