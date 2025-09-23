@@ -1,9 +1,58 @@
 [
   {
-    "tag": "Unreleased (dd3059d0)",
-    "full_sha": "dd3059d01ee58cd39e4872689035a9012745c7cc",
-    "date": "2025-09-21T21:38:51+00:00",
+    "tag": "Unreleased (b1057491)",
+    "full_sha": "b10574912129d1c7769ca74a4a7daa28bd43ca30",
+    "date": "2025-09-23T16:49:09+00:00",
     "commits": [
+      {
+        "sha": "1ba6c04c",
+        "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9",
+        "message": "remove some logging from DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:38:31+00:00"
+      },
+      {
+        "sha": "e0c299ee",
+        "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4",
+        "message": "update task_definitions template",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:25:53+00:00"
+      },
+      {
+        "sha": "520ba86a",
+        "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e",
+        "message": "Allow internal requests. Closes #425",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
+      {
+        "sha": "021c0908",
+        "full_sha": "021c0908e1e089edf7084d7175403c1801553c0a",
+        "message": "Added new NFO Maker preset",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
+      {
+        "sha": "3e407991",
+        "full_sha": "3e4079915ced2da98f7d4fb0156ca38d5164d532",
+        "message": "when we are extracting non supported site, use compatible generic archive_id",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:13:07+00:00"
+      },
+      {
+        "sha": "29d30b5f",
+        "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
+        "message": "Added inspect task handler UI Elements",
+        "author": "arabcoders",
+        "date": "2025-09-22T23:16:20+00:00"
+      },
+      {
+        "sha": "09c02674",
+        "full_sha": "09c0267404fa5057b26a25140cbeb644124e1da4",
+        "message": "Added Web UI for task definitions",
+        "author": "arabcoders",
+        "date": "2025-09-22T22:41:22+00:00"
+      },
       {
         "sha": "7b645ad2",
         "full_sha": "7b645ad2ad0221104482cb2342369fd1951b8aab",
@@ -80,62 +129,6 @@
         "message": "Cache calls to frequently called functions",
         "author": "arabcoders",
         "date": "2025-09-15T16:34:03+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9",
-    "date": "2025-09-23T16:38:31+00:00",
-    "commits": [
-      {
-        "sha": "1ba6c04c",
-        "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9",
-        "message": "remove some logging from DownloadQueue",
-        "author": "arabcoders",
-        "date": "2025-09-23T16:38:31+00:00"
-      },
-      {
-        "sha": "e0c299ee",
-        "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4",
-        "message": "update task_definitions template",
-        "author": "arabcoders",
-        "date": "2025-09-23T16:25:53+00:00"
-      },
-      {
-        "sha": "520ba86a",
-        "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e",
-        "message": "Allow internal requests. Closes #425",
-        "author": "arabcoders",
-        "date": "2025-09-23T16:13:07+00:00"
-      },
-      {
-        "sha": "021c0908",
-        "full_sha": "021c0908e1e089edf7084d7175403c1801553c0a",
-        "message": "Added new NFO Maker preset",
-        "author": "arabcoders",
-        "date": "2025-09-23T16:13:07+00:00"
-      },
-      {
-        "sha": "3e407991",
-        "full_sha": "3e4079915ced2da98f7d4fb0156ca38d5164d532",
-        "message": "when we are extracting non supported site, use compatible generic archive_id",
-        "author": "arabcoders",
-        "date": "2025-09-23T16:13:07+00:00"
-      },
-      {
-        "sha": "29d30b5f",
-        "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c",
-        "message": "Added inspect task handler UI Elements",
-        "author": "arabcoders",
-        "date": "2025-09-22T23:16:20+00:00"
-      },
-      {
-        "sha": "09c02674",
-        "full_sha": "09c0267404fa5057b26a25140cbeb644124e1da4",
-        "message": "Added Web UI for task definitions",
-        "author": "arabcoders",
-        "date": "2025-09-22T22:41:22+00:00"
       }
     ]
   },

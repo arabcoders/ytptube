@@ -1,8 +1,57 @@
 [
     {
-        "tag": "master-20250922-dd3059d0",
-        "date": "2025-09-21T21:38:51+00:00",
+        "tag": "master-20250923-b1057491",
+        "date": "2025-09-23T16:49:09+00:00",
         "commits": [
+            {
+                "sha": "1ba6c04c",
+                "message": "remove some logging from DownloadQueue",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:38:31+00:00",
+                "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9"
+            },
+            {
+                "sha": "e0c299ee",
+                "message": "update task_definitions template",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:25:53+00:00",
+                "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4"
+            },
+            {
+                "sha": "520ba86a",
+                "message": "Allow internal requests. Closes #425",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:13:07+00:00",
+                "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e"
+            },
+            {
+                "sha": "021c0908",
+                "message": "Added new NFO Maker preset",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:13:07+00:00",
+                "full_sha": "021c0908e1e089edf7084d7175403c1801553c0a"
+            },
+            {
+                "sha": "3e407991",
+                "message": "when we are extracting non supported site, use compatible generic archive_id",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:13:07+00:00",
+                "full_sha": "3e4079915ced2da98f7d4fb0156ca38d5164d532"
+            },
+            {
+                "sha": "29d30b5f",
+                "message": "Added inspect task handler UI Elements",
+                "author": "arabcoders",
+                "date": "2025-09-22T23:16:20+00:00",
+                "full_sha": "29d30b5f547d1fc32bee518c61eb4337804f3e4c"
+            },
+            {
+                "sha": "09c02674",
+                "message": "Added Web UI for task definitions",
+                "author": "arabcoders",
+                "date": "2025-09-22T22:41:22+00:00",
+                "full_sha": "09c0267404fa5057b26a25140cbeb644124e1da4"
+            },
             {
                 "sha": "7b645ad2",
                 "message": "add /api/tasks/inspect to API.md",
@@ -2111,7 +2160,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dd3059d01ee58cd39e4872689035a9012745c7cc"
+        "full_sha": "b10574912129d1c7769ca74a4a7daa28bd43ca30"
     },
     {
         "tag": "master-20250616-c07465a6",
