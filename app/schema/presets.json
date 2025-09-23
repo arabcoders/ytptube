@@ -1,0 +1,67 @@
+{
+  "$id": "https://ytptube.app/schema/presets.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Preset Configuration",
+  "description": "Schema for yt-dlp preset configurations used in YTPTube.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the preset (UUID or slug)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable name for the preset.",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the preset.",
+      "default": ""
+    },
+    "folder": {
+      "type": "string",
+      "description": "Default download folder for this preset.",
+      "default": ""
+    },
+    "template": {
+      "type": "string",
+      "description": "Default output template for this preset.",
+      "default": ""
+    },
+    "cookies": {
+      "type": "string",
+      "description": "Default cookies for this preset.",
+      "default": ""
+    },
+    "cli": {
+      "type": "string",
+      "description": "yt-dlp command line options for this preset.",
+      "default": ""
+    },
+    "default": {
+      "type": "boolean",
+      "description": "Whether this preset is a default preset.",
+      "default": false
+    }
+  },
+  "required": [
+    "id",
+    "name"
+  ],
+  "examples": [
+    {
+      "id": "3e163c6c-64eb-4448-924f-814b629b3810",
+      "name": "default",
+      "default": true,
+      "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log",
+      "description": "Default preset for yt-dlp. It will download whatever yt-dlp decides is the best quality for the video and audio."
+    },
+    {
+      "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
+      "name": "Audio Only",
+      "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
+      "description": "This preset is designed to download only the audio of the video. It will extract the audio, add chapters, metadata, and thumbnail."
+    }
+  ]
+}

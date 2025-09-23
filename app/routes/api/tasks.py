@@ -4,6 +4,7 @@ import uuid
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.router import route
 from app.library.Tasks import Task, TaskFailure, TaskResult, Tasks
@@ -13,14 +14,14 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @route("POST", "api/tasks/inspect", "task_handler_inspect")
-async def task_handler_inspect(request: Request, tasks: Tasks, encoder: Encoder) -> Response:
+async def task_handler_inspect(request: Request, tasks: Tasks, encoder: Encoder, config: Config) -> Response:
     data = await request.json()
 
     url: str | None = data.get("url") if isinstance(data, dict) else None
     if not url:
         return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
     try:
-        validate_url(url)
+        validate_url(url, allow_internal=config.allow_internal_urls)
     except ValueError as e:
         return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
 

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://ytptube.app/schemas/task-definition.json",
+  "$id": "https://ytptube.app/schemas/task_definition.json",
   "title": "YTPTube Generic Task Definition",
   "type": "object",
   "required": [
@@ -14,6 +14,12 @@
       "type": "string",
       "minLength": 1,
       "description": "Human-readable identifier for this definition."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional ordering priority. Lower numbers are listed first.",
+      "default": 0
     },
     "match": {
       "type": "array",
@@ -226,6 +232,34 @@
       ]
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "engine": {
+            "properties": {
+              "type": { "const": "selenium" }
+            },
+            "required": ["type"]
+          }
+        },
+        "required": ["engine"]
+      },
+      "then": {
+        "properties": {
+          "engine": {
+            "properties": {
+              "options": {
+                "required": ["url"]
+              }
+            },
+            "required": ["options"]
+          }
+        },
+        "required": ["engine"]
+      }
+    }
+  ],
   "definitions": {
     "stringMap": {
       "type": "object",

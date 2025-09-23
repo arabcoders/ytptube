@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ytptube.app/schema/notifications.json",
+  "title": "Notification Configuration",
+  "type": "array",
+  "description": "Schema describing webhook and Apprise notification targets stored in notifications.json.",
+  "items": {
+    "$ref": "#/definitions/target"
+  },
+  "definitions": {
+    "event": {
+      "type": "string",
+      "enum": [
+        "test",
+        "item_added",
+        "item_completed",
+        "item_cancelled",
+        "item_deleted",
+        "item_paused",
+        "item_resumed",
+        "item_moved",
+        "paused",
+        "resumed",
+        "log_info",
+        "log_success",
+        "log_warning",
+        "log_error",
+        "task_dispatched"
+      ],
+      "description": "Event identifier emitted by the backend event bus."
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "value"
+      ],
+      "properties": {
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HTTP header name."
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "description": "HTTP header value."
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "method",
+        "url"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "json",
+            "form"
+          ],
+          "default": "json",
+          "description": "Payload encoding strategy for the outgoing request."
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "POST",
+            "PUT"
+          ],
+          "default": "POST",
+          "description": "HTTP method used when delivering the notification payload."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Destination endpoint or Apprise URL that receives the notification."
+        },
+        "data_key": {
+          "type": "string",
+          "minLength": 1,
+          "default": "data",
+          "description": "JSON/Form field name used to wrap the serialized event payload."
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/header"
+          },
+          "description": "Optional static headers appended to each HTTP request.",
+          "default": []
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "request"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique identifier for the notification target (UUIDv4)."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Label shown in the UI for this notification target."
+        },
+        "on": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/event"
+          },
+          "description": "Subset of events that trigger this target; leave empty to listen to every event.",
+          "default": []
+        },
+        "presets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Restrict notifications to downloads created by these presets.",
+          "default": []
+        },
+        "request": {
+          "$ref": "#/definitions/request"
+        }
+      },
+      "examples": [
+        {
+          "id": "d40d4b6e-45b8-47a1-b1b2-9cf7f8e6c67a",
+          "name": "Webhook: Completed items",
+          "on": [
+            "item_completed"
+          ],
+          "presets": [
+            "default"
+          ],
+          "request": {
+            "type": "json",
+            "method": "POST",
+            "url": "https://hooks.example.com/ytptube",
+            "headers": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token123"
+              }
+            ]
+          }
+        },
+        {
+          "id": "9f783d0a-6e8b-4c1d-9089-5bb4ae0f2c47",
+          "name": "Apprise Notifier",
+          "on": [],
+          "request": {
+            "type": "json",
+            "method": "POST",
+            "url": "discord://webhook/token"
+          }
+        }
+      ]
+    }
+  }
+}

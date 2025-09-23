@@ -228,7 +228,7 @@ class DLFields(metaclass=Singleton):
         if not isinstance(item, dict):
             if not isinstance(item, DLField):
                 msg = f"Unexpected '{type(item).__name__}' type was given."
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
             item = item.serialize()
 
@@ -255,7 +255,7 @@ class DLFields(metaclass=Singleton):
 
         if not isinstance(item.get("extras", {}), dict):
             msg = "Extras must be a dictionary."
-            raise ValueError(msg)  # noqa: TRY004
+            raise ValueError(msg)
 
         if re.match(r"^--[a-zA-Z0-9\-]+$", item.get("field", "").strip()) is None:
             msg = "Invalid yt-dlp option field it must starts with '--' and contain only alphanumeric characters."

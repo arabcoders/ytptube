@@ -89,6 +89,14 @@ class YTDLP(yt_dlp.YoutubeDL):
 
         self.write_debug(f"Adding to archive: {archive_id}")
         self.archive.add(archive_id)
+        old_archive_ids = info_dict.get("_old_archive_ids", [])
+        if old_archive_ids and isinstance(old_archive_ids, list) and len(old_archive_ids) > 0:
+            for old_id in old_archive_ids:
+                if old_id == archive_id or not old_id.startswith("generic "):
+                    continue
+
+                self.write_debug(f"Adding to archive (old id): {old_id}")
+                self.archive.add(old_id)
 
 
 def ytdlp_options() -> list[dict[str, Any]]:

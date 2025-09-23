@@ -41,6 +41,7 @@
     "copyts",
     "creationflags",
     "cronsim",
+    "crosshairs",
     "currsize",
     "dailymotion",
     "datas",
@@ -81,6 +82,8 @@
     "hookspath",
     "httpx",
     "imagetools",
+    "jmespath",
+    "jsonschema",
     "kibibytes",
     "lastgroup",
     "levelno",
@@ -112,6 +115,7 @@
     "noninteractive",
     "noprogress",
     "onefile",
+    "parsel",
     "pathex",
     "pickleable",
     "platformdirs",
@@ -195,9 +199,39 @@
   "json.schemas": [
     {
       "fileMatch": [
-        "**/var/config/tasks/*.json"
+        "**/tasks/*.json"
       ],
-      "url": "./app/library/task_handlers/task_definition.schema.json"
+      "url": "./app/schema/task_definition.json"
+    },
+    {
+      "fileMatch": [
+        "**/config/conditions.json"
+      ],
+      "url": "./app/schema/conditions.json"
+    },
+    {
+      "fileMatch": [
+        "**/config/dl_fields.json"
+      ],
+      "url": "./app/schema/dl_fields.json"
+    },
+    {
+      "fileMatch": [
+        "**/config/notifications.json"
+      ],
+      "url": "./app/schema/notifications.json"
+    },
+    {
+      "fileMatch": [
+        "**/config/presets.json"
+      ],
+      "url": "./app/schema/presets.json"
+    },
+    {
+      "fileMatch": [
+        "**/config/tasks.json"
+      ],
+      "url": "./app/schema/tasks.json"
     }
   ]
 }

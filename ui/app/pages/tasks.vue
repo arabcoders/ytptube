@@ -200,6 +200,11 @@
                             <span>Run now</span>
                           </NuxtLink>
 
+                          <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
+                            <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
+                            <span>Inspect Handler</span>
+                          </NuxtLink>
+
                           <hr class="dropdown-divider" />
 
                           <NuxtLink class="dropdown-item" @click="archiveAll(item)">
@@ -324,6 +329,11 @@
                     <span>Run now</span>
                   </NuxtLink>
 
+                  <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
+                    <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
+                    <span>Inspect Handler</span>
+                  </NuxtLink>
+
                   <hr class="dropdown-divider" />
 
                   <NuxtLink class="dropdown-item" @click="archiveAll(item)">
@@ -367,6 +377,10 @@
                 <code> <span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
                   class="fa-solid fa-box-archive" /></span> Archive All</code> to archive all existing content.
               </li>
+              <li>
+                For custom handler definitions, you shouldn't have a timer set, as yt-dlp wouldn't know what to do with
+                it.
+              </li>
             </ul>
           </span>
         </Message>
@@ -376,6 +390,10 @@
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       :html_message="dialog_confirm.html_message" @cancel="dialog_confirm = reset_dialog()" />
+
+    <Modal v-if="inspectTask" @close="() => inspectTask = null" :contentClass="`modal-content-max`">
+      <TaskInspect :url="inspectTask.url" :preset="inspectTask.preset" />
+    </Modal>
   </main>
 </template>
 
@@ -383,6 +401,8 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
+import Modal from '~/components/Modal.vue'
+import TaskInspect from '~/components/TaskInspect.vue'
 import type { task_item, exported_task, error_response } from '~/types/tasks'
 
 const box = useConfirm()
@@ -405,6 +425,7 @@ const masterSelectAll = ref(false)
 const massRun = ref<boolean>(false)
 const massDelete = ref<boolean>(false)
 const table_container = ref(false)
+const inspectTask = ref<task_item | null>(null)
 
 const reset_dialog = () => ({
   visible: false,

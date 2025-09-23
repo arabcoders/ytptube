@@ -54,9 +54,16 @@ DEFAULT_PRESETS: list[dict[int, dict[str, str | bool]]] = [
         "id": "2ade2c28-cad4-4a06-b7eb-2439fdf46f60",
         "name": "Info Reader Plugin",
         "description": 'This preset generate specific filename format and metadata to work with yt-dlp info reader plugins for jellyfin/emby and plex and to make play state sync work for WatchState.\n\nThere is one more step you need to do via Other > Terminal if you have it enabled or directly from container shell\n\nyt-dlp -I0 --write-info-json --write-thumbnail --convert-thumbnails jpg --paths /downloads/youtube -o "%(channel|Unknown_title)s [%(channel_id|Unknown_id)s]/%(title).180B [%(channel_id|Unknown_id)s].%(ext)s" -- https://www.youtube.com/channel/UCClfFsWcT3N2I7VTXXyt84A\n\nChange the url to the channel you want to download.\n\nFor more information please visit \nhttps://github.com/arabcoders/watchstate/blob/master/FAQ.md#how-to-get-watchstate-working-with-youtube-contentlibrary',
-        "folder": "youtube",
-        "template": "%(channel)s %(channel_id|Unknown_id)s/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(extractor)s-%(id)s].%(ext)s",
+        "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/%(release_date>%Y%m%d,upload_date>%Y%m%d)s - %(title).180B [%(extractor)s-%(id)s].%(ext)s",
         "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log\n--windows-filenames --write-info-json --embed-info-json \n--convert-thumbnails jpg --write-thumbnail --embed-metadata",
+        "default": True,
+    },
+    {
+        "id": "2ade2c28-cad4-4a06-b7eb-2439fdf46f61",
+        "name": "NFO Maker TV",
+        "description": "This preset generate specific filename format and metadata to work with media servers like jellyfin/emby and plex.",
+        "template": "%(channel)s [%(channel_id|Unknown_id)s]/Season %(release_date>%Y,upload_date>%Y|Unknown)s/S%(release_date>%Y,upload_date>%Y)sE%(release_date>%m%d,upload_date>%m%d)s - %(title).100B [%(extractor)s-%(id)s].%(ext)s",
+        "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log \n--windows-filenames --convert-thumbnails jpg --write-thumbnail \n--use-postprocessor NFOMakerTvPP",
         "default": True,
     },
 ]
@@ -267,7 +274,7 @@ class Presets(metaclass=Singleton):
         if not isinstance(item, dict):
             if not isinstance(item, Preset):
                 msg = f"Unexpected '{type(item).__name__}' type was given."
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
             item = item.serialize()
 

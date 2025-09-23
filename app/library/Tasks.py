@@ -417,7 +417,7 @@ class Tasks(metaclass=Singleton):
         if not isinstance(task, dict):
             if not isinstance(task, Task):
                 msg = "Invalid task type."
-                raise ValueError(msg)  # noqa: TRY004
+                raise ValueError(msg)
 
             task = task.serialize()
 

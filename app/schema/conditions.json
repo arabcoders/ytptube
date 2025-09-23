@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ytptube.app/schemas/conditions.json",
+  "title": "YTPTube Download Conditions",
+  "description": "Schema describing conditional rules evaluated against yt-dlp info dicts.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id",
+      "name",
+      "filter"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier for the condition (UUID)."
+      },
+      "name": {
+        "type": "string",
+        "description": "Human-readable name for the condition."
+      },
+      "filter": {
+        "type": "string",
+        "description": "Filter expression to evaluate against info dict."
+      },
+      "cli": {
+        "type": "string",
+        "description": "yt-dlp CLI fragment to append if matched.",
+        "default": ""
+      },
+      "extras": {
+        "type": "object",
+        "description": "Any extra data to store with the condition.",
+        "default": {}
+      }
+    },
+    "examples": [
+      {
+        "id": "c1e2d3f4-5678-1234-9abc-def012345678",
+        "name": "Audio Only",
+        "filter": "type=audio",
+        "cli": "--extract-audio",
+        "extras": {
+          "priority": "high"
+        }
+      },
+      {
+        "id": "a2b3c4d5-6789-2345-0bcd-ef1234567890",
+        "name": "Long Videos",
+        "filter": "duration>3600"
+      }
+    ]
+  }
+}

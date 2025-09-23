@@ -28,6 +28,7 @@ from app.library.Notifications import Notification
 from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
+from app.library.TaskDefinitions import TaskDefinitions
 from app.library.Tasks import Tasks
 
 LOG = logging.getLogger("app")
@@ -39,6 +40,7 @@ ROOT_PATH: Path = Path(__file__).parent.absolute()
 class Main:
     def __init__(self, is_native: bool = False):
         self._config: Config = Config.get_instance(is_native=is_native)
+        self._config.set_app_path(str(ROOT_PATH))
         self._app = web.Application()
         self._app.on_shutdown.append(self.on_shutdown)
         self._background_worker = BackgroundWorker()
@@ -132,6 +134,7 @@ class Main:
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
+        TaskDefinitions.get_instance().attach(self._app)
         self._background_worker.attach(self._app)
 
         EventBus.get_instance().emit(

@@ -82,7 +82,7 @@ function notify(type: notificationType, message: string, opts?: notificationOpti
   }
 }
 
-export default function useNotification() {
+export const useNotification = () => {
   return {
     info: (message: string, opts?: notificationOptions) => notify('info', message, opts),
     success: (message: string, opts?: notificationOptions) => notify('success', message, opts),
