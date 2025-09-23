@@ -85,9 +85,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4",
-    "date": "2025-09-23T16:25:53+00:00",
+    "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9",
+    "date": "2025-09-23T16:38:31+00:00",
     "commits": [
+      {
+        "sha": "1ba6c04c",
+        "full_sha": "1ba6c04cf3619ca2ca2dacd4cc8905560bc34ad9",
+        "message": "remove some logging from DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-09-23T16:38:31+00:00"
+      },
       {
         "sha": "e0c299ee",
         "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4",
