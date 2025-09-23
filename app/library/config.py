@@ -51,6 +51,9 @@ class Config(metaclass=Singleton):
     temp_disabled: bool = False
     """Disable the temporary files feature."""
 
+    allow_internal_urls: bool = False
+    """Allow requests to internal URLs."""
+
     output_template: str = "%(title)s.%(ext)s"
     """The output template to use for the downloaded files."""
 
@@ -240,6 +243,7 @@ class Config(metaclass=Singleton):
         "ytdlp_auto_update",
         "prevent_premiere_live",
         "temp_disabled",
+        "allow_internal_urls",
     )
     "The variables that are booleans."
 
@@ -433,7 +437,7 @@ class Config(metaclass=Singleton):
         if "dev-master" == self.app_version:
             self._version_via_git()
 
-    def set_app_path(self, path: Path|str) -> "Config":
+    def set_app_path(self, path: Path | str) -> "Config":
         """
         Set the root path of the application.
 

@@ -44,6 +44,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                   |
 | YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`               |
 | YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                   |
+| YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                    | `false`               |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
@@ -479,3 +480,10 @@ For more information about the supported codecs, please refer to the [SegmentEnc
 
 If GPU encoding fails and software encoding is used, you will have to restart the container to try GPU encoding again. 
 as we only test for GPU encoding once on first video stream.
+
+# Allowing internal URLs requests
+
+By default, YTPTube prevents requests to internal resources, for security reasons. However, if you want to allow requests to internal URLs, you can set the `YTP_ALLOW_INTERNAL_URLS` environment variable to `true`. This will allow requests to internal URLs. 
+
+We do not recommend enabling this option unless you know what you are doing, as it can expose your internal network to 
+potential security risks. This should only be used if it's truly needed.
