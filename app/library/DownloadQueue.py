@@ -186,7 +186,6 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.info.auto_start:
                 status[item_id] = "already started"
-                LOG.debug(f"Item {item.info.name()} already started.")
                 continue
 
             item.info.auto_start = True
@@ -200,7 +199,6 @@ class DownloadQueue(metaclass=Singleton):
             )
             status[item_id] = "started"
             started = True
-            LOG.debug(f"Item {item.info.name()} marked as started.")
 
         if started:
             self.event.set()
@@ -231,12 +229,10 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.started() or item.is_cancelled():
                 status[item_id] = "already started"
-                LOG.debug(f"Item {item.info.name()} already started.")
                 continue
 
             if item.info.auto_start is False:
                 status[item_id] = "not started"
-                LOG.debug(f"Item {item.info.name()} is not set to auto-start.")
                 continue
 
             item.info.auto_start = False
@@ -249,7 +245,6 @@ class DownloadQueue(metaclass=Singleton):
                 message=f"Download '{item.info.title}' has been paused.",
             )
             status[item_id] = "paused"
-            LOG.debug(f"Item {item.info.name()} marked as paused.")
 
         return status
 
@@ -1078,19 +1073,19 @@ class DownloadQueue(metaclass=Singleton):
             # No items could be processed, back off a bit to avoid busy-waiting.
             if 0 == items_processed:
                 adaptive_sleep: float = min(adaptive_sleep * 1.5, max_sleep)
-                LOG.info(f"No download slots available. Backing off for {adaptive_sleep:.2f}s before next attempt.")
+                LOG.debug(f"No download slots available. Backing off for {adaptive_sleep:.2f}s before next attempt.")
             else:
                 adaptive_sleep = 0.2
 
             await asyncio.sleep(adaptive_sleep)
 
     async def _download_live(self, _id: str, entry: Download) -> None:
-        LOG.info(f"Creating temporary worker for entry '{entry.info.name()}'.")
+        LOG.debug(f"Creating temporary worker for entry '{entry.info.name()}'.")
 
         try:
             await self._download_file(_id, entry)
         finally:
-            LOG.info(f"Temporary worker for '{entry.info.name()}' completed.")
+            LOG.debug(f"Temporary worker for '{entry.info.name()}' completed.")
 
     async def _download_file(self, id: str, entry: Download) -> None:
         """
@@ -1165,11 +1160,9 @@ class DownloadQueue(metaclass=Singleton):
         if self.is_paused() or self.queue.empty():
             return
 
-        LOG.debug("Checking for stale items in the download queue.")
         for _id, item in list(self.queue.items()):
             item_ref = f"{_id=} {item.info.id=} {item.info.title=}"
             if not item.is_stale():
-                LOG.debug(f"Item '{item_ref}' is not stale.")
                 continue
 
             try:
