@@ -66,12 +66,13 @@ COPY --chown=app:app --from=python_builder /opt/python /opt/python
 COPY --from=ghcr.io/arabcoders/alpine-mp4box /usr/bin/mp4box /usr/bin/mp4box
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffmpeg /usr/bin/ffmpeg
 COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffprobe /usr/bin/ffprobe
+COPY --from=denoland/deno:latest /usr/bin/deno /usr/bin/deno
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
 ENV PATH="/opt/python/bin:$PATH"
 
 RUN chown -R app:app /config /downloads && \
-  chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box /usr/bin/ffmpeg /usr/bin/ffprobe
+  chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box /usr/bin/ffmpeg /usr/bin/ffprobe /usr/bin/deno
 
 VOLUME /config
 VOLUME /downloads
