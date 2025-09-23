@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250923-520ba86a",
-        "date": "2025-09-23T16:13:07+00:00",
+        "tag": "dev-20250923-e0c299ee",
+        "date": "2025-09-23T16:25:53+00:00",
         "commits": [
+            {
+                "sha": "e0c299ee",
+                "message": "update task_definitions template",
+                "author": "arabcoders",
+                "date": "2025-09-23T16:25:53+00:00",
+                "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4"
+            },
             {
                 "sha": "520ba86a",
                 "message": "Allow internal requests. Closes #425",
@@ -2146,7 +2153,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "520ba86ac91e9048432b744aa9d9a43e9a1b258e"
+        "full_sha": "e0c299ee21015e2b2e5e876ca989ba1d7b47f3a4"
     },
     {
         "tag": "dev-20250616-c07465a6",
