@@ -162,17 +162,12 @@
       </div>
     </div>
 
-    <div class="columns is-multiline">
-      <div class="column is-12" v-if="isLoading">
-        <div class="box has-text-centered">
-          <span class="icon"><i class="fa-solid fa-circle-notch fa-spin" /></span>
-          <span class="ml-2">Loading definitions…</span>
-        </div>
-      </div>
-      <div class="column is-12" v-else-if="!definitions.length">
-        <div class="box has-text-centered">
-          <span>No task definitions are configured yet. Create one to get started.</span>
-        </div>
+    <div class="columns is-multiline" v-if="!definitions.length">
+      <div class="column is-12">
+        <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
+          message="Loading data. Please wait..." v-if="isLoading" />
+        <Message title="No definitions" message="No task definitions are configured yet. Create one to get started."
+          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle" v-else />
       </div>
     </div>
 
