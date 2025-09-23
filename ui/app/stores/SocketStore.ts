@@ -30,6 +30,9 @@ export const useSocketStore = defineStore('socket', () => {
     const opts = {
       transports: ['websocket', 'polling'],
       withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 30,
+      reconnectionDelay: 5000
     } as Partial<ManagerOptions & SocketOptions>
 
     let url = runtimeConfig.public.wss

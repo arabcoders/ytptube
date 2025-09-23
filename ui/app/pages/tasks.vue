@@ -377,6 +377,10 @@
                 <code> <span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
                   class="fa-solid fa-box-archive" /></span> Archive All</code> to archive all existing content.
               </li>
+              <li>
+                For custom handler definitions, you shouldn't have a timer set, as yt-dlp wouldn't know what to do with
+                it.
+              </li>
             </ul>
           </span>
         </Message>
