@@ -129,10 +129,10 @@ class YoutubeHandler(BaseHandler):
             None if the URL is neither.
 
         """
-        if m := YoutubeHandler.CHANNEL_REGEX.match(url):
+        if (m := YoutubeHandler.CHANNEL_REGEX.match(url)) and m.group("id"):
             return {"type": "channel_id", "id": m.group("id")}
 
-        if m := YoutubeHandler.PLAYLIST_REGEX.match(url):
+        if (m := YoutubeHandler.PLAYLIST_REGEX.match(url)) and m.group("id"):
             return {"type": "playlist_id", "id": m.group("id")}
 
         return None
