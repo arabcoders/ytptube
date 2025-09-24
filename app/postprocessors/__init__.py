@@ -1,7 +1,7 @@
 # flake8: noqa: F401
 from yt_dlp.globals import postprocessors
 
-from .make_nfo import NFOMakerMoviePP, NFOMakerTvPP
+from .nfo_maker import NFOMakerPP
 
 _ytptube_pps = {name: value for name, value in globals().items() if name.endswith("PP")}
 
