@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250924-4d493433",
-        "date": "2025-09-24T16:23:57+00:00",
+        "tag": "dev-20250925-4d16618c",
+        "date": "2025-09-24T21:47:43+00:00",
         "commits": [
+            {
+                "sha": "4d16618c",
+                "message": "merge in the simple mode for testing",
+                "author": "arabcoders",
+                "date": "2025-09-24T21:47:43+00:00",
+                "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257"
+            },
             {
                 "sha": "4d493433",
                 "message": "fix nfo maker",
@@ -2181,7 +2188,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224"
+        "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257"
     },
     {
         "tag": "dev-20250616-c07465a6",

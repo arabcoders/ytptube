@@ -28,6 +28,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257",
+    "date": "2025-09-24T21:47:43+00:00",
+    "commits": [
+      {
+        "sha": "4d16618c",
+        "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257",
+        "message": "merge in the simple mode for testing",
+        "author": "arabcoders",
+        "date": "2025-09-24T21:47:43+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.11.0",
     "full_sha": "b10574912129d1c7769ca74a4a7daa28bd43ca30",
     "date": "2025-09-23T16:49:09+00:00",
