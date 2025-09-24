@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20250923-b1057491",
-        "date": "2025-09-23T16:49:09+00:00",
+        "tag": "master-20250924-8a852bcd",
+        "date": "2025-09-24T19:39:50+00:00",
         "commits": [
+            {
+                "sha": "4d493433",
+                "message": "fix nfo maker",
+                "author": "arabcoders",
+                "date": "2025-09-24T16:23:57+00:00",
+                "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224"
+            },
+            {
+                "sha": "d09761bd",
+                "message": "Ensure a valid channel/playlist id present when validating url in youtube task handler.",
+                "author": "arabcoders",
+                "date": "2025-09-23T19:00:26+00:00",
+                "full_sha": "d09761bd1c3e2c602471f389782feb8e44514c06"
+            },
+            {
+                "sha": "03cd3312",
+                "message": "Bundles deno runtime. Closes #426",
+                "author": "arabcoders",
+                "date": "2025-09-23T18:34:31+00:00",
+                "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01"
+            },
             {
                 "sha": "1ba6c04c",
                 "message": "remove some logging from DownloadQueue",
@@ -2160,7 +2181,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b10574912129d1c7769ca74a4a7daa28bd43ca30"
+        "full_sha": "8a852bcd24ca635348e2fe7013f0917d6d6ccab3"
     },
     {
         "tag": "master-20250616-c07465a6",
