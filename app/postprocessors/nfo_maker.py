@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-class NFOMaker(PostProcessor):
+class NFOMakerPP(PostProcessor):
     """
     A Post-Processor that writes metadata to an NFO file using a simple
     placeholder-based template engine.
@@ -24,8 +24,6 @@ class NFOMaker(PostProcessor):
       - ("date_field", "%Y")         -> year from date_field
     """
 
-    _MAPPING: dict[str, Any] = {}
-    _TEMPLATE: str | None = None
     _DATE_FIELDS: tuple[str, ...] = ("upload_date", "release_date", "aired", "premiered")
 
     _URL_PAT = re.compile(
@@ -43,6 +41,79 @@ class NFOMaker(PostProcessor):
         r"snapchat|reddit|telegram|t\.me|whatsapp|link\s+in\s+bio|bit\.ly|tinyurl|goo\.gl"
         r")\b"
     )
+    _args: dict[str, Any] = {}
+    _MODE: dict = {
+        "tv": {
+            "mapping": {
+                "title": "title",
+                "season": ("season_number", "season", "year", ("release_date", "%Y"), ("upload_date", "%Y")),
+                "episode": (
+                    "episode_number",
+                    "episode",
+                    ("release_date", "%m%d"),
+                    ("upload_date", "%m%d"),
+                    "unique_id",
+                ),
+                "aired": ("release_date", "upload_date"),
+                "author": "uploader",
+                "plot": "description",
+                "id": "id",
+                "extractor": "extractor",
+            },
+            "template": """
+<episodedetails>
+  <title>{title}</title>
+  <season>{season}</season>
+  <episode>{episode}</episode>
+  <aired>{aired}</aired>
+  <uniqueid type="cmdb">{unique_id}</uniqueid>
+  <uniqueid type="{extractor}">{id}</uniqueid>
+  <plot>{plot}</plot>
+</episodedetails>
+""".strip("\n"),
+        },
+        "movie": {
+            "mapping": {
+                "title": "title",
+                "plot": "description",
+                "runtime": "duration",
+                "thumb": "thumbnail",
+                "id": "id",
+                "country": "language",
+                "aired": ("release_date", "upload_date"),
+                "extractor": "extractor",
+                "year": ("release_year", "year"),
+                "author": "uploader",
+                "trailer": "webpage_url",
+            },
+            "template": """
+<movie>
+  <title>{title}</title>
+  <plot>{plot}</plot>
+  <runtime>{runtime}</runtime>
+  <thumb aspect="poster" preview="{thumb}">{thumb}</thumb>
+  <id>{id}</id>
+  <uniqueid type="cmdb">{unique_id}</uniqueid>
+  <uniqueid type="{extractor}" default="true">{id}</uniqueid>
+  <country>{country}</country>
+  <premiered>{aired}</premiered>
+  <year>{year}</year>
+  <trailer>{trailer}</trailer>
+</movie>
+""".strip("\n"),
+        },
+    }
+
+    mode: str = "tv"
+    "The NFO mode to use. Either 'tv' or 'movie'. Default is 'tv'."
+
+    prefix: bool = True
+    "Prefix episodes with 1 for better sorting."
+
+    def __init__(self, downloader, mode: str = "tv", prefix: bool = True) -> None:
+        PostProcessor.__init__(self, downloader)
+        self.mode = str(mode).lower()
+        self.prefix = prefix in (True, "true", "1", 1)
 
     @classmethod
     def pp_key(cls) -> str:
@@ -53,8 +124,8 @@ class NFOMaker(PostProcessor):
             self.to_screen("No info provided to NFO Maker.")
             return [], {}
 
-        if not self._TEMPLATE:
-            self.to_screen("NFO template not set, skipping NFO creation.")
+        if self.mode not in self._MODE:
+            self.to_screen(f"Invalid mode '{self.mode}'.")
             return [], info
 
         # prefer explicit final path if present, else fall back to filename
@@ -103,7 +174,7 @@ class NFOMaker(PostProcessor):
     def _collect_nfo_data(self, info: dict) -> dict[str, Any]:
         data: dict[str, Any] = {}
 
-        for nfo_name, spec in self._MAPPING.items():
+        for nfo_name, spec in self._MODE[self.mode].get("mapping", {}).items():
             try:
                 values = spec if isinstance(spec, tuple) else (spec,)
                 resolved_key = None
@@ -166,7 +237,7 @@ class NFOMaker(PostProcessor):
             self.to_screen("Invalid aired date parts, skipping NFO creation.")
             return False
 
-        self.to_screen(f"Creating NFO file at {nfo_file!s}")
+        self.to_screen(f"Creating {self.mode} NFO file at {nfo_file!s}")
         nfo_file.parent.mkdir(parents=True, exist_ok=True)
         nfo_file.touch(exist_ok=True)
 
@@ -174,7 +245,7 @@ class NFOMaker(PostProcessor):
         data = dict(data)  # do not mutate original
         data["unique_id"] = self._build_unique_id(dt, real_file)
 
-        self._write(nfo_file=nfo_file, text=self._TEMPLATE or "", repl=data)
+        self._write(nfo_file=nfo_file, text=self._MODE[self.mode].get("template", ""), repl=data)
         return True
 
     @staticmethod
@@ -230,7 +301,7 @@ class NFOMaker(PostProcessor):
             return raw
 
         if fmt and isinstance(fmt, str):
-            date_s = NFOMaker._normalize_date(raw)
+            date_s = NFOMakerPP._normalize_date(raw)
             if date_s:
                 try:
                     dt = datetime.now(tz=UTC).strptime(date_s, "%Y-%m-%d")
@@ -265,10 +336,18 @@ class NFOMaker(PostProcessor):
         for key, value in safe_repl.items():
             if value is None:
                 continue
+
+            if self.prefix and key in ("episode",):
+                try:
+                    value = f"1{value}"
+                except Exception:
+                    pass
+
             rendered = rendered.replace(f"{{{key}}}", str(value))
 
         # remove any unresolved placeholder lines
-        unresolved_keys: Iterable[str] = set({*self._MAPPING.keys(), *safe_repl.keys()})
+        mapping = self._MODE[self.mode].get("mapping", {})
+        unresolved_keys: Iterable[str] = set({*mapping, *safe_repl.keys()})
         pattern = re.compile(rf".*{{(?:{'|'.join(map(re.escape, unresolved_keys))})}}.*")
         rendered = "\n".join(line for line in rendered.splitlines() if not pattern.fullmatch(line))
 
@@ -336,58 +415,3 @@ class NFOMaker(PostProcessor):
             summary = cut[: dot + 1] if 0 < dot else cut.rstrip()
 
         return summary
-
-
-class NFOMakerTvPP(NFOMaker):
-    _MAPPING = {
-        "title": "title",
-        "season": ("season_number", "season", "year", ("release_date", "%Y"), ("upload_date", "%Y")),
-        "episode": ("episode_number", "episode", ("release_date", "%m%d"), ("upload_date", "%m%d"), "unique_id"),
-        "aired": ("release_date", "upload_date"),
-        "author": "uploader",
-        "plot": "description",
-        "id": "id",
-        "extractor": "extractor",
-    }
-    _TEMPLATE = """
-<episodedetails>
-  <title>{title}</title>
-  <season>{season}</season>
-  <episode>{episode}</episode>
-  <aired>{aired}</aired>
-  <uniqueid type="cmdb">{unique_id}</uniqueid>
-  <uniqueid type="{extractor}">{id}</uniqueid>
-  <plot>{plot}</plot>
-</episodedetails>
-""".strip("\n")
-
-
-class NFOMakerMoviePP(NFOMaker):
-    _MAPPING = {
-        "title": "title",
-        "plot": "description",
-        "runtime": "duration",
-        "thumb": "thumbnail",
-        "id": "id",
-        "country": "language",
-        "aired": ("release_date", "upload_date"),
-        "extractor": "extractor",
-        "year": ("release_year", "year"),
-        "author": "uploader",
-        "trailer": "webpage_url",
-    }
-    _TEMPLATE = """
-<movie>
-  <title>{title}</title>
-  <plot>{plot}</plot>
-  <runtime>{runtime}</runtime>
-  <thumb aspect="poster" preview="{thumb}">{thumb}</thumb>
-  <id>{id}</id>
-  <uniqueid type="cmdb">{unique_id}</uniqueid>
-  <uniqueid type="{extractor}" default="true">{id}</uniqueid>
-  <country>{country}</country>
-  <premiered>{aired}</premiered>
-  <year>{year}</year>
-  <trailer>{trailer}</trailer>
-</movie>
-""".strip("\n")

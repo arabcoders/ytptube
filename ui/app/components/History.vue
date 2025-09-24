@@ -764,7 +764,7 @@ const removeItem = async (item: StoreItem) => {
   }
 }
 
-const retryItem = (item: StoreItem, re_add = false) => {
+const retryItem = (item: StoreItem, re_add: boolean = false, remove_file: boolean = false) => {
   const item_req: Partial<StoreItem> = {
     url: item.url,
     preset: item.preset,
@@ -776,7 +776,7 @@ const retryItem = (item: StoreItem, re_add = false) => {
     auto_start: item.auto_start,
   }
 
-  socket.emit('item_delete', { id: item._id, remove_file: false })
+  socket.emit('item_delete', { id: item._id, remove_file: remove_file })
 
   if (selectedElms.value.includes(item._id || '')) {
     selectedElms.value = selectedElms.value.filter(i => i !== item._id)
@@ -860,14 +860,18 @@ const removeFromArchiveDialog = (item: StoreItem) => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.title = 'Remove from Archive'
   dialog_confirm.value.message = `Remove '${item.title || item.id || item.url || '??'}' from archive?`
-  dialog_confirm.value.options = [
-    { key: 'remove_history', label: 'Also, Remove from history.' },
+  const opts = [
+    { key: 'remove_history', label: 'Remove from history.' },
     { key: 're_add', label: 'Re-add to download form.' },
-  ]
+  ];
+  if (config.app.remove_files) {
+    opts.push({ key: 'dont_remove_file', label: "Don't remove associated files." })
+  }
+  dialog_confirm.value.options = opts
   dialog_confirm.value.confirm = (opts: any) => removeFromArchive(item, opts)
 }
 
-const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean }) => {
+const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, remove_history?: boolean, dont_remove_file?: boolean }) => {
   try {
     const req = await request(`/api/history/${item._id}/archive`, { method: 'DELETE' })
     const data = await req.json()
@@ -883,13 +887,18 @@ const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, rem
     dialog_confirm.value.visible = false
   }
 
+  let file_delete = config.app.remove_files
+  if (opts?.dont_remove_file) {
+    file_delete = false
+  }
+
   if (opts?.re_add) {
-    retryItem(item, true)
+    retryItem(item, true, file_delete)
     return
   }
 
   if (opts?.remove_history) {
-    socket.emit('item_delete', { id: item._id, remove_file: false })
+    socket.emit('item_delete', { id: item._id, remove_file: file_delete })
   }
 }
 
