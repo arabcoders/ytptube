@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d09761bd1c3e2c602471f389782feb8e44514c06",
-    "date": "2025-09-23T19:00:26+00:00",
+    "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224",
+    "date": "2025-09-24T16:23:57+00:00",
     "commits": [
+      {
+        "sha": "4d493433",
+        "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224",
+        "message": "fix nfo maker",
+        "author": "arabcoders",
+        "date": "2025-09-24T16:23:57+00:00"
+      },
       {
         "sha": "d09761bd",
         "full_sha": "d09761bd1c3e2c602471f389782feb8e44514c06",
