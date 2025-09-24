@@ -18,6 +18,8 @@ type StoreItem = {
   id: string
   /** Title of the item */
   title: string
+  /** Description of the item */
+  description: string
   /** URL of the item */
   url: string
   /** Preset used for the item */

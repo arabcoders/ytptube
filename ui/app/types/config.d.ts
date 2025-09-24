@@ -26,6 +26,8 @@ type AppConfig = {
   browser_control_enabled: boolean
   /** Indicates if file logging is enabled */
   file_logging: boolean
+  /** Indicates if the app is in simple mode */
+  simple_mode: boolean
   /** Indicates if the app is running in a native environment (e.g., Electron) */
   is_native: boolean
   /** App version in format "1.0.0" */
