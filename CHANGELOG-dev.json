@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20250925-42bcaa32",
-        "date": "2025-09-25T14:50:18+00:00",
+        "tag": "dev-20250926-e82e7b1b",
+        "date": "2025-09-25T22:28:11+00:00",
         "commits": [
+            {
+                "sha": "e82e7b1b",
+                "message": "fixing some issue with simple view",
+                "author": "arabcoders",
+                "date": "2025-09-25T22:28:11+00:00",
+                "full_sha": "e82e7b1bf55a51df661a27fc7f40da1e46148e71"
+            },
             {
                 "sha": "42bcaa32",
                 "message": "break long video description",
@@ -2202,7 +2209,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4"
+        "full_sha": "e82e7b1bf55a51df661a27fc7f40da1e46148e71"
     },
     {
         "tag": "dev-20250616-c07465a6",

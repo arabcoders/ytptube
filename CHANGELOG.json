@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4",
-    "date": "2025-09-25T14:50:18+00:00",
+    "full_sha": "e82e7b1bf55a51df661a27fc7f40da1e46148e71",
+    "date": "2025-09-25T22:28:11+00:00",
     "commits": [
+      {
+        "sha": "e82e7b1b",
+        "full_sha": "e82e7b1bf55a51df661a27fc7f40da1e46148e71",
+        "message": "fixing some issue with simple view",
+        "author": "arabcoders",
+        "date": "2025-09-25T22:28:11+00:00"
+      },
       {
         "sha": "42bcaa32",
         "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4",
