@@ -219,6 +219,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
+import {useConfirm} from '~/composables/useConfirm'
 
 const toast = useNotification()
 const socket = useSocketStore()

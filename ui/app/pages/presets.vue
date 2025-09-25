@@ -204,6 +204,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { Preset } from '~/types/presets'
+import {useConfirm} from '~/composables/useConfirm'
 
 const toast = useNotification()
 const config = useConfigStore()
@@ -295,7 +296,7 @@ const updatePresets = async (items: Preset[]): Promise<boolean | undefined> => {
 }
 
 const deleteItem = async (item: Preset) => {
-  if (true !== (await box.confirm(`Delete preset '${item.name}'?`, true))) {
+  if (true !== (await box.confirm(`Delete preset '${item.name}'?`))) {
     return
   }
 

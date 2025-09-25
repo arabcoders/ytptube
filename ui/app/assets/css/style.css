@@ -358,6 +358,10 @@ div.is-centered {
   justify-content: center;
 }
 
+.is-overflow-visible {
+  overflow: visible !important
+}
+
 .modal-content-max {
   width: calc(100% - 20px);
   max-width: 1344px;

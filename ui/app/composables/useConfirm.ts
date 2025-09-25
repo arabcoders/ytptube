@@ -1,42 +1,29 @@
-import { useStorage } from '@vueuse/core'
-import { useDialog } from './useDialog'
+import { useDialog, type ConfirmOptions, type AlertOptions, type PromptOptions } from './useDialog'
 
 const dialog = useDialog()
 
-const reduceConfirm = useStorage<boolean>('reduce_confirm', false)
-
-const confirm = async (msg: string, force: boolean = false) => {
-  if (false === force && true === reduceConfirm.value) {
-    return true
-  }
-
-  const { status } = await dialog.confirmDialog({
+const confirm = async (msg: string, opts: ConfirmOptions = {}) => {
+  const { status } = await dialog.confirmDialog(Object.assign({
     title: 'Please Confirm',
     message: msg,
     cancelText: 'Cancel',
     confirmText: 'OK',
-  })
+  } as ConfirmOptions, opts || {}))
 
   return status
 }
 
-const alert = async (msg: string) => {
-  const { status } = await dialog.alertDialog({
+const alert = async (msg: string, opts: AlertOptions = {}) => {
+  const { status } = await dialog.alertDialog(Object.assign({
     title: 'Alert',
     message: msg,
     confirmText: 'OK',
-  })
+  } as AlertOptions, opts || {}))
   return status
 }
 
-const prompt = async (msg: string, defaultValue: string = '') => {
-  const { status, value } = await dialog.promptDialog({
-    title: 'Input Required',
-    message: msg,
-    initial: defaultValue,
-    cancelText: 'Cancel',
-    confirmText: 'OK',
-  })
+const prompt = async (msg: string, opts: PromptOptions = {}) => {
+  const { status, value } = await dialog.promptDialog(Object.assign({ message: msg } as PromptOptions, opts || {}))
 
   if (status) {
     return value
@@ -45,6 +32,4 @@ const prompt = async (msg: string, defaultValue: string = '') => {
   return null
 }
 
-export default function useConfirm() {
-  return { confirm, alert, prompt, reduceConfirm }
-}
+export const useConfirm = () => ({ confirm, alert, prompt })

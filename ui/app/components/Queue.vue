@@ -313,6 +313,7 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
+import {useConfirm} from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void

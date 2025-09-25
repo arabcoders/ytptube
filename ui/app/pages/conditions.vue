@@ -129,6 +129,7 @@
 
 <script setup lang="ts">
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
+import {useConfirm} from '~/composables/useConfirm'
 
 type ConditionItemWithUI = ConditionItem & { raw?: boolean }
 
@@ -226,7 +227,7 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
 }
 
 const deleteItem = async (cond: ConditionItem): Promise<void> => {
-  if (true !== (await box.confirm(`Delete '${cond.name}'?`, true))) {
+  if (true !== (await box.confirm(`Delete '${cond.name}'?`))) {
     return
   }
 

@@ -1,8 +1,16 @@
 <template>
-  <template v-if="config.app.simple_mode">
-    <Simple />
+
+  <template v-if="simpleMode">
+    <Simple @show_settings="() => show_settings = true" />
   </template>
-  <template v-else>
+
+  <template v-if="show_settings">
+    <Modal @close="show_settings = false" content-class="modal-content-max is-overflow-visible">
+      <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+    </Modal>
+  </template>
+
+  <template v-if="!simpleMode">
     <Shutdown v-if="app_shutdown" />
     <div id="main_container" class="container" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
@@ -124,11 +132,9 @@
           </div>
         </div>
       </nav>
-
       <div>
-        <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
         <NuxtLoadingIndicator />
-        <NuxtPage v-if="!config.app.simple_mode && config.is_loaded" />
+        <NuxtPage v-if="config.is_loaded" />
         <Message v-if="!config.is_loaded" class="has-background-info-90 has-text-dark mt-5"
           title="Loading Configuration" icon="fas fa-spinner fa-spin">
           <p>Loading application configuration. This usually takes less than a second.</p>
@@ -197,6 +203,8 @@ const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const showMenu = ref(false)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const app_shutdown = ref<boolean>(false)
+const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
+
 const doc = ref<{ file: string }>({ file: '' })
 
 const applyPreferredColorScheme = (scheme: string) => {

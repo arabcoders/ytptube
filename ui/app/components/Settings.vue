@@ -13,6 +13,26 @@
             <div class="column is-6">
 
               <div class="field">
+                <label class="label is-unselectable">Page View</label>
+                <div class="control">
+                  <label for="ui_advanced" class="radio">
+                    <input id="ui_advanced" type="radio" v-model="simpleMode" :value="false">
+                    <span class="icon"><i class="fa-solid fa-computer" /></span>
+                    Regular View
+                  </label>
+                  <label for="ui_simple" class="radio">
+                    <input id="ui_simple" type="radio" v-model="simpleMode" :value="true">
+                    <span class="icon"><i class="fa-solid fa-mobile-screen-button" /></span>
+                    Simple View (Experimental)
+                  </label>
+                </div>
+                <p class="help is-bold has-text-danger">
+                  <span class="icon"> <i class="fa-solid fa-info-circle" /></span>
+                  The simple view is experimental and will change without notice and maybe even deleted in the future.
+                </p>
+              </div>
+
+              <div class="field">
                 <label class="label is-unselectable">Color scheme</label>
                 <div class="control">
                   <label for="auto" class="radio">
@@ -35,7 +55,7 @@
 
               <div class="field">
                 <label class="label is-unselectable">
-                  Backgrounds
+                  Show Background
                   <template v-if="bg_enable">
                     <NuxtLink @click="$emit('reload_bg')" class="is-bold">Reload</NuxtLink>
                     <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
@@ -44,7 +64,7 @@
                 <div class="control">
                   <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
                   <label for="random_bg" class="is-unselectable">
-                    &nbsp;{{ bg_enable ? 'Enabled' : 'Disabled' }}
+                    &nbsp;{{ bg_enable ? 'Yes' : 'No' }}
                   </label>
                 </div>
               </div>
@@ -59,17 +79,7 @@
                 </div>
               </div>
 
-              <div class="field">
-                <label class="label is-unselectable" for="show_thumbnail">Show Videos Thumbnail when possible</label>
-                <div class="control">
-                  <input id="show_thumbnail" type="checkbox" class="switch is-success" v-model="show_thumbnail">
-                  <label for="show_thumbnail" class="is-unselectable">
-                    &nbsp;{{ show_thumbnail ? 'Enabled' : 'Disabled' }}
-                  </label>
-                </div>
-              </div>
-
-              <div class="field">
+              <div class="field" v-if="!simpleMode">
                 <label class="label is-unselectable" for="show_thumbnail">URLs Separator</label>
                 <div class="control">
                   <div class="select is-fullwidth">
@@ -85,27 +95,28 @@
             </div>
             <div class="column is-6">
               <div class="field">
-                <label class="label is-unselectable" for="reduce_confirm">Reduce confirm box usage</label>
+                <label class="label is-unselectable" for="show_thumbnail">Show Thumbnails</label>
                 <div class="control">
-                  <input id="reduce_confirm" type="checkbox" class="switch is-success" v-model="reduce_confirm">
-                  <label for="reduce_confirm" class="is-unselectable">
-                    &nbsp;{{ reduce_confirm ? 'Enabled' : 'Disabled' }}
+                  <input id="show_thumbnail" type="checkbox" class="switch is-success" v-model="show_thumbnail">
+                  <label for="show_thumbnail" class="is-unselectable">
+                    &nbsp;{{ show_thumbnail ? 'Yes' : 'No' }}
                   </label>
                 </div>
+                <p class="help is-bold"> Show videos thumbnail if available.</p>
               </div>
 
               <div class="field">
-                <label class="label" for="allow_toasts">Show notifications toasts</label>
+                <label class="label" for="allow_toasts">Show notifications</label>
                 <div class="control">
                   <input id="allow_toasts" type="checkbox" class="switch is-success" v-model="allow_toasts">
                   <label for="allow_toasts" class="is-unselectable">
-                    &nbsp;{{ allow_toasts ? 'Enabled' : 'Disabled' }}
+                    &nbsp;{{ allow_toasts ? 'Yes' : 'No' }}
                   </label>
                 </div>
               </div>
 
               <div class="field" v-if="allow_toasts">
-                <label class="label">Toasts position</label>
+                <label class="label">Notification position</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select v-model="toast_position">
@@ -121,12 +132,12 @@
               </div>
 
               <div class="field" v-if="allow_toasts">
-                <label class="label" for="dismiss_on_click">Dismiss toasts on click</label>
+                <label class="label" for="dismiss_on_click">Dismiss notification on click</label>
                 <div class="control">
                   <input id="dismiss_on_click" type="checkbox" class="switch is-success"
                     v-model="toast_dismiss_on_click">
                   <label for="dismiss_on_click" class="is-unselectable">
-                    &nbsp;{{ toast_dismiss_on_click ? 'Enabled' : 'Disabled' }}
+                    &nbsp;{{ toast_dismiss_on_click ? 'Yes' : 'No' }}
                   </label>
                 </div>
               </div>
@@ -142,6 +153,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import { POSITION } from 'vue-toastification'
+import { useConfigStore } from '~/stores/ConfigStore'
 
 defineProps<{ isLoading: boolean }>()
 defineEmits<{ (e: 'reload_bg'): void }>()
@@ -150,9 +162,9 @@ const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 const selectedTheme = useStorage<'auto' | 'light' | 'dark'>('theme', 'auto')
 const allow_toasts = useStorage<boolean>('allow_toasts', true)
-const reduce_confirm = useStorage<boolean>('reduce_confirm', false)
 const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
+const simpleMode = useStorage<boolean>('simple_mode', useConfigStore().app.simple_mode || false)
 </script>

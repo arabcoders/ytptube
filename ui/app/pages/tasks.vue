@@ -402,6 +402,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import Modal from '~/components/Modal.vue'
+import { useConfirm } from '~/composables/useConfirm'
 import TaskInspect from '~/components/TaskInspect.vue'
 import type { task_item, exported_task, error_response } from '~/types/tasks'
 
@@ -595,7 +596,7 @@ const deleteSelected = async () => {
 }
 
 const deleteItem = async (item: task_item) => {
-  if (true !== (await box.confirm(`Delete '${item.name}' task?`, true))) {
+  if (true !== (await box.confirm(`Delete '${item.name}' task?`))) {
     return
   }
 

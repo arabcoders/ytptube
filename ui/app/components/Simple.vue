@@ -3,8 +3,19 @@
     <div class="form-container" :class="{ 'is-centered': shouldCenterForm }">
       <section class="download-form box">
         <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
-          <label class="label" for="download-url">What you would like to download?</label>
+          <label class="label" for="download-url">
+            What you would like to download?
+            <span class="is-pulled-right">
+              <span class="icon has-text-primary is-pointer" @click="$emit('show_settings')" v-tooltip="'Settings'"><i
+                  class="fas fa-cogs" /></span>
+            </span>
+          </label>
           <div class="field has-addons">
+            <div class="control">
+              <button type="button" class="button is-info" @click="() => showPresets = !showPresets">
+                <span class="icon"><i class="fas" :class="showPresets ? 'fa-chevron-up' : 'fa-chevron-down'" /></span>
+              </button>
+            </div>
             <div class="control is-expanded">
               <input id="download-url" v-model="formUrl" :disabled="!socketStore.isConnected || addInProgress"
                 class="input" placeholder="https://..." type="url" required>
@@ -12,11 +23,37 @@
             <div class="control">
               <button type="submit" class="button is-primary" :class="{ 'is-loading': addInProgress }"
                 :disabled="!socketStore.isConnected || addInProgress || !formUrl.trim()">
-                <span class="icon"><i class="fa-solid fa-plus" /></span>
+                <span class="icon"><i class="fas fa-plus" /></span>
                 <span>Add</span>
               </button>
             </div>
           </div>
+          <div class="field has-addons" v-if="showPresets">
+            <div class="control">
+              <label class="button is-static">
+                <span class="icon"><i class="fas fa-sliders" /></span>
+                <span>Preset</span>
+              </label>
+            </div>
+            <div class="control is-expanded">
+              <div class="select is-fullwidth">
+                <select id="preset" class="is-fullwidth" :disabled="!socketStore.isConnected || addInProgress"
+                  v-model="formPreset.preset">
+                  <optgroup label="Custom presets" v-if="presets.filter(p => !p?.default).length > 0">
+                    <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
+                      {{ cPreset.name }}
+                    </option>
+                  </optgroup>
+                  <optgroup label="Default presets">
+                    <option v-for="dPreset in filter_presets(true)" :key="dPreset.name" :value="dPreset.name">
+                      {{ dPreset.name }}
+                    </option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          </div>
+
         </form>
       </section>
     </div>
@@ -26,12 +63,12 @@
         <TransitionGroup name="queue-card" tag="div" class="columns is-multiline queue-card-columns">
           <div v-for="entry in displayItems" :key="entry.item._id" class="column is-12-mobile is-6-tablet">
             <article class="queue-card card" :class="{ 'is-history': 'history' === entry.source }">
+              <div v-if="'queue' === entry.source && shouldShowProgress(entry.item)"
+                class="progress-bar is-unselectable mb-3">
+                <div class="progress-percentage">{{ updateProgress(entry.item) }}</div>
+                <div class="progress" :style="{ width: getProgressWidth(entry.item) }"></div>
+              </div>
               <div class="card-content">
-                <div v-if="'queue' === entry.source && shouldShowProgress(entry.item)"
-                  class="progress-bar is-unselectable mb-3">
-                  <div class="progress-percentage">{{ updateProgress(entry.item) }}</div>
-                  <div class="progress" :style="{ width: getProgressWidth(entry.item) }"></div>
-                </div>
                 <article class="media">
                   <figure class="media-left">
                     <figure class="image is-16by9 queue-thumb" :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
@@ -40,7 +77,7 @@
                       <span
                         v-if="entry.item.filename && entry.item.status === 'finished' || isEmbedable(entry.item.url)"
                         class="queue-thumb__overlay">
-                        <span class="icon has-text-white"><i class="fa-solid fa-play" /></span>
+                        <span class="icon has-text-white"><i class="fas fa-play" /></span>
                       </span>
                     </figure>
                   </figure>
@@ -48,7 +85,7 @@
                     <p class="title is-6 mb-0 queue-title">
                       <NuxtLink target="_blank" :href="entry.item.url">{{ entry.item.title }}</NuxtLink>
                     </p>
-                    <div class="field is-grouped">
+                    <div class="field is-grouped is-unselectable">
                       <div class="control">
                         <span class="tag is-size-7 has-text-weight-semibold is-uppercase"
                           :class="getSourceTagClass(entry)">
@@ -56,32 +93,32 @@
                         </span>
                       </div>
                       <div class="control">
-                        <span class="tag is-size-7 has-text-weight-semibold" :class="getStatusClass(entry.item)">{{
-                          getStatusLabel(entry.item) }}</span>
+                        <span class="tag is-size-7 has-text-weight-semibold" :class="getStatusClass(entry.item)">
+                          {{ getStatusLabel(entry.item) }}
+                        </span>
                       </div>
                       <div class="control">
                         <span class="tag" :date-datetime="entry.item.datetime" v-rtime="entry.item.datetime" />
                       </div>
                     </div>
-                    <p v-if="getDescription(entry.item)" class="content is-size-7 has-text-grey queue-description">
-                      {{ getDescription(entry.item) }}
+                    <p class="content is-size-7 has-text-grey queue-description">
+                      {{ getDescription(entry.item) || 'No description available.' }}
                     </p>
                   </div>
                 </article>
-
                 <div v-if="'queue' === entry.source" class="buttons are-small is-right is-flex-wrap-wrap mt-3">
                   <button v-if="canStart(entry.item)" class="button is-success is-light" type="button"
                     @click="startQueueItem(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                    <span class="icon"><i class="fas fa-circle-play" /></span>
                     <span>Start</span>
                   </button>
                   <button v-if="canPause(entry.item)" class="button is-warning is-light" type="button"
                     @click="pauseQueueItem(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-pause" /></span>
+                    <span class="icon"><i class="fas fa-pause" /></span>
                     <span>Pause</span>
                   </button>
                   <button class="button is-warning" type="button" @click="cancelDownload(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-xmark" /></span>
+                    <span class="icon"><i class="fas fa-xmark" /></span>
                     <span>Cancel</span>
                   </button>
                 </div>
@@ -89,16 +126,16 @@
                 <div v-else class="buttons are-small is-right is-flex-wrap-wrap mt-3">
                   <a v-if="getDownloadLink(entry.item)" class="button is-link" :href="getDownloadLink(entry.item)"
                     :download="getDownloadName(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-download" /></span>
+                    <span class="icon"><i class="fas fa-download" /></span>
                     <span>Download</span>
                   </a>
                   <button v-if="entry.item.status != 'finished' || !entry.item.filename" class="button is-info is-light"
                     type="button" @click="requeueItem(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                    <span class="icon"><i class="fas fa-rotate-right" /></span>
                     <span>Requeue</span>
                   </button>
                   <button class="button is-danger" type="button" @click="deleteHistoryItem(entry.item)">
-                    <span class="icon"><i class="fa-solid fa-trash" /></span>
+                    <span class="icon"><i class="fas fa-trash" /></span>
                     <span>Delete</span>
                   </button>
                 </div>
@@ -132,6 +169,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useStorage } from '@vueuse/core'
 import type { item_request } from '~/types/item'
 import type { ItemStatus, StoreItem } from '~/types/store'
 import { useNotification } from '~/composables/useNotification'
@@ -142,19 +180,24 @@ import { isEmbedable, getEmbedable } from '~/utils/embedable'
 import EmbedPlayer from '~/components/EmbedPlayer.vue'
 import { ag, encodePath, makeDownload, request, stripPath, ucFirst, uri } from '~/utils'
 
+defineEmits<{ (e: 'show_settings'): void }>()
+
 const configStore = useConfigStore()
 const stateStore = useStateStore()
 const socketStore = useSocketStore()
 const toast = useNotification()
 
-const { app, paused } = storeToRefs(configStore)
+const { app, paused, presets } = storeToRefs(configStore)
 const { queue, history } = storeToRefs(stateStore)
 
 const embedUrl = ref<string>('')
 const videoItem = ref<StoreItem | null>(null)
 
 const formUrl = ref<string>('')
+const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
 const addInProgress = ref<boolean>(false)
+const showPresets = ref<boolean>(false)
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
 const sortByNewest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
 
@@ -189,7 +232,7 @@ const addDownload = async (): Promise<void> => {
 
   const payload: item_request[] = [{
     url,
-    preset: app.value.default_preset,
+    preset: formPreset.value.preset || app.value.default_preset,
     auto_start: true,
   }]
 
@@ -212,8 +255,8 @@ const addDownload = async (): Promise<void> => {
       return
     }
 
-    toast.success('Added to queue.')
     formUrl.value = ''
+    formPreset.value.preset = app.value.default_preset || ''
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to add download.'
     toast.error(message)
@@ -223,6 +266,10 @@ const addDownload = async (): Promise<void> => {
 }
 
 const resolveThumbnail = (entry: DisplayEntry): string => {
+  if (!show_thumbnail.value) {
+    return '/images/placeholder.png'
+  }
+
   const { item, source } = entry
 
   const sidecarImage = item.sidecar?.image?.[0]?.file
@@ -463,6 +510,8 @@ const deleteHistoryItem = (item: StoreItem): void => {
   socketStore.emit('item_delete', { id: item._id, remove_file: app.value.remove_files })
   toast.info('Removed from history queue.')
 }
+
+const filter_presets = (flag: boolean = true) => presets.value.filter(item => item.default === flag)
 </script>
 
 <style scoped>
@@ -607,5 +656,9 @@ const deleteHistoryItem = (item: StoreItem): void => {
     width: 100%;
     max-width: 100%;
   }
+}
+
+.progress-bar {
+  border-radius: 0.75rem 0.75rem 0 0
 }
 </style>

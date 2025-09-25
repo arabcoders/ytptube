@@ -308,6 +308,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
+import {useConfirm} from '~/composables/useConfirm'
 
 const emitter = defineEmits(['cancel', 'submit'])
 const toast = useNotification()
@@ -412,7 +413,7 @@ const importItem = async () => {
     }
 
     if (form.name || form.request?.url) {
-      if (false === (await box.confirm('Overwrite the current form fields?', true))) {
+      if (false === (await box.confirm('Overwrite the current form fields?'))) {
         return
       }
     }
