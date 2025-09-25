@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257",
-    "date": "2025-09-24T21:47:43+00:00",
+    "full_sha": "1fd7477a9c809915621ba50602c09c476384ff66",
+    "date": "2025-09-25T14:32:28+00:00",
     "commits": [
+      {
+        "sha": "1fd7477a",
+        "full_sha": "1fd7477a9c809915621ba50602c09c476384ff66",
+        "message": "improve the simple view flow and change settings render to work on both",
+        "author": "arabcoders",
+        "date": "2025-09-25T14:32:28+00:00"
+      },
       {
         "sha": "4d16618c",
         "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257",
