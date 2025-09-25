@@ -13,18 +13,17 @@
             <div class="column is-6">
 
               <div class="field">
-                <label class="label is-unselectable">Page View</label>
+                <label class="label is-unselectable">
+                  <span class="icon"><i class="fa-solid fa-computer" /></span>
+                  Page View
+                </label>
                 <div class="control">
-                  <label for="ui_advanced" class="radio">
-                    <input id="ui_advanced" type="radio" v-model="simpleMode" :value="false">
-                    <span class="icon"><i class="fa-solid fa-computer" /></span>
-                    Regular View
-                  </label>
-                  <label for="ui_simple" class="radio">
-                    <input id="ui_simple" type="radio" v-model="simpleMode" :value="true">
-                    <span class="icon"><i class="fa-solid fa-mobile-screen-button" /></span>
-                    Simple View (Experimental)
-                  </label>
+                  <div class="control">
+                    <input id="random_bg" type="checkbox" class="switch is-success" v-model="simpleMode">
+                    <label for="random_bg" class="is-unselectable">
+                      &nbsp;{{ simpleMode ? 'Simple View (Experimental)' : 'Regular View (Default)' }}
+                    </label>
+                  </div>
                 </div>
                 <p class="help is-bold has-text-danger">
                   <span class="icon"> <i class="fa-solid fa-info-circle" /></span>

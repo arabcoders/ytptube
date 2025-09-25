@@ -81,7 +81,7 @@
                       </span>
                     </figure>
                   </figure>
-                  <div class="media-content">
+                  <div class="media-content is-grid">
                     <p class="title is-6 mb-0 queue-title">
                       <NuxtLink target="_blank" :href="entry.item.url">{{ entry.item.title }}</NuxtLink>
                     </p>
@@ -106,7 +106,7 @@
                     </p>
                   </div>
                 </article>
-                <div v-if="'queue' === entry.source" class="buttons are-small is-right is-flex-wrap-wrap mt-3">
+                <div v-if="'queue' === entry.source" class="buttons are-small queue-actions mt-3">
                   <button v-if="canStart(entry.item)" class="button is-success is-light" type="button"
                     @click="startQueueItem(entry.item)">
                     <span class="icon"><i class="fas fa-circle-play" /></span>
@@ -123,7 +123,7 @@
                   </button>
                 </div>
 
-                <div v-else class="buttons are-small is-right is-flex-wrap-wrap mt-3">
+                <div v-else class="buttons are-small queue-actions mt-3">
                   <a v-if="getDownloadLink(entry.item)" class="button is-link" :href="getDownloadLink(entry.item)"
                     :download="getDownloadName(entry.item)">
                     <span class="icon"><i class="fas fa-download" /></span>
@@ -571,15 +571,27 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
   box-shadow: 0 14px 30px rgba(10, 10, 10, 0.12);
 }
 
+.queue-card .card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+
+.queue-card .media-left {
+  margin-right: 1rem;
+}
 
 .queue-thumb {
   position: relative;
-  width: 9rem;
+  width: 12rem;
+  max-width: 100%;
   border-radius: 0.5rem;
   overflow: hidden;
 }
 
 .queue-thumb img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -595,31 +607,45 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0);
   color: #fff;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: background-color 0.2s ease;
+  pointer-events: none;
 }
 
 .queue-thumb.is-clickable:hover .queue-thumb__overlay {
-  opacity: 1;
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .queue-title {
-  max-width: 18rem;
-  white-space: nowrap;
+  overflow: hidden;
+}
+
+.queue-title a {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .queue-description {
   max-height: 4.5rem;
+  min-height: 2.5rem;
   overflow: hidden;
   display: -webkit-box;
   line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: auto;
 }
 
 .queue-fade-enter-active,
@@ -653,9 +679,32 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
     transform: translateY(18vh);
   }
 
+  .queue-card .media {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .queue-card .media-left {
+    margin-right: 0;
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
   .queue-thumb {
     width: 100%;
-    max-width: 100%;
+  }
+
+  .queue-card .media-content {
+    width: 100%;
+  }
+
+  .queue-title {
+    width: 100%;
+  }
+
+  .queue-actions {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 
