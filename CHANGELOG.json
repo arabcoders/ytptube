@@ -29,9 +29,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "1fd7477a9c809915621ba50602c09c476384ff66",
-    "date": "2025-09-25T14:32:28+00:00",
+    "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4",
+    "date": "2025-09-25T14:50:18+00:00",
     "commits": [
+      {
+        "sha": "42bcaa32",
+        "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4",
+        "message": "break long video description",
+        "author": "arabcoders",
+        "date": "2025-09-25T14:50:18+00:00"
+      },
       {
         "sha": "1fd7477a",
         "full_sha": "1fd7477a9c809915621ba50602c09c476384ff66",
