@@ -619,6 +619,7 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
   line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .queue-fade-enter-active,
