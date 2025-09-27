@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20250924-8a852bcd",
-        "date": "2025-09-24T19:39:50+00:00",
+        "tag": "master-20250927-1103b93f",
+        "date": "2025-09-27T18:05:58+00:00",
         "commits": [
+            {
+                "sha": "fb222180",
+                "message": "update uv action",
+                "author": "arabcoders",
+                "date": "2025-09-27T16:41:06+00:00",
+                "full_sha": "fb222180167947882444f1de7980360a8cf8893d"
+            },
+            {
+                "sha": "881232d5",
+                "message": "minor improvements to simple view",
+                "author": "arabcoders",
+                "date": "2025-09-27T12:49:39+00:00",
+                "full_sha": "881232d5aad3665c09ae7b5bd7c393f20d9063eb"
+            },
+            {
+                "sha": "e82e7b1b",
+                "message": "fixing some issue with simple view",
+                "author": "arabcoders",
+                "date": "2025-09-25T22:28:11+00:00",
+                "full_sha": "e82e7b1bf55a51df661a27fc7f40da1e46148e71"
+            },
+            {
+                "sha": "42bcaa32",
+                "message": "break long video description",
+                "author": "arabcoders",
+                "date": "2025-09-25T14:50:18+00:00",
+                "full_sha": "42bcaa32db714d0fef4195c4c561abb3474e0da4"
+            },
+            {
+                "sha": "1fd7477a",
+                "message": "improve the simple view flow and change settings render to work on both",
+                "author": "arabcoders",
+                "date": "2025-09-25T14:32:28+00:00",
+                "full_sha": "1fd7477a9c809915621ba50602c09c476384ff66"
+            },
+            {
+                "sha": "4d16618c",
+                "message": "merge in the simple mode for testing",
+                "author": "arabcoders",
+                "date": "2025-09-24T21:47:43+00:00",
+                "full_sha": "4d16618cfb9ac09406797ea38c9c08f24440d257"
+            },
             {
                 "sha": "4d493433",
                 "message": "fix nfo maker",
@@ -2181,7 +2223,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8a852bcd24ca635348e2fe7013f0917d6d6ccab3"
+        "full_sha": "1103b93f007983ce59633f561054203d8fa60c40"
     },
     {
         "tag": "master-20250616-c07465a6",

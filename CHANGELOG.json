@@ -1,36 +1,8 @@
 [
   {
-    "tag": "Unreleased (8a852bcd)",
-    "full_sha": "8a852bcd24ca635348e2fe7013f0917d6d6ccab3",
-    "date": "2025-09-24T19:39:50+00:00",
-    "commits": [
-      {
-        "sha": "4d493433",
-        "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224",
-        "message": "fix nfo maker",
-        "author": "arabcoders",
-        "date": "2025-09-24T16:23:57+00:00"
-      },
-      {
-        "sha": "d09761bd",
-        "full_sha": "d09761bd1c3e2c602471f389782feb8e44514c06",
-        "message": "Ensure a valid channel/playlist id present when validating url in youtube task handler.",
-        "author": "arabcoders",
-        "date": "2025-09-23T19:00:26+00:00"
-      },
-      {
-        "sha": "03cd3312",
-        "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01",
-        "message": "Bundles deno runtime. Closes #426",
-        "author": "arabcoders",
-        "date": "2025-09-23T18:34:31+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "fb222180167947882444f1de7980360a8cf8893d",
-    "date": "2025-09-27T16:41:06+00:00",
+    "tag": "Unreleased (1103b93f)",
+    "full_sha": "1103b93f007983ce59633f561054203d8fa60c40",
+    "date": "2025-09-27T18:05:58+00:00",
     "commits": [
       {
         "sha": "fb222180",
@@ -73,6 +45,27 @@
         "message": "merge in the simple mode for testing",
         "author": "arabcoders",
         "date": "2025-09-24T21:47:43+00:00"
+      },
+      {
+        "sha": "4d493433",
+        "full_sha": "4d493433af4b621025f2f33bf42cffde03af4224",
+        "message": "fix nfo maker",
+        "author": "arabcoders",
+        "date": "2025-09-24T16:23:57+00:00"
+      },
+      {
+        "sha": "d09761bd",
+        "full_sha": "d09761bd1c3e2c602471f389782feb8e44514c06",
+        "message": "Ensure a valid channel/playlist id present when validating url in youtube task handler.",
+        "author": "arabcoders",
+        "date": "2025-09-23T19:00:26+00:00"
+      },
+      {
+        "sha": "03cd3312",
+        "full_sha": "03cd3312cc29179f115cf12d7c8dcba01a0cfd01",
+        "message": "Bundles deno runtime. Closes #426",
+        "author": "arabcoders",
+        "date": "2025-09-23T18:34:31+00:00"
       }
     ]
   },
