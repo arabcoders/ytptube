@@ -47,8 +47,10 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v6.7
         with:
+          enable-cache: true
+          save-cache: true
           version: "latest"
 
       - name: Install Python dependencies
@@ -160,7 +162,7 @@ jobs:
           echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
           echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
           echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
-          
+
           sed -i \
             -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
             -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
