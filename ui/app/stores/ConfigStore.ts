@@ -24,6 +24,7 @@ export const useConfigStore = defineStore('config', () => {
       app_branch: '',
       started: 0,
       app_env: 'production',
+      simple_mode: false,
     },
     presets: [
       {

@@ -268,6 +268,7 @@ import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
+import {useConfirm} from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
@@ -410,7 +411,7 @@ const importItem = async (): Promise<void> => {
       return
     }
 
-    if ((form.filter || form.cli || Object.keys(form.extras).length > 0) && !(await box.confirm('Overwrite the current form fields?', true))) {
+    if ((form.filter || form.cli || Object.keys(form.extras).length > 0) && !(await box.confirm('Overwrite the current form fields?'))) {
       return
     }
 

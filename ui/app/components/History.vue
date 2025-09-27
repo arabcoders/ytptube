@@ -450,6 +450,7 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
+import {useConfirm} from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
@@ -588,7 +589,7 @@ const deleteSelectedItems = async () => {
   if (true === config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-  if (false === (await box.confirm(msg, config.app.remove_files))) {
+  if (false === (await box.confirm(msg))) {
     return
   }
   for (const key in selectedElms.value) {
@@ -750,7 +751,7 @@ const removeItem = async (item: StoreItem) => {
   if (item.status === 'finished' && config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
-  if (false === (await box.confirm(msg, Boolean(item.filename && config.app.remove_files)))) {
+  if (false === (await box.confirm(msg))) {
     return false
   }
 

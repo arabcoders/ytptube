@@ -307,6 +307,7 @@ import { CronExpressionParser } from 'cron-parser'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 import type { exported_task, task_item } from '~/types/tasks'
+import {useConfirm} from '~/composables/useConfirm'
 
 const props = defineProps<{
   reference?: string | null | undefined
@@ -408,7 +409,7 @@ const importItem = async (): Promise<void> => {
     }
 
     if (form.url || form.timer) {
-      if (false === (await box.confirm('Overwrite the current form fields?', true))) {
+      if (false === (await box.confirm('Overwrite the current form fields?'))) {
         return
       }
     }

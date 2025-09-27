@@ -45,6 +45,9 @@ class Config(metaclass=Singleton):
     temp_path: str = "/tmp"
     """The path to the temporary directory."""
 
+    simple_mode: bool = False
+    """Enable simple mode."""
+
     temp_keep: bool = False
     """Keep temporary files after the download is complete."""
 
@@ -244,6 +247,7 @@ class Config(metaclass=Singleton):
         "prevent_premiere_live",
         "temp_disabled",
         "allow_internal_urls",
+        "simple_mode",
     )
     "The variables that are booleans."
 
@@ -259,6 +263,7 @@ class Config(metaclass=Singleton):
         "default_preset",
         "instance_title",
         "console_enabled",
+        "simple_mode",
         "browser_control_enabled",
         "file_logging",
         "base_path",
