@@ -74,10 +74,16 @@
                     <figure class="image is-16by9 queue-thumb" :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
                       role="presentation" @click="openPlayer(entry.item)">
                       <img :src="resolveThumbnail(entry)" :alt="entry.item.title || 'Video thumbnail'" loading="lazy">
+                      <span v-if="getDurationLabel(entry.item)" class="queue-thumb__badge">
+                        {{ getDurationLabel(entry.item) }}
+                      </span>
                       <span
                         v-if="entry.item.filename && entry.item.status === 'finished' || isEmbedable(entry.item.url)"
                         class="queue-thumb__overlay">
-                        <span class="icon has-text-white"><i class="fas fa-play" /></span>
+                        <span class="icon circle-border"
+                          :class="{ 'has-text-danger': isEmbedable(entry.item.url) && (!entry.item.filename || entry.item.status !== 'finished') }">
+                          <i class="fas fa-play" />
+                        </span>
                       </span>
                     </figure>
                   </figure>
@@ -102,7 +108,17 @@
                       </div>
                     </div>
                     <p class="content is-size-7 has-text-grey queue-description">
-                      {{ getDescription(entry.item) || 'No description available.' }}
+                      <template v-if="entry.item.error || showMessage(entry.item)">
+                        <template v-if="entry.item.error">
+                          <span class="has-text-danger">{{ entry.item.error }}</span>
+                        </template>
+                        <template v-if="showMessage(entry.item)">
+                          <span class="has-text-danger">{{ entry.item.msg }}</span>
+                        </template>
+                      </template>
+                      <template v-else>
+                        {{ getDescription(entry.item) || 'No description available.' }}
+                      </template>
                     </p>
                   </div>
                 </article>
@@ -178,7 +194,7 @@ import { useStateStore } from '~/stores/StateStore'
 import { useSocketStore } from '~/stores/SocketStore'
 import { isEmbedable, getEmbedable } from '~/utils/embedable'
 import EmbedPlayer from '~/components/EmbedPlayer.vue'
-import { ag, encodePath, makeDownload, request, stripPath, ucFirst, uri } from '~/utils'
+import { ag, encodePath, formatTime, makeDownload, request, stripPath, ucFirst, uri } from '~/utils'
 
 defineEmits<{ (e: 'show_settings'): void }>()
 
@@ -350,6 +366,14 @@ const getDescription = (item: StoreItem): string => {
   return ''
 }
 
+const getDurationLabel = (item: StoreItem): string | null => {
+  const duration = ag<number | null>(item, 'extras.duration', null)
+  if (null == duration || Number.isNaN(duration) || 0 >= duration) {
+    return null
+  }
+  return formatTime(duration)
+}
+
 const statusOverrides: Record<string, string> = {
   downloading: 'Downloading',
   postprocessing: 'Post-processing',
@@ -503,7 +527,6 @@ const requeueItem = (item: StoreItem): void => {
 
   socketStore.emit('item_delete', { id: item._id, remove_file: false })
   socketStore.emit('add_url', payload)
-  toast.success('Requeued download.')
 }
 
 const deleteHistoryItem = (item: StoreItem): void => {
@@ -512,6 +535,13 @@ const deleteHistoryItem = (item: StoreItem): void => {
 }
 
 const filter_presets = (flag: boolean = true) => presets.value.filter(item => item.default === flag)
+
+const showMessage = (item: StoreItem) => {
+  if (!item?.msg || item.msg === item?.error) {
+    return false
+  }
+  return (item.msg?.length || 0) > 0
+}
 </script>
 
 <style scoped>
@@ -611,10 +641,24 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
   color: #fff;
   transition: background-color 0.2s ease;
   pointer-events: none;
+  z-index: 0;
 }
 
 .queue-thumb.is-clickable:hover .queue-thumb__overlay {
   background: rgba(0, 0, 0, 0.45);
+}
+
+.queue-thumb__badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1;
+  z-index: 1;
 }
 
 .queue-title {
@@ -710,5 +754,11 @@ const filter_presets = (flag: boolean = true) => presets.value.filter(item => it
 
 .progress-bar {
   border-radius: 0.75rem 0.75rem 0 0
+}
+
+.circle-border {
+  border: 2px solid;
+  border-radius: 50%;
+  padding: 0.5rem;
 }
 </style>
