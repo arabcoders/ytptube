@@ -133,7 +133,6 @@ jobs:
       packages: write
       contents: write
     env:
-      SLUG: ${{ format('{0}/{1}', env.REGISTRY, github.repository) }}
       ARCH: ${{ matrix.arch }}
     steps:
       - name: Checkout
