@@ -19,7 +19,7 @@ env:
 
 jobs:
   build:
-    if: env.REGISTRY == ''
+    if: ${{ env.REGISTRY == '' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
