@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251002-214c39bc",
-        "date": "2025-10-02T15:47:55+00:00",
+        "tag": "dev-20251002-0ef0f6a9",
+        "date": "2025-10-02T15:57:05+00:00",
         "commits": [
+            {
+                "sha": "0ef0f6a9",
+                "message": "Add Gitea support instructions to FAQ.",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:57:05+00:00",
+                "full_sha": "0ef0f6a90aacd43cec10ecb4c0466e2fcdbb0940"
+            },
             {
                 "sha": "214c39bc",
                 "message": "Fix artifact upload/download on selfhosted gitea",
@@ -2300,7 +2307,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "214c39bce7119adccdbcf8c21a965c667d099e66"
+        "full_sha": "0ef0f6a90aacd43cec10ecb4c0466e2fcdbb0940"
     },
     {
         "tag": "dev-20250616-c07465a6",
