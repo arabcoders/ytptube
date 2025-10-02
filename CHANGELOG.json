@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3",
+    "date": "2025-10-02T21:08:36+00:00",
+    "commits": [
+      {
+        "sha": "743566ef",
+        "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3",
+        "message": "Fixes issue with simple view and background toggle due to sharing same ID. ref #431",
+        "author": "arabcoders",
+        "date": "2025-10-02T21:08:36+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.12.0",
     "full_sha": "851124a0472d0062b442215b43669fd8e9e5bc14",
     "date": "2025-10-02T16:25:25+00:00",

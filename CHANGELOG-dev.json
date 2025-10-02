@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251002-ffeaefa9",
-        "date": "2025-10-02T16:18:46+00:00",
+        "tag": "dev-20251003-743566ef",
+        "date": "2025-10-02T21:08:36+00:00",
         "commits": [
+            {
+                "sha": "743566ef",
+                "message": "Fixes issue with simple view and background toggle due to sharing same ID. ref #431",
+                "author": "arabcoders",
+                "date": "2025-10-02T21:08:36+00:00",
+                "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3"
+            },
             {
                 "sha": "ffeaefa9",
                 "message": "fix PR build test",
@@ -2314,7 +2321,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ffeaefa93adee4be62bbc43da336098a80ab0fd3"
+        "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3"
     },
     {
         "tag": "dev-20250616-c07465a6",
