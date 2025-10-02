@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251002-8c0b4461",
-        "date": "2025-10-02T15:32:56+00:00",
+        "tag": "dev-20251002-d36598a3",
+        "date": "2025-10-02T15:43:55+00:00",
         "commits": [
+            {
+                "sha": "d36598a3",
+                "message": "another attempt at fixing CI native builds",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:43:55+00:00",
+                "full_sha": "d36598a316530307b293b136be57693f77ceb866"
+            },
             {
                 "sha": "8c0b4461",
                 "message": "fix native build.",
@@ -2286,7 +2293,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8c0b4461dc3bd6175fddf92d634cfc4ace42f0db"
+        "full_sha": "d36598a316530307b293b136be57693f77ceb866"
     },
     {
         "tag": "dev-20250616-c07465a6",

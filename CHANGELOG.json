@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "8c0b4461dc3bd6175fddf92d634cfc4ace42f0db",
-    "date": "2025-10-02T15:32:56+00:00",
+    "full_sha": "d36598a316530307b293b136be57693f77ceb866",
+    "date": "2025-10-02T15:43:55+00:00",
     "commits": [
+      {
+        "sha": "d36598a3",
+        "full_sha": "d36598a316530307b293b136be57693f77ceb866",
+        "message": "another attempt at fixing CI native builds",
+        "author": "arabcoders",
+        "date": "2025-10-02T15:43:55+00:00"
+      },
       {
         "sha": "8c0b4461",
         "full_sha": "8c0b4461dc3bd6175fddf92d634cfc4ace42f0db",
