@@ -5,7 +5,8 @@
   </template>
 
   <template v-if="show_settings">
-    <Modal @close="show_settings = false" content-class="modal-content-max is-overflow-visible">
+    <Modal @close="show_settings = false"
+      :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max is-overflow-visible'">
       <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
     </Modal>
   </template>

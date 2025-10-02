@@ -6,7 +6,7 @@
           <label class="label" for="download-url">
             What you would like to download?
             <span class="is-pulled-right">
-              <span class="icon has-text-primary is-pointer" @click="$emit('show_settings')" v-tooltip="'Settings'"><i
+              <span class="icon has-text-primary is-pointer" @click="$emit('show_settings')" v-tooltip="'WebUI Settings'"><i
                   class="fas fa-cogs" /></span>
             </span>
           </label>

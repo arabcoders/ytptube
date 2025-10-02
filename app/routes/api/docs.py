@@ -15,10 +15,11 @@ from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-STATIC_FILES = ["README.md", "FAQ.md", "API.md", "sc_short.png"]
+STATIC_FILES = ["README.md", "FAQ.md", "API.md", "sc_short.jpg", "sc_simple.jpg"]
 EXT_TO_MIME: dict = {
     ".md": "text/markdown",
     ".png": "image/png",
+    ".jpg": "image/jpeg",
 }
 
 
