@@ -1,8 +1,99 @@
 [
     {
-        "tag": "master-20250927-1103b93f",
-        "date": "2025-09-27T18:05:58+00:00",
+        "tag": "master-20251002-851124a0",
+        "date": "2025-10-02T16:25:25+00:00",
         "commits": [
+            {
+                "sha": "ffeaefa9",
+                "message": "fix PR build test",
+                "author": "arabcoders",
+                "date": "2025-10-02T16:18:46+00:00",
+                "full_sha": "ffeaefa93adee4be62bbc43da336098a80ab0fd3"
+            },
+            {
+                "sha": "0ef0f6a9",
+                "message": "Add Gitea support instructions to FAQ.",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:57:05+00:00",
+                "full_sha": "0ef0f6a90aacd43cec10ecb4c0466e2fcdbb0940"
+            },
+            {
+                "sha": "214c39bc",
+                "message": "Fix artifact upload/download on selfhosted gitea",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:47:55+00:00",
+                "full_sha": "214c39bce7119adccdbcf8c21a965c667d099e66"
+            },
+            {
+                "sha": "d36598a3",
+                "message": "another attempt at fixing CI native builds",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:43:55+00:00",
+                "full_sha": "d36598a316530307b293b136be57693f77ceb866"
+            },
+            {
+                "sha": "8c0b4461",
+                "message": "fix native build.",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:32:56+00:00",
+                "full_sha": "8c0b4461dc3bd6175fddf92d634cfc4ace42f0db"
+            },
+            {
+                "sha": "72f27f61",
+                "message": "fix",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:29:27+00:00",
+                "full_sha": "72f27f611207fdd86d93bb5f1c7ff3766784bda8"
+            },
+            {
+                "sha": "0850e705",
+                "message": "support selfhosted container registry",
+                "author": "arabcoders",
+                "date": "2025-10-02T15:28:19+00:00",
+                "full_sha": "0850e705ce36ceb345a7c7855c66432b78ef93c6"
+            },
+            {
+                "sha": "6c925f14",
+                "message": "complete API documentation in prep for v1.0 release",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:58:24+00:00",
+                "full_sha": "6c925f14509a88ba87ef457fa53d7eb422aac598"
+            },
+            {
+                "sha": "e8c194e3",
+                "message": "Added YTP_SIMPLE_MODE to FAQ",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:43:15+00:00",
+                "full_sha": "e8c194e3894a8086ceb66ef1a14a4444a3603846"
+            },
+            {
+                "sha": "b63d3f7d",
+                "message": "README updates",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:39:01+00:00",
+                "full_sha": "b63d3f7d5bd37f1f1f095451d075669614d99bb8"
+            },
+            {
+                "sha": "aa8c9e7b",
+                "message": "fixes",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:20:31+00:00",
+                "full_sha": "aa8c9e7b34260a18e27e613ad474b0e474a39fd2"
+            },
+            {
+                "sha": "d1060c43",
+                "message": "Improve autocomplete for console",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:11:51+00:00",
+                "full_sha": "d1060c43e263c6405df1ef8113a39ce9a12bbdd4"
+            },
+            {
+                "sha": "a1c65572",
+                "message": "Fix dropdown on mobile",
+                "author": "arabcoders",
+                "date": "2025-10-02T13:21:41+00:00",
+                "full_sha": "a1c65572d540c287c19e9b58860fe5bfd5becd8f"
+            },
             {
                 "sha": "fb222180",
                 "message": "update uv action",
@@ -2223,7 +2314,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1103b93f007983ce59633f561054203d8fa60c40"
+        "full_sha": "851124a0472d0062b442215b43669fd8e9e5bc14"
     },
     {
         "tag": "master-20250616-c07465a6",
