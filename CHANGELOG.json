@@ -1,5 +1,40 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b63d3f7d5bd37f1f1f095451d075669614d99bb8",
+    "date": "2025-10-02T14:39:01+00:00",
+    "commits": [
+      {
+        "sha": "b63d3f7d",
+        "full_sha": "b63d3f7d5bd37f1f1f095451d075669614d99bb8",
+        "message": "README updates",
+        "author": "arabcoders",
+        "date": "2025-10-02T14:39:01+00:00"
+      },
+      {
+        "sha": "aa8c9e7b",
+        "full_sha": "aa8c9e7b34260a18e27e613ad474b0e474a39fd2",
+        "message": "fixes",
+        "author": "arabcoders",
+        "date": "2025-10-02T14:20:31+00:00"
+      },
+      {
+        "sha": "d1060c43",
+        "full_sha": "d1060c43e263c6405df1ef8113a39ce9a12bbdd4",
+        "message": "Improve autocomplete for console",
+        "author": "arabcoders",
+        "date": "2025-10-02T14:11:51+00:00"
+      },
+      {
+        "sha": "a1c65572",
+        "full_sha": "a1c65572d540c287c19e9b58860fe5bfd5becd8f",
+        "message": "Fix dropdown on mobile",
+        "author": "arabcoders",
+        "date": "2025-10-02T13:21:41+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v0.11.1",
     "full_sha": "1103b93f007983ce59633f561054203d8fa60c40",
     "date": "2025-09-27T18:05:58+00:00",
