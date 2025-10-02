@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d36598a316530307b293b136be57693f77ceb866",
-    "date": "2025-10-02T15:43:55+00:00",
+    "full_sha": "214c39bce7119adccdbcf8c21a965c667d099e66",
+    "date": "2025-10-02T15:47:55+00:00",
     "commits": [
+      {
+        "sha": "214c39bc",
+        "full_sha": "214c39bce7119adccdbcf8c21a965c667d099e66",
+        "message": "Fix artifact upload/download on selfhosted gitea",
+        "author": "arabcoders",
+        "date": "2025-10-02T15:47:55+00:00"
+      },
       {
         "sha": "d36598a3",
         "full_sha": "d36598a316530307b293b136be57693f77ceb866",
