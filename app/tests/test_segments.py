@@ -277,7 +277,9 @@ async def test_stream_gpu_fallback_switches_codec(
 
     monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
     # Only QSV advertised so initial build sets QSV
+    # Patch both where it's defined AND where it's imported/used
     monkeypatch.setattr("app.library.SegmentEncoders.has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.library.Segments.has_dri_devices", lambda: True)
     monkeypatch.setattr("app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_qsv"})
 
     # Fail first, succeed second

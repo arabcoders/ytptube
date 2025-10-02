@@ -14,12 +14,9 @@ on:
     tags:
       - "v*"
 
-env:
-  REGISTRY: ${{ vars.REGISTRY != '' && vars.REGISTRY || '' }}
-
 jobs:
   build:
-    if: ${{ env.REGISTRY == '' }}
+    if: ${{ vars.REGISTRY == '' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
