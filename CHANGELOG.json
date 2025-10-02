@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b63d3f7d5bd37f1f1f095451d075669614d99bb8",
-    "date": "2025-10-02T14:39:01+00:00",
+    "full_sha": "e8c194e3894a8086ceb66ef1a14a4444a3603846",
+    "date": "2025-10-02T14:43:15+00:00",
     "commits": [
+      {
+        "sha": "e8c194e3",
+        "full_sha": "e8c194e3894a8086ceb66ef1a14a4444a3603846",
+        "message": "Added YTP_SIMPLE_MODE to FAQ",
+        "author": "arabcoders",
+        "date": "2025-10-02T14:43:15+00:00"
+      },
       {
         "sha": "b63d3f7d",
         "full_sha": "b63d3f7d5bd37f1f1f095451d075669614d99bb8",
