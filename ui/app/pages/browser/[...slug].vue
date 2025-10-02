@@ -157,7 +157,7 @@
                   </span>
                 </td>
                 <td class="is-vcentered" v-if="config.app.browser_control_enabled">
-                  <Dropdown icons="fa-solid fa-cogs" @open_state="s => table_container = !s" label="Actions">
+                  <Dropdown icons="fa-solid fa-cogs" label="Actions">
                     <template v-if="'file' === item.type">
                       <a :href="makeDownload({}, { filename: item.path, folder: '' })"
                         :download="item.name.split('/').reverse()[0]" class="dropdown-item">
@@ -252,7 +252,7 @@ const path = ref<string>((() => {
   }
   return '/'
 })())
-const table_container = ref<boolean>(false)
+const table_container = ref<boolean>(true)
 const search = ref<string>('')
 const show_filter = ref<boolean>(false)
 

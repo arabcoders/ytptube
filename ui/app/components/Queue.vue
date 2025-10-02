@@ -115,8 +115,7 @@
                     :data-datetime="item.datetime" v-rtime="item.datetime" />
                 </td>
                 <td class="is-vcentered is-items-center">
-                  <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s"
-                    :button_classes="'is-small'" label="Actions">
+                  <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
                     <template v-if="isEmbedable(item.url)">
                       <NuxtLink class="dropdown-item has-text-danger"
                         @click="embed_url = getEmbedable(item.url) as string">
@@ -263,7 +262,7 @@
                 </button>
               </div>
               <div class="column is-half-mobile">
-                <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s" label="Actions">
+                <Dropdown icons="fa-solid fa-cogs" label="Actions">
                   <template v-if="isEmbedable(item.url)">
                     <NuxtLink class="dropdown-item has-text-danger"
                       @click="embed_url = getEmbedable(item.url) as string">
@@ -313,7 +312,7 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void

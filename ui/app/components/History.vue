@@ -174,8 +174,7 @@
                       </button>
                     </div>
                     <div class="control is-expanded" v-if="item.url">
-                      <Dropdown icons="fa-solid fa-cogs" @open_state="(s: boolean) => table_container = !s"
-                        :button_classes="'is-small'" label="Actions">
+                      <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
                         <template v-if="'finished' === item.status && item.filename">
                           <NuxtLink @click="playVideo(item)" class="dropdown-item">
                             <span class="icon"><i class="fa-solid fa-play" /></span>
@@ -450,7 +449,7 @@
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
