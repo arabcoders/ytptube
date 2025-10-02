@@ -82,7 +82,7 @@
                       <span>Associated yt-dlp option</span>
                     </label>
                     <InputAutocomplete v-model="item.field" :options="ytDlpOptions" :disabled="isLoading"
-                      placeholder="Type or select a yt-dlp option" />
+                      placeholder="Type or select a yt-dlp option" :multiple="false" :openOnFocus="true" />
                     <span class="help is-bold">
                       The long form of yt-dlp option name, e.g. <code>--no-overwrites</code> not <code>-w</code>.
                     </span>

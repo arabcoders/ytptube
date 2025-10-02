@@ -14,15 +14,18 @@
         </span>
       </h1>
       <div class="subtitle is-6 is-unselectable">
-        You can use this console window to execute non-interactive commands. The interface is jailed to the
-        <code>yt-dlp</code>
+        You can use this page to run yt-dlp commands directly in a non-interactive way, bypassing the web interface and
+        it's settings.
       </div>
     </div>
     <div class="column is-12">
       <div class="card">
         <header class="card-header">
           <p class="card-header-title">
-            <span class="icon"><i class="fa-solid fa-terminal" /></span> Console Output
+            <span class="icon">
+              <i class="fa-solid fa-desktop" />
+            </span>
+            <span class="ml-2">Console Output</span>
           </p>
           <p class="card-header-icon">
             <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput()">
@@ -36,14 +39,14 @@
         <section class="card-content p-1 m-1">
           <div class="field is-grouped">
             <div class="control is-expanded">
-              <input type="text" class="input" v-model="command" placeholder="--help" autocomplete="off"
-                ref="command_input" @keydown.enter="runCommand" :disabled="isLoading" id="command">
+              <InputAutocomplete v-model="command" :options="ytDlpOptions" :disabled="isLoading" placeholder="--help"
+                id="command" @keydown.enter="runCommand" :multiple="true" :allowShortFlags="true" />
             </div>
             <p class="control">
               <button class="button is-primary" type="button" :disabled="isLoading || '' === command"
                 @click="runCommand">
                 <span class="icon">
-                  <i class="fa-solid fa-spinner" spin v-if="isLoading" />
+                  <i class="fa-solid fa-spinner fa-spin" v-if="isLoading" />
                   <i class="fa-solid fa-paper-plane" v-else />
                 </span>
               </button>
@@ -60,6 +63,8 @@ import '@xterm/xterm/css/xterm.css'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { disableOpacity, enableOpacity } from '~/utils'
+import InputAutocomplete from '~/components/InputAutocomplete.vue'
+import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const config = useConfigStore()
 const socket = useSocketStore()
@@ -69,8 +74,11 @@ const terminal = ref<Terminal>()
 const terminalFit = ref<FitAddon>()
 const command = ref<string>('')
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window')
-const command_input = useTemplateRef<HTMLInputElement>('command_input')
 const isLoading = ref<boolean>(false)
+
+const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
+  .map(flag => ({ value: flag, description: opt.description || '' }))
+))
 
 watch(() => isLoading.value, async value => {
   if (value) {
@@ -158,10 +166,11 @@ const clearOutput = async (withCommand: boolean = false) => {
 }
 
 const focusInput = () => {
-  if (!command_input.value) {
-    return
+  // Focus the InputAutocomplete component's input field
+  const inputElement = document.getElementById('command') as HTMLInputElement
+  if (inputElement) {
+    inputElement.focus()
   }
-  command_input.value.focus()
 }
 
 const writer = (s: string) => {
