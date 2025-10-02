@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251002-e8c194e3",
-        "date": "2025-10-02T14:43:15+00:00",
+        "tag": "dev-20251002-6c925f14",
+        "date": "2025-10-02T14:58:24+00:00",
         "commits": [
+            {
+                "sha": "6c925f14",
+                "message": "complete API documentation in prep for v1.0 release",
+                "author": "arabcoders",
+                "date": "2025-10-02T14:58:24+00:00",
+                "full_sha": "6c925f14509a88ba87ef457fa53d7eb422aac598"
+            },
             {
                 "sha": "e8c194e3",
                 "message": "Added YTP_SIMPLE_MODE to FAQ",
@@ -2258,7 +2265,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "e8c194e3894a8086ceb66ef1a14a4444a3603846"
+        "full_sha": "6c925f14509a88ba87ef457fa53d7eb422aac598"
     },
     {
         "tag": "dev-20250616-c07465a6",
