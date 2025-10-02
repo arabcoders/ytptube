@@ -491,3 +491,15 @@ By default, YTPTube prevents requests to internal resources, for security reason
 
 We do not recommend enabling this option unless you know what you are doing, as it can expose your internal network to 
 potential security risks. This should only be used if it's truly needed.
+
+# How to setup CI on Gitea?
+
+The docker container builder already support self-hosted repositories like Gitea, you simply need to define two things at your repository settings.
+
+1. Create a secret named `GIT_TOKEN` and set it to your Gitea personal access token.
+2. Create a variable named `REGISTRY` and set it to your docker registry, for example `gitea.domain.org`.
+
+Thats it, the `main.yml` will now disable the docker/github container registries, and use your Gitea repository instead. It will follow the usual
+naming, your container name will be named `REGISTRY/ytptube` and the tags will be the same as the ones used in the github registry.
+
+Unfortunately, the `native-builder.yml` workflow doesn't support self-hosted repositories at the moment.
