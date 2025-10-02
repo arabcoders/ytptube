@@ -43,6 +43,12 @@ hr {
               <h1 class="is-4">
                 <span class="icon"><i class="fas fa-code-branch" /></span>
                 {{ log.tag }} <span class="tag has-text-success" v-if="isInstalled(log)">Installed</span>
+                <template v-if="log.date">
+                  <span style="font-size:0.5em;">
+                    - <span class="has-tooltip" v-tooltip="`Release Date: ${log.date}`">
+                      {{ moment(log.date).fromNow() }}
+                    </span></span>
+                </template>
               </h1>
               <hr>
               <ul>
@@ -56,8 +62,8 @@ hr {
                         {{ moment(commit.date).fromNow() }}
                       </span>
                     </NuxtLink>
-                    <span v-tooltip="'Code is at this commit.'" v-if="commit.full_sha === app_sha" class="icon has-text-success"><i
-                        class="fas fa-check" /></span>
+                    <span v-tooltip="'Code is at this commit.'" v-if="commit.full_sha === app_sha"
+                      class="icon has-text-success"><i class="fas fa-check" /></span>
                   </small>
                 </li>
               </ul>

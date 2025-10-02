@@ -45,11 +45,15 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`               |
 | YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                   |
 | YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                    | `false`               |
+| YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                           | `false`               |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
 > The extractor name must be in uppercase, to know the extractor name, check the log for the specific extractor used for the download.
 > The limit should not exceed the `YTP_MAX_WORKERS` value as it will be ignored.
+
+> [!IMPORTANT]
+> The env variable `YTP_SIMPLE_MODE` only control what being displayed for first time visitor, the users can still switch between the two modes  via the WebUI settings page.
 
 
 # Browser extensions & bookmarklets
@@ -487,3 +491,15 @@ By default, YTPTube prevents requests to internal resources, for security reason
 
 We do not recommend enabling this option unless you know what you are doing, as it can expose your internal network to 
 potential security risks. This should only be used if it's truly needed.
+
+# How to setup CI on Gitea?
+
+The docker container builder already support self-hosted repositories like Gitea, you simply need to define two things at your repository settings.
+
+1. Create a secret named `GIT_TOKEN` and set it to your Gitea personal access token.
+2. Create a variable named `REGISTRY` and set it to your docker registry, for example `gitea.domain.org`.
+
+Thats it, the `main.yml` will now disable the docker/github container registries, and use your Gitea repository instead. It will follow the usual
+naming, your container name will be named `REGISTRY/ytptube` and the tags will be the same as the ones used in the github registry.
+
+Unfortunately, the `native-builder.yml` workflow doesn't support self-hosted repositories at the moment.

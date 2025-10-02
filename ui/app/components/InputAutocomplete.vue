@@ -24,12 +24,22 @@
 import { ref, watch, computed, defineModel, defineProps, nextTick } from 'vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   options: AutoCompleteOptions
   placeholder?: string
-  disabled?: boolean,
+  disabled?: boolean
   id?: string
-}>()
+  multiple?: boolean
+  openOnFocus?: boolean
+  allowShortFlags?: boolean
+}>(), {
+  placeholder: '',
+  disabled: false,
+  id: '',
+  multiple: true,
+  openOnFocus: false,
+  allowShortFlags: false
+})
 
 const model = defineModel<string>()
 
@@ -44,6 +54,16 @@ const dropdownItemRefs = ref<(HTMLElement | null)[]>([])
 
 // Extract the last non-space token and its bounds
 const getLastToken = (value: string) => {
+  // If multiple is disabled, treat the entire input as a single token
+  if (!props.multiple) {
+    return {
+      token: value,
+      start: 0,
+      end: value.length
+    }
+  }
+
+  // Multiple enabled: extract last token for multi-flag support
   const m = (value || '').match(/(\S+)$/)
   const token: string = m?.[1] ?? ''
   const start = m ? (m.index as number) : value.length
@@ -57,35 +77,82 @@ const filteredOptions = computed(() => {
     return props.options
   }
   const { token } = getLastToken(value)
-  // Hide suggestions when token has '=' or doesn't start with '--'
-  if (!token || token.includes('=') || !token.startsWith('--')) {
+
+  // If openOnFocus is enabled and token is empty/just whitespace, show all options
+  if (props.openOnFocus && !token) {
+    return props.options
+  }
+
+  // Hide suggestions when token has '='
+  if (!token || token.includes('=')) {
     return []
   }
-  // Hide suggestions if token exactly matches an option value
-  if (props.options.some(opt => opt.value === token)) {
+
+  // Check if token is a valid flag format
+  const isLongFlag = token.startsWith('--')
+  const isShortFlag = props.allowShortFlags && token.startsWith('-') && !token.startsWith('--')
+
+  if (!isLongFlag && !isShortFlag) {
     return []
   }
-  const val = token.toLowerCase()
+
+  // Check for exact match first - if found, only show that
+  const exactMatch = props.options.find(opt => opt.value === token)
+  if (exactMatch) {
+    return [exactMatch]
+  }
+
   const startsWithFlag = []
   const includesFlag = []
   const includesDesc = []
+
   for (const opt of props.options) {
-    const flag = opt.value.toLowerCase()
+    const flag = opt.value
     const desc = opt.description.toLowerCase()
-    if (flag.startsWith(val)) {
-      startsWithFlag.push(opt)
-    } else if (flag.includes(val)) {
-      includesFlag.push(opt)
-    } else if (desc.includes(val)) {
-      includesDesc.push(opt)
+
+    if (isShortFlag) {
+      // Short flags: case-sensitive matching for flag, case-insensitive for description
+      if (flag === token) {
+        startsWithFlag.push(opt)
+      } else if (flag.includes(token)) {
+        includesFlag.push(opt)
+      } else if (desc.includes(token.toLowerCase())) {
+        includesDesc.push(opt)
+      }
+    } else {
+      // Long flags: case-insensitive matching
+      const val = token.toLowerCase()
+      const flagLower = flag.toLowerCase()
+
+      if (flagLower.startsWith(val)) {
+        startsWithFlag.push(opt)
+      } else if (flagLower.includes(val)) {
+        includesFlag.push(opt)
+      } else if (desc.includes(val)) {
+        includesDesc.push(opt)
+      }
     }
   }
+
   return [...startsWithFlag, ...includesFlag, ...includesDesc]
 })
 
 const selectOption = (val: string) => {
   const value = model.value || ''
   const { token, start, end } = getLastToken(value)
+
+  // If multiple is disabled, replace entire value
+  if (!props.multiple) {
+    // Preserve any '=value' suffix already typed
+    const eqPos = token.indexOf('=')
+    const after = eqPos !== -1 ? token.slice(eqPos) : ''
+    model.value = val + after
+    showList.value = false
+    highlightedIndex.value = -1
+    return
+  }
+
+  // Multiple enabled: replace only the last token
   if (token) {
     // Preserve any '=value' suffix already typed for this token
     const eqPos = token.indexOf('=')
@@ -107,8 +174,13 @@ const hideList = () => {
 }
 
 const onFocus = () => {
-  showList.value = isFlagTrigger.value && filteredOptions.value.length > 0
-  highlightedIndex.value = showList.value ? 0 : -1
+  if (!props.openOnFocus) {
+    return
+  }
+  // When openOnFocus is enabled, show dropdown if there are options
+  const hasOptions = filteredOptions.value.length > 0
+  showList.value = hasOptions
+  highlightedIndex.value = hasOptions ? 0 : -1
 }
 
 const setDropdownItemRef = (el: Element | ComponentPublicInstance | null, idx: number) => {
@@ -128,9 +200,24 @@ watch(filteredOptions, () => {
 
 const isFlagTrigger = computed(() => {
   const { token } = getLastToken(model.value || '')
-  if (!token || !token.startsWith('--') || token.includes('=')) return false
-  // Suppress if exact match
-  return !props.options.some(opt => opt.value === token)
+
+  // If openOnFocus is enabled and input is empty, allow trigger
+  if (props.openOnFocus && !token) {
+    return true
+  }
+
+  if (!token || token.includes('=')) return false
+
+  // Check if token is a valid flag format
+  const isLongFlag = token.startsWith('--')
+  const isShortFlag = props.allowShortFlags && token.startsWith('-') && !token.startsWith('--')
+
+  if (!isLongFlag && !isShortFlag) {
+    return false
+  }
+
+  // Allow trigger even for exact matches so users can see descriptions
+  return true
 })
 
 const handleKeydown = (e: KeyboardEvent) => {

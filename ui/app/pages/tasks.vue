@@ -193,8 +193,7 @@
                       </div>
 
                       <div class="control is-expanded">
-                        <Dropdown icons="fa-solid fa-cogs" label="Actions" button_classes="is-small"
-                          @open_state="s => table_container = !s">
+                        <Dropdown icons="fa-solid fa-cogs" label="Actions" button_classes="is-small">
                           <NuxtLink class="dropdown-item has-text-purple" @click="runNow(item)">
                             <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                             <span>Run now</span>

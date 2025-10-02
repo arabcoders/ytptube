@@ -8,13 +8,19 @@
 video platforms easier and user-friendly. It supports downloading playlists, channels, live streams and 
 includes features like scheduling downloads, sending notifications, and built-in video player.
 
-![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/master/sc_short.png)
+# Screenshots
+Example of the regular view interface.
+![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_short.jpg)
+
+Example of the Simple mode interface.
+![Short screenshot](https://raw.githubusercontent.com/ArabCoders/ytptube/dev/sc_simple.jpg)
 
 # YTPTube Features.
 
 * Multi-download support.
 * Random beautiful background.
 * Handles live and upcoming streams.
+* A Dual mode view for both technical and non-technical users.
 * Schedule channels or playlists to be downloaded automatically with support for creating custom download feeds from non-supported sites. See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.

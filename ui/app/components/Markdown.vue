@@ -99,7 +99,7 @@ import Message from '~/components/Message.vue'
 const props = defineProps<{ file: string }>()
 const emitter = defineEmits<{ (e: 'closeModel'): void }>()
 
-const urls = ['FAQ.md', 'README.md', 'API.md', 'sc_short.png']
+const urls = ['FAQ.md', 'README.md', 'API.md', 'sc_short.jpg', 'sc_simple.jpg']
 
 const content = ref<string>('')
 const error = ref<string>('')

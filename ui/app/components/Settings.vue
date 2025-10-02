@@ -21,13 +21,13 @@
                   <div class="control">
                     <input id="random_bg" type="checkbox" class="switch is-success" v-model="simpleMode">
                     <label for="random_bg" class="is-unselectable">
-                      &nbsp;{{ simpleMode ? 'Simple View (Experimental)' : 'Regular View (Default)' }}
+                      &nbsp;{{ simpleMode ? 'Simple View' : 'Regular View' }}
                     </label>
                   </div>
                 </div>
-                <p class="help is-bold has-text-danger">
+                <p class="help is-bold">
                   <span class="icon"> <i class="fa-solid fa-info-circle" /></span>
-                  The simple view is experimental and will change without notice and maybe even deleted in the future.
+                  The simple view is ideal for non-technical users and mobile devices.
                 </p>
               </div>
 
@@ -115,7 +115,7 @@
               </div>
 
               <div class="field" v-if="allow_toasts">
-                <label class="label">Notification position</label>
+                <label class="label">Notifications position</label>
                 <div class="control">
                   <div class="select is-fullwidth">
                     <select v-model="toast_position">

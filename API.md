@@ -34,6 +34,12 @@ This document describes the available endpoints and their usage. All endpoints r
     - [PUT /api/tasks](#put-apitasks)
     - [POST /api/tasks/inspect](#post-apitasksinspect)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
+    - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
+    - [GET /api/task\_definitions/](#get-apitask_definitions)
+    - [GET /api/task\_definitions/{identifier}](#get-apitask_definitionsidentifier)
+    - [POST /api/task\_definitions/](#post-apitask_definitions)
+    - [PUT /api/task\_definitions/{identifier}](#put-apitask_definitionsidentifier)
+    - [DELETE /api/task\_definitions/{identifier}](#delete-apitask_definitionsidentifier)
     - [GET /api/player/playlist/{file:.\*}.m3u8](#get-apiplayerplaylistfilem3u8)
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
@@ -42,7 +48,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/file/ffprobe/{file:.\*}](#get-apifileffprobefile)
     - [GET /api/file/info/{file:.\*}](#get-apifileinfofile)
     - [GET /api/file/browser/{path:.\*}](#get-apifilebrowserpath)
-    - [POST /api/file/action/{path:.\*}](#post-apifileactionpath)
+    - [POST /api/file/actions](#post-apifileactions)
     - [POST /api/file/download](#post-apifiledownload)
     - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
     - [GET /api/random/background](#get-apirandombackground)
@@ -59,9 +65,12 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
+    - [POST /api/system/pause](#post-apisystempause)
+    - [POST /api/system/resume](#post-apisystemresume)
     - [POST /api/system/shutdown](#post-apisystemshutdown)
     - [GET /api/dev/loop](#get-apidevloop)
     - [GET /api/dev/pip](#get-apidevpip)
+    - [GET /api/docs/{file}](#get-apidocsfile)
   - [Error Responses](#error-responses)
 
 ---
@@ -628,6 +637,167 @@ or
 
 ---
 
+### DELETE /api/tasks/{id}/mark
+**Purpose**: Remove all entries associated with a scheduled task from the download archive, allowing them to be re-downloaded.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+```json
+{ "message": "..." }
+```
+or
+```json
+{ "error": "..." }
+```
+
+- `400 Bad Request` if id is missing or invalid.
+- `404 Not Found` if the task does not exist.
+
+---
+
+### GET /api/task_definitions/
+**Purpose**: Retrieve all task definitions.
+
+**Query Parameters**:
+- `include=definition` (optional) - Include the full definition object in response.
+
+**Response**:
+```json
+[
+  {
+    "id": "<uuid>",
+    "name": "Task Definition Name",
+    "description": "...",
+    "enabled": true,
+    "definition": { ... }  // only if include=definition
+  },
+  ...
+]
+```
+
+---
+
+### GET /api/task_definitions/{identifier}
+**Purpose**: Retrieve a specific task definition by ID or name.
+
+**Path Parameter**:
+- `identifier`: Task definition ID or name.
+
+**Response**:
+```json
+{
+  "id": "<uuid>",
+  "name": "Task Definition Name",
+  "description": "...",
+  "enabled": true,
+  "definition": {
+    "handler": "GenericTaskHandler",
+    "config": { ... }
+  }
+}
+```
+
+- `400 Bad Request` if identifier is missing.
+- `404 Not Found` if the task definition doesn't exist.
+
+---
+
+### POST /api/task_definitions/
+**Purpose**: Create a new task definition.
+
+**Body**:
+```json
+{
+  "name": "My Task Definition",
+  "description": "...",
+  "enabled": true,
+  "definition": {
+    "handler": "GenericTaskHandler",
+    "config": { ... }
+  }
+}
+```
+
+Or wrap in a definition object:
+```json
+{
+  "definition": {
+    "name": "My Task Definition",
+    "handler": "GenericTaskHandler",
+    ...
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "id": "<uuid>",
+  "name": "My Task Definition",
+  "description": "...",
+  "enabled": true,
+  "definition": { ... }
+}
+```
+
+- `201 Created` if successful.
+- `400 Bad Request` if validation fails.
+
+---
+
+### PUT /api/task_definitions/{identifier}
+**Purpose**: Update an existing task definition.
+
+**Path Parameter**:
+- `identifier`: Task definition ID or name.
+
+**Body**:
+```json
+{
+  "name": "Updated Name",
+  "description": "...",
+  "enabled": false,
+  "definition": {
+    "handler": "GenericTaskHandler",
+    "config": { ... }
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "id": "<uuid>",
+  "name": "Updated Name",
+  "description": "...",
+  "enabled": false,
+  "definition": { ... }
+}
+```
+
+- `200 OK` if successful.
+- `400 Bad Request` if identifier is missing or validation fails.
+
+---
+
+### DELETE /api/task_definitions/{identifier}
+**Purpose**: Delete a task definition.
+
+**Path Parameter**:
+- `identifier`: Task definition ID or name.
+
+**Response**:
+```json
+{ "status": "deleted" }
+```
+
+- `200 OK` if successful.
+- `400 Bad Request` if identifier is missing or task definition doesn't exist.
+
+---
+
 ### GET /api/player/playlist/{file:.*}.m3u8
 **Purpose**: Generate a playlist for a given local media file.
 
@@ -785,31 +955,41 @@ Binary image data with the appropriate `Content-Type`.
 
 ---
 
-### POST /api/file/action/{path:.*}
-**Purpose**: Perform a file browser action on a file or directory.
-
-**Path Parameter**:
-- `path`: Base path (relative to `download_path`) to operate under. Use `/` for root.
+### POST /api/file/actions
+**Purpose**: Perform file browser actions on files or directories.
 
 **Body**:
 ```json
-{ "action": "rename|delete|move|directory", ... }
+[
+  { "action": "rename", "path": "relative/path/file.ext", "new_name": "newname.ext" },
+  { "action": "delete", "path": "relative/path/file.ext" },
+  { "action": "move", "path": "relative/path/file.ext", "new_path": "new/relative/path" },
+  { "action": "directory", "path": "relative/path", "new_dir": "subdirectory" }
+]
 ```
-Actions and required fields:
-- `rename`: `{ "new_name": "<name>" }`
-- `delete`: no extra fields
-- `move`: `{ "new_path": "<dir-relative-to-download_path>" }`
-- `directory`: `{ "new_dir": "<subdir/to/create>" }`
 
-**Response**: `200 OK` with empty body.
+Actions and required fields:
+- `rename`: `{ "action": "rename", "path": "...", "new_name": "<name>" }`
+- `delete`: `{ "action": "delete", "path": "..." }`
+- `move`: `{ "action": "move", "path": "...", "new_path": "<dir-relative-to-download_path>" }`
+- `directory`: `{ "action": "directory", "path": "...", "new_dir": "<subdir/to/create>" }`
+
+**Response**: 
+```json
+[
+  { "path": "relative/path", "action": "rename", "ok": true },
+  { "path": "relative/path", "action": "delete", "ok": true },
+  ...
+]
+```
 
 or an error:
 ```json
 { "error": "text" }
 ```
 
-- `403 Forbidden` if browser or actions are disabled.
-- `400/404` for invalid paths or parameters.
+- `403 Forbidden` if browser actions are disabled.
+- `400 Bad Request` for invalid actions or parameters.
 
 ---
 
@@ -1201,6 +1381,32 @@ or an error:
 
 ---
 
+### POST /api/system/pause
+**Purpose**: Pause all non-active downloads in the queue.
+
+**Response**:
+```json
+{ "message": "Non-active downloads have been paused." }
+```
+
+- `200 OK` if downloads were successfully paused.
+- `406 Not Acceptable` if downloads are already paused.
+
+---
+
+### POST /api/system/resume
+**Purpose**: Resume all paused downloads in the queue.
+
+**Response**:
+```json
+{ "message": "Resumed all downloads." }
+```
+
+- `200 OK` if downloads were successfully resumed.
+- `406 Not Acceptable` if downloads are not paused.
+
+---
+
 ### POST /api/system/shutdown
 **Purpose**: Gracefully shut down the application (native mode only).
 
@@ -1232,6 +1438,28 @@ or an error:
 ```json
 { "package": "version-or-null", "...": null }
 ```
+
+---
+
+### GET /api/docs/{file}
+**Purpose**: Serve documentation files from the GitHub repository.
+
+**Path Parameter**:
+- `file`: Documentation filename (e.g., `README.md`, `FAQ.md`, `API.md`, `sc_short.jpg`, `sc_simple.jpg`)
+
+**Response**:
+- File content with appropriate `Content-Type` header (text/markdown for .md, image/jpeg for .jpg, etc.)
+- Cached for 1 hour
+
+or an error:
+```json
+{ "error": "Doc file not found." }
+```
+
+- `404 Not Found` if the file is not in the allowed list.
+- `500 Internal Server Error` if fetching from GitHub fails.
+
+> **Note**: This endpoint also responds to direct file paths like `/README.md`, `/FAQ.md`, etc. without the `/api/docs/` prefix.
 
 ---
 

@@ -16,6 +16,7 @@ on:
 
 jobs:
   build:
+    if: ${{ vars.REGISTRY == '' }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
