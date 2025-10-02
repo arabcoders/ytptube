@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "6c925f14509a88ba87ef457fa53d7eb422aac598",
-    "date": "2025-10-02T14:58:24+00:00",
+    "full_sha": "72f27f611207fdd86d93bb5f1c7ff3766784bda8",
+    "date": "2025-10-02T15:29:27+00:00",
     "commits": [
+      {
+        "sha": "72f27f61",
+        "full_sha": "72f27f611207fdd86d93bb5f1c7ff3766784bda8",
+        "message": "fix",
+        "author": "arabcoders",
+        "date": "2025-10-02T15:29:27+00:00"
+      },
+      {
+        "sha": "0850e705",
+        "full_sha": "0850e705ce36ceb345a7c7855c66432b78ef93c6",
+        "message": "support selfhosted container registry",
+        "author": "arabcoders",
+        "date": "2025-10-02T15:28:19+00:00"
+      },
       {
         "sha": "6c925f14",
         "full_sha": "6c925f14509a88ba87ef457fa53d7eb422aac598",
