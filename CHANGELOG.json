@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "0ef0f6a90aacd43cec10ecb4c0466e2fcdbb0940",
-    "date": "2025-10-02T15:57:05+00:00",
+    "full_sha": "ffeaefa93adee4be62bbc43da336098a80ab0fd3",
+    "date": "2025-10-02T16:18:46+00:00",
     "commits": [
+      {
+        "sha": "ffeaefa9",
+        "full_sha": "ffeaefa93adee4be62bbc43da336098a80ab0fd3",
+        "message": "fix PR build test",
+        "author": "arabcoders",
+        "date": "2025-10-02T16:18:46+00:00"
+      },
       {
         "sha": "0ef0f6a9",
         "full_sha": "0ef0f6a90aacd43cec10ecb4c0466e2fcdbb0940",
