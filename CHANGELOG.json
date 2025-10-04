@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3",
-    "date": "2025-10-02T21:08:36+00:00",
+    "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7",
+    "date": "2025-10-04T18:54:24+00:00",
     "commits": [
+      {
+        "sha": "74103f3e",
+        "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7",
+        "message": "fix",
+        "author": "arabcoders",
+        "date": "2025-10-04T18:54:24+00:00"
+      },
+      {
+        "sha": "3072a5e6",
+        "full_sha": "3072a5e66b5bbfe57b369d74aec0e1aee01d9026",
+        "message": "Add locales to final image.",
+        "author": "arabcoders",
+        "date": "2025-10-04T18:51:24+00:00"
+      },
       {
         "sha": "743566ef",
         "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3",

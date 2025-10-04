@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251003-743566ef",
-        "date": "2025-10-02T21:08:36+00:00",
+        "tag": "dev-20251004-74103f3e",
+        "date": "2025-10-04T18:54:24+00:00",
         "commits": [
+            {
+                "sha": "74103f3e",
+                "message": "fix",
+                "author": "arabcoders",
+                "date": "2025-10-04T18:54:24+00:00",
+                "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7"
+            },
+            {
+                "sha": "3072a5e6",
+                "message": "Add locales to final image.",
+                "author": "arabcoders",
+                "date": "2025-10-04T18:51:24+00:00",
+                "full_sha": "3072a5e66b5bbfe57b369d74aec0e1aee01d9026"
+            },
             {
                 "sha": "743566ef",
                 "message": "Fixes issue with simple view and background toggle due to sharing same ID. ref #431",
@@ -2321,7 +2335,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3"
+        "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7"
     },
     {
         "tag": "dev-20250616-c07465a6",
