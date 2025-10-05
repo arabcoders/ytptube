@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7",
-    "date": "2025-10-04T18:54:24+00:00",
+    "full_sha": "d51ca37ace065e59cb6e1c98efca7ed10816e1d1",
+    "date": "2025-10-05T15:37:37+00:00",
     "commits": [
+      {
+        "sha": "d51ca37a",
+        "full_sha": "d51ca37ace065e59cb6e1c98efca7ed10816e1d1",
+        "message": "added the ability to reconnect",
+        "author": "arabcoders",
+        "date": "2025-10-05T15:37:37+00:00"
+      },
       {
         "sha": "74103f3e",
         "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7",
