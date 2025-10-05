@@ -1,6 +1,7 @@
 <template>
 
   <template v-if="simpleMode">
+    <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
     <Simple @show_settings="() => show_settings = true" />
   </template>
 
@@ -15,14 +16,18 @@
     <Shutdown v-if="app_shutdown" />
     <div id="main_container" class="container" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
+      <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
       <nav class="navbar is-mobile is-dark">
 
         <div class="navbar-brand pl-5">
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
             <span class="is-text-overflow">
-              <span class="icon"><i class="fas fa-home" /></span>
-              <span class="has-text-bold" :class="`has-text-${socket.isConnected ? 'success' : 'danger'}`">
+              <span class="icon">
+                <i v-if="'connecting' === socket.connectionStatus" class="fas fa-arrows-rotate fa-spin" />
+                <i v-else class="fas fa-home" />
+              </span>
+              <span class="has-text-bold" :class="connectionStatusColor">
                 YTPTube
               </span>
               <span class="has-text-bold" v-if="config?.app?.instance_title">: {{ config.app.instance_title }}</span>
@@ -191,6 +196,7 @@ import Dialog from '~/components/Dialog.vue'
 import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
+import Connection from '~/components/Connection.vue'
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -469,5 +475,17 @@ const shutdownApp = async () => {
     })
   }
 }
+
+const connectionStatusColor = computed(() => {
+  switch (socket.connectionStatus) {
+    case 'connected':
+      return 'has-text-success'
+    case 'connecting':
+      return 'has-text-warning'
+    case 'disconnected':
+    default:
+      return 'has-text-danger'
+  }
+})
 
 </script>
