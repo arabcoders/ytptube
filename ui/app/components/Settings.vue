@@ -19,8 +19,8 @@
                 </label>
                 <div class="control">
                   <div class="control">
-                    <input id="random_bg" type="checkbox" class="switch is-success" v-model="simpleMode">
-                    <label for="random_bg" class="is-unselectable">
+                    <input id="view_mode" type="checkbox" class="switch is-success" v-model="simpleMode">
+                    <label for="view_mode" class="is-unselectable">
                       &nbsp;{{ simpleMode ? 'Simple View' : 'Regular View' }}
                     </label>
                   </div>

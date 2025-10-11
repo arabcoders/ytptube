@@ -25,7 +25,7 @@
             <span class="icon">
               <i class="fa-solid fa-desktop" />
             </span>
-            <span class="ml-2">Console Output</span>
+            <span class="ml-2">Output</span>
           </p>
           <p class="card-header-icon">
             <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput()">

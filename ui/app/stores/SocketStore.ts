@@ -2,6 +2,8 @@ import { io, type Socket as IOSocket, type SocketOptions, type ManagerOptions } 
 import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
 
+export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
+
 export const useSocketStore = defineStore('socket', () => {
   const runtimeConfig = useRuntimeConfig()
   const config = useConfigStore()
@@ -10,6 +12,7 @@ export const useSocketStore = defineStore('socket', () => {
 
   const socket = ref<IOSocket | null>(null)
   const isConnected = ref<boolean>(false)
+  const connectionStatus = ref<connectionStatus>('disconnected')
 
   const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
   const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
@@ -24,6 +27,24 @@ export const useSocketStore = defineStore('socket', () => {
       event = [event]
     }
     event.forEach(e => socket.value?.off(e, callback));
+  }
+
+  const reconnect = () => {
+    if (true === isConnected.value) {
+      return;
+    }
+    connect();
+    connectionStatus.value = 'connecting';
+  }
+
+  const disconnect = () => {
+    if (null === socket.value) {
+      return;
+    }
+    socket.value.disconnect();
+    socket.value = null;
+    isConnected.value = false;
+    connectionStatus.value = 'disconnected';
   }
 
   const connect = () => {
@@ -44,10 +65,18 @@ export const useSocketStore = defineStore('socket', () => {
       window.ws = socket.value;
     }
 
+    connectionStatus.value = 'connecting';
     socket.value = io(url, opts)
 
-    socket.value.on('connect', () => isConnected.value = true);
-    socket.value.on('disconnect', () => isConnected.value = false);
+    socket.value.on('connect', () => {
+      isConnected.value = true
+      connectionStatus.value = 'connected';
+    });
+
+    socket.value.on('disconnect', () => {
+      isConnected.value = false
+      connectionStatus.value = 'disconnected';
+    });
 
     socket.value.on('connected', stream => {
       const json = JSON.parse(stream)
@@ -187,6 +216,10 @@ export const useSocketStore = defineStore('socket', () => {
     connect();
   }
 
-
-  return { connect, on, off, emit, socket, isConnected };
+  return {
+    connect, reconnect, disconnect,
+    on, off, emit,
+    socket, isConnected,
+    connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
+  };
 });

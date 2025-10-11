@@ -525,6 +525,11 @@ class Tasks(metaclass=Singleton):
                         "template": template,
                         "cli": cli,
                         "auto_start": task.auto_start,
+                        "extras": {
+                            "source_name": task.name,
+                            "source_id": task.id,
+                            "source_handler": __class__.__name__,
+                        },
                     }
                 )
             )
@@ -778,7 +783,7 @@ class HandleTask:
                 "template": task.template or "",
                 "cli": task.cli or "",
                 "auto_start": task.auto_start,
-                "extras": {"source_task": task.id, "source_handler": handler.__name__},
+                "extras": {"source_name": task.name, "source_id": task.id, "source_handler": handler.__name__},
             }
         )
 
@@ -876,11 +881,9 @@ class HandleTask:
             if extraction.metadata:
                 combined_failure_metadata.update(extraction.metadata)
 
-            failure_error = extraction.error if extraction.error else extraction.message
-
             return TaskFailure(
                 message=extraction.message,
-                error=failure_error,
+                error=extraction.error if extraction.error else extraction.message,
                 metadata=combined_failure_metadata,
             )
 
@@ -918,22 +921,22 @@ class HandleTask:
         return handlers
 
     async def _handle_item_error(self, event, _name, **_kwargs):
-        item = getattr(event, "data", None)
+        item: ItemDTO | None = getattr(event, "data", None)
         if not isinstance(item, ItemDTO):
             return
 
-        extras = getattr(item, "extras", {}) or {}
-        handler_name = extras.get("source_handler")
+        extras: dict[Any, Any] = getattr(item, "extras", {}) or {}
+        handler_name: Any | None = extras.get("source_handler")
         if not handler_name:
             return
 
-        archive_id = item.archive_id
+        archive_id: str | None = item.archive_id
         if not archive_id:
             return
 
-        queued = self._queued.get(handler_name)
+        queued: set[str] | None = self._queued.get(handler_name)
         if queued:
             queued.discard(archive_id)
 
-        failures = self._failure_count.setdefault(handler_name, {})
+        failures: dict[str, int] = self._failure_count.setdefault(handler_name, {})
         failures[archive_id] = failures.get(archive_id, 0) + 1

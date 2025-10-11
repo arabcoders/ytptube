@@ -82,8 +82,12 @@ const win: any = {
   navigator: {},
 }
 globalThis.window = win as unknown as Window & typeof globalThis
-// Ensure global navigator is present
-globalThis.navigator = win.navigator as Navigator
+// Ensure global navigator is present using defineProperty to avoid setter issues
+Object.defineProperty(globalThis, 'navigator', {
+  value: win.navigator as Navigator,
+  writable: true,
+  configurable: true,
+})
 
 class MiniCustomEvent<T = any> {
   type: string

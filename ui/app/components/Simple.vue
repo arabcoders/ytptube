@@ -6,8 +6,9 @@
           <label class="label" for="download-url">
             What you would like to download?
             <span class="is-pulled-right">
-              <span class="icon has-text-primary is-pointer" @click="$emit('show_settings')" v-tooltip="'WebUI Settings'"><i
-                  class="fas fa-cogs" /></span>
+              <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
+                v-tooltip="'WebUI Settings'">
+                <i class="fas fa-cogs" /></span>
             </span>
           </label>
           <div class="field has-addons">
@@ -542,6 +543,18 @@ const showMessage = (item: StoreItem) => {
   }
   return (item.msg?.length || 0) > 0
 }
+
+const connectionStatusColor = computed(() => {
+  switch (socketStore.connectionStatus) {
+    case 'connected':
+      return 'has-text-success'
+    case 'connecting':
+      return 'has-text-warning fa-spin'
+    case 'disconnected':
+    default:
+      return 'has-text-danger'
+  }
+})
 </script>
 
 <style scoped>
