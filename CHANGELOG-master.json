@@ -1,8 +1,43 @@
 [
     {
-        "tag": "master-20251002-851124a0",
-        "date": "2025-10-02T16:25:25+00:00",
+        "tag": "master-20251011-fa4da504",
+        "date": "2025-10-11T18:21:48+00:00",
         "commits": [
+            {
+                "sha": "b51bc94e",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-10-11T17:55:56+00:00",
+                "full_sha": "b51bc94eb32338b6bb3a72567e59a1634f094127"
+            },
+            {
+                "sha": "d51ca37a",
+                "message": "added the ability to reconnect",
+                "author": "arabcoders",
+                "date": "2025-10-05T15:37:37+00:00",
+                "full_sha": "d51ca37ace065e59cb6e1c98efca7ed10816e1d1"
+            },
+            {
+                "sha": "74103f3e",
+                "message": "fix",
+                "author": "arabcoders",
+                "date": "2025-10-04T18:54:24+00:00",
+                "full_sha": "74103f3e56afab9dd4de10fe9c2f03282d831df7"
+            },
+            {
+                "sha": "3072a5e6",
+                "message": "Add locales to final image.",
+                "author": "arabcoders",
+                "date": "2025-10-04T18:51:24+00:00",
+                "full_sha": "3072a5e66b5bbfe57b369d74aec0e1aee01d9026"
+            },
+            {
+                "sha": "743566ef",
+                "message": "Fixes issue with simple view and background toggle due to sharing same ID. ref #431",
+                "author": "arabcoders",
+                "date": "2025-10-02T21:08:36+00:00",
+                "full_sha": "743566efb1b21e07d7e6b112a377d5c694a1adb3"
+            },
             {
                 "sha": "ffeaefa9",
                 "message": "fix PR build test",
@@ -2314,7 +2349,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "851124a0472d0062b442215b43669fd8e9e5bc14"
+        "full_sha": "fa4da504031848b85faa3fc28c9c548c449ccde2"
     },
     {
         "tag": "master-20250616-c07465a6",
