@@ -585,7 +585,8 @@ or on error
       "title": "Example title",
       "archive_id": "generic 1",
       "metadata": {
-        "source_task": "...",
+        "source_id": "...",
+        "source_name": "...",
         "source_handler": "GenericTaskHandler"
       }
     }

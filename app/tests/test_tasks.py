@@ -773,6 +773,11 @@ class TestTasks:
                 "template": "test_template",
                 "cli": "--write-info-json",
                 "auto_start": True,
+                "extras": {
+                    "source_name": "Test Task",
+                    "source_id": "task1",
+                    "source_handler": "Tasks",
+                },
             }
         )
 
