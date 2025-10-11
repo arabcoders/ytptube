@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251005-d51ca37a",
-        "date": "2025-10-05T15:37:37+00:00",
+        "tag": "dev-20251011-b51bc94e",
+        "date": "2025-10-11T17:55:56+00:00",
         "commits": [
+            {
+                "sha": "b51bc94e",
+                "message": "minor fixes",
+                "author": "arabcoders",
+                "date": "2025-10-11T17:55:56+00:00",
+                "full_sha": "b51bc94eb32338b6bb3a72567e59a1634f094127"
+            },
             {
                 "sha": "d51ca37a",
                 "message": "added the ability to reconnect",
@@ -2342,7 +2349,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d51ca37ace065e59cb6e1c98efca7ed10816e1d1"
+        "full_sha": "b51bc94eb32338b6bb3a72567e59a1634f094127"
     },
     {
         "tag": "dev-20250616-c07465a6",
