@@ -20,7 +20,7 @@ Example of the Simple mode interface.
 * Multi-download support.
 * Random beautiful background.
 * Handles live and upcoming streams.
-* A Dual mode view for both technical and non-technical users.
+* A dual view mode for both technical and non-technical users.
 * Schedule channels or playlists to be downloaded automatically with support for creating custom download feeds from non-supported sites. See [Feeds documentation](FAQ.md#how-can-i-monitor-sites-without-rss-feeds).
 * Send notification to targets based on selected events. includes [Apprise](https://github.com/caronc/apprise?tab=readme-ov-file#readme) support.
 * Support per link options.
@@ -28,14 +28,14 @@ Example of the Simple mode interface.
 * Queue multiple URLs at once.
 * Powerful presets system for applying `yt-dlp` options. with a pre-made preset for media servers users.
 * A simple file browser.
-* A built in video player **with support for sidecar external subtitles**.
+* A built in video player **with support for sidecar external subtitles**. `Require ffmpeg to be in PATH in non-docker setups`.
 * Basic authentication support.
-* Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation)
-* Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide)
-* Automatic updates for `yt-dlp` and custom `pip` packages.
+* Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation). `In docker only`.
+* Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide). `In docker only`.
+* Automatic updates for `yt-dlp` and custom `pip` packages. `In docker only`.
 * Conditions feature to apply custom options based on `yt-dlp` returned info.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.
-* A bundled executable version for Windows, macOS and Linux. `For non-docker users`.
+* A bundled executable version for Windows, macOS and Linux. `MacOS version is untested`.
 
 Please read the [FAQ](FAQ.md) for more information.
 
