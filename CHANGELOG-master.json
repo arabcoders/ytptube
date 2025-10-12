@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251011-fa4da504",
-        "date": "2025-10-11T18:21:48+00:00",
+        "tag": "master-20251012-f51b11c4",
+        "date": "2025-10-12T18:17:55+00:00",
         "commits": [
+            {
+                "sha": "dd23bab4",
+                "message": "Clarify standalone builds limitations",
+                "author": "arabcoders",
+                "date": "2025-10-12T18:15:13+00:00",
+                "full_sha": "dd23bab4e9110fe0b57bb8542d0dad288ff6dccf"
+            },
             {
                 "sha": "b51bc94e",
                 "message": "minor fixes",
@@ -2349,7 +2356,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fa4da504031848b85faa3fc28c9c548c449ccde2"
+        "full_sha": "f51b11c42119c359a81c86faa2b202cce3389409"
     },
     {
         "tag": "master-20250616-c07465a6",
