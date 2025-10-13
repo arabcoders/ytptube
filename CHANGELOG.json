@@ -14,6 +14,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe",
+    "date": "2025-10-13T15:54:39+00:00",
+    "commits": [
+      {
+        "sha": "9801258b",
+        "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe",
+        "message": "Update bookmarklet URL and add note on mixed content",
+        "author": "arabcoders",
+        "date": "2025-10-13T15:54:39+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.0",
     "full_sha": "fa4da504031848b85faa3fc28c9c548c449ccde2",
     "date": "2025-10-11T18:21:48+00:00",

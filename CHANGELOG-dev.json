@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251012-dd23bab4",
-        "date": "2025-10-12T18:15:13+00:00",
+        "tag": "dev-20251013-9801258b",
+        "date": "2025-10-13T15:54:39+00:00",
         "commits": [
+            {
+                "sha": "9801258b",
+                "message": "Update bookmarklet URL and add note on mixed content",
+                "author": "arabcoders",
+                "date": "2025-10-13T15:54:39+00:00",
+                "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe"
+            },
             {
                 "sha": "dd23bab4",
                 "message": "Clarify standalone builds limitations",
@@ -2356,7 +2363,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dd23bab4e9110fe0b57bb8542d0dad288ff6dccf"
+        "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe"
     },
     {
         "tag": "dev-20250616-c07465a6",
