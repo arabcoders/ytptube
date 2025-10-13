@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (f51b11c4)",
-    "full_sha": "f51b11c42119c359a81c86faa2b202cce3389409",
-    "date": "2025-10-12T18:17:55+00:00",
-    "commits": [
-      {
-        "sha": "dd23bab4",
-        "full_sha": "dd23bab4e9110fe0b57bb8542d0dad288ff6dccf",
-        "message": "Clarify standalone builds limitations",
-        "author": "arabcoders",
-        "date": "2025-10-12T18:15:13+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe",
-    "date": "2025-10-13T15:54:39+00:00",
+    "tag": "Unreleased (f91811ad)",
+    "full_sha": "f91811ad502c93974f85f88f5ca112f1a1a71f79",
+    "date": "2025-10-13T16:24:28+00:00",
     "commits": [
       {
         "sha": "9801258b",
@@ -24,6 +10,13 @@
         "message": "Update bookmarklet URL and add note on mixed content",
         "author": "arabcoders",
         "date": "2025-10-13T15:54:39+00:00"
+      },
+      {
+        "sha": "dd23bab4",
+        "full_sha": "dd23bab4e9110fe0b57bb8542d0dad288ff6dccf",
+        "message": "Clarify standalone builds limitations",
+        "author": "arabcoders",
+        "date": "2025-10-12T18:15:13+00:00"
       }
     ]
   },
