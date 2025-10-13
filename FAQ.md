@@ -61,10 +61,13 @@ or the `environment:` section in `compose.yaml` file.
 ## Simple bookmarklet
 
 ```javascript
-javascript:(() => { const url = "https://ytptube.example.org"; const preset = "default"; const mUrl = new URL(url); mUrl.pathname = "/api/history"; fetch(mUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: document.location.href, preset: preset }) }).then(res => alert(res.ok ? "URL sent!" : "Failed to send URL.")); })()
+javascript:(() => { const url = "https://ytp.example.org"; const preset = "default"; const mUrl = new URL(url);mUrl.pathname="/api/history/add";mUrl.searchParams.set("url",document.location.href);mUrl.searchParams.set("preset",preset);fetch(mUrl,{method: "GET"}).then(j => j.json()).then(json =>alert(json.message)).catch(err =>alert(err)); })()
 ```
 
 Change the the variable `url` and `preset` variables to match your YTPTube instance and preset name.
+
+> [!NOTE]
+> The bookmarklet should be served from https page, otherwise, some browsers will block the request. for mixed content.
 
 ## Browser stores
 
