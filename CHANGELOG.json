@@ -22,9 +22,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3",
-    "date": "2025-10-14T15:32:09+00:00",
+    "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc",
+    "date": "2025-10-14T22:10:25+00:00",
     "commits": [
+      {
+        "sha": "319f7d2f",
+        "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc",
+        "message": "feat: add quick contributing guide.",
+        "author": "arabcoders",
+        "date": "2025-10-14T22:10:25+00:00"
+      },
+      {
+        "sha": "a374c199",
+        "full_sha": "a374c19978d0fd4f6b4232bfbee9795ae584c06b",
+        "message": "feat: make it possible to load different UI",
+        "author": "arabcoders",
+        "date": "2025-10-14T22:09:54+00:00"
+      },
       {
         "sha": "d5a0a3aa",
         "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3",

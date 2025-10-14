@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251014-d5a0a3aa",
-        "date": "2025-10-14T15:32:09+00:00",
+        "tag": "dev-20251015-319f7d2f",
+        "date": "2025-10-14T22:10:25+00:00",
         "commits": [
+            {
+                "sha": "319f7d2f",
+                "message": "feat: add quick contributing guide.",
+                "author": "arabcoders",
+                "date": "2025-10-14T22:10:25+00:00",
+                "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc"
+            },
+            {
+                "sha": "a374c199",
+                "message": "feat: make it possible to load different UI",
+                "author": "arabcoders",
+                "date": "2025-10-14T22:09:54+00:00",
+                "full_sha": "a374c19978d0fd4f6b4232bfbee9795ae584c06b"
+            },
             {
                 "sha": "d5a0a3aa",
                 "message": "more minor design updates. Ref #441",
@@ -2384,7 +2398,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3"
+        "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc"
     },
     {
         "tag": "dev-20250616-c07465a6",
