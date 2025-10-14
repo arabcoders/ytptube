@@ -4,11 +4,17 @@
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-            <span>Task Definitions</span>
+            <template v-if="isEditorOpen">
+              <span class="icon"><i class="fa-solid fa-pen-to-square" /></span>
+              <span>{{ editorTitle }}</span>
+            </template>
+            <template v-else>
+              <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
+              <span>Task Definitions</span>
+            </template>
           </span>
         </span>
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" v-if="!isEditorOpen">
           <div class="field is-grouped">
 
             <p class="control">
@@ -46,7 +52,7 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
+        <div class="is-hidden-mobile" v-if="!isEditorOpen">
           <span class="subtitle">
             Create definitions to turn any website into a downloadable feed of links.
           </span>
@@ -167,7 +173,8 @@
         <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
           message="Loading data. Please wait..." v-if="isLoading" />
         <Message title="No definitions" message="No task definitions are configured yet. Create one to get started."
-          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle" v-else />
+          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle"
+          v-if="!isLoading && !isEditorOpen" />
       </div>
     </div>
 
@@ -257,7 +264,7 @@ const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
 const editorTitle = computed<string>(() => {
   return 'create' === editorMode.value
     ? 'Create Task Definition'
-    : `Edit ${currentSummary.value?.name || 'Task Definition'}`
+    : `Edit - ${currentSummary.value?.name || 'Task Definition'}`
 })
 
 const cloneDocument = (document: TaskDefinitionDocument): TaskDefinitionDocument => {
