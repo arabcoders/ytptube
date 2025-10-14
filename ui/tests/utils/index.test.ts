@@ -279,6 +279,47 @@ describe('string manipulation helpers', () => {
     expect(utils.encodePath('folder#1/video name.mp4')).toBe('folder%231/video%20name.mp4')
   })
 
+  it('encodePath handles % character correctly', () => {
+    // This is the edge case reported in the bug
+    expect(utils.encodePath('How to enjoy Shin Ramyun 100%.opus')).toBe('How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')
+  })
+
+  it('encodePath handles multiple special characters', () => {
+    expect(utils.encodePath('100% complete [HD] #1.mp4')).toBe('100%25%20complete%20%5BHD%5D%20%231.mp4')
+  })
+
+  it('encodePath handles paths with % character', () => {
+    expect(utils.encodePath('folder/How to enjoy Shin Ramyun 100%.opus')).toBe('folder/How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')
+  })
+
+  it('encodePath handles already encoded strings', () => {
+    expect(utils.encodePath('How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')).toBe('How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')
+  })
+
+  it('encodePath handles mixed encoded and unencoded', () => {
+    expect(utils.encodePath('folder/file%20name 100%.mp4')).toBe('folder/file%20name%20100%25.mp4')
+  })
+
+  it('encodePath handles special characters &, =, ?', () => {
+    expect(utils.encodePath('query?param=value&key=100%.mp4')).toBe('query%3Fparam%3Dvalue%26key%3D100%25.mp4')
+  })
+
+  it('encodePath handles empty string', () => {
+    expect(utils.encodePath('')).toBe('')
+  })
+
+  it('encodePath handles simple filename', () => {
+    expect(utils.encodePath('video.mp4')).toBe('video.mp4')
+  })
+
+  it('encodePath handles unicode characters', () => {
+    expect(utils.encodePath('视频文件.mp4')).toBe('%E8%A7%86%E9%A2%91%E6%96%87%E4%BB%B6.mp4')
+  })
+
+  it('encodePath handles parentheses', () => {
+    expect(utils.encodePath('video (1080p).mp4')).toBe('video%20(1080p).mp4')
+  })
+
   it('removeANSIColors strips escape codes', () => {
     const sample = '\u001b[31mError\u001b[0m'
     expect(utils.removeANSIColors(sample)).toBe('Error')
