@@ -22,9 +22,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "8e0f8045ab8616e0d8b8ab1e08f7e3e22b33bdf9",
-    "date": "2025-10-14T15:16:52+00:00",
+    "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3",
+    "date": "2025-10-14T15:32:09+00:00",
     "commits": [
+      {
+        "sha": "d5a0a3aa",
+        "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3",
+        "message": "more minor design updates. Ref #441",
+        "author": "arabcoders",
+        "date": "2025-10-14T15:32:09+00:00"
+      },
       {
         "sha": "8e0f8045",
         "full_sha": "8e0f8045ab8616e0d8b8ab1e08f7e3e22b33bdf9",
