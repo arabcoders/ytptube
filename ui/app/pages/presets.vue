@@ -4,11 +4,17 @@
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-sliders" /></span>
-            <span>Presets</span>
+            <template v-if="toggleForm">
+              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': presetRef, 'fa-plus': !presetRef }" /></span>
+              <span>{{ presetRef ? `Edit - ${preset.name}` : 'Add' }}</span>
+            </template>
+            <template v-else>
+              <span class="icon"><i class="fa-solid fa-sliders" /></span>
+              <span>Presets</span>
+            </template>
           </span>
         </span>
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;"
@@ -38,7 +44,7 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
+        <div class="is-hidden-mobile" v-if="!toggleForm">
           <span class="subtitle">Presets are pre-defined command options for yt-dlp that you want to apply to given
             download.</span>
         </div>
@@ -68,13 +74,10 @@
                 <tbody>
                   <tr v-for="item in presetsNoDefault" :key="item.id">
                     <td class="is-text-overflow is-vcentered">
-                      <div> {{ item.name }}</div>
-                      <div class="is-unselectable">
-                        <span class="icon-text" v-if="item.cookies">
-                          <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                          <span>Cookies</span>
-                        </span>
-                      </div>
+                      {{ item.name }}
+                      <span class="icon" v-if="item.cookies" v-tooltip="'Has cookies'">
+                        <i class="fa-solid fa-cookie has-text-primary" />
+                      </span>
                     </td>
                     <td class="is-vcentered is-items-center">
                       <div class="field is-grouped is-grouped-centered">
@@ -109,61 +112,54 @@
           <div class="column is-6" v-for="item in presetsNoDefault" :key="item.id">
             <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
-                <div class="card-header-title is-text-overflow is-block" v-text="item.name" />
+                <div class="card-header-title is-block is-clickable"
+                  :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }" @click="toggleExpand(item.id, 'title')"
+                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'" v-text="item.name" />
                 <div class="card-header-icon">
-                  <button class="has-text-info" v-tooltip="'Export'" @click="exportItem(item)">
+                  <span v-if="item.cookies" class="icon" v-tooltip="'Has cookies'">
+                    <i class="fa-solid fa-cookie has-text-primary" />
+                  </span>
+                  <button class="has-text-info" v-tooltip="'Export preset'" @click="exportItem(item)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                  </button>
-                  <button @click="item.raw = !item.raw">
-                    <span class="icon"><i class="fa-solid" :class="{
-                      'fa-arrow-down': !item?.raw,
-                      'fa-arrow-up': item?.raw,
-                    }" /></span>
                   </button>
                 </div>
               </header>
               <div class="card-content is-flex-grow-1">
                 <div class="content">
-                  <p class="is-text-overflow" v-if="item.folder">
+                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'folder'), 'is-clickable': true }"
+                    v-if="item.folder" @click="toggleExpand(item.id, 'folder')"
+                    :title="!isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'">
                     <span class="icon"><i class="fa-solid fa-folder" /></span>
                     <span>{{ calcPath(item.folder) }}</span>
                   </p>
-                  <p class="is-text-overflow" v-if="item.template">
+                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'template'), 'is-clickable': true }"
+                    v-if="item.template" @click="toggleExpand(item.id, 'template')"
+                    :title="!isExpanded(item.id, 'template') ? 'Click to expand' : 'Click to collapse'">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
                     <span>{{ item.template }}</span>
                   </p>
-                  <p class="is-text-overflow" v-if="item.cli">
+                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'cli'), 'is-clickable': true }" v-if="item.cli"
+                    @click="toggleExpand(item.id, 'cli')"
+                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>{{ item.cli }}</span>
                   </p>
-                  <p class="is-text-overflow" v-if="item.cookies">
-                    <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                    <span>Has cookies</span>
+                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'description'), 'is-clickable': true }"
+                    v-if="item.description" @click="toggleExpand(item.id, 'description')"
+                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'">
+                    <span class="icon"><i class="fa-solid fa-d" /></span>
+                    <span>{{ item.description }}</span>
                   </p>
-                  <button @click="item.toggle_description = !item.toggle_description" v-if="item.description">
-                    <span class="icon"><i class="fa-solid"
-                        :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw, }" /></span>
-                    <span>{{ !item.toggle_description ? 'Show' : 'Hide' }} Description</span>
-                  </button>
                 </div>
               </div>
               <div class="card-content content m-1 p-1 is-overflow-auto" style="max-height: 300px;"
                 v-if="item?.toggle_description">
                 <div class="is-pre-wrap">{{ item.description }}</div>
               </div>
-              <div class="card-content content is-overflow-auto m-0 p-0" v-if="item?.raw" style="max-height: 300px;">
-                <div class="is-position-relative">
-                  <pre><code>{{ filterItem(item) }}</code></pre>
-                  <button class="button is-small is-primary is-position-absolute" style="top:0; right:0"
-                    @click="copyText(filterItem(item))">
-                    <span class="icon"><i class="fa-solid fa-copy" /></span>
-                  </button>
-                </div>
-              </div>
               <div class="card-footer mt-auto">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(item)">
-                    <span class="icon"><i class="fa-solid fa-cog" /></span>
+                    <span class="icon"><i class="fa-solid fa-edit" /></span>
                     <span>Edit</span>
                   </button>
                 </div>
@@ -190,10 +186,10 @@
 
       <div class="columns is-multiline" v-if="presets && presets.length > 0">
         <div class="column is-12">
-          <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
-            <ul>
-              <li>When you export preset, it doesn't include <code>Cookies</code> field for security reasons.</li>
-            </ul>
+          <Message message_class="has-background-warning-90 has-text-dark">
+            <p>When you export preset, it doesn't include the <strong>cookies</strong> field contents for security
+              reasons.
+            </p>
           </Message>
         </div>
       </div>
@@ -204,7 +200,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { Preset } from '~/types/presets'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const toast = useNotification()
 const config = useConfigStore()
@@ -222,8 +218,28 @@ const isLoading = ref(true)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
 const remove_keys = ['raw', 'toggle_description']
+const expandedItems = ref<Record<string, Set<string>>>({})
 
 const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
+
+const toggleExpand = (itemId: string | undefined, field: string) => {
+  if (!itemId) return
+
+  if (!expandedItems.value[itemId]) {
+    expandedItems.value[itemId] = new Set()
+  }
+
+  if (expandedItems.value[itemId].has(field)) {
+    expandedItems.value[itemId].delete(field)
+  } else {
+    expandedItems.value[itemId].add(field)
+  }
+}
+
+const isExpanded = (itemId: string | undefined, field: string): boolean => {
+  if (!itemId) return false
+  return expandedItems.value[itemId]?.has(field) ?? false
+}
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
