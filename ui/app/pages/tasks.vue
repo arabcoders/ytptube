@@ -6,7 +6,7 @@
           <span class="icon-text">
             <template v-if="toggleForm">
               <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': taskRef, 'fa-plus': !taskRef }" /></span>
-              <span>{{ taskRef ? `Edit - ${task.name}` : 'Add' }}</span>
+              <span>{{ taskRef ? `Edit - ${task.name}` : 'Add new task' }}</span>
             </template>
             <template v-else>
               <span class="icon"><i class="fa-solid fa-tasks" /></span>

@@ -4,8 +4,14 @@
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
-            <span>Notifications</span>
+            <template v-if="toggleForm">
+              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': targetRef, 'fa-plus': !targetRef }" /></span>
+              <span>{{ targetRef ? `Edit - ${target.name}` : 'Add new notification target' }}</span>
+            </template>
+            <template v-else>
+              <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
+              <span>Notifications</span>
+            </template>
           </span>
         </span>
         <div class="is-pulled-right" v-if="!toggleForm">
@@ -44,7 +50,7 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
+        <div class="is-hidden-mobile" v-if="!toggleForm">
           <span class="subtitle">
             Send notifications to your webhooks based on specified events or presets.
           </span>
@@ -103,7 +109,7 @@
                       <div class="control">
                         <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
                           @click="editItem(item)">
-                          <span class="icon"><i class="fa-solid fa-cog" /></span>
+                          <span class="icon"><i class="fa-solid fa-edit" /></span>
                         </button>
                       </div>
                       <div class="control">
@@ -162,7 +168,7 @@
                 <div class="card-footer mt-auto">
                   <div class="card-footer-item">
                     <button class="button is-warning is-fullwidth" @click="editItem(item);">
-                      <span class="icon"><i class="fa-solid fa-trash-can" /></span>
+                      <span class="icon"><i class="fa-solid fa-edit" /></span>
                       <span>Edit</span>
                     </button>
                   </div>
@@ -200,9 +206,6 @@
             The other keys <code>id</code>, <code>event</code> and <code>created_at</code> will be sent as they are.
           </li>
           <li>We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the request.</li>
-          <li>Support for <code>Apprise URLs</code> is in beta and subject to many changes to come, currently the
-            message field fallback to JSON encoded string of the event if no custom message set by us for that
-            particular event.</li>
           <li>
             If you have selected specific presets or events, this will take priority, For example, if you limited the
             target to <code>default</code> preset and selected <code>ALL</code> events, only events that reference the
@@ -219,7 +222,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const toast = useNotification()
 const socket = useSocketStore()

@@ -4,11 +4,17 @@
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-filter" /></span>
-            <span>Conditions</span>
+            <template v-if="toggleForm">
+              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': itemRef, 'fa-plus': !itemRef }" /></span>
+              <span>{{ itemRef ? `Edit - ${item.name}` : 'Add new condition' }}</span>
+            </template>
+            <template v-else>
+              <span class="icon"><i class="fa-solid fa-filter" /></span>
+              <span>Conditions</span>
+            </template>
           </span>
         </span>
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;">
@@ -25,9 +31,10 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
-          <span class="subtitle">Run yt-dlp custom match filter on returned info. and apply cli arguments if matched.
-            This is an advanced feature and should be used with caution.</span>
+        <div class="is-hidden-mobile" v-if="!toggleForm">
+          <span class="subtitle">
+            Run yt-dlp custom match filter on returned info. and apply cli arguments if matched.
+          </span>
         </div>
       </div>
 
@@ -46,12 +53,6 @@
                   <a class="has-text-info" v-tooltip="'Export item.'" @click.prevent="exportItem(cond)">
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </a>
-                  <button @click="cond.raw = !cond.raw">
-                    <span class="icon"><i class="fa-solid" :class="{
-                      'fa-arrow-down': !cond?.raw,
-                      'fa-arrow-up': cond?.raw,
-                    }" /></span>
-                  </button>
                 </div>
               </header>
               <div class="card-content is-flex-grow-1">
@@ -74,15 +75,10 @@
                   </p>
                 </div>
               </div>
-              <div class="card-content" v-if="cond?.raw">
-                <div class="content">
-                  <pre><code>{{ JSON.stringify(cleanObject(cond, remove_keys), null, 2) }}</code></pre>
-                </div>
-              </div>
               <div class="card-footer mt-auto">
                 <div class="card-footer-item">
                   <button class="button is-warning is-fullwidth" @click="editItem(cond)">
-                    <span class="icon"><i class="fa-solid fa-cog" /></span>
+                    <span class="icon"><i class="fa-solid fa-edit" /></span>
                     <span>Edit</span>
                   </button>
                 </div>
@@ -129,7 +125,7 @@
 
 <script setup lang="ts">
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 type ConditionItemWithUI = ConditionItem & { raw?: boolean }
 
