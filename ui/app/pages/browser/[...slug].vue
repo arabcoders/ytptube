@@ -332,7 +332,7 @@ watch(() => socket.isConnected, async () => {
 })
 
 const handleClick = (item: FileItem): void => {
-  if ('video' === item.content_type) {
+  if (true === ['video','audio'].includes(item.content_type)) {
     model_item.value = {
       "type": 'video',
       "filename": item.path,
