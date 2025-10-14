@@ -82,13 +82,24 @@ def preload_static(root_path: Path, config: Config) -> None:
 
     """
     global STATIC_FILES  # noqa: PLW0602
+    static_dir: Path | None = None
+    webui_files: list[Path] = [
+        (root_path / "ui" / "exported").absolute(),
+        (root_path.parent / "ui" / "exported").absolute(),
+    ]
 
-    static_dir: Path = (root_path / "ui" / "exported").absolute()
-    if not static_dir.exists():
-        static_dir = (root_path.parent / "ui" / "exported").absolute()
-        if not static_dir.exists():
-            msg: str = f"Could not find the frontend UI static assets. '{static_dir}'."
-            raise ValueError(msg)
+    if config.static_ui_path:
+        webui_files = [Path(config.static_ui_path).absolute()]
+
+    for p in webui_files:
+        if p.exists():
+            static_dir = p
+            break
+
+    if static_dir is None:
+        webui_files = [str(p) for p in webui_files]
+        msg: str = f"Could not find the frontend UI static assets in '{webui_files=}'."
+        raise ValueError(msg)
 
     preloaded = 0
 

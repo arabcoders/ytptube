@@ -199,6 +199,9 @@ class Config(metaclass=Singleton):
     ]
     "The list of picture backends to use for the background."
 
+    static_ui_path: str = ""
+    "The path to the static UI files."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -333,7 +336,7 @@ class Config(metaclass=Singleton):
                         logging.error(f"Config variable '{k}' had non-existing config reference '{key}'.")
                         sys.exit(1)
 
-                    v = v.replace(key, getattr(self, localKey))
+                    v: str = v.replace(key, str(getattr(self, localKey)))
 
                 setattr(self, k, v)
 
