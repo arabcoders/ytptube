@@ -21,6 +21,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "74dfcbaa58038a7be46e4479c7600374bea55daa",
+    "date": "2025-10-14T14:58:45+00:00",
+    "commits": [
+      {
+        "sha": "74dfcbaa",
+        "full_sha": "74dfcbaa58038a7be46e4479c7600374bea55daa",
+        "message": "Fix #443",
+        "author": "arabcoders",
+        "date": "2025-10-14T14:58:45+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.0",
     "full_sha": "fa4da504031848b85faa3fc28c9c548c449ccde2",
     "date": "2025-10-11T18:21:48+00:00",

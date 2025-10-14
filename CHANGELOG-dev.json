@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251013-9801258b",
-        "date": "2025-10-13T15:54:39+00:00",
+        "tag": "dev-20251014-74dfcbaa",
+        "date": "2025-10-14T14:58:45+00:00",
         "commits": [
+            {
+                "sha": "74dfcbaa",
+                "message": "Fix #443",
+                "author": "arabcoders",
+                "date": "2025-10-14T14:58:45+00:00",
+                "full_sha": "74dfcbaa58038a7be46e4479c7600374bea55daa"
+            },
             {
                 "sha": "9801258b",
                 "message": "Update bookmarklet URL and add note on mixed content",
@@ -2363,7 +2370,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9801258b1c1885975567876ccf59c18b5c2662fe"
+        "full_sha": "74dfcbaa58038a7be46e4479c7600374bea55daa"
     },
     {
         "tag": "dev-20250616-c07465a6",
