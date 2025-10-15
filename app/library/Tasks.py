@@ -46,9 +46,27 @@ class Task:
         return Encoder().encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get a value from the task by key.
+
+        Args:
+            key (str): The key to get.
+            default (Any): The default value if the key is not found.
+
+        Returns:
+            Any: The value of the key or the default value.
+
+        """
         return self.serialize().get(key, default)
 
     def get_ytdlp_opts(self) -> YTDLPOpts:
+        """
+        Get the yt-dlp options for the task.
+
+        Returns:
+            YTDLPOpts: The yt-dlp options.
+
+        """
         params: YTDLPOpts = YTDLPOpts.get_instance()
 
         if self.preset:
@@ -60,6 +78,13 @@ class Task:
         return params
 
     def mark(self) -> tuple[bool, str]:
+        """
+        Mark the task's items as downloaded in the archive file.
+
+        Returns:
+            tuple[bool, str]: A tuple indicating success and a message.
+
+        """
         ret = self._mark_logic()
         if isinstance(ret, tuple):
             return ret
@@ -73,6 +98,13 @@ class Task:
         return (True, f"Task '{self.name}' items marked as downloaded.")
 
     def unmark(self) -> tuple[bool, str]:
+        """
+        Unmark the task's items from the archive file.
+
+        Returns:
+            tuple[bool, str]: A tuple indicating success and a message.
+
+        """
         ret: tuple[bool, str] | set[tuple[Path, set[str]]] = self._mark_logic()
         if isinstance(ret, tuple):
             return ret
@@ -84,6 +116,33 @@ class Task:
             return (True, "No items to remove from archive file.")
 
         return (True, f"Removed '{self.name}' items from archive file.")
+
+    def fetch_metadata(self, full: bool = False) -> tuple[dict[str, Any] | None, bool, str]:
+        """
+        Fetch metadata for the task's URL.
+
+        Args:
+            full (bool): Whether to fetch full metadata including all entries for playlists.
+
+        Returns:
+            tuple[dict[str, Any]|None, bool, str]: A tuple containing the metadata (or None on failure), a boolean
+            indicating if the operation was successful, and a message.
+
+        """
+        if not self.url:
+            return ({}, False, "No URL found in task parameters.")
+
+        params = self.get_ytdlp_opts()
+        if not full:
+            params.add_cli("-I0", from_user=False)
+
+        params = params.get_all()
+
+        ie_info: dict | None = extract_info(params, self.url, no_archive=True, follow_redirect=False, cache=True)
+        if not ie_info or not isinstance(ie_info, dict):
+            return ({}, False, "Failed to extract information from URL.")
+
+        return (ie_info, True, "")
 
     def _mark_logic(self) -> tuple[bool, str] | set[tuple[Path, set[str]]]:
         if not self.url:

@@ -200,6 +200,13 @@
                             <span>Run now</span>
                           </NuxtLink>
 
+                          <NuxtLink class="dropdown-item" @click="generateMeta(item)">
+                            <span class="icon"><i class="fa-solid fa-photo-film" /></span>
+                            <span>Generate metadata</span>
+                          </NuxtLink>
+
+                          <hr class="dropdown-divider" />
+
                           <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
                             <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
                             <span>Inspect Handler</span>
@@ -243,6 +250,9 @@
                 <NuxtLink target="_blank" :href="item.url">
                   {{ remove_tags(item.name) }}
                 </NuxtLink>
+                <span class="icon" v-if="item.in_progress">
+                  <i class="fa-solid fa-spinner fa-spin has-text-info" />
+                </span>
               </div>
               <div class="card-header-icon">
                 <div class="field is-grouped">
@@ -328,6 +338,13 @@
                     <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                     <span>Run now</span>
                   </NuxtLink>
+
+                  <NuxtLink class="dropdown-item" @click="generateMeta(item)">
+                    <span class="icon"><i class="fa-solid fa-photo-film" /></span>
+                    <span>Generate metadata</span>
+                  </NuxtLink>
+
+                  <hr class="dropdown-divider" />
 
                   <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
                     <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
@@ -852,6 +869,57 @@ const unarchiveAll = async (item: task_item) => {
     toast.success(data.message)
   } catch (e: any) {
     toast.error(`Failed to remove items from archive. ${e.message || 'Unknown error.'}`)
+    return
+  } finally {
+    item.in_progress = false
+  }
+}
+
+const generateMeta = async (item: task_item) => {
+  try {
+    let path = '/';
+    if (item.folder) {
+      path = `/${sTrim(item.folder, '/')}`
+    }
+    const { status } = await cDialog({
+      rawHTML: `
+      <p>
+        Generate '${item.name}' metadata in '<b class="has-text-danger">${path}</b>'? you will be notified when it is done.
+      </p>
+      <p>
+        <b>This action will generate:</b>
+        <ul>
+          <li><strong>tvshow.nfo</strong> - for media center compatibility</li>
+          <li><strong>title [id].info.json</strong> - yt-dlp metadata file</li>
+          <li>
+          <strong>Thumbnails</strong>: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg
+          <u>if they are available</u>.
+          </li>
+        </ul>
+      </p>
+      <p class="has-text-danger">
+          <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <span>Warning</span>: This will overwrite existing metadata files if they exist.
+      </p>`
+
+    })
+
+    if (true !== status) {
+      return;
+    }
+
+    item.in_progress = true
+    const response = await request(`/api/tasks/${item.id}/metadata`, { method: 'POST' })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success('Metadata generation completed.')
+  } catch (e: any) {
+    toast.error(`Failed to generate metadata. ${e.message || 'Unknown error.'}`)
     return
   } finally {
     item.in_progress = false

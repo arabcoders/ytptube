@@ -366,20 +366,16 @@ const iTrim = (str: string, delim: string, position: 'start' | 'end' | 'both' = 
     throw new Error('Delimiter is required')
   }
 
-  if (']' === delim) {
-    delim = '\\]'
-  }
-
-  if ('\\' === delim) {
-    delim = '\\\\'
-  }
+  // Escape special regex characters for use in character class
+  // Characters that need escaping in character classes: \ ] ^ -
+  const escapedDelim = delim.replace(/[\\^\-\]]/g, '\\$&')
 
   if (['both', 'start'].includes(position)) {
-    str = str.replace(new RegExp(`^[${delim}]+`, 'g'), '')
+    str = str.replace(new RegExp(`^[${escapedDelim}]+`, 'g'), '')
   }
 
   if (['both', 'end'].includes(position)) {
-    str = str.replace(new RegExp(`[${delim}]+$`, 'g'), '')
+    str = str.replace(new RegExp(`[${escapedDelim}]+$`, 'g'), '')
   }
 
   return str

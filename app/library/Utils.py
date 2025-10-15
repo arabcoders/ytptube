@@ -1572,3 +1572,60 @@ def archive_delete(file: str | Path, ids: list[str]) -> bool:
     from app.library.Archiver import Archiver
 
     return Archiver.get_instance().delete(file, ids)
+
+
+def get_channel_images(thumbnails: list[dict]) -> dict:
+    """
+    Extract channel images from a list of thumbnail dictionaries.
+
+    Args:
+        thumbnails (list[dict]): List of thumbnail dictionaries with keys 'url', 'width', 'height', and 'id'.
+
+    Returns:
+        dict: A dictionary with keys 'icon', 'landscape', 'poster', 'thumb', 'fanart', and 'banner' mapped to their respective URLs.
+
+    """
+    artwork = {}
+
+    for t in thumbnails:
+        url = t.get("url")
+        if not url:
+            continue
+
+        width = t.get("width")
+        height = t.get("height")
+        tid = t.get("id", "")
+
+        if not width or not height:
+            if "avatar_uncropped" in tid:
+                artwork["icon"] = url
+
+            elif "banner_uncropped" in tid:
+                artwork["landscape"] = url
+
+            continue
+
+        ratio = width / height
+
+        if 0.55 <= ratio <= 0.75:  # portrait → poster
+            artwork["poster"] = url
+        elif 0.9 <= ratio <= 1.1:  # square → thumb
+            artwork.setdefault("thumb", url)
+        elif ratio >= 5:  # very wide
+            if width >= 1920:
+                artwork["fanart"] = url
+            else:
+                artwork["banner"] = url
+        elif 1.6 <= ratio <= 1.8:  # landscape
+            artwork["landscape"] = url
+
+    if "fanart" not in artwork and "banner" in artwork:
+        artwork["fanart"] = artwork["banner"]
+
+    if "banner" not in artwork and "fanart" in artwork:
+        artwork["banner"] = artwork["fanart"]
+
+    if "poster" not in artwork and "thumb" in artwork:
+        artwork["poster"] = artwork["thumb"]  # optional fallback
+
+    return artwork

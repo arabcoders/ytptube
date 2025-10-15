@@ -265,6 +265,65 @@ describe('string manipulation helpers', () => {
     expect(utils.iTrim('value::', ':', 'end')).toBe('value')
   })
 
+  it('iTrim handles forward slash delimiter', () => {
+    expect(utils.iTrim('//value//', '/', 'both')).toBe('value')
+    expect(utils.iTrim('/value', '/', 'start')).toBe('value')
+    expect(utils.iTrim('value/', '/', 'end')).toBe('value')
+    expect(utils.iTrim('///multiple///', '/', 'both')).toBe('multiple')
+  })
+
+  it('iTrim handles backslash delimiter', () => {
+    expect(utils.iTrim('\\\\value\\\\', '\\', 'both')).toBe('value')
+    expect(utils.iTrim('\\value', '\\', 'start')).toBe('value')
+    expect(utils.iTrim('value\\', '\\', 'end')).toBe('value')
+  })
+
+  it('iTrim handles hyphen delimiter', () => {
+    expect(utils.iTrim('--value--', '-', 'both')).toBe('value')
+    expect(utils.iTrim('-value', '-', 'start')).toBe('value')
+    expect(utils.iTrim('value-', '-', 'end')).toBe('value')
+    expect(utils.iTrim('---multiple---', '-', 'both')).toBe('multiple')
+  })
+
+  it('iTrim handles caret delimiter', () => {
+    expect(utils.iTrim('^^value^^', '^', 'both')).toBe('value')
+    expect(utils.iTrim('^value', '^', 'start')).toBe('value')
+    expect(utils.iTrim('value^', '^', 'end')).toBe('value')
+  })
+
+  it('iTrim handles bracket delimiters', () => {
+    expect(utils.iTrim('[[value]]', '[', 'both')).toBe('value]]')
+    expect(utils.iTrim(']]value[[', ']', 'both')).toBe('value[[')
+  })
+
+  it('iTrim handles dot delimiter', () => {
+    expect(utils.iTrim('..value..', '.', 'both')).toBe('value')
+    expect(utils.iTrim('.value', '.', 'start')).toBe('value')
+    expect(utils.iTrim('value.', '.', 'end')).toBe('value')
+  })
+
+  it('iTrim handles special regex characters', () => {
+    expect(utils.iTrim('**value**', '*', 'both')).toBe('value')
+    expect(utils.iTrim('++value++', '+', 'both')).toBe('value')
+    expect(utils.iTrim('??value??', '?', 'both')).toBe('value')
+    expect(utils.iTrim('||value||', '|', 'both')).toBe('value')
+    expect(utils.iTrim('((value))', '(', 'both')).toBe('value))')
+    expect(utils.iTrim('((value))', ')', 'both')).toBe('((value')
+  })
+
+  it('iTrim handles empty string', () => {
+    expect(utils.iTrim('', '/', 'both')).toBe('')
+  })
+
+  it('iTrim throws error when delimiter is empty', () => {
+    expect(() => utils.iTrim('value', '', 'both')).toThrow('Delimiter is required')
+  })
+
+  it('iTrim preserves middle occurrences', () => {
+    expect(utils.iTrim('/path/to/file/', '/', 'both')).toBe('path/to/file')
+    expect(utils.iTrim('//path//to//file//', '/', 'both')).toBe('path//to//file')
+  })
+
   it('eTrim and sTrim delegate to iTrim ends', () => {
     expect(utils.eTrim('##name##', '#')).toBe('##name')
     expect(utils.sTrim('##name##', '#')).toBe('name##')
