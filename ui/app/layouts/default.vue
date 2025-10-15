@@ -53,12 +53,12 @@
 
             <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-tasks" /></span>
-              <span>Task-List</span>
+              <span>Tasks</span>
             </NuxtLink>
 
             <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-              <span>Task-Definitions</span>
+              <span>Website Scraper</span>
             </NuxtLink>
 
             <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
@@ -75,21 +75,17 @@
 
           </div>
           <div class="navbar-end">
-
             <div class="navbar-item" v-if="true === config.app.is_native">
               <button class="button is-dark" @click="shutdownApp">
                 <span class="icon"><i class="fas fa-power-off" /></span>
                 <span v-if="isMobile">Shutdown</span>
               </button>
             </div>
-
             <NuxtLink class="navbar-item" to="/settings" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-cog" /></span>
               <span>Settings</span>
             </NuxtLink>
-
             <NotifyDropdown />
-
           </div>
         </div>
       </nav>

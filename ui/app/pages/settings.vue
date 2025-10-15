@@ -98,12 +98,22 @@
               </label>
             </div>
           </div>
+        </div>
+      </div>
 
+
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label"></label>
+        </div>
+        <div class="field-body">
           <div class="field">
-            <template v-if="bg_enable">
-              <NuxtLink @click="$emit('reload_bg')" class="is-bold">Reload</NuxtLink>
-              <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
-            </template>
+            <div class="control">
+              <template v-if="bg_enable">
+                <NuxtLink @click="$emit('reload_bg')" class="button is-primary">Reload Background</NuxtLink>
+                <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
+              </template>
+            </div>
           </div>
         </div>
       </div>
