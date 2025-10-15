@@ -211,7 +211,7 @@ class NFOMakerPP(PostProcessor):
 
                 # collapse multiline descriptions
                 if "description" == resolved_key and isinstance(resolved_val, str):
-                    resolved_val = self._clean_description(resolved_val)
+                    resolved_val = NFOMakerPP._clean_description(resolved_val)
 
                 if resolved_val not in (None, ""):
                     data[nfo_name] = resolved_val
@@ -321,15 +321,9 @@ class NFOMakerPP(PostProcessor):
             repl (dict[str, Any]): Replacement dictionary.
 
         """
-        from xml.sax.saxutils import escape
-
-        # escape XML on a copy
         safe_repl: dict[str, Any] = {}
         for k, v in repl.items():
-            if isinstance(v, str):
-                safe_repl[k] = escape(v)
-            else:
-                safe_repl[k] = v
+            safe_repl[k] = NFOMakerPP._escape_text(v)
 
         # replace placeholders
         rendered = text
@@ -357,7 +351,24 @@ class NFOMakerPP(PostProcessor):
         except Exception as e:
             self.to_screen(f"Error writing NFO file: {e}")
 
-    def _clean_description(self, text: str) -> str:
+    @staticmethod
+    def _escape_text(text: Any) -> Any:
+        """
+        Escape text for XML.
+
+        Args:
+            text (str): Text to escape.
+
+        Returns:
+            Any: Escaped text if input is str, else original value.
+
+        """
+        from xml.sax.saxutils import escape
+
+        return escape(text) if isinstance(text, str) else text
+
+    @staticmethod
+    def _clean_description(text: str) -> str:
         """
         Strip links, chapters/timestamps, pure hashtags/mentions, and promo lines.
         Return a compact single-line summary suitable for NFO <plot>.
@@ -374,20 +385,20 @@ class NFOMakerPP(PostProcessor):
                 continue
 
             # remove markdown links, keep labels
-            ln = self._MD_LINK.sub(r"\1", ln)
+            ln = NFOMakerPP._MD_LINK.sub(r"\1", ln)
 
             # drop lines that are clearly noise
-            if self._TIME_LINE_PAT.match(ln):
+            if NFOMakerPP._TIME_LINE_PAT.match(ln):
                 continue
-            if self._HASHTAGS_LINE.match(ln):
+            if NFOMakerPP._HASHTAGS_LINE.match(ln):
                 continue
-            if self._MENTION_LINE.match(ln):
+            if NFOMakerPP._MENTION_LINE.match(ln):
                 continue
-            if self._PROMO_LINE_PAT.search(ln):
+            if NFOMakerPP._PROMO_LINE_PAT.search(ln):
                 continue
 
             # strip raw/bare urls and domains
-            ln = self._URL_PAT.sub("", ln)
+            ln = NFOMakerPP._URL_PAT.sub("", ln)
 
             # collapse leftover multiple spaces and stray separators
             ln = re.sub(r"\s{2,}", " ", ln)
@@ -402,7 +413,7 @@ class NFOMakerPP(PostProcessor):
 
         # optional minimum signal: if too short, fall back to original first sentence without links
         if 8 > len(summary.split()):
-            fallback = self._URL_PAT.sub("", text)
+            fallback = NFOMakerPP._URL_PAT.sub("", text)
             fallback = re.sub(r"\s{2,}", " ", fallback).strip()
             if 8 <= len(fallback.split()):
                 summary = fallback

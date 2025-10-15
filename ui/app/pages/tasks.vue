@@ -4,11 +4,17 @@
       <div class="column is-12 is-clearfix is-unselectable">
         <span class="title is-4">
           <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-tasks" /></span>
-            <span>Tasks</span>
+            <template v-if="toggleForm">
+              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': taskRef, 'fa-plus': !taskRef }" /></span>
+              <span>{{ taskRef ? `Edit - ${task.name}` : 'Add new task' }}</span>
+            </template>
+            <template v-else>
+              <span class="icon"><i class="fa-solid fa-tasks" /></span>
+              <span>Tasks</span>
+            </template>
           </span>
         </span>
-        <div class="is-pulled-right">
+        <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter && tasks && tasks.length > 0">
               <input type="search" v-model.lazy="query" class="input" id="filter"
@@ -17,24 +23,21 @@
             </p>
 
             <p class="control" v-if="tasks && tasks.length > 0">
-              <button class="button is-danger is-light" v-tooltip.bottom="'Filter'"
-                @click="toggleFilter = !toggleFilter">
+              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
                 <span v-if="!isMobile">Filter</span>
               </button>
             </p>
 
             <p class="control">
-              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm"
-                v-tooltip.bottom="'Toggle Add form'">
+              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm">
                 <span class="icon"><i class="fas fa-add" /></span>
-                <span v-if="!isMobile">New Task</span>
+                <span v-if="!isMobile"> New Task</span>
               </button>
             </p>
 
             <p class="control">
-              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+              <button class="button" @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
                 <span class="icon">
                   <i class="fa-solid"
                     :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
@@ -53,7 +56,7 @@
             </p>
           </div>
         </div>
-        <div class="is-hidden-mobile">
+        <div class="is-hidden-mobile" v-if="!toggleForm">
           <span class="subtitle">
             The task runner is simple queue system that allows you to poll channels or playlists for new content at
             specified intervals.
@@ -180,14 +183,12 @@
                   <td class="is-vcentered is-items-center">
                     <div class="field is-grouped is-grouped-centered">
                       <div class="control">
-                        <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
-                          @click="editItem(item)">
-                          <span class="icon"><i class="fa-solid fa-cog" /></span>
+                        <button class="button is-warning is-small is-fullwidth" @click="editItem(item)">
+                          <span class="icon"><i class="fa-solid fa-edit" /></span>
                         </button>
                       </div>
                       <div class="control">
-                        <button class="button is-danger is-small is-fullwidth" v-tooltip="'Delete'"
-                          @click="deleteItem(item)">
+                        <button class="button is-danger is-small is-fullwidth" @click="deleteItem(item)">
                           <span class="icon"><i class="fa-solid fa-trash" /></span>
                         </button>
                       </div>
@@ -198,6 +199,13 @@
                             <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                             <span>Run now</span>
                           </NuxtLink>
+
+                          <NuxtLink class="dropdown-item" @click="generateMeta(item)">
+                            <span class="icon"><i class="fa-solid fa-photo-film" /></span>
+                            <span>Generate metadata</span>
+                          </NuxtLink>
+
+                          <hr class="dropdown-divider" />
 
                           <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
                             <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
@@ -242,6 +250,9 @@
                 <NuxtLink target="_blank" :href="item.url">
                   {{ remove_tags(item.name) }}
                 </NuxtLink>
+                <span class="icon" v-if="item.in_progress">
+                  <i class="fa-solid fa-spinner fa-spin has-text-info" />
+                </span>
               </div>
               <div class="card-header-icon">
                 <div class="field is-grouped">
@@ -257,13 +268,13 @@
                     </span>
                   </div>
                   <div class="control">
-                    <span class="icon" v-tooltip="`RSS monitoring is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
+                    <span class="icon" v-tooltip="`Task handler is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
                       <i class="fa-solid fa-rss"
                         :class="{ 'has-text-success': item.handler_enabled, 'has-text-danger': !item.handler_enabled }" />
                     </span>
                   </div>
                   <div class="control">
-                    <a class="has-text-info" v-tooltip="'Export task.'" @click.prevent="exportItem(item)">
+                    <a class="has-text-info" @click.prevent="exportItem(item)">
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
                     </a>
                   </div>
@@ -310,7 +321,7 @@
             <div class="card-footer mt-auto">
               <div class="card-footer-item">
                 <button class="button is-warning is-fullwidth" @click="editItem(item);">
-                  <span class="icon"><i class="fa-solid fa-cog" /></span>
+                  <span class="icon"><i class="fa-solid fa-edit" /></span>
                   <span>Edit</span>
                 </button>
               </div>
@@ -327,6 +338,13 @@
                     <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
                     <span>Run now</span>
                   </NuxtLink>
+
+                  <NuxtLink class="dropdown-item" @click="generateMeta(item)">
+                    <span class="icon"><i class="fa-solid fa-photo-film" /></span>
+                    <span>Generate metadata</span>
+                  </NuxtLink>
+
+                  <hr class="dropdown-divider" />
 
                   <NuxtLink class="dropdown-item" @click="() => inspectTask = item">
                     <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
@@ -851,6 +869,57 @@ const unarchiveAll = async (item: task_item) => {
     toast.success(data.message)
   } catch (e: any) {
     toast.error(`Failed to remove items from archive. ${e.message || 'Unknown error.'}`)
+    return
+  } finally {
+    item.in_progress = false
+  }
+}
+
+const generateMeta = async (item: task_item) => {
+  try {
+    let path = '/';
+    if (item.folder) {
+      path = `/${sTrim(item.folder, '/')}`
+    }
+    const { status } = await cDialog({
+      rawHTML: `
+      <p>
+        Generate '${item.name}' metadata in '<b class="has-text-danger">${path}</b>'? you will be notified when it is done.
+      </p>
+      <p>
+        <b>This action will generate:</b>
+        <ul>
+          <li><strong>tvshow.nfo</strong> - for media center compatibility</li>
+          <li><strong>title [id].info.json</strong> - yt-dlp metadata file</li>
+          <li>
+          <strong>Thumbnails</strong>: poster.jpg, fanart.jpg, thumb.jpg, banner.jpg, icon.jpg, landscape.jpg
+          <u>if they are available</u>.
+          </li>
+        </ul>
+      </p>
+      <p class="has-text-danger">
+          <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <span>Warning</span>: This will overwrite existing metadata files if they exist.
+      </p>`
+
+    })
+
+    if (true !== status) {
+      return;
+    }
+
+    item.in_progress = true
+    const response = await request(`/api/tasks/${item.id}/metadata`, { method: 'POST' })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    toast.success('Metadata generation completed.')
+  } catch (e: any) {
+    toast.error(`Failed to generate metadata. ${e.message || 'Unknown error.'}`)
     return
   } finally {
     item.in_progress = false

@@ -8,13 +8,13 @@ or the `environment:` section in `compose.yaml` file.
 | TZ                             | The timezone to use for the application                            | `(not_set)`           |
 | YTP_OUTPUT_TEMPLATE            | The template for the filenames of the downloaded videos            | `%(title)s.%(ext)s`   |
 | YTP_DEFAULT_PRESET             | The default preset to use for the download                         | `default`             |
-| YTP_INSTANCE_TITLE             | The title of the instance                                          | `empty string`        |
+| YTP_INSTANCE_TITLE             | The title of the instance                                          | `(not_set)`           |
 | YTP_FILE_LOGGING               | Whether to log to file                                             | `false`               |
 | YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                          | `/downloads`          |
 | YTP_MAX_WORKERS                | The maximum number of workers to use for downloading               | `20`                  |
 | YTP_MAX_WORKERS_PER_EXTRACTOR  | The maximum number of concurrent downloads per extractor           | `2`                   |
-| YTP_AUTH_USERNAME              | Username for basic authentication                                  | `empty string`        |
-| YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `empty string`        |
+| YTP_AUTH_USERNAME              | Username for basic authentication                                  | `(not_set)`           |
+| YTP_AUTH_PASSWORD              | Password for basic authentication                                  | `(not_set)`           |
 | YTP_CONSOLE_ENABLED            | Whether to enable the console                                      | `false`               |
 | YTP_REMOVE_FILES               | Remove the actual file when clicking the remove button             | `false`               |
 | YTP_CONFIG_PATH                | Path to where the config files will be stored.                     | `/config`             |
@@ -31,13 +31,13 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                           | `5678`                |
 | YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                       | `70`                  |
 | YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats     | `true`                |
-| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `empty string`        |
+| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                  | `(not_set)`           |
 | YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                              | `false`               |
-| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `empty string`        |
+| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                     | `(not_set)`           |
 | YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                         | `false`               |
 | YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                       | `true`                |
 | YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package    | `false`               |
-| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `empty string`        |
+| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `(not_set)`           |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                   |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`               |
 | YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`        |
@@ -46,6 +46,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                  | `1`                   |
 | YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                    | `false`               |
 | YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                           | `false`               |
+| YTP_STATIC_UI_PATH             | Path to custom static UI files.                                    | `(not_set)`           |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.

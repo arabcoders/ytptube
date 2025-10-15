@@ -179,7 +179,6 @@ const makePagination = (current: number, last: number, delta: number = 5): Array
 
 /**
  * Safely encode a path string for use in a URL.
- * Will manually encode '#' and ensure valid URI segments.
  *
  * @param item - The input path string.
  * @returns The URL-encoded path.
@@ -189,14 +188,37 @@ const encodePath = (item: string): string => {
     return item
   }
 
-  item = item.replace(/#/g, '%23')
+  return item.split('/').map(segment => {
+    try {
+      const decoded = decodeURIComponent(segment)
+      const reEncoded = encodeURIComponent(decoded)
 
-  try {
-    return item.split('/').map(decodeURIComponent).map(encodeURIComponent).join('/')
-  } catch (e) {
-    console.error('Error encoding path:', e, item)
-    return item
-  }
+      if (reEncoded === segment) {
+        return segment
+      }
+    } catch {
+      // Decoding failed, segment has invalid encoding
+    }
+
+    const placeholders: string[] = []
+    const _PREFIX = `_YTP${Math.random().toString(36).substring(2, 8).toUpperCase()}_`
+    const _SUFFIX = `_YTP${Math.random().toString(36).substring(2, 8).toUpperCase()}_`
+
+    let processed = segment.replace(/%[0-9A-Fa-f]{2}/g, match => {
+      const index = placeholders.length
+      placeholders.push(match)
+      return `${_PREFIX}${index}${_SUFFIX}`
+    })
+
+    processed = encodeURIComponent(processed)
+
+    const placeholderRegex = new RegExp(`${_PREFIX.replace(/_/g, '_')}(\\d+)${_SUFFIX.replace(/_/g, '_')}`, 'g')
+    processed = processed.replace(placeholderRegex, (_match, index: string) => {
+      return placeholders[parseInt(index)] || ''
+    })
+
+    return processed
+  }).join('/')
 }
 
 /**
@@ -344,20 +366,16 @@ const iTrim = (str: string, delim: string, position: 'start' | 'end' | 'both' = 
     throw new Error('Delimiter is required')
   }
 
-  if (']' === delim) {
-    delim = '\\]'
-  }
-
-  if ('\\' === delim) {
-    delim = '\\\\'
-  }
+  // Escape special regex characters for use in character class
+  // Characters that need escaping in character classes: \ ] ^ -
+  const escapedDelim = delim.replace(/[\\^\-\]]/g, '\\$&')
 
   if (['both', 'start'].includes(position)) {
-    str = str.replace(new RegExp(`^[${delim}]+`, 'g'), '')
+    str = str.replace(new RegExp(`^[${escapedDelim}]+`, 'g'), '')
   }
 
   if (['both', 'end'].includes(position)) {
-    str = str.replace(new RegExp(`[${delim}]+$`, 'g'), '')
+    str = str.replace(new RegExp(`[${escapedDelim}]+$`, 'g'), '')
   }
 
   return str
