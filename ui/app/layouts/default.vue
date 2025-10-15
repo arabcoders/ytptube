@@ -2,14 +2,7 @@
 
   <template v-if="simpleMode">
     <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-    <Simple @show_settings="() => show_settings = true" />
-  </template>
-
-  <template v-if="show_settings">
-    <Modal @close="show_settings = false"
-      :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max is-overflow-visible'">
-      <Settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
-    </Modal>
+    <Simple />
   </template>
 
   <template v-if="!simpleMode">
@@ -23,9 +16,8 @@
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
             <span class="is-text-overflow">
-              <span class="icon">
-                <i v-if="'connecting' === socket.connectionStatus" class="fas fa-arrows-rotate fa-spin" />
-                <i v-else class="fas fa-home" />
+              <span class="icon" v-if="'connecting' === socket.connectionStatus" >
+                <i class="fas fa-arrows-rotate fa-spin" />
               </span>
               <span class="has-text-bold" :class="connectionStatusColor">
                 YTPTube
@@ -43,6 +35,12 @@
 
         <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
           <div class="navbar-start">
+
+            <NuxtLink class="navbar-item" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <span class="icon"><i class="fa-solid fa-home" /></span>
+              <span>Home</span>
+            </NuxtLink>
+
             <NuxtLink class="navbar-item" to="/browser" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
               <span>Files</span>
@@ -52,23 +50,16 @@
               <span class="icon"><i class="fa-solid fa-sliders" /></span>
               <span>Presets</span>
             </NuxtLink>
-            <div class="navbar-item has-dropdown">
-              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
-                <span class="icon"><i class="fas fa-tasks" /></span>
-                <span>Tasks</span>
-              </a>
-              <div class="navbar-dropdown">
-                <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-                  <span class="icon"><i class="fa-solid fa-tasks" /></span>
-                  <span>List</span>
-                </NuxtLink>
 
-                <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-                  <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-                  <span>Definitions</span>
-                </NuxtLink>
-              </div>
-            </div>
+            <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <span class="icon"><i class="fa-solid fa-tasks" /></span>
+              <span>Task-List</span>
+            </NuxtLink>
+
+            <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
+              <span>Task-Definitions</span>
+            </NuxtLink>
 
             <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon-text">
@@ -84,26 +75,6 @@
 
           </div>
           <div class="navbar-end">
-            <div class="navbar-item has-dropdown">
-              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
-                <span class="icon"><i class="fas fa-tools" /></span>
-                <span>Other</span>
-              </a>
-
-              <div class="navbar-dropdown">
-                <NuxtLink class="navbar-item" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                  v-if="config.app.file_logging">
-                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-                  <span>Logs</span>
-                </NuxtLink>
-
-                <NuxtLink class="navbar-item" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                  v-if="config.app.console_enabled">
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  <span>Console</span>
-                </NuxtLink>
-              </div>
-            </div>
 
             <div class="navbar-item" v-if="true === config.app.is_native">
               <button class="button is-dark" @click="shutdownApp">
@@ -112,28 +83,12 @@
               </button>
             </div>
 
-
-            <div class="navbar-item">
-              <button class="button is-dark" @click="reloadPage">
-                <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="isMobile">Reload</span>
-              </button>
-            </div>
+            <NuxtLink class="navbar-item" to="/settings" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <span class="icon"><i class="fa-solid fa-cog" /></span>
+              <span>Settings</span>
+            </NuxtLink>
 
             <NotifyDropdown />
-
-            <div class="navbar-item" v-if="!isMobile">
-              <button class="button is-dark has-tooltip-bottom mr-4" v-tooltip.bottom="'WebUI Settings'"
-                @click="show_settings = !show_settings">
-                <span class="icon"><i class="fas fa-cog" /></span>
-              </button>
-            </div>
-            <div class="navbar-item" v-if="isMobile">
-              <button class="button is-dark" @click="show_settings = !show_settings">
-                <span class="icon"><i class="fas fa-cog" /></span>
-                <span>WebUI Settings</span>
-              </button>
-            </div>
 
           </div>
         </div>
@@ -203,7 +158,6 @@ const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
 const config = useConfigStore()
 const loadedImage = ref()
-const show_settings = ref(false)
 const loadingImage = ref(false)
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
@@ -314,8 +268,6 @@ watch(selectedTheme, value => {
     applyPreferredColorScheme(value)
   } catch { }
 })
-
-const reloadPage = () => window.location.reload()
 
 watch(bg_enable, async v => await handleImage(v))
 watch(bg_opacity, v => {

@@ -6,9 +6,9 @@
           <label class="label" for="download-url">
             What you would like to download?
             <span class="is-pulled-right">
-              <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
-                v-tooltip="'WebUI Settings'">
-                <i class="fas fa-cogs" /></span>
+              <NuxtLink class="icon is-pointer" to="/settings" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                <span class="icon"><i class="fa-solid fa-cog" /></span>
+              </NuxtLink>
             </span>
           </label>
           <div class="field has-addons">
@@ -542,6 +542,15 @@ const showMessage = (item: StoreItem) => {
     return false
   }
   return (item.msg?.length || 0) > 0
+}
+
+
+const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) => {
+  showMenu.value = false
+  document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
+  if (callback) {
+    callback()
+  }
 }
 
 const connectionStatusColor = computed(() => {
