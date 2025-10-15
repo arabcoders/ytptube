@@ -556,17 +556,6 @@ const showSettings = async (_: MouseEvent, callback: (() => void) | null = null)
   }
 }
 
-const connectionStatusColor = computed(() => {
-  switch (socketStore.connectionStatus) {
-    case 'connected':
-      return 'has-text-success'
-    case 'connecting':
-      return 'has-text-warning fa-spin'
-    case 'disconnected':
-    default:
-      return 'has-text-danger'
-  }
-})
 </script>
 
 <style scoped>

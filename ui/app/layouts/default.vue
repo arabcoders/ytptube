@@ -360,18 +360,6 @@ const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) 
   }
 }
 
-const openMenu = (e: MouseEvent) => {
-  const elm = (e.target as HTMLElement)?.closest('div.has-dropdown') as HTMLElement | null
-
-  document.querySelectorAll<HTMLElement>('div.has-dropdown').forEach(el => {
-    if (el !== elm) {
-      el.classList.remove('is-active')
-    }
-  })
-
-  elm?.classList.toggle('is-active')
-}
-
 const useVersionUpdate = () => {
   const newVersionIsAvailable = ref(false)
   const nuxtApp = useNuxtApp()
