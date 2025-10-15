@@ -6,7 +6,7 @@
           <label class="label" for="download-url">
             What you would like to download?
             <span class="is-pulled-right">
-              <NuxtLink class="icon is-pointer" to="/settings" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <NuxtLink class="icon is-pointer" to="/settings" @click.prevent="(e: MouseEvent) => showSettings(e)">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
               </NuxtLink>
             </span>
@@ -545,8 +545,11 @@ const showMessage = (item: StoreItem) => {
 }
 
 
-const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) => {
-  showMenu.value = false
+const showSettings = async (_: MouseEvent, callback: (() => void) | null = null) => {
+
+  const simpleMode = useStorage<boolean>('simple_mode', useConfigStore().app.simple_mode || false)
+  simpleMode.value = false
+
   document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
   if (callback) {
     callback()
