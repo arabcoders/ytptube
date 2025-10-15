@@ -22,9 +22,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc",
-    "date": "2025-10-14T22:10:25+00:00",
+    "full_sha": "7a4634bfd606e6330ed851ae74a2ef9a7d0eb6fa",
+    "date": "2025-10-15T16:04:45+00:00",
     "commits": [
+      {
+        "sha": "17cb32b6",
+        "full_sha": "17cb32b68978037bf946bda932bff81553215488",
+        "message": "update build-pr to run on dev PRs as well",
+        "author": "arabcoders",
+        "date": "2025-10-15T15:58:55+00:00"
+      },
+      {
+        "sha": "e085e680",
+        "full_sha": "e085e680ccbbfbcc5324cd8e1c3f4b55b3976bb8",
+        "message": "[FEAT] create channel metadata and thumbnails. Closes #446",
+        "author": "arabcoders",
+        "date": "2025-10-15T15:55:50+00:00"
+      },
       {
         "sha": "319f7d2f",
         "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc",
