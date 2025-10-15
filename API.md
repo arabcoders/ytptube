@@ -35,6 +35,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/tasks/inspect](#post-apitasksinspect)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
+    - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
     - [GET /api/task\_definitions/](#get-apitask_definitions)
     - [GET /api/task\_definitions/{identifier}](#get-apitask_definitionsidentifier)
     - [POST /api/task\_definitions/](#post-apitask_definitions)
@@ -655,6 +656,58 @@ or
 
 - `400 Bad Request` if id is missing or invalid.
 - `404 Not Found` if the task does not exist.
+
+---
+
+### POST /api/tasks/{id}/metadata
+**Purpose**: Generate metadata files for a scheduled task, including NFO files, thumbnails, and JSON metadata compatible with media centers.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+```json
+{
+  "id": "channel_or_playlist_id",
+  "id_type": "youtube|twitch|...",
+  "title": "Channel/Playlist Title",
+  "description": "Description text...",
+  "uploader": "Uploader name",
+  "tags": ["tag1", "tag2"],
+  "year": 2024,
+  "json_file": "path/to/Title [id].info.json",
+  "nfo_file": "path/to/tvshow.nfo",
+  "thumbnails": {
+    "poster": "path/to/poster.jpg",
+    "fanart": "path/to/fanart.jpg",
+    "thumb": "path/to/thumb.jpg",
+    "banner": "path/to/banner.jpg",
+    "icon": "path/to/icon.jpg",
+    "landscape": "path/to/landscape.jpg"
+  }
+}
+```
+or
+```json
+{ "error": "..." }
+```
+
+**Files Generated**:
+- `tvshow.nfo` - NFO file for media center compatibility (Kodi, Jellyfin, Emby, etc.)
+- `Title [id].info.json` - yt-dlp metadata file.
+- `poster.jpg`, `fanart.jpg`, `thumb.jpg`, `banner.jpg`, `icon.jpg`, `landscape.jpg` - Thumbnail images (if available from the source)
+
+**Notes**:
+- This endpoint fetches metadata from the URL associated with the task
+- Files are saved to the task's configured folder (or default download path)
+- Existing files will be overwritten.
+- Thumbnail images are only downloaded if available from the source.
+- The NFO file follows the Kodi tvshow.nfo format
+
+**Status Codes**:
+- `200 OK` - Metadata generated successfully
+- `400 Bad Request` - Missing task ID, invalid folder path, or failed to fetch metadata
+- `404 Not Found` - Task does not exist
 
 ---
 
