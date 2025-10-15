@@ -1,8 +1,64 @@
 [
     {
-        "tag": "master-20251013-f91811ad",
-        "date": "2025-10-13T16:24:28+00:00",
+        "tag": "master-20251015-2a13c47b",
+        "date": "2025-10-15T16:22:47+00:00",
         "commits": [
+            {
+                "sha": "568d92c3",
+                "message": "updated external packages",
+                "author": "arabcoders",
+                "date": "2025-10-15T16:16:17+00:00",
+                "full_sha": "568d92c33e1aa32c299576e05dd9bf09d5e82123"
+            },
+            {
+                "sha": "17cb32b6",
+                "message": "update build-pr to run on dev PRs as well",
+                "author": "arabcoders",
+                "date": "2025-10-15T15:58:55+00:00",
+                "full_sha": "17cb32b68978037bf946bda932bff81553215488"
+            },
+            {
+                "sha": "e085e680",
+                "message": "[FEAT] create channel metadata and thumbnails. Closes #446",
+                "author": "arabcoders",
+                "date": "2025-10-15T15:55:50+00:00",
+                "full_sha": "e085e680ccbbfbcc5324cd8e1c3f4b55b3976bb8"
+            },
+            {
+                "sha": "319f7d2f",
+                "message": "feat: add quick contributing guide.",
+                "author": "arabcoders",
+                "date": "2025-10-14T22:10:25+00:00",
+                "full_sha": "319f7d2f7afa433dcaaea82819a42cc962a0c4bc"
+            },
+            {
+                "sha": "a374c199",
+                "message": "feat: make it possible to load different UI",
+                "author": "arabcoders",
+                "date": "2025-10-14T22:09:54+00:00",
+                "full_sha": "a374c19978d0fd4f6b4232bfbee9795ae584c06b"
+            },
+            {
+                "sha": "d5a0a3aa",
+                "message": "more minor design updates. Ref #441",
+                "author": "arabcoders",
+                "date": "2025-10-14T15:32:09+00:00",
+                "full_sha": "d5a0a3aafeda2b5d3e5cc218397e567046b81af3"
+            },
+            {
+                "sha": "8e0f8045",
+                "message": "minor design update. Ref #441",
+                "author": "arabcoders",
+                "date": "2025-10-14T15:16:52+00:00",
+                "full_sha": "8e0f8045ab8616e0d8b8ab1e08f7e3e22b33bdf9"
+            },
+            {
+                "sha": "74dfcbaa",
+                "message": "Fix #443",
+                "author": "arabcoders",
+                "date": "2025-10-14T14:58:45+00:00",
+                "full_sha": "74dfcbaa58038a7be46e4479c7600374bea55daa"
+            },
             {
                 "sha": "9801258b",
                 "message": "Update bookmarklet URL and add note on mixed content",
@@ -2363,7 +2419,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f91811ad502c93974f85f88f5ca112f1a1a71f79"
+        "full_sha": "2a13c47bb6634e3aa21c06915a0fee29ed420f39"
     },
     {
         "tag": "master-20250616-c07465a6",
