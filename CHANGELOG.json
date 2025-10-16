@@ -15,9 +15,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
-    "date": "2025-10-16T13:41:59+00:00",
+    "full_sha": "9ea860a9672fec6f7284685a8a017fc1cd6bc2bf",
+    "date": "2025-10-16T14:00:33+00:00",
     "commits": [
+      {
+        "sha": "9ea860a9",
+        "full_sha": "9ea860a9672fec6f7284685a8a017fc1cd6bc2bf",
+        "message": "[FEAT] allow user to choose thumbnail aspect ratio.",
+        "author": "arabcoders",
+        "date": "2025-10-16T14:00:33+00:00"
+      },
       {
         "sha": "5a35854f",
         "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
