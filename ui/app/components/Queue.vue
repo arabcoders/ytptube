@@ -198,7 +198,7 @@
             </div>
           </header>
           <div v-if="showThumbnails" class="card-image">
-            <figure class="image is-3by1">
+            <figure :class="['image', thumbnail_ratio]">
               <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
                 class="play-overlay">
                 <div class="play-icon embed-icon"></div>
@@ -336,6 +336,7 @@ const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'grid')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
+const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)

@@ -266,7 +266,7 @@
             </div>
           </header>
           <div v-if="showThumbnails" class="card-image">
-            <figure class="image is-3by1">
+            <figure :class="['image', thumbnail_ratio]">
               <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
                 <div class="play-icon"></div>
                 <img @load="(e: Event) => pImg(e)" :src="getImage(item)" v-if="getImage(item)" />
@@ -475,6 +475,7 @@ const direction = useStorage<'asc' | 'desc'>('sortCompleted', 'desc')
 const display_style = useStorage<'grid' | 'list'>('display_style', 'grid')
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
+const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)

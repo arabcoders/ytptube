@@ -13,8 +13,9 @@
           </label>
           <div class="field has-addons">
             <div class="control">
-              <button type="button" class="button is-info" @click="() => showPresets = !showPresets">
-                <span class="icon"><i class="fas" :class="showPresets ? 'fa-chevron-up' : 'fa-chevron-down'" /></span>
+              <button type="button" class="button is-info" @click="() => showExtras = !showExtras"
+                v-tooltip="showExtras ? 'Hide extra options' : 'Show extra options'">
+                <span class="icon"><i class="fas" :class="showExtras ? 'fa-chevron-up' : 'fa-chevron-down'" /></span>
               </button>
             </div>
             <div class="control is-expanded">
@@ -29,7 +30,7 @@
               </button>
             </div>
           </div>
-          <div class="field has-addons" v-if="showPresets">
+          <div class="field has-addons" v-if="showExtras">
             <div class="control">
               <label class="button is-static">
                 <span class="icon"><i class="fas fa-sliders" /></span>
@@ -52,6 +53,20 @@
                   </optgroup>
                 </select>
               </div>
+            </div>
+          </div>
+
+          <div class="columns is-multiline is-mobile" v-if="showExtras && configStore.dl_fields.length > 0">
+            <div class="column is-6-tablet is-12-mobile">
+              <DLInput id="force_download" type="bool" label="Force download"
+                v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
+                :disabled="!socketStore.isConnected || addInProgress" description="Ignore archive and re-download." />
+            </div>
+            <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"
+              :key="fi.id || `dlf-${index}`">
+              <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
+                :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field"
+                :disabled="!socketStore.isConnected || addInProgress" />
             </div>
           </div>
 
@@ -213,7 +228,8 @@ const videoItem = ref<StoreItem | null>(null)
 const formUrl = ref<string>('')
 const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
 const addInProgress = ref<boolean>(false)
-const showPresets = ref<boolean>(false)
+const showExtras = ref<boolean>(false)
+const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
 const sortByNewest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
@@ -247,9 +263,50 @@ const addDownload = async (): Promise<void> => {
     return
   }
 
+  let cli = ''
+
+  const dlFieldsExtra = ['--no-download-archive']
+
+  const is_valid = (dl_field: string): boolean => {
+    if (dlFieldsExtra.includes(dl_field)) {
+      return true
+    }
+
+    if (configStore.dl_fields && configStore.dl_fields.length > 0) {
+      return configStore.dl_fields.some(f => dl_field === f.field)
+    }
+
+    return false
+  }
+
+  if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+    const joined = []
+    for (const [key, value] of Object.entries(dlFields.value)) {
+      if (false === is_valid(key)) {
+        continue
+      }
+
+      if ([undefined, null, '', false].includes(value as any)) {
+        continue
+      }
+
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`)
+      if (cli && keyRegex.test(cli)) {
+        continue
+      }
+
+      joined.push(true === value ? `${key}` : `${key} ${value}`)
+    }
+
+    if (joined.length > 0) {
+      cli = joined.join(' ')
+    }
+  }
+
   const payload: item_request[] = [{
     url,
     preset: formPreset.value.preset || app.value.default_preset,
+    cli: cli || '',
     auto_start: true,
   }]
 
@@ -274,6 +331,7 @@ const addDownload = async (): Promise<void> => {
 
     formUrl.value = ''
     formPreset.value.preset = app.value.default_preset || ''
+    dlFields.value = {}
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to add download.'
     toast.error(message)
@@ -543,6 +601,9 @@ const showMessage = (item: StoreItem) => {
   }
   return (item.msg?.length || 0) > 0
 }
+
+// eslint-disable-next-line vue/no-side-effects-in-computed-properties
+const sortedDLFields = computed(() => configStore.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
 
 const connectionStatusColor = computed(() => {
   switch (socketStore.connectionStatus) {
