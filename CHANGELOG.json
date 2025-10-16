@@ -14,6 +14,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
+    "date": "2025-10-16T13:41:59+00:00",
+    "commits": [
+      {
+        "sha": "5a35854f",
+        "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
+        "message": "[FEAT] add custom download fields to simple mode. Closes #437",
+        "author": "arabcoders",
+        "date": "2025-10-16T13:41:59+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.1",
     "full_sha": "2a13c47bb6634e3aa21c06915a0fee29ed420f39",
     "date": "2025-10-15T16:22:47+00:00",
