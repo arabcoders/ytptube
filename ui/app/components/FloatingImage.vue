@@ -8,7 +8,7 @@
           <div class="is-block" style="word-break: all;" v-if="props.title">
             <span style="font-size: 120%;">{{ props.title }}</span>
           </div>
-          <figure class="image is-3by1 is-hidden-mobile">
+          <figure :class="['image', thumbnail_ratio, 'is-hidden-mobile']">
             <img @load="e => pImg(e)" :src="url" :alt="props.title" @error="clearCache"
               :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
               :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { useStorage } from '@vueuse/core'
 import { disableOpacity, enableOpacity } from '~/utils'
 
 const props = defineProps<{
@@ -31,6 +32,7 @@ const props = defineProps<{
 
 const cache = useSessionCache()
 const toast = useNotification()
+const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const url = ref<string | null>(null)
 const error = ref(false)
 const isPreloading = ref(false)
