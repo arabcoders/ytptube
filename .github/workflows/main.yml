@@ -15,6 +15,7 @@ on:
     branches:
       - dev
       - master
+      - testing
     tags:
       - "v*"
     paths-ignore:

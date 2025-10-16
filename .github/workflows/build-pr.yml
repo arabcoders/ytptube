@@ -8,6 +8,7 @@ on:
     branches:
       - master
       - dev
+      - testing
     paths-ignore:
       - "**.md"
       - ".github/ISSUE_TEMPLATE/**"
