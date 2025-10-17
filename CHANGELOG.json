@@ -35,6 +35,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ed9ce05ac06fccc28526ccfe9cb12e29b00175e9",
+    "date": "2025-10-17T14:21:21+00:00",
+    "commits": [
+      {
+        "sha": "ed9ce05a",
+        "full_sha": "ed9ce05ac06fccc28526ccfe9cb12e29b00175e9",
+        "message": "[FEAT] Added checkbox in task add page to directly archive all items in a task.",
+        "author": "arabcoders",
+        "date": "2025-10-17T14:21:21+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.1",
     "full_sha": "2a13c47bb6634e3aa21c06915a0fee29ed420f39",
     "date": "2025-10-15T16:22:47+00:00",
