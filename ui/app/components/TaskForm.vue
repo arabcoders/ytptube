@@ -231,6 +231,28 @@
                 </div>
               </div>
 
+              <div class="column is-6-tablet is-12-mobile" v-if="!reference">
+                <div class="field">
+                  <label class="label is-inline" for="archive_all_after_add">
+                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
+                    Mark all existing items as downloaded
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="archive_all_after_add" type="checkbox" v-model="archiveAllAfterAdd" :disabled="addInProgress"
+                      class="switch is-danger" />
+                    <label for="archive_all_after_add" class="is-unselectable">
+                      {{ archiveAllAfterAdd ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">
+                      If enabled, all existing items in the feed will be marked as downloaded after adding the task.
+                    </span>
+                  </span>
+                </div>
+              </div>
+
               <div class="column is-12">
                 <div class="field">
                   <label class="label is-unselectable" for="cli_options">
@@ -317,7 +339,7 @@ const props = defineProps<{
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', payload: { reference: string | null | undefined, task: task_item }): void
+  (e: 'submit', payload: { reference: string | null | undefined, task: task_item, archive_all?: boolean }): void
 }>()
 
 const toast = useNotification()
@@ -329,6 +351,7 @@ const convertInProgress = ref<boolean>(false)
 const import_string = ref<string>('')
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
+const archiveAllAfterAdd = ref<boolean>(false)
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 
@@ -389,7 +412,7 @@ const checkInfo = async (): Promise<void> => {
     form.cli = form.cli.trim()
   }
 
-  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form) })
+  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form), archive_all: archiveAllAfterAdd.value })
 }
 
 const importItem = async (): Promise<void> => {

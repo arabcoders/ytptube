@@ -223,13 +223,17 @@ cd ui
 pnpm install
 ```
 
+> [!NOTE]
+> Create a `.env` file in the `ui/` directory based on `.env.example` to configure environment variables.
+> to link the frontend to the backend API.
+
 3. **Run the frontend development server:**
 
 ```bash
 pnpm dev
 ```
 
-The frontend will be available at `http://localhost:3000` (or the port shown in the terminal)
+The frontend will be available at `http://localhost:8082` (or the port shown in the terminal)
 
 4. **Verify the setup:**
 
