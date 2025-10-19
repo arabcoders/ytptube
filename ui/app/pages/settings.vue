@@ -8,32 +8,7 @@
           <p class="card-header-title">Settings</p>
         </span>
       </span>
-
-      <!-- Link buttons -->
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label"></label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
-            <div class="control">
-
-              <NuxtLink class="button is-primary" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                        v-if="config.app.file_logging">
-                <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-                <span>Open Logs</span>
-              </NuxtLink>
-
-              <NuxtLink class="button is-primary" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                        v-if="config.app.console_enabled">
-                <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                <span>Open Console</span>
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <span class="field is-horizontal"/>
 
       <!-- Page View -->
       <div class="field is-horizontal">
@@ -55,6 +30,15 @@
           </div>
         </div>
       </div>
+
+
+      <span class="field title is-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-palette" /></span>
+          <p class="card-header-title">Theming</p>
+        </span>
+      </span>
+      <span class="field is-horizontal"/>
 
       <!-- Color Scheme -->
       <div class="field is-horizontal">
@@ -140,6 +124,15 @@
         </div>
       </div>
 
+
+      <span class="field title is-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-home" /></span>
+          <p class="card-header-title">Dashboard</p>
+        </span>
+      </span>
+      <span class="field is-horizontal"/>
+
       <!-- URL Separator -->
       <div class="field is-horizontal" v-if="!simpleMode">
         <div class="field-label is-normal">
@@ -184,6 +177,15 @@
         </div>
       </div>
 
+
+
+      <span class="field title is-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-bell" /></span>
+          <p class="card-header-title">On-Screen Notifications</p>
+        </span>
+      </span>
+      <span class="field is-horizontal"/>
 
       <!-- Show notifications -->
       <div class="field is-horizontal">
@@ -248,6 +250,41 @@
       </div>
 
       <!--end-->
+
+      <span class="field is-horizontal"/>
+      <span class="title is-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-cog"/></span>
+          <p class="card-header-title">Application Settings</p>
+        </span>
+      </span>
+      <span class="field is-horizontal"/>
+
+      <!-- Link buttons -->
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label"></label>
+        </div>
+        <div class="field-body">
+          <div class="field is-narrow">
+            <div class="control">
+
+              <NuxtLink class="button is-primary" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
+                        v-if="config.app.file_logging">
+                <span class="icon"><i class="fa-solid fa-file-lines"/></span>
+                <span>Open Logs</span>
+              </NuxtLink>
+
+              <NuxtLink class="button is-primary" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
+                        v-if="config.app.console_enabled">
+                <span class="icon"><i class="fa-solid fa-terminal"/></span>
+                <span>Open Console</span>
+              </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
+        <!--end-->
     </div>
   </main>
 </template>
