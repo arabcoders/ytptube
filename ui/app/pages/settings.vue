@@ -274,7 +274,18 @@
                 <span class="icon"><i class="fa-solid fa-file-lines"/></span>
                 <span>Open Logs</span>
               </NuxtLink>
+            </div>
+          </div>
+        </div>
+      </div>
 
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label class="label"></label>
+        </div>
+        <div class="field-body">
+          <div class="field is-narrow">
+            <div class="control">
               <NuxtLink class="button is-primary" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
                         v-if="config.app.console_enabled">
                 <span class="icon"><i class="fa-solid fa-terminal"/></span>
