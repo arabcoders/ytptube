@@ -1,43 +1,8 @@
 [
   {
-    "tag": "Unreleased (618ce4d3)",
-    "full_sha": "618ce4d3878a0514b7ae4d7550f1fa15d99bb684",
-    "date": "2025-10-16T14:23:02+00:00",
-    "commits": [
-      {
-        "sha": "32bdbf54",
-        "full_sha": "32bdbf5402c29bf9bd3aa62389c8a241a1dacd09",
-        "message": "update README",
-        "author": "arabcoders",
-        "date": "2025-10-16T14:21:21+00:00"
-      },
-      {
-        "sha": "9ea860a9",
-        "full_sha": "9ea860a9672fec6f7284685a8a017fc1cd6bc2bf",
-        "message": "[FEAT] allow user to choose thumbnail aspect ratio.",
-        "author": "arabcoders",
-        "date": "2025-10-16T14:00:33+00:00"
-      },
-      {
-        "sha": "5a35854f",
-        "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
-        "message": "[FEAT] add custom download fields to simple mode. Closes #437",
-        "author": "arabcoders",
-        "date": "2025-10-16T13:41:59+00:00"
-      },
-      {
-        "sha": "c35cca39",
-        "full_sha": "c35cca39a963dff1ead17bf173246992c52ead39",
-        "message": "create new branch for testing ground",
-        "author": "arabcoders",
-        "date": "2025-10-16T12:55:40+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "4fafe0cbe7537408857d32c3f6e70e97701d3796",
-    "date": "2025-10-19T16:54:06+00:00",
+    "tag": "Unreleased (238deddb)",
+    "full_sha": "238deddb9dd3ed7c28cbe99bf9c51a0e797536d9",
+    "date": "2025-10-19T19:22:52+00:00",
     "commits": [
       {
         "sha": "3a092988",
@@ -164,6 +129,34 @@
         "message": "[FEAT] Added checkbox in task add page to directly archive all items in a task.",
         "author": "arabcoders",
         "date": "2025-10-17T14:21:21+00:00"
+      },
+      {
+        "sha": "32bdbf54",
+        "full_sha": "32bdbf5402c29bf9bd3aa62389c8a241a1dacd09",
+        "message": "update README",
+        "author": "arabcoders",
+        "date": "2025-10-16T14:21:21+00:00"
+      },
+      {
+        "sha": "9ea860a9",
+        "full_sha": "9ea860a9672fec6f7284685a8a017fc1cd6bc2bf",
+        "message": "[FEAT] allow user to choose thumbnail aspect ratio.",
+        "author": "arabcoders",
+        "date": "2025-10-16T14:00:33+00:00"
+      },
+      {
+        "sha": "5a35854f",
+        "full_sha": "5a35854f458aabf5c0223d4afa80a560c36528fa",
+        "message": "[FEAT] add custom download fields to simple mode. Closes #437",
+        "author": "arabcoders",
+        "date": "2025-10-16T13:41:59+00:00"
+      },
+      {
+        "sha": "c35cca39",
+        "full_sha": "c35cca39a963dff1ead17bf173246992c52ead39",
+        "message": "create new branch for testing ground",
+        "author": "arabcoders",
+        "date": "2025-10-16T12:55:40+00:00"
       },
       {
         "sha": "433bad7e",
