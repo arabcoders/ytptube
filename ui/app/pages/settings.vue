@@ -1,5 +1,5 @@
 <template>
-  <main  class="m-6">
+  <main class="m-6">
 
     <div>
       <span class="title is-4">
@@ -8,19 +8,18 @@
           <p class="card-header-title">Settings</p>
         </span>
       </span>
-      <span class="field is-horizontal"/>
+      <span class="field is-horizontal" />
 
-      <!-- Page View -->
       <div class="field is-horizontal">
         <div class="field-label is-normal">
-          <label class="label"><i class="icon fa-solid fa-computer" /> Page View</label>
+          <label class="label">Page View</label>
         </div>
         <div class="field-body">
           <div class="field">
             <div class="control is-expanded has-icons-left">
               <input id="view_mode" type="checkbox" class="switch is-success" v-model="simpleMode">
               <label for="view_mode" class="is-unselectable">
-                &nbsp;{{ simpleMode ? 'Simple View' : 'Regular View' }}
+                {{ simpleMode ? 'Simple View' : 'Regular View' }}
               </label>
             </div>
             <p class="help">
@@ -38,9 +37,8 @@
           <p class="card-header-title">Theming</p>
         </span>
       </span>
-      <span class="field is-horizontal"/>
+      <span class="field is-horizontal" />
 
-      <!-- Color Scheme -->
       <div class="field is-horizontal">
         <div class="field-label">
           <label class="label">Color scheme</label>
@@ -68,7 +66,6 @@
         </div>
       </div>
 
-      <!-- Show Background -->
       <div class="field is-horizontal">
         <div class="field-label is-normal">
           <label class="label">Show Background</label>
@@ -78,7 +75,7 @@
             <div class="control">
               <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
               <label for="random_bg" class="is-unselectable">
-                &nbsp;{{ bg_enable ? 'Yes' : 'No' }}
+                {{ bg_enable ? 'Yes' : 'No' }}
               </label>
             </div>
           </div>
@@ -94,36 +91,36 @@
           <div class="field">
             <div class="control">
               <template v-if="bg_enable">
-                <NuxtLink @click="$emit('reload_bg')" class="button is-primary">Reload Background</NuxtLink>
-                <span class="icon" v-if="isLoading"><i class="fa fa-spin fa-spinner" /></span>
+                <button @click="$emit('reload_bg')" class="button is-primary" :disabled="isLoading">
+                  <span class="icon-text">
+                    <span class="icon"><i class="fa"
+                        :class="{ 'fa-spin fa-spinner': isLoading, 'fa-file-image': !isLoading }" /></span>
+                    <span>Reload Background</span>
+                  </span>
+                </button>
               </template>
             </div>
           </div>
         </div>
       </div>
 
-
-      <!-- Background visibility -->
       <div class="field is-horizontal">
         <div class="field-label is-normal">
           <label class="label">Background visibility</label>
         </div>
         <div class="field-body">
           <div class="field is-expanded">
-
-            <a class="button is-static">
+            <a class="button is-static is-small">
               <code>{{ parseFloat(String(1.0 - bg_opacity)).toFixed(2) }}</code>
             </a>
 
-
             <div class="control">
-              <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50"
-                     max="1.00" step="0.05">
+              <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50" max="1.00"
+                step="0.05">
             </div>
           </div>
         </div>
       </div>
-
 
       <span class="field title is-4">
         <span class="icon-text">
@@ -131,9 +128,8 @@
           <p class="card-header-title">Dashboard</p>
         </span>
       </span>
-      <span class="field is-horizontal"/>
+      <span class="field is-horizontal" />
 
-      <!-- URL Separator -->
       <div class="field is-horizontal" v-if="!simpleMode">
         <div class="field-label is-normal">
           <label class="label">URL Separator</label>
@@ -153,9 +149,6 @@
         </div>
       </div>
 
-
-
-      <!-- Show Thumbnails -->
       <div class="field is-horizontal">
         <div class="field-label is-normal">
           <label class="label">Show Thumbnails</label>
@@ -166,19 +159,17 @@
             <div class="field">
               <input id="show_thumbnail" type="checkbox" class="switch is-success" v-model="show_thumbnail">
               <label for="show_thumbnail" class="is-unselectable">
-                &nbsp;{{ show_thumbnail ? 'Yes' : 'No' }}
+                {{ show_thumbnail ? 'Yes' : 'No' }}
               </label>
             </div>
             <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle"/></span>
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
               Show videos thumbnail if available
             </p>
           </div>
         </div>
       </div>
 
-
-      <!-- Aspect Ratio -->
       <div class="field is-horizontal" v-if="show_thumbnail">
         <div class="field-label is-normal">
           <label class="label">Aspect Ratio</label>
@@ -197,13 +188,12 @@
               </label>
             </div>
             <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle"/></span>
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
               Choose the aspect ratio for thumbnail display.
             </p>
           </div>
         </div>
       </div>
-
 
       <span class="field title is-4">
         <span class="icon-text">
@@ -211,9 +201,8 @@
           <p class="card-header-title">On-Screen Notifications</p>
         </span>
       </span>
-      <span class="field is-horizontal"/>
+      <span class="field is-horizontal" />
 
-      <!-- Show notifications -->
       <div class="field is-horizontal">
         <div class="field-label is-normal">
           <label class="label">Show notifications</label>
@@ -224,15 +213,13 @@
             <div class="field">
               <input id="allow_toasts" type="checkbox" class="switch is-success" v-model="allow_toasts">
               <label for="allow_toasts" class="is-unselectable">
-                &nbsp;{{ allow_toasts ? 'Yes' : 'No' }}
+                {{ allow_toasts ? 'Yes' : 'No' }}
               </label>
             </div>
           </div>
         </div>
       </div>
 
-
-      <!-- Notification Position -->
       <div class="field is-horizontal" v-if="allow_toasts">
         <div class="field-label is-normal">
           <label class="label">Notifications position</label>
@@ -255,9 +242,6 @@
         </div>
       </div>
 
-
-
-      <!-- Dismiss notification on click -->
       <div class="field is-horizontal" v-if="allow_toasts">
         <div class="field-label is-normal">
           <label class="label">Dismiss notification on click</label>
@@ -268,60 +252,45 @@
             <div class="field">
               <input id="dismiss_on_click" type="checkbox" class="switch is-success" v-model="toast_dismiss_on_click">
               <label for="dismiss_on_click" class="is-unselectable">
-                &nbsp;{{ toast_dismiss_on_click ? 'Yes' : 'No' }}
+                {{ toast_dismiss_on_click ? 'Yes' : 'No' }}
               </label>
             </div>
           </div>
         </div>
       </div>
 
-      <!--end-->
-
-      <span class="field is-horizontal"/>
-      <span class="title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-cog"/></span>
-          <p class="card-header-title">Application Settings</p>
+      <template v-if="!simpleMode">
+        <span class="field is-horizontal" />
+        <span class="title is-4">
+          <span class="icon-text">
+            <span class="icon"><i class="fas fa-cog" /></span>
+            <p class="card-header-title">Application Settings</p>
+          </span>
         </span>
-      </span>
-      <span class="field is-horizontal"/>
+        <span class="field is-horizontal" />
 
-      <!-- Link buttons -->
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label"></label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
-            <div class="control">
-
-              <NuxtLink class="button is-primary" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                        v-if="config.app.file_logging">
-                <span class="icon"><i class="fa-solid fa-file-lines"/></span>
-                <span>Open Logs</span>
-              </NuxtLink>
+        <div class="field is-horizontal">
+          <div class="field-label is-normal">
+            <label class="label"></label>
+          </div>
+          <div class="field-body">
+            <div class="field is-grouped">
+              <div class="control" v-if="config.app.file_logging">
+                <NuxtLink class="button is-primary" to="/logs">
+                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
+                  <span>Open Logs</span>
+                </NuxtLink>
+              </div>
+              <div class="control" v-if="config.app.console_enabled">
+                <NuxtLink class="button is-primary" to="/console">
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  <span>Open Console</span>
+                </NuxtLink>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label"></label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
-            <div class="control">
-              <NuxtLink class="button is-primary" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                        v-if="config.app.console_enabled">
-                <span class="icon"><i class="fa-solid fa-terminal"/></span>
-                <span>Open Console</span>
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-      </div>
-        <!--end-->
+      </template>
     </div>
   </main>
 </template>
@@ -334,6 +303,8 @@ import { useConfigStore } from '~/stores/ConfigStore'
 defineProps<{ isLoading: boolean }>()
 defineEmits<{ (e: 'reload_bg'): void }>()
 
+const config = useConfigStore()
+
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 const selectedTheme = useStorage<'auto' | 'light' | 'dark'>('theme', 'auto')
@@ -343,17 +314,5 @@ const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', tru
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
-const simpleMode = useStorage<boolean>('simple_mode', useConfigStore().app.simple_mode || false)
-
-
-
-const config = useConfigStore()
-
-const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) => {
-  document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
-  if (callback) {
-    callback()
-  }
-}
-
+const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
 </script>

@@ -5,23 +5,22 @@
     <Simple @show_settings="() => show_settings = true" />
   </template>
 
-
   <template v-if="show_settings">
     <Modal @close="closeSettings()"
-           :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max'">
+      :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max'">
       <div class="columns is-multiline">
         <div class="column is-12 mt-2">
           <div class="card">
             <header class="card-header">
               <p class="card-header-title">WebUI Settings</p>
               <span class="card-header-icon">
-            <span class="icon"><i class="fas fa-cog" /></span>
-          </span>
+                <span class="icon"><i class="fas fa-cog" /></span>
+              </span>
             </header>
             <div class="card-content">
               <div class="columns is-multiline">
                 <div class="column is-6">
-                    <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                  <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
                 </div>
               </div>
             </div>
@@ -42,7 +41,7 @@
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
             <span class="is-text-overflow">
-              <span class="icon" v-if="'connecting' === socket.connectionStatus" >
+              <span class="icon" v-if="'connecting' === socket.connectionStatus">
                 <i class="fas fa-arrows-rotate fa-spin" />
               </span>
               <span class="has-text-bold" :class="connectionStatusColor">
@@ -84,7 +83,7 @@
 
             <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-              <span>Website Scraper</span>
+              <span>Task Definitions</span>
             </NuxtLink>
 
             <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
@@ -117,7 +116,7 @@
       </nav>
       <div>
         <NuxtLoadingIndicator />
-        <NuxtPage v-if="config.is_loaded" />
+        <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
         <Message v-if="!config.is_loaded" class="has-background-info-90 has-text-dark mt-5"
           title="Loading Configuration" icon="fas fa-spinner fa-spin">
           <p>Loading application configuration. This usually takes less than a second.</p>
