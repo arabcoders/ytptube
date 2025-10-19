@@ -422,6 +422,7 @@ import Modal from '~/components/Modal.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import TaskInspect from '~/components/TaskInspect.vue'
 import type { task_item, exported_task, error_response } from '~/types/tasks'
+import { sleep } from '~/utils'
 
 const box = useConfirm()
 const toast = useNotification()
@@ -634,7 +635,7 @@ const deleteItem = async (item: task_item) => {
   toast.success('Task deleted.')
 }
 
-const updateItem = async ({ reference, task }: { reference?: string | null | undefined, task: task_item }) => {
+const updateItem = async ({ reference, task, archive_all }: { reference?: string | null | undefined, task: task_item, archive_all?: boolean }) => {
   if (reference) {
     // -- find the task index.
     const index = tasks.value.findIndex((t) => t?.id === reference)
@@ -651,6 +652,16 @@ const updateItem = async ({ reference, task }: { reference?: string | null | und
   }
 
   toast.success('Task updated.')
+
+  if (!reference && true === archive_all) {
+    const newTask = tasks.value[tasks.value.length - 1]
+    if (newTask) {
+      await sleep(1)
+      await nextTick()
+      await archiveAll(newTask, true)
+    }
+  }
+
   resetForm(true)
 }
 
@@ -817,14 +828,17 @@ const get_tags = (name: string): Array<string> => {
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
 
-const archiveAll = async (item: task_item) => {
+const archiveAll = async (item: task_item, by_pass: boolean = false) => {
   try {
-    const { status } = await cDialog({
-      message: `Mark all '${item.name}' items as downloaded in download archive?`
-    })
 
-    if (true !== status) {
-      return;
+    if (true !== by_pass) {
+      const { status } = await cDialog({
+        message: `Mark all '${item.name}' items as downloaded in download archive?`
+      })
+
+      if (true !== status) {
+        return;
+      }
     }
 
     item.in_progress = true
