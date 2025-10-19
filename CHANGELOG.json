@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ed9ce05ac06fccc28526ccfe9cb12e29b00175e9",
-    "date": "2025-10-17T14:21:21+00:00",
+    "full_sha": "06698cb54e7f7fd00accb60b2da3d7e70cee0c5e",
+    "date": "2025-10-19T14:51:58+00:00",
     "commits": [
+      {
+        "sha": "06698cb5",
+        "full_sha": "06698cb54e7f7fd00accb60b2da3d7e70cee0c5e",
+        "message": "Fix possible issue with apprise notification.",
+        "author": "arabcoders",
+        "date": "2025-10-19T14:51:58+00:00"
+      },
       {
         "sha": "ed9ce05a",
         "full_sha": "ed9ce05ac06fccc28526ccfe9cb12e29b00175e9",
