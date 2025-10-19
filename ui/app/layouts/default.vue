@@ -2,7 +2,15 @@
 
   <template v-if="simpleMode">
     <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-    <Simple />
+    <Simple @show_settings="() => show_settings = true" />
+  </template>
+
+
+  <template v-if="show_settings">
+    <Modal @close="closeSettings()"
+           :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max is-overflow-visible'">
+      <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+    </Modal>
   </template>
 
   <template v-if="!simpleMode">
@@ -148,6 +156,7 @@ import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
 import Connection from '~/components/Connection.vue'
+import Settings from "~/pages/settings.vue";
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -161,6 +170,7 @@ const showMenu = ref(false)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const app_shutdown = ref<boolean>(false)
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
+const show_settings = ref(false)
 
 const doc = ref<{ file: string }>({ file: '' })
 
@@ -371,6 +381,11 @@ const useVersionUpdate = () => {
 }
 
 const { newVersionIsAvailable } = useVersionUpdate()
+
+const closeSettings = () => {
+  show_settings.value = false
+  navigateTo('/')
+}
 
 const shutdownApp = async () => {
   const { alertDialog, confirmDialog: confirm_message } = useDialog()

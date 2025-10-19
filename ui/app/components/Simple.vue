@@ -5,11 +5,9 @@
         <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
           <label class="label" for="download-url">
             What you would like to download?
-            <span class="is-pulled-right">
-              <NuxtLink class="icon is-pointer" to="/settings" @click.prevent="(e: MouseEvent) => showSettings(e)">
-                <span class="icon"><i class="fa-solid fa-cog" /></span>
-              </NuxtLink>
-            </span>
+            <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
+                  v-tooltip="'WebUI Settings'">
+                <i class="fas fa-cogs" /></span>
           </label>
           <div class="field has-addons">
             <div class="control">
@@ -544,17 +542,17 @@ const showMessage = (item: StoreItem) => {
   return (item.msg?.length || 0) > 0
 }
 
-
-const showSettings = async (_: MouseEvent, callback: (() => void) | null = null) => {
-
-  const simpleMode = useStorage<boolean>('simple_mode', useConfigStore().app.simple_mode || false)
-  simpleMode.value = false
-
-  document.querySelectorAll('div.has-dropdown').forEach(el => el.classList.remove('is-active'))
-  if (callback) {
-    callback()
+const connectionStatusColor = computed(() => {
+  switch (socketStore.connectionStatus) {
+    case 'connected':
+      return 'has-text-success'
+    case 'connecting':
+      return 'has-text-warning fa-spin'
+    case 'disconnected':
+    default:
+      return 'has-text-danger'
   }
-}
+})
 
 </script>
 
