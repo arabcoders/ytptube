@@ -30,6 +30,7 @@ FRONTEND_ROUTES: list[str] = [
     "/logs/",
     "/conditions/",
     "/browser/",
+    "/settings/",
     "/browser/{path:.*}",
 ]
 
