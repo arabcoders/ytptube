@@ -36,9 +36,93 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "06698cb54e7f7fd00accb60b2da3d7e70cee0c5e",
-    "date": "2025-10-19T14:51:58+00:00",
+    "full_sha": "4fafe0cbe7537408857d32c3f6e70e97701d3796",
+    "date": "2025-10-19T16:54:06+00:00",
     "commits": [
+      {
+        "sha": "3a092988",
+        "full_sha": "3a092988a743c131537df20c0699e5862d19bd0c",
+        "message": "fix minor issues with settings display page",
+        "author": "arabcoders",
+        "date": "2025-10-19T16:13:02+00:00"
+      },
+      {
+        "sha": "56fa3c96",
+        "full_sha": "56fa3c96c34c207fcb9752ac439d43b1acea8f18",
+        "message": "re-add aspect ratio",
+        "author": "felix",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "acdc4297",
+        "full_sha": "acdc429776bc023fecf5fbce0a22d6db4b37e5d7",
+        "message": "move buttons into their own rows",
+        "author": "felix",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "1ed7f6d3",
+        "full_sha": "1ed7f6d3dd24eeaae8ac7e08af7003911d68d08e",
+        "message": "Put settings into card",
+        "author": "felix",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "17738fbf",
+        "full_sha": "17738fbf107e4682404a960fc9ad4040b0bd939d",
+        "message": "updated external packages",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "86a5329a",
+        "full_sha": "86a5329a5823293acc67296671050bd88698433f",
+        "message": "update build-pr to run on dev PRs as well",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "478f78ec",
+        "full_sha": "478f78ece68d19f4948d9eb6a382d05d935e8c3b",
+        "message": "[FEAT] create channel metadata and thumbnails. Closes #446",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "f196587d",
+        "full_sha": "f196587df6c0cf3148b0d354f42bd7774141d104",
+        "message": "feat: add quick contributing guide.",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "d93ddb91",
+        "full_sha": "d93ddb91b4cbaccbf1651dcc911638a5d6584721",
+        "message": "feat: make it possible to load different UI",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "5d60d27e",
+        "full_sha": "5d60d27e070c2f6b4c98ea8e88f8e9b7c6a08bca",
+        "message": "more minor design updates. Ref #441",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "048139ae",
+        "full_sha": "048139ae2ab2ae7a80f9713acc8512f00cbbc782",
+        "message": "minor design update. Ref #441",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
+      {
+        "sha": "145dd056",
+        "full_sha": "145dd056c5846851b1f149303a907555cd444aec",
+        "message": "Fix #443",
+        "author": "arabcoders",
+        "date": "2025-10-19T15:18:27+00:00"
+      },
       {
         "sha": "06698cb5",
         "full_sha": "06698cb54e7f7fd00accb60b2da3d7e70cee0c5e",
@@ -47,11 +131,67 @@
         "date": "2025-10-19T14:51:58+00:00"
       },
       {
+        "sha": "ea19772d",
+        "full_sha": "ea19772d069e6db86045e078927f5ba18387b8f0",
+        "message": "Add route",
+        "author": "felix",
+        "date": "2025-10-19T10:05:38+00:00"
+      },
+      {
+        "sha": "4fbafecc",
+        "full_sha": "4fbafecc3b2197c0f3d7f87592df91bc67655a1a",
+        "message": "Add sections to settings-ui",
+        "author": "felix",
+        "date": "2025-10-19T10:04:10+00:00"
+      },
+      {
+        "sha": "58810259",
+        "full_sha": "5881025931a2fd4bc1822da52612ff25c987fb08",
+        "message": "Make notification icons fit better",
+        "author": "felix",
+        "date": "2025-10-19T09:54:59+00:00"
+      },
+      {
+        "sha": "2dcdb6ec",
+        "full_sha": "2dcdb6ec210ce7a594030e74dc34f9146ab8a2b8",
+        "message": "move simple view settings back to modal",
+        "author": "felix",
+        "date": "2025-10-19T09:39:20+00:00"
+      },
+      {
         "sha": "ed9ce05a",
         "full_sha": "ed9ce05ac06fccc28526ccfe9cb12e29b00175e9",
         "message": "[FEAT] Added checkbox in task add page to directly archive all items in a task.",
         "author": "arabcoders",
         "date": "2025-10-17T14:21:21+00:00"
+      },
+      {
+        "sha": "433bad7e",
+        "full_sha": "433bad7e5fa98a5e04d4fecfdcc844a99868e41c",
+        "message": "fix button styling\nrename definition site to web scraper",
+        "author": "felix",
+        "date": "2025-10-15T17:03:43+00:00"
+      },
+      {
+        "sha": "7dcd67e6",
+        "full_sha": "7dcd67e69e324a8108a35e1d6578b517e2980ece",
+        "message": "remove unused functions",
+        "author": "felix",
+        "date": "2025-10-15T16:45:45+00:00"
+      },
+      {
+        "sha": "65084345",
+        "full_sha": "65084345f9200399aacb6e0673672c5bcb605328",
+        "message": "make simple mode reversible again",
+        "author": "felix",
+        "date": "2025-10-15T16:39:39+00:00"
+      },
+      {
+        "sha": "e5c15053",
+        "full_sha": "e5c15053d9fd064b03970addb9072a2e56d4af79",
+        "message": "Update Navbar and Settings-Styling",
+        "author": "felix",
+        "date": "2025-10-15T16:32:57+00:00"
       }
     ]
   },
