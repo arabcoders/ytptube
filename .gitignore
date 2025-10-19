@@ -39,3 +39,4 @@ build
 version.txt
 test_impl.py
 ./eslint.config.js
+.pytest_cache

@@ -19,7 +19,7 @@
             </header>
             <div class="card-content">
               <div class="columns is-multiline">
-                <div class="column is-6">
+                <div class="column is-12">
                   <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
                 </div>
               </div>

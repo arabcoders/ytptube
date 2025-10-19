@@ -438,7 +438,7 @@ class Notification(metaclass=Singleton):
         import apprise
 
         try:
-            notify = apprise.Apprise()
+            notify = apprise.Apprise(debug=self._debug)
             apr_config = Path(Config.get_instance().apprise_config)
             if apr_config.exists():
                 apprise_config = notify.AppriseConfig()
@@ -448,11 +448,14 @@ class Notification(metaclass=Singleton):
             for t in target:
                 notify.add(t.request.url)
 
-            notify.notify(
+            status = await notify.async_notify(
                 body=ev.message or json.dumps(ev.serialize(), sort_keys=False, ensure_ascii=False),
                 title=ev.title or f"YTPTube Event: {ev.event}",
-                notify_type=ev.event,
             )
+
+            if not status:
+                msg = "Apprise failed to send notification."
+                raise RuntimeError(msg)  # noqa: TRY301
         except Exception as e:
             LOG.exception(e)
             LOG.error(f"Error sending Apprise notification: {e!s}")
