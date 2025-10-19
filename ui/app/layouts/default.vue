@@ -8,8 +8,26 @@
 
   <template v-if="show_settings">
     <Modal @close="closeSettings()"
-           :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max is-overflow-visible'">
-      <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+           :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max'">
+      <div class="columns is-multiline">
+        <div class="column is-12 mt-2">
+          <div class="card">
+            <header class="card-header">
+              <p class="card-header-title">WebUI Settings</p>
+              <span class="card-header-icon">
+            <span class="icon"><i class="fas fa-cog" /></span>
+          </span>
+            </header>
+            <div class="card-content">
+              <div class="columns is-multiline">
+                <div class="column is-6">
+                    <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </Modal>
   </template>
 
