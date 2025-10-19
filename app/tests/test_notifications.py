@@ -812,6 +812,8 @@ class TestNotification:
             # Mock apprise import
             mock_apprise = Mock()
             mock_notify = Mock()
+            # Mock async_notify as an AsyncMock that returns True
+            mock_notify.async_notify = AsyncMock(return_value=True)
             mock_apprise.Apprise.return_value = mock_notify
             mock_import.return_value = mock_apprise
 
