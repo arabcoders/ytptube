@@ -178,6 +178,32 @@
       </div>
 
 
+      <!-- Aspect Ratio -->
+      <div class="field is-horizontal" v-if="show_thumbnail">
+        <div class="field-label is-normal">
+          <label class="label">Aspect Ratio</label>
+        </div>
+
+        <div class="field-body">
+          <div class="control">
+            <div class="field">
+              <label for="ratio_16by9" class="radio">
+                <input id="ratio_16by9" type="radio" v-model="thumbnail_ratio" value="is-16by9">
+                <span>&nbsp;16:9</span>
+              </label>
+              <label for="ratio_3by1" class="radio">
+                <input id="ratio_3by1" type="radio" v-model="thumbnail_ratio" value="is-3by1">
+                <span>&nbsp;3:1</span>
+              </label>
+            </div>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info-circle"/></span>
+              Choose the aspect ratio for thumbnail display.
+            </p>
+          </div>
+        </div>
+      </div>
+
 
       <span class="field title is-4">
         <span class="icon-text">
@@ -315,6 +341,7 @@ const allow_toasts = useStorage<boolean>('allow_toasts', true)
 const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const simpleMode = useStorage<boolean>('simple_mode', useConfigStore().app.simple_mode || false)
 
