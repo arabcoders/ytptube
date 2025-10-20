@@ -72,6 +72,51 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/dev/loop](#get-apidevloop)
     - [GET /api/dev/pip](#get-apidevpip)
     - [GET /api/docs/{file}](#get-apidocsfile)
+  - [WebSocket API](#websocket-api)
+    - [Connection](#connection)
+    - [Authentication](#authentication-1)
+    - [Message Format](#message-format)
+    - [Core Events](#core-events)
+      - [Connection Events](#connection-events)
+        - [`connect` (Built-in)](#connect-built-in)
+        - [`disconnect` (Built-in)](#disconnect-built-in)
+        - [`connected` (Server → Client)](#connected-server--client)
+      - [Subscription Events](#subscription-events)
+        - [`subscribe` (Client → Server)](#subscribe-client--server)
+        - [`unsubscribe` (Client → Server)](#unsubscribe-client--server)
+        - [`subscribed` (Server → Client)](#subscribed-server--client)
+        - [`unsubscribed` (Server → Client)](#unsubscribed-server--client)
+      - [Logging Events](#logging-events)
+        - [`log_info` (Server → Client)](#log_info-server--client)
+        - [`log_success` (Server → Client)](#log_success-server--client)
+        - [`log_warning` (Server → Client)](#log_warning-server--client)
+        - [`log_error` (Server → Client)](#log_error-server--client)
+        - [`log_lines` (Server → Client)](#log_lines-server--client)
+    - [Download Queue Events](#download-queue-events)
+      - [`add_url` (Client → Server)](#add_url-client--server)
+      - [`item_added` (Server → Client)](#item_added-server--client)
+      - [`item_updated` (Server → Client)](#item_updated-server--client)
+      - [`item_completed` (Server → Client)](#item_completed-server--client)
+      - [`item_cancelled` (Server → Client)](#item_cancelled-server--client)
+      - [`item_deleted` (Server → Client)](#item_deleted-server--client)
+      - [`item_cancel` (Client → Server)](#item_cancel-client--server)
+      - [`item_delete` (Client → Server)](#item_delete-client--server)
+      - [`item_start` (Client → Server)](#item_start-client--server)
+      - [`item_pause` (Client → Server)](#item_pause-client--server)
+      - [`item_moved` (Server → Client)](#item_moved-server--client)
+    - [Queue Control Events](#queue-control-events)
+      - [`paused` (Server → Client)](#paused-server--client)
+      - [`resumed` (Server → Client)](#resumed-server--client)
+    - [Terminal/CLI Events](#terminalcli-events)
+      - [`cli_post` (Client → Server)](#cli_post-client--server)
+      - [`cli_output` (Server → Client)](#cli_output-server--client)
+      - [`cli_close` (Server → Client)](#cli_close-server--client)
+    - [Configuration Events](#configuration-events)
+      - [`presets_update` (Server → Client)](#presets_update-server--client)
+      - [`dlfields_update` (Server → Client)](#dlfields_update-server--client)
+    - [Client Implementation Examples](#client-implementation-examples)
+      - [Vue 3 Composable Pattern](#vue-3-composable-pattern)
+      - [Python Client Example](#python-client-example)
   - [Error Responses](#error-responses)
 
 ---
@@ -1514,6 +1559,614 @@ or an error:
 - `500 Internal Server Error` if fetching from GitHub fails.
 
 > **Note**: This endpoint also responds to direct file paths like `/README.md`, `/FAQ.md`, etc. without the `/api/docs/` prefix.
+
+---
+
+## WebSocket API
+
+The WebSocket API provides real-time bidirectional communication between the client and server using Socket.IO protocol. It enables live updates for downloads, queue status, notifications, and terminal access.
+
+### Connection
+
+**URL**: `ws://localhost:8081/socket.io/` (development) or `https://yourdomain.com/socket.io/` (production)
+
+The client automatically connects to the WebSocket server and receives a `connected` event with initial state. The connection uses automatic reconnection with exponential backoff (default: up to 30 attempts, 5s delay).
+
+**Connection Options**:
+```javascript
+{
+  transports: ['websocket', 'polling'],  // Fallback to long-polling if WebSocket unavailable
+  withCredentials: true,                  // Include cookies for authentication
+  reconnection: true,                     // Enable automatic reconnection
+  reconnectionAttempts: 30,              // Max reconnection attempts
+  reconnectionDelay: 5000                // Initial reconnection delay in ms
+}
+```
+
+### Authentication
+
+If Basic Authentication is configured, include credentials when establishing the WebSocket connection:
+
+1. **Via HTTP Headers** (automatic in browsers):
+   ```
+   Authorization: Basic base64("<username>:<password>")
+   ```
+
+2. **Via Query Parameter**:
+   ```
+   ws://localhost:8081/socket.io/?apikey=<base64_urlsafe("<username>:<password>")>
+   ```
+
+### Message Format
+
+All WebSocket messages are JSON-encoded and follow a consistent structure:
+
+**Server-to-Client (Event)** - Emitted by server, received by client:
+```json
+{
+  "id": "unique-event-id",
+  "created_at": "2024-01-15T10:30:00.000000+00:00",
+  "event": "item_added",
+  "title": "Item Queued",
+  "message": "Video added to download queue",
+  "data": {...}
+}
+```
+
+### Core Events
+
+#### Connection Events
+
+##### `connect` (Built-in)
+Fired when WebSocket connection is established. No data payload.
+
+```typescript
+socket.on('connect', () => console.log('WebSocket connected'));
+```
+
+##### `disconnect` (Built-in)
+Fired when WebSocket connection is closed. No data payload.
+
+```typescript
+socket.on('disconnect', (reason: string) => console.log('WebSocket disconnected:', reason));
+```
+
+##### `connected` (Server → Client)
+Initial connection event with full application state.
+
+**Data Fields**:
+- `config`: Global configuration object
+- `queue`: Current download queue (array of items)
+- `done`: Download history (array of completed items)
+- `tasks`: Scheduled tasks
+- `presets`: Available download presets
+- `dl_fields`: Available download fields
+- `folders`: Directory structure for downloads
+- `paused`: Queue pause status (boolean)
+
+**Example**:
+```typescript
+socket.on('connected', (data: string) => {
+  const json = JSON.parse(data);
+  const queueItems = json.data.queue || {};
+  const historyItems = json.data.done || {};
+  console.log('Connected with', Object.keys(queueItems).length, 'queued downloads');
+});
+```
+
+#### Subscription Events
+
+##### `subscribe` (Client → Server)
+Subscribe to a specific event stream. Only supported events is `log_lines`.
+
+**Data**: Event name as string
+```javascript
+socket.emit('subscribe', 'log_lines');
+```
+
+**Response**: `subscribed` event with confirmation.
+
+##### `unsubscribe` (Client → Server)
+Unsubscribe from an event stream.
+
+**Data**: Event name as string
+```javascript
+socket.emit('unsubscribe', 'log_lines');
+```
+
+**Response**: `unsubscribed` event with confirmation.
+
+##### `subscribed` (Server → Client)
+Confirmation of successful subscription.
+
+```typescript
+socket.on('subscribed', (data: string) => {
+  const json = JSON.parse(data);
+  console.log('Subscribed to event:', json.data.event);
+});
+```
+
+##### `unsubscribed` (Server → Client)
+Confirmation of successful unsubscription.
+
+```typescript
+socket.on('unsubscribed', (data: string) => {
+  const json = JSON.parse(data);
+  console.log('Unsubscribed from event:', json.data.event);
+});
+```
+
+#### Logging Events
+
+All logging events follow the same structure with JSON-encoded message:
+
+##### `log_info` (Server → Client)
+General informational message.
+
+```typescript
+socket.on('log_info', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.info(json.message, json.data);
+});
+```
+
+##### `log_success` (Server → Client)
+Success notification message.
+
+```typescript
+socket.on('log_success', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log('✓', json.message);
+});
+```
+
+##### `log_warning` (Server → Client)
+Warning notification message.
+
+```typescript
+socket.on('log_warning', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.warn('⚠', json.message);
+});
+```
+
+##### `log_error` (Server → Client)
+Error notification message.
+
+```typescript
+socket.on('log_error', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.error('✗', json.message);
+});
+```
+
+##### `log_lines` (Server → Client)
+Continuous application log lines (requires subscription).
+
+**Data Fields**:
+- `line`: Log line content
+- `timestamp`: Log timestamp
+
+```typescript
+socket.on('log_lines', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log('[LOG]', json.data.line);
+});
+```
+
+### Download Queue Events
+
+#### `add_url` (Client → Server)
+Add a new URL to the download queue. Payload is exactly the same as 
+the POST `/api/queue/` endpoint.
+
+**Data**:
+```json
+{
+  "url": "https://youtube.com/watch?v=...",
+  "preset": "default",
+  ...
+}
+```
+
+**Responses**: `item_added` or `log_error` event
+
+```typescript
+socket.emit('add_url', {
+  url: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
+  preset: 'default'
+});
+```
+
+#### `item_added` (Server → Client)
+Emitted when a new item is successfully added to the queue. The response payload is the complete item object.
+
+```typescript
+socket.on('item_added', (stream: string) => {
+  const json = JSON.parse(stream);
+  const item = json.data;
+  console.log(`Added: ${item.title} [${item.url}]`);
+});
+```
+
+#### `item_updated` (Server → Client)
+Emitted when an item's status or progress changes **(high-frequency event)**.
+
+**Data Fields**: Same as `item_added`
+
+```typescript
+socket.on('item_updated', (stream: string) => {
+  const json = JSON.parse(stream);
+  const item = json.data;
+  console.log(`Progress: ${item.title} - ${item.progress}%`);
+});
+```
+
+#### `item_completed` (Server → Client)
+Emitted when a download completes. Item moves from queue to history.
+
+**Data Fields**: Complete item object with final status
+
+```typescript
+socket.on('item_completed', (stream: string) => {
+  const json = JSON.parse(stream);
+  const item = json.data;
+  console.log(`✓ Completed: ${item.title}`);
+  console.log(`Saved to: ${item.output_path}`);
+});
+```
+
+#### `item_cancelled` (Server → Client)
+Emitted when a download is cancelled by user.
+
+**Data Fields**: Item object with status `cancelled`
+
+```typescript
+socket.on('item_cancelled', (stream: string) => {
+  const json = JSON.parse(stream);
+  const item = json.data;
+  console.log(`✗ Cancelled: ${item.title}`);
+});
+```
+
+#### `item_deleted` (Server → Client)
+Emitted when an item is deleted from history.
+
+**Data Fields**: Item object
+
+```typescript
+socket.on('item_deleted', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log(`Deleted from history: ${json.data._id}`);
+});
+```
+
+#### `item_cancel` (Client → Server)
+Cancel an active download.
+
+**Data**: Item ID (string)
+
+```typescript
+socket.emit('item_cancel', 'download-id-here');
+```
+
+**Response**: `item_cancelled` event
+
+#### `item_delete` (Client → Server)
+Delete an item from history.
+
+**Data**:
+```json
+{
+  "id": "item-id",
+  "remove_file": false
+}
+```
+
+**Parameters**:
+- `id`: Item ID (required)
+- `remove_file`: Also delete downloaded file (optional)
+
+```typescript
+socket.emit('item_delete', {
+  id: 'item-id',
+  remove_file: true  // Also delete the file if deleting is enabled server-side.
+});
+```
+
+**Response**: `item_deleted` event
+
+#### `item_start` (Client → Server)
+Start or resume a paused download.
+
+**Data**: Item ID (string) or array of IDs
+
+```typescript
+socket.emit('item_start', 'download-id');
+// OR
+socket.emit('item_start', ['id1', 'id2']);
+```
+
+**Response**: Queue status updated via `item_updated`
+
+#### `item_pause` (Client → Server)
+Pause an active download.
+
+**Data**: Item ID (string) or array of IDs
+
+```typescript
+socket.emit('item_pause', 'download-id');
+// OR
+socket.emit('item_pause', ['id1', 'id2']);
+```
+
+**Response**: Queue status updated via `item_updated`
+
+#### `item_moved` (Server → Client)
+Emitted when an item moves between queue and history.
+
+**Data Fields**:
+- `to`: Destination location (`queue` or `history`)
+- `item`: Complete item object
+
+```typescript
+socket.on('item_moved', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log(`Item moved to: ${json.data.to}`);
+});
+```
+
+### Queue Control Events
+
+#### `paused` (Server → Client)
+Emitted when the entire download queue is paused.
+
+**Data Fields**:
+- `paused`: Boolean true
+
+```typescript
+socket.on('paused', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log('Queue paused');
+});
+```
+
+#### `resumed` (Server → Client)
+Emitted when the download queue is resumed.
+
+**Data Fields**:
+- `paused`: Boolean false
+
+```typescript
+socket.on('resumed', (stream: string) => {
+  const json = JSON.parse(stream);
+  console.log('Queue resumed');
+});
+```
+
+### Terminal/CLI Events
+
+The terminal feature requires `console_enabled: true` in configuration.
+
+#### `cli_post` (Client → Server)
+Execute a command via yt-dlp CLI.
+
+**Data**: Command arguments as string (without `yt-dlp` prefix)
+
+```typescript
+socket.emit('cli_post', '--help');
+socket.emit('cli_post', 'https://youtube.com/watch?v=... --info-json');
+```
+
+**Responses**: `cli_output` events followed by `cli_close`
+
+#### `cli_output` (Server → Client)
+Output line from the CLI command execution.
+
+**Data Fields**:
+- `type`: Output type (`stdout` or `stderr`)
+- `line`: Output line content
+
+```typescript
+socket.on('cli_output', (stream: string) => {
+  const json = JSON.parse(stream);
+  if (json.data.type === 'stderr') {
+    console.error(json.data.line);
+  } else {
+    console.log(json.data.line);
+  }
+});
+```
+
+#### `cli_close` (Server → Client)
+Emitted when CLI command execution completes.
+
+**Data Fields**:
+- `exitcode`: Command exit code (0 = success, non-zero = error)
+
+```typescript
+socket.on('cli_close', (stream: string) => {
+  const json = JSON.parse(stream);
+  if (json.data.exitcode === 0) {
+    console.log('Command completed successfully');
+  } else {
+    console.error(`Command failed with exit code ${json.data.exitcode}`);
+  }
+});
+```
+
+### Configuration Events
+
+#### `presets_update` (Server → Client)
+Emitted when download presets are updated or created.
+
+**Data**: Array of preset objects
+
+```typescript
+socket.on('presets_update', (stream: string) => {
+  const json = JSON.parse(stream);
+  const presets = json.data || [];
+  console.log('Presets updated:', presets);
+});
+```
+
+#### `dlfields_update` (Server → Client)
+Emitted when download fields configuration is updated.
+
+**Data**: Array of field objects
+
+```typescript
+socket.on('dlfields_update', (stream: string) => {
+  const json = JSON.parse(stream);
+  const fields = json.data || [];
+  console.log('Download fields updated:', fields);
+});
+```
+
+### Client Implementation Examples
+
+#### Vue 3 Composable Pattern
+
+```typescript
+// composables/useSocket.ts
+import { ref, computed } from 'vue'
+import { io, type Socket } from 'socket.io-client'
+
+export function useSocket() {
+  const socket = ref<Socket | null>(null)
+  const isConnected = ref(false)
+  const queueItems = ref<Record<string, any>>({})
+  const historyItems = ref<Record<string, any>>({})
+
+  const connect = () => {
+    socket.value = io('/', {
+      transports: ['websocket', 'polling'],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 30,
+      reconnectionDelay: 5000
+    })
+
+    socket.value.on('connect', () => {
+      isConnected.value = true
+      console.log('Connected to server')
+    })
+
+    socket.value.on('connected', (stream: string) => {
+      const json = JSON.parse(stream)
+      queueItems.value = json.data.queue || {}
+      historyItems.value = json.data.done || {}
+    })
+
+    socket.value.on('item_added', (stream: string) => {
+      const json = JSON.parse(stream)
+      queueItems.value[json.data._id] = json.data
+    })
+
+    socket.value.on('item_updated', (stream: string) => {
+      const json = JSON.parse(stream)
+      const item = json.data
+      if (queueItems.value[item._id]) {
+        queueItems.value[item._id] = item
+      }
+    })
+
+    socket.value.on('item_completed', (stream: string) => {
+      const json = JSON.parse(stream)
+      const item = json.data
+      delete queueItems.value[item._id]
+      historyItems.value[item._id] = item
+    })
+
+    socket.value.on('disconnect', () => {
+      isConnected.value = false
+      console.log('Disconnected from server')
+    })
+  }
+
+  const addDownload = (url: string, preset: string = 'default') => {
+    socket.value?.emit('add_url', { url, preset })
+  }
+
+  const cancelDownload = (id: string) => {
+    socket.value?.emit('item_cancel', id)
+  }
+
+  return {
+    socket,
+    isConnected,
+    queueItems,
+    historyItems,
+    connect,
+    addDownload,
+    cancelDownload
+  }
+}
+```
+
+#### Python Client Example
+
+```python
+# WebSocket client for YTPTube
+import json
+import asyncio
+import socketio
+
+class YTPTubeClient:
+    def __init__(self, url: str = 'http://localhost:8081'):
+        self.sio = socketio.AsyncClient(
+            transports=['websocket', 'polling'],
+            reconnection_attempts=30,
+            reconnection_delay=5
+        )
+        self.url = url
+        self.queue = {}
+        self.history = {}
+
+    async def connect(self):
+        await self.sio.connect(self.url)
+        await self.sio.wait()
+
+    async def setup_listeners(self):
+        @self.sio.on('connected')
+        async def on_connected(data: str):
+            json_data = json.loads(data)
+            self.queue = json_data['data'].get('queue', {})
+            self.history = json_data['data'].get('done', {})
+            print('Connected to YTPTube')
+
+        @self.sio.on('item_added')
+        async def on_item_added(data: str):
+            json_data = json.loads(data)
+            item = json_data['data']
+            self.queue[item['_id']] = item
+            print(f"Added: {item['title']}")
+
+        @self.sio.on('item_completed')
+        async def on_item_completed(data: str):
+            json_data = json.loads(data)
+            item = json_data['data']
+            self.queue.pop(item['_id'], None)
+            self.history[item['_id']] = item
+            print(f"Completed: {item['title']}")
+
+    async def add_download(self, url: str, preset: str = 'default'):
+        await self.sio.emit('add_url', {'url': url, 'preset': preset})
+
+    async def cancel_download(self, item_id: str):
+        await self.sio.emit('item_cancel', item_id)
+
+# Usage
+async def main():
+    client = YTPTubeClient('http://localhost:8081')
+    await client.setup_listeners()
+    await client.connect()
+    
+    await client.add_download('https://youtube.com/watch?v=...')
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
 
 ---
 
