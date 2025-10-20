@@ -189,6 +189,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed",
+    "date": "2025-10-20T16:46:54+00:00",
+    "commits": [
+      {
+        "sha": "7512fde7",
+        "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed",
+        "message": "Added the socket API to API.md",
+        "author": "arabcoders",
+        "date": "2025-10-20T16:46:54+00:00"
+      },
+      {
+        "sha": "716bbbc6",
+        "full_sha": "716bbbc6fb8f93413d25c5b1bfbc66452604a9c6",
+        "message": "add table-container for list view in index",
+        "author": "arabcoders",
+        "date": "2025-10-20T16:29:02+00:00"
+      },
+      {
+        "sha": "dd348533",
+        "full_sha": "dd34853373686916db066e05ca3d45e88edd004d",
+        "message": "add filter for changelog",
+        "author": "arabcoders",
+        "date": "2025-10-20T16:28:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.1",
     "full_sha": "2a13c47bb6634e3aa21c06915a0fee29ed420f39",
     "date": "2025-10-15T16:22:47+00:00",

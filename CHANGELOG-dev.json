@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20251019-4fafe0cb",
-        "date": "2025-10-19T16:54:06+00:00",
+        "tag": "dev-20251020-7512fde7",
+        "date": "2025-10-20T16:46:54+00:00",
         "commits": [
+            {
+                "sha": "7512fde7",
+                "message": "Added the socket API to API.md",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:46:54+00:00",
+                "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed"
+            },
+            {
+                "sha": "716bbbc6",
+                "message": "add table-container for list view in index",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:29:02+00:00",
+                "full_sha": "716bbbc6fb8f93413d25c5b1bfbc66452604a9c6"
+            },
+            {
+                "sha": "dd348533",
+                "message": "add filter for changelog",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:28:34+00:00",
+                "full_sha": "dd34853373686916db066e05ca3d45e88edd004d"
+            },
             {
                 "sha": "3a092988",
                 "message": "fix minor issues with settings display page",
@@ -2601,7 +2622,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4fafe0cbe7537408857d32c3f6e70e97701d3796"
+        "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed"
     },
     {
         "tag": "dev-20250616-c07465a6",
