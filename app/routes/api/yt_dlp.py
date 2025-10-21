@@ -244,7 +244,7 @@ async def get_options() -> Response:
 @route("POST", "api/yt-dlp/archive_id/", "get_archive_ids")
 async def get_archive_ids(request: Request, config: Config) -> Response:
     """
-    Get the yt-dlp CLI options.
+    Get the archive IDs for the given URLs.
 
     Returns:
         Response: The response object with the yt-dlp CLI options.

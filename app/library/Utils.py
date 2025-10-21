@@ -251,7 +251,7 @@ def extract_info(
     no_archive: bool = False,
     follow_redirect: bool = False,
     sanitize_info: bool = False,
-    **kwargs,  # noqa: ARG001
+    **kwargs,
 ) -> dict:
     """
     Extracts video information from the given URL.
@@ -314,6 +314,11 @@ def extract_info(
             log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
 
         params["logger"] = log_wrapper
+
+    if kwargs.get("no_log", False):
+        params["logger"] = LogWrapper()
+        params["quiet"] = True
+        params["no_warnings"] = True
 
     if no_archive and "download_archive" in params:
         del params["download_archive"]
