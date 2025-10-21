@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251020-7512fde7",
-        "date": "2025-10-20T16:46:54+00:00",
+        "tag": "dev-20251021-13b13d1f",
+        "date": "2025-10-21T20:58:01+00:00",
         "commits": [
+            {
+                "sha": "13b13d1f",
+                "message": "[FIX] Force generic handler to generate real archive_id for generic urls.",
+                "author": "arabcoders",
+                "date": "2025-10-21T20:58:01+00:00",
+                "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d"
+            },
             {
                 "sha": "7512fde7",
                 "message": "Added the socket API to API.md",
@@ -2622,7 +2629,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed"
+        "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d"
     },
     {
         "tag": "dev-20250616-c07465a6",

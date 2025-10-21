@@ -190,9 +190,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed",
-    "date": "2025-10-20T16:46:54+00:00",
+    "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d",
+    "date": "2025-10-21T20:58:01+00:00",
     "commits": [
+      {
+        "sha": "13b13d1f",
+        "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d",
+        "message": "[FIX] Force generic handler to generate real archive_id for generic urls.",
+        "author": "arabcoders",
+        "date": "2025-10-21T20:58:01+00:00"
+      },
       {
         "sha": "7512fde7",
         "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed",
