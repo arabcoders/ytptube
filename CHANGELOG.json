@@ -190,9 +190,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d",
-    "date": "2025-10-21T20:58:01+00:00",
+    "full_sha": "81999084e19887955d0ffde572ba066c0d152626",
+    "date": "2025-10-22T14:40:53+00:00",
     "commits": [
+      {
+        "sha": "81999084",
+        "full_sha": "81999084e19887955d0ffde572ba066c0d152626",
+        "message": "Fix issue with some instagram:story extractor reporting incorrect type.",
+        "author": "arabcoders",
+        "date": "2025-10-22T14:40:53+00:00"
+      },
+      {
+        "sha": "5208d0ab",
+        "full_sha": "5208d0ab1fad62aef39159c6c8e5023cfceedfd4",
+        "message": "fix issue sending sometimes events to apprise backends.",
+        "author": "arabcoders",
+        "date": "2025-10-22T14:39:28+00:00"
+      },
       {
         "sha": "13b13d1f",
         "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d",
