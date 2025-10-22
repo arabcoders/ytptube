@@ -1,8 +1,64 @@
 [
     {
-        "tag": "master-20251019-238deddb",
-        "date": "2025-10-19T19:22:52+00:00",
+        "tag": "master-20251022-b95b6eb6",
+        "date": "2025-10-22T16:02:44+00:00",
         "commits": [
+            {
+                "sha": "9d36ab13",
+                "message": "Added generic rss feed parser for tasks.",
+                "author": "arabcoders",
+                "date": "2025-10-22T15:52:57+00:00",
+                "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9"
+            },
+            {
+                "sha": "9ec427ff",
+                "message": "updated external packages.",
+                "author": "arabcoders",
+                "date": "2025-10-22T15:52:57+00:00",
+                "full_sha": "9ec427ff31f49b9b1802e45182cbc70a81d98483"
+            },
+            {
+                "sha": "81999084",
+                "message": "Fix issue with some instagram:story extractor reporting incorrect type.",
+                "author": "arabcoders",
+                "date": "2025-10-22T14:40:53+00:00",
+                "full_sha": "81999084e19887955d0ffde572ba066c0d152626"
+            },
+            {
+                "sha": "5208d0ab",
+                "message": "fix issue sending sometimes events to apprise backends.",
+                "author": "arabcoders",
+                "date": "2025-10-22T14:39:28+00:00",
+                "full_sha": "5208d0ab1fad62aef39159c6c8e5023cfceedfd4"
+            },
+            {
+                "sha": "13b13d1f",
+                "message": "[FIX] Force generic handler to generate real archive_id for generic urls.",
+                "author": "arabcoders",
+                "date": "2025-10-21T20:58:01+00:00",
+                "full_sha": "13b13d1f7bdfb5b376d93fae64b6ade64e03d91d"
+            },
+            {
+                "sha": "7512fde7",
+                "message": "Added the socket API to API.md",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:46:54+00:00",
+                "full_sha": "7512fde77bbdcd6f27869f2d0103f0d57d89f9ed"
+            },
+            {
+                "sha": "716bbbc6",
+                "message": "add table-container for list view in index",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:29:02+00:00",
+                "full_sha": "716bbbc6fb8f93413d25c5b1bfbc66452604a9c6"
+            },
+            {
+                "sha": "dd348533",
+                "message": "add filter for changelog",
+                "author": "arabcoders",
+                "date": "2025-10-20T16:28:34+00:00",
+                "full_sha": "dd34853373686916db066e05ca3d45e88edd004d"
+            },
             {
                 "sha": "3a092988",
                 "message": "fix minor issues with settings display page",
@@ -2601,7 +2657,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "238deddb9dd3ed7c28cbe99bf9c51a0e797536d9"
+        "full_sha": "b95b6eb6be2d927a18689ab9920164f3ef05acb8"
     },
     {
         "tag": "master-20250616-c07465a6",
