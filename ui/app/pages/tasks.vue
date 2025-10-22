@@ -389,14 +389,9 @@
         <Message title="Tips" class="is-info is-background-info-80" icon="fas fa-info-circle">
           <span>
             <ul>
-              <li>
-                If you don't wish to download <strong>ALL</strong> content from a channel or playlist, click on
-                <code> <span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
-                  class="fa-solid fa-box-archive" /></span> Archive All</code> to archive all existing content.
+              <li><strong>Selective Downloads:</strong> To avoid downloading all existing content from a channel/playlist, use <code><span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i class="fa-solid fa-box-archive" /></span> Archive All</code> to mark existing items as already downloaded.
               </li>
-              <li>
-                For custom handler definitions, you shouldn't have a timer set, as yt-dlp wouldn't know what to do with
-                it.
+              <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs hourly and doesn't require a scheduled timer.
               </li>
             </ul>
           </span>

@@ -7,6 +7,12 @@
               URL</b></NuxtLink> link.</span>
       </Message>
     </div>
+    <div class="column is-12" v-if="form?.url && is_generic_rss(form.url)">
+      <Message title="Information" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+        <span>You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found
+          in this feed.</span>
+      </Message>
+    </div>
     <div class="column is-12">
       <form autocomplete="off" id="taskForm" @submit.prevent="checkInfo()">
         <div class="card">
@@ -238,8 +244,8 @@
                     Mark all existing items as downloaded
                   </label>
                   <div class="control is-unselectable">
-                    <input id="archive_all_after_add" type="checkbox" v-model="archiveAllAfterAdd" :disabled="addInProgress"
-                      class="switch is-danger" />
+                    <input id="archive_all_after_add" type="checkbox" v-model="archiveAllAfterAdd"
+                      :disabled="addInProgress" class="switch is-danger" />
                     <label for="archive_all_after_add" class="is-unselectable">
                       {{ archiveAllAfterAdd ? 'Yes' : 'No' }}
                     </label>
@@ -299,21 +305,23 @@
       <Message title="Tips" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
         <span>
           <ul>
-            <li>To enable YouTube RSS feed monitoring, The task URL must include a <code>channel_id</code> or
-              <code>playlist_id</code>. Other link types won’t work.
+            <li><strong>YouTube RSS:</strong> Use <code>channel_id</code> or <code>playlist_id</code> URLs. Other link
+              types (custom names, handles, user profiles) are not supported.
             </li>
-            <li>RSS monitoring runs every hour alongside the actual task execution. Regardless if the task has timer set
-              or not. To opt out of RSS monitoring for a specific task, simply disable the <code>Enable Handler</code>
-              option. To have the task only monitor RSS feed, <b>do not set timer</b>.</li>
-            <li>RSS Feed monitoring will only work if you have <code>--download-archive</code> set in <code>Command options
-            for yt-dlp</code> via the task itself, or preset. command options
+            <li><strong>Generic RSS/Atom:</strong> URL must end with <code>.rss</code> or <code>.atom</code>. If not
+              possible, append <code>&handler=rss</code> to existing query parameters, or add <code>#handler=rss</code>
+              as a fragment.
+            </li>
+            <li><strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls scheduled downloads to
+              yt-dlp. Disable <code>Enable Handler</code> to disable RSS monitoring.
+            </li>
+            <li><strong>Archive Requirement:</strong> RSS monitoring requires <code>--download-archive</code> in
+              <code>Command options for yt-dlp</code> (set in task or preset).
             </li>
           </ul>
         </span>
       </Message>
-    </div>
-
-    <datalist id="folders" v-if="config?.folders">
+    </div> <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
@@ -329,7 +337,7 @@ import { CronExpressionParser } from 'cron-parser'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 import type { exported_task, task_item } from '~/types/tasks'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const props = defineProps<{
   reference?: string | null | undefined
@@ -354,7 +362,7 @@ const ytDlpOpt = ref<AutoCompleteOptions>([])
 const archiveAllAfterAdd = ref<boolean>(false)
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
-
+const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i
 const form = reactive<task_item>({ ...props.task })
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
@@ -495,6 +503,13 @@ const is_yt_handle = (url: string): boolean => {
     return !m.groups.channelId
   }
   return false
+}
+
+const is_generic_rss = (url: string): boolean => {
+  if (!url || '' === url) {
+    return false
+  }
+  return GENERIC_RSS_REGEX.test(url)
 }
 
 const convert_url = async (url: string): Promise<string> => {
