@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251022-81999084",
-        "date": "2025-10-22T14:40:53+00:00",
+        "tag": "dev-20251022-9d36ab13",
+        "date": "2025-10-22T15:52:57+00:00",
         "commits": [
+            {
+                "sha": "9d36ab13",
+                "message": "Added generic rss feed parser for tasks.",
+                "author": "arabcoders",
+                "date": "2025-10-22T15:52:57+00:00",
+                "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9"
+            },
+            {
+                "sha": "9ec427ff",
+                "message": "updated external packages.",
+                "author": "arabcoders",
+                "date": "2025-10-22T15:52:57+00:00",
+                "full_sha": "9ec427ff31f49b9b1802e45182cbc70a81d98483"
+            },
             {
                 "sha": "81999084",
                 "message": "Fix issue with some instagram:story extractor reporting incorrect type.",
@@ -2643,7 +2657,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "81999084e19887955d0ffde572ba066c0d152626"
+        "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9"
     },
     {
         "tag": "dev-20250616-c07465a6",

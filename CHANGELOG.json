@@ -190,9 +190,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "81999084e19887955d0ffde572ba066c0d152626",
-    "date": "2025-10-22T14:40:53+00:00",
+    "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9",
+    "date": "2025-10-22T15:52:57+00:00",
     "commits": [
+      {
+        "sha": "9d36ab13",
+        "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9",
+        "message": "Added generic rss feed parser for tasks.",
+        "author": "arabcoders",
+        "date": "2025-10-22T15:52:57+00:00"
+      },
+      {
+        "sha": "9ec427ff",
+        "full_sha": "9ec427ff31f49b9b1802e45182cbc70a81d98483",
+        "message": "updated external packages.",
+        "author": "arabcoders",
+        "date": "2025-10-22T15:52:57+00:00"
+      },
       {
         "sha": "81999084",
         "full_sha": "81999084e19887955d0ffde572ba066c0d152626",
