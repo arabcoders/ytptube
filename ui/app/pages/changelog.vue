@@ -22,6 +22,23 @@ hr {
           CHANGELOG
         </span>
 
+        <div class="is-pulled-right">
+          <div class="field is-grouped">
+            <p class="control has-icons-left" v-if="toggleFilter && logs && logs.length > 0">
+              <input type="search" v-model.lazy="query" class="input" id="filter"
+                placeholder="Filter changelog entries">
+              <span class="icon is-left"><i class="fas fa-filter" /></span>
+            </p>
+
+            <p class="control" v-if="logs && logs.length > 0">
+              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
+                <span class="icon"><i class="fas fa-filter" /></span>
+                <span v-if="!isMobile">Filter</span>
+              </button>
+            </p>
+          </div>
+        </div>
+
         <div class="is-hidden-mobile">
           <span class="subtitle">This page display the latest changes and updates from the project.</span>
         </div>
@@ -36,9 +53,9 @@ hr {
     </div>
 
     <template v-if="!isLoading">
-      <div class="logs-container">
+      <div class="logs-container" v-if="filteredLogs && filteredLogs.length > 0">
         <div class="columns is-multiline">
-          <div class="column p-0 m-0 is-12" v-for="(log, index) in logs" :key="log.tag">
+          <div class="column p-0 m-0 is-12" v-for="(log, index) in filteredLogs" :key="log.tag">
             <div class="content p-0 m-0">
               <h1 class="is-4">
                 <span class="icon"><i class="fas fa-code-branch" /></span>
@@ -72,6 +89,16 @@ hr {
           </div>
         </div>
       </div>
+
+      <div class="columns is-multiline" v-if="!filteredLogs || filteredLogs.length < 1">
+        <div class="column is-12">
+          <Message title="No Results" class="is-background-warning-80 has-text-dark" icon="fas fa-search"
+            v-if="query" :useClose="true" @close="query = ''">
+            <p>No changelog entries found for the query: <strong>{{ query }}</strong>.</p>
+            <p>Please try a different search term.</p>
+          </Message>
+        </div>
+      </div>
     </template>
   </main>
 </template>
@@ -82,6 +109,7 @@ import type { changelogs, changeset } from '~/types/changelogs'
 
 const toast = useNotification()
 const config = useConfigStore()
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 useHead({ title: 'CHANGELOG' })
 
@@ -94,6 +122,43 @@ const app_version = ref('')
 const app_branch = ref('')
 const app_sha = ref('')
 const isLoading = ref(true)
+const query = ref<string>('')
+const toggleFilter = ref<boolean>(false)
+
+watch(toggleFilter, () => {
+  if (!toggleFilter.value) {
+    query.value = ''
+  }
+})
+
+const filteredLogs = computed<changelogs>(() => {
+  const q = query.value?.toLowerCase()
+  if (!q) return logs.value
+
+  return logs.value
+    .map(log => {
+      // Check if tag matches
+      const tagMatches = log.tag.toLowerCase().includes(q)
+
+      // Filter commits that match the query
+      const filteredCommits = log.commits?.filter(commit =>
+        commit.message.toLowerCase().includes(q) ||
+        commit.author.toLowerCase().includes(q) ||
+        commit.full_sha.toLowerCase().includes(q)
+      ) ?? []
+
+      // Return log only if tag matches OR if there are matching commits
+      if (tagMatches || filteredCommits.length > 0) {
+        return {
+          ...log,
+          commits: tagMatches ? log.commits : filteredCommits
+        }
+      }
+
+      return null
+    })
+    .filter((log): log is changeset => log !== null)
+})
 
 const loadContent = async () => {
   if ('' === app_version.value || logs.value.length > 0) {

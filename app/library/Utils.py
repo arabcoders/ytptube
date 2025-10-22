@@ -251,7 +251,7 @@ def extract_info(
     no_archive: bool = False,
     follow_redirect: bool = False,
     sanitize_info: bool = False,
-    **kwargs,  # noqa: ARG001
+    **kwargs,
 ) -> dict:
     """
     Extracts video information from the given URL.
@@ -315,6 +315,11 @@ def extract_info(
 
         params["logger"] = log_wrapper
 
+    if kwargs.get("no_log", False):
+        params["logger"] = LogWrapper()
+        params["quiet"] = True
+        params["no_warnings"] = True
+
     if no_archive and "download_archive" in params:
         del params["download_archive"]
 
@@ -368,7 +373,7 @@ def merge_dict(
     source: dict, destination: dict, max_depth: int = 50, max_list_size: int = 10000, _depth: int = 0, _seen: set = None
 ) -> dict:
     """
-    Merge data from source into destination safely with protection against DoS attacks.
+    Merge data from source into destination.
 
     Args:
         source (dict): Source data

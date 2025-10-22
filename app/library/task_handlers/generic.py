@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import fnmatch
+import hashlib
 import json
 import logging
 import re
@@ -19,9 +20,10 @@ from parsel import Selector
 from parsel.selector import SelectorList
 from yt_dlp.utils.networking import random_user_agent
 
+from app.library.cache import Cache
 from app.library.config import Config
 from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
-from app.library.Utils import get_archive_id
+from app.library.Utils import extract_info, get_archive_id
 
 from ._base_handler import BaseHandler
 
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from parsel.selector import SelectorList
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
+CACHE: Cache = Cache()
 
 @dataclass(slots=True)
 class MatchRule:
@@ -700,11 +702,35 @@ class GenericTaskHandler(BaseHandler):
             idDict: str | None = get_archive_id(url=url)
             archive_id: str | None = idDict.get("archive_id")
             if not archive_id:
-                LOG.warning(
-                    f"[{definition.name}]: '{task.name}': Could not compute archive ID for video '{url}' in feed. generating one."
-                )
+                cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
+                if CACHE.has(cache_key):
+                    archive_id = CACHE.get(cache_key)
+                    if not archive_id:
+                        continue
+                else:
+                    LOG.warning(
+                        f"[{definition.name}]: '{task.name}': Unable to generate static archive id for '{url}' in feed. Doing real request to fetch yt-dlp archive id."
+                    )
 
-                archive_id = f"generic {_generic_id(url)}"
+                    info = extract_info(
+                        config=task.get_ytdlp_opts().get_all(),
+                        url=url,
+                        no_archive=True,
+                        no_log=True,
+                    )
+
+                    if not info:
+                        LOG.error(f"[{definition.name}]: '{task.name}': Failed to extract info for URL '{url}' to generate archive ID. Skipping.")
+                        CACHE.set(cache_key, None)
+                        continue
+
+                    if not info.get("id") or not info.get("extractor_key"):
+                        LOG.error(f"[{definition.name}]: '{task.name}': Incomplete info extracted for URL '{url}' to generate archive ID. Skipping.")
+                        CACHE.set(cache_key, None)
+                        continue
+
+                    archive_id = f"{str(info.get('extractor_key', '')).lower()} {info.get('id')}"
+                    CACHE.set(cache_key, archive_id)
 
             metadata: dict[str, str] = {
                 k: v for k, v in entry.items() if k not in {"link", "url", "title", "published", "archive_id"}

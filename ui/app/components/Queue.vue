@@ -46,7 +46,7 @@
 
     <div class="columns is-multiline" v-if="'list' === display_style">
       <div class="column is-12" v-if="filteredItems.length > 0">
-        <div :class="{ 'table-container': table_container }">
+        <div class="table-container">
           <table class="table is-striped is-hoverable is-fullwidth is-bordered"
             style="min-width: 1300px; table-layout: fixed;">
             <thead>
@@ -341,7 +341,6 @@ const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'i
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
 const embed_url = ref('')
-const table_container = ref(false)
 
 const showThumbnails = computed(() => !!props.thumbnails && !hideThumbnail.value)
 

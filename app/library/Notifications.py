@@ -449,7 +449,7 @@ class Notification(metaclass=Singleton):
                 notify.add(t.request.url)
 
             status = await notify.async_notify(
-                body=ev.message or json.dumps(ev.serialize(), sort_keys=False, ensure_ascii=False),
+                body=ev.message or self._encoder.encode(ev.serialize()),
                 title=ev.title or f"YTPTube Event: {ev.event}",
             )
 

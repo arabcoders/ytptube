@@ -33,6 +33,7 @@ from .Utils import (
     extract_info,
     extract_ytdlp_logs,
     load_cookies,
+    merge_dict,
     str_to_dt,
     ytdlp_reject,
 )
@@ -358,10 +359,15 @@ class DownloadQueue(metaclass=Singleton):
                 if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
                     extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
 
-                return await self.add(
-                    item=item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras),
-                    already=already,
-                )
+                newItem = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
+
+                if "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0:
+                    LOG.warning(f"Unexpected formats entries in --flat-playlist for {item_name}, treating as video.")
+                    return await self._add_video(
+                        entry=merge_dict(merge_dict({"_type": "video"}, etr), entry), item=newItem, logs=[]
+                    )
+
+                return await self.add(item=newItem, already=already)
             finally:
                 self.processors.release()
 

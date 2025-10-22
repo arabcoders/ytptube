@@ -25,6 +25,7 @@ FRONTEND_ROUTES: list[str] = [
     "/console/",
     "/presets/",
     "/tasks/",
+    "/task_definitions/",
     "/notifications/",
     "/changelog/",
     "/logs/",
