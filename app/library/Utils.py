@@ -373,7 +373,7 @@ def merge_dict(
     source: dict, destination: dict, max_depth: int = 50, max_list_size: int = 10000, _depth: int = 0, _seen: set = None
 ) -> dict:
     """
-    Merge data from source into destination safely with protection against DoS attacks.
+    Merge data from source into destination.
 
     Args:
         source (dict): Source data
