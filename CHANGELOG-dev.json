@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251022-9d36ab13",
-        "date": "2025-10-22T15:52:57+00:00",
+        "tag": "dev-20251023-026962d1",
+        "date": "2025-10-23T16:58:12+00:00",
         "commits": [
+            {
+                "sha": "026962d1",
+                "message": "[FIX] Cancelling live streams. Closes #463",
+                "author": "arabcoders",
+                "date": "2025-10-23T16:58:12+00:00",
+                "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85"
+            },
             {
                 "sha": "9d36ab13",
                 "message": "Added generic rss feed parser for tasks.",
@@ -2657,7 +2664,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9d36ab13514e28b3e766b1d01d5db595653053a9"
+        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85"
     },
     {
         "tag": "dev-20250616-c07465a6",
