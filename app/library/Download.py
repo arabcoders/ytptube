@@ -6,7 +6,6 @@ import os
 import re
 import signal
 import time
-from copy import deepcopy
 from datetime import UTC, datetime
 from email.utils import formatdate
 from pathlib import Path
@@ -134,11 +133,19 @@ class Download:
 
     def _progress_hook(self, data: dict) -> None:
         if self.debug:
-            d_copy: dict = deepcopy(data)
-            for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
-                d_copy["info_dict"].pop(k, None)
-
-            self.logger.debug(f"PG Hook: {d_copy}")
+            try:
+                d_safe: dict = {
+                    "status": data.get("status"),
+                    "filename": data.get("filename"),
+                    "info_dict": {
+                        k: v for k, v in data.get("info_dict", {}).items()
+                        if k not in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]
+                        and not isinstance(v, (type(None).__bases__[0], type(lambda: None)))  # Skip non-serializable
+                    }
+                }
+                self.logger.debug(f"PG Hook: {d_safe}")
+            except Exception as e:
+                self.logger.debug(f"PG Hook: Error creating debug info: {e}")
 
         self.status_queue.put(
             {
@@ -150,11 +157,19 @@ class Download:
 
     def _postprocessor_hook(self, data: dict) -> None:
         if self.debug:
-            d_copy: dict = deepcopy(data)
-            for k in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]:
-                d_copy["info_dict"].pop(k, None)
-
-            self.logger.debug(f"PP Hook: {d_copy}")
+            try:
+                d_safe: dict = {
+                    "postprocessor": data.get("postprocessor"),
+                    "status": data.get("status"),
+                    "info_dict": {
+                        k: v for k, v in data.get("info_dict", {}).items()
+                        if k not in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]
+                        and not isinstance(v, (type(None).__bases__[0], type(lambda: None)))  # Skip non-serializable
+                    }
+                }
+                self.logger.debug(f"PP Hook: {d_safe}")
+            except Exception as e:
+                self.logger.debug(f"PP Hook: Error creating debug info: {e}")
 
         if "MoveFiles" == data.get("postprocessor") and "finished" == data.get("status"):
             if "__finaldir" in data.get("info_dict", {}) and "filepath" in data.get("info_dict", {}):
@@ -392,12 +407,17 @@ class Download:
         return self.proc is not None
 
     def cancel(self) -> bool:
+        """
+        Cancel the download task.
+        For live streams and unresponsive processes, this will force-kill the process.
+        """
         if not self.started():
             return False
 
         self.cancelled = True
 
-        return True
+        # Actively kill the process instead of just setting a flag
+        return self.kill()
 
     async def close(self) -> bool:
         """
@@ -465,18 +485,72 @@ class Download:
         return self.cancelled
 
     def kill(self) -> bool:
+        """
+        Kill the download process.
+        Attempts graceful termination via signal first, then force-kills if necessary.
+        For live streams that may not respond to signals, uses force termination.
+        """
         if not self.running():
             return False
 
+        procId: int | None = self.proc.ident
         try:
-            self.logger.info(f"Killing download process: '{self.proc.ident}'.")
+            self.logger.info(f"Killing download process: PID={self.proc.pid}, ident={procId}.")
+
+            # First, try graceful termination with SIGUSR1 signal (if on POSIX)
             if self.proc.pid and "posix" == os.name:
-                os.kill(self.proc.pid, signal.SIGUSR1)
-            else:
-                self.proc.kill()
+                try:
+                    self.logger.debug(f"Sending SIGUSR1 signal to PID={self.proc.pid}.")
+                    os.kill(self.proc.pid, signal.SIGUSR1)
+
+                    # Wait briefly for graceful shutdown (1 second timeout for live streams)
+                    start_time = time.time()
+                    timeout = 2 if self.is_live else 5  # Live streams get shorter timeout
+                    while self.proc.is_alive() and (time.time() - start_time) < timeout:
+                        time.sleep(0.1)
+
+                    if self.proc.is_alive():
+                        self.logger.warning(
+                            f"Process PID={self.proc.pid} did not respond to SIGUSR1 "
+                            f"({'live stream' if self.is_live else 'regular download'}), "
+                            f"forcing termination."
+                        )
+                    else:
+                        self.logger.debug(f"Process PID={self.proc.pid} terminated gracefully.")
+                        return True
+
+                except (OSError, AttributeError) as e:
+                    self.logger.debug(f"Failed to send SIGUSR1 signal: {e}")
+
+            # Force terminate if still running (for live streams or unresponsive processes)
+            if self.proc.is_alive():
+                self.logger.info(f"Force-terminating process PID={self.proc.pid}.")
+                self.proc.terminate()
+
+                # Give it a moment to terminate
+                start_time = time.time()
+                timeout = 1 if self.is_live else 2
+                while self.proc.is_alive() and (time.time() - start_time) < timeout:
+                    time.sleep(0.05)
+
+                # If still alive, use hard kill
+                if self.proc.is_alive():
+                    self.logger.warning(
+                        f"Process PID={self.proc.pid} did not respond to terminate(), "
+                        f"killing forcefully."
+                    )
+                    self.proc.kill()
+                    # Give it final moment
+                    start_time = time.time()
+                    while self.proc.is_alive() and (time.time() - start_time) < 1:
+                        time.sleep(0.05)
+
+            self.logger.info(f"Process PID={self.proc.pid} killed.")
             return True
+
         except Exception as e:
-            self.logger.error(f"Failed to kill process: '{self.proc.ident}'. {e}")
+            self.logger.error(f"Failed to kill process PID={self.proc.pid}, ident={procId}. {e}")
+            self.logger.exception(e)
 
         return False
 
