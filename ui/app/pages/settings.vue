@@ -2,13 +2,15 @@
   <main class="m-6">
 
     <div>
-      <span class="title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-cog" /></span>
-          <p class="card-header-title">Settings</p>
+      <template v-if="!simpleMode">
+        <span class="title is-4">
+          <span class="icon-text">
+            <span class="icon"><i class="fas fa-cog" /></span>
+            <p class="card-header-title">WebUI Settings</p>
+          </span>
         </span>
-      </span>
-      <span class="field is-horizontal" />
+        <span class="field is-horizontal" />
+      </template>
 
       <div class="field is-horizontal">
         <div class="field-label is-normal">
@@ -82,7 +84,6 @@
         </div>
       </div>
 
-
       <div class="field is-horizontal">
         <div class="field-label is-normal">
           <label class="label"></label>
@@ -91,7 +92,7 @@
           <div class="field">
             <div class="control">
               <template v-if="bg_enable">
-                <button @click="$emit('reload_bg')" class="button is-primary" :disabled="isLoading">
+                <button @click="$emit('reload_bg')" class="has-text-link" :disabled="isLoading">
                   <span class="icon-text">
                     <span class="icon"><i class="fa"
                         :class="{ 'fa-spin fa-spinner': isLoading, 'fa-file-image': !isLoading }" /></span>
@@ -258,39 +259,6 @@
           </div>
         </div>
       </div>
-
-      <template v-if="!simpleMode">
-        <span class="field is-horizontal" />
-        <span class="title is-4">
-          <span class="icon-text">
-            <span class="icon"><i class="fas fa-cog" /></span>
-            <p class="card-header-title">Application Settings</p>
-          </span>
-        </span>
-        <span class="field is-horizontal" />
-
-        <div class="field is-horizontal">
-          <div class="field-label is-normal">
-            <label class="label"></label>
-          </div>
-          <div class="field-body">
-            <div class="field is-grouped">
-              <div class="control" v-if="config.app.file_logging">
-                <NuxtLink class="button is-primary" to="/logs">
-                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-                  <span>Open Logs</span>
-                </NuxtLink>
-              </div>
-              <div class="control" v-if="config.app.console_enabled">
-                <NuxtLink class="button is-primary" to="/console">
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  <span>Open Console</span>
-                </NuxtLink>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
     </div>
   </main>
 </template>

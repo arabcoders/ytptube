@@ -19,14 +19,14 @@
         </span>
         <div class="is-pulled-right">
           <div class="field is-grouped">
-            <div class="control has-icons-left" v-if="show_filter">
+            <div class="control has-icons-left" v-if="show_filter && items && items.length > 0">
               <input type="search" v-model.lazy="search" class="input" id="search" placeholder="Filter">
               <span class="icon is-left">
                 <i class="fas fa-filter"></i>
               </span>
             </div>
 
-            <div class="control">
+            <div class="control" v-if="items && items.length > 0">
               <button class="button is-danger is-light" @click="toggleFilter">
                 <span class="icon"><i class="fas fa-filter" /></span>
                 <span v-if="!isMobile">Filter</span>
@@ -41,10 +41,62 @@
               </button>
             </p>
             <p class="control">
+              <button class="button" @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+                <span class="icon">
+                  <i class="fa-solid"
+                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                <span v-if="!isMobile">
+                  {{ display_style === 'list' ? 'List' : 'Grid' }}
+                </span>
+              </button>
+            </p>
+            <p class="control" v-if="items && items.length > 0">
+              <Dropdown label="Sort&nbsp;&nbsp;" icons="fa-solid fa-sort" :hide_label_on_mobile="true">
+                <NuxtLink class="dropdown-item" :class="{ 'is-active': 'type' === sort_by }"
+                  @click="changeSort('type')">
+                  <span class="icon"><i class="fa-solid fa-hashtag" /></span>
+                  <span>Type</span>
+                  <span class="icon is-pulled-right" v-if="'type' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </NuxtLink>
+
+                <NuxtLink class="dropdown-item" :class="{ 'is-active': 'name' === sort_by }"
+                  @click="changeSort('name')">
+                  <span class="icon"><i class="fa-solid fa-arrow-down-a-z" /></span>
+                  <span>Name</span>
+                  <span class="icon is-pulled-right" v-if="'name' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </NuxtLink>
+
+                <NuxtLink class="dropdown-item" :class="{ 'is-active': 'size' === sort_by }"
+                  @click="changeSort('size')">
+                  <span class="icon"><i class="fa-solid fa-weight" /></span>
+                  <span>Size</span>
+                  <span class="icon is-pulled-right" v-if="'size' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </NuxtLink>
+
+                <NuxtLink class="dropdown-item" :class="{ 'is-active': 'date' === sort_by }"
+                  @click="changeSort('date')">
+                  <span class="icon"><i class="fa-solid fa-calendar" /></span>
+                  <span>Date</span>
+                  <span class="icon is-pulled-right" v-if="'date' === sort_by">
+                    <i class="fas"
+                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                  </span>
+                </NuxtLink>
+              </Dropdown>
+            </p>
+            <p class="control">
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
                 :disabled="!socket.isConnected || isLoading">
                 <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -52,7 +104,19 @@
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="config.app.browser_control_enabled">
+    <div class="columns is-mobile is-multiline" v-if="config.app.browser_control_enabled && items && items.length > 0">
+      <div class="column is-12-mobile">
+        <button type="button" class="button is-fullwidth is-ghost is-inverted"
+          @click="masterSelectAll = !masterSelectAll" :disabled="isLoading || items.length < 1">
+          <span class="icon-text is-block">
+            <span class="icon">
+              <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
+            </span>
+            <span v-if="!masterSelectAll">Select All</span>
+            <span v-else>Unselect All</span>
+          </span>
+        </button>
+      </div>
       <div class="column is-half-mobile">
         <button type="button" class="button is-fullwidth is-danger" @click="deleteSelected"
           :disabled="selectedElms.length < 1 || isLoading || items.length < 1">
@@ -74,126 +138,210 @@
     </div>
 
     <div class="columns is-multiline">
-      <div class="column is-12" v-if="items && items.length > 0">
-        <div :class="{ 'table-container': table_container }">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-            style="min-width: 1300px; table-layout: fixed;">
-            <thead>
-              <tr class="has-text-centered is-unselectable">
-                <th width="5%" v-if="config.app.browser_control_enabled">
-                  <input type="checkbox" v-model="masterSelectAll" />
-                </th>
-                <th width="6%" @click="changeSort('type')">
-                  #
-                  <span class="icon" v-if="'type' === sort_by">
-                    <i class="fas"
-                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
-                  </span>
-                </th>
-                <th width="65%" @click="changeSort('name')">
-                  Name
-                  <span class="icon" v-if="'name' === sort_by">
-                    <i class="fas"
-                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
-                  </span>
+      <template v-if="'list' === display_style">
+        <div class="column is-12" v-if="filteredItems && filteredItems.length > 0">
+          <div class="table-container">
+            <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+              style="min-width: 1300px; table-layout: fixed;">
+              <thead>
+                <tr class="has-text-centered is-unselectable">
+                  <th colspan="2" width="10%">
+                    #
+                    <span class="icon" v-if="'type' === sort_by">
+                      <i class="fas"
+                        :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                    </span>
+                  </th>
+                  <th width="65%">
+                    Name
+                    <span class="icon" v-if="'name' === sort_by">
+                      <i class="fas"
+                        :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                    </span>
 
-                </th>
-                <th width="10%" @click="changeSort('size')">
-                  Size
-                  <span class="icon" v-if="'size' === sort_by">
-                    <i class="fas"
-                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
-                  </span>
+                  </th>
+                  <th width="10%">
+                    Size
+                    <span class="icon" v-if="'size' === sort_by">
+                      <i class="fas"
+                        :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                    </span>
 
-                </th>
-                <th width="15%" @click="changeSort('date')">
-                  Date
-                  <span class="icon" v-if="'date' === sort_by">
-                    <i class="fas"
-                      :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
-                  </span>
-                </th>
-                <th width="15%" v-if="config.app.browser_control_enabled">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in filteredItems" :key="item.path">
-                <td class="has-text-centered is-vcentered" v-if="config.app.browser_control_enabled">
-                  <input type="checkbox" v-model="selectedElms" :value="item.path" />
-                </td>
-                <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
-                  <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
-                </td>
-                <td class="is-text-overflow is-vcentered">
-                  <div class="field is-grouped">
-                    <div class="control is-text-overflow is-expanded">
-                      <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
-                        @click.prevent="handleClick(item)">
-                        {{ item.name }}
-                      </a>
-                      <a :href="makeDownload({}, { filename: item.path, folder: '' })"
-                        @click.prevent="handleClick(item)" v-else>
-                        {{ item.name }}
-                      </a>
-                    </div>
-                    <div class="control" v-if="'file' === item.type">
-                      <span class="icon">
-                        <a :href="makeDownload({}, { filename: item.path, folder: '' })"
-                          :download="item.name.split('/').reverse()[0]">
-                          <i class="fas fa-download" />
+                  </th>
+                  <th width="15%">
+                    Date
+                    <span class="icon" v-if="'date' === sort_by">
+                      <i class="fas"
+                        :class="{ 'fa-sort-up': 'desc' === sort_order, 'fa-sort-down': 'asc' === sort_order }" />
+                    </span>
+                  </th>
+                  <th width="15%" v-if="config.app.browser_control_enabled">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in filteredItems" :key="item.path">
+                  <td class="has-text-centered is-vcentered" v-if="config.app.browser_control_enabled">
+                    <input type="checkbox" v-model="selectedElms" :value="item.path" />
+                  </td>
+                  <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
+                    <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
+                  </td>
+                  <td class="is-text-overflow is-vcentered">
+                    <div class="field is-grouped">
+                      <div class="control is-text-overflow is-expanded">
+                        <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
+                          @click.prevent="handleClick(item)">
+                          {{ item.name }}
                         </a>
-                      </span>
+                        <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                          @click.prevent="handleClick(item)" v-else>
+                          {{ item.name }}
+                        </a>
+                      </div>
+                      <div class="control" v-if="'file' === item.type">
+                        <span class="icon">
+                          <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                            :download="item.name.split('/').reverse()[0]">
+                            <i class="fas fa-download" />
+                          </a>
+                        </span>
+                      </div>
                     </div>
+                  </td>
+                  <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
+                    {{ 'file' === item.type ? formatBytes(item.size) : ucFirst(item.type) }}
+                  </td>
+                  <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
+                    <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')"
+                      class="has-tooltip">
+                      {{ moment(item.mtime).fromNow() }}
+                    </span>
+                  </td>
+                  <td class="is-vcentered" v-if="config.app.browser_control_enabled">
+                    <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                      <template v-if="'file' === item.type">
+                        <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                          :download="item.name.split('/').reverse()[0]" class="dropdown-item">
+                          <span class="icon"><i class="fa-solid fa-download" /></span>
+                          <span>Download</span>
+                        </a>
+                        <hr class="dropdown-divider" />
+                      </template>
+
+                      <NuxtLink class="dropdown-item" @click="handleAction('rename', item)">
+                        <span class="icon"><i class="fa-solid fa-edit" /></span>
+                        <span>Rename</span>
+                      </NuxtLink>
+
+                      <hr class="dropdown-divider" />
+
+                      <NuxtLink class="dropdown-item" @click="handleAction('delete', item)">
+                        <span class="icon has-text-danger"><i class="fa-solid fa-trash" /></span>
+                        <span>Delete</span>
+                      </NuxtLink>
+
+                      <hr class="dropdown-divider" />
+
+                      <NuxtLink class="dropdown-item" @click="handleAction('move', item)">
+                        <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
+                        <span>Move</span>
+                      </NuxtLink>
+
+                    </Dropdown>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="column is-6" v-for="item in filteredItems" :key="item.path">
+          <div class="card is-flex is-full-height is-flex-direction-column">
+            <header class="card-header">
+              <div class="card-header-title is-text-overflow is-block">
+                <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
+                  @click.prevent="handleClick(item)" v-tooltip="item.name">
+                  <span class="icon"> <i class="fas fa-solid" :class="setIcon(item)" /></span>
+                  {{ item.name }}
+                </a>
+                <a :href="makeDownload({}, { filename: item.path, folder: '' })" @click.prevent="handleClick(item)"
+                  v-tooltip="item.name" v-else>
+                  <span class="icon"> <i class="fas fa-solid" :class="setIcon(item)" /></span>
+                  {{ item.name }}
+                </a>
+              </div>
+              <div class="card-header-icon">
+                <div class="field is-grouped">
+                  <div class="control" v-if="'file' === item.type">
+                    <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                      :download="item.name.split('/').reverse()[0]" class="has-text-link" v-tooltip="`Download File`">
+                      <span class="icon"><i class="fa-solid fa-download" /></span>
+                    </a>
                   </div>
-                </td>
-                <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
-                  {{ 'file' === item.type ? formatBytes(item.size) : ucFirst(item.type) }}
-                </td>
-                <td class="has-text-centered is-text-overflow is-unselectable is-vcentered">
-                  <span :data-datetime="item.mtime" v-tooltip="moment(item.mtime).format('MMMM Do YYYY, h:mm:ss a')">
+                  <div class="control" v-if="config.app.browser_control_enabled">
+                    <label class="checkbox is-block">
+                      <input type="checkbox" v-model="selectedElms" :value="item.path">
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </header>
+            <div class="card-footer mt-auto">
+              <div class="card-footer-item" v-if="config.app.browser_control_enabled">
+                <a class="has-text-danger" @click="handleAction('delete', item)">
+                  <span class="icon"><i class="fa-solid fa-trash" /></span>
+                  <span>Delete</span>
+                </a>
+              </div>
+              <div class="card-footer-item has-text-centered">
+                <p class="is-text-overflow">
+                  <span class="icon"><i class="fa-solid fa-calendar" /></span>
+                  <span v-tooltip="moment(item.mtime).format('YYYY-MM-DD H:mm:ss Z')" class="has-tooltip">
                     {{ moment(item.mtime).fromNow() }}
                   </span>
-                </td>
-                <td class="is-vcentered" v-if="config.app.browser_control_enabled">
-                  <Dropdown icons="fa-solid fa-cogs" label="Actions">
-                    <template v-if="'file' === item.type">
-                      <a :href="makeDownload({}, { filename: item.path, folder: '' })"
-                        :download="item.name.split('/').reverse()[0]" class="dropdown-item">
-                        <span class="icon"><i class="fa-solid fa-download" /></span>
-                        <span>Download</span>
-                      </a>
-                      <hr class="dropdown-divider" />
-                    </template>
+                </p>
+              </div>
+              <div class="card-footer-item" v-if="config.app.browser_control_enabled">
+                <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                  <NuxtLink class="dropdown-item" @click="handleAction('rename', item)">
+                    <span class="icon"><i class="fa-solid fa-edit" /></span>
+                    <span>Rename</span>
+                  </NuxtLink>
 
-                    <NuxtLink class="dropdown-item" @click="handleAction('rename', item)">
-                      <span class="icon"><i class="fa-solid fa-edit" /></span>
-                      <span>Rename</span>
-                    </NuxtLink>
+                  <hr class="dropdown-divider" />
 
-                    <hr class="dropdown-divider" />
+                  <NuxtLink class="dropdown-item" @click="handleAction('delete', item)">
+                    <span class="icon has-text-danger"><i class="fa-solid fa-trash" /></span>
+                    <span>Delete</span>
+                  </NuxtLink>
 
-                    <NuxtLink class="dropdown-item" @click="handleAction('delete', item)">
-                      <span class="icon has-text-danger"><i class="fa-solid fa-trash" /></span>
-                      <span>Delete</span>
-                    </NuxtLink>
+                  <hr class="dropdown-divider" />
 
-                    <hr class="dropdown-divider" />
-
-                    <NuxtLink class="dropdown-item" @click="handleAction('move', item)">
-                      <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
-                      <span>Move</span>
-                    </NuxtLink>
-
-                  </Dropdown>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  <NuxtLink class="dropdown-item" @click="handleAction('move', item)">
+                    <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
+                    <span>Move</span>
+                  </NuxtLink>
+                </Dropdown>
+              </div>
+            </div>
+          </div>
         </div>
+      </template>
+
+      <div class="column is-12" v-if="search && filteredItems.length < 1">
+        <Message message_class="has-background-warning-90 has-text-dark" title="No results" icon="fas fa-filter"
+          :useClose="true" @close="() => search = ''" v-if="search">
+          <p class="is-block">
+            No results found for '<span class="is-underlined is-bold">{{ search }}</span>'.
+          </p>
+        </Message>
       </div>
-      <div class="column is-12" v-else>
+
+      <div class="column is-12" v-if="!items || items.length < 1">
         <Message title="Loading content" class="has-background-info-90 has-text-dark" icon="fas fa-refresh fa-spin"
           v-if="isLoading">
           Loading file browser contents...
@@ -238,6 +386,7 @@ const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const sort_by = useStorage('sort_by', 'name')
 const sort_order = useStorage('sort_order', 'asc')
+const display_style = useStorage<string>('browser_display_style', 'list')
 
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
@@ -252,7 +401,6 @@ const path = ref<string>((() => {
   }
   return '/'
 })())
-const table_container = ref<boolean>(true)
 const search = ref<string>('')
 const show_filter = ref<boolean>(false)
 
@@ -332,7 +480,7 @@ watch(() => socket.isConnected, async () => {
 })
 
 const handleClick = (item: FileItem): void => {
-  if (true === ['video','audio'].includes(item.content_type)) {
+  if (true === ['video', 'audio'].includes(item.content_type)) {
     model_item.value = {
       "type": 'video',
       "filename": item.path,

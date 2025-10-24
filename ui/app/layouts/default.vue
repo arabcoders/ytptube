@@ -8,8 +8,8 @@
   <template v-if="show_settings">
     <Modal @close="closeSettings()"
       :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max'">
-      <div class="columns is-multiline">
-        <div class="column is-12 mt-2">
+      <div class="columns is-multiline" style="width:100%">
+        <div class="column is-12">
           <div class="card">
             <header class="card-header">
               <p class="card-header-title">WebUI Settings</p>
@@ -41,8 +41,9 @@
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
             <span class="is-text-overflow">
-              <span class="icon" v-if="'connecting' === socket.connectionStatus">
-                <i class="fas fa-arrows-rotate fa-spin" />
+              <span class="icon">
+                <i v-if="'connecting' === socket.connectionStatus" class="fas fa-arrows-rotate fa-spin" />
+                <i v-else class="fas fa-home" />
               </span>
               <span class="has-text-bold" :class="connectionStatusColor">
                 YTPTube
@@ -60,12 +61,6 @@
 
         <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
           <div class="navbar-start">
-
-            <NuxtLink class="navbar-item" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-              <span class="icon"><i class="fa-solid fa-home" /></span>
-              <span>Home</span>
-            </NuxtLink>
-
             <NuxtLink class="navbar-item" to="/browser" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
               <span>Files</span>
@@ -76,15 +71,23 @@
               <span>Presets</span>
             </NuxtLink>
 
-            <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-              <span class="icon"><i class="fa-solid fa-tasks" /></span>
-              <span>Tasks</span>
-            </NuxtLink>
+            <div class="navbar-item has-dropdown">
+              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
+                <span class="icon"><i class="fas fa-tasks" /></span>
+                <span>Tasks</span>
+              </a>
+              <div class="navbar-dropdown">
+                <NuxtLink class="navbar-item" to="/tasks" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                  <span class="icon"><i class="fa-solid fa-tasks" /></span>
+                  <span>List</span>
+                </NuxtLink>
 
-            <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-              <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-              <span>Task Definitions</span>
-            </NuxtLink>
+                <NuxtLink class="navbar-item" to="/task_definitions" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                  <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
+                  <span>Definitions</span>
+                </NuxtLink>
+              </div>
+            </div>
 
             <NuxtLink class="navbar-item" to="/notifications" @click.prevent="(e: MouseEvent) => changeRoute(e)">
               <span class="icon-text">
@@ -100,17 +103,51 @@
 
           </div>
           <div class="navbar-end">
+            <div class="navbar-item has-dropdown" v-if="config.app.file_logging || config.app.console_enabled">
+              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
+                <span class="icon"><i class="fas fa-tools" /></span>
+                <span>Other</span>
+              </a>
+
+              <div class="navbar-dropdown">
+                <NuxtLink class="navbar-item" to="/logs" @click.prevent="(e: MouseEvent) => changeRoute(e)"
+                  v-if="config.app.file_logging">
+                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
+                  <span>Logs</span>
+                </NuxtLink>
+
+                <NuxtLink class="navbar-item" to="/console" @click.prevent="(e: MouseEvent) => changeRoute(e)"
+                  v-if="config.app.console_enabled">
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  <span>Console</span>
+                </NuxtLink>
+              </div>
+            </div>
+
             <div class="navbar-item" v-if="true === config.app.is_native">
               <button class="button is-dark" @click="shutdownApp">
                 <span class="icon"><i class="fas fa-power-off" /></span>
                 <span v-if="isMobile">Shutdown</span>
               </button>
             </div>
-            <NuxtLink class="navbar-item" to="/settings" @click.prevent="(e: MouseEvent) => changeRoute(e)">
-              <span class="icon"><i class="fa-solid fa-cog" /></span>
-              <span>Settings</span>
-            </NuxtLink>
+
             <NotifyDropdown />
+
+            <div class="navbar-item">
+              <button class="button is-dark" @click="reloadPage">
+                <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="isMobile">Reload</span>
+              </button>
+            </div>
+
+            <div class="navbar-item">
+              <NuxtLink class="button is-dark " :class="{ 'has-tooltip-bottom mr-4': !isMobile }" to="/settings"
+                @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                <span class="icon"><i class="fas fa-cog" /></span>
+                <span v-if="isMobile">WebUI Settings</span>
+              </NuxtLink>
+            </div>
+
           </div>
         </div>
       </nav>
@@ -443,6 +480,20 @@ const shutdownApp = async () => {
     })
   }
 }
+
+const openMenu = (e: MouseEvent) => {
+  const elm = (e.target as HTMLElement)?.closest('div.has-dropdown') as HTMLElement | null
+
+  document.querySelectorAll<HTMLElement>('div.has-dropdown').forEach(el => {
+    if (el !== elm) {
+      el.classList.remove('is-active')
+    }
+  })
+
+  elm?.classList.toggle('is-active')
+}
+
+const reloadPage = () => window.location.reload()
 
 const connectionStatusColor = computed(() => {
   switch (socket.connectionStatus) {
