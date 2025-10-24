@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251023-026962d1",
-        "date": "2025-10-23T16:58:12+00:00",
+        "tag": "dev-20251024-94dd37a1",
+        "date": "2025-10-24T15:56:56+00:00",
         "commits": [
+            {
+                "sha": "94dd37a1",
+                "message": "Reverted some changes to the navbar",
+                "author": "arabcoders",
+                "date": "2025-10-24T15:56:56+00:00",
+                "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260"
+            },
+            {
+                "sha": "32452e05",
+                "message": "[FEAT] add grid display style for files",
+                "author": "arabcoders",
+                "date": "2025-10-24T15:56:10+00:00",
+                "full_sha": "32452e05964f732607e822ac777e7276c91c65af"
+            },
             {
                 "sha": "026962d1",
                 "message": "[FIX] Cancelling live streams. Closes #463",
@@ -2664,7 +2678,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85"
+        "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260"
     },
     {
         "tag": "dev-20250616-c07465a6",
