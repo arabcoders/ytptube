@@ -15,9 +15,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260",
-    "date": "2025-10-24T15:56:56+00:00",
+    "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80",
+    "date": "2025-10-24T16:26:48+00:00",
     "commits": [
+      {
+        "sha": "75911d01",
+        "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80",
+        "message": "Add more checks before fallback for hls stream",
+        "author": "arabcoders",
+        "date": "2025-10-24T16:26:48+00:00"
+      },
       {
         "sha": "94dd37a1",
         "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260",
