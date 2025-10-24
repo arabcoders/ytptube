@@ -196,6 +196,11 @@ const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
   thumbnail.value = dataUrl
   havePoster.value = true
   applyMediaSessionMetadata()
+
+  if (detachDecodeGuard) {
+    detachDecodeGuard()
+    detachDecodeGuard = null
+  }
 }
 
 onMounted(async () => {
@@ -387,6 +392,7 @@ function attachDecodeFailGuard(el: HTMLVideoElement, onFail: () => void): () => 
   let timer: number | null = null
   let armed = false
   let done = false
+  let playAttempted = false
 
   const clearAll = () => {
     if (null !== timer) {
@@ -400,6 +406,7 @@ function attachDecodeFailGuard(el: HTMLVideoElement, onFail: () => void): () => 
     el.removeEventListener('loadeddata', onLoadedData)
     el.removeEventListener('error', onError)
     el.removeEventListener('emptied', onError)
+    el.removeEventListener('play', onPlay)
   }
 
   const ok = () => {
@@ -429,23 +436,30 @@ function attachDecodeFailGuard(el: HTMLVideoElement, onFail: () => void): () => 
     return 0
   }
 
+  const onPlay = () => playAttempted = true
+
   const armCheck = () => {
     if (armed || done) return
     armed = true
 
     if ('requestVideoFrameCallback' in el) {
       rvfcId = (el as any).requestVideoFrameCallback(() => ok())
-      timer = window.setTimeout(() => fail(), 1000)
+      // Extend timeout for network delays and buffering
+      timer = window.setTimeout(() => fail(), 3000)
       return
     }
 
+    // Give more time for network playback and buffering
     timer = window.setTimeout(() => {
-      if (0 === (el as any).videoWidth || 0 === (el as any).videoHeight || 0 === decodedFrames()) {
+      // Only fail if we actually tried to play and have no frames decoded after 3 seconds
+      if (playAttempted && 0 === (el as any).videoWidth && 0 === (el as any).videoHeight && 0 === decodedFrames()) {
         fail()
-      } else {
+      } else if (0 < (el as any).videoWidth || 0 < (el as any).videoHeight || 0 < decodedFrames()) {
+        // Video dimensions or frames are available, stream is working
         ok()
       }
-    }, 800)
+      // If nothing is available yet but video hasn't been played, keep waiting
+    }, 3000)
   }
 
   const onLoadedData = () => armCheck()
@@ -454,6 +468,7 @@ function attachDecodeFailGuard(el: HTMLVideoElement, onFail: () => void): () => 
   el.addEventListener('loadeddata', onLoadedData, { once: true })
   el.addEventListener('error', onError)
   el.addEventListener('emptied', onError)
+  el.addEventListener('play', onPlay)
 
   if (4 <= el.readyState || 2 <= el.readyState) {
     queueMicrotask(armCheck)
@@ -466,8 +481,19 @@ const src_error = async () => {
   if (hls) {
     return
   }
+
+  // If we already successfully captured a frame, that means the streamed video codec is working.
+  if (havePoster.value) {
+    return
+  }
+
   await nextTick()
   if (destroyed.value) {
+    return
+  }
+
+  // Check if video is actually paused.
+  if (video.value && video.value.paused) {
     return
   }
 
