@@ -4,7 +4,7 @@
       <button class="button is-fullwidth is-justify-content-space-between" aria-haspopup="true" type="button"
         aria-controls="dropdown-menu" @click="toggle" :class="button_classes">
         <span class="icon" v-if="icons"><i :class="icons" /></span>
-        <span>{{ label }}</span>
+        <span :class="{ 'is-sr-only': hideLabel }">{{ label }}</span>
         <div class="is-pulled-right">
           <span class="icon"><i class="fas fa-angle-down" aria-hidden="true" /></span>
         </div>
@@ -15,6 +15,15 @@
       <div v-if="isOpen" class="dropdown is-active dropdown-portal" ref="menu" :style="menuStyle">
         <div class="dropdown-menu" role="menu">
           <div class="dropdown-content" @click="handle_slot_click">
+            <template v-if="hideLabel">
+              <div class="dropdown-label">
+                <span class="icon-text">
+                  <span class="icon" v-if="icons"><i :class="icons" /></span>
+                  <span>{{ label }}</span>
+                </span>
+              </div>
+              <div class="dropdown-divider"></div>
+            </template>
             <slot />
           </div>
         </div>
@@ -27,7 +36,7 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watchEffect, useTemplateRef } from 'vue'
 
 const emitter = defineEmits(['open_state'])
-defineProps({
+const props = defineProps({
   label: {
     type: String,
     default: 'Select'
@@ -39,6 +48,10 @@ defineProps({
   button_classes: {
     type: String,
     default: ''
+  },
+  hide_label_on_mobile: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -47,6 +60,9 @@ const dropUp = ref(false)
 const dropdown = useTemplateRef<HTMLDivElement>('dropdown')
 const menu = useTemplateRef<HTMLDivElement>('menu')
 const menuStyle = ref<Record<string, string>>({})
+const isMobile = useMediaQuery({ maxWidth: 1024 })
+
+const hideLabel = computed(() => isMobile.value && props.hide_label_on_mobile)
 
 const updatePosition = () => {
   if (!dropdown.value || !isOpen.value) {
@@ -162,8 +178,10 @@ onBeforeUnmount(() => {
 }
 
 .dropdown.dropdown-portal .dropdown-menu {
-  display: block !important; /* Override Bulma's display: none */
-  position: static; /* Don't use absolute positioning inside fixed container */
+  display: block !important;
+  /* Override Bulma's display: none */
+  position: static;
+  /* Don't use absolute positioning inside fixed container */
   max-height: 300px;
   overflow-y: auto;
   padding-top: 4px;
@@ -175,5 +193,11 @@ onBeforeUnmount(() => {
   box-shadow: var(--bulma-dropdown-content-shadow, var(--bulma-shadow, 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02)));
   padding-top: var(--bulma-dropdown-content-padding-top, 0.5rem);
   padding-bottom: var(--bulma-dropdown-content-padding-bottom, 0.5rem);
+}
+
+.dropdown-label {
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  color: var(--bulma-dropdown-label-color, var(--bulma-text-color, #4a4a4a));
 }
 </style>

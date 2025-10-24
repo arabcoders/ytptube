@@ -43,13 +43,14 @@
 
 <template>
   <div class="navbar-item has-dropdown is-hoverable">
-    <a class="navbar-link is-arrowless">
+    <a class="navbar-link">
       <span class="icon"><i class="fas fa-bell" /></span>
-      <span class="tag ml-2" v-if="store.unreadCount > 0">
+      <span class="tag ml-2">
         <span class="is-underlined">{{ store.unreadCount }}</span>
+        <span>&nbsp;/&nbsp;</span>
+        <span class="is-underlined">{{ store.notifications.length }}</span>
       </span>
     </a>
-
     <div class="navbar-dropdown is-right" style="width: 400px;">
       <template v-if="store.notifications.length > 0">
         <div class="px-3 py-2 is-flex is-justify-content-space-between is-align-items-center">
@@ -112,11 +113,6 @@
         </div>
       </div>
     </div>
-
-  </div>
-
-  <div class="navbar-item">
-
   </div>
 </template>
 

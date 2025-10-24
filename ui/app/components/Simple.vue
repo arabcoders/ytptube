@@ -5,9 +5,11 @@
         <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
           <label class="label" for="download-url">
             What you would like to download?
-            <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
-              v-tooltip="'WebUI Settings'">
-              <i class="fas fa-cogs" /></span>
+            <span class="is-pulled-right">
+              <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
+                v-tooltip="'WebUI Settings'">
+                <i class="fas fa-cogs" /></span>
+            </span>
           </label>
           <div class="field has-addons">
             <div class="control">
