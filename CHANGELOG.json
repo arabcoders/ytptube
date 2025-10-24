@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (477c7e7c)",
-    "full_sha": "477c7e7c9846d94c76e847a0ae6202b8398009f9",
-    "date": "2025-10-23T21:47:11+00:00",
-    "commits": [
-      {
-        "sha": "026962d1",
-        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85",
-        "message": "[FIX] Cancelling live streams. Closes #463",
-        "author": "arabcoders",
-        "date": "2025-10-23T16:58:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80",
-    "date": "2025-10-24T16:26:48+00:00",
+    "tag": "Unreleased (70c42252)",
+    "full_sha": "70c42252a6f52d077756b052f389610a6faacca2",
+    "date": "2025-10-24T17:06:28+00:00",
     "commits": [
       {
         "sha": "75911d01",
@@ -38,6 +24,13 @@
         "message": "[FEAT] add grid display style for files",
         "author": "arabcoders",
         "date": "2025-10-24T15:56:10+00:00"
+      },
+      {
+        "sha": "026962d1",
+        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85",
+        "message": "[FIX] Cancelling live streams. Closes #463",
+        "author": "arabcoders",
+        "date": "2025-10-23T16:58:12+00:00"
       }
     ]
   },

@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20251024-477c7e7c",
-        "date": "2025-10-23T21:47:11+00:00",
+        "tag": "master-20251024-70c42252",
+        "date": "2025-10-24T17:06:28+00:00",
         "commits": [
+            {
+                "sha": "75911d01",
+                "message": "Add more checks before fallback for hls stream",
+                "author": "arabcoders",
+                "date": "2025-10-24T16:26:48+00:00",
+                "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80"
+            },
+            {
+                "sha": "94dd37a1",
+                "message": "Reverted some changes to the navbar",
+                "author": "arabcoders",
+                "date": "2025-10-24T15:56:56+00:00",
+                "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260"
+            },
+            {
+                "sha": "32452e05",
+                "message": "[FEAT] add grid display style for files",
+                "author": "arabcoders",
+                "date": "2025-10-24T15:56:10+00:00",
+                "full_sha": "32452e05964f732607e822ac777e7276c91c65af"
+            },
             {
                 "sha": "026962d1",
                 "message": "[FIX] Cancelling live streams. Closes #463",
@@ -2664,7 +2685,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "477c7e7c9846d94c76e847a0ae6202b8398009f9"
+        "full_sha": "70c42252a6f52d077756b052f389610a6faacca2"
     },
     {
         "tag": "master-20250616-c07465a6",
