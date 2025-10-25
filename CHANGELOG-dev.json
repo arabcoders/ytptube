@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251024-75911d01",
-        "date": "2025-10-24T16:26:48+00:00",
+        "tag": "dev-20251025-211089be",
+        "date": "2025-10-25T17:05:24+00:00",
         "commits": [
+            {
+                "sha": "211089be",
+                "message": "minor fixes to file listing, and unifiy how we present tips",
+                "author": "arabcoders",
+                "date": "2025-10-25T17:05:24+00:00",
+                "full_sha": "211089bead477ddbc6a6a73c4fa4bffb38bc78e3"
+            },
             {
                 "sha": "75911d01",
                 "message": "Add more checks before fallback for hls stream",
@@ -2685,7 +2692,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80"
+        "full_sha": "211089bead477ddbc6a6a73c4fa4bffb38bc78e3"
     },
     {
         "tag": "dev-20250616-c07465a6",
