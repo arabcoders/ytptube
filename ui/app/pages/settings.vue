@@ -264,6 +264,7 @@
 </template>
 
 <script setup lang="ts">
+import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import { POSITION } from 'vue-toastification'
 import { useConfigStore } from '~/stores/ConfigStore'

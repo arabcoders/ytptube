@@ -156,7 +156,7 @@
                     </p>
                     <p v-if="item.request?.headers && item.request.headers.length > 0">
                       <span class="icon"><i class="fa-solid fa-heading" /></span>
-                      <span>{{ item.request.headers.map(h => h.key).join(', ') }}</span>
+                      <span>{{item.request.headers.map(h => h.key).join(', ')}}</span>
                     </p>
                   </div>
                 </div>
@@ -193,28 +193,30 @@
     </div>
 
     <div class="column is-12" v-if="notifications && notifications.length > 0 && !toggleForm">
-      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
-        <ul>
-          <li>
-            When you export notification target, We remove <code>Authorization</code> header key by default,
-            However this might not be enough to remove credentials from the exported data. it's your responsibility
-            to ensure that the exported data does not contain any sensitive information for sharing.
-          </li>
-          <li>
-            When you set the request type as <code>Form</code>, the event data will be JSON encoded and sent as
-            <code>...&data_key=json_string</code>, only the <code>data</code> field will be JSON encoded.
-            The other keys <code>id</code>, <code>event</code> and <code>created_at</code> will be sent as they are.
-          </li>
-          <li>We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the request.</li>
-          <li>
-            If you have selected specific presets or events, this will take priority, For example, if you limited the
-            target to <code>default</code> preset and selected <code>ALL</code> events, only events that reference the
-            <code>default</code> preset will be sent to that target. Like wise, if you have limited both events and
-            presets, then ONLY events that satisfy both conditions will be sent to that target. Only the
-            <code>test</code> events can bypass these conditions.
-          </li>
-        </ul>
-      </Message>
+      <div class="message is-info">
+        <div class="message-body content pl-0">
+          <ul>
+            <li>
+              When you export notification target, We remove <b>Authorization</b> header key by default,
+              However this might not be enough to remove credentials from the exported data. it's your responsibility
+              to ensure that the exported data does not contain any sensitive information for sharing.
+            </li>
+            <li>
+              When you set the request type as <b>Form</b>, the event data will be JSON encoded and sent as
+              <b>...&data_key=json_string</b>, only the <b>data</b> field will be JSON encoded.
+              The other keys <b>id</b>, <b>event</b> and <b>created_at</b> will be sent as they are.
+            </li>
+            <li>We also send two special headers <b>X-Event-ID</b> and <b>X-Event</b> with the request.</li>
+            <li>
+              If you have selected specific presets or events, this will take priority, For example, if you limited the
+              target to <b>default</b> preset and selected <b>ALL</b> events, only events that reference the
+              <b>default</b> preset will be sent to that target. Like wise, if you have limited both events and
+              presets, then ONLY events that satisfy both conditions will be sent to that target. Only the
+              <b>test</b> events can bypass these conditions.
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>

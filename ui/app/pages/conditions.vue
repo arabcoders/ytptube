@@ -98,27 +98,30 @@
       </div>
     </div>
     <div class="column is-12" v-if="items && items.length > 0 && !toggleForm">
-      <Message message_class="has-background-info-90 has-text-dark" title="Tips" icon="fas fa-info-circle">
-        <ul>
-          <li>Filtering is based on yt-dlp’s <code>--match-filter</code> logic. Any expression that works with yt-dlp
-            will also work here, including the same boolean operators. We added extended support for the <code>OR</code>
-            ( <code>||</code> ) operator, which yt-dlp does not natively support. This allows you to combine multiple
-            conditions more flexibly.</li>
-          <li>
-            The primary use case for this feature is to apply custom cli arguments to specific returned info.
-          </li>
-          <li>
-            For example, i follow specific channel that sometimes region lock some videos, by using the following
-            filter i am able to bypass it <code>availability = 'needs_auth' & channel_id = 'channel_id'</code>.
-            and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.
-          </li>
-          <li>
-            The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the
-            information button, and check the data to craft your filter. You will get instant feedback if the
-            filter matches or not.
-          </li>
-        </ul>
-      </Message>
+      <div class="message is-info">
+        <div class="message-body content pl-0">
+          <ul>
+            <li>Filtering is based on yt-dlp’s <b>--match-filter</b> logic. Any expression that works with yt-dlp
+              will also work here, including the same boolean operators. We added extended support for the
+              <b>OR</b> ( <b>||</b> ) operator, which yt-dlp does not natively support. This allows you to combine
+              multiple conditions more flexibly.
+            </li>
+            <li>
+              The primary use case for this feature is to apply custom cli arguments to specific returned info.
+            </li>
+            <li>
+              For example, i follow specific channel that sometimes region lock some videos, by using the following
+              filter i am able to bypass it <b>availability = 'needs_auth' & channel_id = 'channel_id'</b>.
+              and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.
+            </li>
+            <li>
+              The data which the filter is applied on is the same data that yt-dlp returns, simply, click on the
+              information button, and check the data to craft your filter. You will get instant feedback if the
+              filter matches or not.
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 </template>

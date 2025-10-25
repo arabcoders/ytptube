@@ -145,7 +145,8 @@
               style="min-width: 1300px; table-layout: fixed;">
               <thead>
                 <tr class="has-text-centered is-unselectable">
-                  <th colspan="2" width="10%">
+                  <th :colspan="config.app.browser_control_enabled ? 2 : 1"
+                    :width="config.app.browser_control_enabled ? '10%' : '5%'">
                     #
                     <span class="icon" v-if="'type' === sort_by">
                       <i class="fas"
@@ -263,20 +264,19 @@
           <div class="card is-flex is-full-height is-flex-direction-column">
             <header class="card-header">
               <div class="card-header-title is-text-overflow is-block">
+                <span class="icon"> <i class="fas fa-solid" :class="setIcon(item)" /></span>
                 <a :href="uri(`/browser/${item.path}`)" v-if="'dir' === item.content_type"
                   @click.prevent="handleClick(item)" v-tooltip="item.name">
-                  <span class="icon"> <i class="fas fa-solid" :class="setIcon(item)" /></span>
                   {{ item.name }}
                 </a>
                 <a :href="makeDownload({}, { filename: item.path, folder: '' })" @click.prevent="handleClick(item)"
                   v-tooltip="item.name" v-else>
-                  <span class="icon"> <i class="fas fa-solid" :class="setIcon(item)" /></span>
                   {{ item.name }}
                 </a>
               </div>
               <div class="card-header-icon">
                 <div class="field is-grouped">
-                  <div class="control" v-if="'file' === item.type">
+                  <div class="control" v-if="'file' === item.type && config.app.browser_control_enabled">
                     <a :href="makeDownload({}, { filename: item.path, folder: '' })"
                       :download="item.name.split('/').reverse()[0]" class="has-text-link" v-tooltip="`Download File`">
                       <span class="icon"><i class="fa-solid fa-download" /></span>
@@ -291,6 +291,13 @@
               </div>
             </header>
             <div class="card-footer mt-auto">
+              <div class="card-footer-item" v-if="'file' === item.type && !config.app.browser_control_enabled">
+                <a :href="makeDownload({}, { filename: item.path, folder: '' })"
+                  :download="item.name.split('/').reverse()[0]" class="has-text-link" v-tooltip="`Download File`">
+                  <span class="icon"><i class="fa-solid fa-download" /></span>
+                  <span>Download</span>
+                </a>
+              </div>
               <div class="card-footer-item" v-if="config.app.browser_control_enabled">
                 <a class="has-text-danger" @click="handleAction('delete', item)">
                   <span class="icon"><i class="fa-solid fa-trash" /></span>
@@ -350,6 +357,15 @@
           icon="fas fa-exclamation-circle">
           No content found in this directory.
         </Message>
+      </div>
+      <div class="column is-12" v-if="!config.app.browser_control_enabled">
+        <div class="message is-info">
+          <p class="message-body">
+            <span class="icon"> <i class="fas fa-info-circle" /></span>
+            You can enable file controls such as rename, delete, move, and create directory by setting
+            <code>YTP_BROWSER_CONTROL_ENABLED=true</code> in your environment configuration and restart the application.
+          </p>
+        </div>
       </div>
     </div>
 

@@ -186,11 +186,13 @@
 
       <div class="columns is-multiline" v-if="presets && presets.length > 0">
         <div class="column is-12">
-          <Message message_class="has-background-warning-90 has-text-dark">
-            <p>When you export preset, it doesn't include the <strong>cookies</strong> field contents for security
+          <div class="message is-info">
+            <p class="message-body">
+              <span class="icon"> <i class="fas fa-info-circle" /></span>
+              When you export preset, it doesn't include the <strong>cookies</strong> field contents for security
               reasons.
             </p>
-          </Message>
+          </div>
         </div>
       </div>
     </template>
