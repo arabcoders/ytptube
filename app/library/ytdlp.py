@@ -1,8 +1,10 @@
+# flake8: noqa: F401
 from typing import Any
 
 import yt_dlp
+from yt_dlp.utils import make_archive_id
 
-import app.postprocessors  # noqa: F401
+import app.postprocessors
 
 
 class _ArchiveProxy:

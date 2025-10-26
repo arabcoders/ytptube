@@ -64,6 +64,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/notifications](#get-apinotifications)
     - [PUT /api/notifications](#put-apinotifications)
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
+    - [POST /api/yt-dlp/save\_cookies/](#post-apiyt-dlpsave_cookies)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [POST /api/system/pause](#post-apisystempause)
@@ -1446,6 +1447,45 @@ or an error:
 ```
 
 - If the body is not a valid JSON array, returns `400 Bad Request`.
+
+---
+
+### POST /api/yt-dlp/save_cookies/
+**Purpose**: Save cookies to a file for use with yt-dlp CLI operations. Requires console to be enabled (`console_enabled` in configuration).
+**Body**: JSON object with `cookies` field containing the cookie string.
+```json
+{
+  "cookies": "cookie_string_or_netscape_format"
+}
+```
+
+**Response on Success**:
+```json
+{
+  "status": true,
+  "cookie_file": "/path/to/temp/c_uuid.txt"
+}
+```
+
+**Response on Error**:
+```json
+{
+  "error": "error_message"
+}
+```
+
+**Status Codes**:
+- `200 OK` if cookies were successfully saved.
+- `400 Bad Request` if the request body is invalid or missing the `cookies` field.
+- `403 Forbidden` if console is disabled.
+- `413 Payload Too Large` if cookies exceed 1MB.
+- `500 Internal Server Error` if cookie file creation fails.
+
+**Notes**:
+- Console must be enabled in configuration (`console_enabled: true`).
+- Cookies must be a valid string (≤ 1MB).
+- Cookies are stored in the temporary directory with a UUID-based filename.
+- Cookie files can be used with subsequent yt-dlp operations.
 
 ---
 

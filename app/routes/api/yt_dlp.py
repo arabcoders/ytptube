@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from collections import OrderedDict
+from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -272,3 +273,60 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
         response.append(dct)
 
     return web.json_response(data=response, status=web.HTTPOk.status_code)
+
+
+@route("POST", "api/yt-dlp/save_cookies/", "save_cookies")
+async def save_cookies(request: Request, config: Config) -> Response:
+    """
+    Save cookies for use with CLI.
+
+    Returns:
+        Response: The response object with the yt-dlp CLI options.
+
+    """
+    if not config.console_enabled:
+        return web.json_response(
+            data={"error": "Console is disabled."},
+            status=web.HTTPForbidden.status_code,
+        )
+
+    data = (await request.json()) if request.body_exists else None
+    if not data or not isinstance(data, dict):
+        return web.json_response(
+            data={"error": "Invalid request. expecting dict with 'cookies' field."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    cookies = data.get("cookies")
+    if not cookies or not isinstance(cookies, str):
+        return web.json_response(
+            data={"error": "Invalid request. 'cookies' field is required and must be a string."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if len(cookies) > 1_000_000:
+        return web.json_response(
+            data={"error": "Cookie size exceeds the maximum limit of 1MB."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    import uuid
+
+    from app.library.Utils import load_cookies
+
+    cookie_file: Path = Path(config.temp_path) / f"c_{uuid.uuid4()!s}.txt"
+
+    try:
+        cookie_file.write_text(cookies)
+        file_path = str(cookie_file)
+        load_cookies(cookie_file)
+    except Exception as e:
+        return web.json_response(
+            data={"error": f"Failed to create cookie file. '{e!s}'."},
+            status=web.HTTPInternalServerError.status_code,
+        )
+
+    return web.json_response(
+        data={"status": True, "cookie_file": file_path},
+        status=web.HTTPOk.status_code,
+    )
