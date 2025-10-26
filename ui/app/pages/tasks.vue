@@ -386,16 +386,28 @@
 
     <div class="columns is-multiline" v-if="!toggleForm && tasks && tasks.length > 0">
       <div class="column is-12">
-        <Message title="Tips" class="is-info is-background-info-80" icon="fas fa-info-circle">
-          <span>
+        <div class="message is-info">
+          <div class="message-body content pl-0 pt-1 pb-1">
             <ul>
-              <li><strong>Selective Downloads:</strong> To avoid downloading all existing content from a channel/playlist, use <code><span class="icon"><i class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i class="fa-solid fa-box-archive" /></span> Archive All</code> to mark existing items as already downloaded.
+              <li class="has-text-danger">
+                <span class="icon">
+                  <i class="fas fa-triangle-exclamation" />
+                </span>
+                All tasks operations require <b>--download-archive</b> to be set in the <b>preset</b> or in the
+                <b>command options for yt-dlp</b> for the task to be dispatched. If you have selected one of the built
+                in presets it already includes this option and no further action is required.
               </li>
-              <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs hourly and doesn't require a scheduled timer.
+              <li>To avoid downloading all existing content from a channel/playlist, use <b><span class="icon"><i
+                      class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
+                      class="fa-solid fa-box-archive" /></span> Archive All</b> to mark existing items as already
+                downloaded.
+              </li>
+              <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs
+                hourly and doesn't require a scheduled timer.
               </li>
             </ul>
-          </span>
-        </Message>
+          </div>
+        </div>
       </div>
     </div>
 
