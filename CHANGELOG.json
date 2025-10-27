@@ -42,6 +42,48 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f",
+    "date": "2025-10-27T16:57:05+00:00",
+    "commits": [
+      {
+        "sha": "2b9b36ea",
+        "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f",
+        "message": "[FEAT] ADd new yt-dlp merger class.",
+        "author": "arabcoders",
+        "date": "2025-10-27T16:57:05+00:00"
+      },
+      {
+        "sha": "b888e678",
+        "full_sha": "b888e6787762dda72c18ca6eaac5afe8c2ae20bd",
+        "message": "[FEAT] When console enabled show button to run commands from newDownload into console.",
+        "author": "arabcoders",
+        "date": "2025-10-27T16:55:52+00:00"
+      },
+      {
+        "sha": "444dc72e",
+        "full_sha": "444dc72e8fae7881e13c17612fad9b057effbe2a",
+        "message": "Add new api endpoint to generate yt-dlp commands",
+        "author": "arabcoders",
+        "date": "2025-10-27T16:55:19+00:00"
+      },
+      {
+        "sha": "b5683a3e",
+        "full_sha": "b5683a3e774b460c756d82c73541442febd386b3",
+        "message": "Migrate inline cookie creation to standalone function",
+        "author": "arabcoders",
+        "date": "2025-10-27T16:54:49+00:00"
+      },
+      {
+        "sha": "24493885",
+        "full_sha": "24493885aaa7b7a15f14aa55d5e296c53769ad10",
+        "message": "minor fixes and style update",
+        "author": "arabcoders",
+        "date": "2025-10-26T18:42:48+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.2",
     "full_sha": "b95b6eb6be2d927a18689ab9920164f3ef05acb8",
     "date": "2025-10-22T16:02:44+00:00",

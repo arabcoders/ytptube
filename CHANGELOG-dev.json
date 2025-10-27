@@ -1,8 +1,43 @@
 [
     {
-        "tag": "dev-20251025-211089be",
-        "date": "2025-10-25T17:05:24+00:00",
+        "tag": "dev-20251027-2b9b36ea",
+        "date": "2025-10-27T16:57:05+00:00",
         "commits": [
+            {
+                "sha": "2b9b36ea",
+                "message": "[FEAT] ADd new yt-dlp merger class.",
+                "author": "arabcoders",
+                "date": "2025-10-27T16:57:05+00:00",
+                "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f"
+            },
+            {
+                "sha": "b888e678",
+                "message": "[FEAT] When console enabled show button to run commands from newDownload into console.",
+                "author": "arabcoders",
+                "date": "2025-10-27T16:55:52+00:00",
+                "full_sha": "b888e6787762dda72c18ca6eaac5afe8c2ae20bd"
+            },
+            {
+                "sha": "444dc72e",
+                "message": "Add new api endpoint to generate yt-dlp commands",
+                "author": "arabcoders",
+                "date": "2025-10-27T16:55:19+00:00",
+                "full_sha": "444dc72e8fae7881e13c17612fad9b057effbe2a"
+            },
+            {
+                "sha": "b5683a3e",
+                "message": "Migrate inline cookie creation to standalone function",
+                "author": "arabcoders",
+                "date": "2025-10-27T16:54:49+00:00",
+                "full_sha": "b5683a3e774b460c756d82c73541442febd386b3"
+            },
+            {
+                "sha": "24493885",
+                "message": "minor fixes and style update",
+                "author": "arabcoders",
+                "date": "2025-10-26T18:42:48+00:00",
+                "full_sha": "24493885aaa7b7a15f14aa55d5e296c53769ad10"
+            },
             {
                 "sha": "211089be",
                 "message": "minor fixes to file listing, and unifiy how we present tips",
@@ -2692,7 +2727,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "211089bead477ddbc6a6a73c4fa4bffb38bc78e3"
+        "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f"
     },
     {
         "tag": "dev-20250616-c07465a6",
