@@ -1,50 +1,8 @@
 [
   {
-    "tag": "Unreleased (a81c73a4)",
-    "full_sha": "a81c73a469253c7b1e9392a83ce10c092c917212",
-    "date": "2025-10-26T13:15:44+00:00",
-    "commits": [
-      {
-        "sha": "211089be",
-        "full_sha": "211089bead477ddbc6a6a73c4fa4bffb38bc78e3",
-        "message": "minor fixes to file listing, and unifiy how we present tips",
-        "author": "arabcoders",
-        "date": "2025-10-25T17:05:24+00:00"
-      },
-      {
-        "sha": "75911d01",
-        "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80",
-        "message": "Add more checks before fallback for hls stream",
-        "author": "arabcoders",
-        "date": "2025-10-24T16:26:48+00:00"
-      },
-      {
-        "sha": "94dd37a1",
-        "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260",
-        "message": "Reverted some changes to the navbar",
-        "author": "arabcoders",
-        "date": "2025-10-24T15:56:56+00:00"
-      },
-      {
-        "sha": "32452e05",
-        "full_sha": "32452e05964f732607e822ac777e7276c91c65af",
-        "message": "[FEAT] add grid display style for files",
-        "author": "arabcoders",
-        "date": "2025-10-24T15:56:10+00:00"
-      },
-      {
-        "sha": "026962d1",
-        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85",
-        "message": "[FIX] Cancelling live streams. Closes #463",
-        "author": "arabcoders",
-        "date": "2025-10-23T16:58:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f",
-    "date": "2025-10-27T16:57:05+00:00",
+    "tag": "Unreleased (71153d6f)",
+    "full_sha": "71153d6fb45bad777b54ba232def13be0cf20b21",
+    "date": "2025-10-27T17:04:13+00:00",
     "commits": [
       {
         "sha": "2b9b36ea",
@@ -80,6 +38,41 @@
         "message": "minor fixes and style update",
         "author": "arabcoders",
         "date": "2025-10-26T18:42:48+00:00"
+      },
+      {
+        "sha": "211089be",
+        "full_sha": "211089bead477ddbc6a6a73c4fa4bffb38bc78e3",
+        "message": "minor fixes to file listing, and unifiy how we present tips",
+        "author": "arabcoders",
+        "date": "2025-10-25T17:05:24+00:00"
+      },
+      {
+        "sha": "75911d01",
+        "full_sha": "75911d01dc848eb6d5e66884cf81ff029f7f4c80",
+        "message": "Add more checks before fallback for hls stream",
+        "author": "arabcoders",
+        "date": "2025-10-24T16:26:48+00:00"
+      },
+      {
+        "sha": "94dd37a1",
+        "full_sha": "94dd37a123dc7857174c5c645d0c58dd944fd260",
+        "message": "Reverted some changes to the navbar",
+        "author": "arabcoders",
+        "date": "2025-10-24T15:56:56+00:00"
+      },
+      {
+        "sha": "32452e05",
+        "full_sha": "32452e05964f732607e822ac777e7276c91c65af",
+        "message": "[FEAT] add grid display style for files",
+        "author": "arabcoders",
+        "date": "2025-10-24T15:56:10+00:00"
+      },
+      {
+        "sha": "026962d1",
+        "full_sha": "026962d1a7f4a360777a30aafc0a9933fa6e1f85",
+        "message": "[FIX] Cancelling live streams. Closes #463",
+        "author": "arabcoders",
+        "date": "2025-10-23T16:58:12+00:00"
       }
     ]
   },
