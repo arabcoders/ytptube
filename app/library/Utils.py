@@ -1634,3 +1634,28 @@ def get_channel_images(thumbnails: list[dict]) -> dict:
         artwork["poster"] = artwork["thumb"]  # optional fallback
 
     return artwork
+
+
+def create_cookies_file(cookies: str, file: Path | None = None) -> Path:
+    """
+    Create a cookies file from a string of cookies.
+
+    Args:
+        cookies (str): The cookie string.
+        file (Path|None): The path to the cookie file. If None, a temporary file is created.
+
+    Returns:
+        Path: The path to the created cookie file.
+
+    """
+    if file is None:
+        from .config import Config
+
+        file = Path(Config.get_instance().temp_path, f"c_{uuid.uuid4().hex}.txt")
+
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text(cookies)
+
+    load_cookies(file)
+
+    return file

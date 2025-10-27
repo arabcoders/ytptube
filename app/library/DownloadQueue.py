@@ -29,10 +29,10 @@ from .Utils import (
     archive_add,
     arg_converter,
     calc_download_path,
+    create_cookies_file,
     dt_delta,
     extract_info,
     extract_ytdlp_logs,
-    load_cookies,
     merge_dict,
     str_to_dt,
     ytdlp_reject,
@@ -731,9 +731,7 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.cookies:
                 try:
-                    cookie_file.write_text(item.cookies)
-                    yt_conf["cookiefile"] = str(cookie_file.as_posix())
-                    load_cookies(cookie_file)
+                    yt_conf["cookiefile"] = str(create_cookies_file(item.cookies, cookie_file).as_posix())
                 except Exception as e:
                     msg = f"Failed to create cookie file for '{item.url}'. '{e!s}'."
                     LOG.error(msg)

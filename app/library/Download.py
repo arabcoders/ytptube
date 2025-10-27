@@ -17,7 +17,7 @@ from .config import Config
 from .Events import EventBus, Events
 from .ffprobe import ffprobe
 from .ItemDTO import ItemDTO
-from .Utils import delete_dir, extract_info, extract_ytdlp_logs, load_cookies
+from .Utils import create_cookies_file, delete_dir, extract_info, extract_ytdlp_logs
 from .ytdlp import YTDLP
 
 
@@ -138,10 +138,11 @@ class Download:
                     "status": data.get("status"),
                     "filename": data.get("filename"),
                     "info_dict": {
-                        k: v for k, v in data.get("info_dict", {}).items()
+                        k: v
+                        for k, v in data.get("info_dict", {}).items()
                         if k not in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]
                         and not isinstance(v, (type(None).__bases__[0], type(lambda: None)))  # Skip non-serializable
-                    }
+                    },
                 }
                 self.logger.debug(f"PG Hook: {d_safe}")
             except Exception as e:
@@ -162,10 +163,11 @@ class Download:
                     "postprocessor": data.get("postprocessor"),
                     "status": data.get("status"),
                     "info_dict": {
-                        k: v for k, v in data.get("info_dict", {}).items()
+                        k: v
+                        for k, v in data.get("info_dict", {}).items()
                         if k not in ["formats", "thumbnails", "description", "tags", "_format_sort_fields"]
                         and not isinstance(v, (type(None).__bases__[0], type(lambda: None)))  # Skip non-serializable
-                    }
+                    },
                 }
                 self.logger.debug(f"PP Hook: {d_safe}")
             except Exception as e:
@@ -238,10 +240,7 @@ class Download:
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
                     )
-                    cookie_file.write_text(self.info.cookies)
-                    params["cookiefile"] = str(cookie_file.as_posix())
-
-                    load_cookies(cookie_file)
+                    params["cookiefile"] = str(create_cookies_file(self.info.cookies, cookie_file).as_posix())
                 except Exception as e:
                     err_msg: str = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
                     self.logger.error(err_msg)
@@ -536,8 +535,7 @@ class Download:
                 # If still alive, use hard kill
                 if self.proc.is_alive():
                     self.logger.warning(
-                        f"Process PID={self.proc.pid} did not respond to terminate(), "
-                        f"killing forcefully."
+                        f"Process PID={self.proc.pid} did not respond to terminate(), killing forcefully."
                     )
                     self.proc.kill()
                     # Give it final moment

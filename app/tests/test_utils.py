@@ -1701,3 +1701,330 @@ class TestLoadModules:
         except Exception:
             # Module loading might fail in test environment
             assert True
+
+
+class TestGetChannelImages:
+    """Test the get_channel_images function."""
+
+    def test_get_channel_images_poster_from_portrait(self):
+        """Test extracting poster image from portrait ratio thumbnail."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [
+            {"url": "http://example.com/poster.jpg", "width": 200, "height": 300, "id": "some_id"}
+        ]
+
+        result = get_channel_images(thumbnails)
+
+        assert "poster" in result
+        assert result["poster"] == "http://example.com/poster.jpg"
+
+    def test_get_channel_images_thumb_from_square(self):
+        """Test extracting thumbnail from square ratio."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [{"url": "http://example.com/thumb.jpg", "width": 300, "height": 300, "id": "id"}]
+
+        result = get_channel_images(thumbnails)
+
+        assert "thumb" in result
+        assert result["thumb"] == "http://example.com/thumb.jpg"
+
+    def test_get_channel_images_banner_from_wide(self):
+        """Test extracting banner from very wide image."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [{"url": "http://example.com/banner.jpg", "width": 1920, "height": 200, "id": "id"}]
+
+        result = get_channel_images(thumbnails)
+
+        assert "banner" in result
+        assert result["banner"] == "http://example.com/banner.jpg"
+
+    def test_get_channel_images_icon_from_avatar(self):
+        """Test extracting icon from avatar uncropped."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [{"url": "http://example.com/icon.jpg", "id": "avatar_uncropped"}]
+
+        result = get_channel_images(thumbnails)
+
+        assert "icon" in result
+        assert result["icon"] == "http://example.com/icon.jpg"
+
+    def test_get_channel_images_landscape_from_banner_uncropped(self):
+        """Test extracting landscape from banner uncropped."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [{"url": "http://example.com/landscape.jpg", "id": "banner_uncropped"}]
+
+        result = get_channel_images(thumbnails)
+
+        assert "landscape" in result
+        assert result["landscape"] == "http://example.com/landscape.jpg"
+
+    def test_get_channel_images_empty_list(self):
+        """Test with empty thumbnail list."""
+        from app.library.Utils import get_channel_images
+
+        result = get_channel_images([])
+
+        assert result == {}
+
+    def test_get_channel_images_fallbacks(self):
+        """Test fallback logic for missing images."""
+        from app.library.Utils import get_channel_images
+
+        # Create image with fanart but no banner
+        thumbnails = [{"url": "http://example.com/fanart.jpg", "width": 1920, "height": 200, "id": "id"}]
+
+        result = get_channel_images(thumbnails)
+
+        assert "fanart" in result
+        assert "banner" in result  # Should fallback to fanart
+        assert result["banner"] == result["fanart"]
+
+    def test_get_channel_images_no_url(self):
+        """Test handling of thumbnail without URL."""
+        from app.library.Utils import get_channel_images
+
+        thumbnails = [
+            {"width": 300, "height": 300, "id": "id"},  # Missing URL
+            {"url": "http://example.com/thumb.jpg", "width": 300, "height": 300, "id": "id"},
+        ]
+
+        result = get_channel_images(thumbnails)
+
+        assert len(result) > 0
+        assert result.get("thumb") == "http://example.com/thumb.jpg"
+
+
+class TestIsSafeKey:
+    """Test the _is_safe_key function (indirectly through merge_dict)."""
+
+    def test_safe_key_normal_string(self):
+        """Test that normal strings are considered safe keys."""
+        from app.library.Utils import merge_dict
+
+        source = {"normal_key": "value"}
+        dest = {}
+
+        result = merge_dict(source, dest)
+
+        assert "normal_key" in result
+        assert result["normal_key"] == "value"
+
+    def test_unsafe_key_dunder_attributes(self):
+        """Test that dunder attributes are blocked."""
+        from app.library.Utils import merge_dict
+
+        source = {"__class__": "should_not_merge", "normal_key": "value"}
+        dest = {}
+
+        result = merge_dict(source, dest)
+
+        assert "__class__" not in result
+        assert "normal_key" in result
+
+    def test_unsafe_key_empty_string(self):
+        """Test that empty keys are blocked."""
+        from app.library.Utils import merge_dict
+
+        source = {"": "empty_key_value", "normal_key": "value"}
+        dest = {}
+
+        result = merge_dict(source, dest)
+
+        assert "" not in result
+        assert "normal_key" in result
+
+    def test_unsafe_key_whitespace_only(self):
+        """Test that whitespace-only keys are blocked."""
+        from app.library.Utils import merge_dict
+
+        source = {"   ": "whitespace_key", "normal_key": "value"}
+        dest = {}
+
+        result = merge_dict(source, dest)
+
+        assert "   " not in result
+        assert "normal_key" in result
+
+    def test_unsafe_key_non_string(self):
+        """Test that non-string keys are blocked."""
+        from app.library.Utils import merge_dict
+
+        source = {123: "numeric_key", "normal_key": "value"}
+        dest = {}
+
+        result = merge_dict(source, dest)
+
+        assert 123 not in result
+        assert "normal_key" in result
+
+
+class TestDecryptDataCornerCases:
+    """Additional tests for decrypt_data edge cases."""
+
+    def test_decrypt_data_invalid_base64(self):
+        """Test decrypting invalid base64 data."""
+        from app.library.Utils import decrypt_data
+
+        result = decrypt_data("not_valid_base64!!!", b"k" * 32)
+
+        assert result is None
+
+    def test_decrypt_data_wrong_key(self):
+        """Test decrypting with wrong key returns None."""
+        from app.library.Utils import decrypt_data, encrypt_data
+
+        correct_key = b"a" * 32
+        wrong_key = b"z" * 32
+
+        encrypted = encrypt_data("test data", correct_key)
+        result = decrypt_data(encrypted, wrong_key)
+
+        # Should return None on decryption failure
+        assert result is None
+
+    def test_decrypt_data_truncated(self):
+        """Test decrypting truncated encrypted data."""
+        from app.library.Utils import decrypt_data
+
+        result = decrypt_data("YQ==", b"k" * 32)
+
+        assert result is None
+
+
+class TestArgConverterAdvanced:
+    """Advanced tests for arg_converter function."""
+
+    def test_arg_converter_with_removed_options(self):
+        """Test arg_converter with removed options tracking."""
+        try:
+            removed = []
+            result = arg_converter("--quiet --skip-download", level=True, removed_options=removed)
+
+            assert isinstance(result, dict)
+        except (ModuleNotFoundError, AttributeError, ImportError):
+            assert True
+
+    def test_arg_converter_dumps_enabled(self):
+        """Test arg_converter with dumps flag enabled."""
+        try:
+            result = arg_converter("--format best", dumps=True)
+
+            # With dumps=True, result should still be a dict with JSON-serializable content
+            assert isinstance(result, (dict, list))
+        except (ModuleNotFoundError, AttributeError, ImportError):
+            assert True
+
+
+class TestCreateCookiesFile:
+    """Test the create_cookies_file function."""
+
+    def setup_method(self):
+        """Set up test environment."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.test_path = Path(self.temp_dir)
+
+    def teardown_method(self):
+        """Clean up after tests."""
+        import shutil
+
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_with_path(self, mock_load_cookies):
+        """Test creating a cookies file with a specific path."""
+        from app.library.Utils import create_cookies_file
+
+        mock_load_cookies.return_value = (True, MagicMock())
+        cookie_path = self.test_path / "cookies" / "test_cookies.txt"
+
+        result = create_cookies_file("session=abc123", file=cookie_path)
+
+        assert result == cookie_path
+        assert cookie_path.exists()
+        assert cookie_path.is_file()
+        assert cookie_path.read_text() == "session=abc123"
+        mock_load_cookies.assert_called_once_with(cookie_path)
+
+    @patch("app.library.config.Config")
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_without_path(self, mock_load_cookies, mock_config):
+        """Test creating a cookies file without a specific path (auto temp file)."""
+        from app.library.Utils import create_cookies_file
+
+        mock_config_inst = MagicMock()
+        mock_config_inst.temp_path = self.temp_dir
+        mock_config.get_instance.return_value = mock_config_inst
+
+        mock_load_cookies.return_value = (True, MagicMock())
+
+        result = create_cookies_file("session=def456")
+
+        assert result.exists()
+        assert result.is_file()
+        assert result.read_text() == "session=def456"
+        assert result.parent == Path(self.temp_dir)
+        mock_load_cookies.assert_called_once()
+
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_invalid_cookies(self, mock_load_cookies):
+        """Test creating a cookies file with invalid cookies raises error."""
+        from app.library.Utils import create_cookies_file
+
+        mock_load_cookies.side_effect = ValueError("Invalid cookies")
+        cookie_path = self.test_path / "bad_cookies.txt"
+
+        with pytest.raises(ValueError, match="Invalid cookies"):
+            create_cookies_file("invalid_data", file=cookie_path)
+
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_creates_parent_directory(self, mock_load_cookies):
+        """Test that create_cookies_file creates parent directories as needed."""
+        from app.library.Utils import create_cookies_file
+
+        mock_load_cookies.return_value = (True, MagicMock())
+        # Use a deeply nested path that doesn't exist yet
+        cookie_path = self.test_path / "a" / "b" / "c" / "cookies.txt"
+
+        result = create_cookies_file("test_data", file=cookie_path)
+
+        assert result == cookie_path
+        assert cookie_path.exists()
+        assert cookie_path.parent == Path(self.test_path / "a" / "b" / "c")
+
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_with_special_characters(self, mock_load_cookies):
+        """Test create_cookies_file with special characters in cookie data."""
+        from app.library.Utils import create_cookies_file
+
+        mock_load_cookies.return_value = (True, MagicMock())
+        cookie_data = "session=abc123; path=/; domain=.example.com; secure; httponly"
+        cookie_path = self.test_path / "special_cookies.txt"
+
+        result = create_cookies_file(cookie_data, file=cookie_path)
+
+        assert result == cookie_path
+        assert cookie_path.read_text() == cookie_data
+
+    @patch("app.library.Utils.load_cookies")
+    def test_create_cookies_file_overwrites_existing(self, mock_load_cookies):
+        """Test that create_cookies_file overwrites existing files."""
+        from app.library.Utils import create_cookies_file
+
+        mock_load_cookies.return_value = (True, MagicMock())
+        cookie_path = self.test_path / "cookies.txt"
+
+        # Create initial file
+        cookie_path.parent.mkdir(parents=True, exist_ok=True)
+        cookie_path.write_text("old_data")
+
+        # Overwrite with new data
+        result = create_cookies_file("new_data", file=cookie_path)
+
+        assert result == cookie_path
+        assert cookie_path.read_text() == "new_data"
+

@@ -5,7 +5,7 @@ import uuid
 from dataclasses import dataclass, field
 from email.utils import formatdate
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.library.encoder import Encoder
 from app.library.Utils import (
@@ -18,6 +18,9 @@ from app.library.Utils import (
     get_file_sidecar,
 )
 from app.library.YTDLPOpts import YTDLPOpts
+
+if TYPE_CHECKING:
+    from app.library.Presets import Preset
 
 LOG: logging.Logger = logging.getLogger("ItemDTO")
 
@@ -206,6 +209,18 @@ class Item:
                 raise ValueError(msg) from e
 
         return Item(**data)
+
+    def get_preset(self) -> "Preset":
+        """
+        Get the preset for the item.
+
+        Returns:
+            Preset: The preset for the item. If not found, None.
+
+        """
+        from .Presets import Presets
+
+        return Presets.get_instance().get(self.preset if self.preset else self._default_preset())
 
     def get_archive_id(self) -> str | None:
         """
