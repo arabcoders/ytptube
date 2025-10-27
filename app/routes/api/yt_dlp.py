@@ -2,7 +2,6 @@ import json
 import logging
 import time
 from collections import OrderedDict
-from pathlib import Path
 from typing import Any
 
 from aiohttp import web
@@ -10,6 +9,7 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.ItemDTO import Item
 from app.library.Presets import Presets
 from app.library.router import route
 from app.library.Utils import (
@@ -20,7 +20,7 @@ from app.library.Utils import (
     get_archive_id,
     validate_url,
 )
-from app.library.YTDLPOpts import YTDLPOpts
+from app.library.YTDLPOpts import YTDLPCli, YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -275,58 +275,41 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
     return web.json_response(data=response, status=web.HTTPOk.status_code)
 
 
-@route("POST", "api/yt-dlp/save_cookies/", "save_cookies")
-async def save_cookies(request: Request, config: Config) -> Response:
+@route("POST", "api/yt-dlp/command/", "make_command")
+async def make_command(request: Request, config: Config) -> Response:
     """
-    Save cookies for use with CLI.
+    Build yt-dlp CLI command.
+
+    Args:
+        request (Request): The request object.
+        config (Config): The config instance.
 
     Returns:
-        Response: The response object with the yt-dlp CLI options.
+        Response: The response object with the merged fields and final yt-dlp CLI command string.
 
     """
     if not config.console_enabled:
-        return web.json_response(
-            data={"error": "Console is disabled."},
-            status=web.HTTPForbidden.status_code,
-        )
+        return web.json_response(data={"error": "Console is disabled."}, status=web.HTTPForbidden.status_code)
 
     data = (await request.json()) if request.body_exists else None
     if not data or not isinstance(data, dict):
         return web.json_response(
-            data={"error": "Invalid request. expecting dict with 'cookies' field."},
+            data={"error": "Invalid request. expecting JSON body."},
             status=web.HTTPBadRequest.status_code,
         )
-
-    cookies = data.get("cookies")
-    if not cookies or not isinstance(cookies, str):
-        return web.json_response(
-            data={"error": "Invalid request. 'cookies' field is required and must be a string."},
-            status=web.HTTPBadRequest.status_code,
-        )
-
-    if len(cookies) > 1_000_000:
-        return web.json_response(
-            data={"error": "Cookie size exceeds the maximum limit of 1MB."},
-            status=web.HTTPBadRequest.status_code,
-        )
-
-    import uuid
-
-    from app.library.Utils import load_cookies
-
-    cookie_file: Path = Path(config.temp_path) / f"c_{uuid.uuid4()!s}.txt"
 
     try:
-        cookie_file.write_text(cookies)
-        file_path = str(cookie_file)
-        load_cookies(cookie_file)
+        it = Item.format(data)
+    except ValueError as e:
+        return web.json_response(data={"error": str(e), "data": data}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        command, _ = YTDLPCli(item=it, config=config).build()
     except Exception as e:
+        LOG.exception(e)
         return web.json_response(
-            data={"error": f"Failed to create cookie file. '{e!s}'."},
-            status=web.HTTPInternalServerError.status_code,
+            data={"error": "Failed to build CLI command"},
+            status=web.HTTPBadRequest.status_code,
         )
 
-    return web.json_response(
-        data={"status": True, "cookie_file": file_path},
-        status=web.HTTPOk.status_code,
-    )
+    return web.json_response(data={"command": command}, status=web.HTTPOk.status_code)

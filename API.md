@@ -18,6 +18,7 @@ This document describes the available endpoints and their usage. All endpoints r
   - [Endpoints](#endpoints)
     - [GET /api/ping](#get-apiping)
     - [POST /api/yt-dlp/convert](#post-apiyt-dlpconvert)
+    - [POST /api/yt-dlp/command/](#post-apiyt-dlpcommand)
     - [GET /api/yt-dlp/url/info](#get-apiyt-dlpurlinfo)
     - [GET /api/history/add](#get-apihistoryadd)
     - [POST /api/history](#post-apihistory)
@@ -64,7 +65,6 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/notifications](#get-apinotifications)
     - [PUT /api/notifications](#put-apinotifications)
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
-    - [POST /api/yt-dlp/save\_cookies/](#post-apiyt-dlpsave_cookies)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
     - [POST /api/system/pause](#post-apisystempause)
@@ -207,6 +207,45 @@ or an error:
   "error": "Failed to parse command options for yt-dlp. '<reason>'."
 }
 ```
+
+---
+
+### POST /api/yt-dlp/command/
+**Purpose**: Build a complete yt-dlp CLI command string with priority-based argument merging from user input, presets, and defaults.
+
+**Requires**: Console must be enabled (`YTP_CONSOLE_ENABLED=true` env).
+
+**Body**: JSON object:
+```json
+{
+  "url": "https://example.com/video",// required - item url
+  "preset": "preset_name",           // optional - preset name to apply
+  "folder": "subfolder",             // optional - output folder (relative to download_path)
+  "template": "%(title)s.%(ext)s",   // optional - output filename template
+  "cli": "--write-sub --embed-subs", // optional - additional yt-dlp CLI arguments
+  "cookies": "cookie_string"         // optional - authentication cookies as string
+}
+```
+
+If cookies are given, they will be stored in a temporary file and the appropriate `--cookies <file>` argument 
+will be added to the command.
+
+**Priority System** (User > Preset > Default):
+1. **User fields** take highest priority (from request body)
+2. **Preset fields** used only if user didn't provide them
+3. **Default fields** used as final fallback (from configuration)
+
+**Response**:
+```json
+{
+  "command": "--output-path /downloads/subfolder --output %(title)s.%(ext)s --write-sub --embed-subs https://example.com/video"
+}
+```
+
+**Error Responses**:
+- `403 Forbidden` if console is disabled
+- `400 Bad Request` if body is invalid JSON or Item format validation fails
+- `400 Bad Request` if CLI command building fails
 
 ---
 
@@ -1447,45 +1486,6 @@ or an error:
 ```
 
 - If the body is not a valid JSON array, returns `400 Bad Request`.
-
----
-
-### POST /api/yt-dlp/save_cookies/
-**Purpose**: Save cookies to a file for use with yt-dlp CLI operations. Requires console to be enabled (`console_enabled` in configuration).
-**Body**: JSON object with `cookies` field containing the cookie string.
-```json
-{
-  "cookies": "cookie_string_or_netscape_format"
-}
-```
-
-**Response on Success**:
-```json
-{
-  "status": true,
-  "cookie_file": "/path/to/temp/c_uuid.txt"
-}
-```
-
-**Response on Error**:
-```json
-{
-  "error": "error_message"
-}
-```
-
-**Status Codes**:
-- `200 OK` if cookies were successfully saved.
-- `400 Bad Request` if the request body is invalid or missing the `cookies` field.
-- `403 Forbidden` if console is disabled.
-- `413 Payload Too Large` if cookies exceed 1MB.
-- `500 Internal Server Error` if cookie file creation fails.
-
-**Notes**:
-- Console must be enabled in configuration (`console_enabled: true`).
-- Cookies must be a valid string (≤ 1MB).
-- Cookies are stored in the temporary directory with a UUID-based filename.
-- Cookie files can be used with subsequent yt-dlp operations.
 
 ---
 
