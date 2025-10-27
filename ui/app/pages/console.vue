@@ -62,6 +62,7 @@
 import '@xterm/xterm/css/xterm.css'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { useStorage } from '@vueuse/core'
 import { disableOpacity, enableOpacity } from '~/utils'
 import InputAutocomplete from '~/components/InputAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
@@ -75,6 +76,7 @@ const terminalFit = ref<FitAddon>()
 const command = ref<string>('')
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window')
 const isLoading = ref<boolean>(false)
+const storedCommand = useStorage<string>('console_command', '')
 
 const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
   .map(flag => ({ value: flag, description: opt.description || '' }))
@@ -104,6 +106,34 @@ const handle_event = () => {
   terminalFit.value?.fit()
 }
 
+const ensureTerminal = async () => {
+  if (terminal.value) {
+    return
+  }
+
+  terminal.value = new Terminal({
+    fontSize: 14,
+    fontFamily: "'JetBrains Mono', monospace",
+    cursorBlink: false,
+    cursorStyle: 'underline',
+    cols: 108,
+    rows: 10,
+    disableStdin: true,
+    scrollback: 1000,
+  })
+
+  terminalFit.value = new FitAddon()
+  terminal.value.loadAddon(terminalFit.value)
+
+  await nextTick()
+
+  if (terminal_window.value) {
+    terminal.value.open(terminal_window.value)
+  }
+
+  terminalFit.value.fit();
+}
+
 const runCommand = async () => {
   if ('' === command.value) {
     return
@@ -123,24 +153,7 @@ const runCommand = async () => {
     }
   }
 
-  if (!terminal.value) {
-    terminal.value = new Terminal({
-      fontSize: 14,
-      fontFamily: "'JetBrains Mono', monospace",
-      cursorBlink: false,
-      cursorStyle: 'underline',
-      cols: 108,
-      rows: 10,
-      disableStdin: true,
-      scrollback: 1000,
-    })
-    terminalFit.value = new FitAddon()
-    terminal.value.loadAddon(terminalFit.value)
-    if (terminal_window.value) {
-      terminal.value.open(terminal_window.value)
-    }
-    terminalFit.value.fit();
-  }
+  await ensureTerminal()
 
   if ('clear' === command.value) {
     clearOutput(true)
@@ -149,8 +162,9 @@ const runCommand = async () => {
 
   socket.emit('cli_post', command.value)
   isLoading.value = true
-  terminal.value.writeln(`user@YTPTube ~`)
-  terminal.value.writeln(`$ yt-dlp ${command.value}`)
+  terminal.value?.writeln(`user@YTPTube ~`)
+  terminal.value?.writeln(`$ yt-dlp ${command.value}`)
+  storedCommand.value = ''
 }
 
 const clearOutput = async (withCommand: boolean = false) => {
@@ -166,7 +180,6 @@ const clearOutput = async (withCommand: boolean = false) => {
 }
 
 const focusInput = () => {
-  // Focus the InputAutocomplete component's input field
   const inputElement = document.getElementById('command') as HTMLInputElement
   if (inputElement) {
     inputElement.focus()
@@ -192,7 +205,16 @@ onMounted(async () => {
   socket.off('cli_output', writer)
   socket.on('cli_close', loader)
   socket.on('cli_output', writer)
+
   disableOpacity()
+
+  await ensureTerminal()
+
+  if (storedCommand.value) {
+    command.value = storedCommand.value
+    await nextTick()
+    runCommand()
+  }
 })
 
 onBeforeUnmount(() => {

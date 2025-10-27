@@ -21,7 +21,7 @@ from yt_dlp.utils import age_restricted
 
 from .LogWrapper import LogWrapper
 from .mini_filter import match_str
-from .ytdlp import YTDLP
+from .ytdlp import YTDLP, make_archive_id
 
 LOG: logging.Logger = logging.getLogger("Utils")
 
@@ -1242,21 +1242,21 @@ def get_archive_id(url: str) -> dict[str, str | None]:
             }
         )
 
-    for key, ie in YTDLP_INFO_CLS._ies.items():
+    for key, _ie in YTDLP_INFO_CLS._ies.items():
         try:
-            if not ie.suitable(url):
+            if not _ie.suitable(url):
                 continue
 
-            if not ie.working():
-                break
+            if not _ie.working():
+                continue
 
-            temp_id = ie.get_temp_id(url)
+            temp_id = _ie.get_temp_id(url)
             if not temp_id:
-                break
+                continue
 
             idDict["id"] = temp_id
             idDict["ie_key"] = key
-            idDict["archive_id"] = YTDLP_INFO_CLS._make_archive_id(idDict)
+            idDict["archive_id"] = make_archive_id(_ie, temp_id)
             break
         except Exception as e:
             LOG.exception(e)
@@ -1634,3 +1634,28 @@ def get_channel_images(thumbnails: list[dict]) -> dict:
         artwork["poster"] = artwork["thumb"]  # optional fallback
 
     return artwork
+
+
+def create_cookies_file(cookies: str, file: Path | None = None) -> Path:
+    """
+    Create a cookies file from a string of cookies.
+
+    Args:
+        cookies (str): The cookie string.
+        file (Path|None): The path to the cookie file. If None, a temporary file is created.
+
+    Returns:
+        Path: The path to the created cookie file.
+
+    """
+    if file is None:
+        from .config import Config
+
+        file = Path(Config.get_instance().temp_path, f"c_{uuid.uuid4().hex}.txt")
+
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_text(cookies)
+
+    load_cookies(file)
+
+    return file

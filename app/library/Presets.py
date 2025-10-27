@@ -10,7 +10,7 @@ from aiohttp import web
 from .config import Config
 from .Events import EventBus, Events
 from .Singleton import Singleton
-from .Utils import arg_converter, init_class
+from .Utils import arg_converter, create_cookies_file, init_class
 
 LOG = logging.getLogger("presets")
 
@@ -103,8 +103,11 @@ class Preset:
     default: bool = False
     """If True, the preset is a default preset."""
 
+    _cookies_file: Path | None = field(init=False, default=None)
+    """The path to the cookies file."""
+
     def serialize(self) -> dict:
-        return self.__dict__
+        return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
     def json(self) -> str:
         from .encoder import Encoder
@@ -112,7 +115,31 @@ class Preset:
         return Encoder().encode(self.serialize())
 
     def get(self, key: str, default: Any = None) -> Any:
-        return self.serialize().get(key, default)
+        return self.__dict__.get(key, default)
+
+    def get_cookies_file(self, config: Config | None = None) -> Path | None:
+        """
+        Get the path to the cookies file.
+
+        Args:
+            config (Config|None): The config instance.
+
+        Returns:
+            Path|None: The path to the cookies file.
+
+        """
+        if self._cookies_file:
+            return self._cookies_file
+
+        if not self.cookies or not self.id:
+            return None
+
+        if not config:
+            config = Config.get_instance()
+
+        self._cookies_file = create_cookies_file(self.cookies, Path(config.config_path) / "cookies" / f"{self.id}.txt")
+
+        return self._cookies_file
 
 
 class Presets(metaclass=Singleton):

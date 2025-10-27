@@ -9,6 +9,7 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.ItemDTO import Item
 from app.library.Presets import Presets
 from app.library.router import route
 from app.library.Utils import (
@@ -19,7 +20,7 @@ from app.library.Utils import (
     get_archive_id,
     validate_url,
 )
-from app.library.YTDLPOpts import YTDLPOpts
+from app.library.YTDLPOpts import YTDLPCli, YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -272,3 +273,43 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
         response.append(dct)
 
     return web.json_response(data=response, status=web.HTTPOk.status_code)
+
+
+@route("POST", "api/yt-dlp/command/", "make_command")
+async def make_command(request: Request, config: Config) -> Response:
+    """
+    Build yt-dlp CLI command.
+
+    Args:
+        request (Request): The request object.
+        config (Config): The config instance.
+
+    Returns:
+        Response: The response object with the merged fields and final yt-dlp CLI command string.
+
+    """
+    if not config.console_enabled:
+        return web.json_response(data={"error": "Console is disabled."}, status=web.HTTPForbidden.status_code)
+
+    data = (await request.json()) if request.body_exists else None
+    if not data or not isinstance(data, dict):
+        return web.json_response(
+            data={"error": "Invalid request. expecting JSON body."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    try:
+        it = Item.format(data)
+    except ValueError as e:
+        return web.json_response(data={"error": str(e), "data": data}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        command, _ = YTDLPCli(item=it, config=config).build()
+    except Exception as e:
+        LOG.exception(e)
+        return web.json_response(
+            data={"error": "Failed to build CLI command"},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    return web.json_response(data={"command": command}, status=web.HTTPOk.status_code)

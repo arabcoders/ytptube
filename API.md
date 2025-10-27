@@ -18,6 +18,7 @@ This document describes the available endpoints and their usage. All endpoints r
   - [Endpoints](#endpoints)
     - [GET /api/ping](#get-apiping)
     - [POST /api/yt-dlp/convert](#post-apiyt-dlpconvert)
+    - [POST /api/yt-dlp/command/](#post-apiyt-dlpcommand)
     - [GET /api/yt-dlp/url/info](#get-apiyt-dlpurlinfo)
     - [GET /api/history/add](#get-apihistoryadd)
     - [POST /api/history](#post-apihistory)
@@ -206,6 +207,45 @@ or an error:
   "error": "Failed to parse command options for yt-dlp. '<reason>'."
 }
 ```
+
+---
+
+### POST /api/yt-dlp/command/
+**Purpose**: Build a complete yt-dlp CLI command string with priority-based argument merging from user input, presets, and defaults.
+
+**Requires**: Console must be enabled (`YTP_CONSOLE_ENABLED=true` env).
+
+**Body**: JSON object:
+```json
+{
+  "url": "https://example.com/video",// required - item url
+  "preset": "preset_name",           // optional - preset name to apply
+  "folder": "subfolder",             // optional - output folder (relative to download_path)
+  "template": "%(title)s.%(ext)s",   // optional - output filename template
+  "cli": "--write-sub --embed-subs", // optional - additional yt-dlp CLI arguments
+  "cookies": "cookie_string"         // optional - authentication cookies as string
+}
+```
+
+If cookies are given, they will be stored in a temporary file and the appropriate `--cookies <file>` argument 
+will be added to the command.
+
+**Priority System** (User > Preset > Default):
+1. **User fields** take highest priority (from request body)
+2. **Preset fields** used only if user didn't provide them
+3. **Default fields** used as final fallback (from configuration)
+
+**Response**:
+```json
+{
+  "command": "--output-path /downloads/subfolder --output %(title)s.%(ext)s --write-sub --embed-subs https://example.com/video"
+}
+```
+
+**Error Responses**:
+- `403 Forbidden` if console is disabled
+- `400 Bad Request` if body is invalid JSON or Item format validation fails
+- `400 Bad Request` if CLI command building fails
 
 ---
 

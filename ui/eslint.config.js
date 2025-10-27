@@ -25,7 +25,7 @@ export default withNuxt(
       'vue/script-setup-uses-vars': 'off',
 
       'vue/html-quotes': ['warn', 'double'],
-      'vue/mustache-interpolation-spacing': ['warn', 'always'],
+      'vue/mustache-interpolation-spacing': "off",
       'vue/v-bind-style': ['warn', 'shorthand'],
       'vue/v-on-style': ['warn', 'shorthand'],
       'vue/attributes-order': 'off',

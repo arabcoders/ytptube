@@ -43,7 +43,6 @@ async def notification_add(request: Request, encoder: Encoder) -> Response:
     Args:
         request (Request): The request object.
         encoder (Encoder): The encoder instance.
-        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
