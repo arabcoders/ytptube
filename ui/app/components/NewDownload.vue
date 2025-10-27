@@ -137,9 +137,8 @@
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <DLInput id="ytdlpCookies" type="text" label="Cookies" v-model="form.cookies"
-                icon="fa-solid fa-cookie" :disabled="!socket.isConnected || addInProgress"
-                :placeholder="getDefault('cookies', '')">
+              <DLInput id="ytdlpCookies" type="text" label="Cookies" v-model="form.cookies" icon="fa-solid fa-cookie"
+                :disabled="!socket.isConnected || addInProgress" :placeholder="getDefault('cookies', '')">
                 <template #help>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -173,6 +172,12 @@
                   <span>yt-dlp Information</span>
                 </NuxtLink>
 
+                <hr class="dropdown-divider" v-if="config.app.console_enabled" />
+                <NuxtLink class="dropdown-item" @click="runCliCommand" v-if="config.app.console_enabled">
+                  <span class="icon has-text-warning"><i class="fa-solid fa-terminal" /></span>
+                  <span>Run CLI</span>
+                </NuxtLink>
+
                 <hr class="dropdown-divider" />
                 <NuxtLink class="dropdown-item" @click="resetConfig">
                   <span class="icon has-text-danger"><i class="fa-solid fa-rotate-left" /></span>
@@ -199,6 +204,14 @@
                   </button>
                 </div>
 
+                <div class="control" v-if="config.app.console_enabled">
+                  <button type="button" class="button is-warning" @click="runCliCommand"
+                    :disabled="!socket.isConnected || !form?.url">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                    <span>Run CLI</span>
+                  </button>
+                </div>
+
                 <div class="control">
                   <button type="button" class="button is-danger" @click="resetConfig"
                     :disabled="!!(!socket.isConnected || form?.id)" v-tooltip="'Reset local settings'">
@@ -216,9 +229,6 @@
     <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
-    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
-      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
-      @cancel="() => dialog_confirm.visible = false" />
 
     <DLFields v-if="showFields" @cancel="() => showFields = false" />
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
@@ -232,7 +242,9 @@ import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { item_request } from '~/types/item'
-import type { AutoCompleteOptions } from '~/types/autocomplete';
+import type { AutoCompleteOptions } from '~/types/autocomplete'
+import { navigateTo } from '#app'
+import { useDialog } from '~/composables/useDialog'
 
 const props = defineProps<{ item?: Partial<item_request> }>()
 const emitter = defineEmits<{
@@ -242,12 +254,14 @@ const emitter = defineEmits<{
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
+const dialog = useDialog()
 
 const showAdvanced = useStorage<boolean>('show_advanced', false)
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const auto_start = useStorage<boolean>('auto_start', true)
 const show_description = useStorage<boolean>('show_description', true)
 const dlFields = useStorage<Record<string, any>>('dl_fields', {})
+const storedCommand = useStorage<string>('console_command', '')
 
 const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
@@ -275,25 +289,25 @@ const dialog_confirm = ref({
   options: [],
 })
 
+const is_valid_dl_field = (dl_field: string): boolean => {
+  if (dlFieldsExtra.includes(dl_field)) {
+    return true
+  }
+
+  if (config.dl_fields && config.dl_fields.length > 0) {
+    return config.dl_fields.some(f => f.field === dl_field)
+  }
+
+  return false;
+}
+
 const addDownload = async () => {
   let form_cli = (form.value?.cli || '').trim()
-
-  const is_valid = (dl_field: string): boolean => {
-    if (dlFieldsExtra.includes(dl_field)) {
-      return true
-    }
-
-    if (config.dl_fields && config.dl_fields.length > 0) {
-      return config.dl_fields.some(f => f.field === dl_field)
-    }
-
-    return false;
-  }
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
     const joined = []
     for (const [key, value] of Object.entries(dlFields.value)) {
-      if (false === is_valid(key)) {
+      if (false === is_valid_dl_field(key)) {
         continue
       }
 
@@ -382,13 +396,16 @@ const addDownload = async () => {
   }
 }
 
-const resetConfig = () => {
-  dialog_confirm.value.visible = true
-  dialog_confirm.value.message = `Reset local configuration?`
-  dialog_confirm.value.confirm = reset_config
-}
+const resetConfig = async () => {
+  const { status } = await dialog.confirmDialog({
+    title: 'Confirm Action',
+    message: `Reset local configuration?`,
+    confirmColor: 'is-danger',
+  })
+  if (!status) {
+    return
+  }
 
-const reset_config = () => {
   form.value = {
     url: '',
     preset: config.app.default_preset,
@@ -399,9 +416,7 @@ const reset_config = () => {
     extras: {},
   } as item_request
   dlFields.value = {}
-
   showAdvanced.value = false
-
   toast.success('Local configuration has been reset.')
   dialog_confirm.value.visible = false
 }
@@ -474,6 +489,84 @@ onMounted(async () => {
     separator.value = separators[0]?.value ?? '.'
   }
 })
+
+const runCliCommand = async (): Promise<void> => {
+  if (!form.value.url) {
+    toast.warning('Please enter a URL first')
+    return
+  }
+
+  const {status} = await dialog.confirmDialog({
+    title: 'Run CLI Command',
+    message: `This will generate a yt-dlp command and run it in the console. Continue?`,
+    confirmColor: 'is-warning',
+  })
+
+  if (!status) {
+    return
+  }
+
+  let form_cli = (form.value?.cli || '').trim()
+
+  if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+    const joined = []
+    for (const [key, value] of Object.entries(dlFields.value)) {
+      if (false === is_valid_dl_field(key)) {
+        continue
+      }
+
+      if ([undefined, null, '', false].includes(value as any)) {
+        continue
+      }
+
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
+      if (form_cli && keyRegex.test(form_cli)) {
+        continue;
+      }
+
+      joined.push(true === value ? `${key}` : `${key} ${value}`)
+    }
+
+    if (joined.length > 0) {
+      form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+    }
+  }
+
+  if (form_cli && form_cli.trim()) {
+    const options = await convertOptions(form_cli)
+    if (null === options) {
+      return
+    }
+  }
+
+  try {
+    const resp = await request('/api/yt-dlp/command', {
+      method: 'POST',
+      body: JSON.stringify({
+        url: form.value.url,
+        preset: form.value.preset,
+        folder: form.value.folder,
+        cookies: form.value.cookies,
+        template: form.value.template,
+        cli: form_cli,
+      })
+    })
+
+    const json = await resp.json() as { command?: string; error?: string }
+
+    if (!resp.ok) {
+      toast.error(`Error: ${json.error || 'Failed to generate command.'}`)
+      return
+    }
+
+    storedCommand.value = json.command
+
+    await nextTick()
+    await navigateTo('/console')
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to create and navigate to command')
+  }
+}
 
 const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\S)(-f|--format)(=|\s)(\S+)/))
 

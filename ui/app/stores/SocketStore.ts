@@ -29,6 +29,8 @@ export const useSocketStore = defineStore('socket', () => {
     event.forEach(e => socket.value?.off(e, callback));
   }
 
+  const getSessionId = (): string | null => socket.value?.id || null
+
   const reconnect = () => {
     if (true === isConnected.value) {
       return;
@@ -220,6 +222,7 @@ export const useSocketStore = defineStore('socket', () => {
     connect, reconnect, disconnect,
     on, off, emit,
     socket, isConnected,
+    getSessionId,
     connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
   };
 });
