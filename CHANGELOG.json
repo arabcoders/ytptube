@@ -77,6 +77,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "44fd225ab1281cdcfe352a5d31e54913131947e4",
+    "date": "2025-11-01T14:22:16+00:00",
+    "commits": [
+      {
+        "sha": "44fd225a",
+        "full_sha": "44fd225ab1281cdcfe352a5d31e54913131947e4",
+        "message": "Add yt-dlp wrapper to keep it in sync with user installed yt-dlp. Ref #469",
+        "author": "arabcoders",
+        "date": "2025-11-01T14:22:16+00:00"
+      },
+      {
+        "sha": "f140b598",
+        "full_sha": "f140b598f9680af612897ed31d81eb58ca68f1f9",
+        "message": "updated external packages",
+        "author": "arabcoders",
+        "date": "2025-11-01T14:21:48+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.2",
     "full_sha": "b95b6eb6be2d927a18689ab9920164f3ef05acb8",
     "date": "2025-10-22T16:02:44+00:00",

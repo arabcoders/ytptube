@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251027-2b9b36ea",
-        "date": "2025-10-27T16:57:05+00:00",
+        "tag": "dev-20251101-44fd225a",
+        "date": "2025-11-01T14:22:16+00:00",
         "commits": [
+            {
+                "sha": "44fd225a",
+                "message": "Add yt-dlp wrapper to keep it in sync with user installed yt-dlp. Ref #469",
+                "author": "arabcoders",
+                "date": "2025-11-01T14:22:16+00:00",
+                "full_sha": "44fd225ab1281cdcfe352a5d31e54913131947e4"
+            },
+            {
+                "sha": "f140b598",
+                "message": "updated external packages",
+                "author": "arabcoders",
+                "date": "2025-11-01T14:21:48+00:00",
+                "full_sha": "f140b598f9680af612897ed31d81eb58ca68f1f9"
+            },
             {
                 "sha": "2b9b36ea",
                 "message": "[FEAT] ADd new yt-dlp merger class.",
@@ -2727,7 +2741,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2b9b36eacfa29f5086dd6cd9c4a19b1610762f2f"
+        "full_sha": "44fd225ab1281cdcfe352a5d31e54913131947e4"
     },
     {
         "tag": "dev-20250616-c07465a6",
