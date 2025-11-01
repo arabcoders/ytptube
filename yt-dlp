@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+###########
+# Set PATH to include user installed packages
+PY_BASE_VERSION=$(/opt/python/bin/python -V 2>&1 | awk '{print $2}' | cut -d. -f1,2)
+
+CONFIG_PATH="${YTP_CONFIG_PATH:-/app/var/config}"
+USER_SITE="${CONFIG_PATH}/python${PY_BASE_VERSION}-packages"
+USER_SITE_BIN="${USER_SITE}/bin"
+
+if [ -d "${USER_SITE_BIN}" ]; then
+  case ":${PATH}:" in
+    *:"${USER_SITE_BIN}":*)
+      ;;
+    *)
+      if [ -n "${PATH}" ]; then
+        PATH="${USER_SITE_BIN}:${PATH}"
+      else
+        PATH="${USER_SITE_BIN}"
+      fi
+      ;;
+  esac
+
+  export PATH
+fi
+
+if [ -d "${USER_SITE}" ]; then
+  case ":${PYTHONPATH}:" in
+    *:"${USER_SITE}":*)
+      ;;
+    *)
+      if [ -n "${PYTHONPATH}" ]; then
+        PYTHONPATH="${USER_SITE}:${PYTHONPATH}"
+      else
+        PYTHONPATH="${USER_SITE}"
+      fi
+      ;;
+  esac
+
+  export PYTHONPATH
+fi
+
+# Execute yt-dlp with passed arguments
+exec /opt/python/bin/python -m yt_dlp "${@}"

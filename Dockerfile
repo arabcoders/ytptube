@@ -57,12 +57,10 @@ RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
   dpkg-reconfigure --frontend=noninteractive locales && \
   update-locale LANG=en_US.UTF-8 \
-  && rm -rf /var/lib/apt/lists/*
+  mkdir -p /opt/bin && rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.sh /
-
-RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh
-
+COPY --chown=app:app yt-dlp /opt/bin/yt-dlp
 COPY --chown=app:app ./app /app/app
 COPY --chown=app:app --from=node_builder /app/exported /app/ui/exported
 COPY --chown=app:app --from=python_builder /opt/python /opt/python
@@ -72,13 +70,13 @@ COPY --from=ghcr.io/arabcoders/jellyfin-ffmpeg /usr/bin/ffprobe /usr/bin/ffprobe
 COPY --from=denoland/deno:latest /usr/bin/deno /usr/bin/deno
 COPY --chown=app:app ./healthcheck.sh /usr/local/bin/healthcheck
 
-ENV PATH="/opt/python/bin:$PATH"
+ENV PATH="/opt/bin:/opt/python/bin:$PATH"
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-RUN chown -R app:app /config /downloads && \
-  chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box /usr/bin/ffmpeg /usr/bin/ffprobe /usr/bin/deno
+RUN sed -i 's/\r$//g' /entrypoint.sh && chmod +x /entrypoint.sh && chown -R app:app /config /downloads && \
+  chmod +x /usr/local/bin/healthcheck /usr/bin/mp4box /usr/bin/ffmpeg /usr/bin/ffprobe /usr/bin/deno /opt/bin/yt-dlp
 
 VOLUME /config
 VOLUME /downloads

@@ -110,10 +110,13 @@ class PackageInstaller:
             str(self.user_site),
         ]
 
+        if "yt_dlp" == pkg:
+            pkg = "yt-dlp"
+
         if version:
-            if "nightly" == version and pkg == "yt_dlp":
+            if "nightly" == version and pkg == "yt-dlp":
                 cmd.extend(["--pre", "yt-dlp[default]"])
-            elif "master" == version and pkg == "yt_dlp":
+            elif "master" == version and pkg == "yt-dlp":
                 cmd.append("git+https://github.com/yt-dlp/yt-dlp.git@master")
             else:
                 cmd.append(version if str(version).startswith("git+") else f"{pkg}=={version}")
@@ -179,7 +182,7 @@ class PackageInstaller:
 
         return False
 
-    def out(self, out: bytes | str | None = None, err=bytes | str | None) -> None:
+    def out(self, out: bytes | str | None = None, err: bytes | str | None = None) -> None:
         if out:
             for line in (line.strip() for line in out.strip().splitlines() if line.strip()):
                 LOG.info(line.decode() if isinstance(line, bytes) else line)
