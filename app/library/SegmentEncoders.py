@@ -180,10 +180,8 @@ class QsvBuilder(_BaseBuilder):
             new_args += [
                 "-vf",
                 "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=nv12,hwupload=extra_hw_frames=64",
-                # Favor widely-supported constant quality path and disable LA
-                "-b:v",
-                "0",
-                "-global_quality",
+                # Use ICQ (Intelligent Constant Quality) ratecontrol mode with quality level
+                "-q:v",
                 "23",
                 "-look_ahead",
                 "0",

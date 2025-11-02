@@ -721,22 +721,16 @@ const src_error = async () => {
     return
   }
 
-  // If we already successfully captured a frame, that means the streamed video codec is working.
-  if (havePoster.value) {
-    return
-  }
-
   await nextTick()
   if (destroyed.value) {
     return
   }
 
-  // Check if video is actually paused.
-  if (video.value && video.value.paused) {
+  if (video.value && (notFirefox && video.value.paused)) {
     return
   }
 
-  console.warn('Source failed to load, attempting HLS fallback...')
+  console.warn('Source failed to load, attempting HLS fallback via hls.js...')
   attach_hls(makeDownload(config, props.item, 'm3u8'))
 }
 
