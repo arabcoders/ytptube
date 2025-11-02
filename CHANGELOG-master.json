@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20251101-ee9e2a1d",
-        "date": "2025-11-01T15:12:31+00:00",
+        "tag": "master-20251103-1db5e268",
+        "date": "2025-11-02T22:46:07+00:00",
         "commits": [
+            {
+                "sha": "c65e0f23",
+                "message": "Fix qsv for low power mode.",
+                "author": "arabcoders",
+                "date": "2025-11-02T22:35:18+00:00",
+                "full_sha": "c65e0f23b0b0c494a9c0e361cbb858e52046ecbe"
+            },
+            {
+                "sha": "be3d57ff",
+                "message": "minor fixes to video player",
+                "author": "arabcoders",
+                "date": "2025-11-02T16:50:22+00:00",
+                "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66"
+            },
+            {
+                "sha": "4b996a56",
+                "message": "[FEAT] Add keyboard shortcuts to built-in video player",
+                "author": "arabcoders",
+                "date": "2025-11-02T16:07:14+00:00",
+                "full_sha": "4b996a56753f3b3b08897c00adef23eddc53165e"
+            },
             {
                 "sha": "44fd225a",
                 "message": "Add yt-dlp wrapper to keep it in sync with user installed yt-dlp. Ref #469",
@@ -2741,7 +2762,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ee9e2a1d0bdb49c500f91ceca580c0b333cbc7ee"
+        "full_sha": "1db5e2684340655edba9be39a4e2a768d96efcf0"
     },
     {
         "tag": "master-20250616-c07465a6",
