@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251102-4b996a56",
-        "date": "2025-11-02T16:07:14+00:00",
+        "tag": "dev-20251102-be3d57ff",
+        "date": "2025-11-02T16:50:22+00:00",
         "commits": [
+            {
+                "sha": "be3d57ff",
+                "message": "minor fixes to video player",
+                "author": "arabcoders",
+                "date": "2025-11-02T16:50:22+00:00",
+                "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66"
+            },
             {
                 "sha": "4b996a56",
                 "message": "[FEAT] Add keyboard shortcuts to built-in video player",
@@ -2748,7 +2755,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4b996a56753f3b3b08897c00adef23eddc53165e"
+        "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66"
     },
     {
         "tag": "dev-20250616-c07465a6",

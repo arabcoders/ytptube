@@ -92,9 +92,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4b996a56753f3b3b08897c00adef23eddc53165e",
-    "date": "2025-11-02T16:07:14+00:00",
+    "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66",
+    "date": "2025-11-02T16:50:22+00:00",
     "commits": [
+      {
+        "sha": "be3d57ff",
+        "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66",
+        "message": "minor fixes to video player",
+        "author": "arabcoders",
+        "date": "2025-11-02T16:50:22+00:00"
+      },
       {
         "sha": "4b996a56",
         "full_sha": "4b996a56753f3b3b08897c00adef23eddc53165e",
