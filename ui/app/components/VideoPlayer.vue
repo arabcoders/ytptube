@@ -6,18 +6,230 @@
   height: auto;
   max-height: 80vh;
   max-width: 80vw;
+  position: relative;
+}
+
+.keyboard-help {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  color: var(--bulma-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-radius: 4px;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1000px;
+  width: 100%;
+}
+
+.shortcut-section {
+  text-align: left;
+}
+
+.shortcut-section h3 {
+  color: var(--bulma-primary);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.shortcut-item span:first-child {
+  flex: 1;
+}
+
+.shortcut-item .kbd-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.shortcut-key {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  margin-right: 1rem;
+  font-family: monospace;
+  font-weight: bold;
+  min-width: 60px;
+  text-align: center;
+}
+
+.help-close-hint {
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: var(--bulma-light);
 }
 </style>
 
 <template>
   <div v-if="infoLoaded">
-    <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls
-      crossorigin="anonymous" preload="auto" autoplay>
-      <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
-        :type="source.type" />
-      <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
-        :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
-    </video>
+    <div style="position: relative;">
+      <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls
+        crossorigin="anonymous" preload="auto" autoplay>
+        <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
+          :type="source.type" />
+        <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
+          :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
+      </video>
+
+      <span class="has-text-white is-pointer" @click="showHelp = !showHelp" title="Keyboard shortcuts (or press ?)">
+        <span class="icon"><i class="fa-solid fa-question" /></span>
+        <span>Click here to Keyboard shortcuts or press <kbd>?</kbd> or <kbd>/</kbd></span>
+      </span>
+
+      <div v-if="showHelp" class="keyboard-help" @click.self="showHelp = false">
+        <h2 style="margin-bottom: 1.5rem;">Keyboard Shortcuts</h2>
+
+        <div class="shortcuts-grid">
+          <div class="shortcut-section">
+            <h3>Playback Control</h3>
+            <div class="shortcut-item">
+              <span>Play/Pause</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">SPACE</kbd>
+                <kbd class="shortcut-key">K</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Rewind 10s</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">J</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Forward 10s</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">L</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Mute/Unmute</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">M</kbd>
+              </div>
+            </div>
+          </div>
+
+          <div class="shortcut-section">
+            <h3>Seeking</h3>
+            <div class="shortcut-item">
+              <span>Seek Back 5s</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">←</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Seek Forward 5s</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">→</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Jump to Start</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">HOME</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Jump to End</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">END</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Jump to %</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">0-9</kbd>
+              </div>
+            </div>
+          </div>
+
+          <div class="shortcut-section">
+            <h3>Volume & Speed</h3>
+            <div class="shortcut-item">
+              <span>Increase Volume</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">↑</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Decrease Volume</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">↓</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Increase Speed</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">'</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Decrease Speed</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">;</kbd>
+              </div>
+            </div>
+          </div>
+
+          <div class="shortcut-section">
+            <h3>Display & Other</h3>
+            <div class="shortcut-item">
+              <span>Fullscreen</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">F</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Picture in Picture (PiP)</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">P</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Toggle Captions</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">C</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Frame Advance</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">.</kbd>
+              </div>
+            </div>
+            <div class="shortcut-item">
+              <span>Frame Rewind</span>
+              <div class="kbd-group">
+                <kbd class="shortcut-key">,</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-close-hint">Click outside or press <kbd>?</kbd> or <kbd>/</kbd> to close</div>
+      </div>
+    </div>
   </div>
   <div style="text-align: center;" v-else>
     <div class="icon">
@@ -28,8 +240,10 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import { watch } from 'vue'
 import Hls from 'hls.js'
 import { disableOpacity, enableOpacity } from '~/utils'
+import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts'
 
 import type { StoreItem } from '~/types/store'
 import type { file_info, video_source_element, video_track_element } from '~/types/video'
@@ -61,10 +275,12 @@ const infoLoaded = ref(false)
 const destroyed = ref(false)
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 const havePoster = ref(false)
+const showHelp = ref(false)
 
 let unbindMediaSessionListeners: null | (() => void) = null
 let hls: Hls | null = null
 let detachDecodeGuard: null | (() => void) = null
+let cleanupKeyboardShortcuts: null | (() => void) = null
 
 const handle_event = (e: KeyboardEvent) => {
   if ('Escape' !== e.key) {
@@ -296,6 +512,24 @@ onMounted(async () => {
     unbindMediaSessionListeners = bindMediaSessionListeners(video.value)
   }
 
+  // Initialize keyboard shortcuts
+  const keyboardShortcutsResult = useKeyboardShortcuts({
+    videoElement: video,
+    enabled: ref(true),
+    closePlayer: () => emitter('closeModel'),
+    onHelpToggle: () => {
+      // Help toggle callback (optional)
+    }
+  })
+
+  // Attach the keyboard shortcuts listener and store cleanup function
+  cleanupKeyboardShortcuts = keyboardShortcutsResult.attach()
+
+  // Bind the showHelp from the composable
+  watch(keyboardShortcutsResult.showHelp, (newVal) => {
+    showHelp.value = newVal
+  })
+
   document.addEventListener('keydown', handle_event)
 })
 
@@ -322,6 +556,11 @@ onBeforeUnmount(() => {
   }
 
   document.removeEventListener('keydown', handle_event)
+
+  if (cleanupKeyboardShortcuts) {
+    cleanupKeyboardShortcuts()
+    cleanupKeyboardShortcuts = null
+  }
 
   if (unbindMediaSessionListeners) {
     unbindMediaSessionListeners()
