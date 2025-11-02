@@ -92,9 +92,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66",
-    "date": "2025-11-02T16:50:22+00:00",
+    "full_sha": "c65e0f23b0b0c494a9c0e361cbb858e52046ecbe",
+    "date": "2025-11-02T22:35:18+00:00",
     "commits": [
+      {
+        "sha": "c65e0f23",
+        "full_sha": "c65e0f23b0b0c494a9c0e361cbb858e52046ecbe",
+        "message": "Fix qsv for low power mode.",
+        "author": "arabcoders",
+        "date": "2025-11-02T22:35:18+00:00"
+      },
       {
         "sha": "be3d57ff",
         "full_sha": "be3d57ff952ee494029bb490dd64fed9007cbe66",
