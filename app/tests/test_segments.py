@@ -314,9 +314,7 @@ async def test_stream_gpu_fallback_switches_codec(
     assert "-filter_hw_device" in first
     assert first[first.index("-filter_hw_device") + 1] == "hw"
     assert "-vf" in first
-    assert first[first.index("-vf") + 1] == (
-        "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=nv12,hwupload=extra_hw_frames=64"
-    )
+    assert "vpp_qsv" in first[first.index("-vf") + 1]
 
     # Second call (fallback) must switch codec to a safe fallback
     second = captured_args[1]
@@ -329,8 +327,8 @@ async def test_stream_gpu_fallback_switches_codec(
         assert "-filter_hw_device" not in second
         if "-vf" in second:
             vf_val = second[second.index("-vf") + 1]
-            assert not vf_val.startswith("scale=trunc(")
-            assert not vf_val.startswith("format=nv12,hwupload")
+            assert "scale_qsv" not in vf_val
+            assert "hwupload" not in vf_val
         assert "-pix_fmt" in second
         assert second[second.index("-pix_fmt") + 1] == "yuv420p"
     else:
