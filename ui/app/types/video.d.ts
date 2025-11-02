@@ -1,3 +1,6 @@
+type KeyboardShortcutContext = {
+  video: HTMLVideoElement
+}
 
 type video_track_element = {
   file: string,
@@ -82,4 +85,5 @@ export type {
   video_source_element,
   FFProbeResult,
   file_info,
+  KeyboardShortcutContext,
 };

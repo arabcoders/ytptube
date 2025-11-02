@@ -6,13 +6,19 @@ import subprocess  # type: ignore
 import sys
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
 
 from .config import SUPPORTED_CODECS, Config
 from .ffprobe import ffprobe
-from .SegmentEncoders import encoder_fallback_chain, get_builder_for_codec, has_dri_devices, select_encoder
+from .SegmentEncoders import (
+    detect_qsv_capabilities,
+    encoder_fallback_chain,
+    get_builder_for_codec,
+    has_dri_devices,
+    select_encoder,
+)
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
@@ -80,27 +86,28 @@ class Segments:
 
         startTime: str = f"{0:.6f}" if self.index == 0 else f"{self.duration * self.index:.6f}"
 
+        ctx = {
+            "is_linux": sys.platform.startswith("linux"),
+            "has_dri": has_dri_devices(),
+            "vaapi_device": Config.get_instance().vaapi_device,
+            "qsv": {"full": False, "lp": False},
+        }
+
+        caps: dict[str, dict[str, bool]] = detect_qsv_capabilities()
+        base_codec: str = s_codec.split("_")[0]
+        codec_caps: dict[str, bool] = caps.get(base_codec, {"full": False, "lp": False})
+        ctx["qsv"] = codec_caps
+
         if self.vconvert and ff and hasattr(ff, "has_video") and ff.has_video():
             builder: EncoderBuilder = get_builder_for_codec(s_codec)
-            builder_ctx: dict[str, Any] = {
-                "is_linux": sys.platform.startswith("linux"),
-                "has_dri": has_dri_devices(),
-                "vaapi_device": Config.get_instance().vaapi_device,
-            }
         else:
             builder = None
-            builder_ctx = {}
+            ctx: dict = {}
 
         # Collect encoder-specific input/global flags that must precede the input
         input_args: list[str] = []
         if builder:
-            input_args = builder.input_args(
-                {
-                    "is_linux": sys.platform.startswith("linux"),
-                    "has_dri": has_dri_devices(),
-                    "vaapi_device": Config.get_instance().vaapi_device,
-                }
-            )
+            input_args = builder.input_args(ctx)
 
         fargs: list[str] = [
             "-xerror",
@@ -123,10 +130,7 @@ class Segments:
 
         v_args: list[str] = []
         if builder:
-            v_args = builder.add_video_args(
-                ["-g", "52", "-map", "0:v:0", "-strict", "-2"],
-                builder_ctx,
-            )
+            v_args = builder.add_video_args(["-g", "52", "-map", "0:v:0", "-strict", "-2"], ctx)
         else:
             v_args += ["-codec:v", "copy"]
 

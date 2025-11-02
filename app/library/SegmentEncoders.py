@@ -4,10 +4,57 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol
 
 
+@lru_cache(maxsize=1)
+def detect_qsv_capabilities() -> dict[str, dict[str, bool]]:
+    """
+    Detects QSV encode capability for each relevant codec.
+    Returns a dict where keys are codec names (e.g. "h264", "hevc", "vp9") and
+    values are dicts with keys "full" and "lp" booleans.
+    """
+    try:
+        result: subprocess.CompletedProcess[str] = subprocess.run(
+            ["vainfo"],  # noqa: S607
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        out: str = result.stdout + result.stderr
+    except Exception:
+        return {}
+
+    caps = {}
+    for line in out.splitlines():
+        line: str = line.strip()
+        parts: list[str] = line.split(":")
+        if len(parts) < 2:
+            continue
+        prof, ep_str = parts[0].strip(), parts[1].strip()
+        if "H264" in prof:
+            key = "h264"
+        elif "HEVC" in prof:
+            key = "hevc"
+        elif "VP9" in prof:
+            key = "vp9"
+        else:
+            continue
+        if key not in caps:
+            caps[key] = {"full": False, "lp": False}
+
+        if "EncSlice " in ep_str:
+            caps[key]["full"] = True
+
+        if "EncSliceLP" in ep_str:
+            caps[key]["lp"] = True
+
+    return caps
+
+
+@lru_cache(maxsize=1)
 def has_dri_devices() -> bool:
     """
     Check if there are any /dev/dri devices.
@@ -29,6 +76,7 @@ def has_dri_devices() -> bool:
         return False
 
 
+@lru_cache(maxsize=1)
 def ffmpeg_encoders() -> set[str]:
     """
     Return a set of available ffmpeg encoders.
@@ -38,6 +86,7 @@ def ffmpeg_encoders() -> set[str]:
 
     """
     from .config import SUPPORTED_CODECS
+
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
             ["ffmpeg", "-hide_banner", "-loglevel", "error", "-encoders"],  # noqa: S607
@@ -74,6 +123,7 @@ def select_encoder(configured: str) -> str:
 
     """
     from .config import SUPPORTED_CODECS
+
     configured = (configured or "").strip()
 
     avail: set[str] = ffmpeg_encoders()
@@ -109,7 +159,7 @@ class SoftwareBuilder(_BaseBuilder):
     codec_name = "libx264"
 
     def add_video_args(self, args: list[str], ctx: dict[str, Any] | None = None) -> list[str]:
-        return super().add_video_args(["-pix_fmt", "yuv420p", *args])
+        return super().add_video_args(["-pix_fmt", "yuv420p", *args], ctx)
 
 
 class NvencBuilder(_BaseBuilder):
@@ -164,31 +214,60 @@ class QsvBuilder(_BaseBuilder):
 
     def input_args(self, ctx: dict[str, Any] | None = None) -> list[str]:
         ctx = ctx or {}
+        args = []
         is_linux: bool = bool(ctx.get("is_linux", sys.platform.startswith("linux")))
         has_dri: bool = bool(ctx.get("has_dri", False))
         device: str = ctx.get("vaapi_device", "/dev/dri/renderD128")
         if is_linux and has_dri:
-            return ["-init_hw_device", f"qsv=hw:{device}", "-filter_hw_device", "hw"]
-        return []
+            args: list[str] = [
+                "-init_hw_device",
+                f"qsv=hw:{device}",
+                "-hwaccel",
+                "qsv",
+                "-hwaccel_output_format",
+                "qsv",
+                "-filter_hw_device",
+                "hw",
+            ]
+
+        return args
 
     def add_video_args(self, args: list[str], ctx: dict[str, Any] | None = None) -> list[str]:
         ctx = ctx or {}
-        new_args: list[str] = list(args)
         is_linux: bool = bool(ctx.get("is_linux", sys.platform.startswith("linux")))
         has_dri: bool = bool(ctx.get("has_dri", False))
         if is_linux and has_dri:
-            new_args += [
+            if ctx.get("qsv", {}).get("full", False):
+                return [
+                    *args,
+                    "-vf",
+                    "vpp_qsv=w=trunc(iw/2)*2:h=trunc(ih/2)*2:format=nv12",
+                    "-codec:v",
+                    self.codec_name,
+                    "-global_quality",
+                    "24",
+                    "-rc_mode",
+                    "cqp",
+                ]
+            return [
+                *args,
                 "-vf",
-                "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=nv12,hwupload=extra_hw_frames=64",
-                # Favor widely-supported constant quality path and disable LA
+                "vpp_qsv=w=trunc(iw/2)*2:h=trunc(ih/2)*2:format=nv12",
+                "-codec:v",
+                self.codec_name,
+                "-low_power",
+                "1",
+                "-rc_mode",
+                "cbr",
                 "-b:v",
-                "0",
-                "-global_quality",
-                "23",
-                "-look_ahead",
-                "0",
+                "3M",
+                "-maxrate",
+                "3M",
+                "-bufsize",
+                "6M",
             ]
-        return super().add_video_args(new_args)
+
+        return super().add_video_args(args, ctx)
 
 
 def get_builder_for_codec(codec: str) -> EncoderBuilder:

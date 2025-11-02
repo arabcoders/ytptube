@@ -46,11 +46,12 @@ ENV PYTHONFAULTHANDLER=1
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
+RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(Components:[[:space:]]*)main([[:space:]]*|$)/\1main contrib non-free\2/}' /etc/apt/sources.list.d/debian.sources && \
+  mkdir /config /downloads && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone && \
   apt-get update && \
   ARCH="$(dpkg --print-architecture)" && \
   EXTRA_PACKAGES="" && \
-  if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver i965-va-driver libmfx-gen1.2"; fi && \
+  if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver-non-free i965-va-driver libmfx-gen1.2"; fi && \
   apt-get install -y --no-install-recommends locales \
   bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
@@ -87,7 +88,7 @@ USER app
 
 WORKDIR /tmp
 
-HEALTHCHECK --interval=10s --timeout=20s --start-period=10s --retries=3 CMD [ "/usr/local/bin/healthcheck" ]
+HEALTHCHECK --interval=10s --timeout=20s --start-period=60s --retries=3 CMD [ "/usr/local/bin/healthcheck" ]
 
 ENTRYPOINT ["/entrypoint.sh"]
 
