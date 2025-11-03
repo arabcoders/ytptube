@@ -92,7 +92,8 @@
           :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
       </video>
 
-      <span class="has-text-white is-pointer" @click="showHelp = !showHelp" title="Keyboard shortcuts (or press ?)">
+      <span class="is-hidden-mobile has-text-white is-pointer" @click="showHelp = !showHelp"
+        title="Keyboard shortcuts (or press ?)">
         <span class="icon"><i class="fa-solid fa-question" /></span>
         <span>Click here to Keyboard shortcuts or press <kbd>?</kbd> or <kbd>/</kbd></span>
       </span>
