@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (1db5e268)",
-    "full_sha": "1db5e2684340655edba9be39a4e2a768d96efcf0",
-    "date": "2025-11-02T22:46:07+00:00",
+    "tag": "Unreleased (03e8166a)",
+    "full_sha": "03e8166afe27d6f57f3f4749b2de035635ef536c",
+    "date": "2025-11-06T21:26:30+00:00",
     "commits": [
+      {
+        "sha": "dda90ce1",
+        "full_sha": "dda90ce17a34b84355db6d7437a3d9b831630d97",
+        "message": "hide keyboard shortcuts on mobile",
+        "author": "arabcoders",
+        "date": "2025-11-03T13:21:27+00:00"
+      },
       {
         "sha": "c65e0f23",
         "full_sha": "c65e0f23b0b0c494a9c0e361cbb858e52046ecbe",
@@ -108,20 +115,6 @@
         "message": "[FIX] Cancelling live streams. Closes #463",
         "author": "arabcoders",
         "date": "2025-10-23T16:58:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "dda90ce17a34b84355db6d7437a3d9b831630d97",
-    "date": "2025-11-03T13:21:27+00:00",
-    "commits": [
-      {
-        "sha": "dda90ce1",
-        "full_sha": "dda90ce17a34b84355db6d7437a3d9b831630d97",
-        "message": "hide keyboard shortcuts on mobile",
-        "author": "arabcoders",
-        "date": "2025-11-03T13:21:27+00:00"
       }
     ]
   },
