@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20251103-dda90ce1",
-        "date": "2025-11-03T13:21:27+00:00",
+        "tag": "dev-20251108-357ca323",
+        "date": "2025-11-07T23:08:24+00:00",
         "commits": [
+            {
+                "sha": "357ca323",
+                "message": "[FIX] update some web related design choices and improve messaging",
+                "author": "arabcoders",
+                "date": "2025-11-07T23:08:24+00:00",
+                "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff"
+            },
+            {
+                "sha": "058bf567",
+                "message": "[FEAT] add option to see the compiled yt-dlp options",
+                "author": "arabcoders",
+                "date": "2025-11-07T23:07:37+00:00",
+                "full_sha": "058bf567d13518dd5ad75be5d794eefd180ee8e8"
+            },
+            {
+                "sha": "b939aad1",
+                "message": "[CHORES] update external packages",
+                "author": "arabcoders",
+                "date": "2025-11-07T23:06:51+00:00",
+                "full_sha": "b939aad1dbc1b7031ad75d0c8524dfc03b0cf19f"
+            },
             {
                 "sha": "dda90ce1",
                 "message": "hide keyboard shortcuts on mobile",
@@ -2769,7 +2790,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dda90ce17a34b84355db6d7437a3d9b831630d97"
+        "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff"
     },
     {
         "tag": "dev-20250616-c07465a6",

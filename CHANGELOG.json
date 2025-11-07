@@ -119,6 +119,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",
+    "date": "2025-11-07T23:08:24+00:00",
+    "commits": [
+      {
+        "sha": "357ca323",
+        "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",
+        "message": "[FIX] update some web related design choices and improve messaging",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:08:24+00:00"
+      },
+      {
+        "sha": "058bf567",
+        "full_sha": "058bf567d13518dd5ad75be5d794eefd180ee8e8",
+        "message": "[FEAT] add option to see the compiled yt-dlp options",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:07:37+00:00"
+      },
+      {
+        "sha": "b939aad1",
+        "full_sha": "b939aad1dbc1b7031ad75d0c8524dfc03b0cf19f",
+        "message": "[CHORES] update external packages",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:06:51+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.2",
     "full_sha": "b95b6eb6be2d927a18689ab9920164f3ef05acb8",
     "date": "2025-10-22T16:02:44+00:00",
