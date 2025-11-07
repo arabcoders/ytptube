@@ -289,6 +289,10 @@ hr {
   white-space: pre-wrap;
 }
 
+.is-pre-wrap-force {
+  white-space: pre-wrap !important;
+}
+
 .has-text-bold {
   font-weight: bold;
 }
@@ -370,4 +374,3 @@ div.is-centered {
   padding: 0;
   margin: 0 auto;
 }
-

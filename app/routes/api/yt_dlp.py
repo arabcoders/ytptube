@@ -9,6 +9,7 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
 from app.library.Presets import Presets
 from app.library.router import route
@@ -276,13 +277,14 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
 
 
 @route("POST", "api/yt-dlp/command/", "make_command")
-async def make_command(request: Request, config: Config) -> Response:
+async def make_command(request: Request, config: Config, encoder: Encoder) -> Response:
     """
     Build yt-dlp CLI command.
 
     Args:
         request (Request): The request object.
         config (Config): The config instance.
+        encoder (Encoder): The encoder instance.
 
     Returns:
         Response: The response object with the merged fields and final yt-dlp CLI command string.
@@ -304,12 +306,15 @@ async def make_command(request: Request, config: Config) -> Response:
         return web.json_response(data={"error": str(e), "data": data}, status=web.HTTPBadRequest.status_code)
 
     try:
-        command, _ = YTDLPCli(item=it, config=config).build()
+        command, info = YTDLPCli(item=it, config=config).build()
     except Exception as e:
         LOG.exception(e)
         return web.json_response(
             data={"error": "Failed to build CLI command"},
             status=web.HTTPBadRequest.status_code,
         )
+
+    if request.query.get("full", False):
+        return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
     return web.json_response(data={"command": command}, status=web.HTTPOk.status_code)
