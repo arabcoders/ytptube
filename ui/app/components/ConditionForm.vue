@@ -153,12 +153,20 @@
                       </div>
                     </div>
                   </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
-                      For advanced users only. This feature is meant to be expanded later. the only supported key right
-                      now. <code>ignore_download</code> with value of <code>true</code>. Keys must be lowercase with
-                      underscores (e.g., custom_field).</span>
+                  <span class="help ">
+                    <div class="message is-info">
+                      <div class="message-body content pl-0 is-small pt-1">
+                        <ul>
+                          <li>For advanced users only. This feature is meant to be expanded later.</li>
+                          <li>Keys must be lowercase with underscores (e.g., custom_field).</li>
+                          <li>You must click on Add to actually add the option.</li>
+                          <li>The key <code>ignore_download</code> with value of <code>true</code> will instruct
+                            <b>YTPTube</b> to ignore the download and directly mark the item as archived. this is useful
+                            to skip certain kind of downloads.
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                   </span>
                 </div>
               </div>
@@ -268,7 +276,7 @@ import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
@@ -325,7 +333,7 @@ const checkInfo = async (): Promise<void> => {
   }
 
   if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
-    toast.error('Either command options for yt-dlp or at least one extra option is required.')
+    toast.error('Command options for yt-dlp or at least one extra option is required.')
     return
   }
 
@@ -544,4 +552,5 @@ const updateExtraValue = (key: string, event: Event): void => {
   const value = target.value.trim()
   form.extras[key] = value ? parseValue(value) : ''
 }
+
 </script>
