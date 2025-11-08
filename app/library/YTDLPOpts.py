@@ -1,6 +1,7 @@
 import logging
 import shlex
 from pathlib import Path
+from typing import Any
 
 from .config import Config
 from .Presets import Preset, Presets
@@ -28,7 +29,7 @@ class ARGSMerger:
         if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
-        _args = shlex.split(args)
+        _args: list[str] = shlex.split(args)
         if len(_args) > 0:
             self.args.extend(_args)
 
@@ -124,8 +125,8 @@ class YTDLPCli:
             raise ValueError(msg)
 
         self.item = item
-        self.preset = item.get_preset()
-        self._config = config or Config.get_instance()
+        self.preset: Preset = item.get_preset()
+        self._config: Config = config or Config.get_instance()
 
     def build(self) -> tuple[str, dict]:
         """
@@ -138,7 +139,7 @@ class YTDLPCli:
         template: str | None = None
         save_path: str | None = None
         cookie_file: Path | None = None
-        cli_args = ARGSMerger.get_instance()
+        cli_args: ARGSMerger = ARGSMerger.get_instance()
 
         if self.item.cookies:
             cookie_file = create_cookies_file(self.item.cookies)
@@ -160,10 +161,10 @@ class YTDLPCli:
                 template = self.preset.template
 
             if self.preset.cli:
-                cli_args.add(self.preset.cli)
+                cli_args.add(self._replace_vars(self.preset.cli))
 
         if self.item.cli:
-            cli_args.add(self.item.cli)
+            cli_args.add(self._replace_vars(self.item.cli))
 
         if not save_path:
             save_path = self._config.download_path
@@ -172,24 +173,22 @@ class YTDLPCli:
             template = self._config.output_template
 
         if cookie_file:
-            cli_args.add(f'--cookies "{cookie_file!s}"')
+            cli_args.add(self._replace_vars(f'--cookies "{cookie_file!s}"'))
 
         if template:
-            cli_args.add(f'--output "{template}"')
+            cli_args.add(self._replace_vars(f'--output "{template}"'))
 
         if save_path:
-            cli_args.add(f'--paths "home:{save_path}"')
+            cli_args.add(self._replace_vars(f'--paths "home:{save_path}"'))
 
-        cli_args.add(f'--paths "temp:{self._config.temp_path}"')
+        cli_args.add(self._replace_vars(f'--paths "temp:{self._config.temp_path}"'))
 
         if self.item.url:
             cli_args.add(self.item.url)
 
-        command = str(cli_args)
-        for k, v in self._config.get_replacers().items():
-            command = command.replace(f"%({k})s", v if isinstance(v, str) else str(v))
+        command: str = self._replace_vars(str(cli_args))
 
-        info = {
+        info: dict[str, Any] = {
             "command": command,
             "dict": cli_args.as_dict(),
             "ytdlp": cli_args.as_ytdlp(),
@@ -201,6 +200,22 @@ class YTDLPCli:
         }
 
         return command, info
+
+    def _replace_vars(self, text: str) -> str:
+        """
+        Replace variables in the given text.
+
+        Args:
+            text (str): The text to replace variables in
+
+        Returns:
+            str: The text with variables replaced
+
+        """
+        for k, v in self._config.get_replacers().items():
+            text: str = text.replace(f"%({k})s", v if isinstance(v, str) else str(v))
+
+        return text
 
 
 class YTDLPOpts:

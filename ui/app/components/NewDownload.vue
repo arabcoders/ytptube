@@ -15,8 +15,7 @@
                     :disabled="!socket.isConnected || addInProgress" v-model="form.url">
                 </div>
                 <div class="control">
-                  <button type="submit" class="button is-primary"
-                    :class="{ 'is-loading': !socket.isConnected || addInProgress }"
+                  <button type="submit" class="button is-primary" :class="{ 'is-loading': addInProgress }"
                     :disabled="!socket.isConnected || addInProgress || !form?.url">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                     <span>Add</span>
@@ -72,7 +71,7 @@
 
             <div class="column">
               <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
-                :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
+                :disabled="!socket.isConnected">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
                 <span>Advanced Options</span>
               </button>
@@ -178,6 +177,11 @@
                   <span>Run CLI</span>
                 </NuxtLink>
 
+                <NuxtLink class="dropdown-item" @click="testDownloadOptions" v-if="config.app.console_enabled">
+                  <span class="icon has-text-success"><i class="fa-solid fa-flask" /></span>
+                  <span>Show compiled yt-dlp options</span>
+                </NuxtLink>
+
                 <hr class="dropdown-divider" />
                 <NuxtLink class="dropdown-item" @click="resetConfig">
                   <span class="icon has-text-danger"><i class="fa-solid fa-rotate-left" /></span>
@@ -189,26 +193,31 @@
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
                   <button type="button" class="button is-purple" @click="() => showFields = true"
-                    :class="{ 'is-loading': !socket.isConnected }" :disabled="!socket.isConnected">
+                    :disabled="!socket.isConnected" v-tooltip="'Manage custom fields'">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
-                    <span>Custom Fields</span>
                   </button>
                 </div>
+
+                <div class="control" v-if="config.app.console_enabled" v-tooltip="'Run directly in console'">
+                  <button type="button" class="button is-warning" @click="runCliCommand"
+                    :disabled="!socket.isConnected || !form?.url">
+                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  </button>
+                </div>
+
                 <div class="control">
                   <button type="button" class="button is-info"
+                    v-tooltip="'Get yt-dlp information for the provided URL.'"
                     @click="emitter('getInfo', form.url, form.preset, form.cli)"
-                    :class="{ 'is-loading': !socket.isConnected }"
-                    :disabled="!socket.isConnected || addInProgress || !form?.url">
+                    :disabled="!socket.isConnected || addInProgress || !form?.url || multiURLs">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Information</span>
                   </button>
                 </div>
 
                 <div class="control" v-if="config.app.console_enabled">
-                  <button type="button" class="button is-warning" @click="runCliCommand"
-                    :disabled="!socket.isConnected || !form?.url">
-                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>Run CLI</span>
+                  <button type="button" class="button is-success" @click="testDownloadOptions"
+                    :disabled="!socket.isConnected || !form?.url" v-tooltip="'Show compiled yt-dlp options.'">
+                    <span class="icon"><i class="fa-solid fa-flask" /></span>
                   </button>
                 </div>
 
@@ -216,7 +225,6 @@
                   <button type="button" class="button is-danger" @click="resetConfig"
                     :disabled="!!(!socket.isConnected || form?.id)" v-tooltip="'Reset local settings'">
                     <span class="icon"><i class="fa-solid fa-rotate-left" /></span>
-                    <span>Reset</span>
                   </button>
                 </div>
 
@@ -234,6 +242,8 @@
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
       <YTDLPOptions />
     </Modal>
+
+    <ModalText v-if="showTestResults" @closeModel="CloseTestResults" :data="testResultsData" />
   </main>
 </template>
 
@@ -266,6 +276,8 @@ const storedCommand = useStorage<string>('console_command', '')
 const addInProgress = ref<boolean>(false)
 const showFields = ref<boolean>(false)
 const showOptions = ref<boolean>(false)
+const showTestResults = ref<boolean>(false)
+const testResultsData = ref<any>(null)
 const dlFieldsExtra = ['--no-download-archive']
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 
@@ -496,10 +508,9 @@ const runCliCommand = async (): Promise<void> => {
     return
   }
 
-  const {status} = await dialog.confirmDialog({
+  const { status } = await dialog.confirmDialog({
     title: 'Run CLI Command',
     message: `This will generate a yt-dlp command and run it in the console. Continue?`,
-    confirmColor: 'is-warning',
   })
 
   if (!status) {
@@ -568,6 +579,73 @@ const runCliCommand = async (): Promise<void> => {
   }
 }
 
+const testDownloadOptions = async (): Promise<void> => {
+  if (!form.value.url) {
+    toast.warning('Please enter a URL first')
+    return
+  }
+
+  let form_cli = (form.value?.cli || '').trim()
+
+  if (dlFields.value && Object.keys(dlFields.value).length > 0) {
+    const joined = []
+    for (const [key, value] of Object.entries(dlFields.value)) {
+      if (false === is_valid_dl_field(key)) {
+        continue
+      }
+
+      if ([undefined, null, '', false].includes(value as any)) {
+        continue
+      }
+
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
+      if (form_cli && keyRegex.test(form_cli)) {
+        continue;
+      }
+
+      joined.push(true === value ? `${key}` : `${key} ${value}`)
+    }
+
+    if (joined.length > 0) {
+      form_cli = form_cli ? `${form_cli} ${joined.join(' ')}` : joined.join(' ')
+    }
+  }
+
+  try {
+    const resp = await request('/api/yt-dlp/command?full=true', {
+      method: 'POST',
+      body: JSON.stringify({
+        url: form.value.url,
+        preset: form.value.preset,
+        folder: form.value.folder,
+        cookies: form.value.cookies,
+        template: form.value.template,
+        cli: form_cli,
+      })
+    })
+
+    const json = await resp.json()
+
+    if (!resp.ok) {
+      toast.error(`Error: ${json.error || 'Failed to generate command.'}`)
+      return
+    }
+
+    testResultsData.value = {
+      command: json.command,
+      yt_dlp: json.ytdlp,
+    }
+    showTestResults.value = true
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : 'Failed to test download options')
+  }
+}
+
+const CloseTestResults = () => {
+  showTestResults.value = false
+  testResultsData.value = null
+}
+
 const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\S)(-f|--format)(=|\s)(\S+)/))
 
 const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
@@ -606,4 +684,11 @@ const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string
 
 // eslint-disable-next-line vue/no-side-effects-in-computed-properties
 const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
+
+const multiURLs = computed(() => {
+  if (!form.value.url) {
+    return false
+  }
+  return form.value.url.split(separator.value).filter((u: string) => u.trim()).length > 1
+})
 </script>

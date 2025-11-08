@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, defineModel, defineProps, nextTick } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const props = withDefaults(defineProps<{

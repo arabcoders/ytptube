@@ -587,6 +587,13 @@ def arg_converter(
         finally:
             yt_dlp.options.create_parser = create_parser
 
+    try:
+        from app.postprocessors.patch_metadata_parser import ensure_patch
+
+        ensure_patch()
+    except Exception as exc:
+        LOG.debug("Metadata parser patch failed to apply: %s", exc)
+
     default_opts = _default_opts([]).ydl_opts
 
     if args:

@@ -121,24 +121,24 @@ class NFOMakerPP(PostProcessor):
 
     def run(self, info: dict | None = None) -> tuple[list, dict]:
         if not info:
-            self.to_screen("No info provided to NFO Maker.")
+            self.report_warning("No info provided to NFO Maker.")
             return [], {}
 
         if self.mode not in self._MODE:
-            self.to_screen(f"Invalid mode '{self.mode}'.")
+            self.report_warning(f"Invalid mode '{self.mode}'.")
             return [], info
 
         # prefer explicit final path if present, else fall back to filename
         base_path = info.get("filename")
         if not base_path:
-            self.to_screen("No 'filename' provided, skipping NFO creation.")
+            self.report_warning("No 'filename' provided, skipping NFO creation.")
             return [], info
 
         base_path = Path(base_path)
 
         nfo_file = base_path.with_suffix(".nfo")
         if nfo_file.exists():
-            self.to_screen(f"NFO file '{nfo_file!s}' already exists, skipping creation.")
+            self.report_warning(f"NFO file '{nfo_file!s}' already exists, skipping creation.")
             return [], info
 
         try:
@@ -149,25 +149,25 @@ class NFOMakerPP(PostProcessor):
             return [], info
 
         if 1 > len(nfo_data):
-            self.to_screen("No metadata found to write to NFO file.")
+            self.report_warning("No metadata found to write to NFO file.")
             return [], info
 
         # derive year from any date if missing
         if ("year" not in nfo_data) and any(k in nfo_data for k in self._DATE_FIELDS):
             try:
-                first_date = next((str(nfo_data[k]) for k in self._DATE_FIELDS if nfo_data.get(k)), "")
+                first_date: str = next((str(nfo_data[k]) for k in self._DATE_FIELDS if nfo_data.get(k)), "")
                 if first_date:
                     nfo_data["year"] = first_date.split("-")[0]
             except Exception as e:
-                self.to_screen(f"Error extracting year from date: {e}")
+                self.report_warning(f"Error extracting year from date: {e}")
 
-        status = self._write_episode_info(nfo_file, base_path, nfo_data)
+        status: bool = self._write_episode_info(nfo_file, base_path, nfo_data)
         if status and nfo_file.exists() and base_path.exists:
             try:
-                mtime = base_path.stat().st_mtime
+                mtime: float = base_path.stat().st_mtime
                 self.try_utime(str(nfo_file), mtime, mtime)
             except Exception as e:
-                self.to_screen(f"Failed to sync NFO mtime: {e}")
+                self.report_warning(f"Failed to sync NFO mtime: {e}")
 
         return [], info
 
@@ -229,12 +229,12 @@ class NFOMakerPP(PostProcessor):
 
         aired = self._normalize_date(aired) if aired else ""
         if not aired or 3 > len(aired.split("-")):
-            self.to_screen("Invalid aired/premiered date, skipping NFO creation.")
+            self.report_warning("Invalid aired/premiered date, skipping NFO creation.")
             return False
 
         year, month, day = aired.split("-")
         if not (year and month and day):
-            self.to_screen("Invalid aired date parts, skipping NFO creation.")
+            self.report_warning("Invalid aired date parts, skipping NFO creation.")
             return False
 
         self.to_screen(f"Creating {self.mode} NFO file at {nfo_file!s}")
@@ -333,7 +333,7 @@ class NFOMakerPP(PostProcessor):
 
             if self.prefix and key in ("episode",):
                 try:
-                    value = f"1{value}"
+                    value: str = f"1{value}"
                 except Exception:
                     pass
 
@@ -342,14 +342,14 @@ class NFOMakerPP(PostProcessor):
         # remove any unresolved placeholder lines
         mapping = self._MODE[self.mode].get("mapping", {})
         unresolved_keys: Iterable[str] = set({*mapping, *safe_repl.keys()})
-        pattern = re.compile(rf".*{{(?:{'|'.join(map(re.escape, unresolved_keys))})}}.*")
-        rendered = "\n".join(line for line in rendered.splitlines() if not pattern.fullmatch(line))
+        pattern: re.Pattern[str] = re.compile(rf".*{{(?:{'|'.join(map(re.escape, unresolved_keys))})}}.*")
+        rendered: str = "\n".join(line for line in rendered.splitlines() if not pattern.fullmatch(line))
 
         try:
             nfo_file.write_text(rendered, encoding="utf-8")
             self.to_screen(f"NFO file written successfully at {nfo_file!s}")
         except Exception as e:
-            self.to_screen(f"Error writing NFO file: {e}")
+            self.report_warning(f"Error writing NFO file: {e}")
 
     @staticmethod
     def _escape_text(text: Any) -> Any:
