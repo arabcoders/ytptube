@@ -84,8 +84,8 @@
 <template>
   <div v-if="infoLoaded">
     <div style="position: relative;">
-      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls
-        crossorigin="anonymous" preload="auto" autoplay>
+      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls crossorigin="anonymous"
+        preload="auto" autoplay>
         <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
           :type="source.type" />
         <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
@@ -416,6 +416,68 @@ const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
   applyMediaSessionMetadata()
 }
 
+const restoreDefaultTextTrack = async () => {
+  const el = video.value
+  if (!el) {
+    return
+  }
+
+  try {
+    const tracksList = el.textTracks
+    if (!tracksList || 0 === tracksList.length) {
+      return
+    }
+
+    // Check if first track has cues - if not, we need to reload tracks
+    const firstTrack = tracksList[0] as TextTrack | undefined
+    const needsReload = firstTrack && (!firstTrack.cues || firstTrack.cues.length === 0)
+
+    if (needsReload) {
+      const trackElements = el.querySelectorAll('track')
+
+      trackElements.forEach((trackEl, idx) => {
+        const parent = trackEl.parentNode
+        const clone = trackEl.cloneNode(true) as HTMLTrackElement
+        trackEl.remove()
+        setTimeout(() => {
+          if (parent) {
+            parent.appendChild(clone)
+            // Set mode after cues load
+            clone.addEventListener('load', () => {
+              const trackObj = clone.track
+              if (trackObj) {
+                trackObj.mode = idx === 0 ? 'showing' : 'disabled'
+              }
+            }, { once: true })
+          }
+        }, idx * 10)
+      })
+
+      return
+    }
+
+    for (let i = 0; i < tracksList.length; i += 1) {
+      const track = tracksList[i] as TextTrack | undefined
+      if (track) {
+        track.mode = 'disabled'
+      }
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 50))
+
+    for (let i = 0; i < tracksList.length; i += 1) {
+      const track = tracksList[i] as TextTrack | undefined
+      if (!track) {
+        continue
+      }
+      const newMode = 0 === i ? 'showing' : 'disabled'
+      track.mode = newMode
+    }
+  } catch (error) {
+    console.warn('Failed to restore subtitle track state', error)
+  }
+}
+
 onMounted(async () => {
   disableOpacity()
   const req = await request(makeDownload(config, props.item, 'api/file/info'))
@@ -452,7 +514,7 @@ onMounted(async () => {
 
   if (isApple) {
     const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4')
-    const src = makeDownload(config, props.item, allowedCodec ? 'api/download' : 'm3u8')
+    const src = makeDownload(config, props.item, allowedCodec ? 'api/download' : 'm3u8', allowedCodec ? false : true)
     sources.value.push({
       src,
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
@@ -460,7 +522,7 @@ onMounted(async () => {
     })
     usingHls.value = !allowedCodec
   } else {
-    const src = makeDownload(config, props.item, 'api/download')
+    const src = makeDownload(config, props.item, 'api/download', false)
     sources.value.push({ src, type: response.mimetype, onerror: (err: Event) => src_error(err), })
     usingHls.value = false
   }
@@ -597,6 +659,7 @@ const prepareVideoPlayer = () => {
 
   video.value.volume = volume.value
   video.value.addEventListener('volumechange', volume_change_handler)
+  restoreDefaultTextTrack()
 
   if (hasVideoStream.value) {
     if ('requestVideoFrameCallback' in video.value) {
@@ -623,7 +686,7 @@ const src_error = async (e: any) => {
   }
 
   console.warn('Source failed to load, attempting HLS fallback via hls.js...', e)
-  attach_hls(makeDownload(config, props.item, 'm3u8'))
+  attach_hls(makeDownload(config, props.item, 'm3u8', true))
 }
 
 const attach_hls = (link: string) => {
@@ -640,6 +703,15 @@ const attach_hls = (link: string) => {
   })
 
   hls.on(Hls.Events.MANIFEST_PARSED, () => applyMediaSessionMetadata())
+  hls.on(Hls.Events.MANIFEST_PARSED, async () => {
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await restoreDefaultTextTrack()
+  })
+
+  hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
+    await new Promise(resolve => setTimeout(resolve, 200))
+    await restoreDefaultTextTrack()
+  })
 
   hls.on(Hls.Events.LEVEL_LOADED, () => {
     if (video.value) {
@@ -667,6 +739,6 @@ const forceSwitchToHls = () => {
     return
   }
 
-  src_error(new Event('forceSwitch'))
+  attach_hls(makeDownload(config, props.item, 'm3u8', true))
 }
 </script>

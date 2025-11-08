@@ -456,9 +456,10 @@ const getQueryParams = (url: string = window.location.search): Record<string, st
  * @param config - The application config object.
  * @param item - The item containing filename/folder.
  * @param base - The base endpoint type (default: 'api/download').
+ * @param playlist - Whether to generate a playlist URL (default: false).
  * @returns The fully constructed download URI.
  */
-const makeDownload = (config: any, item: StoreItem | { folder?: string; filename: string }, base: string = 'api/download'): string => {
+const makeDownload = (config: any, item: StoreItem | { folder?: string; filename: string }, base: string = 'api/download', playlist: boolean = false): string => {
   let baseDir = 'api/player/m3u8/video/'
   if ('m3u8' !== base) {
     baseDir = `${base}/`
@@ -474,7 +475,7 @@ const makeDownload = (config: any, item: StoreItem | { folder?: string; filename
   }
 
   const url = `/${sTrim(baseDir, '/')}${encodePath(item.filename)}`
-  return uri('m3u8' === base ? `${url}.m3u8` : url)
+  return uri('m3u8' === base || true === playlist ? `${url}.m3u8` : url)
 }
 
 /**
