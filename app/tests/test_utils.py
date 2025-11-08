@@ -1333,6 +1333,27 @@ class TestArgConverter:
         except (ModuleNotFoundError, AttributeError, ImportError):
             assert True
 
+    def test_arg_converter_replace_in_metadata(self):
+        """Test arg_converter handles replace-in-metadata without assertions."""
+        try:
+            result = arg_converter("--replace-in-metadata title foo bar")
+        except (ModuleNotFoundError, AttributeError, ImportError):
+            assert True
+            return
+
+        postprocessors = result.get("postprocessors", [])
+        assert postprocessors, "Expected metadata parser postprocessor to be present"
+
+        metadata_pp = postprocessors[0]
+        assert metadata_pp.get("key") == "MetadataParser"
+
+        actions = metadata_pp.get("actions", [])
+        assert actions, "Expected metadata parser to include actions"
+
+        action_callable = actions[0][0]
+        assert callable(action_callable)
+        assert getattr(action_callable, "__name__", "") == "replacer"
+
 
 class TestGetPossibleImages:
     """Test the get_possible_images function."""
