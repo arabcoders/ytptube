@@ -120,9 +120,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",
-    "date": "2025-11-07T23:08:24+00:00",
+    "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
+    "date": "2025-11-08T18:33:22+00:00",
     "commits": [
+      {
+        "sha": "1ced5b33",
+        "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
+        "message": "[FIX] fix regression in video player",
+        "author": "arabcoders",
+        "date": "2025-11-08T18:33:22+00:00"
+      },
+      {
+        "sha": "5a393bfd",
+        "full_sha": "5a393bfd9f3e3e4ac2b60c54b5de7cb4359d210a",
+        "message": "[FIX] MetadataParserPP. Ref #475",
+        "author": "arabcoders",
+        "date": "2025-11-08T17:42:07+00:00"
+      },
       {
         "sha": "357ca323",
         "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",

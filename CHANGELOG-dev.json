@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251108-357ca323",
-        "date": "2025-11-07T23:08:24+00:00",
+        "tag": "dev-20251108-1ced5b33",
+        "date": "2025-11-08T18:33:22+00:00",
         "commits": [
+            {
+                "sha": "1ced5b33",
+                "message": "[FIX] fix regression in video player",
+                "author": "arabcoders",
+                "date": "2025-11-08T18:33:22+00:00",
+                "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef"
+            },
+            {
+                "sha": "5a393bfd",
+                "message": "[FIX] MetadataParserPP. Ref #475",
+                "author": "arabcoders",
+                "date": "2025-11-08T17:42:07+00:00",
+                "full_sha": "5a393bfd9f3e3e4ac2b60c54b5de7cb4359d210a"
+            },
             {
                 "sha": "357ca323",
                 "message": "[FIX] update some web related design choices and improve messaging",
@@ -2790,7 +2804,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff"
+        "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef"
     },
     {
         "tag": "dev-20250616-c07465a6",
