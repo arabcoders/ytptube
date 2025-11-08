@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251108-1ced5b33",
-        "date": "2025-11-08T18:33:22+00:00",
+        "tag": "dev-20251108-8c8b932d",
+        "date": "2025-11-08T20:11:14+00:00",
         "commits": [
+            {
+                "sha": "8c8b932d",
+                "message": "[FIX] Chromium browser does not render subtitles after HLS attach",
+                "author": "arabcoders",
+                "date": "2025-11-08T20:11:14+00:00",
+                "full_sha": "8c8b932d6b90dd3e6cb69aac1304481af10f6b48"
+            },
             {
                 "sha": "1ced5b33",
                 "message": "[FIX] fix regression in video player",
@@ -2804,7 +2811,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef"
+        "full_sha": "8c8b932d6b90dd3e6cb69aac1304481af10f6b48"
     },
     {
         "tag": "dev-20250616-c07465a6",
