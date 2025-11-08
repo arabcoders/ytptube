@@ -1,9 +1,44 @@
 [
   {
-    "tag": "Unreleased (03e8166a)",
-    "full_sha": "03e8166afe27d6f57f3f4749b2de035635ef536c",
-    "date": "2025-11-06T21:26:30+00:00",
+    "tag": "Unreleased (f4e5dfb2)",
+    "full_sha": "f4e5dfb2f66a49b1dfef8163165cc8205e38b2ac",
+    "date": "2025-11-08T18:40:21+00:00",
     "commits": [
+      {
+        "sha": "1ced5b33",
+        "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
+        "message": "[FIX] fix regression in video player",
+        "author": "arabcoders",
+        "date": "2025-11-08T18:33:22+00:00"
+      },
+      {
+        "sha": "5a393bfd",
+        "full_sha": "5a393bfd9f3e3e4ac2b60c54b5de7cb4359d210a",
+        "message": "[FIX] MetadataParserPP. Ref #475",
+        "author": "arabcoders",
+        "date": "2025-11-08T17:42:07+00:00"
+      },
+      {
+        "sha": "357ca323",
+        "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",
+        "message": "[FIX] update some web related design choices and improve messaging",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:08:24+00:00"
+      },
+      {
+        "sha": "058bf567",
+        "full_sha": "058bf567d13518dd5ad75be5d794eefd180ee8e8",
+        "message": "[FEAT] add option to see the compiled yt-dlp options",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:07:37+00:00"
+      },
+      {
+        "sha": "b939aad1",
+        "full_sha": "b939aad1dbc1b7031ad75d0c8524dfc03b0cf19f",
+        "message": "[CHORES] update external packages",
+        "author": "arabcoders",
+        "date": "2025-11-07T23:06:51+00:00"
+      },
       {
         "sha": "dda90ce1",
         "full_sha": "dda90ce17a34b84355db6d7437a3d9b831630d97",
@@ -115,48 +150,6 @@
         "message": "[FIX] Cancelling live streams. Closes #463",
         "author": "arabcoders",
         "date": "2025-10-23T16:58:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
-    "date": "2025-11-08T18:33:22+00:00",
-    "commits": [
-      {
-        "sha": "1ced5b33",
-        "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
-        "message": "[FIX] fix regression in video player",
-        "author": "arabcoders",
-        "date": "2025-11-08T18:33:22+00:00"
-      },
-      {
-        "sha": "5a393bfd",
-        "full_sha": "5a393bfd9f3e3e4ac2b60c54b5de7cb4359d210a",
-        "message": "[FIX] MetadataParserPP. Ref #475",
-        "author": "arabcoders",
-        "date": "2025-11-08T17:42:07+00:00"
-      },
-      {
-        "sha": "357ca323",
-        "full_sha": "357ca323e1d8ba6fb058ba2f84e780bc0d34faff",
-        "message": "[FIX] update some web related design choices and improve messaging",
-        "author": "arabcoders",
-        "date": "2025-11-07T23:08:24+00:00"
-      },
-      {
-        "sha": "058bf567",
-        "full_sha": "058bf567d13518dd5ad75be5d794eefd180ee8e8",
-        "message": "[FEAT] add option to see the compiled yt-dlp options",
-        "author": "arabcoders",
-        "date": "2025-11-07T23:07:37+00:00"
-      },
-      {
-        "sha": "b939aad1",
-        "full_sha": "b939aad1dbc1b7031ad75d0c8524dfc03b0cf19f",
-        "message": "[CHORES] update external packages",
-        "author": "arabcoders",
-        "date": "2025-11-07T23:06:51+00:00"
       }
     ]
   },
