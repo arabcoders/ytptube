@@ -42,6 +42,6 @@ class Playlist:
             )
 
         playlist.append(f"#EXT-X-STREAM-INF:PROGRAM-ID=1{subs}")
-        playlist.append(f"{self.url}api/player/m3u8/video/{quote(ref)}.m3u8")
+        playlist.append(f"{self.url}api/player/m3u8/video/{quote(str(ref))}.m3u8")
 
         return "\n".join(playlist)
