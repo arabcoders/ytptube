@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (f4e5dfb2)",
-    "full_sha": "f4e5dfb2f66a49b1dfef8163165cc8205e38b2ac",
-    "date": "2025-11-08T18:40:21+00:00",
+    "tag": "Unreleased (8273847d)",
+    "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
+    "date": "2025-11-08T20:19:41+00:00",
     "commits": [
+      {
+        "sha": "8c8b932d",
+        "full_sha": "8c8b932d6b90dd3e6cb69aac1304481af10f6b48",
+        "message": "[FIX] Chromium browser does not render subtitles after HLS attach",
+        "author": "arabcoders",
+        "date": "2025-11-08T20:11:14+00:00"
+      },
       {
         "sha": "1ced5b33",
         "full_sha": "1ced5b331417a1d484937e969de7cbb34d0e04ef",
@@ -150,20 +157,6 @@
         "message": "[FIX] Cancelling live streams. Closes #463",
         "author": "arabcoders",
         "date": "2025-10-23T16:58:12+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "8c8b932d6b90dd3e6cb69aac1304481af10f6b48",
-    "date": "2025-11-08T20:11:14+00:00",
-    "commits": [
-      {
-        "sha": "8c8b932d",
-        "full_sha": "8c8b932d6b90dd3e6cb69aac1304481af10f6b48",
-        "message": "[FIX] Chromium browser does not render subtitles after HLS attach",
-        "author": "arabcoders",
-        "date": "2025-11-08T20:11:14+00:00"
       }
     ]
   },
