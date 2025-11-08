@@ -84,7 +84,7 @@
 <template>
   <div v-if="infoLoaded">
     <div style="position: relative;">
-      <video class="player" ref="video" :poster="uri(thumbnail)" :title="title" playsinline controls
+      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls
         crossorigin="anonymous" preload="auto" autoplay>
         <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
           :type="source.type" />
@@ -92,11 +92,21 @@
           :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
       </video>
 
-      <span class="is-hidden-mobile has-text-white is-pointer" @click="showHelp = !showHelp"
-        title="Keyboard shortcuts (or press ?)">
-        <span class="icon"><i class="fa-solid fa-question" /></span>
-        <span>Click here to Keyboard shortcuts or press <kbd>?</kbd> or <kbd>/</kbd></span>
-      </span>
+      <div class="is-flex is-justify-content-space-between">
+        <div>
+          <span v-if="infoLoaded && !usingHls && hasVideoStream" class="is-hidden-mobile has-text-info is-pointer"
+            @click.prevent="forceSwitchToHls">
+            <span class="icon"><i class="fa-solid fa-arrows-rotate" /></span>
+            <span>Trouble playing? switch to HLS stream.</span>
+          </span>
+        </div>
+        <div>
+          <span class="is-hidden-mobile has-text-grey-lighter is-pointer" @click="showHelp = !showHelp">
+            <span class="icon"><i class="fa-solid fa-question" /></span>
+            <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
+          </span>
+        </div>
+      </div>
 
       <div v-if="showHelp" class="keyboard-help" @click.self="showHelp = false">
         <h2 style="margin-bottom: 1.5rem;">Keyboard Shortcuts</h2>
@@ -252,12 +262,7 @@ import type { file_info, video_source_element, video_track_element } from '~/typ
 const config = useConfigStore()
 const toast = useNotification()
 
-const props = defineProps({
-  item: {
-    type: Object as () => StoreItem,
-    default: () => ({}),
-  }
-})
+const props = defineProps({ item: { type: Object as () => StoreItem, default: () => ({}) } })
 
 const emitter = defineEmits(['closeModel'])
 
@@ -277,10 +282,10 @@ const destroyed = ref(false)
 const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
 const havePoster = ref(false)
 const showHelp = ref(false)
+const usingHls = ref(false)
 
 let unbindMediaSessionListeners: null | (() => void) = null
 let hls: Hls | null = null
-let detachDecodeGuard: null | (() => void) = null
 let cleanupKeyboardShortcuts: null | (() => void) = null
 
 const handle_event = (e: KeyboardEvent) => {
@@ -353,10 +358,6 @@ const volume_change_handler = () => {
   updateMediaSessionPosition(el)
 }
 
-/**
- * Unified frame capture helper (merges previous captureCurrentFrame/captureFirstFramePoster logic).
- * Returns a JPEG data URL or '' on failure.
- */
 const captureFrame = async (el: HTMLVideoElement): Promise<string> => {
   if (!el || destroyed.value) {
     return ''
@@ -413,11 +414,6 @@ const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
   thumbnail.value = dataUrl
   havePoster.value = true
   applyMediaSessionMetadata()
-
-  if (detachDecodeGuard) {
-    detachDecodeGuard()
-    detachDecodeGuard = null
-  }
 }
 
 onMounted(async () => {
@@ -460,15 +456,13 @@ onMounted(async () => {
     sources.value.push({
       src,
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
-      onerror: (_e: Event) => src_error(),
+      onerror: (err: Event) => src_error(err),
     })
+    usingHls.value = !allowedCodec
   } else {
     const src = makeDownload(config, props.item, 'api/download')
-    sources.value.push({
-      src,
-      type: response.mimetype,
-      onerror: (_e: Event) => src_error(),
-    })
+    sources.value.push({ src, type: response.mimetype, onerror: (err: Event) => src_error(err), })
+    usingHls.value = false
   }
 
   if (props.item.extras?.channel) {
@@ -513,23 +507,15 @@ onMounted(async () => {
     unbindMediaSessionListeners = bindMediaSessionListeners(video.value)
   }
 
-  // Initialize keyboard shortcuts
   const keyboardShortcutsResult = useKeyboardShortcuts({
     videoElement: video,
     enabled: ref(true),
     closePlayer: () => emitter('closeModel'),
-    onHelpToggle: () => {
-      // Help toggle callback (optional)
-    }
   })
 
-  // Attach the keyboard shortcuts listener and store cleanup function
   cleanupKeyboardShortcuts = keyboardShortcutsResult.attach()
 
-  // Bind the showHelp from the composable
-  watch(keyboardShortcutsResult.showHelp, (newVal) => {
-    showHelp.value = newVal
-  })
+  watch(keyboardShortcutsResult.showHelp, newVal => showHelp.value = newVal)
 
   document.addEventListener('keydown', handle_event)
 })
@@ -545,7 +531,9 @@ const applyMediaSessionMetadata = () => {
   if (thumbnail.value) {
     meta.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }]
   }
-  try { navigator.mediaSession.metadata = new MediaMetadata(meta) } catch { }
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata(meta)
+  } catch { }
 }
 
 onUpdated(() => prepareVideoPlayer())
@@ -554,7 +542,10 @@ onBeforeUnmount(() => {
   enableOpacity()
   if (hls) {
     hls.destroy()
+    hls = null
   }
+
+  usingHls.value = false
 
   document.removeEventListener('keydown', handle_event)
 
@@ -575,16 +566,13 @@ onBeforeUnmount(() => {
   if (!video.value) {
     return
   }
+
   destroyed.value = true
 
   try {
     video.value.pause()
     video.value.querySelectorAll('source').forEach(source => source.removeAttribute('src'))
     video.value.removeEventListener('volumechange', volume_change_handler)
-    if (detachDecodeGuard) {
-      detachDecodeGuard()
-      detachDecodeGuard = null
-    }
     video.value.load()
   }
   catch (e) {
@@ -610,114 +598,17 @@ const prepareVideoPlayer = () => {
   video.value.volume = volume.value
   video.value.addEventListener('volumechange', volume_change_handler)
 
-  if (detachDecodeGuard) {
-    detachDecodeGuard()
-    detachDecodeGuard = null
-  }
-
   if (hasVideoStream.value) {
     if ('requestVideoFrameCallback' in video.value) {
       ; (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!))
     } else {
-      const tryOnce = () => captureFirstFramePoster(video.value!)
-        ; (video.value as any).addEventListener('loadeddata', tryOnce, { once: true })
+      const tryOnce = () => captureFirstFramePoster(video.value!);
+      ; (video.value as any).addEventListener('loadeddata', tryOnce, { once: true })
     }
-
-    detachDecodeGuard = attachDecodeFailGuard(video.value, () => src_error())
   }
 }
 
-function attachDecodeFailGuard(el: HTMLVideoElement, onFail: () => void): () => void {
-  let rvfcId: number | null = null
-  let timer: number | null = null
-  let armed = false
-  let done = false
-  let playAttempted = false
-
-  const clearAll = () => {
-    if (null !== timer) {
-      clearTimeout(timer)
-      timer = null
-    }
-    if (null !== rvfcId && 'cancelVideoFrameCallback' in el) {
-      ; (el as any).cancelVideoFrameCallback(rvfcId)
-      rvfcId = null
-    }
-    el.removeEventListener('loadeddata', onLoadedData)
-    el.removeEventListener('error', onError)
-    el.removeEventListener('emptied', onError)
-    el.removeEventListener('play', onPlay)
-  }
-
-  const ok = () => {
-    if (done) return
-    done = true
-    clearAll()
-  }
-
-  const fail = () => {
-    if (done) return
-    done = true
-    clearAll()
-    onFail()
-  }
-
-  const decodedFrames = (): number => {
-    try {
-      const q = 'getVideoPlaybackQuality' in el ? (el as any).getVideoPlaybackQuality() : null
-      if (q && 'totalVideoFrames' in q) {
-        return Number(q.totalVideoFrames || 0)
-      }
-      const anyEl = el as any
-      if ('webkitDecodedFrameCount' in anyEl) {
-        return Number(anyEl.webkitDecodedFrameCount || 0)
-      }
-    } catch { }
-    return 0
-  }
-
-  const onPlay = () => playAttempted = true
-
-  const armCheck = () => {
-    if (armed || done) return
-    armed = true
-
-    if ('requestVideoFrameCallback' in el) {
-      rvfcId = (el as any).requestVideoFrameCallback(() => ok())
-      // Extend timeout for network delays and buffering
-      timer = window.setTimeout(() => fail(), 3000)
-      return
-    }
-
-    // Give more time for network playback and buffering
-    timer = window.setTimeout(() => {
-      // Only fail if we actually tried to play and have no frames decoded after 3 seconds
-      if (playAttempted && 0 === (el as any).videoWidth && 0 === (el as any).videoHeight && 0 === decodedFrames()) {
-        fail()
-      } else if (0 < (el as any).videoWidth || 0 < (el as any).videoHeight || 0 < decodedFrames()) {
-        // Video dimensions or frames are available, stream is working
-        ok()
-      }
-      // If nothing is available yet but video hasn't been played, keep waiting
-    }, 3000)
-  }
-
-  const onLoadedData = () => armCheck()
-  const onError = () => fail()
-
-  el.addEventListener('loadeddata', onLoadedData, { once: true })
-  el.addEventListener('error', onError)
-  el.addEventListener('emptied', onError)
-  el.addEventListener('play', onPlay)
-
-  if (4 <= el.readyState || 2 <= el.readyState) {
-    queueMicrotask(armCheck)
-  }
-
-  return clearAll
-}
-
-const src_error = async () => {
+const src_error = async (e: any) => {
   if (hls) {
     return
   }
@@ -731,7 +622,7 @@ const src_error = async () => {
     return
   }
 
-  console.warn('Source failed to load, attempting HLS fallback via hls.js...')
+  console.warn('Source failed to load, attempting HLS fallback via hls.js...', e)
   attach_hls(makeDownload(config, props.item, 'm3u8'))
 }
 
@@ -748,9 +639,7 @@ const attach_hls = (link: string) => {
     fragLoadingTimeOut: 200000,
   })
 
-  hls.on(Hls.Events.MANIFEST_PARSED, () => {
-    applyMediaSessionMetadata()
-  })
+  hls.on(Hls.Events.MANIFEST_PARSED, () => applyMediaSessionMetadata())
 
   hls.on(Hls.Events.LEVEL_LOADED, () => {
     if (video.value) {
@@ -765,5 +654,19 @@ const attach_hls = (link: string) => {
 
   hls.loadSource(link)
   hls.attachMedia(video.value)
+  usingHls.value = true
+}
+
+const forceSwitchToHls = () => {
+  if (usingHls.value) {
+    return
+  }
+
+  if (!hasVideoStream.value) {
+    toast.error('Cannot switch to HLS: stream has no video track.')
+    return
+  }
+
+  src_error(new Event('forceSwitch'))
 }
 </script>
