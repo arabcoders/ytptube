@@ -203,10 +203,7 @@
   },
   "eslint.format.enable": true,
   "eslint.ignoreUntitled": true,
-  "python.testing.pytestArgs": [
-    "app/tests"
-  ],
-  "python.testing.unittestEnabled": true,
+  "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "json.schemas": [
     {
@@ -245,5 +242,6 @@
       ],
       "url": "./app/schema/tasks.json"
     }
-  ]
+  ],
+  "python.testing.cwd": "app/tests"
 }
