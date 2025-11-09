@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "7c9233e82ec12b262c48eb1fd7e70fff60226d79",
+    "date": "2025-11-09T20:36:45+00:00",
+    "commits": [
+      {
+        "sha": "7c9233e8",
+        "full_sha": "7c9233e82ec12b262c48eb1fd7e70fff60226d79",
+        "message": "[FIX] implement --max-downloads arg. Ref #479",
+        "author": "arabcoders",
+        "date": "2025-11-09T20:36:45+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.3",
     "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
     "date": "2025-11-08T20:19:41+00:00",
