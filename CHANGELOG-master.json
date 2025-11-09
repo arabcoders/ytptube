@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251108-8273847d",
-        "date": "2025-11-08T20:19:41+00:00",
+        "tag": "master-20251110-f0b5e20a",
+        "date": "2025-11-09T21:35:48+00:00",
         "commits": [
+            {
+                "sha": "7c9233e8",
+                "message": "[FIX] implement --max-downloads arg. Ref #479",
+                "author": "arabcoders",
+                "date": "2025-11-09T20:36:45+00:00",
+                "full_sha": "7c9233e82ec12b262c48eb1fd7e70fff60226d79"
+            },
             {
                 "sha": "8c8b932d",
                 "message": "[FIX] Chromium browser does not render subtitles after HLS attach",
@@ -2811,7 +2818,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb"
+        "full_sha": "f0b5e20af8a629d88fb5395f4af1b22a9797ad41"
     },
     {
         "tag": "master-20250616-c07465a6",
