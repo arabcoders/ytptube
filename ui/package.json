@@ -18,7 +18,7 @@
   },
   "web-types": "./web-types.json",
   "dependencies": {
-    "@pinia/nuxt": "^0.11.2",
+    "@pinia/nuxt": "^0.11.3",
     "@vueuse/core": "^14.0.0",
     "@vueuse/nuxt": "^14.0.0",
     "@xterm/addon-fit": "^0.10.0",
@@ -26,16 +26,16 @@
     "cron-parser": "^5.4.0",
     "cronstrue": "^3.9.0",
     "floating-vue": "^5.2.2",
-    "hls.js": "^1.6.13",
+    "hls.js": "^1.6.14",
     "marked": "^16.4.1",
     "marked-alert": "^2.1.2",
     "marked-base-url": "^1.1.7",
     "marked-gfm-heading-id": "^4.1.2",
     "moment": "^2.30.1",
     "nuxt": "^4.2.0",
-    "pinia": "^3.0.3",
+    "pinia": "^3.0.4",
     "socket.io-client": "^4.8.1",
-    "vue": "^3.5.22",
+    "vue": "^3.5.23",
     "vue-router": "^4.6.3",
     "vue-toastification": "2.0.0-rc.5"
   },
@@ -54,11 +54,11 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.10.0",
     "@nuxt/eslint-config": "^1.10.0",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.38.0",
+    "@typescript-eslint/parser": "^8.46.3",
+    "eslint": "^9.39.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5",
+    "vitest": "^4.0.7",
     "vue-eslint-parser": "^10.2.0",
-    "vue-tsc": "^3.1.2"
+    "vue-tsc": "^3.1.3"
   }
 }

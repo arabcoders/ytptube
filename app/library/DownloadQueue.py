@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from pathlib import Path
 from sqlite3 import Connection
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import yt_dlp.utils
 from aiohttp import web
@@ -305,14 +305,16 @@ class DownloadQueue(metaclass=Singleton):
 
         entries = entry.get("entries", [])
 
-        LOG.info(f"Processing '{entry.get('id')}: {entry.get('title')} ({len(entries)})' Playlist.")
+        playlist_name: str = f"{entry.get('id')}: {entry.get('title')}"
+
+        LOG.info(f"Processing '{playlist_name} ({len(entries)})' Playlist.")
 
         playlistCount = entry.get("playlist_count")
-        playlistCount = int(playlistCount) if playlistCount else len(entries)
+        playlistCount: int = int(playlistCount) if playlistCount else len(entries)
 
         results = []
 
-        playlist_keys = {
+        playlist_keys: dict[str, Any] = {
             "playlist_count": playlistCount,
             "playlist": entry.get("title") or entry.get("id"),
             "playlist_id": entry.get("id"),
@@ -328,7 +330,7 @@ class DownloadQueue(metaclass=Singleton):
 
         async def playlist_processor(i: int, etr: dict):
             try:
-                item_name = (
+                item_name: str = (
                     f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
                 )
                 LOG.debug(f"Waiting to acquire lock for {item_name}")
@@ -345,7 +347,7 @@ class DownloadQueue(metaclass=Singleton):
                 if not _status:
                     return {"status": "error", "msg": _msg}
 
-                extras = {
+                extras: dict[str, Any] = {
                     **playlist_keys,
                     "playlist_index": i,
                     "playlist_index_number": i,
@@ -359,7 +361,7 @@ class DownloadQueue(metaclass=Singleton):
                 if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
                     extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
 
-                newItem = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
+                newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
 
                 if "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0:
                     LOG.warning(f"Unexpected formats entries in --flat-playlist for {item_name}, treating as video.")
@@ -371,8 +373,16 @@ class DownloadQueue(metaclass=Singleton):
             finally:
                 self.processors.release()
 
+        max_downloads: int = -1
+        ytdlp_opts: dict[str, Any] = item.get_ytdlp_opts().get_all()
+        if ytdlp_opts.get("max_downloads") and isinstance(ytdlp_opts.get("max_downloads"), int):
+            max_downloads: int = ytdlp_opts.get("max_downloads")
+
         tasks: list[asyncio.Task] = []
         for i, etr in enumerate(entries, start=1):
+            if max_downloads > 0 and i > max_downloads:
+                break
+
             task = asyncio.create_task(
                 playlist_processor(i, etr),
                 name=f"playlist_processor_{etr.get('id')}_{i}",
@@ -382,9 +392,12 @@ class DownloadQueue(metaclass=Singleton):
 
         results: list[dict] = await asyncio.gather(*tasks)
 
-        LOG.info(
-            f"Playlist '{entry.get('id')}: {entry.get('title')}' processing completed with '{len(results)}' entries."
-        )
+        log_msg: str = f"Playlist '{playlist_name}' processing completed with '{len(results)}' entries."
+        if max_downloads > 0 and len(entries) > max_downloads:
+            skipped: int = len(entries) - max_downloads
+            log_msg += f" Limited to '{max_downloads}' items, skipped '{skipped}' remaining items."
+
+        LOG.info(log_msg)
 
         if any("error" == res["status"] for res in results):
             return {
