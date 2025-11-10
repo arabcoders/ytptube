@@ -14,6 +14,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ddd7f7755131088205d6f0669766932574fad845",
+    "date": "2025-11-10T13:43:13+00:00",
+    "commits": [
+      {
+        "sha": "ddd7f775",
+        "full_sha": "ddd7f7755131088205d6f0669766932574fad845",
+        "message": "[FIX] Show loading screen while waiting for modal text content.",
+        "author": "arabcoders",
+        "date": "2025-11-10T13:43:13+00:00"
+      },
+      {
+        "sha": "1316cbf7",
+        "full_sha": "1316cbf7c1bf57660940f385f245e4118869fc93",
+        "message": "[FIX] strip out comment lines when creating yt-dlp command",
+        "author": "arabcoders",
+        "date": "2025-11-10T13:42:34+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.3",
     "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
     "date": "2025-11-08T20:19:41+00:00",
