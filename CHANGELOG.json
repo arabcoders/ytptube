@@ -15,9 +15,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ddd7f7755131088205d6f0669766932574fad845",
-    "date": "2025-11-10T13:43:13+00:00",
+    "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4",
+    "date": "2025-11-10T13:47:35+00:00",
     "commits": [
+      {
+        "sha": "3dd5357f",
+        "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4",
+        "message": "[FIX] sometimes responses dont contain a _path reference",
+        "author": "arabcoders",
+        "date": "2025-11-10T13:47:35+00:00"
+      },
       {
         "sha": "ddd7f775",
         "full_sha": "ddd7f7755131088205d6f0669766932574fad845",

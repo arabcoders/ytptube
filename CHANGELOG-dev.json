@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251110-ddd7f775",
-        "date": "2025-11-10T13:43:13+00:00",
+        "tag": "dev-20251110-3dd5357f",
+        "date": "2025-11-10T13:47:35+00:00",
         "commits": [
+            {
+                "sha": "3dd5357f",
+                "message": "[FIX] sometimes responses dont contain a _path reference",
+                "author": "arabcoders",
+                "date": "2025-11-10T13:47:35+00:00",
+                "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4"
+            },
             {
                 "sha": "ddd7f775",
                 "message": "[FIX] Show loading screen while waiting for modal text content.",
@@ -2832,7 +2839,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ddd7f7755131088205d6f0669766932574fad845"
+        "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4"
     },
     {
         "tag": "dev-20250616-c07465a6",
