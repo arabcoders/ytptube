@@ -31,14 +31,19 @@ code {
     </div>
     <div class="modal-content-max" style="height: 80vh;" v-else>
       <div class="content p-0 m-0" style="position: relative">
-        <pre :class="[code_classes, custom_classes]"><code class="p-4 is-block" v-text="data" /></pre>
-        <div class="m-4 is-flex" style="position: absolute; top:0; right:0;">
-          <button class="button is-small is-purple mr-3" @click="() => toggleClass('is-pre-wrap-force')">
-            <span class="icon"><i class="fas fa-text-width" /></span>
-          </button>
-          <button class="button is-info is-small" @click="() => copyText(JSON.stringify(data, null, 2))">
-            <span class="icon"><i class="fas fa-copy" /></span>
-          </button>
+        <div style="font-size:30vh; width: 99%" class="has-text-centered" v-if="isLoading">
+          <i class="fas fa-circle-notch fa-spin" />
+        </div>
+        <div v-else>
+          <pre :class="[code_classes, custom_classes]"><code class="p-4 is-block" v-text="data" /></pre>
+          <div class="m-4 is-flex" style="position: absolute; top:0; right:0;">
+            <button class="button is-small is-purple mr-3" @click="() => toggleClass('is-pre-wrap-force')">
+              <span class="icon"><i class="fas fa-text-width" /></span>
+            </button>
+            <button class="button is-info is-small" @click="() => copyText(JSON.stringify(data, null, 2))">
+              <span class="icon"><i class="fas fa-copy" /></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

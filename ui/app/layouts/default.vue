@@ -39,7 +39,7 @@
 
         <div class="navbar-brand pl-5">
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'">
+            v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'" id="top">
             <span class="is-text-overflow">
               <span class="icon">
                 <i v-if="'connecting' === socket.connectionStatus" class="fas fa-arrows-rotate fa-spin" />
@@ -172,15 +172,19 @@
         <div class="column">
           <div class="has-text-left" v-if="config.app?.app_version">
             © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-            <span class="has-tooltip"
+            (<span class="has-tooltip"
               v-tooltip="`Build Date: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, commit: ${config.app?.app_commit_sha}`">
-              &nbsp;({{ config?.app?.app_version || 'unknown' }})</span>
+              {{ config?.app?.app_version || 'unknown' }}</span>)
             - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
             <span>&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
             - <NuxtLink to="/changelog">CHANGELOG</NuxtLink>
             - <NuxtLink @click="doc.file = '/api/docs/FAQ.md'">FAQ</NuxtLink>
             - <NuxtLink @click="doc.file = '/api/docs/README.md'">README</NuxtLink>
             - <NuxtLink @click="doc.file = '/api/docs/API.md'">API</NuxtLink>
+            - <NuxtLink @click="scrollToTop">
+                <span class="icon"><i class="fas fa-arrow-up" /></span>
+                <span>Top</span>
+            </NuxtLink>
           </div>
         </div>
         <div class="column is-narrow" v-if="config.app?.started">
@@ -507,4 +511,5 @@ const connectionStatusColor = computed(() => {
   }
 })
 
+const scrollToTop = () => document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' });
 </script>
