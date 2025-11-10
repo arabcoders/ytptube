@@ -527,6 +527,80 @@ class TestARGSMerger:
         assert result is merger  # Returns self for chaining
         assert merger.args == ["--format", "best"]
 
+    def test_add_filters_comment_lines(self):
+        """Test that comment lines (starting with #) are filtered out."""
+        from app.library.YTDLPOpts import ARGSMerger
+
+        merger = ARGSMerger()
+        cli_with_comments = """--format best
+# This is a comment
+--output test.mp4
+#Another comment without space
+--no-playlist"""
+
+        merger.add(cli_with_comments)
+
+        # Comments should be filtered out
+        assert "#" not in merger.as_string()
+        assert "This is a comment" not in merger.as_string()
+        assert "Another comment" not in merger.as_string()
+
+        # Valid options should remain
+        assert "--format" in merger.args
+        assert "best" in merger.args
+        assert "--output" in merger.args
+        assert "test.mp4" in merger.args
+        assert "--no-playlist" in merger.args
+
+    def test_add_filters_indented_comment_lines(self):
+        """Test that indented comment lines are filtered out."""
+        from app.library.YTDLPOpts import ARGSMerger
+
+        merger = ARGSMerger()
+        cli_with_indented_comments = """--format best
+    # Indented comment with spaces
+		# Indented comment with tabs
+  --output test.mp4
+    # Another indented comment
+--socket-timeout 30"""
+
+        merger.add(cli_with_indented_comments)
+
+        # Comments should be filtered out
+        result = merger.as_string()
+        assert "# Indented comment with spaces" not in result
+        assert "# Indented comment with tabs" not in result
+        assert "# Another indented comment" not in result
+
+        # Valid options should remain
+        assert "--format" in merger.args
+        assert "--output" in merger.args
+        assert "--socket-timeout" in merger.args
+
+    def test_add_filters_complex_commented_extractor_args(self):
+        """Test filtering of complex real-world commented extractor-args."""
+        from app.library.YTDLPOpts import ARGSMerger
+
+        merger = ARGSMerger()
+        cli_with_complex_comments = """--extractor-args "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete"
+#--extractor-args "youtube:player-client=default,tv,mweb;-formats=incomplete;player_js_version=actual"
+#--extractor-args "youtube:player-client=default,tv,mweb,web_safari;formats=incomplete"
+--socket-timeout 60"""
+
+        merger.add(cli_with_complex_comments)
+
+        result = merger.as_string()
+
+        # Commented lines should be filtered out completely
+        assert "player_js_version=actual" not in result
+        # Check the specific commented variant (with comma before web_safari, not dash)
+        assert "mweb,web_safari;formats=incomplete" not in result
+
+        # Valid extractor-args should remain (with -web_safari, note the dash)
+        assert "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete" in result
+        assert "--socket-timeout" in merger.args
+        assert "60" in merger.args
+
     def test_add_multiple_args_with_chaining(self):
         """Test adding multiple arguments using method chaining."""
         from app.library.YTDLPOpts import ARGSMerger

@@ -16,7 +16,7 @@ const props = defineProps<{
   code_classes?: string
 }>()
 
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(true)
 const data = ref<any>({})
 
 onMounted(async (): Promise<void> => {
@@ -35,7 +35,6 @@ onMounted(async (): Promise<void> => {
   }
 
   try {
-    isLoading.value = true
     const response = await request(url)
     const body = await response.text()
 

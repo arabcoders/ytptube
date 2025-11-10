@@ -262,8 +262,8 @@ class HttpAPI:
 
             response: Response = await handler(request)
 
-            contentType: str | None = response.headers.get("content-type", None)
-            if contentType and contentType.startswith("text/html"):
+            contentType: str = response.headers.get("content-type", "")
+            if contentType.startswith("text/html") and getattr(response, "_path", None):
                 rewrite_path: str = base_path.rstrip("/")
                 async with await anyio.open_file(response._path, "rb") as f:
                     content = await f.read()
