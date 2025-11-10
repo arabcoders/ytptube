@@ -35,6 +35,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "e1eb17ad7a5cb7a1f41f84cb1ac81eb07d0ef375",
+    "date": "2025-11-10T16:02:55+00:00",
+    "commits": [
+      {
+        "sha": "e1eb17ad",
+        "full_sha": "e1eb17ad7a5cb7a1f41f84cb1ac81eb07d0ef375",
+        "message": "[CHORE] update dependancies and remove lagecy code",
+        "author": "arabcoders",
+        "date": "2025-11-10T16:02:55+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.3",
     "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
     "date": "2025-11-08T20:19:41+00:00",

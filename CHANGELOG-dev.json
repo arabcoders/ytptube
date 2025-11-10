@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251110-3dd5357f",
-        "date": "2025-11-10T13:47:35+00:00",
+        "tag": "dev-20251110-e1eb17ad",
+        "date": "2025-11-10T16:02:55+00:00",
         "commits": [
+            {
+                "sha": "e1eb17ad",
+                "message": "[CHORE] update dependancies and remove lagecy code",
+                "author": "arabcoders",
+                "date": "2025-11-10T16:02:55+00:00",
+                "full_sha": "e1eb17ad7a5cb7a1f41f84cb1ac81eb07d0ef375"
+            },
             {
                 "sha": "3dd5357f",
                 "message": "[FIX] sometimes responses dont contain a _path reference",
@@ -2839,7 +2846,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4"
+        "full_sha": "e1eb17ad7a5cb7a1f41f84cb1ac81eb07d0ef375"
     },
     {
         "tag": "dev-20250616-c07465a6",
