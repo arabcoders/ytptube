@@ -122,21 +122,6 @@ export const useSocketStore = defineStore('socket', () => {
       }
     }, true);
 
-    on('item_completed', (stream: string) => {
-      const json = JSON.parse(stream);
-
-      if (true === stateStore.has('queue', json.data._id)) {
-        stateStore.remove('queue', json.data._id);
-      }
-
-      if (true === stateStore.has('history', json.data._id)) {
-        stateStore.update('history', json.data._id, json.data);
-        return;
-      }
-
-      stateStore.add('history', json.data._id, json.data);
-    });
-
     on('item_cancelled', (stream: string) => {
       const item = JSON.parse(stream);
       const id = item.data._id

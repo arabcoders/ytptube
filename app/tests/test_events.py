@@ -91,7 +91,6 @@ class TestEvents:
             Events.LOG_SUCCESS,
             Events.ITEM_ADDED,
             Events.ITEM_UPDATED,
-            Events.ITEM_COMPLETED,
         ]
 
         for expected in expected_frontend:

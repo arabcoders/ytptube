@@ -97,7 +97,6 @@ class Events:
             Events.LOG_SUCCESS,
             Events.ITEM_ADDED,
             Events.ITEM_UPDATED,
-            Events.ITEM_COMPLETED,
             Events.ITEM_CANCELLED,
             Events.ITEM_DELETED,
             Events.ITEM_MOVED,
