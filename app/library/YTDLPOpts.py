@@ -29,7 +29,11 @@ class ARGSMerger:
         if not args or not isinstance(args, str) or len(args) < 2:
             return self
 
-        _args: list[str] = shlex.split(args)
+        _args: list[str] = shlex.split(
+            # Filter out comment lines.
+            "\n".join([line for line in args.split("\n") if not line.lstrip().startswith("#")])
+        )
+
         if len(_args) > 0:
             self.args.extend(_args)
 
