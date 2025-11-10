@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20251110-f0b5e20a",
-        "date": "2025-11-09T21:35:48+00:00",
+        "tag": "master-20251110-d1a20b39",
+        "date": "2025-11-10T15:29:25+00:00",
         "commits": [
+            {
+                "sha": "3dd5357f",
+                "message": "[FIX] sometimes responses dont contain a _path reference",
+                "author": "arabcoders",
+                "date": "2025-11-10T13:47:35+00:00",
+                "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4"
+            },
+            {
+                "sha": "ddd7f775",
+                "message": "[FIX] Show loading screen while waiting for modal text content.",
+                "author": "arabcoders",
+                "date": "2025-11-10T13:43:13+00:00",
+                "full_sha": "ddd7f7755131088205d6f0669766932574fad845"
+            },
+            {
+                "sha": "1316cbf7",
+                "message": "[FIX] strip out comment lines when creating yt-dlp command",
+                "author": "arabcoders",
+                "date": "2025-11-10T13:42:34+00:00",
+                "full_sha": "1316cbf7c1bf57660940f385f245e4118869fc93"
+            },
             {
                 "sha": "7c9233e8",
                 "message": "[FIX] implement --max-downloads arg. Ref #479",
@@ -2818,7 +2839,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f0b5e20af8a629d88fb5395f4af1b22a9797ad41"
+        "full_sha": "d1a20b39725e4353dc806e94fb1f401b132e6f27"
     },
     {
         "tag": "master-20250616-c07465a6",

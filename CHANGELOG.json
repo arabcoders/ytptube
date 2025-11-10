@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (f0b5e20a)",
-    "full_sha": "f0b5e20af8a629d88fb5395f4af1b22a9797ad41",
-    "date": "2025-11-09T21:35:48+00:00",
-    "commits": [
-      {
-        "sha": "7c9233e8",
-        "full_sha": "7c9233e82ec12b262c48eb1fd7e70fff60226d79",
-        "message": "[FIX] implement --max-downloads arg. Ref #479",
-        "author": "arabcoders",
-        "date": "2025-11-09T20:36:45+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "3dd5357f243d9f89a8aa5a6279fc39f8b8c893f4",
-    "date": "2025-11-10T13:47:35+00:00",
+    "tag": "Unreleased (d1a20b39)",
+    "full_sha": "d1a20b39725e4353dc806e94fb1f401b132e6f27",
+    "date": "2025-11-10T15:29:25+00:00",
     "commits": [
       {
         "sha": "3dd5357f",
@@ -38,6 +24,13 @@
         "message": "[FIX] strip out comment lines when creating yt-dlp command",
         "author": "arabcoders",
         "date": "2025-11-10T13:42:34+00:00"
+      },
+      {
+        "sha": "7c9233e8",
+        "full_sha": "7c9233e82ec12b262c48eb1fd7e70fff60226d79",
+        "message": "[FIX] implement --max-downloads arg. Ref #479",
+        "author": "arabcoders",
+        "date": "2025-11-09T20:36:45+00:00"
       }
     ]
   },
