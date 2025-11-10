@@ -71,6 +71,12 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
             LOG.debug(f"Fetching thumbnail from '{url}'.")
             response = await client.request(method="GET", url=url, follow_redirects=True)
 
+            if response.status_code != web.HTTPOk.status_code:
+                LOG.error(f"Failed to fetch thumbnail from '{url}'. Status code: {response.status_code}.")
+                return web.json_response(
+                    data={"error": "failed to retrieve the thumbnail."}, status=response.status_code
+                )
+
             return web.Response(
                 body=response.content,
                 headers={
