@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "3754722126acbab6a7716c47614f7e52c940e150",
-    "date": "2025-11-10T18:47:24+00:00",
+    "full_sha": "e6296de3fe43c988582bfb3b1753f4977a4a6719",
+    "date": "2025-11-10T19:45:15+00:00",
     "commits": [
+      {
+        "sha": "e6296de3",
+        "full_sha": "e6296de3fe43c988582bfb3b1753f4977a4a6719",
+        "message": "Fix: handle errors when fetching remote thumbnail and return appropriate status code",
+        "author": "arabcoders",
+        "date": "2025-11-10T19:45:15+00:00"
+      },
       {
         "sha": "37547221",
         "full_sha": "3754722126acbab6a7716c47614f7e52c940e150",
