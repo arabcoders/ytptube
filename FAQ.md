@@ -47,6 +47,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                    | `false`               |
 | YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                           | `false`               |
 | YTP_STATIC_UI_PATH             | Path to custom static UI files.                                    | `(not_set)`           |
+| YTP_AUTO_CLEAR_HISTORY_DAYS    | Number of days after which completed download history is cleared.  | `0`                   |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
@@ -54,8 +55,12 @@ or the `environment:` section in `compose.yaml` file.
 > The limit should not exceed the `YTP_MAX_WORKERS` value as it will be ignored.
 
 > [!IMPORTANT]
-> The env variable `YTP_SIMPLE_MODE` only control what being displayed for first time visitor, the users can still switch between the two modes  via the WebUI settings page.
+> The env variable `YTP_SIMPLE_MODE` only control what being displayed for first time visitor, the users can still switch between the two modes via the WebUI settings page.
 
+## Notes about YTP_AUTO_CLEAR_HISTORY_DAYS
+
+- `0` days means no automatic clearing of the download history. lowest value that will trigger the clearing is `1` day.
+- This setting will **NOT** delete the downloaded files, it will only clear the history from the database.
 
 # Browser extensions & bookmarklets
 
