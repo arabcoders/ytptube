@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e6296de3fe43c988582bfb3b1753f4977a4a6719",
-    "date": "2025-11-10T19:45:15+00:00",
+    "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e",
+    "date": "2025-11-11T14:24:07+00:00",
     "commits": [
+      {
+        "sha": "fa9f1fce",
+        "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e",
+        "message": "Fix: reduce the initial connection data",
+        "author": "arabcoders",
+        "date": "2025-11-11T14:24:07+00:00"
+      },
       {
         "sha": "e6296de3",
         "full_sha": "e6296de3fe43c988582bfb3b1753f4977a4a6719",
