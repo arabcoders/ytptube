@@ -44,7 +44,7 @@ class HttpSocket:
         self.sio = sio or socketio.AsyncServer(
             async_handlers=True,
             async_mode="aiohttp",
-            cors_allowed_origins=[],
+            cors_allowed_origins="*",
             transports=["websocket", "polling"],
             logger=self.config.debug,
             engineio_logger=self.config.debug,

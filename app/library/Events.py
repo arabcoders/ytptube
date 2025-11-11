@@ -24,6 +24,8 @@ class Events:
 
     CONNECTED: str = "connected"
 
+    CONFIGURATION: str = "configuration"
+
     LOG_INFO: str = "log_info"
     LOG_WARNING: str = "log_warning"
     LOG_ERROR: str = "log_error"
@@ -90,6 +92,7 @@ class Events:
 
         """
         return [
+            Events.CONFIGURATION,
             Events.CONNECTED,
             Events.LOG_INFO,
             Events.LOG_WARNING,

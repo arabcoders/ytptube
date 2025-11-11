@@ -54,8 +54,10 @@ export const useSocketStore = defineStore('socket', () => {
       transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
-      reconnectionAttempts: 30,
-      reconnectionDelay: 5000
+      reconnectionAttempts: 50,
+      reconnectionDelay: 5000,
+      tryAllTransports: true,
+      timeout: 10000 * 5,
     } as Partial<ManagerOptions & SocketOptions>
 
     let url = runtimeConfig.public.wss
@@ -70,28 +72,38 @@ export const useSocketStore = defineStore('socket', () => {
     connectionStatus.value = 'connecting';
     socket.value = io(url, opts)
 
-    socket.value.on('connect', () => {
+    on("connect_error", (e: any) => {
+      if (!socket.value) {
+        return;
+      }
+      console.error("Socket connection error:", e);
+      socket.value.io.opts.transports = ["polling", "websocket"];
+    });
+
+    on('connect', () => {
       isConnected.value = true
       connectionStatus.value = 'connected';
     });
 
-    socket.value.on('disconnect', () => {
+    on('disconnect', () => {
       isConnected.value = false
       connectionStatus.value = 'disconnected';
     });
 
-    socket.value.on('connected', stream => {
+    on('configuration', stream => {
       const json = JSON.parse(stream)
-
       config.setAll({
         app: json.data.config,
         tasks: json.data.tasks,
-        folders: json.data.folders,
         presets: json.data.presets,
         dl_fields: json.data.dl_fields,
         paused: Boolean(json.data.paused)
       } as Partial<ConfigState>)
+    })
 
+    on('connected', stream => {
+      const json = JSON.parse(stream);
+      config.add('folders', json.data.folders)
       stateStore.addAll('queue', json.data.queue || {})
       stateStore.addAll('history', json.data.done || {})
     })
