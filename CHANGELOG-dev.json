@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251111-fa9f1fce",
-        "date": "2025-11-11T14:24:07+00:00",
+        "tag": "dev-20251111-28207bcd",
+        "date": "2025-11-11T14:25:51+00:00",
         "commits": [
+            {
+                "sha": "28207bcd",
+                "message": "Refactor: swap the order to poll and than upgrade to WS",
+                "author": "arabcoders",
+                "date": "2025-11-11T14:25:51+00:00",
+                "full_sha": "28207bcd4115a7f743763e0da4721b267159768f"
+            },
             {
                 "sha": "fa9f1fce",
                 "message": "Fix: reduce the initial connection data",
@@ -2867,7 +2874,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e"
+        "full_sha": "28207bcd4115a7f743763e0da4721b267159768f"
     },
     {
         "tag": "dev-20250616-c07465a6",

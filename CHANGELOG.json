@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e",
-    "date": "2025-11-11T14:24:07+00:00",
+    "full_sha": "28207bcd4115a7f743763e0da4721b267159768f",
+    "date": "2025-11-11T14:25:51+00:00",
     "commits": [
+      {
+        "sha": "28207bcd",
+        "full_sha": "28207bcd4115a7f743763e0da4721b267159768f",
+        "message": "Refactor: swap the order to poll and than upgrade to WS",
+        "author": "arabcoders",
+        "date": "2025-11-11T14:25:51+00:00"
+      },
       {
         "sha": "fa9f1fce",
         "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e",
