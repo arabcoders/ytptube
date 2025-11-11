@@ -51,7 +51,7 @@ export const useSocketStore = defineStore('socket', () => {
 
   const connect = () => {
     const opts = {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 50,
@@ -72,13 +72,7 @@ export const useSocketStore = defineStore('socket', () => {
     connectionStatus.value = 'connecting';
     socket.value = io(url, opts)
 
-    on("connect_error", (e: any) => {
-      if (!socket.value) {
-        return;
-      }
-      console.error("Socket connection error:", e);
-      socket.value.io.opts.transports = ["polling", "websocket"];
-    });
+    on("connect_error", (e: any) => console.error("Socket connection error:", e));
 
     on('connect', () => {
       isConnected.value = true
