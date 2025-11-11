@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "28207bcd4115a7f743763e0da4721b267159768f",
-    "date": "2025-11-11T14:25:51+00:00",
+    "full_sha": "4e86729206c8427ff63db0d9fe57398936a46bb1",
+    "date": "2025-11-11T19:08:32+00:00",
     "commits": [
+      {
+        "sha": "4e867292",
+        "full_sha": "4e86729206c8427ff63db0d9fe57398936a46bb1",
+        "message": "FEAT: add auto clear env variable",
+        "author": "arabcoders",
+        "date": "2025-11-11T19:08:32+00:00"
+      },
       {
         "sha": "28207bcd",
         "full_sha": "28207bcd4115a7f743763e0da4721b267159768f",
