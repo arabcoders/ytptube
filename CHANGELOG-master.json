@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20251110-d1a20b39",
-        "date": "2025-11-10T15:29:25+00:00",
+        "tag": "master-20251111-8ff65823",
+        "date": "2025-11-11T20:45:47+00:00",
         "commits": [
+            {
+                "sha": "4e867292",
+                "message": "FEAT: add auto clear env variable",
+                "author": "arabcoders",
+                "date": "2025-11-11T19:08:32+00:00",
+                "full_sha": "4e86729206c8427ff63db0d9fe57398936a46bb1"
+            },
+            {
+                "sha": "28207bcd",
+                "message": "Refactor: swap the order to poll and than upgrade to WS",
+                "author": "arabcoders",
+                "date": "2025-11-11T14:25:51+00:00",
+                "full_sha": "28207bcd4115a7f743763e0da4721b267159768f"
+            },
+            {
+                "sha": "fa9f1fce",
+                "message": "Fix: reduce the initial connection data",
+                "author": "arabcoders",
+                "date": "2025-11-11T14:24:07+00:00",
+                "full_sha": "fa9f1fcefc407cbbff5357e25a5c214af3548f9e"
+            },
+            {
+                "sha": "e6296de3",
+                "message": "Fix: handle errors when fetching remote thumbnail and return appropriate status code",
+                "author": "arabcoders",
+                "date": "2025-11-10T19:45:15+00:00",
+                "full_sha": "e6296de3fe43c988582bfb3b1753f4977a4a6719"
+            },
+            {
+                "sha": "37547221",
+                "message": "Doc: update docs update tmpfs",
+                "author": "arabcoders",
+                "date": "2025-11-10T18:47:24+00:00",
+                "full_sha": "3754722126acbab6a7716c47614f7e52c940e150"
+            },
+            {
+                "sha": "e1eb17ad",
+                "message": "[CHORE] update dependancies and remove lagecy code",
+                "author": "arabcoders",
+                "date": "2025-11-10T16:02:55+00:00",
+                "full_sha": "e1eb17ad7a5cb7a1f41f84cb1ac81eb07d0ef375"
+            },
             {
                 "sha": "3dd5357f",
                 "message": "[FIX] sometimes responses dont contain a _path reference",
@@ -2839,7 +2881,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d1a20b39725e4353dc806e94fb1f401b132e6f27"
+        "full_sha": "8ff658231652d8f31b2dc26f91661629642f73b0"
     },
     {
         "tag": "master-20250616-c07465a6",
