@@ -77,6 +77,7 @@ services:
 
 > [!IMPORTANT]
 > Make sure to change the `user` line to match your user id and group id
+> If you have low RAM, remove the `tmpfs` and mount a disk-based directory to `/tmp` instead. See [FAQ](FAQ.md#getting-no-space-left-on-device-error) for more information.
 
 ```bash
 $ mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d

@@ -20,7 +20,7 @@ dependencies = [
   "aiocron>=1.8",
   "python-dotenv>=1.0.1",
   "debugpy>=1.8.1",
-  "httpx",
+  "httpx[brotli,http2,socks,zstd]",
   "async-timeout",
   "pyjson5",
   "curl_cffi>=0.13",

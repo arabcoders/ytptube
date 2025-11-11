@@ -23,25 +23,31 @@ class _Data:
 
 @route(RouteType.SOCKET, "connect", "socket_connect")
 async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: str):
-    data = {
-        **queue.get(),
-        "config": config.frontend(),
-        "presets": Presets.get_instance().get_all(),
-        "dl_fields": DLFields.get_instance().get_all(),
-        "paused": queue.is_paused(),
-    }
-
-    data["folders"] = list_folders(
-        path=Path(config.download_path),
-        base=Path(config.download_path),
-        depth_limit=config.download_path_depth-1,
+    notify.emit(
+        Events.CONFIGURATION,
+        data={
+            "config": config.frontend(),
+            "presets": Presets.get_instance().get_all(),
+            "dl_fields": DLFields.get_instance().get_all(),
+            "paused": queue.is_paused(),
+        },
+        title="Client connected",
+        message=f"Client '{sid}' connected.",
+        to=sid,
     )
 
     notify.emit(
         Events.CONNECTED,
-        data=data,
-        title="Client connected",
-        message=f"Client '{sid}' connected.",
+        data={
+            "folders": list_folders(
+                path=Path(config.download_path),
+                base=Path(config.download_path),
+                depth_limit=config.download_path_depth - 1,
+            ),
+            **queue.get(),
+        },
+        title="Sending initial download data",
+        message=f"Sending initial download data to client '{sid}'.",
         to=sid,
     )
 

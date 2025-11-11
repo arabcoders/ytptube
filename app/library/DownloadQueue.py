@@ -140,6 +140,15 @@ class DownloadQueue(metaclass=Singleton):
             func=self._check_live,
             id=f"{__class__.__name__}.{__class__._check_live.__name__}",
         )
+
+        if self.config.auto_clear_history_days > 0:
+            Scheduler.get_instance().add(
+                # timer="8 */1 * * *",
+                timer="* * * * *",
+                func=self._delete_old_history,
+                id=f"{__class__.__name__}.{__class__._delete_old_history.__name__}",
+            )
+
         # app.on_shutdown.append(self.on_shutdown)
 
     async def test(self) -> bool:
@@ -1261,6 +1270,48 @@ class DownloadQueue(metaclass=Singleton):
                 self.done.put(item)
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
+
+    async def _delete_old_history(self) -> None:
+        """
+        Automatically delete old download history based on user specified days.
+        0 or negative value disables this feature.
+        """
+        if self.config.auto_clear_history_days < 0 or self.is_paused() or self.done.empty():
+            return
+
+        cutoff_date: datetime = datetime.now(UTC) - timedelta(days=self.config.auto_clear_history_days)
+        items_to_delete: list[tuple[str, ItemDTO]] = []
+
+        for key, download in self.done.items():
+            info: ItemDTO = download.info
+            if not info or not info.timestamp:
+                continue
+
+            if "finished" != info.status or not info.filename:
+                continue
+
+            try:
+                timestamp_seconds: float = info.timestamp / 1e9
+                item_datetime: datetime = datetime.fromtimestamp(timestamp_seconds, tz=UTC)
+                if item_datetime < cutoff_date:
+                    items_to_delete.append((key, info))
+            except (OSError, ValueError, OverflowError) as e:
+                LOG.error(f"Failed to parse timestamp '{info.timestamp}' for item '{info.title}': {e}")
+
+        titles: list[str] = []
+        for key, info in items_to_delete:
+            item_name: str = info.title or info.id or info._id
+            self._notify.emit(
+                Events.ITEM_DELETED,
+                data=info,
+                title="Download Cleared",
+                message=f"'{item_name}' record removed from history.",
+            )
+            titles.append(item_name)
+            self.done.delete(key)
+
+        if titles:
+            LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")
 
     def _handle_task_exception(self, task: asyncio.Task) -> None:
         if task.cancelled():

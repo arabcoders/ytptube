@@ -51,11 +51,13 @@ export const useSocketStore = defineStore('socket', () => {
 
   const connect = () => {
     const opts = {
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       withCredentials: true,
       reconnection: true,
-      reconnectionAttempts: 30,
-      reconnectionDelay: 5000
+      reconnectionAttempts: 50,
+      reconnectionDelay: 5000,
+      tryAllTransports: true,
+      timeout: 10000 * 5,
     } as Partial<ManagerOptions & SocketOptions>
 
     let url = runtimeConfig.public.wss
@@ -70,28 +72,32 @@ export const useSocketStore = defineStore('socket', () => {
     connectionStatus.value = 'connecting';
     socket.value = io(url, opts)
 
-    socket.value.on('connect', () => {
+    on("connect_error", (e: any) => console.error("Socket connection error:", e));
+
+    on('connect', () => {
       isConnected.value = true
       connectionStatus.value = 'connected';
     });
 
-    socket.value.on('disconnect', () => {
+    on('disconnect', () => {
       isConnected.value = false
       connectionStatus.value = 'disconnected';
     });
 
-    socket.value.on('connected', stream => {
+    on('configuration', stream => {
       const json = JSON.parse(stream)
-
       config.setAll({
         app: json.data.config,
         tasks: json.data.tasks,
-        folders: json.data.folders,
         presets: json.data.presets,
         dl_fields: json.data.dl_fields,
         paused: Boolean(json.data.paused)
       } as Partial<ConfigState>)
+    })
 
+    on('connected', stream => {
+      const json = JSON.parse(stream);
+      config.add('folders', json.data.folders)
       stateStore.addAll('queue', json.data.queue || {})
       stateStore.addAll('history', json.data.done || {})
     })
@@ -121,21 +127,6 @@ export const useSocketStore = defineStore('socket', () => {
           break;
       }
     }, true);
-
-    on('item_completed', (stream: string) => {
-      const json = JSON.parse(stream);
-
-      if (true === stateStore.has('queue', json.data._id)) {
-        stateStore.remove('queue', json.data._id);
-      }
-
-      if (true === stateStore.has('history', json.data._id)) {
-        stateStore.update('history', json.data._id, json.data);
-        return;
-      }
-
-      stateStore.add('history', json.data._id, json.data);
-    });
 
     on('item_cancelled', (stream: string) => {
       const item = JSON.parse(stream);

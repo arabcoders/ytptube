@@ -482,6 +482,9 @@ def check_id(file: Path) -> bool | str:
     id: str | None = match.groupdict().get("id")
 
     try:
+        if not file.parent.exists():
+            return False
+
         for f in file.parent.iterdir():
             if id not in f.stem:
                 continue

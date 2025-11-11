@@ -47,6 +47,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                    | `false`               |
 | YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                           | `false`               |
 | YTP_STATIC_UI_PATH             | Path to custom static UI files.                                    | `(not_set)`           |
+| YTP_AUTO_CLEAR_HISTORY_DAYS    | Number of days after which completed download history is cleared.  | `0`                   |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
@@ -54,8 +55,12 @@ or the `environment:` section in `compose.yaml` file.
 > The limit should not exceed the `YTP_MAX_WORKERS` value as it will be ignored.
 
 > [!IMPORTANT]
-> The env variable `YTP_SIMPLE_MODE` only control what being displayed for first time visitor, the users can still switch between the two modes  via the WebUI settings page.
+> The env variable `YTP_SIMPLE_MODE` only control what being displayed for first time visitor, the users can still switch between the two modes via the WebUI settings page.
 
+## Notes about YTP_AUTO_CLEAR_HISTORY_DAYS
+
+- `0` days means no automatic clearing of the download history. lowest value that will trigger the clearing is `1` day.
+- This setting will **NOT** delete the downloaded files, it will only clear the history from the database.
 
 # Browser extensions & bookmarklets
 
@@ -507,3 +512,40 @@ Thats it, the `main.yml` will now disable the docker/github container registries
 naming, your container name will be named `REGISTRY/ytptube` and the tags will be the same as the ones used in the github registry.
 
 Unfortunately, the `native-builder.yml` workflow doesn't support self-hosted repositories at the moment.
+
+# Getting No space left on device error
+
+If you encounter this error: `OSError: [Errno 28] No space left on device` This indicates that either 
+the `/tmp` or `/downloads` directory has run out of available space.
+
+This issue commonly occurs when:
+
+- `/tmp` is mounted as `tmpfs` (memory-based storage)
+- Your system has limited RAM
+- You're downloading large video files
+
+Since videos are temporarily stored in `/tmp` before being moved to the final download location, memory-based storage 
+may be insufficient for large downloads.
+
+To fix the issue, modify your `compose.yaml` to use a disk-based directory for temporary files:
+
+```yaml
+services:
+  ytptube:
+    user: "${UID:-1000}:${UID:-1000}"
+    image: ghcr.io/arabcoders/ytptube:latest
+    container_name: ytptube
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/config:rw
+      - ./downloads:/downloads/local:rw
+      - ./temp:/tmp:rw
+```
+
+> [!NOTE]
+> Replace the `tmpfs` mount with a local directory volume (`./temp:/tmp:rw`). This allows temporary files to use disk space instead of RAM.
+
+After making the changes, restart your container. This should resolve the "No space left on device" 
+error during download.

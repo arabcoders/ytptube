@@ -192,6 +192,9 @@ class Config(metaclass=Singleton):
     playlist_items_concurrency: int = 4
     """The number of concurrent playlist items to be processed at same time."""
 
+    auto_clear_history_days: int = 0
+    """Number of days after which completed download history is automatically cleared. 0 to disable."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -230,6 +233,7 @@ class Config(metaclass=Singleton):
         "playlist_items_concurrency",
         "download_path_depth",
         "download_info_expires",
+        "auto_clear_history_days",
     )
     "The variables that are integers."
 
