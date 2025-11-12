@@ -84,8 +84,8 @@
 <template>
   <div v-if="infoLoaded">
     <div style="position: relative;">
-      <video class="player" ref="video" :poster="uri(thumbnail)" :width="videoWidth" :height="videoHeight"
-        playsinline controls crossorigin="anonymous" preload="auto" autoplay>
+      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls crossorigin="anonymous"
+        preload="auto" autoplay>
         <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
           :type="source.type" />
         <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
