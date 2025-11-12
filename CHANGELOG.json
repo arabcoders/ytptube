@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d4b481f2a8d1161a20f1948c5e90ceec3f98bdf8",
-    "date": "2025-11-12T20:38:18+00:00",
+    "full_sha": "c82e840c4b8f63d8435e321e3f5eb73efc3c5548",
+    "date": "2025-11-12T20:40:17+00:00",
     "commits": [
+      {
+        "sha": "c82e840c",
+        "full_sha": "c82e840c4b8f63d8435e321e3f5eb73efc3c5548",
+        "message": "Fix: updated default yt-dlp package to include all default dependancies",
+        "author": "arabcoders",
+        "date": "2025-11-12T20:40:17+00:00"
+      },
       {
         "sha": "d4b481f2",
         "full_sha": "d4b481f2a8d1161a20f1948c5e90ceec3f98bdf8",
