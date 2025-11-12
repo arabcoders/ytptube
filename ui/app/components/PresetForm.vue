@@ -134,10 +134,8 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>Use this output template if non are given with URL. if not set, it will defaults to
-                      <code>{{ config.app.output_template }}</code>.
-                      For more information visit <NuxtLink href="https://github.com/yt-dlp/yt-dlp#output-template"
-                        target="_blank">
-                        this page</NuxtLink>.
+                      <code>{{ config.app.output_template }}</code>. For more information visit <NuxtLink
+                        href="https://github.com/yt-dlp/yt-dlp#output-template" target="_blank">this page</NuxtLink>.
                     </span>
                   </span>
                 </div>
@@ -170,8 +168,9 @@
                     Cookies
                   </label>
                   <div class="control">
-                    <textarea class="textarea is-pre" id="cookies" v-model="form.cookies" :disabled="addInProgress"
-                      placeholder="Leave empty to use default cookies" />
+                    <TextDropzone id="cookies" v-model="form.cookies" :disabled="addInProgress"
+                      @error="(msg: string) => toast.error(msg)"
+                      placeholder="Leave empty to use default cookies. Or drag & drop a cookie file here." />
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
