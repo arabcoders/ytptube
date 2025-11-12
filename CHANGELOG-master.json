@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20251112-d4c14c79",
-        "date": "2025-11-12T19:06:20+00:00",
+        "tag": "master-20251112-b94d62ac",
+        "date": "2025-11-12T20:55:47+00:00",
         "commits": [
+            {
+                "sha": "c82e840c",
+                "message": "Fix: updated default yt-dlp package to include all default dependancies",
+                "author": "arabcoders",
+                "date": "2025-11-12T20:40:17+00:00",
+                "full_sha": "c82e840c4b8f63d8435e321e3f5eb73efc3c5548"
+            },
+            {
+                "sha": "d4b481f2",
+                "message": "add yt-dlp-ejs",
+                "author": "arabcoders",
+                "date": "2025-11-12T20:38:18+00:00",
+                "full_sha": "d4b481f2a8d1161a20f1948c5e90ceec3f98bdf8"
+            },
+            {
+                "sha": "919322ea",
+                "message": "include procps in container.",
+                "author": "arabcoders",
+                "date": "2025-11-12T19:49:47+00:00",
+                "full_sha": "919322ea227ca2cb29ddd8b05dea44fc616674f5"
+            },
             {
                 "sha": "3da5e547",
                 "message": "Refactor: move nfo maker into correct namespace and move metadataPP patcher into utils",
@@ -2916,7 +2937,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d4c14c79918ccc6ae00f678df9da33cddc3c766c"
+        "full_sha": "b94d62accd905d17a39ebd2f290590d6d88a128d"
     },
     {
         "tag": "master-20250616-c07465a6",
