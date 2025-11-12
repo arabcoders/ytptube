@@ -154,12 +154,18 @@
       <div>
         <NuxtLoadingIndicator />
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
-        <Message v-if="!config.is_loaded" class="has-background-info-90 has-text-dark mt-5"
+        <Message v-if="!config.is_loaded" class="mt-5" :newStyle="true"
           title="Loading Configuration" icon="fas fa-spinner fa-spin">
           <p>Loading application configuration. This usually takes less than a second.</p>
           <p v-if="!socket.isConnected" class="mt-2">
             If this is taking too long, please check that the backend server is running and that the WebSocket
             connection is functional.
+          </p>
+          <p v-if="socket.error" class="has-text-danger">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-triangle-exclamation" /></span>
+              {{ socket.error }}
+            </span>
           </p>
         </Message>
         <Markdown @closeModel="() => doc.file = ''" :file="doc.file" v-if="doc.file" />
@@ -182,8 +188,8 @@
             - <NuxtLink @click="doc.file = '/api/docs/README.md'">README</NuxtLink>
             - <NuxtLink @click="doc.file = '/api/docs/API.md'">API</NuxtLink>
             - <NuxtLink @click="scrollToTop">
-                <span class="icon"><i class="fas fa-arrow-up" /></span>
-                <span>Top</span>
+              <span class="icon"><i class="fas fa-arrow-up" /></span>
+              <span>Top</span>
             </NuxtLink>
           </div>
         </div>

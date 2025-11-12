@@ -13,6 +13,7 @@ export const useSocketStore = defineStore('socket', () => {
   const socket = ref<IOSocket | null>(null)
   const isConnected = ref<boolean>(false)
   const connectionStatus = ref<connectionStatus>('disconnected')
+  const error = ref<string | null>(null)
 
   const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
   const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
@@ -72,16 +73,26 @@ export const useSocketStore = defineStore('socket', () => {
     connectionStatus.value = 'connecting';
     socket.value = io(url, opts)
 
-    on("connect_error", (e: any) => console.error("Socket connection error:", e));
+    on("connect_error", (e: any) => {
+      isConnected.value = false
+      if (null === e || undefined === e) {
+        error.value = 'Connection error: Unknown error';
+        return;
+      }
+      error.value = `Connection error: ${e.type || 'Unknown'}: ${e.message || 'Unknown error'}`;
+    });
+
 
     on('connect', () => {
       isConnected.value = true
       connectionStatus.value = 'connected';
+      error.value = null;
     });
 
     on('disconnect', () => {
       isConnected.value = false
       connectionStatus.value = 'disconnected';
+      error.value = 'Disconnected from server.';
     });
 
     on('configuration', stream => {
@@ -100,6 +111,7 @@ export const useSocketStore = defineStore('socket', () => {
       config.add('folders', json.data.folders)
       stateStore.addAll('queue', json.data.queue || {})
       stateStore.addAll('history', json.data.done || {})
+      error.value = null;
     })
 
     on('item_added', stream => {
@@ -215,5 +227,6 @@ export const useSocketStore = defineStore('socket', () => {
     socket, isConnected,
     getSessionId,
     connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
+    error: readonly(error) as Readonly<Ref<string | null>>,
   };
 });
