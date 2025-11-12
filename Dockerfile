@@ -52,7 +52,7 @@ RUN sed -i -E '/^Suites:[[:space:]]*trixie[[:space:]]+trixie-updates$/ {n; s/^(C
   ARCH="$(dpkg --print-architecture)" && \
   EXTRA_PACKAGES="" && \
   if [ "$ARCH" = "amd64" ]; then EXTRA_PACKAGES="intel-media-va-driver-non-free i965-va-driver libmfx-gen1.2"; fi && \
-  apt-get install -y --no-install-recommends locales \
+  apt-get install -y --no-install-recommends locales procps \
   bash mkvtoolnix patch aria2 curl ca-certificates xz-utils git sqlite3 tzdata file libmagic1 vainfo ${EXTRA_PACKAGES} \
   && useradd -u ${USER_ID:-1000} -U -d /app -s /bin/bash app && \
   sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \

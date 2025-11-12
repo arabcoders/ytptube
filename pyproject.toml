@@ -30,7 +30,7 @@ dependencies = [
   "brotli",
   "brotlicffi",
   "anyio",
-  "yt-dlp",
+  "yt-dlp[default]",
   "platformdirs",
   "multidict==6.5.1",
   "dateparser>=1.2.1",
