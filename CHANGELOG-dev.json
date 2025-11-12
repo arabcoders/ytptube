@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251112-b0c9db2d",
-        "date": "2025-11-12T15:48:33+00:00",
+        "tag": "dev-20251112-3da5e547",
+        "date": "2025-11-12T18:56:29+00:00",
         "commits": [
+            {
+                "sha": "3da5e547",
+                "message": "Refactor: move nfo maker into correct namespace and move metadataPP patcher into utils",
+                "author": "arabcoders",
+                "date": "2025-11-12T18:56:29+00:00",
+                "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72"
+            },
             {
                 "sha": "b0c9db2d",
                 "message": "Refactor: update video player to account for video height and width",
@@ -2909,7 +2916,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d"
+        "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72"
     },
     {
         "tag": "dev-20250616-c07465a6",

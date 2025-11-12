@@ -105,6 +105,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72",
+    "date": "2025-11-12T18:56:29+00:00",
+    "commits": [
+      {
+        "sha": "3da5e547",
+        "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72",
+        "message": "Refactor: move nfo maker into correct namespace and move metadataPP patcher into utils",
+        "author": "arabcoders",
+        "date": "2025-11-12T18:56:29+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.3",
     "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
     "date": "2025-11-08T20:19:41+00:00",
