@@ -1747,6 +1747,15 @@ wheels = [
 ]
 
 [[package]]
+name = "yt-dlp-ejs"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/02/58b16dee54ad7f9f8c4b5b490960478dbbd31a27da4be2c876d8c09ac8e3/yt_dlp_ejs-0.3.1.tar.gz", hash = "sha256:7f2119eb02864800f651fa33825ddfe13d152a1f730fa103d9864f091df24227", size = 33805 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e7/fd/34fbdaf0d53386c47e219c532a479766cd9336fde34c00834c8e0123df7a/yt_dlp_ejs-0.3.1-py3-none-any.whl", hash = "sha256:a6e3548874db7c774388931752bb46c7f4642c044b2a189e56968f3d5ecab622", size = 53155 },
+]
+
+[[package]]
 name = "ytptube"
 version = "1.0.0"
 source = { virtual = "." }
@@ -1784,6 +1793,7 @@ dependencies = [
     { name = "selenium" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "yt-dlp" },
+    { name = "yt-dlp-ejs" },
     { name = "zipstream-ng" },
 ]
 
@@ -1836,6 +1846,7 @@ requires-dist = [
     { name = "selenium", specifier = ">=4.35.0" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "yt-dlp" },
+    { name = "yt-dlp-ejs", specifier = ">=0.3.1" },
     { name = "zipstream-ng", specifier = ">=1.8.0" },
 ]
 provides-extras = ["installer"]
