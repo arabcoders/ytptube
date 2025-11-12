@@ -1,9 +1,37 @@
 [
   {
-    "tag": "Unreleased (8ff65823)",
-    "full_sha": "8ff658231652d8f31b2dc26f91661629642f73b0",
-    "date": "2025-11-11T20:45:47+00:00",
+    "tag": "Unreleased (c1b9034e)",
+    "full_sha": "c1b9034ef806488ef49c7c4fe2260863af073dd8",
+    "date": "2025-11-12T15:59:49+00:00",
     "commits": [
+      {
+        "sha": "b0c9db2d",
+        "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
+        "message": "Refactor: update video player to account for video height and width",
+        "author": "arabcoders",
+        "date": "2025-11-12T15:48:33+00:00"
+      },
+      {
+        "sha": "70ff5e79",
+        "full_sha": "70ff5e79c5063aa7194dbaa79c40a7ee8607695b",
+        "message": "refactor: improve messaging about websocket errors",
+        "author": "arabcoders",
+        "date": "2025-11-12T15:08:43+00:00"
+      },
+      {
+        "sha": "ad3a3ddb",
+        "full_sha": "ad3a3ddb722ad506359aebfaaa150f9e4de80a6d",
+        "message": "Feat: add drop file support for cookies field.",
+        "author": "arabcoders",
+        "date": "2025-11-12T14:48:43+00:00"
+      },
+      {
+        "sha": "0972b23b",
+        "full_sha": "0972b23b0d9a1693eff170e114b5c8b52a752d1b",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-11-12T14:48:04+00:00"
+      },
       {
         "sha": "4e867292",
         "full_sha": "4e86729206c8427ff63db0d9fe57398936a46bb1",
@@ -73,41 +101,6 @@
         "message": "[FIX] implement --max-downloads arg. Ref #479",
         "author": "arabcoders",
         "date": "2025-11-09T20:36:45+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
-    "date": "2025-11-12T15:48:33+00:00",
-    "commits": [
-      {
-        "sha": "b0c9db2d",
-        "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
-        "message": "Refactor: update video player to account for video height and width",
-        "author": "arabcoders",
-        "date": "2025-11-12T15:48:33+00:00"
-      },
-      {
-        "sha": "70ff5e79",
-        "full_sha": "70ff5e79c5063aa7194dbaa79c40a7ee8607695b",
-        "message": "refactor: improve messaging about websocket errors",
-        "author": "arabcoders",
-        "date": "2025-11-12T15:08:43+00:00"
-      },
-      {
-        "sha": "ad3a3ddb",
-        "full_sha": "ad3a3ddb722ad506359aebfaaa150f9e4de80a6d",
-        "message": "Feat: add drop file support for cookies field.",
-        "author": "arabcoders",
-        "date": "2025-11-12T14:48:43+00:00"
-      },
-      {
-        "sha": "0972b23b",
-        "full_sha": "0972b23b0d9a1693eff170e114b5c8b52a752d1b",
-        "message": "Chore: update external packages",
-        "author": "arabcoders",
-        "date": "2025-11-12T14:48:04+00:00"
       }
     ]
   },
