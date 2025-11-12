@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (c1b9034e)",
-    "full_sha": "c1b9034ef806488ef49c7c4fe2260863af073dd8",
-    "date": "2025-11-12T15:59:49+00:00",
+    "tag": "Unreleased (d4c14c79)",
+    "full_sha": "d4c14c79918ccc6ae00f678df9da33cddc3c766c",
+    "date": "2025-11-12T19:06:20+00:00",
     "commits": [
+      {
+        "sha": "3da5e547",
+        "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72",
+        "message": "Refactor: move nfo maker into correct namespace and move metadataPP patcher into utils",
+        "author": "arabcoders",
+        "date": "2025-11-12T18:56:29+00:00"
+      },
       {
         "sha": "b0c9db2d",
         "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
@@ -101,20 +108,6 @@
         "message": "[FIX] implement --max-downloads arg. Ref #479",
         "author": "arabcoders",
         "date": "2025-11-09T20:36:45+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72",
-    "date": "2025-11-12T18:56:29+00:00",
-    "commits": [
-      {
-        "sha": "3da5e547",
-        "full_sha": "3da5e54774e22e9f5b38852979863a639aa72e72",
-        "message": "Refactor: move nfo maker into correct namespace and move metadataPP patcher into utils",
-        "author": "arabcoders",
-        "date": "2025-11-12T18:56:29+00:00"
       }
     ]
   },
