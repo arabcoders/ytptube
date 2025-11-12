@@ -1,8 +1,36 @@
 [
     {
-        "tag": "dev-20251111-4e867292",
-        "date": "2025-11-11T19:08:32+00:00",
+        "tag": "dev-20251112-b0c9db2d",
+        "date": "2025-11-12T15:48:33+00:00",
         "commits": [
+            {
+                "sha": "b0c9db2d",
+                "message": "Refactor: update video player to account for video height and width",
+                "author": "arabcoders",
+                "date": "2025-11-12T15:48:33+00:00",
+                "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d"
+            },
+            {
+                "sha": "70ff5e79",
+                "message": "refactor: improve messaging about websocket errors",
+                "author": "arabcoders",
+                "date": "2025-11-12T15:08:43+00:00",
+                "full_sha": "70ff5e79c5063aa7194dbaa79c40a7ee8607695b"
+            },
+            {
+                "sha": "ad3a3ddb",
+                "message": "Feat: add drop file support for cookies field.",
+                "author": "arabcoders",
+                "date": "2025-11-12T14:48:43+00:00",
+                "full_sha": "ad3a3ddb722ad506359aebfaaa150f9e4de80a6d"
+            },
+            {
+                "sha": "0972b23b",
+                "message": "Chore: update external packages",
+                "author": "arabcoders",
+                "date": "2025-11-12T14:48:04+00:00",
+                "full_sha": "0972b23b0d9a1693eff170e114b5c8b52a752d1b"
+            },
             {
                 "sha": "4e867292",
                 "message": "FEAT: add auto clear env variable",
@@ -2881,7 +2909,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4e86729206c8427ff63db0d9fe57398936a46bb1"
+        "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d"
     },
     {
         "tag": "dev-20250616-c07465a6",

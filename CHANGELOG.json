@@ -77,6 +77,41 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
+    "date": "2025-11-12T15:48:33+00:00",
+    "commits": [
+      {
+        "sha": "b0c9db2d",
+        "full_sha": "b0c9db2d7df0d602422a46bc40f571ef311dd95d",
+        "message": "Refactor: update video player to account for video height and width",
+        "author": "arabcoders",
+        "date": "2025-11-12T15:48:33+00:00"
+      },
+      {
+        "sha": "70ff5e79",
+        "full_sha": "70ff5e79c5063aa7194dbaa79c40a7ee8607695b",
+        "message": "refactor: improve messaging about websocket errors",
+        "author": "arabcoders",
+        "date": "2025-11-12T15:08:43+00:00"
+      },
+      {
+        "sha": "ad3a3ddb",
+        "full_sha": "ad3a3ddb722ad506359aebfaaa150f9e4de80a6d",
+        "message": "Feat: add drop file support for cookies field.",
+        "author": "arabcoders",
+        "date": "2025-11-12T14:48:43+00:00"
+      },
+      {
+        "sha": "0972b23b",
+        "full_sha": "0972b23b0d9a1693eff170e114b5c8b52a752d1b",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-11-12T14:48:04+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.3",
     "full_sha": "8273847d469114cd0e2767c4c14a408c3142f6eb",
     "date": "2025-11-08T20:19:41+00:00",
