@@ -4,8 +4,6 @@ from typing import Any
 import yt_dlp
 from yt_dlp.utils import make_archive_id
 
-import app.postprocessors
-
 
 class _ArchiveProxy:
     """

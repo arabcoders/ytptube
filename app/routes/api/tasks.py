@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -11,6 +11,9 @@ from app.library.encoder import Encoder
 from app.library.router import route
 from app.library.Tasks import Task, TaskFailure, TaskResult, Tasks
 from app.library.Utils import get_channel_images, get_file, init_class, validate_url, validate_uuid
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -255,10 +258,10 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
 
         from yt_dlp.utils import sanitize_filename
 
-        from app.postprocessors.nfo_maker import NFOMakerPP
+        from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 
-        title = sanitize_filename(info.get("title"))
-        filename = save_path / f"{title} [{info.get('id')}].info.json"
+        title: str = sanitize_filename(info.get("title"))
+        filename: Path = save_path / f"{title} [{info.get('id')}].info.json"
         filename.write_text(encoder.encode(metadata), encoding="utf-8")
         info["json_file"] = str(filename.relative_to(config.download_path))
 
