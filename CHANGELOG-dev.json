@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251112-919322ea",
-        "date": "2025-11-12T19:49:47+00:00",
+        "tag": "dev-20251112-d4b481f2",
+        "date": "2025-11-12T20:38:18+00:00",
         "commits": [
+            {
+                "sha": "d4b481f2",
+                "message": "add yt-dlp-ejs",
+                "author": "arabcoders",
+                "date": "2025-11-12T20:38:18+00:00",
+                "full_sha": "d4b481f2a8d1161a20f1948c5e90ceec3f98bdf8"
+            },
             {
                 "sha": "919322ea",
                 "message": "include procps in container.",
@@ -2923,7 +2930,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "919322ea227ca2cb29ddd8b05dea44fc616674f5"
+        "full_sha": "d4b481f2a8d1161a20f1948c5e90ceec3f98bdf8"
     },
     {
         "tag": "dev-20250616-c07465a6",
