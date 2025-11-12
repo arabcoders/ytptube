@@ -136,19 +136,23 @@
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <DLInput id="ytdlpCookies" type="text" label="Cookies" v-model="form.cookies" icon="fa-solid fa-cookie"
-                :disabled="!socket.isConnected || addInProgress" :placeholder="getDefault('cookies', '')">
-                <template #help>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use the <NuxtLink target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                        Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
-                        cookies MUST be in Netscape HTTP Cookie format.</span>
-                    </span>
+              <div class="field">
+                <label class="label is-unselectable" for="ytdlpCookies">
+                  <span class="icon"><i class="fa-solid fa-cookie" /></span>
+                  <span>Cookies</span>
+                </label>
+                <TextDropzone id="ytdlpCookies" v-model="form.cookies" :disabled="!socket.isConnected || addInProgress"
+                  @error="(msg: string) => toast.error(msg)"
+                  :placeholder="getDefault('cookies', 'Leave empty to use default cookies. Or drag & drop a cookie file here.')" />
+                <span class="help is-bold">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Use the <NuxtLink target="_blank"
+                      to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
+                      Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
+                      cookies MUST be in Netscape HTTP Cookie format.</span>
                   </span>
-                </template>
-              </DLInput>
+                </span>
+              </div>
             </div>
             <template v-if="config.dl_fields.length > 0">
               <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"

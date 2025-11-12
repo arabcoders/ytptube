@@ -84,8 +84,8 @@
 <template>
   <div v-if="infoLoaded">
     <div style="position: relative;">
-      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls crossorigin="anonymous"
-        preload="auto" autoplay>
+      <video class="player" ref="video" :poster="uri(thumbnail)" :width="videoWidth" :height="videoHeight"
+        playsinline controls crossorigin="anonymous" preload="auto" autoplay>
         <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
           :type="source.type" />
         <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
@@ -275,6 +275,8 @@ const artist = ref('')
 const title = ref('')
 const isAudio = ref(false)
 const hasVideoStream = ref(false)
+const videoWidth = ref<number | undefined>(undefined)
+const videoHeight = ref<number | undefined>(undefined)
 const volume = useStorage('player_volume', 1)
 const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
 const infoLoaded = ref(false)
@@ -503,6 +505,15 @@ onMounted(async () => {
 
   hasVideoStream.value = Array.isArray(response.ffprobe?.video)
     && response.ffprobe.video.some(s => 'video' === s.codec_type)
+
+  // Extract video dimensions to prevent layout reflow
+  if (hasVideoStream.value && response.ffprobe?.video) {
+    const videoStream = response.ffprobe.video.find(s => 'video' === s.codec_type)
+    if (videoStream?.width && videoStream?.height) {
+      videoWidth.value = videoStream.width
+      videoHeight.value = videoStream.height
+    }
+  }
 
   if (!props.item.extras?.is_video && props.item.extras?.is_audio) {
     isAudio.value = true

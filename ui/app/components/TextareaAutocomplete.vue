@@ -3,7 +3,7 @@
     <div class="control" style="width:100%;">
       <textarea :id="id" ref="textareaRef" v-model="localValue" @input="onInput" @focus="onFocus" @blur="hideList"
         @keydown="onKeydown" @keyup="updateCaret" @click="updateCaret" @mouseup="updateCaret"
-        class="textarea" :placeholder="placeholder" autocomplete="off"
+        class="control is-fullwidth textarea" :placeholder="placeholder" autocomplete="off"
         style="width:100%; position:relative; z-index:2;" rows="4" :disabled="disabled" />
     </div>
     <div class="dropdown-menu" role="menu" style="width:100%; z-index:3;">
