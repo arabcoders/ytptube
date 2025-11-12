@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (b94d62ac)",
-    "full_sha": "b94d62accd905d17a39ebd2f290590d6d88a128d",
-    "date": "2025-11-12T20:55:47+00:00",
+    "tag": "v1.0.5",
+    "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
+    "date": "2025-11-12T21:21:35+00:00",
     "commits": [
+      {
+        "sha": "1144ac0e",
+        "full_sha": "1144ac0e125e9554a8f5411a4f58949bb653ce16",
+        "message": "revert: Revert changes to video player, it was causing issue with side scrolling due to video width and height. let it auto scale",
+        "author": "arabcoders",
+        "date": "2025-11-12T21:08:36+00:00"
+      },
       {
         "sha": "c82e840c",
         "full_sha": "c82e840c4b8f63d8435e321e3f5eb73efc3c5548",
@@ -24,20 +31,6 @@
         "message": "include procps in container.",
         "author": "arabcoders",
         "date": "2025-11-12T19:49:47+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "1144ac0e125e9554a8f5411a4f58949bb653ce16",
-    "date": "2025-11-12T21:08:36+00:00",
-    "commits": [
-      {
-        "sha": "1144ac0e",
-        "full_sha": "1144ac0e125e9554a8f5411a4f58949bb653ce16",
-        "message": "revert: Revert changes to video player, it was causing issue with side scrolling due to video width and height. let it auto scale",
-        "author": "arabcoders",
-        "date": "2025-11-12T21:08:36+00:00"
       }
     ]
   },

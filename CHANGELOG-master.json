@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251112-b94d62ac",
-        "date": "2025-11-12T20:55:47+00:00",
+        "tag": "master-20251113-46a3abeb",
+        "date": "2025-11-12T21:21:35+00:00",
         "commits": [
+            {
+                "sha": "1144ac0e",
+                "message": "revert: Revert changes to video player, it was causing issue with side scrolling due to video width and height. let it auto scale",
+                "author": "arabcoders",
+                "date": "2025-11-12T21:08:36+00:00",
+                "full_sha": "1144ac0e125e9554a8f5411a4f58949bb653ce16"
+            },
             {
                 "sha": "c82e840c",
                 "message": "Fix: updated default yt-dlp package to include all default dependancies",
@@ -2937,7 +2944,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b94d62accd905d17a39ebd2f290590d6d88a128d"
+        "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8"
     },
     {
         "tag": "master-20250616-c07465a6",
