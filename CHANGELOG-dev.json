@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251113-739d8e70",
-        "date": "2025-11-13T16:28:10+00:00",
+        "tag": "dev-20251113-7edc21ee",
+        "date": "2025-11-13T16:58:42+00:00",
         "commits": [
+            {
+                "sha": "7edc21ee",
+                "message": "Refactor: removed debug statement.",
+                "author": "arabcoders",
+                "date": "2025-11-13T16:58:42+00:00",
+                "full_sha": "7edc21ee2d891263c1d70f1c635e5359d18edeee"
+            },
             {
                 "sha": "739d8e70",
                 "message": "Feat: Paginate history items to improve performance",
@@ -2958,7 +2965,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "739d8e702f7728c311e300f2dce961c06a7480be"
+        "full_sha": "7edc21ee2d891263c1d70f1c635e5359d18edeee"
     },
     {
         "tag": "dev-20250616-c07465a6",
