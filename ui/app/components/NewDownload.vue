@@ -139,10 +139,11 @@
               <div class="field">
                 <label class="label is-unselectable" for="ytdlpCookies">
                   <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                  <span>Cookies</span>
+                  <span>Cookies - <NuxtLink @click="cookiesDropzoneRef?.triggerFileSelect()">Upload file</NuxtLink>
+                  </span>
                 </label>
-                <TextDropzone id="ytdlpCookies" v-model="form.cookies" :disabled="!socket.isConnected || addInProgress"
-                  @error="(msg: string) => toast.error(msg)"
+                <TextDropzone ref="cookiesDropzoneRef" id="ytdlpCookies" v-model="form.cookies"
+                  :disabled="!socket.isConnected || addInProgress" @error="(msg: string) => toast.error(msg)"
                   :placeholder="getDefault('cookies', 'Leave empty to use default cookies. Or drag & drop a cookie file here.')" />
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -255,6 +256,7 @@
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import TextDropzone from '~/components/TextDropzone.vue'
 import type { item_request } from '~/types/item'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 import { navigateTo } from '#app'
@@ -284,6 +286,7 @@ const showTestResults = ref<boolean>(false)
 const testResultsData = ref<any>(null)
 const dlFieldsExtra = ['--no-download-archive']
 const ytDlpOpt = ref<AutoCompleteOptions>([])
+const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,

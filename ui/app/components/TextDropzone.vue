@@ -221,6 +221,15 @@ const readFileAsText = (file: File): Promise<string> => {
     reader.readAsText(file)
   })
 }
+
+const triggerFileSelect = (): void => {
+  if (props.disabled) {
+    return
+  }
+  fileInputRef.value?.click()
+}
+
+defineExpose({ triggerFileSelect })
 </script>
 
 <style>
