@@ -98,8 +98,6 @@ export const useStateStore = defineStore('state', () => {
 
     state.pagination.isLoading = true
 
-    per_page = 2 // For testing purposes, set per_page to 2
-
     try {
       const search = new URLSearchParams({ type: 'done', page: page.toString(), per_page: per_page.toString(), order });
 
