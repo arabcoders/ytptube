@@ -442,21 +442,83 @@ or an error:
 ---
 
 ### GET /api/history
-**Purpose**: Returns the download queue and the download history.  
+**Purpose**: Returns the download queue and/or download history with optional pagination support.
 
-**Response**:
+**Query Parameters**:
+- `type` (optional): Type of items to return. Default: `all`
+  - `all` (default): Returns both queue and history (legacy behavior, no pagination)
+  - `queue`: Returns only queue items (with pagination)
+  - `done`: Returns only history items (with pagination)
+- `page` (optional): Page number (1-indexed). Default: `1`. Only used when `type != all`
+- `per_page` (optional): Items per page. Default: `50`, Max: `200`. Only used when `type != all`
+- `order` (optional): Sort order. Default: `DESC`. Only used when `type != all`
+  - `DESC`: Newest items first (descending by creation date)
+  - `ASC`: Oldest items first (ascending by creation date)
+
+**Response (when `type=all` or no type set)** - Legacy format:
 ```json
 {
   "queue": [
-    { ... },
+    { 
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "title": "Video Title",
+      "status": "downloading",
+      ...
+    },
     ...
   ],
   "history": [
-    { ... },
+    {
+      "id": "def456", 
+      "url": "https://example.com/video2",
+      "title": "Completed Video",
+      "status": "finished",
+      ...
+    },
     ...
   ]
 }
 ```
+
+**Response (when `type=queue` or `type=done`)** - Paginated format:
+```json
+{
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1234,
+    "total_pages": 25,
+    "has_next": true,
+    "has_prev": false
+  },
+  "items": [
+    {
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "title": "Video Title",
+      "status": "finished",
+      ...
+    },
+    ...
+  ]
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if parameters are invalid:
+  ```json
+  { "error": "type must be one of all, queue, done." }
+  { "error": "page must be >= 1." }
+  { "error": "per_page must be between 1 and 1000." }
+  { "error": "order must be ASC or DESC." }
+  { "error": "page and per_page must be valid integers." }
+  ```
+
+**Notes**:
+- The `type=all` behavior is considered legacy and will be removed in future versions
+- For large datasets, use paginated requests (`type=queue` or `type=done`) for better performance
+- The `items` array contains ItemDTO objects serialized to JSON
 
 ---
 

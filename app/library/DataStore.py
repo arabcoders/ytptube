@@ -179,6 +179,88 @@ class DataStore:
         self._connection.execute('SELECT "id" FROM "history" LIMIT 1').fetchone()
         return True
 
+    def get_total_count(self) -> int:
+        """
+        Get the total count of items in the datastore.
+
+        Returns:
+            int: The total number of items in the datastore.
+
+        """
+        cursor = self._connection.execute(
+            'SELECT COUNT(*) as count FROM "history" WHERE "type" = ?',
+            (str(self._type),),
+        )
+        row = cursor.fetchone()
+        return row["count"] if row else 0
+
+    def get_items_paginated(
+        self,
+        page: int = 1,
+        per_page: int = 50,
+        order: str = "DESC",
+    ) -> tuple[list[tuple[str, ItemDTO]], int, int, int]:
+        """
+        Get paginated items from the datastore.
+
+        Args:
+            page (int): The page number (1-indexed). Defaults to 1.
+            per_page (int): Number of items per page. Defaults to 50.
+            order (str): Sort order - 'ASC' or 'DESC'. Defaults to 'DESC' (newest first).
+
+        Returns:
+            tuple[list[tuple[str, ItemDTO]], int, int, int]: A tuple containing:
+                - List of (id, ItemDTO) tuples for the requested page
+                - Total number of items
+                - Current page number
+                - Total number of pages
+
+        Raises:
+            ValueError: If page < 1 or per_page < 1
+
+        """
+        if page < 1:
+            msg = "page must be >= 1"
+            raise ValueError(msg)
+
+        if per_page < 1:
+            msg = "per_page must be >= 1"
+            raise ValueError(msg)
+
+        order = order.upper()
+        if order not in ("ASC", "DESC"):
+            msg = f"order must be 'ASC' or 'DESC', got '{order}'"
+            raise ValueError(msg)
+
+        order = "ASC" if order == "ASC" else "DESC"
+
+        total_items = self.get_total_count()
+        total_pages = (total_items + per_page - 1) // per_page if total_items > 0 else 1
+
+        # Ensure page is within valid range.
+        if page > total_pages and total_items > 0:
+            page = total_pages
+
+        offset = (page - 1) * per_page
+
+        items: list[tuple[str, ItemDTO]] = []
+
+        cursor = self._connection.execute(
+            f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" {order} LIMIT ? OFFSET ?',  # noqa: S608
+            (str(self._type), per_page, offset),
+        )
+
+        for row in cursor:
+            rowDate: datetime = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+            data: dict = json.loads(row["data"])
+            data.pop("_id", None)
+            item: ItemDTO = init_class(ItemDTO, data)
+            item._id = row["id"]
+            item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
+            items.append((row["id"], item))
+
+        return items, total_items, page, total_pages
+
     def _update_store_item(self, type: StoreType, item: ItemDTO) -> None:
         sqlStatement = """
         INSERT INTO "history" ("id", "type", "url", "data")
