@@ -81,6 +81,7 @@ This document describes the available endpoints and their usage. All endpoints r
       - [Connection Events](#connection-events)
         - [`connect` (Built-in)](#connect-built-in)
         - [`disconnect` (Built-in)](#disconnect-built-in)
+        - [`configuration` (Server → Client)](#configuration-server--client)
         - [`connected` (Server → Client)](#connected-server--client)
       - [Subscription Events](#subscription-events)
         - [`subscribe` (Client → Server)](#subscribe-client--server)
@@ -442,21 +443,83 @@ or an error:
 ---
 
 ### GET /api/history
-**Purpose**: Returns the download queue and the download history.  
+**Purpose**: Returns the download queue and/or download history with optional pagination support.
 
-**Response**:
+**Query Parameters**:
+- `type` (optional): Type of items to return. Default: `all`
+  - `all` (default): Returns both queue and history (legacy behavior, no pagination)
+  - `queue`: Returns only queue items (with pagination)
+  - `done`: Returns only history items (with pagination)
+- `page` (optional): Page number (1-indexed). Default: `1`. Only used when `type != all`
+- `per_page` (optional): Items per page. Default: `config.default_pagination`, Max: `200`. Only used when `type != all`
+- `order` (optional): Sort order. Default: `DESC`. Only used when `type != all`
+  - `DESC`: Newest items first (descending by creation date)
+  - `ASC`: Oldest items first (ascending by creation date)
+
+**Response (when `type=all` or no type set)** - Legacy format:
 ```json
 {
   "queue": [
-    { ... },
+    { 
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "title": "Video Title",
+      "status": "downloading",
+      ...
+    },
     ...
   ],
   "history": [
-    { ... },
+    {
+      "id": "def456", 
+      "url": "https://example.com/video2",
+      "title": "Completed Video",
+      "status": "finished",
+      ...
+    },
     ...
   ]
 }
 ```
+
+**Response (when `type=queue` or `type=done`)** - Paginated format:
+```json
+{
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1234,
+    "total_pages": 25,
+    "has_next": true,
+    "has_prev": false
+  },
+  "items": [
+    {
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "title": "Video Title",
+      "status": "finished",
+      ...
+    },
+    ...
+  ]
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if parameters are invalid:
+  ```json
+  { "error": "type must be one of all, queue, done." }
+  { "error": "page must be >= 1." }
+  { "error": "per_page must be between 1 and 1000." }
+  { "error": "order must be ASC or DESC." }
+  { "error": "page and per_page must be valid integers." }
+  ```
+
+**Notes**:
+- The `type=all` behavior is considered legacy and will be removed in future versions
+- For large datasets, use paginated requests (`type=queue` or `type=done`) for better performance
+- The `items` array contains ItemDTO objects serialized to JSON
 
 ---
 
@@ -1671,25 +1734,35 @@ Fired when WebSocket connection is closed. No data payload.
 socket.on('disconnect', (reason: string) => console.log('WebSocket disconnected:', reason));
 ```
 
-##### `connected` (Server → Client)
-Initial connection event with full application state.
+##### `configuration` (Server → Client)
+Sends the current application configuration.
 
 **Data Fields**:
 - `config`: Global configuration object
-- `queue`: Current download queue (array of items)
-- `done`: Download history (array of completed items)
-- `tasks`: Scheduled tasks
 - `presets`: Available download presets
 - `dl_fields`: Available download fields
-- `folders`: Directory structure for downloads
 - `paused`: Queue pause status (boolean)
 
 **Example**:
 ```typescript
 socket.on('connected', (data: string) => {
   const json = JSON.parse(data);
+  console.log('Current configuration:', json.data.config);
+});
+```
+
+##### `connected` (Server → Client)
+When a client connects, this events sends the folder and current queue.
+
+**Data Fields**:
+- `queue`: Current download queue (array of items)
+- `folders`: Directory structure for downloads
+
+**Example**:
+```typescript
+socket.on('connected', (data: string) => {
+  const json = JSON.parse(data);
   const queueItems = json.data.queue || {};
-  const historyItems = json.data.done || {};
   console.log('Connected with', Object.keys(queueItems).length, 'queued downloads');
 });
 ```

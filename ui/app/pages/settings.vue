@@ -199,7 +199,7 @@
       <span class="field title is-4">
         <span class="icon-text">
           <span class="icon"><i class="fas fa-bell" /></span>
-          <p class="card-header-title">On-Screen Notifications</p>
+          <p class="card-header-title">Notifications</p>
         </span>
       </span>
       <span class="field is-horizontal" />
@@ -223,6 +223,33 @@
 
       <div class="field is-horizontal" v-if="allow_toasts">
         <div class="field-label is-normal">
+          <label class="label">Notification target</label>
+        </div>
+        <div class="field-body">
+          <div class="field is-narrow">
+            <div class="control">
+              <div class="select is-fullwidth">
+                <select v-model="toast_target" @change="onNotificationTargetChange">
+                  <option value="toast">Toast</option>
+                  <option value="browser" :disabled="!isSecureContext">Browser</option>
+                </select>
+              </div>
+            </div>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+              <template v-if="!isSecureContext">
+                Browser notifications require HTTPS connection.
+              </template>
+              <template v-else>
+                Choose where to display notifications. Browser requires permission.
+              </template>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="field is-horizontal" v-if="allow_toasts && toast_target === 'toast'">
+        <div class="field-label is-normal">
           <label class="label">Notifications position</label>
         </div>
         <div class="field-body">
@@ -243,7 +270,7 @@
         </div>
       </div>
 
-      <div class="field is-horizontal" v-if="allow_toasts">
+      <div class="field is-horizontal" v-if="allow_toasts && toast_target === 'toast'">
         <div class="field-label is-normal">
           <label class="label">Dismiss notification on click</label>
         </div>
@@ -266,13 +293,17 @@
 <script setup lang="ts">
 import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
+import { ref, onMounted } from 'vue'
 import { POSITION } from 'vue-toastification'
 import { useConfigStore } from '~/stores/ConfigStore'
+import { useNotification } from '~/composables/useNotification'
+import type { notificationTarget } from '~/composables/useNotification'
 
 defineProps<{ isLoading: boolean }>()
 defineEmits<{ (e: 'reload_bg'): void }>()
 
 const config = useConfigStore()
+const notification = useNotification()
 
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
@@ -280,8 +311,28 @@ const selectedTheme = useStorage<'auto' | 'light' | 'dark'>('theme', 'auto')
 const allow_toasts = useStorage<boolean>('allow_toasts', true)
 const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
+const toast_target = useStorage<notificationTarget>('toast_target', 'toast')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
+const isSecureContext = ref<boolean>(false)
+
+onMounted(async () => {
+  isSecureContext.value = window.isSecureContext
+  await nextTick()
+  if ('browser' === toast_target.value && !isSecureContext.value) {
+    toast_target.value = 'toast'
+  }
+})
+
+const onNotificationTargetChange = async (): Promise<void> => {
+  if ('browser' === toast_target.value) {
+    const permission = await notification.requestBrowserPermission()
+    if ('granted' !== permission) {
+      toast_target.value = 'toast'
+      notification.warning('Browser notification permission denied. Reverting to toast notifications.')
+    }
+  }
+}
 </script>

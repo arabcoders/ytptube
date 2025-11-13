@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.library.config import Config
 from app.library.Download import Download
 from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
@@ -20,23 +21,85 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @route("GET", r"api/history/", "items_list")
-async def items_list(queue: DownloadQueue, encoder: Encoder) -> Response:
+async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, config: Config) -> Response:
     """
-    Get the history.
+    Get the history with optional pagination support.
 
     Args:
+        request (Request): The request object.
         queue (DownloadQueue): The download queue instance.
         encoder (Encoder): The encoder instance.
+        config (Config): The configuration instance.
 
     Returns:
         Response: The response object.
 
-    """
-    data: dict = {"queue": [], "history": []}
-    q = queue.get()
+    Query Parameters:
+        type (str): Type of items to return - "all", "queue", or "done". Default: "all"
+        page (int): Page number for pagination (1-indexed). Only used when type != "all"
+        per_page (int): Items per page. Default: 50, Max: 1000. Only used when type != "all"
+        order (str): Sort order - "ASC" or "DESC". Default: "DESC". Only used when type != "all"
 
-    data["queue"].extend([q.get("queue", {}).get(k) for k in q.get("queue", {})])
-    data["history"].extend([q.get("done", {}).get(k) for k in q.get("done", {})])
+    """
+    from app.library.DataStore import StoreType
+
+    store_type = request.query.get("type", "all").lower()
+    stores: list[str] = ["all", StoreType.QUEUE.value, StoreType.HISTORY.value]
+    if store_type not in stores:
+        return web.json_response(
+            data={"error": f"type must be one of {', '.join(stores)}."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    # Legacy behavior: return all items without pagination, will be removed in future.
+    if "all" == store_type:
+        data: dict = {"queue": [], "history": []}
+        q = queue.get()
+
+        data["queue"].extend([q.get("queue", {}).get(k) for k in q.get("queue", {})])
+        data["history"].extend([q.get("done", {}).get(k) for k in q.get("done", {})])
+
+        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    ds = queue.queue if store_type == StoreType.QUEUE.value else queue.done
+
+    try:
+        page = int(request.query.get("page", 1))
+        per_page = int(request.query.get("per_page", config.default_pagination))
+        order = request.query.get("order", "DESC").upper()
+    except ValueError:
+        return web.json_response(
+            data={"error": "page and per_page must be valid integers."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if page < 1:
+        return web.json_response(data={"error": "page must be >= 1."}, status=web.HTTPBadRequest.status_code)
+
+    if per_page < 1 or per_page > 1000:
+        return web.json_response(
+            data={"error": "per_page must be between 1 and 1000."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if order not in ("ASC", "DESC"):
+        return web.json_response(
+            data={"error": "order must be ASC or DESC."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    items, total, current_page, total_pages = ds.get_items_paginated(page=page, per_page=per_page, order=order)
+    data = {
+        "pagination": {
+            "page": current_page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
+            "has_next": current_page < total_pages,
+            "has_prev": current_page > 1,
+        },
+        "items": [item for _, item in items],
+    }
 
     return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
 

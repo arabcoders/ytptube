@@ -2,19 +2,26 @@
   <vTooltip @show="loadContent" @hide="stopTimer">
     <slot />
     <template #popper>
-      <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin" /></span>
-      <div v-else>
-        <div style="min-width: 300px; width: 25vw; height: auto;" class="m-1">
-          <div class="is-block" style="word-break: all;" v-if="props.title">
-            <span style="font-size: 120%;">{{ props.title }}</span>
+      <template v-if="error_msg">
+        <Message message_class="is-danger" :newStyle="true">
+          {{ error_msg }}
+        </Message>
+      </template>
+      <template v-else>
+        <span class="icon" v-if="!url"><i class="fas fa-circle-notch fa-spin" /></span>
+        <div v-else>
+          <div style="min-width: 300px; width: 25vw; height: auto;" class="m-1">
+            <div class="is-block" style="word-break: all;" v-if="props.title">
+              <span style="font-size: 120%;">{{ props.title }}</span>
+            </div>
+            <figure :class="['image', thumbnail_ratio, 'is-hidden-mobile']">
+              <img @load="e => pImg(e)" :src="url" :alt="props.title" @error="clearCache"
+                :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
+                :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
+            </figure>
           </div>
-          <figure :class="['image', thumbnail_ratio, 'is-hidden-mobile']">
-            <img @load="e => pImg(e)" :src="url" :alt="props.title" @error="clearCache"
-              :crossorigin="props.privacy ? 'anonymous' : 'use-credentials'"
-              :referrerpolicy="props.privacy ? 'no-referrer' : 'origin'" />
-          </figure>
         </div>
-      </div>
+      </template>
     </template>
   </vTooltip>
 </template>
@@ -36,6 +43,7 @@ const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'i
 const url = ref<string | null>(null)
 const error = ref(false)
 const isPreloading = ref(false)
+const error_msg = ref<string | null>(null)
 
 const loadTimer: ReturnType<typeof setTimeout> | null = null
 const cancelRequest = new AbortController()
@@ -54,7 +62,7 @@ const defaultLoader = async (): Promise<void> => {
     const response = await request(props.image, { signal: cancelRequest.signal })
 
     if (!response.ok) {
-      toast.error(`ImageView Request error. ${response.status}: ${response.statusText}`)
+      error_msg.value = `ImageView Request error. ${response.status}: ${response.statusText}`
       return
     }
 

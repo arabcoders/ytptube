@@ -25,6 +25,7 @@ export const useConfigStore = defineStore('config', () => {
       started: 0,
       app_env: 'production',
       simple_mode: false,
+      default_pagination: 50,
     },
     presets: [
       {

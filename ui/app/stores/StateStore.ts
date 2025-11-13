@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { StoreItem } from '~/types/store'
+import { request } from '~/utils'
 
 type StateType = 'queue' | 'history'
 type KeyType = string
@@ -7,10 +8,33 @@ type KeyType = string
 interface State {
   queue: Record<KeyType, StoreItem>
   history: Record<KeyType, StoreItem>
+  pagination: {
+    page: number
+    per_page: number
+    total: number
+    total_pages: number
+    has_next: boolean
+    has_prev: boolean
+    isLoaded: boolean
+    isLoading: boolean
+  }
 }
 
 export const useStateStore = defineStore('state', () => {
-  const state = reactive<State>({ queue: {}, history: {} })
+  const state = reactive<State>({
+    queue: {},
+    history: {},
+    pagination: {
+      page: 1,
+      per_page: 50,
+      total: 0,
+      total_pages: 0,
+      has_next: false,
+      has_prev: false,
+      isLoaded: false,
+      isLoading: false,
+    },
+  })
 
   const add = (type: StateType, key: KeyType, value: StoreItem): void => {
     state[type][key] = value
@@ -37,6 +61,15 @@ export const useStateStore = defineStore('state', () => {
 
   const clearAll = (type: StateType): void => {
     state[type] = {}
+    if ('queue' === type) {
+      return
+    }
+
+    state.pagination.total = 0
+    state.pagination.page = 1
+    state.pagination.total_pages = 0
+    state.pagination.has_next = false
+    state.pagination.has_prev = false
   }
 
   const addAll = (type: StateType, data: Record<KeyType, StoreItem>): void => {
@@ -52,8 +85,94 @@ export const useStateStore = defineStore('state', () => {
   }
 
   const count = (type: StateType): number => {
+    if ('history' === type && state.pagination.total > 0) {
+      return state.pagination.total
+    }
     return Object.keys(state[type]).length
   }
 
-  return { ...toRefs(state), add, update, remove, get, has, clearAll, addAll, move, count }
+  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC'): Promise<void> => {
+    if ('history' !== type) {
+      throw new Error('Pagination is only supported for history type');
+    }
+
+    state.pagination.isLoading = true
+
+    try {
+      const search = new URLSearchParams({ type: 'done', page: page.toString(), per_page: per_page.toString(), order });
+
+      const response = await request(`/api/history?${search}`)
+      const data = await response.json()
+
+      if (data.pagination) {
+        state.pagination = { ...data.pagination, isLoaded: true, isLoading: false, }
+        const items: Record<KeyType, StoreItem> = {}
+        for (const item of data.items || []) {
+          items[item._id] = item
+        }
+        state[type] = items
+      }
+    } catch (error) {
+      console.error(`Failed to load ${type} page ${page}:`, error)
+      state.pagination.isLoading = false
+    }
+  }
+
+  const loadNextPage = async (type: StateType): Promise<void> => {
+    if ('history' !== type) {
+      throw new Error('Pagination is only supported for history type');
+    }
+
+    if (!state.pagination.has_next || state.pagination.isLoading) {
+      return
+    }
+
+    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page)
+  }
+
+  const loadPreviousPage = async (type: StateType): Promise<void> => {
+    if ('history' !== type) {
+      throw new Error('Pagination is only supported for history type');
+    }
+
+    if (!state.pagination.has_prev || state.pagination.isLoading) {
+      return
+    }
+
+    await loadPaginated(type, state.pagination.page - 1, state.pagination.per_page)
+  }
+
+  const reloadCurrentPage = async (type: StateType): Promise<void> => {
+    if ('history' !== type) {
+      throw new Error('Pagination is only supported for history type');
+    }
+    if (!state.pagination.isLoaded) {
+      return
+    }
+
+    await loadPaginated(type, state.pagination.page, state.pagination.per_page)
+  }
+
+  const getPagination = () => state.pagination
+
+  const setHistoryCount = (count: number) => state.pagination.total = count
+
+  return {
+    ...toRefs(state),
+    add,
+    update,
+    remove,
+    get,
+    has,
+    clearAll,
+    addAll,
+    move,
+    count,
+    loadPaginated,
+    loadNextPage,
+    loadPreviousPage,
+    reloadCurrentPage,
+    getPagination,
+    setHistoryCount,
+  }
 })

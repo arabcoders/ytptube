@@ -43,9 +43,18 @@ export default defineNuxtConfig({
         { "charset": "utf-8" },
         { "name": "viewport", "content": "width=device-width, initial-scale=1.0, maximum-scale=1.0" },
         { "name": "theme-color", "content": "#000000" },
+        { "name": "mobile-web-app-capable", "content": "yes" },
+        { "name": "apple-mobile-web-app-capable", "content": "yes" },
+        { "name": "apple-mobile-web-app-status-bar-style", "content": "black-translucent" },
+        { "name": "apple-mobile-web-app-title", "content": "YTPTube" },
       ],
       base: { "href": "/" },
-      link: [{ rel: 'icon', type: 'image/x-icon', href: 'favicon.ico?v=100' }]
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: 'favicon.ico?v=100' },
+        { rel: 'manifest', href: 'manifest.webmanifest?v=100' },
+        { rel: 'apple-touch-icon', href: 'images/favicon.png' },
+        { rel: 'apple-touch-startup-image', href: 'images/logo.png' }
+      ]
     },
     pageTransition: { name: 'page', mode: 'out-in' }
   },

@@ -154,17 +154,18 @@
       <div>
         <NuxtLoadingIndicator />
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
-        <Message v-if="!config.is_loaded" class="mt-5" :newStyle="true"
-          title="Loading Configuration" icon="fas fa-spinner fa-spin">
-          <p>Loading application configuration. This usually takes less than a second.</p>
-          <p v-if="!socket.isConnected" class="mt-2">
-            If this is taking too long, please check that the backend server is running and that the WebSocket
-            connection is functional.
+        <Message v-if="!config.is_loaded" class="mt-5" :newStyle="true" title="Loading Configuration"
+          icon="fas fa-spinner fa-spin">
+          <p>This usually takes less than a second.
+            <span v-if="!socket.isConnected" class="mt-2">
+              If this is taking too long, please check that the backend server is running and that the WebSocket
+              connection is functional.
+            </span>
           </p>
           <p v-if="socket.error" class="has-text-danger">
             <span class="icon-text">
               <span class="icon"><i class="fas fa-triangle-exclamation" /></span>
-              {{ socket.error }}
+              {{ socket.error }}. Check the developer console for more information.
             </span>
           </p>
         </Message>

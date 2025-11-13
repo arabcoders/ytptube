@@ -165,10 +165,10 @@
                 <div class="field">
                   <label class="label is-inline" for="cookies" v-tooltip="'Netscape HTTP Cookie format.'">
                     <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                    Cookies
+                    Cookies - <NuxtLink @click="cookiesDropzoneRef?.triggerFileSelect()">Upload file</NuxtLink>
                   </label>
                   <div class="control">
-                    <TextDropzone id="cookies" v-model="form.cookies" :disabled="addInProgress"
+                    <TextDropzone ref="cookiesDropzoneRef" id="cookies" v-model="form.cookies" :disabled="addInProgress"
                       @error="(msg: string) => toast.error(msg)"
                       placeholder="Leave empty to use default cookies. Or drag & drop a cookie file here." />
                   </div>
@@ -234,6 +234,8 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import TextDropzone from '~/components/TextDropzone.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset, PresetImport } from '~/types/presets'
 
@@ -257,6 +259,7 @@ const showImport = useStorage<boolean>('showImport', false)
 const selected_preset = ref<string>('')
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
+const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)

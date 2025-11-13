@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
-import type { Notification, notificationType } from '~/composables/useNotification'
+import type { notification, notificationType } from '~/composables/useNotification'
 
 export const useNotificationStore = defineStore('notifications', () => {
-  const notifications = useStorage<Notification[]>('notifications', [])
+  const notifications = useStorage<notification[]>('notifications', [])
   const unreadCount = computed<number>(() => notifications.value.filter(n => !n.seen).length)
 
   const add = (level: notificationType, message: string, seen: boolean = false): string => {
@@ -39,7 +39,7 @@ export const useNotificationStore = defineStore('notifications', () => {
     n.seen = true
   }
 
-  const get = (id: string): Notification | undefined => notifications.value.find(n => n.id === id)
+  const get = (id: string): notification | undefined => notifications.value.find(n => n.id === id)
 
   const remove = (id: string) => notifications.value = notifications.value.filter(n => n.id !== id)
 

@@ -19,6 +19,7 @@ EXT_TO_MIME: dict = {
     ".js": "application/javascript",
     ".json": "application/json",
     ".ico": "image/x-icon",
+    ".webmanifest": "application/manifest+json",
 }
 
 FRONTEND_ROUTES: list[str] = [
@@ -34,7 +35,6 @@ FRONTEND_ROUTES: list[str] = [
     "/settings/",
     "/browser/{path:.*}",
 ]
-
 
 async def serve_static_file(request: Request, config: Config) -> Response:
     """
