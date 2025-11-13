@@ -1,9 +1,37 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7edc21ee2d891263c1d70f1c635e5359d18edeee",
-    "date": "2025-11-13T16:58:42+00:00",
+    "full_sha": "98fbf00a63310fe00a4f08db821f4b4fd260e936",
+    "date": "2025-11-13T20:13:01+00:00",
     "commits": [
+      {
+        "sha": "98fbf00a",
+        "full_sha": "98fbf00a63310fe00a4f08db821f4b4fd260e936",
+        "message": "Feat: add app manifest to allow the app to be installed",
+        "author": "arabcoders",
+        "date": "2025-11-13T20:13:01+00:00"
+      },
+      {
+        "sha": "8e6f5fc2",
+        "full_sha": "8e6f5fc29321e15b8040f9e7304f0d794c0dcfe3",
+        "message": "Feat: allow selecting browser as target for toasts",
+        "author": "arabcoders",
+        "date": "2025-11-13T19:21:16+00:00"
+      },
+      {
+        "sha": "d835c027",
+        "full_sha": "d835c027d51a4d27638aa7b6c3a4ce02fa2baeb2",
+        "message": "Chore: rename Notification interface type to notification",
+        "author": "arabcoders",
+        "date": "2025-11-13T18:42:46+00:00"
+      },
+      {
+        "sha": "c77d232c",
+        "full_sha": "c77d232c72505dd1bd9de8101431466d742323be",
+        "message": "Feat: add link to upload cookies",
+        "author": "arabcoders",
+        "date": "2025-11-13T18:32:19+00:00"
+      },
       {
         "sha": "7edc21ee",
         "full_sha": "7edc21ee2d891263c1d70f1c635e5359d18edeee",
