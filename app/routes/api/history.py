@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.library.config import Config
 from app.library.Download import Download
 from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
@@ -20,7 +21,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @route("GET", r"api/history/", "items_list")
-async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, config: Config) -> Response:
     """
     Get the history with optional pagination support.
 
@@ -28,6 +29,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder) -
         request (Request): The request object.
         queue (DownloadQueue): The download queue instance.
         encoder (Encoder): The encoder instance.
+        config (Config): The configuration instance.
 
     Returns:
         Response: The response object.
@@ -63,7 +65,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder) -
 
     try:
         page = int(request.query.get("page", 1))
-        per_page = int(request.query.get("per_page", 50))
+        per_page = int(request.query.get("per_page", config.default_pagination))
         order = request.query.get("order", "DESC").upper()
     except ValueError:
         return web.json_response(
@@ -74,7 +76,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder) -
     if page < 1:
         return web.json_response(data={"error": "page must be >= 1."}, status=web.HTTPBadRequest.status_code)
 
-    if per_page < 1 or per_page > 200:
+    if per_page < 1 or per_page > 1000:
         return web.json_response(
             data={"error": "per_page must be between 1 and 1000."},
             status=web.HTTPBadRequest.status_code,

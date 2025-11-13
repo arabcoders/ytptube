@@ -42,6 +42,8 @@ type AppConfig = {
   started: number,
   /** Application environment, e.g. "production", "development" */
   app_env: "production" | "development"
+  /** Default number of items per page for pagination */
+  default_pagination: number
 }
 
 type Preset = {

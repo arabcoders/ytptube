@@ -48,6 +48,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                           | `false`               |
 | YTP_STATIC_UI_PATH             | Path to custom static UI files.                                    | `(not_set)`           |
 | YTP_AUTO_CLEAR_HISTORY_DAYS    | Number of days after which completed download history is cleared.  | `0`                   |
+| YTP_DEFAULT_PAGINATION         | The default number of items per page for history.                  | `50`                  |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.

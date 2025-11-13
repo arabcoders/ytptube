@@ -195,6 +195,9 @@ class Config(metaclass=Singleton):
     auto_clear_history_days: int = 0
     """Number of days after which completed download history is automatically cleared. 0 to disable."""
 
+    default_pagination: int = 50
+    """The default number of items per page for pagination."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -234,6 +237,7 @@ class Config(metaclass=Singleton):
         "download_path_depth",
         "download_info_expires",
         "auto_clear_history_days",
+        "default_pagination",
     )
     "The variables that are integers."
 
@@ -281,6 +285,7 @@ class Config(metaclass=Singleton):
         "app_commit_sha",
         "app_build_date",
         "app_branch",
+        "default_pagination",
     )
     "The variables that are relevant to the frontend."
 

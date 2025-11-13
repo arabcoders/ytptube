@@ -5,7 +5,8 @@
         <i :class="showCompleted ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
       </span>
       <span>
-        History <span v-if="hasItems">({{ stateStore.count('history') }})</span>
+        History
+        <span v-if="stateStore.count('history')">({{ stateStore.count('history') }})</span>
         <span v-if="selectedElms.length > 0">&nbsp;- Selected: {{ selectedElms.length }}</span>
       </span>
     </span>
@@ -76,6 +77,34 @@
             </span>
           </span>
         </button>
+      </div>
+      <div class="column is-1-tablet">
+        <button type="button" class="button is-info is-fullwidth" @click="() => stateStore.reloadCurrentPage('history')"
+          :disabled="paginationInfo.isLoading" :class="{ 'is-loading': paginationInfo.isLoading }">
+          <span class="icon-text is-block">
+            <span class="icon"><i class="fas fa-refresh" /></span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <div class="columns is-multiline" v-if="paginationInfo.isLoading && !hasItems">
+      <div class="column is-12">
+        <div class="message is-info">
+          <div class="message-body">
+            <span class="icon-text">
+              <span class="icon"> <i class="fa-solid fa-spinner fa-spin fa-2x" /> </span>
+              <span class="ml-3">Loading history...</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="columns is-multiline" v-if="paginationInfo.isLoaded && paginationInfo.total_pages > 1">
+      <div class="column is-12 has-text-centered">
+        <Pager :page="paginationInfo.page" :last_page="paginationInfo.total_pages" :isLoading="paginationInfo.isLoading"
+          @navigate="navigateToPage" />
       </div>
     </div>
 
@@ -410,16 +439,27 @@
       </LateLoader>
     </div>
 
-    <div class="columns is-multiline" v-if="!hasItems">
+    <div class="columns is-multiline" v-if="!hasItems && !paginationInfo.isLoading">
       <div class="column is-12">
-        <Message message_class="has-background-warning-90 has-text-dark" title="No results for downloaded items."
-          icon="fas fa-search" :useClose="true" @close="() => emitter('clear_search')" v-if="query">
+        <Message message_class="is-warning" title="Filter items" icon="fas fa-search" :useClose="true"
+          @close="() => emitter('clear_search')" v-if="query" :newStyle="true">
           <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
         </Message>
-        <Message message_class="has-background-success-90 has-text-dark" title="No records in history."
-          icon="fas fa-circle-check" v-else-if="socket.isConnected" />
+        <Message message_class="is-warning" title="Page is empty." icon="fas fa-exclamation-triangle"
+        v-else-if="socket.isConnected && paginationInfo.total" :new-style="true">
+          <span class="is-block">The current page has no items. Try navigating to a different page.</span>
+        </Message>
+        <Message message_class="is-success" title="No records in history."
+          icon="fas fa-circle-check" v-else-if="socket.isConnected" :new-style="true" />
         <Message message_class="has-background-info-90 has-text-dark" title="Connecting.." icon="fas fa-spinner fa-spin"
           v-else />
+      </div>
+    </div>
+
+    <div class="columns is-multiline" v-if="paginationInfo.isLoaded && paginationInfo.total_pages > 1">
+      <div class="column is-12 has-text-centered">
+        <Pager :page="paginationInfo.page" :last_page="paginationInfo.total_pages" :isLoading="paginationInfo.isLoading"
+          @navigate="navigateToPage" />
       </div>
     </div>
 
@@ -493,6 +533,92 @@ const dialog_confirm = ref<{
   confirm: () => { },
   message: '',
   options: [],
+})
+
+const paginationInfo = computed(() => stateStore.getPagination())
+
+const route = useRoute()
+const router = useRouter()
+
+const currentPageFromUrl = computed(() => {
+  const pageParam = route.query.page
+  if (!pageParam) {
+    return 1
+  }
+  const pageStr = Array.isArray(pageParam) ? pageParam[0] : pageParam
+  if (!pageStr) {
+    return 1
+  }
+  const page = parseInt(pageStr, 10)
+  return isNaN(page) || page < 1 ? 1 : page
+})
+
+const navigateToPage = async (page: number) => {
+  if (page < 1 || page > paginationInfo.value.total_pages || paginationInfo.value.isLoading) {
+    return
+  }
+
+  try {
+    await router.push({ query: { ...route.query, page: page.toString() } })
+    await stateStore.loadPaginated('history', page, config.app.default_pagination, 'DESC')
+  } catch (error) {
+    console.error('Failed to navigate to page:', error)
+    toast.error('Failed to load page')
+  }
+}
+
+watch(showCompleted, async isShown => {
+  if (isShown && !paginationInfo.value.isLoaded && socket.isConnected) {
+    try {
+      const pageToLoad = currentPageFromUrl.value
+      await stateStore.loadPaginated('history', pageToLoad, config.app.default_pagination, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history:', error)
+    }
+  }
+})
+
+watch(() => route.query.page, async newPage => {
+  if (!showCompleted.value || !paginationInfo.value.isLoaded) {
+    return
+  }
+
+  const pageStr = newPage ? (Array.isArray(newPage) ? newPage[0] : newPage) : undefined
+  const page = pageStr ? parseInt(pageStr, 10) : 1
+  if (isNaN(page) || page < 1) {
+    return
+  }
+
+  if (page !== paginationInfo.value.page) {
+    try {
+      await stateStore.loadPaginated('history', page, config.app.default_pagination, 'DESC')
+    } catch (error) {
+      console.error('Failed to load page from URL:', error)
+    }
+  }
+})
+
+onMounted(async () => {
+  if (showCompleted.value && !paginationInfo.value.isLoaded && socket.isConnected) {
+    try {
+      const pageToLoad = currentPageFromUrl.value
+      await stateStore.loadPaginated('history', pageToLoad, config.app.default_pagination, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history on mount:', error)
+      toast.error('Failed to load history')
+    }
+  }
+})
+
+watch(() => socket.isConnected, async connected => {
+  if (connected && showCompleted.value && !paginationInfo.value.isLoaded) {
+    try {
+      const pageToLoad = currentPageFromUrl.value
+      await stateStore.loadPaginated('history', pageToLoad, config.app.default_pagination, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history after socket connection:', error)
+    }
+  }
 })
 
 const showThumbnails = computed(() => (props.thumbnails ?? true) && !hideThumbnail.value)

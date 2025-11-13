@@ -99,7 +99,6 @@ export const useSocketStore = defineStore('socket', () => {
       const json = JSON.parse(stream)
       config.setAll({
         app: json.data.config,
-        tasks: json.data.tasks,
         presets: json.data.presets,
         dl_fields: json.data.dl_fields,
         paused: Boolean(json.data.paused)
@@ -108,9 +107,22 @@ export const useSocketStore = defineStore('socket', () => {
 
     on('connected', stream => {
       const json = JSON.parse(stream);
-      config.add('folders', json.data.folders)
-      stateStore.addAll('queue', json.data.queue || {})
-      stateStore.addAll('history', json.data.done || {})
+      if (!json?.data) {
+        return;
+      }
+
+      if (json.data?.folder) {
+        config.add('folders', json.data.folders)
+      }
+
+      if (json.data?.queue) {
+        stateStore.addAll('queue', json.data.queue || {})
+      }
+
+      if (typeof json.data?.history_count === 'number') {
+        stateStore.setHistoryCount(json.data.history_count)
+      }
+
       error.value = null;
     })
 
