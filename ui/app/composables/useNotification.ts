@@ -3,7 +3,7 @@ import { POSITION, useToast } from "vue-toastification"
 
 export type notificationType = 'info' | 'success' | 'warning' | 'error'
 
-export interface Notification {
+export interface notification {
   id: string;
   message: string
   level: notificationType
