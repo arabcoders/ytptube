@@ -2,6 +2,7 @@ import { useStorage } from '@vueuse/core'
 import { POSITION, useToast } from "vue-toastification"
 
 export type notificationType = 'info' | 'success' | 'warning' | 'error'
+export type notificationTarget = 'toast' | 'browser'
 
 export interface notification {
   id: string;
@@ -25,9 +26,77 @@ export interface notificationOptions {
 const allowToast = useStorage<boolean>('allow_toasts', true)
 const toastPosition = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT)
 const toastDismissOnClick = useStorage<boolean>('toast_dismiss_on_click', true)
+const toastTarget = useStorage<notificationTarget>('toast_target', 'toast')
 const toast = useToast()
 
-function notify(type: notificationType, message: string, opts?: notificationOptions): void {
+const requestBrowserPermission = async (): Promise<NotificationPermission> => {
+  if (!('Notification' in window)) {
+    return 'denied'
+  }
+
+  if (Notification.permission === 'granted') {
+    return 'granted'
+  }
+
+  if (Notification.permission !== 'denied') {
+    return await Notification.requestPermission()
+  }
+
+  return Notification.permission
+}
+
+const sendMessage = (type: notificationType, id: string, message: string, opts?: notificationOptions): void => {
+  const notificationStore = useNotificationStore()
+
+  const useToastNotification = !window.isSecureContext || 'toast' === toastTarget.value ||
+    !('Notification' in window) || 'granted' !== Notification.permission;
+
+  console.log('useToastNotification', useToastNotification,{
+    windowIsSecureContext: window.isSecureContext,
+    notificationTarget: toastTarget.value,
+    notificationInWindow: 'Notification' in window,
+    notificationPermission: Notification.permission
+  });
+
+  if (useToastNotification) {
+    switch (type) {
+      case 'info':
+        toast.info(message, opts)
+        break;
+      case 'success':
+        toast.success(message, opts)
+        break;
+      case 'warning':
+        toast.warning(message, opts)
+        break;
+      case 'error':
+        toast.error(message, opts)
+        break;
+      default:
+        toast.error(`Unknown notification type: ${type}. ${message}`, opts)
+        break;
+    }
+    return
+  }
+
+  const notification = new Notification('YTPTube', {
+    body: message,
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: `ytptube-${type}`,
+    silent: false
+  })
+
+  setTimeout(() => notification.close(), 5000)
+
+  notification.onclick = () => {
+    notificationStore.markRead(id)
+    window.focus()
+    notification.close()
+  }
+}
+
+const notify = (type: notificationType, message: string, opts?: notificationOptions): void => {
   const notificationStore = useNotificationStore()
 
   if (!opts) {
@@ -63,23 +132,7 @@ function notify(type: notificationType, message: string, opts?: notificationOpti
     }
   }
 
-  switch (type) {
-    case 'info':
-      toast.info(message, opts)
-      break;
-    case 'success':
-      toast.success(message, opts)
-      break;
-    case 'warning':
-      toast.warning(message, opts)
-      break;
-    case 'error':
-      toast.error(message, opts)
-      break;
-    default:
-      toast.error(`Unknown notification type: ${type}. ${message}`, opts)
-      break;
-  }
+  sendMessage(type, id, message, opts)
 }
 
 export const useNotification = () => {
@@ -88,6 +141,7 @@ export const useNotification = () => {
     success: (message: string, opts?: notificationOptions) => notify('success', message, opts),
     warning: (message: string, opts?: notificationOptions) => notify('warning', message, opts),
     error: (message: string, opts?: notificationOptions) => notify('error', message, opts),
-    notify
+    notify,
+    requestBrowserPermission,
   }
 }
