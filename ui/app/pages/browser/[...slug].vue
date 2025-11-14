@@ -726,9 +726,10 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('rename' === action) {
+    const moveSideCars = 'file' === item.type ? ' (and its sidecars)' : ''
     const { status, value: newName } = await dialog.promptDialog({
       title: 'Rename Item',
-      message: `Enter new name for '${item.name}' Sidecars will be renamed as well:`,
+      message: `Enter new name for '${item.name}'${moveSideCars}:`,
       initial: item.name,
       confirmText: 'Rename',
       cancelText: 'Cancel',
@@ -775,9 +776,10 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('move' === action) {
+    const moveSideCars = 'file' === item.type ? ' (and its sidecars)' : ''
     const { status, value: newPath } = await dialog.promptDialog({
       title: 'Move Item',
-      message: `Enter new path for '${item.name}':`,
+      message: `Enter new path for '${item.name}'${moveSideCars}:`,
       initial: item.path.replace(/[^/]+$/, '') || '/',
       confirmText: 'Move',
       cancelText: 'Cancel',
@@ -792,10 +794,12 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    await actionRequest(item, 'move', { new_path: new_path }, (item, _, data) => {
-      items.value = items.value.filter(i => i.path !== item.path)
-      toast.success(`Moved '${item.name}' to '${data.new_path}'.`)
-    })
+    await actionRequest(item, 'move', { new_path: new_path }, (item, _, data, source) => {
+      if (item.path === source.path) {
+        toast.success(`Moved '${item.name}' to '${data.new_path}'.`)
+      }
+      items.value = items.value.filter(i => i.path !== data.path)
+    }, true)
 
     return
   }

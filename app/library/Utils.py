@@ -824,6 +824,79 @@ def rename_file(old_path: Path, new_name: str) -> tuple[Path, list[tuple[Path, P
         raise
 
 
+def move_file(old_path: Path, target_dir: Path) -> tuple[Path, list[tuple[Path, Path]]]:
+    """
+    Move a file along with all its sidecar files to a target directory.
+
+    Args:
+        old_path (Path): The original file path.
+        target_dir (Path): The target directory to move the file to.
+
+    Returns:
+        tuple[Path, list[tuple[Path, Path]]]: Tuple of (new_path, list of (old_sidecar_path, new_sidecar_path) tuples).
+
+    Raises:
+        OSError: If moving fails.
+        ValueError: If target directory doesn't exist or if destination would cause collision.
+
+    """
+    if not target_dir.exists():
+        msg: str = f"Target directory '{target_dir}' does not exist"
+        raise ValueError(msg)
+
+    if not target_dir.is_dir():
+        msg = f"Target '{target_dir}' is not a directory"
+        raise ValueError(msg)
+
+    new_path: Path = target_dir / old_path.name
+
+    if new_path.exists():
+        msg = f"Destination '{new_path}' already exists"
+        raise ValueError(msg)
+
+    sidecar_data: dict[str, dict] = get_file_sidecar(old_path)
+    sidecar_files: list[Path] = []
+
+    for category in sidecar_data.values():
+        sidecar_files.extend([item["file"] for item in category if "file" in item and isinstance(item["file"], Path)])
+
+    renamed_sidecars: list[tuple[Path, Path]] = []
+    move_operations: list[tuple[Path, Path]] = []
+
+    for sidecar in sidecar_files:
+        new_sidecar_path: Path = target_dir / sidecar.name
+        if new_sidecar_path.exists():
+            msg = f"Sidecar destination '{new_sidecar_path}' already exists"
+            raise ValueError(msg)
+
+        move_operations.append((sidecar, new_sidecar_path))
+
+    try:
+        moved_main: Path = old_path.rename(new_path)
+        for old_sidecar, new_sidecar in move_operations:
+            try:
+                moved_sidecar: Path = old_sidecar.rename(new_sidecar)
+                renamed_sidecars.append((old_sidecar, moved_sidecar))
+            except OSError as e:
+                LOG.error(f"Failed to move sidecar '{old_sidecar}': {e}")
+                try:
+                    moved_main.rename(old_path)
+                    # Rollback any sidecars that were already moved
+                    for rolled_back_old, rolled_back_new in renamed_sidecars:
+                        try:
+                            rolled_back_new.rename(rolled_back_old)
+                        except OSError:
+                            LOG.error(f"Failed to rollback sidecar move from '{rolled_back_new}' to '{rolled_back_old}'")
+                except OSError:
+                    LOG.error(f"Failed to rollback main file move from '{moved_main}' to '{old_path}'")
+                raise
+
+        return moved_main, renamed_sidecars
+    except OSError as e:
+        LOG.error(f"Failed to move '{old_path}' to '{new_path}': {e}")
+        raise
+
+
 def get_possible_images(dir: str) -> list[dict]:
     images: list = []
 

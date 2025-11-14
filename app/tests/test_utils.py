@@ -39,6 +39,7 @@ from app.library.Utils import (
     load_cookies,
     load_modules,
     merge_dict,
+    move_file,
     parse_tags,
     read_logfile,
     rename_file,
@@ -2189,3 +2190,189 @@ class TestRenameFile:
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
         assert "renamed.en-US.ass" in sidecar_names
         assert "renamed.thumb.jpg" in sidecar_names
+
+
+class TestMoveFile:
+    """Test move_file function."""
+
+    def test_move_single_file_no_sidecars(self, tmp_path: Path):
+        """Test moving a single file without sidecar files."""
+        # Create test file
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test content")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Move file
+        new_path, sidecars = move_file(test_file, target_dir)
+
+        # Assertions
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+        assert 0 == len(sidecars)
+
+    def test_move_file_with_subtitle_sidecar(self, tmp_path: Path):
+        """Test moving a file with subtitle sidecar."""
+        # Create test files
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_file = source_dir / "video.en.srt"
+        subtitle_file.write_text("test subtitle")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Move file
+        new_path, sidecars = move_file(test_file, target_dir)
+
+        # Assertions
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+
+        assert 1 == len(sidecars)
+        old_sidecar, new_sidecar = sidecars[0]
+        assert new_sidecar.exists()
+        assert "video.en.srt" == new_sidecar.name
+        assert new_sidecar.parent == target_dir
+        assert old_sidecar == subtitle_file
+        assert not subtitle_file.exists()
+
+    def test_move_file_with_multiple_sidecars(self, tmp_path: Path):
+        """Test moving a file with multiple sidecar files."""
+        # Create test files
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_en = source_dir / "video.en.srt"
+        subtitle_en.write_text("english subtitle")
+
+        subtitle_fr = source_dir / "video.fr.srt"
+        subtitle_fr.write_text("french subtitle")
+
+        info_file = source_dir / "video.info.json"
+        info_file.write_text('{"title": "test"}')
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Move file
+        new_path, sidecars = move_file(test_file, target_dir)
+
+        # Assertions
+        assert new_path.exists()
+        assert "video.mp4" == new_path.name
+        assert new_path.parent == target_dir
+        assert not test_file.exists()
+
+        assert 3 == len(sidecars)
+
+        # Check all sidecars were moved
+        sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
+        assert "video.en.srt" in sidecar_names
+        assert "video.fr.srt" in sidecar_names
+        assert "video.info.json" in sidecar_names
+
+        # Check all are in target directory
+        for _old_sidecar, new_sidecar in sidecars:
+            assert new_sidecar.parent == target_dir
+
+        # Check old files don't exist
+        assert not subtitle_en.exists()
+        assert not subtitle_fr.exists()
+        assert not info_file.exists()
+
+    def test_move_file_destination_exists(self, tmp_path: Path):
+        """Test moving a file when destination already exists."""
+        # Create test files
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test content")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+        existing_file = target_dir / "video.mp4"
+        existing_file.write_text("existing content")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="already exists"):
+            move_file(test_file, target_dir)
+
+        # Original files should still exist
+        assert test_file.exists()
+        assert existing_file.exists()
+
+    def test_move_file_sidecar_destination_exists(self, tmp_path: Path):
+        """Test moving when sidecar destination already exists."""
+        # Create test files
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_file = source_dir / "video.en.srt"
+        subtitle_file.write_text("test subtitle")
+
+        target_dir = tmp_path / "target"
+        target_dir.mkdir()
+
+        # Create conflicting sidecar destination
+        conflicting_sidecar = target_dir / "video.en.srt"
+        conflicting_sidecar.write_text("existing subtitle")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match=r"Sidecar destination.*already exists"):
+            move_file(test_file, target_dir)
+
+        # Original files should still exist
+        assert test_file.exists()
+        assert subtitle_file.exists()
+        assert conflicting_sidecar.exists()
+
+    def test_move_file_target_not_directory(self, tmp_path: Path):
+        """Test moving when target is not a directory."""
+        # Create test file
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test content")
+
+        # Create a file (not directory) as target
+        target_file = tmp_path / "target.txt"
+        target_file.write_text("not a directory")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="not a directory"):
+            move_file(test_file, target_file)
+
+        # Original file should still exist
+        assert test_file.exists()
+
+    def test_move_file_target_does_not_exist(self, tmp_path: Path):
+        """Test moving when target directory doesn't exist."""
+        # Create test file
+        source_dir = tmp_path / "source"
+        source_dir.mkdir()
+        test_file = source_dir / "video.mp4"
+        test_file.write_text("test content")
+
+        target_dir = tmp_path / "nonexistent"
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="does not exist"):
+            move_file(test_file, target_dir)
+
+        # Original file should still exist
+        assert test_file.exists()
