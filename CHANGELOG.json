@@ -56,6 +56,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
+    "date": "2025-11-14T17:05:58+00:00",
+    "commits": [
+      {
+        "sha": "4a69b0b6",
+        "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
+        "message": "Feat: Moving files in file browser should trigger item update if exists and update sidecars as well.",
+        "author": "arabcoders",
+        "date": "2025-11-14T17:05:58+00:00"
+      },
+      {
+        "sha": "1c7444e2",
+        "full_sha": "1c7444e2322b3f461f28c8e2286a9c642075a77c",
+        "message": "Feat: Renaming files in file browser should trigger item update if exists and update sidecars as well.",
+        "author": "arabcoders",
+        "date": "2025-11-14T16:26:59+00:00"
+      },
+      {
+        "sha": "6d9c7d70",
+        "full_sha": "6d9c7d70d9e5c496d777d981cb5d961262c4d890",
+        "message": "Feat: update datastore.get_items to support operations",
+        "author": "arabcoders",
+        "date": "2025-11-14T14:49:01+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.5",
     "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
     "date": "2025-11-12T21:21:35+00:00",
