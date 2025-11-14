@@ -1,9 +1,30 @@
 [
   {
-    "tag": "Unreleased (59fe171a)",
-    "full_sha": "59fe171a9db2cee3e17af6274ed3906ce44c24cf",
-    "date": "2025-11-13T20:36:14+00:00",
+    "tag": "Unreleased (477dc41b)",
+    "full_sha": "477dc41bb6897110fd18aaa438e3aadd52b1579a",
+    "date": "2025-11-14T17:17:14+00:00",
     "commits": [
+      {
+        "sha": "4a69b0b6",
+        "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
+        "message": "Feat: Moving files in file browser should trigger item update if exists and update sidecars as well.",
+        "author": "arabcoders",
+        "date": "2025-11-14T17:05:58+00:00"
+      },
+      {
+        "sha": "1c7444e2",
+        "full_sha": "1c7444e2322b3f461f28c8e2286a9c642075a77c",
+        "message": "Feat: Renaming files in file browser should trigger item update if exists and update sidecars as well.",
+        "author": "arabcoders",
+        "date": "2025-11-14T16:26:59+00:00"
+      },
+      {
+        "sha": "6d9c7d70",
+        "full_sha": "6d9c7d70d9e5c496d777d981cb5d961262c4d890",
+        "message": "Feat: update datastore.get_items to support operations",
+        "author": "arabcoders",
+        "date": "2025-11-14T14:49:01+00:00"
+      },
       {
         "sha": "98fbf00a",
         "full_sha": "98fbf00a63310fe00a4f08db821f4b4fd260e936",
@@ -52,34 +73,6 @@
         "message": "Feat: add paginated history endpoint",
         "author": "arabcoders",
         "date": "2025-11-13T14:15:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
-    "date": "2025-11-14T17:05:58+00:00",
-    "commits": [
-      {
-        "sha": "4a69b0b6",
-        "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
-        "message": "Feat: Moving files in file browser should trigger item update if exists and update sidecars as well.",
-        "author": "arabcoders",
-        "date": "2025-11-14T17:05:58+00:00"
-      },
-      {
-        "sha": "1c7444e2",
-        "full_sha": "1c7444e2322b3f461f28c8e2286a9c642075a77c",
-        "message": "Feat: Renaming files in file browser should trigger item update if exists and update sidecars as well.",
-        "author": "arabcoders",
-        "date": "2025-11-14T16:26:59+00:00"
-      },
-      {
-        "sha": "6d9c7d70",
-        "full_sha": "6d9c7d70d9e5c496d777d981cb5d961262c4d890",
-        "message": "Feat: update datastore.get_items to support operations",
-        "author": "arabcoders",
-        "date": "2025-11-14T14:49:01+00:00"
       }
     ]
   },

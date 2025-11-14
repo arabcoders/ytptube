@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20251113-59fe171a",
-        "date": "2025-11-13T20:36:14+00:00",
+        "tag": "master-20251114-477dc41b",
+        "date": "2025-11-14T17:17:14+00:00",
         "commits": [
+            {
+                "sha": "4a69b0b6",
+                "message": "Feat: Moving files in file browser should trigger item update if exists and update sidecars as well.",
+                "author": "arabcoders",
+                "date": "2025-11-14T17:05:58+00:00",
+                "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d"
+            },
+            {
+                "sha": "1c7444e2",
+                "message": "Feat: Renaming files in file browser should trigger item update if exists and update sidecars as well.",
+                "author": "arabcoders",
+                "date": "2025-11-14T16:26:59+00:00",
+                "full_sha": "1c7444e2322b3f461f28c8e2286a9c642075a77c"
+            },
+            {
+                "sha": "6d9c7d70",
+                "message": "Feat: update datastore.get_items to support operations",
+                "author": "arabcoders",
+                "date": "2025-11-14T14:49:01+00:00",
+                "full_sha": "6d9c7d70d9e5c496d777d981cb5d961262c4d890"
+            },
             {
                 "sha": "98fbf00a",
                 "message": "Feat: add app manifest to allow the app to be installed",
@@ -2993,7 +3014,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "59fe171a9db2cee3e17af6274ed3906ce44c24cf"
+        "full_sha": "477dc41bb6897110fd18aaa438e3aadd52b1579a"
     },
     {
         "tag": "master-20250616-c07465a6",
