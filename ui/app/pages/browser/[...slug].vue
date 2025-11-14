@@ -726,9 +726,10 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('rename' === action) {
+    const moveSideCars = 'file' === item.type ? ' (and its sidecars)' : ''
     const { status, value: newName } = await dialog.promptDialog({
       title: 'Rename Item',
-      message: `Enter new name for '${item.name}':`,
+      message: `Enter new name for '${item.name}'${moveSideCars}:`,
       initial: item.name,
       confirmText: 'Rename',
       cancelText: 'Cancel',
@@ -742,11 +743,13 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    await actionRequest(item, 'rename', { new_name: new_name }, (item, _, data) => {
-      item.name = data.new_name
-      item.path = item.path.replace(/[^/]+$/, data.new_name)
-      toast.success(`Renamed '${item.name}'.`)
-    })
+    await actionRequest(item, 'rename', { new_name: new_name }, (item, _, data, source) => {
+      if (item.path === source.path) {
+        toast.success(`Renamed '${item.name}'.`)
+      }
+      item.name = basename(data.new_path)
+      item.path = data.new_path
+    }, true)
     return
   }
 
@@ -773,9 +776,10 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
   }
 
   if ('move' === action) {
+    const moveSideCars = 'file' === item.type ? ' (and its sidecars)' : ''
     const { status, value: newPath } = await dialog.promptDialog({
       title: 'Move Item',
-      message: `Enter new path for '${item.name}':`,
+      message: `Enter new path for '${item.name}'${moveSideCars}:`,
       initial: item.path.replace(/[^/]+$/, '') || '/',
       confirmText: 'Move',
       cancelText: 'Cancel',
@@ -790,10 +794,12 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
       return
     }
 
-    await actionRequest(item, 'move', { new_path: new_path }, (item, action, data) => {
-      items.value = items.value.filter(i => i.path !== item.path)
-      toast.success(`Moved '${item.name}' to '${data.new_path}'.`)
-    })
+    await actionRequest(item, 'move', { new_path: new_path }, (item, _, data, source) => {
+      if (item.path === source.path) {
+        toast.success(`Moved '${item.name}' to '${data.new_path}'.`)
+      }
+      items.value = items.value.filter(i => i.path !== data.path)
+    }, true)
 
     return
   }
@@ -802,25 +808,22 @@ const handleAction = async (action: string, item: FileItem): Promise<void> => {
 const actionRequest = async (
   item: FileItem,
   action: string,
-  data: Record<string, any>,
-  cb: (item: FileItem, action: string, data: any) => void
+  req: Record<string, any>,
+  cb: (item: FileItem, action: string, data: any, source: FileItem, req: any) => void,
+  multiple: boolean = false
 ): Promise<any> => {
   if (!config.app.browser_control_enabled) {
     return
   }
 
-  if (!item || !action || !data) {
+  if (!item || !action || !req) {
     return
   }
 
   try {
     const response = await request(`/api/file/actions`, {
       method: 'POST',
-      body: JSON.stringify([{
-        path: item.path,
-        action: action,
-        ...data
-      }]),
+      body: JSON.stringify([{ path: item.path, action: action, ...req }]),
     })
 
     if (!response.ok) {
@@ -831,17 +834,24 @@ const actionRequest = async (
 
     const json = await response.json() as Array<{ path: string, status: boolean, error?: string }>
     json.forEach(i => {
-      if (i.path !== item.path) {
+      if (false === multiple && i.path !== item.path) {
         return
       }
 
-      if (true !== i.status) {
+      if (false === multiple && true !== i.status) {
         toast.error(`Failed to perform action: ${i.error || 'Unknown error'}`)
         return
       }
 
       if (cb && typeof cb === 'function') {
-        cb(item, action, data)
+        if (false === multiple) {
+          return cb(item, action, req, item, req)
+        }
+        items.value.forEach(it => {
+          if (it.path === i.path) {
+            return cb(it, action, i, toRaw(item), req)
+          }
+        })
       }
     });
 

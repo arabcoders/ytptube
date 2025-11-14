@@ -9,10 +9,12 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
+from app.library.Events import EventBus, Events
 from app.library.ffprobe import ffprobe
 from app.library.router import route
-from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type
+from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, move_file, rename_file
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -175,13 +177,15 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
 
 
 @route("POST", "api/file/actions", "browser.file.actions")
-async def path_actions(request: Request, config: Config) -> Response:
+async def path_actions(request: Request, config: Config, queue: DownloadQueue, notify: EventBus) -> Response:
     """
     Browser actions.
 
     Args:
         request (Request): The request object.
         config (Config): The configuration object.
+        queue (DownloadQueue): The download queue instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -360,16 +364,46 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
 
             try:
-                renamed = path.rename(new_path)
+                sidecar_count: int = 0
+                sidecar_info: str = ""
+                sidecar_renamed: list[tuple[Path, Path]] = []
+                if path.is_dir():
+                    renamed: Path = path.rename(new_path)
+                else:
+                    renamed, sidecar_renamed = rename_file(path, new_name)
+                    sidecar_count: int = len(sidecar_renamed)
+                    sidecar_info: str = (
+                        f" (with {sidecar_count} sidecar file{'s' if sidecar_count != 1 else ''})"
+                        if sidecar_count > 0
+                        else ""
+                    )
+
                 LOG.info(
-                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'"
+                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'{sidecar_info}"
                 )
             except OSError as e:
                 LOG.exception(e)
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
+            except ValueError as e:
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
+                continue
             else:
-                record(path, ok=True, action=action, extra={"new_path": renamed})
+                extra_info: dict[str, Path] = {"new_path": renamed}
+                if sidecar_renamed:
+                    extra_info["sidecar_count"] = len(sidecar_renamed)
+                record(path, ok=True, action=action, extra=extra_info)
+
+                for old_sidecar, new_sidecar in sidecar_renamed:
+                    record(old_sidecar, ok=True, action=action, extra={"new_path": new_sidecar})
+
+                if item := queue.done.get_item(filename=str(path.relative_to(config.download_path))):
+                    item.info.filename = str(renamed.relative_to(config.download_path))
+                    if sidecar_renamed:
+                        item.info.get_file_sidecar()
+
+                    queue.done.put(item)
+                    notify.emit(Events.ITEM_UPDATED, data=item.info)
 
         if "delete" == action:
             try:
@@ -397,7 +431,7 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
 
             raw_new: str = unquote_plus(str(new_path)).strip()
-            target_dir = (
+            target_dir: Path = (
                 Path(config.download_path)
                 if not raw_new or raw_new in ("/", ".")
                 else Path(config.download_path).joinpath(raw_new.lstrip("/"))
@@ -411,7 +445,7 @@ async def path_actions(request: Request, config: Config) -> Response:
                 )
                 continue
 
-            root_real = Path(config.download_path).resolve()
+            root_real: Path = Path(config.download_path).resolve()
             if not target_dir.exists() or not target_dir.is_dir():
                 record(
                     path, ok=False, error="Destination path is invalid.", action=action, extra={"new_path": target_dir}
@@ -433,14 +467,49 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
 
             try:
-                dest = target_dir.joinpath(path.name)
-                path.rename(dest)
+                sidecar_count: int = 0
+                sidecar_moved: list[tuple[Path, Path]] = []
+                sidecar_info: str = ""
+
+                if path.is_dir():
+                    dest: Path = target_dir.joinpath(path.name)
+                    moved: Path = path.rename(dest)
+                else:
+                    moved, sidecar_moved = move_file(path, target_dir)
+                    sidecar_count: int = len(sidecar_moved)
+                    sidecar_info: str = (
+                        f" (with {sidecar_count} sidecar file{'s' if sidecar_count != 1 else ''})"
+                        if sidecar_count > 0
+                        else ""
+                    )
+
+                LOG.info(
+                    f"Moved '{path.relative_to(config.download_path)}' to '{moved.relative_to(config.download_path)}'{sidecar_info}"
+                )
             except OSError as e:
                 LOG.exception(e)
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
+            except ValueError as e:
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
+                continue
             else:
-                record(path, ok=True, action=action, extra={"new_path": dest})
+                extra_info: dict[str, Path] = {"new_path": moved}
+                if sidecar_moved:
+                    extra_info["sidecar_count"] = len(sidecar_moved)
+
+                record(path, ok=True, action=action, extra=extra_info)
+
+                for old_sidecar, new_sidecar in sidecar_moved:
+                    record(old_sidecar, ok=True, action=action, extra={"new_path": new_sidecar})
+
+                if item := queue.done.get_item(filename=str(path.relative_to(config.download_path))):
+                    item.info.filename = str(moved.relative_to(config.download_path))
+                    if sidecar_moved:
+                        item.info.get_file_sidecar()
+
+                    queue.done.put(item)
+                    notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(data=operations_status, status=web.HTTPOk.status_code)
 
