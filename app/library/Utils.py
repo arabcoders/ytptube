@@ -763,6 +763,67 @@ def get_file_sidecar(file: Path | None = None) -> dict[dict]:
     return files
 
 
+def rename_file(old_path: Path, new_name: str) -> tuple[Path, list[tuple[Path, Path]]]:
+    """
+    Rename a file along with all its sidecar files.
+
+    Args:
+        old_path (Path): The original file path.
+        new_name (str): The new name for the file (not full path, just the name).
+
+    Returns:
+        tuple[Path, list[tuple[Path, Path]]]: Tuple of (new_path, list of (old_sidecar_path, new_sidecar_path) tuples).
+
+    Raises:
+        OSError: If renaming fails.
+        ValueError: If new_name would cause a collision with existing files.
+
+    """
+    new_path: Path = old_path.parent / new_name
+
+    if new_path.exists():
+        msg: str = f"Destination '{new_name}' already exists"
+        raise ValueError(msg)
+
+    sidecar_data: dict[str, dict] = get_file_sidecar(old_path)
+    sidecar_files: list[Path] = []
+
+    for category in sidecar_data.values():
+        sidecar_files.extend([item["file"] for item in category if "file" in item and isinstance(item["file"], Path)])
+
+    renamed_sidecars: list[tuple[Path, Path]] = []
+    new_stem: str = new_path.stem
+    rename_operations: list[tuple[Path, Path]] = []
+
+    for sidecar in sidecar_files:
+        sidecar_suffix: str = sidecar.name[len(old_path.stem) :]  # Everything after the original stem
+        new_sidecar_path: Path = old_path.parent / f"{new_stem}{sidecar_suffix}"
+        if new_sidecar_path.exists():
+            msg = f"Sidecar destination '{new_sidecar_path.name}' already exists"
+            raise ValueError(msg)
+
+        rename_operations.append((sidecar, new_sidecar_path))
+
+    try:
+        renamed_main: Path = old_path.rename(new_path)
+        for old_sidecar, new_sidecar in rename_operations:
+            try:
+                renamed_sidecar: Path = old_sidecar.rename(new_sidecar)
+                renamed_sidecars.append((old_sidecar, renamed_sidecar))
+            except OSError as e:
+                LOG.error(f"Failed to rename sidecar '{old_sidecar}': {e}")
+                try:
+                    renamed_main.rename(old_path)
+                except OSError:
+                    LOG.error(f"Failed to rollback main file rename from '{renamed_main}' to '{old_path}'")
+                raise
+
+        return renamed_main, renamed_sidecars
+    except OSError as e:
+        LOG.error(f"Failed to rename '{old_path}' to '{new_path}': {e}")
+        raise
+
+
 def get_possible_images(dir: str) -> list[dict]:
     images: list = []
 

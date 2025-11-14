@@ -9,10 +9,12 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
+from app.library.Events import EventBus, Events
 from app.library.ffprobe import ffprobe
 from app.library.router import route
-from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type
+from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, rename_file
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -175,13 +177,15 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
 
 
 @route("POST", "api/file/actions", "browser.file.actions")
-async def path_actions(request: Request, config: Config) -> Response:
+async def path_actions(request: Request, config: Config, queue: DownloadQueue, notify: EventBus) -> Response:
     """
     Browser actions.
 
     Args:
         request (Request): The request object.
         config (Config): The configuration object.
+        queue (DownloadQueue): The download queue instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -360,16 +364,47 @@ async def path_actions(request: Request, config: Config) -> Response:
                 continue
 
             try:
-                renamed = path.rename(new_path)
+                # Rename main file and all sidecar files
+                renamed, renamed_sidecars = rename_file(path, new_name)
+
+                sidecar_count: int = len(renamed_sidecars)
+                sidecar_info: str = (
+                    f" (with {sidecar_count} sidecar file{'s' if sidecar_count != 1 else ''})"
+                    if sidecar_count > 0
+                    else ""
+                )
+
                 LOG.info(
-                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'"
+                    f"Renamed '{path.relative_to(config.download_path)}' to '{renamed.relative_to(config.download_path)}'{sidecar_info}"
                 )
             except OSError as e:
                 LOG.exception(e)
                 record(path, ok=False, error=str(e), action=action, extra={"item": params})
                 continue
+            except ValueError as e:
+                record(path, ok=False, error=str(e), action=action, extra={"item": params})
+                continue
             else:
-                record(path, ok=True, action=action, extra={"new_path": renamed})
+                extra_info: dict[str, Path] = {"new_path": renamed}
+                if renamed_sidecars:
+                    extra_info["sidecar_count"] = len(renamed_sidecars)
+                record(path, ok=True, action=action, extra=extra_info)
+
+                for old_sidecar, new_sidecar in renamed_sidecars:
+                    record(
+                        old_sidecar,
+                        ok=True,
+                        action="rename_sidecar",
+                        extra={"new_path": new_sidecar, "parent": str(path.relative_to(config.download_path))},
+                    )
+
+                if item := queue.done.get_item(filename=str(path.relative_to(config.download_path))):
+                    item.info.filename = str(renamed.relative_to(config.download_path))
+                    if len(renamed_sidecars) > 0:
+                        item.info.get_file_sidecar()
+
+                    queue.done.put(item)
+                    notify.emit(Events.ITEM_UPDATED, data=item.info)
 
         if "delete" == action:
             try:

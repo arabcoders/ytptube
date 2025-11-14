@@ -41,6 +41,7 @@ from app.library.Utils import (
     merge_dict,
     parse_tags,
     read_logfile,
+    rename_file,
     str_to_dt,
     strip_newline,
     tail_log,
@@ -1731,9 +1732,7 @@ class TestGetChannelImages:
         """Test extracting poster image from portrait ratio thumbnail."""
         from app.library.Utils import get_channel_images
 
-        thumbnails = [
-            {"url": "http://example.com/poster.jpg", "width": 200, "height": 300, "id": "some_id"}
-        ]
+        thumbnails = [{"url": "http://example.com/poster.jpg", "width": 200, "height": 300, "id": "some_id"}]
 
         result = get_channel_images(thumbnails)
 
@@ -2049,3 +2048,144 @@ class TestCreateCookiesFile:
         assert result == cookie_path
         assert cookie_path.read_text() == "new_data"
 
+
+class TestRenameFile:
+    """Test rename_file function."""
+
+    def test_rename_single_file_no_sidecars(self, tmp_path: Path):
+        """Test renaming a single file without sidecar files."""
+        # Create test file
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test content")
+
+        # Rename file
+        new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
+
+        # Assertions
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+        assert 0 == len(sidecars)
+
+    def test_rename_file_with_subtitle_sidecar(self, tmp_path: Path):
+        """Test renaming a file with subtitle sidecar."""
+        # Create test files
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_file = tmp_path / "video.en.srt"
+        subtitle_file.write_text("test subtitle")
+
+        # Rename file
+        new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
+
+        # Assertions
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+
+        assert 1 == len(sidecars)
+        old_sidecar, new_sidecar = sidecars[0]
+        assert new_sidecar.exists()
+        assert "renamed_video.en.srt" == new_sidecar.name
+        assert old_sidecar == subtitle_file
+        assert not subtitle_file.exists()
+
+    def test_rename_file_with_multiple_sidecars(self, tmp_path: Path):
+        """Test renaming a file with multiple sidecar files."""
+        # Create test files
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_en = tmp_path / "video.en.srt"
+        subtitle_en.write_text("english subtitle")
+
+        subtitle_fr = tmp_path / "video.fr.srt"
+        subtitle_fr.write_text("french subtitle")
+
+        info_file = tmp_path / "video.info.json"
+        info_file.write_text('{"title": "test"}')
+
+        # Rename file
+        new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
+
+        # Assertions
+        assert new_path.exists()
+        assert "renamed_video.mp4" == new_path.name
+        assert not test_file.exists()
+
+        assert 3 == len(sidecars)
+
+        # Check all sidecars were renamed
+        sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
+        assert "renamed_video.en.srt" in sidecar_names
+        assert "renamed_video.fr.srt" in sidecar_names
+        assert "renamed_video.info.json" in sidecar_names
+
+        # Check old files don't exist
+        assert not subtitle_en.exists()
+        assert not subtitle_fr.exists()
+        assert not info_file.exists()
+
+    def test_rename_file_destination_exists(self, tmp_path: Path):
+        """Test renaming a file when destination already exists."""
+        # Create test files
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test content")
+
+        existing_file = tmp_path / "renamed_video.mp4"
+        existing_file.write_text("existing content")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="already exists"):
+            rename_file(test_file, "renamed_video.mp4")
+
+        # Original files should still exist
+        assert test_file.exists()
+        assert existing_file.exists()
+
+    def test_rename_file_sidecar_destination_exists(self, tmp_path: Path):
+        """Test renaming when sidecar destination already exists."""
+        # Create test files
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_file = tmp_path / "video.en.srt"
+        subtitle_file.write_text("test subtitle")
+
+        # Create conflicting sidecar destination
+        conflicting_sidecar = tmp_path / "renamed_video.en.srt"
+        conflicting_sidecar.write_text("existing subtitle")
+
+        # Should raise ValueError
+        with pytest.raises(ValueError, match=r"Sidecar destination.*already exists"):
+            rename_file(test_file, "renamed_video.mp4")
+
+        # Original files should still exist
+        assert test_file.exists()
+        assert subtitle_file.exists()
+        assert conflicting_sidecar.exists()
+
+    def test_rename_preserves_sidecar_extensions(self, tmp_path: Path):
+        """Test that rename preserves complex sidecar extensions."""
+        # Create test files with complex extensions
+        test_file = tmp_path / "video.mp4"
+        test_file.write_text("test video")
+
+        subtitle_file = tmp_path / "video.en-US.ass"
+        subtitle_file.write_text("test subtitle")
+
+        thumb_file = tmp_path / "video.thumb.jpg"
+        thumb_file.write_text("test thumb")
+
+        # Rename file
+        new_path, sidecars = rename_file(test_file, "renamed.mp4")
+
+        # Assertions
+        assert new_path.exists()
+        assert "renamed.mp4" == new_path.name
+
+        assert 2 == len(sidecars)
+        sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
+        assert "renamed.en-US.ass" in sidecar_names
+        assert "renamed.thumb.jpg" in sidecar_names

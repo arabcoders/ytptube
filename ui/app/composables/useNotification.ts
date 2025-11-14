@@ -51,13 +51,6 @@ const sendMessage = (type: notificationType, id: string, message: string, opts?:
   const useToastNotification = !window.isSecureContext || 'toast' === toastTarget.value ||
     !('Notification' in window) || 'granted' !== Notification.permission;
 
-  console.log('useToastNotification', useToastNotification,{
-    windowIsSecureContext: window.isSecureContext,
-    notificationTarget: toastTarget.value,
-    notificationInWindow: 'Notification' in window,
-    notificationPermission: Notification.permission
-  });
-
   if (useToastNotification) {
     switch (type) {
       case 'info':
