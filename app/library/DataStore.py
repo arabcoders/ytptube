@@ -9,6 +9,7 @@ from sqlite3 import Connection
 
 from .Download import Download
 from .ItemDTO import ItemDTO
+from .operations import matches_condition
 from .Utils import init_class
 
 LOG: logging.Logger = logging.getLogger("datastore")
@@ -91,15 +92,30 @@ class DataStore:
 
     def get_item(self, **kwargs) -> Download | None:
         """
-        Get a specific item from the datastore based on provided attributes.
+        Get a specific item from the datastore based on provided attributes with optional operations.
 
         Args:
             **kwargs: Arbitrary keyword arguments representing attributes of the ItemDTO.
-            If no attributes are provided, the method returns None.
-            If any attribute matches, the corresponding Download object is returned.
+                Each value can be either:
+                - A direct value (defaults to EQUAL operation): {"title": "test"}
+                - A tuple of (Operation, value): {"title": (Operation.CONTAIN, "test")}
+
+                If no attributes are provided, the method returns None.
+                If any attribute matches, the corresponding Download object is returned.
 
         Returns:
             Download | None: The requested item if found, otherwise None.
+
+        Examples:
+            # Direct equality check (default)
+            store.get_item(title="Video 1")
+
+            # Using operations
+            store.get_item(title=(Operation.CONTAIN, "test"))
+            store.get_item(id=(Operation.EQUAL, "123"), status=(Operation.NOT_EQUAL, "error"))
+
+            # Mixed usage
+            store.get_item(title=(Operation.CONTAIN, "test"), folder="downloads")
 
         """
         if not kwargs:
@@ -110,7 +126,7 @@ class DataStore:
                 continue
 
             info = self._dict[i].info.__dict__
-            if any((key in info and info == value) for key, value in kwargs.items()):
+            if any(matches_condition(key, value, info) for key, value in kwargs.items()):
                 return self._dict[i]
 
         return None
@@ -118,7 +134,7 @@ class DataStore:
     def get_by_id(self, id: str) -> Download | None:
         return self._dict.get(id, None)
 
-    def items(self) -> list[tuple[str, Download]]:
+    def items(self) -> OrderedDict[tuple[str, Download]]:
         return self._dict.items()
 
     def saved_items(self) -> list[tuple[str, ItemDTO]]:
@@ -234,8 +250,8 @@ class DataStore:
 
         order = "ASC" if order == "ASC" else "DESC"
 
-        total_items = self.get_total_count()
-        total_pages = (total_items + per_page - 1) // per_page if total_items > 0 else 1
+        total_items: int = self.get_total_count()
+        total_pages: int = (total_items + per_page - 1) // per_page if total_items > 0 else 1
 
         # Ensure page is within valid range.
         if page > total_pages and total_items > 0:
