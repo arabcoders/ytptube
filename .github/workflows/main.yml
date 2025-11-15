@@ -337,13 +337,11 @@ jobs:
 
   docker-publish-manifest:
     name: Publish multi-arch manifest
+    runs-on: ubuntu-latest
     needs: [docker-build-amd64, docker-build-arm64]
     if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled') &&
-      (contains(needs.*.result, 'success'))
-    runs-on: ubuntu-latest
+      !cancelled() &&
+      (needs.docker-build-amd64.result == 'success' || needs.docker-build-arm64.result == 'success')
     permissions:
       packages: write
       contents: write
@@ -396,20 +394,20 @@ jobs:
           for tag in $(echo "${{ steps.meta.outputs.tags }}"); do
             echo "Creating manifest for ${tag}"
 
-            IMAGES=""
+            IMAGES=()
             if [ "$BUILD_AMD64" = "true" ]; then
-              IMAGES="${IMAGES} ${tag}-amd64"
+              IMAGES+=("${tag}-amd64")
             fi
             if [ "$BUILD_ARM64" = "true" ]; then
-              IMAGES="${IMAGES} ${tag}-arm64"
+              IMAGES+=("${tag}-arm64")
             fi
 
-            if [ -z "$IMAGES" ]; then
+            if [ ${#IMAGES[@]} -eq 0 ]; then
               echo "::error::No architectures enabled for manifest creation"
               exit 1
             fi
 
-            docker buildx imagetools create --tag "$tag" $IMAGES
+            docker buildx imagetools create --tag "$tag" "${IMAGES[@]}"
           done
 
       - name: Overwrite GitHub release notes
