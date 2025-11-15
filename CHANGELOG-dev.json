@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251114-4a69b0b6",
-        "date": "2025-11-14T17:05:58+00:00",
+        "tag": "dev-20251115-81a29983",
+        "date": "2025-11-15T17:26:26+00:00",
         "commits": [
+            {
+                "sha": "81a29983",
+                "message": "Refactor: Use tab design for index page",
+                "author": "arabcoders",
+                "date": "2025-11-15T17:26:26+00:00",
+                "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18"
+            },
             {
                 "sha": "4a69b0b6",
                 "message": "Feat: Moving files in file browser should trigger item update if exists and update sidecars as well.",
@@ -3014,7 +3021,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d"
+        "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18"
     },
     {
         "tag": "dev-20250616-c07465a6",

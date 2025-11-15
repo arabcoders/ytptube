@@ -77,6 +77,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",
+    "date": "2025-11-15T17:26:26+00:00",
+    "commits": [
+      {
+        "sha": "81a29983",
+        "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",
+        "message": "Refactor: Use tab design for index page",
+        "author": "arabcoders",
+        "date": "2025-11-15T17:26:26+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.5",
     "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
     "date": "2025-11-12T21:21:35+00:00",
