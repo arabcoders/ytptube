@@ -78,9 +78,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",
-    "date": "2025-11-15T17:26:26+00:00",
+    "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
+    "date": "2025-11-15T19:04:45+00:00",
     "commits": [
+      {
+        "sha": "9ea8b639",
+        "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
+        "message": "Refactor: Add --no-continue as toggle option",
+        "author": "arabcoders",
+        "date": "2025-11-15T19:04:45+00:00"
+      },
+      {
+        "sha": "58ccab33",
+        "full_sha": "58ccab336578921efc912f4f426bc8b863a89175",
+        "message": "add support for embedding google drive",
+        "author": "arabcoders",
+        "date": "2025-11-15T18:51:28+00:00"
+      },
       {
         "sha": "81a29983",
         "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",

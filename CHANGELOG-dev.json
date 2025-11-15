@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251115-81a29983",
-        "date": "2025-11-15T17:26:26+00:00",
+        "tag": "dev-20251115-9ea8b639",
+        "date": "2025-11-15T19:04:45+00:00",
         "commits": [
+            {
+                "sha": "9ea8b639",
+                "message": "Refactor: Add --no-continue as toggle option",
+                "author": "arabcoders",
+                "date": "2025-11-15T19:04:45+00:00",
+                "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5"
+            },
+            {
+                "sha": "58ccab33",
+                "message": "add support for embedding google drive",
+                "author": "arabcoders",
+                "date": "2025-11-15T18:51:28+00:00",
+                "full_sha": "58ccab336578921efc912f4f426bc8b863a89175"
+            },
             {
                 "sha": "81a29983",
                 "message": "Refactor: Use tab design for index page",
@@ -3021,7 +3035,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18"
+        "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5"
     },
     {
         "tag": "dev-20250616-c07465a6",
