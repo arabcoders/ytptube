@@ -24,6 +24,7 @@ on:
 
 env:
   REGISTRY: ${{ vars.REGISTRY != '' && vars.REGISTRY || '' }}
+  BUILD_ARM64: ${{ vars.BUILD_ARM64 != 'false' && 'true' || 'false' }}
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
   PNPM_VERSION: 10
@@ -131,6 +132,9 @@ jobs:
             arch: amd64
           - os: ubuntu-latest
             arch: arm64
+            enabled: ${{ vars.BUILD_ARM64 != 'false' }}
+        exclude:
+          - enabled: false
     permissions:
       packages: write
       contents: write
@@ -277,10 +281,16 @@ jobs:
           IFS=$'\n'
           for tag in $(echo "${{ steps.meta.outputs.tags }}"); do
             echo "Creating manifest for ${tag}"
-            docker buildx imagetools create \
-              --tag "$tag" \
-              "${tag}-amd64" \
-              "${tag}-arm64"
+            if [ "${{ env.BUILD_ARM64 }}" = "true" ]; then
+              docker buildx imagetools create \
+                --tag "$tag" \
+                "${tag}-amd64" \
+                "${tag}-arm64"
+            else
+              docker buildx imagetools create \
+                --tag "$tag" \
+                "${tag}-amd64"
+            fi
           done
 
       - name: Overwrite GitHub release notes
