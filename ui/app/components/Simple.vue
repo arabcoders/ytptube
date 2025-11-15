@@ -4,7 +4,7 @@
       <section class="download-form box">
         <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
           <label class="label" for="download-url">
-            What you would like to download?
+            {{ greetingMessage }}
             <span class="is-pulled-right">
               <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
                 v-tooltip="'WebUI Settings'">
@@ -175,6 +175,16 @@
             </article>
           </div>
         </TransitionGroup>
+
+        <div v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages" ref="loadMoreTrigger"
+          class="columns is-centered mt-4">
+          <div class="column is-narrow">
+            <div v-if="paginationInfo.isLoading" class="has-text-centered">
+              <span class="icon is-large has-text-info"><i class="fas fa-spinner fa-pulse fa-2x" /></span>
+              <p class="is-size-7 has-text-grey mt-2">Loading more items...</p>
+            </div>
+          </div>
+        </div>
       </section>
     </Transition>
 
@@ -199,9 +209,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useStorage } from '@vueuse/core'
+import { useStorage, useIntersectionObserver } from '@vueuse/core'
 import type { item_request } from '~/types/item'
 import type { ItemStatus, StoreItem } from '~/types/store'
 import { useNotification } from '~/composables/useNotification'
@@ -224,6 +234,7 @@ const { queue, history } = storeToRefs(stateStore)
 
 const embedUrl = ref<string>('')
 const videoItem = ref<StoreItem | null>(null)
+const loadMoreTrigger = ref<HTMLElement | null>(null)
 
 const formUrl = ref<string>('')
 const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
@@ -236,6 +247,7 @@ const sortByNewest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a,
 
 const queueItems = computed<StoreItem[]>(() => sortByNewest(Object.values(queue.value ?? {})))
 const historyEntries = computed<StoreItem[]>(() => sortByNewest(Object.values(history.value ?? {})))
+const paginationInfo = computed(() => stateStore.getPagination())
 
 const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set(['downloading', 'postprocessing', 'preparing'])
 
@@ -255,6 +267,24 @@ const displayItems = computed<DisplayEntry[]>(() => [
 const hasActiveQueue = computed<boolean>(() => queueItems.value.length > 0)
 const hasAnyItems = computed<boolean>(() => hasActiveQueue.value || historyEntries.value.length > 0)
 const shouldCenterForm = computed<boolean>(() => 0 === queueItems.value.length && 0 === historyEntries.value.length)
+const DEFAULT_PAGE_SIZE = 12
+
+const greetingMessage = computed<string>(() => {
+  const hour = new Date().getHours()
+  let greeting = ''
+
+  if (hour >= 5 && hour < 12) {
+    greeting = 'Good morning'
+  } else if (hour >= 12 && hour < 17) {
+    greeting = 'Good afternoon'
+  } else if (hour >= 17 && hour < 21) {
+    greeting = 'Good evening'
+  } else {
+    greeting = 'Hello'
+  }
+
+  return `${greeting}, what would you like to download?`
+})
 
 const addDownload = async (): Promise<void> => {
   const url = formUrl.value.trim()
@@ -616,6 +646,59 @@ const connectionStatusColor = computed(() => {
       return 'has-text-danger'
   }
 })
+
+// Load history via API on mount
+onMounted(async () => {
+  if (socketStore.isConnected && !paginationInfo.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history on mount:', error)
+    }
+  }
+
+  if (window?.location && '/' !== window.location.pathname) {
+    window.history.replaceState({}, '', '/')
+  }
+})
+
+// Reload history when socket reconnects
+watch(() => socketStore.isConnected, async (connected) => {
+  if (connected && !paginationInfo.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history after socket connection:', error)
+    }
+  }
+})
+
+// Function to load more history items
+const loadMoreHistory = async (): Promise<void> => {
+  if (paginationInfo.value.isLoading || paginationInfo.value.page >= paginationInfo.value.total_pages) {
+    return
+  }
+
+  try {
+    await stateStore.loadPaginated('history', paginationInfo.value.page + 1, DEFAULT_PAGE_SIZE, 'DESC', true)
+  } catch (error) {
+    console.error('Failed to load more history:', error)
+    toast.error('Failed to load more history')
+  }
+}
+
+// Setup intersection observer for infinite scroll
+useIntersectionObserver(
+  loadMoreTrigger,
+  ([entry]) => {
+    if (entry?.isIntersecting && !paginationInfo.value.isLoading && paginationInfo.value.page < paginationInfo.value.total_pages) {
+      loadMoreHistory()
+    }
+  },
+  {
+    threshold: 0.5,
+  }
+)
 
 </script>
 

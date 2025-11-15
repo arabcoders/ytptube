@@ -32,7 +32,6 @@
         </div>
       </div>
 
-
       <span class="field title is-4">
         <span class="icon-text">
           <span class="icon"><i class="fas fa-palette" /></span>
@@ -300,7 +299,7 @@ import { useNotification } from '~/composables/useNotification'
 import type { notificationTarget } from '~/composables/useNotification'
 
 defineProps<{ isLoading: boolean }>()
-defineEmits<{ (e: 'reload_bg'): void }>()
+const emitter = defineEmits<{ (e: 'reload_bg' | 'close'): void }>()
 
 const config = useConfigStore()
 const notification = useNotification()
@@ -335,4 +334,6 @@ const onNotificationTargetChange = async (): Promise<void> => {
     }
   }
 }
+
+watch(simpleMode, async () => emitter('close'))
 </script>

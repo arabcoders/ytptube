@@ -3,7 +3,7 @@ import type { ConfigState } from '~/types/config';
 
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({
-    showForm: useStorage('showForm', false),
+    showForm: useStorage('showForm', true),
     app: {
       download_path: '/downloads',
       remove_files: false,

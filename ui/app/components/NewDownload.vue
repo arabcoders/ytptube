@@ -88,20 +88,24 @@
           </div>
 
           <div class="columns is-multiline is-mobile" v-if="showAdvanced">
-            <div class="column is-3-tablet is-12-mobile">
-              <DLInput id="force_download" type="bool" label="Force download"
-                v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
-                :disabled="!socket.isConnected || addInProgress" description="Ignore archive and re-download." />
+            <div class="column is-2-tablet is-12-mobile">
+              <DLInput id="force_download" type="bool" label="Force download" icon="fa-solid fa-download"
+                v-model="dlFields['--no-download-archive']" :disabled="!socket.isConnected || addInProgress"
+                description="Ignore archive." />
             </div>
 
-            <div class="column is-3-tablet is-12-mobile">
+            <div class="column is-2-tablet is-12-mobile">
               <DLInput id="auto_start" type="bool" label="Auto start" v-model="auto_start" icon="fa-solid fa-play"
-                :disabled="!socket.isConnected || addInProgress"
-                description="Whether to start the download automatically." />
+                :disabled="!socket.isConnected || addInProgress" description="Download automatically." />
+            </div>
+
+            <div class="column is-2-tablet is-12-mobile">
+              <DLInput id="no_cache" type="bool" label="Bypass cache" icon="fa-solid fa-broom"
+                v-model="dlFields['--no-continue']" :disabled="!socket.isConnected || addInProgress"
+                description="Remove temporary files." />
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-
               <DLInput id="output_template" type="string" label="Output template" v-model="form.template"
                 icon="fa-solid fa-file" :disabled="!socket.isConnected || addInProgress"
                 :placeholder="getDefault('template', config.app.output_template || '%(title)s.%(ext)s')">
@@ -284,7 +288,7 @@ const showFields = ref<boolean>(false)
 const showOptions = ref<boolean>(false)
 const showTestResults = ref<boolean>(false)
 const testResultsData = ref<any>(null)
-const dlFieldsExtra = ['--no-download-archive']
+const dlFieldsExtra = ['--no-download-archive', '--no-continue']
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
 

@@ -1,268 +1,112 @@
 <template>
-  <h1 class="mt-3 is-size-3 is-clickable is-unselectable" @click="showQueue = !showQueue" v-if="hasQueuedItems">
-    <span class="icon-text title is-4">
-      <span class="icon">
-        <i class="fas" :class="showQueue ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
-      </span>
-      <span>Queue <span v-if="hasQueuedItems">({{ filteredItems.length }})</span>
-        <span v-if="selectedElms.length > 0">&nbsp;- Selected: {{ selectedElms.length }}</span>
-      </span>
-    </span>
-  </h1>
-
-  <div v-if="showQueue">
-    <div class="columns is-multiline is-mobile has-text-centered" v-if="filteredItems.length > 0">
-      <div class="column is-half-mobile" v-if="'grid' === display_style">
-        <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
-          <span class="icon-text is-block">
-            <span class="icon">
-              <i class="fas" :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-            </span>
-            <span v-if="!masterSelectAll">Select All</span>
-            <span v-else>Unselect All</span>
+  <div class="columns is-multiline is-mobile has-text-centered" v-if="filteredItems.length > 0">
+    <div class="column is-half-mobile">
+      <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
+        <span v-if="selectedElms.length > 0" class="mr-2 tag is-danger">
+          {{ selectedElms.length }}
+        </span>
+        <span class="icon-text is-block">
+          <span class="icon">
+            <i class="fas" :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
           </span>
-        </button>
-      </div>
-      <div class="column is-half-mobile" v-if="hasManualStart">
-        <button type="button" class="button is-fullwidth is-success" :disabled="!hasSelected" @click="startItems">
-          <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-          <span>Start</span>
-        </button>
-      </div>
-      <div class="column is-half-mobile" v-if="hasPausable">
-        <button type="button" class="button is-fullwidth is-warning is-background-warning-85" :disabled="!hasSelected"
-          @click="pauseSelected">
-          <span class="icon"><i class="fa-solid fa-pause" /></span>
-          <span>Pause</span>
-        </button>
-      </div>
-      <div class="column is-half-mobile" v-if="('grid' === display_style || hasSelected)">
-        <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
-          <span class="icon"><i class="fa-solid fa-eject" /></span>
-          <span>Cancel</span>
-        </button>
-      </div>
+          <span v-if="!masterSelectAll">Select All</span>
+          <span v-else> Unselect All</span>
+        </span>
+      </button>
     </div>
+    <div class="column is-half-mobile" v-if="hasManualStart">
+      <button type="button" class="button is-fullwidth is-success" :disabled="!hasSelected" @click="startItems">
+        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+        <span>Start</span>
+      </button>
+    </div>
+    <div class="column is-half-mobile" v-if="hasPausable">
+      <button type="button" class="button is-fullwidth is-warning is-background-warning-85" :disabled="!hasSelected"
+        @click="pauseSelected">
+        <span class="icon"><i class="fa-solid fa-pause" /></span>
+        <span>Pause</span>
+      </button>
+    </div>
+    <div class="column is-half-mobile">
+      <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
+        <span class="icon"><i class="fa-solid fa-eject" /></span>
+        <span>Cancel</span>
+      </button>
+    </div>
+  </div>
 
-    <div class="columns is-multiline" v-if="'list' === display_style">
-      <div class="column is-12" v-if="filteredItems.length > 0">
-        <div class="table-container">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-            style="min-width: 1300px; table-layout: fixed;">
-            <thead>
-              <tr class="has-text-centered is-unselectable">
-                <th width="5%" v-tooltip="masterSelectAll ? 'Unselect all' : 'Select all'">
-                  <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
-                    <span class="icon-text is-block">
-                      <span class="icon">
-                        <i class="fa-regular"
-                          :class="{ 'fa-square-check': !masterSelectAll, 'fa-square': masterSelectAll }" />
-                      </span>
+  <div class="columns is-multiline" v-if="'list' === display_style">
+    <div class="column is-12" v-if="filteredItems.length > 0">
+      <div class="table-container">
+        <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+          style="min-width: 1300px; table-layout: fixed;">
+          <thead>
+            <tr class="has-text-centered is-unselectable">
+              <th width="5%" v-tooltip="masterSelectAll ? 'Unselect all' : 'Select all'">
+                <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
+                  <span class="icon-text is-block">
+                    <span class="icon">
+                      <i class="fa-regular"
+                        :class="{ 'fa-square-check': !masterSelectAll, 'fa-square': masterSelectAll }" />
                     </span>
-                  </a>
-                </th>
-                <th width="40%">Video Title</th>
-                <th width="15%">Status</th>
-                <th width="20%">Progress</th>
-                <th width="15%">Created</th>
-                <th width="10%">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in filteredItems" :key="item._id">
-                <td class="has-text-centered is-vcentered">
-                  <label class="checkbox is-block">
-                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
-                      :id="'checkbox-' + item._id" :value="item._id">
-                  </label>
-                </td>
-                <td class="is-text-overflow is-vcentered">
-                  <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || item.extras?.duration">
-                    <span class="tag" v-if="item.downloaded_bytes">{{ formatBytes(item.downloaded_bytes) }}</span>
-                    <span class="tag is-info" v-if="item.extras?.duration">
-                      {{ formatTime(item.extras.duration) }}
-                    </span>
-                  </div>
-                  <div v-if="showThumbnails && item.extras?.thumbnail">
-                    <FloatingImage
-                      :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                      :title="item.title">
-                      <div class="is-text-overflow">
-                        <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                      </div>
-                    </FloatingImage>
-                  </div>
-                  <template v-else>
-                    <div class="is-text-overflow" v-tooltip="item.title">
-                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                    </div>
-                  </template>
-                </td>
-                <td class="has-text-centered is-text-overflow is-unselectable">
-                  <span class="icon" :class="setIconColor(item)">
-                    <i class="fas fa-solid" :class="setIcon(item)" />
                   </span>
-                  <span v-text="setStatus(item)" />
-                </td>
-                <td>
-                  <div class="progress-bar is-unselectable">
-                    <div class="progress-percentage">{{ updateProgress(item) }}</div>
-                    <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
-                  </div>
-                </td>
-                <td class="has-text-centered is-text-overflow is-unselectable">
-                  <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')"
-                    :data-datetime="item.datetime" v-rtime="item.datetime" />
-                </td>
-                <td class="is-vcentered is-items-center">
-                  <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
-                    <template v-if="isEmbedable(item.url)">
-                      <NuxtLink class="dropdown-item has-text-danger"
-                        @click="embed_url = getEmbedable(item.url) as string">
-                        <span class="icon"><i class="fa-solid fa-play" /></span>
-                        <span>Play video</span>
-                      </NuxtLink>
-                      <hr class="dropdown-divider" />
-                    </template>
-
-                    <NuxtLink class="dropdown-item has-text-warning" @click="confirmCancel(item);">
-                      <span class="icon"><i class="fa-solid fa-eject" /></span>
-                      <span>Cancel Download</span>
-                    </NuxtLink>
-
-                    <template v-if="!item.auto_start && !item.status">
-                      <hr class="dropdown-divider" />
-                      <NuxtLink class="dropdown-item has-text-success" @click="startItem(item)">
-                        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-                        <span>Start Download</span>
-                      </NuxtLink>
-                    </template>
-
-                    <template v-if="item.auto_start && !item.status">
-                      <hr class="dropdown-divider" />
-                      <NuxtLink class="dropdown-item has-text-warning" @click="pauseItem(item)">
-                        <span class="icon"><i class="fa-solid fa-pause" /></span>
-                        <span>Pause Download</span>
-                      </NuxtLink>
-                    </template>
-
-                    <hr class="dropdown-divider" />
-
-                    <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
-                      <span class="icon"><i class="fa-solid fa-info" /></span>
-                      <span>yt-dlp Information</span>
-                    </NuxtLink>
-
-                    <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
-                      <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                      <span>Local Information</span>
-                    </NuxtLink>
-                  </Dropdown>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="columns is-multiline" v-else>
-      <LateLoader :unrender="true" :min-height="showThumbnails ? 475 : 265" class="column is-6"
-        v-for="item in filteredItems" :key="item._id">
-        <div class="card">
-          <header class="card-header">
-            <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-            </div>
-            <div class="card-header-icon">
-              <div class="field is-grouped">
-
-                <div class="control">
+                </a>
+              </th>
+              <th width="40%">Video Title</th>
+              <th width="15%">Status</th>
+              <th width="20%">Progress</th>
+              <th width="15%">Created</th>
+              <th width="10%">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in filteredItems" :key="item._id">
+              <td class="has-text-centered is-vcentered">
+                <label class="checkbox is-block">
+                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
+                    :value="item._id">
+                </label>
+              </td>
+              <td class="is-text-overflow is-vcentered">
+                <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || item.extras?.duration">
+                  <span class="tag" v-if="item.downloaded_bytes">{{ formatBytes(item.downloaded_bytes) }}</span>
                   <span class="tag is-info" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
                 </div>
-                <div class="control">
-                  <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
-                    <span class="icon"><i class="fa-solid"
-                        :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail }" /></span>
-                  </button>
+                <div v-if="showThumbnails && item.extras?.thumbnail">
+                  <FloatingImage
+                    :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
+                    :title="item.title">
+                    <div class="is-text-overflow">
+                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                    </div>
+                  </FloatingImage>
                 </div>
-                <div class="control">
-                  <label class="checkbox is-block">
-                    <input class="completed-checkbox" type="checkbox" v-model="selectedElms"
-                      :id="'checkbox-' + item._id" :value="item._id">
-                  </label>
-                </div>
-              </div>
-            </div>
-          </header>
-          <div v-if="showThumbnails" class="card-image">
-            <figure :class="['image', thumbnail_ratio]">
-              <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
-                class="play-overlay">
-                <div class="play-icon embed-icon"></div>
-                <img @load="(e: Event) => pImg(e)"
-                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                  v-if="item.extras?.thumbnail" />
-                <img v-else src="/images/placeholder.png" />
-              </span>
-              <template v-else>
-                <img @load="(e: Event) => pImg(e)" v-if="item.extras?.thumbnail"
-                  :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
-                <img v-else src="/images/placeholder.png" />
-              </template>
-            </figure>
-          </div>
-          <div class="card-content">
-            <div class="columns is-multiline is-mobile">
-              <div class="column is-12">
-                <div class="progress-bar is-unselectable">
-                  <div class="progress-percentage">{{ updateProgress(item) }}</div>
-                  <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
-                </div>
-              </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+                <template v-else>
+                  <div class="is-text-overflow" v-tooltip="item.title">
+                    <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                  </div>
+                </template>
+              </td>
+              <td class="has-text-centered is-text-overflow is-unselectable">
                 <span class="icon" :class="setIconColor(item)">
                   <i class="fas fa-solid" :class="setIcon(item)" />
                 </span>
                 <span v-text="setStatus(item)" />
-              </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-                <span class="icon"><i class="fa-solid fa-sliders" /></span>
-                <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
-              </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+              </td>
+              <td>
+                <div class="progress-bar is-unselectable">
+                  <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                  <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
+                </div>
+              </td>
+              <td class="has-text-centered is-text-overflow is-unselectable">
                 <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
                   v-rtime="item.datetime" />
-              </div>
-              <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
-                v-if="item.downloaded_bytes" v-tooltip="`Saving to: ${makePath(item)}`">
-                {{ formatBytes(item.downloaded_bytes) }}
-              </div>
-
-            </div>
-            <div class="columns is-multiline is-mobile">
-              <div class="column is-half-mobile">
-                <button class="button is-warning is-fullwidth" @click="confirmCancel(item);">
-                  <span class="icon"><i class="fa-solid fa-eject" /></span>
-                  <span>Cancel</span>
-                </button>
-              </div>
-              <div class="column is-half-mobile" v-if="!item.auto_start && !item.status">
-                <button class="button is-success is-fullwidth" @click="startItem(item)">
-                  <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-                  <span>Start</span>
-                </button>
-              </div>
-              <div class="column is-half-mobile" v-if="item.auto_start && !item.status">
-                <button class="button is-warning is-background-warning-85 is-fullwidth" @click="pauseItem(item)">
-                  <span class="icon"><i class="fa-solid fa-pause" /></span>
-                  <span>Pause</span>
-                </button>
-              </div>
-              <div class="column is-half-mobile">
-                <Dropdown icons="fa-solid fa-cogs" label="Actions">
+              </td>
+              <td class="is-vcentered is-items-center">
+                <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
                   <template v-if="isEmbedable(item.url)">
                     <NuxtLink class="dropdown-item has-text-danger"
                       @click="embed_url = getEmbedable(item.url) as string">
@@ -271,6 +115,29 @@
                     </NuxtLink>
                     <hr class="dropdown-divider" />
                   </template>
+
+                  <NuxtLink class="dropdown-item has-text-warning" @click="confirmCancel(item);">
+                    <span class="icon"><i class="fa-solid fa-eject" /></span>
+                    <span>Cancel Download</span>
+                  </NuxtLink>
+
+                  <template v-if="!item.auto_start && !item.status">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item has-text-success" @click="startItem(item)">
+                      <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                      <span>Start Download</span>
+                    </NuxtLink>
+                  </template>
+
+                  <template v-if="item.auto_start && !item.status">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item has-text-warning" @click="pauseItem(item)">
+                      <span class="icon"><i class="fa-solid fa-pause" /></span>
+                      <span>Pause Download</span>
+                    </NuxtLink>
+                  </template>
+
+                  <hr class="dropdown-divider" />
 
                   <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -282,29 +149,155 @@
                     <span>Local Information</span>
                   </NuxtLink>
                 </Dropdown>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="columns is-multiline" v-else>
+    <LateLoader :unrender="true" :min-height="showThumbnails ? 475 : 265" class="column is-6"
+      v-for="item in filteredItems" :key="item._id">
+      <div class="card">
+        <header class="card-header">
+          <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
+            <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+          </div>
+          <div class="card-header-icon">
+            <div class="field is-grouped">
+
+              <div class="control">
+                <span class="tag is-info" v-if="item.extras?.duration">
+                  {{ formatTime(item.extras.duration) }}
+                </span>
+              </div>
+              <div class="control">
+                <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
+                  <span class="icon"><i class="fa-solid"
+                      :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail }" /></span>
+                </button>
+              </div>
+              <div class="control">
+                <label class="checkbox is-block">
+                  <input class="completed-checkbox" type="checkbox" v-model="selectedElms" :id="'checkbox-' + item._id"
+                    :value="item._id">
+                </label>
               </div>
             </div>
           </div>
+        </header>
+        <div v-if="showThumbnails" class="card-image">
+          <figure :class="['image', thumbnail_ratio]">
+            <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
+              class="play-overlay">
+              <div class="play-icon embed-icon"></div>
+              <img @load="(e: Event) => pImg(e)"
+                :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
+                v-if="item.extras?.thumbnail" />
+              <img v-else src="/images/placeholder.png" />
+            </span>
+            <template v-else>
+              <img @load="(e: Event) => pImg(e)" v-if="item.extras?.thumbnail"
+                :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
+              <img v-else src="/images/placeholder.png" />
+            </template>
+          </figure>
         </div>
-      </LateLoader>
-    </div>
+        <div class="card-content">
+          <div class="columns is-multiline is-mobile">
+            <div class="column is-12">
+              <div class="progress-bar is-unselectable">
+                <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
+              </div>
+            </div>
+            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+              <span class="icon" :class="setIconColor(item)">
+                <i class="fas fa-solid" :class="setIcon(item)" />
+              </span>
+              <span v-text="setStatus(item)" />
+            </div>
+            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+              <span class="icon"><i class="fa-solid fa-sliders" /></span>
+              <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
+            </div>
+            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
+              <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
+                v-rtime="item.datetime" />
+            </div>
+            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
+              v-if="item.downloaded_bytes" v-tooltip="`Saving to: ${makePath(item)}`">
+              {{ formatBytes(item.downloaded_bytes) }}
+            </div>
 
-    <div class="columns is-multiline" v-if="hasQueuedItems && filteredItems.length < 1 && query">
-      <div class="column is-12">
-        <Message message_class="has-background-warning-90 has-text-dark" title="No results for queued items"
-          icon="fas fa-search" :useClose="true" @close="() => emitter('clear_search')" v-if="query">
-          <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
-        </Message>
-      </div>
-    </div>
+          </div>
+          <div class="columns is-multiline is-mobile">
+            <div class="column is-half-mobile">
+              <button class="button is-warning is-fullwidth" @click="confirmCancel(item);">
+                <span class="icon"><i class="fa-solid fa-eject" /></span>
+                <span>Cancel</span>
+              </button>
+            </div>
+            <div class="column is-half-mobile" v-if="!item.auto_start && !item.status">
+              <button class="button is-success is-fullwidth" @click="startItem(item)">
+                <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                <span>Start</span>
+              </button>
+            </div>
+            <div class="column is-half-mobile" v-if="item.auto_start && !item.status">
+              <button class="button is-warning is-background-warning-85 is-fullwidth" @click="pauseItem(item)">
+                <span class="icon"><i class="fa-solid fa-pause" /></span>
+                <span>Pause</span>
+              </button>
+            </div>
+            <div class="column is-half-mobile">
+              <Dropdown icons="fa-solid fa-cogs" label="Actions">
+                <template v-if="isEmbedable(item.url)">
+                  <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url) as string">
+                    <span class="icon"><i class="fa-solid fa-play" /></span>
+                    <span>Play video</span>
+                  </NuxtLink>
+                  <hr class="dropdown-divider" />
+                </template>
 
-    <div class="modal is-active" v-if="embed_url">
-      <div class="modal-background" @click="embed_url = ''"></div>
-      <div class="modal-content is-unbounded-model">
-        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+                <NuxtLink class="dropdown-item" @click="emitter('getInfo', item.url, item.preset, item.cli)">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>yt-dlp Information</span>
+                </NuxtLink>
+
+                <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
+                  <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                  <span>Local Information</span>
+                </NuxtLink>
+              </Dropdown>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
+    </LateLoader>
+  </div>
+
+  <div class="columns is-multiline" v-if="filteredItems.length < 1">
+    <div class="column is-12">
+      <Message message_class="is-warning" title="Filter results" :newStyle="true" icon="fas fa-search" :useClose="true"
+        @close="() => emitter('clear_search')" v-if="query">
+        <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+      </Message>
+      <Message message_class="is-info" title="No items" icon="fas fa-clock" :useClose="false" :newStyle="true"
+        v-else>
+        <p>The download queue is empty.</p>
+      </Message>
     </div>
+  </div>
+
+  <div class="modal is-active" v-if="embed_url">
+    <div class="modal-background" @click="embed_url = ''"></div>
+    <div class="modal-content is-unbounded-model">
+      <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+    </div>
+    <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
   </div>
 </template>
 
@@ -331,7 +324,6 @@ const socket = useSocketStore()
 const box = useConfirm()
 const toast = useNotification()
 
-const showQueue = useStorage('showQueue', true)
 const hideThumbnail = useStorage('hideThumbnailQueue', false)
 const display_style = useStorage('display_style', 'grid')
 const bg_enable = useStorage('random_bg', true)
@@ -363,7 +355,6 @@ const filteredItems = computed<StoreItem[]>(() => {
 })
 
 const hasSelected = computed(() => 0 < selectedElms.value.length)
-const hasQueuedItems = computed(() => 0 < stateStore.count('queue'))
 const hasManualStart = computed(() => {
   if (0 > stateStore.count('queue')) {
     return false

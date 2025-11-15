@@ -37,6 +37,9 @@ export const useStateStore = defineStore('state', () => {
   })
 
   const add = (type: StateType, key: KeyType, value: StoreItem): void => {
+    if ('history' === type && state.pagination.total > 0) {
+      state.pagination.total += 1
+    }
     state[type][key] = value
   }
 
@@ -45,6 +48,10 @@ export const useStateStore = defineStore('state', () => {
   }
 
   const remove = (type: StateType, key: KeyType): void => {
+    if ('history' === type && state.pagination.total > 0) {
+      state.pagination.total -= 1
+    }
+
     if (state[type][key]) {
       const { [key]: _, ...rest } = state[type]
       state[type] = rest
@@ -77,11 +84,11 @@ export const useStateStore = defineStore('state', () => {
   }
 
   const move = (fromType: StateType, toType: StateType, key: KeyType): void => {
-    if (state[fromType][key]) {
-      state[toType][key] = state[fromType][key]
-      const { [key]: _, ...rest } = state[fromType]
-      state[fromType] = rest
+    if (true === has(fromType, key)) {
+      remove(fromType, key)
     }
+
+    add(toType, key, get(fromType, key, {} as StoreItem) as StoreItem)
   }
 
   const count = (type: StateType): number => {
@@ -91,7 +98,7 @@ export const useStateStore = defineStore('state', () => {
     return Object.keys(state[type]).length
   }
 
-  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC'): Promise<void> => {
+  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC', append: boolean = false): Promise<void> => {
     if ('history' !== type) {
       throw new Error('Pagination is only supported for history type');
     }
@@ -110,7 +117,8 @@ export const useStateStore = defineStore('state', () => {
         for (const item of data.items || []) {
           items[item._id] = item
         }
-        state[type] = items
+
+        state[type] = append ? { ...state[type], ...items } : items
       }
     } catch (error) {
       console.error(`Failed to load ${type} page ${page}:`, error)
@@ -118,7 +126,7 @@ export const useStateStore = defineStore('state', () => {
     }
   }
 
-  const loadNextPage = async (type: StateType): Promise<void> => {
+  const loadNextPage = async (type: StateType, append: boolean = false): Promise<void> => {
     if ('history' !== type) {
       throw new Error('Pagination is only supported for history type');
     }
@@ -127,7 +135,7 @@ export const useStateStore = defineStore('state', () => {
       return
     }
 
-    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page)
+    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page, 'DESC', append)
   }
 
   const loadPreviousPage = async (type: StateType): Promise<void> => {
