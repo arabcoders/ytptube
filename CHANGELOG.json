@@ -1,9 +1,30 @@
 [
   {
-    "tag": "Unreleased (477dc41b)",
-    "full_sha": "477dc41bb6897110fd18aaa438e3aadd52b1579a",
-    "date": "2025-11-14T17:17:14+00:00",
+    "tag": "Unreleased (83a416ec)",
+    "full_sha": "83a416ec4c13c5c64f2ae04fa6a2a72f25c8ccb2",
+    "date": "2025-11-15T19:12:25+00:00",
     "commits": [
+      {
+        "sha": "9ea8b639",
+        "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
+        "message": "Refactor: Add --no-continue as toggle option",
+        "author": "arabcoders",
+        "date": "2025-11-15T19:04:45+00:00"
+      },
+      {
+        "sha": "58ccab33",
+        "full_sha": "58ccab336578921efc912f4f426bc8b863a89175",
+        "message": "add support for embedding google drive",
+        "author": "arabcoders",
+        "date": "2025-11-15T18:51:28+00:00"
+      },
+      {
+        "sha": "81a29983",
+        "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",
+        "message": "Refactor: Use tab design for index page",
+        "author": "arabcoders",
+        "date": "2025-11-15T17:26:26+00:00"
+      },
       {
         "sha": "4a69b0b6",
         "full_sha": "4a69b0b6a1fdfd445c50fb5e97155c5d70d2085d",
@@ -73,34 +94,6 @@
         "message": "Feat: add paginated history endpoint",
         "author": "arabcoders",
         "date": "2025-11-13T14:15:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
-    "date": "2025-11-15T19:04:45+00:00",
-    "commits": [
-      {
-        "sha": "9ea8b639",
-        "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
-        "message": "Refactor: Add --no-continue as toggle option",
-        "author": "arabcoders",
-        "date": "2025-11-15T19:04:45+00:00"
-      },
-      {
-        "sha": "58ccab33",
-        "full_sha": "58ccab336578921efc912f4f426bc8b863a89175",
-        "message": "add support for embedding google drive",
-        "author": "arabcoders",
-        "date": "2025-11-15T18:51:28+00:00"
-      },
-      {
-        "sha": "81a29983",
-        "full_sha": "81a299830394db016c0edf52a9d042cb4c51cf18",
-        "message": "Refactor: Use tab design for index page",
-        "author": "arabcoders",
-        "date": "2025-11-15T17:26:26+00:00"
       }
     ]
   },
