@@ -14,6 +14,7 @@ export const useSocketStore = defineStore('socket', () => {
   const isConnected = ref<boolean>(false)
   const connectionStatus = ref<connectionStatus>('disconnected')
   const error = ref<string | null>(null)
+  const error_count = ref<number>(0)
 
   const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
   const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
@@ -52,7 +53,7 @@ export const useSocketStore = defineStore('socket', () => {
 
   const connect = () => {
     const opts = {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 50,
@@ -80,6 +81,7 @@ export const useSocketStore = defineStore('socket', () => {
         return;
       }
       error.value = `Connection error: ${e.type || 'Unknown'}: ${e.message || 'Unknown error'}`;
+      error_count.value += 1
     });
 
 
@@ -87,6 +89,7 @@ export const useSocketStore = defineStore('socket', () => {
       isConnected.value = true
       connectionStatus.value = 'connected';
       error.value = null;
+      error_count.value = 0
     });
 
     on('disconnect', () => {
@@ -240,5 +243,6 @@ export const useSocketStore = defineStore('socket', () => {
     getSessionId,
     connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
     error: readonly(error) as Readonly<Ref<string | null>>,
+    error_count: readonly(error_count) as Readonly<Ref<number>>,
   };
 });

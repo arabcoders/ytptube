@@ -38,7 +38,7 @@
             <p class="control">
               <button class="button is-primary has-tooltip-bottom" @click="config.showForm = !config.showForm">
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
-                <span v-if="!isMobile">New Download</span>
+                <span v-if="!isMobile">Add</span>
               </button>
             </p>
 
@@ -62,17 +62,45 @@
       </div>
     </div>
 
-    <NewDownload v-if="config.showForm"
-      @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-      :item="item_form" @clear_form="item_form = {}" />
-    <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-      :thumbnails="show_thumbnail" :query="query" @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-      @clear_search="query = ''" />
-    <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-      @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
-      @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+    <NewDownload v-if="config.showForm" :item="item_form" @clear_form="item_form = {}"
+      @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)" />
+
+    <div class="tabs is-boxed is-medium">
+      <ul>
+        <li :class="{ 'is-active': activeTab === 'queue' }">
+          <a @click="setActiveTab('queue')">
+            <span class="icon is-small"><i class="fas fa-clock" aria-hidden="true"></i></span>
+            <span>Queue</span>
+            <span class="tag is-info is-rounded is-bold ml-2">{{ queueCount }}</span>
+          </a>
+        </li>
+        <li :class="{ 'is-active': activeTab === 'history' }">
+          <a @click="setActiveTab('history')">
+            <span class="icon is-small"><i class="fas fa-history" aria-hidden="true"></i></span>
+            <span>History</span>
+            <span class="tag is-primary is-rounded is-bold ml-2">{{ historyCount }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="tab-content">
+      <div v-show="'queue' === activeTab">
+        <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+          :thumbnails="show_thumbnail" :query="query"
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+      </div>
+
+      <div v-show="'history' === activeTab">
+        <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
+          @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+      </div>
+    </div>
+
     <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :cli="info_view.cli"
       :useUrl="info_view.useUrl" @closeModel="close_info()" />
+
     <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
       :html_message="dialog_confirm.html_message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
       @cancel="() => dialog_confirm.visible = false" />
@@ -87,6 +115,9 @@ import type { StoreItem } from '~/types/store'
 const config = useConfigStore()
 const stateStore = useStateStore()
 const socket = useSocketStore()
+const route = useRoute()
+const router = useRouter()
+
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 const display_style = useStorage<string>('display_style', 'grid')
@@ -110,6 +141,35 @@ const dialog_confirm = ref({
   options: [],
 })
 
+// Tab management with URL state
+type TabType = 'queue' | 'history'
+
+const activeTab = ref<TabType>('queue')
+
+const getInitialTab = (): TabType => {
+  const tabParam = route.query.tab as string
+  return (tabParam === 'queue' || tabParam === 'history') ? tabParam : 'queue'
+}
+
+const setActiveTab = async (tab: TabType): Promise<void> => {
+  activeTab.value = tab
+  await router.push({ query: { ...route.query, tab }, replace: true })
+}
+
+watch(() => route.query.tab, (newTab) => {
+  if (!['queue', 'history'].includes(newTab as string)) {
+    return
+  }
+  activeTab.value = newTab as TabType
+})
+
+onMounted(() => {
+  activeTab.value = getInitialTab()
+  useHead({ title: getTitle() })
+})
+
+const queueCount = computed(() => stateStore.count('queue'))
+const historyCount = computed(() => stateStore.count('history'))
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -123,8 +183,6 @@ const getTitle = (): string => {
   }
   return `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}:${config.app.max_workers_per_extractor} | ${Object.keys(stateStore.history).length || 0} )`
 }
-
-onMounted(() => useHead({ title: getTitle() }))
 
 watch(() => stateStore.history, () => {
   if (!config.app.ui_update_title) {

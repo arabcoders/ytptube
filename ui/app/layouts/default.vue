@@ -20,7 +20,8 @@
             <div class="card-content">
               <div class="columns is-multiline">
                 <div class="column is-12">
-                  <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                  <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)"
+                    @close="closeSettings()" />
                 </div>
               </div>
             </div>
@@ -162,12 +163,16 @@
               connection is functional.
             </span>
           </p>
-          <p v-if="socket.error" class="has-text-danger">
-            <span class="icon-text">
-              <span class="icon"><i class="fas fa-triangle-exclamation" /></span>
-              {{ socket.error }}. Check the developer console for more information.
-            </span>
-          </p>
+          <template v-if="socket.error">
+            <hr>
+            <p class="has-text-danger">
+              <span class="icon-text">
+                <span class="icon"><i class="fas fa-triangle-exclamation" /></span>
+                <span class="tag is-danger">{{ socket.error_count }}</span>
+                {{ socket.error }}. Check the developer console for more information.
+              </span>
+            </p>
+          </template>
         </Message>
         <Markdown @closeModel="() => doc.file = ''" :file="doc.file" v-if="doc.file" />
         <ClientOnly>
