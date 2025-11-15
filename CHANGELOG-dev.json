@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251115-486888ae",
-        "date": "2025-11-15T19:53:04+00:00",
+        "tag": "dev-20251115-abe5a5f5",
+        "date": "2025-11-15T20:12:34+00:00",
         "commits": [
+            {
+                "sha": "abe5a5f5",
+                "message": "Fix: build",
+                "author": "arabcoders",
+                "date": "2025-11-15T20:12:34+00:00",
+                "full_sha": "abe5a5f571aaceed62c56dd4963ce9c359f36ef9"
+            },
             {
                 "sha": "486888ae",
                 "message": "Refactor: make it possible to disable ARM builds in private repos",
@@ -3042,7 +3049,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "486888aea820a4d195d0684ecb01b789e65526c1"
+        "full_sha": "abe5a5f571aaceed62c56dd4963ce9c359f36ef9"
     },
     {
         "tag": "dev-20250616-c07465a6",
