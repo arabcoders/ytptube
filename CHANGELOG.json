@@ -99,9 +99,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "2274af0a2b468a4bc513f17acb61964190ee4e2f",
-    "date": "2025-11-15T20:21:45+00:00",
+    "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
+    "date": "2025-11-15T21:46:02+00:00",
     "commits": [
+      {
+        "sha": "46fb9432",
+        "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
+        "message": "Fix: change icons and show no items in history.",
+        "author": "arabcoders",
+        "date": "2025-11-15T21:46:02+00:00"
+      },
       {
         "sha": "2274af0a",
         "full_sha": "2274af0a2b468a4bc513f17acb61964190ee4e2f",
