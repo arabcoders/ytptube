@@ -70,6 +70,11 @@ const sources: EmbedSource[] = [
     url: "https://player.bilibili.com/player.html?aid=12569853&bvid={id}&cid=20681553&p=1&high_quality=1",
     regex: /^https?:\/\/(?:www\.)?bilibili\.com\/video\/(?<id>BV[0-9A-Za-z]+)\/?/i,
   },
+  {
+    name: "googledrive",
+    url: "https://drive.google.com/file/d/{id}/preview",
+    regex: /https?:\/\/(?:www\.)?drive\.google\.com\/file\/d\/(?<id>[^/?#&]+)/,
+  },
 ]
 
 const isEmbedable = (url: string): boolean => sources.some(source => source.regex.test(url))
