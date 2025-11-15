@@ -98,6 +98,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "486888aea820a4d195d0684ecb01b789e65526c1",
+    "date": "2025-11-15T19:53:04+00:00",
+    "commits": [
+      {
+        "sha": "486888ae",
+        "full_sha": "486888aea820a4d195d0684ecb01b789e65526c1",
+        "message": "Refactor: make it possible to disable ARM builds in private repos",
+        "author": "arabcoders",
+        "date": "2025-11-15T19:53:04+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.5",
     "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
     "date": "2025-11-12T21:21:35+00:00",
