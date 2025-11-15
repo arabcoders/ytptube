@@ -24,6 +24,7 @@ on:
 
 env:
   REGISTRY: ${{ vars.REGISTRY != '' && vars.REGISTRY || '' }}
+  BUILD_AMD64: ${{ vars.BUILD_AMD64 != 'false' && 'true' || 'false' }}
   BUILD_ARM64: ${{ vars.BUILD_ARM64 != 'false' && 'true' || 'false' }}
   DOCKERHUB_SLUG: arabcoders/ytptube
   GHCR_SLUG: ghcr.io/arabcoders/ytptube
@@ -32,8 +33,23 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
+  validate-build-config:
+    name: Validate Build Configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if at least one architecture is enabled
+        run: |
+          if [ "${{ vars.BUILD_AMD64 }}" = "false" ] && [ "${{ vars.BUILD_ARM64 }}" = "false" ]; then
+            echo "::error::Both BUILD_AMD64 and BUILD_ARM64 are disabled. At least one architecture must be enabled."
+            exit 1
+          fi
+          echo "Build configuration is valid"
+          echo "BUILD_AMD64: ${{ vars.BUILD_AMD64 != 'false' && 'true' || 'false' }}"
+          echo "BUILD_ARM64: ${{ vars.BUILD_ARM64 != 'false' && 'true' || 'false' }}"
+
   test:
     name: Run Tests & Prepare Frontend
+    needs: [validate-build-config]
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -121,25 +137,115 @@ jobs:
           path: ui/exported/
           retention-days: 1
 
-  docker-build-arch:
-    name: Build Container (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
-    needs: [test]
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            arch: amd64
-          - os: ubuntu-latest
-            arch: arm64
-            enabled: ${{ vars.BUILD_ARM64 != 'false' }}
-        exclude:
-          - enabled: false
+  docker-build-amd64:
+    name: Build Container (amd64)
+    runs-on: ubuntu-latest
+    needs: [test, validate-build-config]
+    if: vars.BUILD_AMD64 != 'false'
     permissions:
       packages: write
       contents: write
     env:
-      ARCH: ${{ matrix.arch }}
+      ARCH: amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        if: env.REGISTRY == ''
+        with:
+          name: frontend-build
+          path: ui/exported/
+
+      - name: Update app/library/version.py
+        run: |
+          VERSION="${GITHUB_REF##*/}"
+          SHA=$(git rev-parse HEAD)
+          DATE=$(date -u +"%Y%m%d")
+          BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | sed 's/\//-/g')
+
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
+          echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
+          echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+
+          sed -i \
+            -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
+            -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
+            -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
+            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
+            app/library/version.py
+
+          echo "Updated version info:"
+          cat app/library/version.py
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            name=${{ env.DOCKERHUB_SLUG }},enable=${{ env.REGISTRY == '' }}
+            name=${{ env.GHCR_SLUG }},enable=${{ env.REGISTRY == '' }}
+            name=${{ env.REGISTRY }}/${{ github.repository }},enable=${{ env.REGISTRY != '' }}
+          flavor: |
+            latest=false
+            suffix=-${{ env.ARCH }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Login to Private Registry
+        uses: docker/login-action@v3
+        if: env.REGISTRY != ''
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GIT_TOKEN && secrets.GIT_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        if: env.REGISTRY == ''
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        if: env.REGISTRY == ''
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/${{ env.ARCH }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+          cache-from: type=gha,scope=${{ github.workflow }}
+          provenance: true
+
+  docker-build-arm64:
+    name: Build Container (arm64)
+    runs-on: ubuntu-latest
+    needs: [test, validate-build-config]
+    if: vars.BUILD_ARM64 != 'false'
+    permissions:
+      packages: write
+      contents: write
+    env:
+      ARCH: arm64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -231,7 +337,12 @@ jobs:
 
   docker-publish-manifest:
     name: Publish multi-arch manifest
-    needs: [docker-build-arch]
+    needs: [docker-build-amd64, docker-build-arm64]
+    if: |
+      always() &&
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      (contains(needs.*.result, 'success'))
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -279,18 +390,26 @@ jobs:
         shell: bash
         run: |
           IFS=$'\n'
+          BUILD_AMD64="${{ env.BUILD_AMD64 }}"
+          BUILD_ARM64="${{ env.BUILD_ARM64 }}"
+
           for tag in $(echo "${{ steps.meta.outputs.tags }}"); do
             echo "Creating manifest for ${tag}"
-            if [ "${{ env.BUILD_ARM64 }}" = "true" ]; then
-              docker buildx imagetools create \
-                --tag "$tag" \
-                "${tag}-amd64" \
-                "${tag}-arm64"
-            else
-              docker buildx imagetools create \
-                --tag "$tag" \
-                "${tag}-amd64"
+
+            IMAGES=""
+            if [ "$BUILD_AMD64" = "true" ]; then
+              IMAGES="${IMAGES} ${tag}-amd64"
             fi
+            if [ "$BUILD_ARM64" = "true" ]; then
+              IMAGES="${IMAGES} ${tag}-arm64"
+            fi
+
+            if [ -z "$IMAGES" ]; then
+              echo "::error::No architectures enabled for manifest creation"
+              exit 1
+            fi
+
+            docker buildx imagetools create --tag "$tag" $IMAGES
           done
 
       - name: Overwrite GitHub release notes
@@ -322,7 +441,7 @@ jobs:
             const commits = comparison.commits.filter(c => 1 === c.parents.length);
 
             const changelog = commits.map(
-              c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]} by @${c.commit.author.name}`
+              c => `- ${c.sha.substring(0, 7)} ${c.commit.message.split('\n')[0]}`
             ).join('\n');
 
             if (!changelog) {
