@@ -285,8 +285,8 @@
         @close="() => emitter('clear_search')" v-if="query">
         <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
       </Message>
-      <Message message_class="is-info" title="No items" icon="fas fa-clock" :useClose="false" :newStyle="true"
-        v-else>
+      <Message message_class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false"
+        :newStyle="true" v-else>
         <p>The download queue is empty.</p>
       </Message>
     </div>

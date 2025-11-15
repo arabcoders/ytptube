@@ -417,7 +417,7 @@
         <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
       </Message>
       <Message message_class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
-        v-else-if="socket.isConnected && paginationInfo.total" :new-style="true">
+        v-else-if="socket.isConnected" :new-style="true">
         <p>Your download history is empty. Once queued downloads are completed, they will appear here.</p>
       </Message>
     </div>
