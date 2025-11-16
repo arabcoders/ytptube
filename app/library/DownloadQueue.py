@@ -869,7 +869,7 @@ class DownloadQueue(metaclass=Singleton):
             dict: The status of the operation.
 
         """
-        status: dict[str, str] = {"status": "ok"}
+        status: dict[str, str] = {}
 
         for id in ids:
             try:
@@ -917,13 +917,13 @@ class DownloadQueue(metaclass=Singleton):
 
         Args:
             ids (list): The list of ids to clear.
-            remove_file (bool): True to remove the file, False otherwise. Default is False.
+            remove_file (bool): Only considered if config.remove_files is True.
 
         Returns:
             dict: The status of the operation.
 
         """
-        status: dict[str, str] = {"status": "ok"}
+        status: dict[str, str] = {}
 
         for id in ids:
             try:
@@ -938,11 +938,12 @@ class DownloadQueue(metaclass=Singleton):
             removed_files = 0
             filename: str = ""
 
-            LOG.debug(
-                f"{remove_file=} {itemRef} - Removing local files: {self.config.remove_files}, {item.info.status=}"
-            )
+            if self.config.remove_files is not True:
+                remove_file = False
 
-            if remove_file and self.config.remove_files and "finished" == item.info.status:
+            LOG.debug(f"{remove_file=} {itemRef} - Removing local files: {item.info.status=}")
+
+            if remove_file and "finished" == item.info.status:
                 filename = str(item.info.filename)
                 if item.info.folder:
                     filename = f"{item.info.folder}/{item.info.filename}"

@@ -69,14 +69,14 @@
       <ul>
         <li :class="{ 'is-active': activeTab === 'queue' }">
           <a @click="setActiveTab('queue')">
-            <span class="icon is-small"><i class="fas fa-clock" aria-hidden="true"></i></span>
-            <span>Queue</span>
+            <span class="icon is-small"><i class="fas fa-download" /></span>
+            <span>Downloads</span>
             <span class="tag is-info is-rounded is-bold ml-2">{{ queueCount }}</span>
           </a>
         </li>
         <li :class="{ 'is-active': activeTab === 'history' }">
           <a @click="setActiveTab('history')">
-            <span class="icon is-small"><i class="fas fa-history" aria-hidden="true"></i></span>
+            <span class="icon is-small"><i class="fas fa-history" /></span>
             <span>History</span>
             <span class="tag is-primary is-rounded is-bold ml-2">{{ historyCount }}</span>
           </a>
@@ -204,7 +204,7 @@ const pauseDownload = () => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.html_message = `
   <span class="icon-text">
-    <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
+    <span class="icon"><i class="fa-solid fa-exclamation-triangle"/></span>
     <span class="is-bold">Pause All non-active downloads?</span>
   </span>
   <br>

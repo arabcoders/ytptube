@@ -252,7 +252,7 @@ def timed_lru_cache(ttl_seconds: int, max_size: int = 128):
 
 def calc_download_path(base_path: str | Path, folder: str | None = None, create_path: bool = True) -> str:
     """
-    Calculates download path and prevents folder traversal.
+    Calculates download path.
 
     Args:
         base_path (str): Base download path.

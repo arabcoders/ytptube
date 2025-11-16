@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.library.config import Config
+from app.library.DataStore import StoreType
 from app.library.Download import Download
 from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
@@ -16,6 +17,7 @@ from app.library.router import route
 
 if TYPE_CHECKING:
     from library.Download import Download
+
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -39,6 +41,8 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
         page (int): Page number for pagination (1-indexed). Only used when type != "all"
         per_page (int): Items per page. Default: 50, Max: 1000. Only used when type != "all"
         order (str): Sort order - "ASC" or "DESC". Default: "DESC". Only used when type != "all"
+        status (str): Filter by status. Use "!status" to exclude a status. Only used when type != "all"
+                      Examples: "?status=finished" or "?status=!finished"
 
     """
     from app.library.DataStore import StoreType
@@ -88,7 +92,12 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
             status=web.HTTPBadRequest.status_code,
         )
 
-    items, total, current_page, total_pages = ds.get_items_paginated(page=page, per_page=per_page, order=order)
+    # Parse status filter
+    status_filter = request.query.get("status", None)
+
+    items, total, current_page, total_pages = ds.get_items_paginated(
+        page=page, per_page=per_page, order=order, status_filter=status_filter
+    )
     data = {
         "pagination": {
             "page": current_page,
@@ -104,10 +113,10 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
     return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("DELETE", "api/history/", "item_delete")
-async def item_delete(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+@route("DELETE", "api/history/", "items_delete")
+async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
     """
-    Delete an item from the queue.
+    Delete items from the queue or history.
 
     Args:
         request (Request): The request object.
@@ -117,17 +126,77 @@ async def item_delete(request: Request, queue: DownloadQueue, encoder: Encoder) 
     Returns:
         Response: The response object.
 
+    Request Body:
+        type (str): "queue" or "done"
+        status (str, optional): Filter by status (e.g., "finished" or "!finished")
+        ids (list[str], optional): Specific IDs to delete (if provided, ignores status filter)
+        remove_file (bool, optional): Whether to remove files. Default: True
+
     """
     data = await request.json()
-    ids = data.get("ids")
-    where = data.get("where")
-    if not ids or where not in ["queue", "done"]:
-        return web.json_response(data={"error": "ids and where are required."}, status=web.HTTPBadRequest.status_code)
 
+    ids = data.get("ids")
     remove_file: bool = bool(data.get("remove_file", True))
+    _type = data.get("type", data.get("where"))
+
+    if not _type:
+        return web.json_response(data={"error": "Type is required."}, status=web.HTTPBadRequest.status_code)
+
+    if _type not in [StoreType.QUEUE.value, StoreType.HISTORY.value]:
+        return web.json_response(
+            data={"error": f"type must be '{StoreType.QUEUE.value}' or '{StoreType.HISTORY.value}'."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    ds = queue.queue if _type == StoreType.QUEUE.value else queue.done
+
+    if ids:
+        return web.json_response(
+            data={
+                "items": await (
+                    queue.cancel(ids) if _type == StoreType.QUEUE.value else queue.clear(ids, remove_file=remove_file)
+                ),
+                "deleted": len(ids),
+            },
+            status=web.HTTPOk.status_code,
+            dumps=encoder.encode,
+        )
+
+    status_filter = data.get("status")
+    if not status_filter:
+        return web.json_response(
+            data={"error": "either 'ids' or 'status' filter is required."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    items_to_delete = []
+    page = 1
+    per_page = 1000
+
+    while True:
+        items, _, current_page, total_pages = ds.get_items_paginated(
+            page=page, per_page=per_page, order="DESC", status_filter=status_filter
+        )
+
+        items_to_delete.extend([item_id for item_id, _ in items])
+
+        if current_page >= total_pages:
+            break
+
+        page += 1
+
+    if not items_to_delete:
+        return web.json_response(data={"error": "No items matched the filter."}, status=web.HTTPBadRequest.status_code)
 
     return web.json_response(
-        data=await (queue.cancel(ids) if where == "queue" else queue.clear(ids, remove_file=remove_file)),
+        data={
+            "items": await (
+                queue.cancel(items_to_delete)
+                if _type == StoreType.QUEUE.value
+                else queue.clear(items_to_delete, remove_file=remove_file)
+            ),
+            "deleted": len(items_to_delete),
+        },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
