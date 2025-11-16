@@ -1,9 +1,44 @@
 [
   {
-    "tag": "Unreleased (83a416ec)",
-    "full_sha": "83a416ec4c13c5c64f2ae04fa6a2a72f25c8ccb2",
-    "date": "2025-11-15T19:12:25+00:00",
+    "tag": "Unreleased (d13ac834)",
+    "full_sha": "d13ac83425e83d05b99d4264062cacdaebef6955",
+    "date": "2025-11-16T17:07:50+00:00",
     "commits": [
+      {
+        "sha": "6d2deedc",
+        "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
+        "message": "Refactor: change how clear in/completed buttons behave due to changes in how we load history now.",
+        "author": "arabcoders",
+        "date": "2025-11-16T16:17:33+00:00"
+      },
+      {
+        "sha": "46fb9432",
+        "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
+        "message": "Fix: change icons and show no items in history.",
+        "author": "arabcoders",
+        "date": "2025-11-15T21:46:02+00:00"
+      },
+      {
+        "sha": "2274af0a",
+        "full_sha": "2274af0a2b468a4bc513f17acb61964190ee4e2f",
+        "message": "Fix: build #2",
+        "author": "arabcoders",
+        "date": "2025-11-15T20:21:45+00:00"
+      },
+      {
+        "sha": "abe5a5f5",
+        "full_sha": "abe5a5f571aaceed62c56dd4963ce9c359f36ef9",
+        "message": "Fix: build",
+        "author": "arabcoders",
+        "date": "2025-11-15T20:12:34+00:00"
+      },
+      {
+        "sha": "486888ae",
+        "full_sha": "486888aea820a4d195d0684ecb01b789e65526c1",
+        "message": "Refactor: make it possible to disable ARM builds in private repos",
+        "author": "arabcoders",
+        "date": "2025-11-15T19:53:04+00:00"
+      },
       {
         "sha": "9ea8b639",
         "full_sha": "9ea8b639f0033346741f9b5b672c8d1cbe63e5a5",
@@ -94,48 +129,6 @@
         "message": "Feat: add paginated history endpoint",
         "author": "arabcoders",
         "date": "2025-11-13T14:15:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
-    "date": "2025-11-16T16:17:33+00:00",
-    "commits": [
-      {
-        "sha": "6d2deedc",
-        "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
-        "message": "Refactor: change how clear in/completed buttons behave due to changes in how we load history now.",
-        "author": "arabcoders",
-        "date": "2025-11-16T16:17:33+00:00"
-      },
-      {
-        "sha": "46fb9432",
-        "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
-        "message": "Fix: change icons and show no items in history.",
-        "author": "arabcoders",
-        "date": "2025-11-15T21:46:02+00:00"
-      },
-      {
-        "sha": "2274af0a",
-        "full_sha": "2274af0a2b468a4bc513f17acb61964190ee4e2f",
-        "message": "Fix: build #2",
-        "author": "arabcoders",
-        "date": "2025-11-15T20:21:45+00:00"
-      },
-      {
-        "sha": "abe5a5f5",
-        "full_sha": "abe5a5f571aaceed62c56dd4963ce9c359f36ef9",
-        "message": "Fix: build",
-        "author": "arabcoders",
-        "date": "2025-11-15T20:12:34+00:00"
-      },
-      {
-        "sha": "486888ae",
-        "full_sha": "486888aea820a4d195d0684ecb01b789e65526c1",
-        "message": "Refactor: make it possible to disable ARM builds in private repos",
-        "author": "arabcoders",
-        "date": "2025-11-15T19:53:04+00:00"
       }
     ]
   },
