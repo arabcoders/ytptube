@@ -250,3 +250,134 @@ class TestDataStorePagination:
             assert total_pages == 1
 
             conn.close()
+
+    def test_pagination_status_filter_include(self, temp_db):
+        """Test pagination with status filter (inclusion)."""
+        # Add some items with different status values
+        item_data_pending = {
+            "url": "https://example.com/pending",
+            "title": "Pending Video",
+            "id": "pending-video",
+            "folder": "/downloads",
+            "status": "pending",
+        }
+        item_data_downloading = {
+            "url": "https://example.com/downloading",
+            "title": "Downloading Video",
+            "id": "downloading-video",
+            "folder": "/downloads",
+            "status": "downloading",
+        }
+
+        temp_db.execute(
+            'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+            (
+                "pending-id",
+                str(StoreType.HISTORY),
+                item_data_pending["url"],
+                json.dumps(item_data_pending),
+                datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        temp_db.execute(
+            'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+            (
+                "downloading-id",
+                str(StoreType.HISTORY),
+                item_data_downloading["url"],
+                json.dumps(item_data_downloading),
+                datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        temp_db.commit()
+
+        datastore = DataStore(type=StoreType.HISTORY, connection=temp_db)
+
+        # Filter for finished items only
+        items, total, _page, _total_pages = datastore.get_items_paginated(
+            page=1, per_page=50, status_filter="finished"
+        )
+
+        assert len(items) == 50  # First page of finished items
+        assert total == 100  # Only 100 finished items in fixture
+        for _item_id, item in items:
+            assert item.status == "finished"
+
+        # Filter for pending items only
+        items, total, _page, _total_pages = datastore.get_items_paginated(
+            page=1, per_page=50, status_filter="pending"
+        )
+
+        assert len(items) == 1
+        assert total == 1
+        assert items[0][1].status == "pending"
+
+    def test_pagination_status_filter_exclude(self, temp_db):
+        """Test pagination with status filter (exclusion)."""
+        # Add some items with different status values
+        item_data_pending = {
+            "url": "https://example.com/pending2",
+            "title": "Pending Video 2",
+            "id": "pending-video-2",
+            "folder": "/downloads",
+            "status": "pending",
+        }
+        item_data_error = {
+            "url": "https://example.com/error",
+            "title": "Error Video",
+            "id": "error-video",
+            "folder": "/downloads",
+            "status": "error",
+        }
+
+        temp_db.execute(
+            'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+            (
+                "pending-id-2",
+                str(StoreType.HISTORY),
+                item_data_pending["url"],
+                json.dumps(item_data_pending),
+                datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        temp_db.execute(
+            'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
+            (
+                "error-id",
+                str(StoreType.HISTORY),
+                item_data_error["url"],
+                json.dumps(item_data_error),
+                datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+            ),
+        )
+        temp_db.commit()
+
+        datastore = DataStore(type=StoreType.HISTORY, connection=temp_db)
+
+        # Exclude finished items
+        items, total, _page, _total_pages = datastore.get_items_paginated(
+            page=1, per_page=50, status_filter="!finished"
+        )
+
+        assert total == 2  # Only 2 non-finished items
+        assert len(items) == 2
+        for _item_id, item in items:
+            assert item.status != "finished"
+
+        # Verify we have pending and error
+        statuses = {item.status for _, item in items}
+        assert statuses == {"pending", "error"}
+
+    def test_pagination_status_filter_none_matching(self, temp_db):
+        """Test pagination with status filter that matches no items."""
+        datastore = DataStore(type=StoreType.HISTORY, connection=temp_db)
+
+        # Filter for a status that doesn't exist
+        items, total, page, total_pages = datastore.get_items_paginated(
+            page=1, per_page=50, status_filter="nonexistent"
+        )
+
+        assert len(items) == 0
+        assert total == 0
+        assert page == 1
+        assert total_pages == 1

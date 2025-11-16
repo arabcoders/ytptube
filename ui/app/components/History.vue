@@ -655,59 +655,38 @@ const deleteSelectedItems = async () => {
     toast.error('No items selected.')
     return
   }
+
   let msg = `${config.app.remove_files ? 'Remove' : 'Clear'} '${selectedElms.value.length}' items?`
   if (true === config.app.remove_files) {
     msg += ' This will remove any associated files if they exists.'
   }
+
   if (false === (await box.confirm(msg))) {
     return
   }
-  for (const key in selectedElms.value) {
-    const item_id = selectedElms.value[key]
-    if (!item_id) {
-      continue
-    }
-    const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
-    socket.emit('item_delete', {
-      id: item._id,
-      remove_file: config.app.remove_files,
-    })
-  }
+
+  await stateStore.deleteItems('history', {
+    ids: [...selectedElms.value],
+    removeFile: config.app.remove_files
+  })
   selectedElms.value = []
 }
 
 const clearCompleted = async () => {
-  const msg = 'Clear all completed downloads?'
+  const msg = 'Clear all completed downloads? No files will be removed.'
   if (false === (await box.confirm(msg))) {
     return
   }
-  for (const key in stateStore.history) {
-    if ('finished' === ag(stateStore.get('history', key, {} as StoreItem), 'status')) {
-      socket.emit('item_delete', { id: stateStore.history[key]?._id, remove_file: false, })
-      if (selectedElms.value.includes(stateStore.history[key]?._id || '')) {
-        selectedElms.value = selectedElms.value.filter(i => i !== stateStore.history[key]?._id)
-      }
-    }
-  }
+  selectedElms.value = []
+  await stateStore.deleteItems('history', { status: 'finished', removeFile: false })
 }
 
 const clearIncomplete = async () => {
   if (false === (await box.confirm('Clear all in-complete downloads?'))) {
     return
   }
-  for (const key in stateStore.history) {
-    if ((stateStore.history[key] as StoreItem).status !== 'finished') {
-      socket.emit('item_delete', {
-        id: stateStore.history[key]?._id,
-        remove_file: false,
-      })
-
-      if (selectedElms.value.includes(stateStore.history[key]?._id || '')) {
-        selectedElms.value = selectedElms.value.filter(i => i !== stateStore.history[key]?._id)
-      }
-
-    }
-  }
+  selectedElms.value = []
+  await stateStore.deleteItems('history', { status: '!finished', removeFile: false })
 }
 
 const setIcon = (item: StoreItem) => {

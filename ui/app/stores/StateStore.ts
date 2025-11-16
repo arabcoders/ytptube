@@ -48,14 +48,16 @@ export const useStateStore = defineStore('state', () => {
   }
 
   const remove = (type: StateType, key: KeyType): void => {
+    if (!state[type][key]) {
+      return
+    }
+
     if ('history' === type && state.pagination.total > 0) {
       state.pagination.total -= 1
     }
 
-    if (state[type][key]) {
-      const { [key]: _, ...rest } = state[type]
-      state[type] = rest
-    }
+    const { [key]: _, ...rest } = state[type]
+    state[type] = rest
   }
 
   const get = (type: StateType, key: KeyType, defaultValue: StoreItem | null = null): StoreItem | null => {
@@ -98,7 +100,7 @@ export const useStateStore = defineStore('state', () => {
     return Object.keys(state[type]).length
   }
 
-  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC', append: boolean = false): Promise<void> => {
+  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC', append: boolean = false, status?: string): Promise<void> => {
     if ('history' !== type) {
       throw new Error('Pagination is only supported for history type');
     }
@@ -106,7 +108,18 @@ export const useStateStore = defineStore('state', () => {
     state.pagination.isLoading = true
 
     try {
-      const search = new URLSearchParams({ type: 'done', page: page.toString(), per_page: per_page.toString(), order });
+      const params: Record<string, string> = {
+        type: 'done',
+        page: page.toString(),
+        per_page: per_page.toString(),
+        order
+      }
+
+      if (status) {
+        params.status = status
+      }
+
+      const search = new URLSearchParams(params)
 
       const response = await request(`/api/history?${search}`)
       const data = await response.json()
@@ -165,6 +178,69 @@ export const useStateStore = defineStore('state', () => {
 
   const setHistoryCount = (count: number) => state.pagination.total = count
 
+  /**
+   * Delete items by specific IDs or status filter.
+   *
+   * @param type - The store type ('queue' or 'history')
+   * @param options - Delete options
+   * @param options.ids - Array of item IDs to delete (if provided, status is ignored)
+   * @param options.status - Status filter (e.g., 'finished' or '!finished')
+   * @param options.removeFile - Whether to remove files from disk (default: true)
+   *
+   * @returns Number of items deleted
+   */
+  const deleteItems = async (
+    type: StateType,
+    options: { ids?: string[]; status?: string; removeFile?: boolean } = {}
+  ): Promise<number> => {
+    const { ids, status, removeFile = true } = options
+
+    if (!ids && !status) {
+      throw new Error('Either ids or status filter must be provided')
+    }
+
+    try {
+      const body: Record<string, unknown> = {
+        type: type === 'queue' ? 'queue' : 'done',
+        remove_file: removeFile
+      }
+
+      if (ids) {
+        body.ids = ids
+      }
+
+      if (status) {
+        body.status = status
+      }
+
+      const response = await request('/api/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      const result = await response.json() as {
+        items: Record<string, string>,
+        deleted: number,
+        error?: string,
+        message?: string,
+      }
+
+      if (result.error || result.message || !response.ok) {
+        throw new Error(result.error || result.message || 'Failed to delete items.')
+      }
+
+      for (const id of Object.keys(result.items)) {
+        remove(type, id)
+      }
+
+      return result.deleted
+    } catch (error) {
+      console.error(`Failed to delete items:`, error)
+      throw error
+    }
+  }
+
   return {
     ...toRefs(state),
     add,
@@ -182,5 +258,6 @@ export const useStateStore = defineStore('state', () => {
     reloadCurrentPage,
     getPagination,
     setHistoryCount,
+    deleteItems,
   }
 })

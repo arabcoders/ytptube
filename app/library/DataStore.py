@@ -215,6 +215,7 @@ class DataStore:
         page: int = 1,
         per_page: int = 50,
         order: str = "DESC",
+        status_filter: str | None = None,
     ) -> tuple[list[tuple[str, ItemDTO]], int, int, int]:
         """
         Get paginated items from the datastore.
@@ -223,6 +224,8 @@ class DataStore:
             page (int): The page number (1-indexed). Defaults to 1.
             per_page (int): Number of items per page. Defaults to 50.
             order (str): Sort order - 'ASC' or 'DESC'. Defaults to 'DESC' (newest first).
+            status_filter (str | None): Optional status filter. Can be a status value (e.g., 'finished')
+                to include only that status, or prefixed with '!' (e.g., '!finished') to exclude that status.
 
         Returns:
             tuple[list[tuple[str, ItemDTO]], int, int, int]: A tuple containing:
@@ -250,7 +253,26 @@ class DataStore:
 
         order = "ASC" if order == "ASC" else "DESC"
 
-        total_items: int = self.get_total_count()
+        # Build SQL query with status filter if provided
+        where_clauses = ['"type" = ?']
+        query_params: list = [str(self._type)]
+
+        if status_filter:
+            # Check if it's an exclusion filter (starts with !)
+            if status_filter.startswith("!"):
+                status_value = status_filter[1:]
+                where_clauses.append("json_extract(data, '$.status') != ?")
+                query_params.append(status_value)
+            else:
+                where_clauses.append("json_extract(data, '$.status') = ?")
+                query_params.append(status_filter)
+
+        where_clause = " AND ".join(where_clauses)
+
+        # Get total count with filter
+        count_query = f'SELECT COUNT(*) as count FROM "history" WHERE {where_clause}'  # noqa: S608
+        count_result = self._connection.execute(count_query, tuple(query_params)).fetchone()
+        total_items: int = count_result["count"] if count_result else 0
         total_pages: int = (total_items + per_page - 1) // per_page if total_items > 0 else 1
 
         # Ensure page is within valid range.
@@ -261,9 +283,11 @@ class DataStore:
 
         items: list[tuple[str, ItemDTO]] = []
 
+        query_params.extend([per_page, offset])
+
         cursor = self._connection.execute(
-            f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? ORDER BY "created_at" {order} LIMIT ? OFFSET ?',  # noqa: S608
-            (str(self._type), per_page, offset),
+            f'SELECT "id", "data", "created_at" FROM "history" WHERE {where_clause} ORDER BY "created_at" {order} LIMIT ? OFFSET ?',  # noqa: S608
+            tuple(query_params),
         )
 
         for row in cursor:

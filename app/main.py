@@ -50,6 +50,7 @@ class Main:
 
         self._check_folders()
 
+        LOG.debug(f"DB Version: '{caribou.get_version(self._config.db_file)}'.")
         caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")
 
         connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
