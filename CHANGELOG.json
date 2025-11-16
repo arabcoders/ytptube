@@ -99,9 +99,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
-    "date": "2025-11-15T21:46:02+00:00",
+    "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
+    "date": "2025-11-16T16:17:33+00:00",
     "commits": [
+      {
+        "sha": "6d2deedc",
+        "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
+        "message": "Refactor: change how clear in/completed buttons behave due to changes in how we load history now.",
+        "author": "arabcoders",
+        "date": "2025-11-16T16:17:33+00:00"
+      },
       {
         "sha": "46fb9432",
         "full_sha": "46fb943243b623e9a1f596aa9e22fd51f1e8be76",
