@@ -317,17 +317,13 @@ def extract_info(
     """
     params: dict = {
         **config,
+        "simulate": True,
         "color": "no_color",
         "extract_flat": True,
         "skip_download": True,
         "ignoreerrors": True,
         "ignore_no_formats_error": True,
     }
-
-    # Remove keys that are not needed for info extraction.
-    keys_to_remove: list = [key for key in params if str(key).startswith("write") or key in ["postprocessors"]]
-    for key in keys_to_remove:
-        params.pop(key, None)
 
     if debug:
         params["verbose"] = True
@@ -886,7 +882,9 @@ def move_file(old_path: Path, target_dir: Path) -> tuple[Path, list[tuple[Path, 
                         try:
                             rolled_back_new.rename(rolled_back_old)
                         except OSError:
-                            LOG.error(f"Failed to rollback sidecar move from '{rolled_back_new}' to '{rolled_back_old}'")
+                            LOG.error(
+                                f"Failed to rollback sidecar move from '{rolled_back_new}' to '{rolled_back_old}'"
+                            )
                 except OSError:
                     LOG.error(f"Failed to rollback main file move from '{moved_main}' to '{old_path}'")
                 raise
