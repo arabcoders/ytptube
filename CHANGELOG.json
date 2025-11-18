@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (70d015a2)",
-    "full_sha": "70d015a2a5192e99e5f87adb7d621ba6d4ea6d88",
-    "date": "2025-11-18T16:39:33+00:00",
+    "tag": "Unreleased (89a92028)",
+    "full_sha": "89a92028e0c49e35855ca997db5e0599c5b763ab",
+    "date": "2025-11-18T19:56:14+00:00",
     "commits": [
+      {
+        "sha": "bb59e255",
+        "full_sha": "bb59e25580a38819276eb42a26311d607ee4277e",
+        "message": "Fix: possible fix for not being able to download subtitles.",
+        "author": "arabcoders",
+        "date": "2025-11-18T18:31:08+00:00"
+      },
       {
         "sha": "f8de9b5b",
         "full_sha": "f8de9b5b7a10a3d4c745a985da8c57737036a13e",
@@ -150,20 +157,6 @@
         "message": "Feat: add paginated history endpoint",
         "author": "arabcoders",
         "date": "2025-11-13T14:15:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "bb59e25580a38819276eb42a26311d607ee4277e",
-    "date": "2025-11-18T18:31:08+00:00",
-    "commits": [
-      {
-        "sha": "bb59e255",
-        "full_sha": "bb59e25580a38819276eb42a26311d607ee4277e",
-        "message": "Fix: possible fix for not being able to download subtitles.",
-        "author": "arabcoders",
-        "date": "2025-11-18T18:31:08+00:00"
       }
     ]
   },
