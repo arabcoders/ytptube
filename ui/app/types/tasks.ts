@@ -10,6 +10,7 @@ type task_item = {
   in_progress?: boolean,
   auto_start?: boolean,
   handler_enabled?: boolean,
+  enabled?: boolean,
 }
 
 type exported_task = task_item & { _type: string, _version: string }

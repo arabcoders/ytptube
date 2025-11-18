@@ -67,6 +67,11 @@
           "type": "boolean",
           "description": "Controls whether the matched handler remains enabled for this task.",
           "default": true
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Controls whether the task is enabled and will be executed by the scheduler.",
+          "default": true
         }
       },
       "examples": [

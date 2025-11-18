@@ -105,6 +105,46 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
+                  <label class="label is-inline" for="enabled">
+                    <span class="icon"><i class="fa-solid fa-power-off" /></span>
+                    Enabled
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="enabled" class="is-unselectable">
+                      {{ form.enabled ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Whether the task is enabled.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="auto_start">
+                    <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+                    Auto Start
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="auto_start" type="checkbox" v-model="form.auto_start" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="auto_start" class="is-unselectable">
+                      {{ form.auto_start ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Whether to automatically queue and start the download task.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
                   <label class="label is-inline" for="preset">
                     <span class="icon"><i class="fa-solid fa-sliders" /></span>
                     Preset
@@ -197,27 +237,6 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="auto_start">
-                    <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-                    Auto Start
-                  </label>
-                  <div class="control is-unselectable">
-                    <input id="auto_start" type="checkbox" v-model="form.auto_start" :disabled="addInProgress"
-                      class="switch is-success" />
-                    <label for="auto_start" class="is-unselectable">
-                      {{ form.auto_start ? 'Yes' : 'No' }}
-                    </label>
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Whether to automatically start downloading or just queue them in paused
-                      state.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
                   <label class="label is-inline" for="handler_enabled">
                     <span class="icon"><i class="fa-solid fa-rss" /></span>
                     Enable Handler
@@ -231,8 +250,8 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Some URLs like YouTube channels/playlists can be monitored using RSS feed,
-                      this option works regardless of the timer being set or not.</span>
+                    <span class="is-bold">Some URLs have special handlers to monitor for new content. Like YouTube
+                      channels/playlists.</span>
                   </span>
                 </div>
               </div>
@@ -302,7 +321,7 @@
     </div>
 
     <div class="column is-12">
-      <Message title="Tips" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
+      <Message class="is-info" :newStyle="true">
         <span>
           <ul>
             <li><strong>YouTube RSS:</strong> Use <code>channel_id</code> or <code>playlist_id</code> URLs. Other link
@@ -386,6 +405,10 @@ onMounted(() => {
     form.handler_enabled = true
   }
 
+  if (typeof form.enabled === 'undefined' || null === form.enabled) {
+    form.enabled = true
+  }
+
 })
 
 const checkInfo = async (): Promise<void> => {
@@ -452,6 +475,8 @@ const importItem = async (): Promise<void> => {
     form.folder = item.folder ?? form.folder
     form.cli = item.cli ?? form.cli
     form.auto_start = item.auto_start ?? true
+    form.handler_enabled = item.handler_enabled ?? true
+    form.enabled = item.enabled ?? true
 
     if (item.preset) {
       const preset = config.presets.find(p => p.name === item.preset)
