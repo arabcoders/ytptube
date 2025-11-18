@@ -133,6 +133,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb",
+    "date": "2025-11-18T16:29:26+00:00",
+    "commits": [
+      {
+        "sha": "a3116110",
+        "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb",
+        "message": "Fix: add permissions to new ci",
+        "author": "arabcoders",
+        "date": "2025-11-18T16:29:26+00:00"
+      },
+      {
+        "sha": "793b67c1",
+        "full_sha": "793b67c13554460fb9e8c64e3cb6274e2ee38381",
+        "message": "Feat: Make it possible to enable/disable task. Ref #493",
+        "author": "arabcoders",
+        "date": "2025-11-18T16:27:19+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.5",
     "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
     "date": "2025-11-12T21:21:35+00:00",

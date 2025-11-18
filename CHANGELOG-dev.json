@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251116-6d2deedc",
-        "date": "2025-11-16T16:17:33+00:00",
+        "tag": "dev-20251118-a3116110",
+        "date": "2025-11-18T16:29:26+00:00",
         "commits": [
+            {
+                "sha": "a3116110",
+                "message": "Fix: add permissions to new ci",
+                "author": "arabcoders",
+                "date": "2025-11-18T16:29:26+00:00",
+                "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb"
+            },
+            {
+                "sha": "793b67c1",
+                "message": "Feat: Make it possible to enable/disable task. Ref #493",
+                "author": "arabcoders",
+                "date": "2025-11-18T16:27:19+00:00",
+                "full_sha": "793b67c13554460fb9e8c64e3cb6274e2ee38381"
+            },
             {
                 "sha": "6d2deedc",
                 "message": "Refactor: change how clear in/completed buttons behave due to changes in how we load history now.",
@@ -3070,7 +3084,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311"
+        "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb"
     },
     {
         "tag": "dev-20250616-c07465a6",
