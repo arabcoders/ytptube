@@ -1,9 +1,30 @@
 [
   {
-    "tag": "Unreleased (d13ac834)",
-    "full_sha": "d13ac83425e83d05b99d4264062cacdaebef6955",
-    "date": "2025-11-16T17:07:50+00:00",
+    "tag": "Unreleased (70d015a2)",
+    "full_sha": "70d015a2a5192e99e5f87adb7d621ba6d4ea6d88",
+    "date": "2025-11-18T16:39:33+00:00",
     "commits": [
+      {
+        "sha": "f8de9b5b",
+        "full_sha": "f8de9b5b7a10a3d4c745a985da8c57737036a13e",
+        "message": "Chore: followup to update API.md for new endpoint.",
+        "author": "arabcoders",
+        "date": "2025-11-18T16:36:21+00:00"
+      },
+      {
+        "sha": "a3116110",
+        "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb",
+        "message": "Fix: add permissions to new ci",
+        "author": "arabcoders",
+        "date": "2025-11-18T16:29:26+00:00"
+      },
+      {
+        "sha": "793b67c1",
+        "full_sha": "793b67c13554460fb9e8c64e3cb6274e2ee38381",
+        "message": "Feat: Make it possible to enable/disable task. Ref #493",
+        "author": "arabcoders",
+        "date": "2025-11-18T16:27:19+00:00"
+      },
       {
         "sha": "6d2deedc",
         "full_sha": "6d2deedc21b5623ef0b6c59ba850c366fd90d311",
@@ -129,27 +150,6 @@
         "message": "Feat: add paginated history endpoint",
         "author": "arabcoders",
         "date": "2025-11-13T14:15:05+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb",
-    "date": "2025-11-18T16:29:26+00:00",
-    "commits": [
-      {
-        "sha": "a3116110",
-        "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb",
-        "message": "Fix: add permissions to new ci",
-        "author": "arabcoders",
-        "date": "2025-11-18T16:29:26+00:00"
-      },
-      {
-        "sha": "793b67c1",
-        "full_sha": "793b67c13554460fb9e8c64e3cb6274e2ee38381",
-        "message": "Feat: Make it possible to enable/disable task. Ref #493",
-        "author": "arabcoders",
-        "date": "2025-11-18T16:27:19+00:00"
       }
     ]
   },

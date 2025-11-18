@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251118-a3116110",
-        "date": "2025-11-18T16:29:26+00:00",
+        "tag": "dev-20251118-f8de9b5b",
+        "date": "2025-11-18T16:36:21+00:00",
         "commits": [
+            {
+                "sha": "f8de9b5b",
+                "message": "Chore: followup to update API.md for new endpoint.",
+                "author": "arabcoders",
+                "date": "2025-11-18T16:36:21+00:00",
+                "full_sha": "f8de9b5b7a10a3d4c745a985da8c57737036a13e"
+            },
             {
                 "sha": "a3116110",
                 "message": "Fix: add permissions to new ci",
@@ -3084,7 +3091,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a311611024794e2955bf7b9e999a932e6ba384fb"
+        "full_sha": "f8de9b5b7a10a3d4c745a985da8c57737036a13e"
     },
     {
         "tag": "dev-20250616-c07465a6",
