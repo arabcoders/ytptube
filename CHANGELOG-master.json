@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251118-89a92028",
-        "date": "2025-11-18T19:56:14+00:00",
+        "tag": "master-20251119-c6d89dde",
+        "date": "2025-11-18T22:42:59+00:00",
         "commits": [
+            {
+                "sha": "1c2b6213",
+                "message": "Fix: tasks were shown as disabled even if they are actually enabled.",
+                "author": "arabcoders",
+                "date": "2025-11-18T20:29:39+00:00",
+                "full_sha": "1c2b62132473012961bb34bb4ac42801ca00c1a6"
+            },
             {
                 "sha": "bb59e255",
                 "message": "Fix: possible fix for not being able to download subtitles.",
@@ -3098,7 +3105,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "89a92028e0c49e35855ca997db5e0599c5b763ab"
+        "full_sha": "c6d89dde9c6772775fe01172a129c1ef1f18d8a1"
     },
     {
         "tag": "master-20250616-c07465a6",
