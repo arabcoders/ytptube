@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "1c2b62132473012961bb34bb4ac42801ca00c1a6",
+    "date": "2025-11-18T20:29:39+00:00",
+    "commits": [
+      {
+        "sha": "1c2b6213",
+        "full_sha": "1c2b62132473012961bb34bb4ac42801ca00c1a6",
+        "message": "Fix: tasks were shown as disabled even if they are actually enabled.",
+        "author": "arabcoders",
+        "date": "2025-11-18T20:29:39+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.6",
     "full_sha": "89a92028e0c49e35855ca997db5e0599c5b763ab",
     "date": "2025-11-18T19:56:14+00:00",
