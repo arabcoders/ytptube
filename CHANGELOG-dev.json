@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251118-1c2b6213",
-        "date": "2025-11-18T20:29:39+00:00",
+        "tag": "dev-20251119-32c5d4ed",
+        "date": "2025-11-18T23:52:32+00:00",
         "commits": [
+            {
+                "sha": "32c5d4ed",
+                "message": "Fix: regrassion in tasks due change in how we handle event loop",
+                "author": "arabcoders",
+                "date": "2025-11-18T23:52:32+00:00",
+                "full_sha": "32c5d4ed09545aa8e5c4694969ab376c2be95f2a"
+            },
             {
                 "sha": "1c2b6213",
                 "message": "Fix: tasks were shown as disabled even if they are actually enabled.",
@@ -3105,7 +3112,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1c2b62132473012961bb34bb4ac42801ca00c1a6"
+        "full_sha": "32c5d4ed09545aa8e5c4694969ab376c2be95f2a"
     },
     {
         "tag": "dev-20250616-c07465a6",
