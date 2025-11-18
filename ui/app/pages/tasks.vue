@@ -262,7 +262,7 @@
                 <span class="icon" v-if="item.in_progress">
                   <i class="fa-solid fa-spinner fa-spin has-text-info" />
                 </span>
-                <span class="tag is-danger is-small ml-1" v-if="!task.enabled">Disabled</span>
+                <span class="tag is-danger is-small ml-1" v-if="!item.enabled">Disabled</span>
               </div>
               <div class="card-header-icon">
                 <div class="field is-grouped">
