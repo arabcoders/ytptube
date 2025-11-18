@@ -302,14 +302,7 @@ class Tasks(metaclass=Singleton):
         "The tasks file."
         self._encoder: Encoder = encoder or Encoder()
         "The JSON encoder."
-        if loop:
-            self._loop: asyncio.AbstractEventLoop = loop
-        else:
-            try:
-                self._loop = asyncio.get_running_loop()
-            except RuntimeError:
-                self._loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(self._loop)
+        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
         "The event loop."
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         "The scheduler."
