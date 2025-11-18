@@ -37,6 +37,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
+    - [POST /api/tasks/{id}/toggle](#post-apitasksidtoggle)
     - [GET /api/task\_definitions/](#get-apitask_definitions)
     - [GET /api/task\_definitions/{identifier}](#get-apitask_definitionsidentifier)
     - [POST /api/task\_definitions/](#post-apitask_definitions)
@@ -732,7 +733,10 @@ Notes:
     "cookies": "",
     "config": {},
     "template": "...",
-    "folder": "..."
+    "folder": "...",
+    "auto_start": true,
+    "handler_enabled": true,
+    "enabled": true
   },
   {
     "url": "https://youtube.com/...",
@@ -753,7 +757,10 @@ If `id` or other fields are missing, they may be auto-generated or defaulted (e.
     "cookies": "...",
     "config": { ... },
     "template": "...",
-    "folder": "..."
+    "folder": "...",
+    "auto_start": true,
+    "handler_enabled": true,
+    "enabled": true
   }
   ...
 ]
@@ -913,6 +920,45 @@ or
 - `200 OK` - Metadata generated successfully
 - `400 Bad Request` - Missing task ID, invalid folder path, or failed to fetch metadata
 - `404 Not Found` - Task does not exist
+
+---
+
+### POST /api/tasks/{id}/toggle
+**Purpose**: Toggle the enabled/disabled status of a scheduled task.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+Returns the updated task object:
+```json
+{
+  "id": "task_id",
+  "name": "Task Name",
+  "url": "https://example.com/playlist",
+  "preset": "default",
+  "folder": "",
+  "template": "",
+  "cli": "",
+  "timer": "0 */6 * * *",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": false
+}
+```
+or
+```json
+{ "error": "Task 'task_id' does not exist." }
+```
+
+**Notes**:
+- When a task is disabled (`enabled: false`), it will not be executed by the scheduler
+
+**Status Codes**:
+- `200 OK` - Task status toggled successfully, returns updated task object
+- `400 Bad Request` - Missing task ID
+- `404 Not Found` - Task does not exist
+- `500 Internal Server Error` - Failed to update task status
 
 ---
 
