@@ -73,7 +73,7 @@
     </div>
 
     <div class="columns is-multiline is-mobile" v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
-      <div class="column" v-if="'list' !== display_style">
+      <div class="column">
         <button type="button" class="button is-fullwidth is-ghost is-inverted"
           @click="masterSelectAll = !masterSelectAll">
           <span class="icon-text is-block">
@@ -166,6 +166,15 @@
                         <span>{{ item.handler_enabled ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
+                      <span class="icon-text is-clickable" @click="toggleEnabled(item)"
+                        v-tooltip="'Click to ' + (item.enabled !== false ? 'disable' : 'enable') + ' task'">
+                        <span class="icon">
+                          <i class="fa-solid fa-power-off"
+                            :class="{ 'has-text-success': item.enabled !== false, 'has-text-danger': item.enabled === false }" />
+                        </span>
+                        <span>{{ item.enabled !== false ? 'Active' : 'Inactive' }}</span>
+                      </span>
+                      &nbsp;
                       <span class="icon-text" v-if="item.preset">
                         <span class="icon"><i class="fa-solid fa-tv" /></span>
                         <span>{{ item.preset ?? config.app.default_preset }}</span>
@@ -253,6 +262,7 @@
                 <span class="icon" v-if="item.in_progress">
                   <i class="fa-solid fa-spinner fa-spin has-text-info" />
                 </span>
+                <span class="tag is-danger is-small ml-1" v-if="!task.enabled">Disabled</span>
               </div>
               <div class="card-header-icon">
                 <div class="field is-grouped">
@@ -271,6 +281,13 @@
                     <span class="icon" v-tooltip="`Task handler is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
                       <i class="fa-solid fa-rss"
                         :class="{ 'has-text-success': item.handler_enabled, 'has-text-danger': !item.handler_enabled }" />
+                    </span>
+                  </div>
+                  <div class="control is-clickable" @click="toggleEnabled(item)">
+                    <span class="icon"
+                      v-tooltip="`Task is ${item.enabled !== false ? 'active' : 'inactive'}. Click to toggle.`">
+                      <i class="fa-solid fa-power-off"
+                        :class="{ 'has-text-success': item.enabled !== false, 'has-text-danger': item.enabled === false }" />
                     </span>
                   </div>
                   <div class="control">
@@ -403,7 +420,7 @@
                 downloaded.
               </li>
               <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs
-                hourly and doesn't require a scheduled timer.
+                hourly and doesn't require timer.
               </li>
             </ul>
           </div>
@@ -535,7 +552,18 @@ const reloadContent = async (fromMounted: boolean = false) => {
 }
 
 const resetForm = (closeForm: boolean = false) => {
-  task.value = {}
+  task.value = {
+    name: '',
+    url: '',
+    timer: '',
+    preset: '',
+    folder: '',
+    template: '',
+    cli: '',
+    auto_start: true,
+    handler_enabled: true,
+    enabled: true
+  }
   taskRef.value = ''
   addInProgress.value = false
   if (closeForm) {
@@ -640,6 +668,26 @@ const deleteItem = async (item: task_item) => {
   }
 
   toast.success('Task deleted.')
+}
+
+const toggleEnabled = async (item: task_item) => {
+  const newStatus = !item.enabled
+  const actionText = newStatus ? 'enable' : 'disable'
+
+  try {
+    const response = await request(`/api/tasks/${item.id}/toggle`, { method: 'POST' })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    item.enabled = data.enabled
+    toast.success(`Task '${item.name}' ${data.enabled ? 'enabled' : 'disabled'}.`)
+  } catch (e: any) {
+    toast.error(`Failed to ${actionText} task. ${e.message || 'Unknown error.'}`)
+  }
 }
 
 const updateItem = async ({ reference, task, archive_all }: { reference?: string | null | undefined, task: task_item, archive_all?: boolean }) => {
@@ -811,6 +859,8 @@ const exportItem = async (item: task_item) => {
     timer: info.timer,
     folder: info.folder,
     auto_start: info?.auto_start ?? true,
+    handler_enabled: info?.handler_enabled ?? true,
+    enabled: info?.enabled ?? true,
   } as exported_task
 
   if (info.template) {

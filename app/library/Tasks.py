@@ -38,6 +38,7 @@ class Task:
     cli: str = ""
     auto_start: bool = True
     handler_enabled: bool = True
+    enabled: bool = True
 
     def serialize(self) -> dict:
         return self.__dict__
@@ -301,7 +302,14 @@ class Tasks(metaclass=Singleton):
         "The tasks file."
         self._encoder: Encoder = encoder or Encoder()
         "The JSON encoder."
-        self._loop: asyncio.AbstractEventLoop = loop or asyncio.get_event_loop()
+        if loop:
+            self._loop: asyncio.AbstractEventLoop = loop
+        else:
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
         "The event loop."
         self._scheduler: Scheduler = scheduler or Scheduler.get_instance()
         "The scheduler."
@@ -402,9 +410,14 @@ class Tasks(metaclass=Singleton):
         if not tasks or len(tasks) < 1:
             return self
 
+        needs_update: bool = False
         for i, task in enumerate(tasks):
             try:
                 Tasks.validate(task)
+                if "enabled" not in task:
+                    task["enabled"] = True
+                    needs_update = True
+
                 task: Task = init_class(Task, task)
             except Exception as e:
                 LOG.error(f"Failed to parse task at list position '{i}'. '{e!s}'.")
@@ -431,6 +444,9 @@ class Tasks(metaclass=Singleton):
             except Exception as e:
                 LOG.exception(e)
                 LOG.error(f"Failed to queue '{i}: {task.name}'. '{e!s}'.")
+
+        if needs_update:
+            self.save(self._tasks)
 
         return self
 
@@ -565,7 +581,18 @@ class Tasks(metaclass=Singleton):
         """
         timeNow: str = datetime.now(UTC).isoformat()
         try:
+            if not self.get(task.id):
+                LOG.info(f"Task '{task.name}' no longer exists.")
+                if self._scheduler.has(task.id):
+                    self._scheduler.remove(task.id)
+                return
+
             started: float = time.time()
+
+            if not task.enabled:
+                LOG.debug(f"Task '{task.name}' is disabled. Skipping execution.")
+                return
+
             if not task.url:
                 LOG.error(f"Failed to dispatch '{task.name}'. No URL found.")
                 return
@@ -677,6 +704,9 @@ class HandleTask:
         s: dict[list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
         for task in self._tasks.get_all():
+            if not task.enabled:
+                continue
+
             if not task.handler_enabled:
                 s["d"].append(task.name)
                 continue

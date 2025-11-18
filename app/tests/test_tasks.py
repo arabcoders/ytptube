@@ -24,6 +24,7 @@ class TestTask:
         assert task.cli == ""
         assert task.auto_start is True
         assert task.handler_enabled is True
+        assert task.enabled is True
 
     def test_task_creation_with_all_fields(self):
         """Test creating a task with all fields specified."""
@@ -38,6 +39,7 @@ class TestTask:
             cli="--extract-flat",
             auto_start=False,
             handler_enabled=False,
+            enabled=False,
         )
 
         assert task.id == "test_id"
@@ -50,6 +52,7 @@ class TestTask:
         assert task.cli == "--extract-flat"
         assert task.auto_start is False
         assert task.handler_enabled is False
+        assert task.enabled is False
 
     def test_task_serialize(self):
         """Test task serialization to dictionary."""
@@ -757,7 +760,11 @@ class TestTasks:
             template="test_template",
             cli="--write-info-json",
             auto_start=True,
+            enabled=True,
         )
+
+        # Add task to tasks list so it can be found by _runner
+        tasks._tasks.append(test_task)
 
         await tasks._runner(test_task)
 
@@ -813,8 +820,12 @@ class TestTasks:
         test_task = Task(
             id="task1",
             name="Test Task",
-            url="",  # Empty URL
+            url="",  # Empty URL to trigger error
+            enabled=True,
         )
+
+        # Add task to tasks list so it can be found by _runner
+        tasks._tasks.append(test_task)
 
         await tasks._runner(test_task)
 
@@ -857,7 +868,11 @@ class TestTasks:
             id="task1",
             name="Test Task",
             url="https://example.com/video",
+            enabled=True,
         )
+
+        # Add task to tasks list so it can be found by _runner
+        tasks._tasks.append(test_task)
 
         await tasks._runner(test_task)
 
@@ -867,3 +882,42 @@ class TestTasks:
         # Verify the last call was an error event
         last_call = calls[-1]
         assert "Task failed" in str(last_call)
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.Config")
+    @patch("app.library.Tasks.EventBus")
+    @patch("app.library.Tasks.Scheduler")
+    @patch("app.library.Tasks.DownloadQueue")
+    async def test_tasks_runner_disabled_task(
+        self, mock_download_queue, mock_scheduler, mock_eventbus, mock_config
+    ):
+        """Test that disabled tasks are skipped by the runner."""
+        mock_config_instance = Mock(
+            debug=False, default_preset="default", config_path="/tmp", tasks_handler_timer="15 */1 * * *"
+        )
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus_instance = Mock()
+        mock_eventbus.get_instance.return_value = mock_eventbus_instance
+        mock_scheduler.get_instance.return_value = Mock()
+
+        # Mock download queue
+        mock_download_queue_instance = Mock()
+        mock_download_queue_instance.add = AsyncMock(return_value={"success": True, "id": "download123"})
+        mock_download_queue.get_instance.return_value = mock_download_queue_instance
+
+        tasks = Tasks(file=None, config=mock_config_instance)
+
+        test_task = Task(
+            id="task1",
+            name="Test Task",
+            url="https://example.com/video",
+            enabled=False,  # Task is disabled
+        )
+
+        # Add task to tasks list so it can be found by _runner
+        tasks._tasks.append(test_task)
+
+        await tasks._runner(test_task)
+
+        # Verify download queue was NOT called (task was skipped)
+        mock_download_queue_instance.add.assert_not_called()

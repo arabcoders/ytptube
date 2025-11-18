@@ -343,3 +343,41 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         return web.json_response(data=info, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except ValueError as e:
         return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
+
+
+@route("POST", "api/tasks/{id}/toggle", "tasks_toggle_enabled")
+async def task_toggle_enabled(request: Request, encoder: Encoder) -> Response:
+    """
+    Toggle the enabled status of a task.
+
+    Args:
+        request (Request): The request object.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object
+
+    """
+    task_id: str = request.match_info.get("id", None)
+
+    if not task_id:
+        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+
+    tasks: Tasks = Tasks.get_instance()
+    try:
+        task: Task | None = tasks.get(task_id)
+        if not task:
+            return web.json_response(
+                data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
+            )
+
+        task.enabled = not task.enabled
+        tasks.save(tasks=tasks.get_all()).load()
+
+        return web.json_response(data=tasks.get(task_id), status=web.HTTPOk.status_code, dumps=encoder.encode)
+    except Exception as e:
+        LOG.exception(e)
+        return web.json_response(
+            data={"error": "Failed to toggle task status.", "message": str(e)},
+            status=web.HTTPInternalServerError.status_code,
+        )
