@@ -154,6 +154,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "bb59e25580a38819276eb42a26311d607ee4277e",
+    "date": "2025-11-18T18:31:08+00:00",
+    "commits": [
+      {
+        "sha": "bb59e255",
+        "full_sha": "bb59e25580a38819276eb42a26311d607ee4277e",
+        "message": "Fix: possible fix for not being able to download subtitles.",
+        "author": "arabcoders",
+        "date": "2025-11-18T18:31:08+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.5",
     "full_sha": "46a3abebdef1cf375e1b0324ff81700450505cc8",
     "date": "2025-11-12T21:21:35+00:00",
