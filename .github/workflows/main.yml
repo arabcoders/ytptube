@@ -36,6 +36,7 @@ jobs:
   validate-build-config:
     name: Validate Build Configuration
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Check if at least one architecture is enabled
         run: |
