@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7569ff252a6e6a07b98b85664379b2d8f4f58967",
-    "date": "2025-11-19T15:46:55+00:00",
+    "full_sha": "c74c6ed60e09ff8f5d9ef1280a528cf12257668c",
+    "date": "2025-11-19T15:54:18+00:00",
     "commits": [
+      {
+        "sha": "c74c6ed6",
+        "full_sha": "c74c6ed60e09ff8f5d9ef1280a528cf12257668c",
+        "message": "Refactor: hide Downloads title in index while on mobile",
+        "author": "arabcoders",
+        "date": "2025-11-19T15:54:18+00:00"
+      },
       {
         "sha": "7569ff25",
         "full_sha": "7569ff252a6e6a07b98b85664379b2d8f4f58967",
