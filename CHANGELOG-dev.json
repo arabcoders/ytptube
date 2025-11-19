@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251119-ab56b875",
-        "date": "2025-11-19T13:32:52+00:00",
+        "tag": "dev-20251119-7569ff25",
+        "date": "2025-11-19T15:46:55+00:00",
         "commits": [
+            {
+                "sha": "7569ff25",
+                "message": "Refactor: drop aiohttp serve_static in favor of our own to have more control",
+                "author": "arabcoders",
+                "date": "2025-11-19T15:46:55+00:00",
+                "full_sha": "7569ff252a6e6a07b98b85664379b2d8f4f58967"
+            },
             {
                 "sha": "ab56b875",
                 "message": "Minor tasks page update",
@@ -3126,7 +3133,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ab56b875f3616688812bcb8278afbfb2c697ca5b"
+        "full_sha": "7569ff252a6e6a07b98b85664379b2d8f4f58967"
     },
     {
         "tag": "dev-20250616-c07465a6",
