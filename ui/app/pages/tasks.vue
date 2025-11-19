@@ -151,6 +151,15 @@
                       </NuxtLink>
                     </div>
                     <div class="is-unselectable">
+                      <span class="icon-text is-clickable" @click="toggleEnabled(item)"
+                        v-tooltip="'Click to ' + (item.enabled !== false ? 'disable' : 'enable') + ' task'">
+                        <span class="icon">
+                          <i class="fa-solid fa-power-off"
+                            :class="{ 'has-text-success': item.enabled !== false, 'has-text-danger': item.enabled === false }" />
+                        </span>
+                        <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                      </span>
+                      &nbsp;
                       <span class="icon-text">
                         <span class="icon">
                           <i class="fa-solid"
@@ -166,15 +175,6 @@
                         <span>{{ item.handler_enabled ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
-                      <span class="icon-text is-clickable" @click="toggleEnabled(item)"
-                        v-tooltip="'Click to ' + (item.enabled !== false ? 'disable' : 'enable') + ' task'">
-                        <span class="icon">
-                          <i class="fa-solid fa-power-off"
-                            :class="{ 'has-text-success': item.enabled !== false, 'has-text-danger': item.enabled === false }" />
-                        </span>
-                        <span>{{ item.enabled !== false ? 'Active' : 'Inactive' }}</span>
-                      </span>
-                      &nbsp;
                       <span class="icon-text" v-if="item.preset">
                         <span class="icon"><i class="fa-solid fa-tv" /></span>
                         <span>{{ item.preset ?? config.app.default_preset }}</span>
@@ -185,7 +185,8 @@
                     <span v-if="item.timer" class="has-tooltip" v-tooltip="item.timer">
                       {{ tryParse(item.timer) }}
                     </span>
-                    <span v-else class="has-text-warning">
+                    <span v-else class="has-text-danger">
+                      <span class="icon"> <i class="fa-solid fa-exclamation" /> </span>
                       No timer is set
                     </span>
                   </td>
@@ -285,7 +286,7 @@
                   </div>
                   <div class="control is-clickable" @click="toggleEnabled(item)">
                     <span class="icon"
-                      v-tooltip="`Task is ${item.enabled !== false ? 'active' : 'inactive'}. Click to toggle.`">
+                      v-tooltip="`Task is ${item.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
                       <i class="fa-solid fa-power-off"
                         :class="{ 'has-text-success': item.enabled !== false, 'has-text-danger': item.enabled === false }" />
                     </span>
@@ -308,14 +309,14 @@
                 <p class="is-text-overflow">
                   <span class="icon">
                     <i class="fa-solid"
-                      :class="{ 'fa-clock': item.timer, 'has-text-danger fa-exclamation-triangle': !item.timer }" />
+                      :class="{ 'fa-clock': item.timer, 'has-text-danger fa-exclamation': !item.timer }" />
                   </span>
                   <span v-if="item.timer">
                     <NuxtLink target="_blank" :to="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`">
                       {{ item.timer }} - {{ tryParse(item.timer) }}
                     </NuxtLink>
                   </span>
-                  <span class="has-text-warning" v-else>No timer is set</span>
+                  <span class="has-text-danger" v-else>No timer is set</span>
                 </p>
                 <p class="is-text-overflow" v-if="item.folder">
                   <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -387,44 +388,54 @@
       </template>
     </div>
 
+    <div class="columns is-multiline">
+      <div class="column is-12">
+
+      </div>
+    </div>
+
     <div class="columns is-multiline" v-if="!filteredTasks || filteredTasks.length < 1">
       <div class="column is-12">
-        <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
-          message="Loading data. Please wait..." v-if="isLoading" />
-        <Message title="No Results" class="is-background-warning-80 has-text-dark" icon="fas fa-search"
-          v-else-if="query" :useClose="true" @close="query = ''">
+
+        <Message :newStyle="true" message_class="is-info" v-if="isLoading">
+          <p><span class="icon"><i class="fas fa-spinner fa-spin" /></span> Loading data. Please wait...</p>
+        </Message>
+        <Message title="No Results" message_class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+          @close="query = ''" :newStyle="true">
           <p>No results found for the query: <strong>{{ query }}</strong>.</p>
           <p>Please try a different search term.</p>
         </Message>
-        <Message title="No tasks" message="No tasks are defined." class="is-background-warning-80 has-text-dark"
-          icon="fas fa-exclamation-circle" v-else />
+        <Message message_class="is-warning" :newStyle="true" v-else>
+          <p>
+            <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+            <span>No tasks are defined.</span>
+          </p>
+        </Message>
       </div>
     </div>
 
     <div class="columns is-multiline" v-if="!toggleForm && tasks && tasks.length > 0">
       <div class="column is-12">
-        <div class="message is-info">
-          <div class="message-body content pl-0 pt-1 pb-1">
-            <ul>
-              <li class="has-text-danger">
-                <span class="icon">
-                  <i class="fas fa-triangle-exclamation" />
-                </span>
-                All tasks operations require <b>--download-archive</b> to be set in the <b>preset</b> or in the
-                <b>command options for yt-dlp</b> for the task to be dispatched. If you have selected one of the built
-                in presets it already includes this option and no further action is required.
-              </li>
-              <li>To avoid downloading all existing content from a channel/playlist, use <b><span class="icon"><i
-                      class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
-                      class="fa-solid fa-box-archive" /></span> Archive All</b> to mark existing items as already
-                downloaded.
-              </li>
-              <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs
-                hourly and doesn't require timer.
-              </li>
-            </ul>
-          </div>
-        </div>
+        <Message :newStyle="true" message_class="is-info">
+          <ul>
+            <li class="has-text-danger">
+              <span class="icon">
+                <i class="fas fa-triangle-exclamation" />
+              </span>
+              All tasks operations require <code>--download-archive</code> to be set in the <b>preset</b> or in the
+              <b>command options for yt-dlp</b> for the task to be dispatched. If you have selected one of the built
+              in presets it already includes this option and no further action is required.
+            </li>
+            <li>To avoid downloading all existing content from a channel/playlist, use <code><span class="icon"><i
+                class="fa-solid fa-cogs" /></span> Actions > <span class="icon"><i
+                class="fa-solid fa-box-archive" /></span> Archive All</code> to mark existing items as already
+              downloaded.
+            </li>
+            <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs
+              hourly and doesn't require timer.
+            </li>
+          </ul>
+        </Message>
       </div>
     </div>
 
@@ -684,7 +695,8 @@ const toggleEnabled = async (item: task_item) => {
     }
 
     item.enabled = data.enabled
-    toast.success(`Task '${item.name}' ${data.enabled ? 'enabled' : 'disabled'}.`)
+    const func = data.enabled ? 'success' : 'warning'
+    toast[func](`Task '${item.name}' ${data.enabled ? 'enabled' : 'disabled'}.`)
   } catch (e: any) {
     toast.error(`Failed to ${actionText} task. ${e.message || 'Unknown error.'}`)
   }
