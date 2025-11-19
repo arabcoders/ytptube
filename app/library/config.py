@@ -189,6 +189,9 @@ class Config(metaclass=Singleton):
     prevent_live_premiere: bool = False
     """Prevent downloading of the initial premiere live broadcast."""
 
+    live_premiere_buffer: int = 5
+    """The buffer time in minutes to add to video duration to wait before starting premiere download."""
+
     playlist_items_concurrency: int = 4
     """The number of concurrent playlist items to be processed at same time."""
 

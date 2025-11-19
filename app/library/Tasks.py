@@ -697,10 +697,7 @@ class HandleTask:
         s: dict[list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
         for task in self._tasks.get_all():
-            if not task.enabled:
-                continue
-
-            if not task.handler_enabled:
+            if not task.enabled or not task.handler_enabled:
                 s["d"].append(task.name)
                 continue
 
@@ -725,7 +722,7 @@ class HandleTask:
 
         if len(self._tasks.get_all()) > 0:
             LOG.info(
-                f"Task Handler summary: Handled: {len(s['h'])}, Unhandled: {len(s['u'])}, Disabled: {len(s['d'])}, Failed: {len(s['f'])}."
+                f"Tasks handler summary: Handled: {len(s['h'])}, Unhandled: {len(s['u'])}, Disabled: {len(s['d'])}, Failed: {len(s['f'])}."
             )
 
     def _handle_exception(self, fut: asyncio.Task, task: Task) -> None:

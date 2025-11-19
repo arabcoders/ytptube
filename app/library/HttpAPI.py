@@ -17,9 +17,8 @@ from .config import Config
 from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus
-from .ffprobe import ffprobe
 from .router import RouteType, get_routes
-from .Utils import decrypt_data, encrypt_data, get_file, get_mime_type, load_modules
+from .Utils import decrypt_data, encrypt_data, get_file, load_modules
 
 LOG: logging.Logger = logging.getLogger("http_api")
 
@@ -143,8 +142,6 @@ class HttpAPI:
 
             app.router.add_route("OPTIONS", route.path, handler=options_handler, name=f"{route.name}_opts")
             registered_options.append(route.path)
-
-        app.router.add_static(f"{base_path}/api/download/", self.config.download_path, name="download_static")
 
     @staticmethod
     def basic_auth(username: str, password: str) -> Awaitable:
@@ -293,14 +290,6 @@ class HttpAPI:
                     )
 
                 return new_response
-
-            if request.path.startswith(static_path) and isinstance(response, web.FileResponse):
-                try:
-                    ff_info = await ffprobe(response._path)
-                    mime_type = get_mime_type(ff_info.get("metadata", {}), response._path)
-                    response.content_type = mime_type
-                except Exception:
-                    pass
 
             return response
 

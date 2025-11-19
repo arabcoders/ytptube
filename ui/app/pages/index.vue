@@ -2,7 +2,7 @@
   <div>
     <div class="mt-1 columns is-multiline">
       <div class="column is-12 is-clearfix is-unselectable">
-        <span class="title is-4">
+        <span class="title is-4" v-if="!isMobile">
           <span class="icon-text">
             <span class="icon"><i class="fa-solid fa-download" /></span>
             <span>Downloads</span>

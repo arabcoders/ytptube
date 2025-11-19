@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import re
+import shutil
 import tempfile
 import uuid
 from dataclasses import dataclass
@@ -525,6 +526,116 @@ class TestCalcDownloadPath:
         folder = "folder/../../../etc/passwd"
         with pytest.raises(Exception, match="must resolve inside the base download folder"):
             calc_download_path(str(self.base_path), folder, create_path=False)
+
+    def test_calc_download_path_partial_match_attack(self):
+        """
+        Test specific prefix matching vulnerability.
+        Base: /tmp/test
+        Target: /tmp/test_suffix (starts with base, but is a sibling)
+        This tests that the relative_to() check catches what startswith() alone would miss.
+        """
+        # Create a sibling directory that starts with the base path name
+        sibling_dir = Path(str(self.temp_dir) + "_suffix")
+        sibling_dir.mkdir(exist_ok=True)
+
+        # Try to access the sibling directory
+        folder = f"../{sibling_dir.name}"
+
+        with pytest.raises(Exception, match="must resolve inside the base download folder"):
+            calc_download_path(str(self.base_path), folder, create_path=False)
+
+        # Clean up
+        shutil.rmtree(sibling_dir, ignore_errors=True)
+
+    def test_calc_download_path_symlink_attack_outside(self):
+        """Test that symlinks pointing outside base directory are blocked."""
+        # Create a symlink pointing outside the base directory
+        outside_dir = Path(self.temp_dir).parent / "outside_target"
+        outside_dir.mkdir(exist_ok=True)
+
+        symlink_path = self.base_path / "evil_symlink"
+        try:
+            symlink_path.symlink_to(outside_dir, target_is_directory=True)
+
+            # Try to use the symlink
+            with pytest.raises(Exception, match="must resolve inside the base download folder"):
+                calc_download_path(str(self.base_path), "evil_symlink", create_path=False)
+        finally:
+            # Clean up
+            if symlink_path.exists():
+                symlink_path.unlink()
+            shutil.rmtree(outside_dir, ignore_errors=True)
+
+    def test_calc_download_path_symlink_attack_with_traversal(self):
+        """Test symlink combined with path traversal."""
+        # Create a directory outside base
+        outside_dir = Path(self.temp_dir).parent / "target_dir"
+        outside_dir.mkdir(exist_ok=True)
+
+        # Create a symlink inside base pointing outside
+        safe_dir = self.base_path / "safe"
+        safe_dir.mkdir(exist_ok=True)
+
+        symlink_path = safe_dir / "link_to_outside"
+        try:
+            symlink_path.symlink_to(outside_dir, target_is_directory=True)
+
+            # Try to traverse through the symlink
+            with pytest.raises(Exception, match="must resolve inside the base download folder"):
+                calc_download_path(str(self.base_path), "safe/link_to_outside", create_path=False)
+        finally:
+            # Clean up
+            if symlink_path.exists():
+                symlink_path.unlink()
+            shutil.rmtree(safe_dir, ignore_errors=True)
+            shutil.rmtree(outside_dir, ignore_errors=True)
+
+    def test_calc_download_path_symlink_safe_internal(self):
+        """Test that symlinks pointing inside base directory are allowed."""
+        # Create target directory inside base
+        target_dir = self.base_path / "target"
+        target_dir.mkdir(exist_ok=True)
+
+        # Create a symlink inside base pointing to another location inside base
+        symlink_path = self.base_path / "link_to_target"
+        try:
+            symlink_path.symlink_to(target_dir, target_is_directory=True)
+
+            # This should succeed since symlink resolves inside base
+            result = calc_download_path(str(self.base_path), "link_to_target", create_path=False)
+            assert str(target_dir) == result, "Internal symlinks should be allowed"
+        finally:
+            # Clean up
+            if symlink_path.exists():
+                symlink_path.unlink()
+            shutil.rmtree(target_dir, ignore_errors=True)
+
+    def test_calc_download_path_extremely_long_path(self):
+        """Test handling of extremely long paths."""
+        # Create a very long folder name (most filesystems limit to 255 chars per component)
+        long_component = "a" * 300
+
+        # This should raise an error during path creation or validation (OSError or ValueError)
+        with pytest.raises((OSError, ValueError)):
+            calc_download_path(str(self.base_path), long_component, create_path=True)
+
+    def test_calc_download_path_many_nested_levels(self):
+        """Test deeply nested directory structure."""
+        # Create a path with many nested levels
+        deep_path = "/".join([f"level{i}" for i in range(100)])
+
+        # This should work but might be slow
+        result = calc_download_path(str(self.base_path), deep_path, create_path=False)
+        expected = str(self.base_path / deep_path)
+        assert result == expected, "Should handle deeply nested paths"
+
+    def test_calc_download_path_directory_with_spaces(self):
+        """Test paths with multiple spaces and special spacing."""
+        folder = "folder with   multiple    spaces"
+        result = calc_download_path(str(self.base_path), folder, create_path=True)
+        expected_path = self.base_path / folder
+        assert result == str(expected_path), "Should handle spaces correctly"
+        assert expected_path.exists(), "Directory with spaces should be created"
 
 
 class TestMergeDict:
