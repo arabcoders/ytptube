@@ -1240,10 +1240,11 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             if self.config.prevent_live_premiere and is_premiere and duration:
-                premiere_ends: datetime = starts_in + timedelta(minutes=5, seconds=duration)
+                buffer_time = self.config.live_premiere_buffer if self.config.live_premiere_buffer >= 0 else 5
+                premiere_ends: datetime = starts_in + timedelta(minutes=buffer_time, seconds=duration)
                 if time_now < premiere_ends:
                     LOG.debug(
-                        f"Item '{item_ref}' is premiering, download will start in '{(starts_in + timedelta(minutes=5, seconds=duration)).astimezone().isoformat()}'"
+                        f"Item '{item_ref}' is premiering, download will start in '{(starts_in + timedelta(minutes=buffer_time, seconds=duration)).astimezone().isoformat()}'"
                     )
                     continue
 

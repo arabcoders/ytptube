@@ -40,6 +40,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version           | `(not_set)`           |
 | YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                | `/`                   |
 | YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded | `false`               |
+| YTP_LIVE_PREMIERE_BUFFER       | buffer time in minutes to add to video duration                    | `5`                   |
 | YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                    | `15 */1 * * *`        |
 | YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time          | `1`                   |
 | YTP_TEMP_DISABLED              | Disable temp files handling.                                       | `false`               |
@@ -550,3 +551,20 @@ services:
 
 After making the changes, restart your container. This should resolve the "No space left on device" 
 error during download.
+
+
+# How to prevent loading screen during YouTube premieres?
+
+Depending on how you look at it, YTPTube live download implementation is rather great and fast. However, during YouTube 
+premieres, usually streams will contain a loading screen of say, 1-5 minutes before the actual video content starts 
+playing. By default we wait for 5min + the duration of the video before starting the download to ensure we get the full video without
+the loading screen. However, you can override the behavior by setting the following environment variable:
+
+```env
+YTP_PREVENT_LIVE_PREMIERE=true
+YTP_LIVE_PREMIERE_BUFFER=10
+```
+
+Where `YTP_LIVE_PREMIERE_BUFFER` is the buffer time in minutes to add to the video duration before the download starts. 
+This will help in case the premiere has a longer loading screen than usual.
+
