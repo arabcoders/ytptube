@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ab56b875f3616688812bcb8278afbfb2c697ca5b",
+    "date": "2025-11-19T13:32:52+00:00",
+    "commits": [
+      {
+        "sha": "ab56b875",
+        "full_sha": "ab56b875f3616688812bcb8278afbfb2c697ca5b",
+        "message": "Minor tasks page update",
+        "author": "arabcoders",
+        "date": "2025-11-19T13:32:52+00:00"
+      },
+      {
+        "sha": "77d48bb8",
+        "full_sha": "77d48bb8c43917f9b8d313ae2d7e9f3fa3e33f3e",
+        "message": "Doc: update FAQ.md to include explainer for how prevent live premiere works.",
+        "author": "arabcoders",
+        "date": "2025-11-19T13:17:15+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.8",
     "full_sha": "9272e0b1737e200ee9276e757b2f3d506f891168",
     "date": "2025-11-18T23:57:16+00:00",
