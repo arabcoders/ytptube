@@ -54,6 +54,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/file/actions](#post-apifileactions)
     - [POST /api/file/download](#post-apifiledownload)
     - [GET /api/file/download/{token}](#get-apifiledownloadtoken)
+    - [GET /api/download/{filename}](#get-apidownloadfilename)
     - [GET /api/random/background](#get-apirandombackground)
     - [GET /api/presets](#get-apipresets)
     - [GET /api/dl\_fields](#get-apidl_fields)
@@ -1327,6 +1328,27 @@ or an error:
 
 ---
 
+### GET /api/download/{filename}
+**Purpose**: Serve downloaded files directly from the download path.
+
+**Path Parameter**:
+- `filename`: Relative path to the file within the download directory (URL-encoded).
+
+**Response**:
+- `200 OK` with file content and appropriate headers
+- `302 Found` redirect if the file path needs normalization
+- `404 Not Found` if the file doesn't exist
+
+- **Error Responses**  
+
+When an error occurs, responses follow a structure similar to:
+```json
+{ "error": "Description of the error"  }
+```
+with an appropriate HTTP status code.
+
+---
+
 ### GET /api/random/background
 **Purpose**: Get a random background image from configured backends.  
 
@@ -1334,7 +1356,7 @@ or an error:
 - `force=true` (optional) - Force fetch a new image instead of using cache.
 
 **Response**:
-Binary image data with appropriate `Content-Type` header.
+Binary image data with appropriate headers
 
 ---
 
