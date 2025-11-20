@@ -35,6 +35,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",
+    "date": "2025-11-20T13:49:50+00:00",
+    "commits": [
+      {
+        "sha": "4d22e345",
+        "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",
+        "message": "Refactor: Improve display of notifications to indicate severity. This allow user to disable toasts and just rely on color coding",
+        "author": "arabcoders",
+        "date": "2025-11-20T13:49:50+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.8",
     "full_sha": "9272e0b1737e200ee9276e757b2f3d506f891168",
     "date": "2025-11-18T23:57:16+00:00",
