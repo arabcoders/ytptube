@@ -45,11 +45,12 @@
   <div class="navbar-item has-dropdown is-hoverable">
     <a class="navbar-link">
       <span class="icon"><i class="fas fa-bell" /></span>
-      <span class="tag ml-2">
-        <span class="is-underlined">{{ store.unreadCount }}</span>
+      <span class="tag ml-2" :class="store.severityColor">
+        <span :class="{ 'is-bold': store.unreadCount }">{{ store.unreadCount }}</span>
         <span>&nbsp;/&nbsp;</span>
         <span class="is-underlined">{{ store.notifications.length }}</span>
       </span>
+      <span class="icon ml-2" v-if="store.severityIcon"><i :class="store.severityIcon" /></span>
     </a>
     <div class="navbar-dropdown is-right" style="width: 400px;">
       <template v-if="store.notifications.length > 0">

@@ -2,9 +2,45 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import type { notification, notificationType } from '~/composables/useNotification'
 
+const _map: Record<notificationType, { level: number; color: string; icon: string }> = {
+  'error': { level: 3, color: 'is-danger', icon: 'fas fa-circle-exclamation' },
+  'warning': { level: 2, color: 'is-warning', icon: 'fas fa-triangle-exclamation' },
+  'success': { level: 1, color: 'is-primary', icon: 'fas fa-circle-check' },
+  'info': { level: 0, color: 'is-info', icon: 'fas fa-circle-info' }
+}
+
 export const useNotificationStore = defineStore('notifications', () => {
   const notifications = useStorage<notification[]>('notifications', [])
   const unreadCount = computed<number>(() => notifications.value.filter(n => !n.seen).length)
+
+  const severityLevel = computed<notificationType | null>(() => {
+    const unread = notifications.value.filter(n => !n.seen)
+    if (0 === unread.length) {
+      return null
+    }
+
+    return unread.reduce((h, n) => _map[n.level].level > _map[h.level].level ? n : h).level
+  })
+
+  const severityColor = computed<string>(() => {
+    const level = severityLevel.value
+    return level ? _map[level].color : ''
+  })
+
+  const severityIcon = computed<string>(() => {
+    const level = severityLevel.value
+    return level ? _map[level].icon : ''
+  })
+
+  const sortedNotifications = computed<notification[]>(() => {
+    return [...notifications.value].sort((a, b) => {
+      const severityDiff = _map[b.level].level - _map[a.level].level
+      if (0 !== severityDiff) {
+        return severityDiff
+      }
+      return (new Date(b.created).getTime()) - (new Date(a.created).getTime())
+    })
+  })
 
   const add = (level: notificationType, message: string, seen: boolean = false): string => {
     const id = Array.from(
@@ -43,5 +79,18 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   const remove = (id: string) => notifications.value = notifications.value.filter(n => n.id !== id)
 
-  return { notifications, unreadCount, add, get, markAllRead, clear, markRead, remove }
+  return {
+    notifications,
+    unreadCount,
+    severityLevel,
+    severityColor,
+    severityIcon,
+    sortedNotifications,
+    add,
+    get,
+    markAllRead,
+    clear,
+    markRead,
+    remove
+  }
 })

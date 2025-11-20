@@ -204,7 +204,7 @@ const pauseDownload = () => {
   dialog_confirm.value.visible = true
   dialog_confirm.value.html_message = `
   <span class="icon-text">
-    <span class="icon"><i class="fa-solid fa-exclamation-triangle"/></span>
+    <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
     <span class="is-bold">Pause All non-active downloads?</span>
   </span>
   <br>
