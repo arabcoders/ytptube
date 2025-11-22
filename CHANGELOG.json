@@ -1,9 +1,23 @@
 [
   {
-    "tag": "Unreleased (69dc19ad)",
-    "full_sha": "69dc19ad4f7e3bbd07ff501b75589c53c0b3cbc5",
-    "date": "2025-11-19T18:24:17+00:00",
+    "tag": "Unreleased (91f52788)",
+    "full_sha": "91f527887c815c111317bb4ea59b7f86e417211d",
+    "date": "2025-11-22T18:07:43+00:00",
     "commits": [
+      {
+        "sha": "b3ee857c",
+        "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
+        "message": "Fix: dont reject downloads if they provide a info.url only.",
+        "author": "arabcoders",
+        "date": "2025-11-22T12:30:41+00:00"
+      },
+      {
+        "sha": "4d22e345",
+        "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",
+        "message": "Refactor: Improve display of notifications to indicate severity. This allow user to disable toasts and just rely on color coding",
+        "author": "arabcoders",
+        "date": "2025-11-20T13:49:50+00:00"
+      },
       {
         "sha": "c74c6ed6",
         "full_sha": "c74c6ed60e09ff8f5d9ef1280a528cf12257668c",
@@ -31,27 +45,6 @@
         "message": "Doc: update FAQ.md to include explainer for how prevent live premiere works.",
         "author": "arabcoders",
         "date": "2025-11-19T13:17:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
-    "date": "2025-11-22T12:30:41+00:00",
-    "commits": [
-      {
-        "sha": "b3ee857c",
-        "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
-        "message": "Fix: dont reject downloads if they provide a info.url only.",
-        "author": "arabcoders",
-        "date": "2025-11-22T12:30:41+00:00"
-      },
-      {
-        "sha": "4d22e345",
-        "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",
-        "message": "Refactor: Improve display of notifications to indicate severity. This allow user to disable toasts and just rely on color coding",
-        "author": "arabcoders",
-        "date": "2025-11-20T13:49:50+00:00"
       }
     ]
   },

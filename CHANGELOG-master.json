@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20251119-69dc19ad",
-        "date": "2025-11-19T18:24:17+00:00",
+        "tag": "master-20251122-91f52788",
+        "date": "2025-11-22T18:07:43+00:00",
         "commits": [
+            {
+                "sha": "b3ee857c",
+                "message": "Fix: dont reject downloads if they provide a info.url only.",
+                "author": "arabcoders",
+                "date": "2025-11-22T12:30:41+00:00",
+                "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7"
+            },
+            {
+                "sha": "4d22e345",
+                "message": "Refactor: Improve display of notifications to indicate severity. This allow user to disable toasts and just rely on color coding",
+                "author": "arabcoders",
+                "date": "2025-11-20T13:49:50+00:00",
+                "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367"
+            },
             {
                 "sha": "c74c6ed6",
                 "message": "Refactor: hide Downloads title in index while on mobile",
@@ -3140,7 +3154,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "69dc19ad4f7e3bbd07ff501b75589c53c0b3cbc5"
+        "full_sha": "91f527887c815c111317bb4ea59b7f86e417211d"
     },
     {
         "tag": "master-20250616-c07465a6",
