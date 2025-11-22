@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",
-    "date": "2025-11-20T13:49:50+00:00",
+    "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
+    "date": "2025-11-22T12:30:41+00:00",
     "commits": [
+      {
+        "sha": "b3ee857c",
+        "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
+        "message": "Fix: dont reject downloads if they provide a info.url only.",
+        "author": "arabcoders",
+        "date": "2025-11-22T12:30:41+00:00"
+      },
       {
         "sha": "4d22e345",
         "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367",

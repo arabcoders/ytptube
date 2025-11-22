@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251120-4d22e345",
-        "date": "2025-11-20T13:49:50+00:00",
+        "tag": "dev-20251122-b3ee857c",
+        "date": "2025-11-22T12:30:41+00:00",
         "commits": [
+            {
+                "sha": "b3ee857c",
+                "message": "Fix: dont reject downloads if they provide a info.url only.",
+                "author": "arabcoders",
+                "date": "2025-11-22T12:30:41+00:00",
+                "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7"
+            },
             {
                 "sha": "4d22e345",
                 "message": "Refactor: Improve display of notifications to indicate severity. This allow user to disable toasts and just rely on color coding",
@@ -3147,7 +3154,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4d22e345e594de2a27eb274f46dc047eb31a4367"
+        "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7"
     },
     {
         "tag": "dev-20250616-c07465a6",
