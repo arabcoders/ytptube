@@ -513,6 +513,7 @@ class DownloadQueue(metaclass=Singleton):
             nTitle: str | None = None
             nMessage: str | None = None
             nStore: str = "queue"
+            hasFormats: bool = len(entry.get("formats", [])) > 0 or entry.get("url")
 
             text_logs: str = ""
             if filtered_logs := extract_ytdlp_logs(logs):
@@ -534,7 +535,7 @@ class DownloadQueue(metaclass=Singleton):
                 )
 
                 itemDownload: Download = self.done.put(dlInfo)
-            elif len(entry.get("formats", [])) < 1:
+            elif not hasFormats:
                 ava: str = entry.get("availability", "public")
                 nTitle = "Download Error"
                 nMessage: str = f"No formats for '{dl.title}'."
