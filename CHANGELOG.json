@@ -49,6 +49,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053",
+    "date": "2025-11-25T13:52:03+00:00",
+    "commits": [
+      {
+        "sha": "13ac81b5",
+        "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053",
+        "message": "Feat: Add task handler for tver.jp",
+        "author": "arabcoders",
+        "date": "2025-11-25T13:52:03+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.8",
     "full_sha": "9272e0b1737e200ee9276e757b2f3d506f891168",
     "date": "2025-11-18T23:57:16+00:00",
