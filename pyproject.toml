@@ -167,6 +167,7 @@ ignore = [
   "D203",
   "TRY004", # Like it's our choice to use ValuesError :|
   "PT011",
+  "RUF001", # We like unicode chars.
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.

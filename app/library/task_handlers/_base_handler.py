@@ -30,7 +30,22 @@ class BaseHandler:
         return []
 
     @staticmethod
-    async def request(url: str, headers: dict | None = None, ytdlp_opts: dict | None = None) -> httpx.Response:
+    async def request(
+        url: str, headers: dict | None = None, ytdlp_opts: dict | None = None, **kwargs
+    ) -> httpx.Response:
+        """
+        Make an HTTP request.
+
+        Args:
+            url (str): The URL to request.
+            headers (dict | None): Additional headers to include in the request.
+            ytdlp_opts (dict | None): yt-dlp options that may affect the request.
+            **kwargs: Additional arguments to pass to httpx request.
+
+        Returns:
+            httpx.Response: The HTTP response.
+
+        """
         headers = {} if not isinstance(headers, dict) else headers
         ytdlp_opts = {} if not isinstance(ytdlp_opts, dict) else ytdlp_opts
 
@@ -59,4 +74,6 @@ class BaseHandler:
             opts["proxy"] = proxy
 
         async with httpx.AsyncClient(**opts) as client:
-            return await client.request(method="GET", url=url, timeout=ytdlp_opts.get("socket_timeout", 120))
+            method = kwargs.pop("method", "GET").upper()
+            timeout = ytdlp_opts.get("timeout", ytdlp_opts.get("socket_timeout", 120))
+            return await client.request(method=method, url=url, timeout=timeout, **kwargs)

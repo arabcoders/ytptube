@@ -30,7 +30,7 @@ class NFOMakerPP(PostProcessor):
         r"(?i)\b(?:https?://|ftp://|www\.)\S+|\b(?!@)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?){1,}\b(?:/[^\s<>()]*)?"
     )
     _MD_LINK = re.compile(r"\[([^\]]+)\]\((?:[^)]+)\)")
-    _TIME_LINE_PAT = re.compile(r"^\s*(?:\d+:)?\d{1,2}:\d{2}(?::\d{2})?(?:\s*[-–—•:]\s*.*)?$", re.IGNORECASE)  # noqa: RUF001
+    _TIME_LINE_PAT = re.compile(r"^\s*(?:\d+:)?\d{1,2}:\d{2}(?::\d{2})?(?:\s*[-–—•:]\s*.*)?$", re.IGNORECASE)
     _HASHTAGS_LINE = re.compile(r"^\s*(?:#[\w\-]+(?:\s+|$))+$")
     _MENTION_LINE = re.compile(r"^\s*@[\w.\-]{2,}\s*$")
     _PROMO_LINE_PAT = re.compile(
@@ -402,7 +402,7 @@ class NFOMakerPP(PostProcessor):
 
             # collapse leftover multiple spaces and stray separators
             ln = re.sub(r"\s{2,}", " ", ln)
-            ln = re.sub(r"\s*[-–—•·]+\s*$", "", ln)  # noqa: RUF001
+            ln = re.sub(r"\s*[-–—•·]+\s*$", "", ln)
 
             if ln:
                 cleaned.append(ln)
