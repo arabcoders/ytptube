@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (91f52788)",
-    "full_sha": "91f527887c815c111317bb4ea59b7f86e417211d",
-    "date": "2025-11-22T18:07:43+00:00",
+    "tag": "Unreleased (7e6b6f05)",
+    "full_sha": "7e6b6f0544b2d74fe32ae606f21d8c1f3786f071",
+    "date": "2025-11-25T18:10:05+00:00",
     "commits": [
+      {
+        "sha": "13ac81b5",
+        "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053",
+        "message": "Feat: Add task handler for tver.jp",
+        "author": "arabcoders",
+        "date": "2025-11-25T13:52:03+00:00"
+      },
       {
         "sha": "b3ee857c",
         "full_sha": "b3ee857ceb2988add053b8e0788b2bdbcf0e89f7",
@@ -45,20 +52,6 @@
         "message": "Doc: update FAQ.md to include explainer for how prevent live premiere works.",
         "author": "arabcoders",
         "date": "2025-11-19T13:17:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053",
-    "date": "2025-11-25T13:52:03+00:00",
-    "commits": [
-      {
-        "sha": "13ac81b5",
-        "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053",
-        "message": "Feat: Add task handler for tver.jp",
-        "author": "arabcoders",
-        "date": "2025-11-25T13:52:03+00:00"
       }
     ]
   },

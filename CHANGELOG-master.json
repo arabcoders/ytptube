@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251122-91f52788",
-        "date": "2025-11-22T18:07:43+00:00",
+        "tag": "master-20251125-7e6b6f05",
+        "date": "2025-11-25T18:10:05+00:00",
         "commits": [
+            {
+                "sha": "13ac81b5",
+                "message": "Feat: Add task handler for tver.jp",
+                "author": "arabcoders",
+                "date": "2025-11-25T13:52:03+00:00",
+                "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053"
+            },
             {
                 "sha": "b3ee857c",
                 "message": "Fix: dont reject downloads if they provide a info.url only.",
@@ -3154,7 +3161,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "91f527887c815c111317bb4ea59b7f86e417211d"
+        "full_sha": "7e6b6f0544b2d74fe32ae606f21d8c1f3786f071"
     },
     {
         "tag": "master-20250616-c07465a6",
