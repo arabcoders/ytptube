@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20251125-13ac81b5",
-        "date": "2025-11-25T13:52:03+00:00",
+        "tag": "dev-20251128-a616a777",
+        "date": "2025-11-28T14:56:01+00:00",
         "commits": [
+            {
+                "sha": "a616a777",
+                "message": "Chore: remove $ from commands examples",
+                "author": "arabcoders",
+                "date": "2025-11-28T14:56:01+00:00",
+                "full_sha": "a616a77773e0687848a8414d18c42157c12ce1e7"
+            },
+            {
+                "sha": "1f0a5975",
+                "message": "Feat: Add commands history to console",
+                "author": "arabcoders",
+                "date": "2025-11-28T14:53:53+00:00",
+                "full_sha": "1f0a5975e565ee319a936a458edb4b20a9761f60"
+            },
+            {
+                "sha": "d99875eb",
+                "message": "QoL: Support newlines as seperator for URLs.",
+                "author": "arabcoders",
+                "date": "2025-11-28T14:15:46+00:00",
+                "full_sha": "d99875eb570229e30fbddef1b8549af6fe9b009a"
+            },
             {
                 "sha": "13ac81b5",
                 "message": "Feat: Add task handler for tver.jp",
@@ -3161,7 +3182,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "13ac81b56e316242206ef59c5bd2d7524724c053"
+        "full_sha": "a616a77773e0687848a8414d18c42157c12ce1e7"
     },
     {
         "tag": "dev-20250616-c07465a6",

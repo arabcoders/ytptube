@@ -56,6 +56,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "a616a77773e0687848a8414d18c42157c12ce1e7",
+    "date": "2025-11-28T14:56:01+00:00",
+    "commits": [
+      {
+        "sha": "a616a777",
+        "full_sha": "a616a77773e0687848a8414d18c42157c12ce1e7",
+        "message": "Chore: remove $ from commands examples",
+        "author": "arabcoders",
+        "date": "2025-11-28T14:56:01+00:00"
+      },
+      {
+        "sha": "1f0a5975",
+        "full_sha": "1f0a5975e565ee319a936a458edb4b20a9761f60",
+        "message": "Feat: Add commands history to console",
+        "author": "arabcoders",
+        "date": "2025-11-28T14:53:53+00:00"
+      },
+      {
+        "sha": "d99875eb",
+        "full_sha": "d99875eb570229e30fbddef1b8549af6fe9b009a",
+        "message": "QoL: Support newlines as seperator for URLs.",
+        "author": "arabcoders",
+        "date": "2025-11-28T14:15:46+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.8",
     "full_sha": "9272e0b1737e200ee9276e757b2f3d506f891168",
     "date": "2025-11-18T23:57:16+00:00",
