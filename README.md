@@ -80,7 +80,7 @@ services:
 > If you have low RAM, remove the `tmpfs` and mount a disk-based directory to `/tmp` instead. See [FAQ](FAQ.md#getting-no-space-left-on-device-error) for more information.
 
 ```bash
-$ mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d
+mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
