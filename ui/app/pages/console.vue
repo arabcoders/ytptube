@@ -2,6 +2,15 @@
 .terminal {
   padding-left: 10px;
 }
+
+.history-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.history-item:hover {
+  background-color: #f5f5f5;
+}
 </style>
 
 <template>
@@ -49,12 +58,54 @@
               <button class="button is-primary" type="button" :disabled="isLoading || !hasValidCommand"
                 @click="runCommand">
                 <span class="icon">
-                  <i class="fa-solid" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'"/>
+                  <i class="fa-solid" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'" />
                 </span>
               </button>
             </p>
           </div>
         </section>
+      </div>
+    </div>
+
+    <div class="column is-12">
+      <div class="card">
+        <header class="card-header">
+          <p class="card-header-title is-pointer is-unselectable" @click="isHistoryCollapsed = !isHistoryCollapsed">
+            <span class="icon"><i class="fa-solid fa-clock-rotate-left" /></span>
+            <span class="ml-2">Commands History</span>
+          </p>
+          <p class="card-header-icon">
+            <span v-tooltip.top="'Clear command history'" class="icon" @click="clearHistory()">
+              <i class="fa-solid fa-trash" />
+            </span>
+            <span v-tooltip.top="isHistoryCollapsed ? 'Expand' : 'Collapse'" class="icon ml-2"
+              @click="isHistoryCollapsed = !isHistoryCollapsed">
+              <i class="fa-solid" :class="isHistoryCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'" />
+            </span>
+          </p>
+        </header>
+        <div v-show="!isHistoryCollapsed" class="card-content p-2">
+          <Message :newStyle="true" class="is-info" v-if="commandHistory.length < 1">
+            Commands history is empty.
+          </Message>
+          <div class="table-container" v-if="commandHistory.length > 0">
+            <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+              style="min-width: 850px; table-layout: fixed;">
+              <tbody>
+                <tr v-for="(cmd, index) in commandHistory" :key="index">
+                  <td>
+                    <code class="is-family-monospace is-text-overflow is-pointer is-block" @click="loadCommand(cmd)">
+                      {{ cmd.replace(/\n/g, ' ') }}
+                    </code>
+                  </td>
+                  <td style="width: 40px; text-align: center;">
+                    <button class="delete" @click="removeFromHistory(index)" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -68,11 +119,13 @@ import { useStorage } from '@vueuse/core'
 import { disableOpacity, enableOpacity } from '~/utils'
 import InputAutocomplete from '~/components/InputAutocomplete.vue'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import { useDialog } from '~/composables/useDialog'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
+const dialog = useDialog()
 
 const terminal = ref<Terminal>()
 const terminalFit = ref<FitAddon>()
@@ -82,6 +135,9 @@ const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null)
 const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null)
 const isLoading = ref<boolean>(false)
 const storedCommand = useStorage<string>('console_command', '')
+const commandHistory = useStorage<string[]>('console_command_history', [])
+const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false)
+const MAX_HISTORY_ITEMS = 50
 
 const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
   .map(flag => ({ value: flag, description: opt.description || '' }))
@@ -93,6 +149,9 @@ const isMultiLineInput = computed(() => !!command.value && command.value.include
 watch(() => isLoading.value, async value => {
   if (value) {
     return
+  }
+  if (command.value.trim()) {
+    addToHistory(command.value.trim())
   }
   command.value = ''
   await nextTick();
@@ -255,6 +314,33 @@ const focusInput = async () => {
 
   elm?.focus()
 }
+
+const addToHistory = (cmd: string) => {
+  commandHistory.value = [cmd, ...commandHistory.value.filter(h => h !== cmd)].slice(0, MAX_HISTORY_ITEMS)
+}
+
+const loadCommand = async (cmd: string) => {
+  command.value = cmd
+  await nextTick()
+  focusInput()
+}
+
+const clearHistory = async () => {
+  if (commandHistory.value.length === 0) {
+    return
+  }
+  const { status } = await dialog.confirmDialog({
+    title: 'Confirm Action',
+    message: `Clear commands history?`,
+    confirmColor: 'is-danger',
+  })
+  if (!status) {
+    return
+  }
+  commandHistory.value = []
+}
+
+const removeFromHistory = (index: number) => commandHistory.value = commandHistory.value.filter((_, i) => i !== index)
 
 const writer = (s: string) => {
   if (!terminal.value) {
