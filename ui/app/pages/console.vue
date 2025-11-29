@@ -2,6 +2,15 @@
 .terminal {
   padding-left: 10px;
 }
+
+.history-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.history-item:hover {
+  background-color: #f5f5f5;
+}
 </style>
 
 <template>
@@ -39,20 +48,64 @@
         <section class="card-content p-1 m-1">
           <div class="field is-grouped">
             <div class="control is-expanded">
-              <InputAutocomplete v-model="command" :options="ytDlpOptions" :disabled="isLoading" placeholder="--help"
-                id="command" @keydown.enter="runCommand" :multiple="true" :allowShortFlags="true" />
+              <TextareaAutocomplete v-if="isMultiLineInput" ref="commandTextarea" v-model="command"
+                :options="ytDlpOptions" :disabled="isLoading" placeholder="--help" @keydown="handleKeyDown" />
+              <InputAutocomplete v-else v-model="command" ref="commandInput" :options="ytDlpOptions"
+                :disabled="isLoading" placeholder="--help" @keydown="handleKeyDown" @paste="handlePaste"
+                :multiple="true" :allowShortFlags="true" />
             </div>
             <p class="control">
-              <button class="button is-primary" type="button" :disabled="isLoading || '' === command"
+              <button class="button is-primary" type="button" :disabled="isLoading || !hasValidCommand"
                 @click="runCommand">
                 <span class="icon">
-                  <i class="fa-solid fa-spinner fa-spin" v-if="isLoading" />
-                  <i class="fa-solid fa-paper-plane" v-else />
+                  <i class="fa-solid" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'" />
                 </span>
               </button>
             </p>
           </div>
         </section>
+      </div>
+    </div>
+
+    <div class="column is-12">
+      <div class="card">
+        <header class="card-header">
+          <p class="card-header-title is-pointer is-unselectable" @click="isHistoryCollapsed = !isHistoryCollapsed">
+            <span class="icon"><i class="fa-solid fa-clock-rotate-left" /></span>
+            <span class="ml-2">Commands History</span>
+          </p>
+          <p class="card-header-icon">
+            <span v-tooltip.top="'Clear command history'" class="icon" @click="clearHistory()">
+              <i class="fa-solid fa-trash" />
+            </span>
+            <span v-tooltip.top="isHistoryCollapsed ? 'Expand' : 'Collapse'" class="icon ml-2"
+              @click="isHistoryCollapsed = !isHistoryCollapsed">
+              <i class="fa-solid" :class="isHistoryCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'" />
+            </span>
+          </p>
+        </header>
+        <div v-show="!isHistoryCollapsed" class="card-content p-2">
+          <Message :newStyle="true" class="is-info" v-if="commandHistory.length < 1">
+            Commands history is empty.
+          </Message>
+          <div class="table-container" v-if="commandHistory.length > 0">
+            <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+              style="min-width: 850px; table-layout: fixed;">
+              <tbody>
+                <tr v-for="(cmd, index) in commandHistory" :key="index">
+                  <td>
+                    <code class="is-family-monospace is-text-overflow is-pointer is-block" @click="loadCommand(cmd)">
+                      {{ cmd.replace(/\n/g, ' ') }}
+                    </code>
+                  </td>
+                  <td style="width: 40px; text-align: center;">
+                    <button class="delete" @click="removeFromHistory(index)" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -65,26 +118,40 @@ import { FitAddon } from '@xterm/addon-fit'
 import { useStorage } from '@vueuse/core'
 import { disableOpacity, enableOpacity } from '~/utils'
 import InputAutocomplete from '~/components/InputAutocomplete.vue'
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import { useDialog } from '~/composables/useDialog'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const config = useConfigStore()
 const socket = useSocketStore()
 const toast = useNotification()
+const dialog = useDialog()
 
 const terminal = ref<Terminal>()
 const terminalFit = ref<FitAddon>()
 const command = ref<string>('')
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window')
+const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null)
+const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null)
 const isLoading = ref<boolean>(false)
 const storedCommand = useStorage<string>('console_command', '')
+const commandHistory = useStorage<string[]>('console_command_history', [])
+const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false)
+const MAX_HISTORY_ITEMS = 50
 
 const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
   .map(flag => ({ value: flag, description: opt.description || '' }))
 ))
 
+const hasValidCommand = computed(() => command.value && command.value.trim().length > 0)
+const isMultiLineInput = computed(() => !!command.value && command.value.includes('\n'))
+
 watch(() => isLoading.value, async value => {
   if (value) {
     return
+  }
+  if (command.value.trim()) {
+    addToHistory(command.value.trim())
   }
   command.value = ''
   await nextTick();
@@ -98,6 +165,61 @@ watch(() => config.app.console_enabled, async () => {
   toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
   await navigateTo('/')
 })
+
+const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  const isTextarea = 'TEXTAREA' === target.tagName
+
+  if (event.key !== 'Enter') {
+    return
+  }
+
+  if (((event.ctrlKey && isTextarea) || !isTextarea) && hasValidCommand.value) {
+    event.preventDefault()
+    runCommand()
+    return
+  }
+
+  if (event.shiftKey && !isTextarea) {
+    event.preventDefault()
+    const cursorPos = target.selectionStart || command.value.length
+    command.value = command.value.substring(0, cursorPos) + '\n' + command.value.substring(target.selectionEnd || cursorPos)
+    await nextTick()
+    if (commandTextarea.value) {
+      const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement
+      if (textarea) {
+        textarea.setSelectionRange(cursorPos + 1, cursorPos + 1)
+        textarea.focus()
+      }
+    }
+  }
+}
+
+const handlePaste = async (event: ClipboardEvent): Promise<void> => {
+  const pastedText = event.clipboardData?.getData('text') || ''
+  if (!pastedText.includes('\n')) {
+    return
+  }
+
+  event.preventDefault()
+  const target = event.target as HTMLInputElement
+  const currentValue = command.value || ''
+  const start = target.selectionStart || currentValue.length
+  const end = target.selectionEnd || currentValue.length
+  command.value = currentValue.substring(0, start) + pastedText + currentValue.substring(end)
+  await nextTick()
+
+  if (!commandTextarea.value) {
+    return
+  }
+
+  const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement
+  if (textarea) {
+    const newPos = start + pastedText.length
+    textarea.setSelectionRange(newPos, newPos)
+    textarea.focus()
+  }
+}
 
 const handle_event = () => {
   if (!terminal.value) {
@@ -135,7 +257,7 @@ const ensureTerminal = async () => {
 }
 
 const runCommand = async () => {
-  if ('' === command.value) {
+  if (!hasValidCommand.value) {
     return
   }
 
@@ -145,22 +267,24 @@ const runCommand = async () => {
     return
   }
 
-  if (command.value.startsWith('yt-dlp')) {
-    command.value = command.value.replace(/^yt-dlp/, '').trim()
+  let cmd = command.value.trim().replace(/\n/g, ' ').trim()
+
+  if (cmd.startsWith('yt-dlp')) {
+    cmd = cmd.replace(/^yt-dlp/, '').trim()
     await nextTick()
-    if ('' === command.value) {
+    if ('' === cmd) {
       return
     }
   }
 
   await ensureTerminal()
 
-  if ('clear' === command.value) {
+  if ('clear' === cmd) {
     clearOutput(true)
     return
   }
 
-  socket.emit('cli_post', command.value)
+  socket.emit('cli_post', cmd)
   isLoading.value = true
   terminal.value?.writeln(`user@YTPTube ~`)
   terminal.value?.writeln(`$ yt-dlp ${command.value}`)
@@ -179,24 +303,55 @@ const clearOutput = async (withCommand: boolean = false) => {
   focusInput()
 }
 
-const focusInput = () => {
-  const inputElement = document.getElementById('command') as HTMLInputElement
-  if (inputElement) {
-    inputElement.focus()
+const focusInput = async () => {
+  await nextTick()
+  let elm;
+  if (isMultiLineInput.value) {
+    elm = commandTextarea.value?.$el?.querySelector('textarea') as HTMLTextAreaElement
+  } else {
+    elm = commandInput.value?.$el?.querySelector('input') as HTMLInputElement
   }
+
+  elm?.focus()
 }
+
+const addToHistory = (cmd: string) => {
+  commandHistory.value = [cmd, ...commandHistory.value.filter(h => h !== cmd)].slice(0, MAX_HISTORY_ITEMS)
+}
+
+const loadCommand = async (cmd: string) => {
+  command.value = cmd
+  await nextTick()
+  focusInput()
+}
+
+const clearHistory = async () => {
+  if (commandHistory.value.length === 0) {
+    return
+  }
+  const { status } = await dialog.confirmDialog({
+    title: 'Confirm Action',
+    message: `Clear commands history?`,
+    confirmColor: 'is-danger',
+  })
+  if (!status) {
+    return
+  }
+  commandHistory.value = []
+}
+
+const removeFromHistory = (index: number) => commandHistory.value = commandHistory.value.filter((_, i) => i !== index)
 
 const writer = (s: string) => {
   if (!terminal.value) {
     return
   }
-
-  const json = JSON.parse(s)
-
-  terminal.value.writeln(json.data.line)
+  terminal.value.writeln(JSON.parse(s).data.line)
 }
 
 const loader = () => isLoading.value = false
+
+watch(isMultiLineInput, () => focusInput())
 
 onMounted(async () => {
   document.addEventListener('resize', handle_event);
@@ -213,7 +368,6 @@ onMounted(async () => {
   if (storedCommand.value) {
     command.value = storedCommand.value
     await nextTick()
-    runCommand()
   }
 })
 

@@ -479,7 +479,7 @@ This setup should work for at VAAPI encoding in `x86_64` containers.
 > Your `video`, `render` group id might be different from mine, you can run the follow command in docker host server to get the group ids for both groups.
 
 ```bash
-$ cat /etc/group | grep -E 'render|video'
+cat /etc/group | grep -E 'render|video'
 
 video:x:44:your_docker_username
 render:x:105:your_docker_username

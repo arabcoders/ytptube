@@ -5,18 +5,26 @@
         <div class="box">
           <div class="columns is-multiline is-mobile">
             <div class="column is-12">
-              <label class="label is-inline is-unselectable" for="url">
+              <label class=" label is-inline is-unselectable" for="url">
                 <span class="icon"><i class="fa-solid fa-link" /></span>
-                URLs separated by <span class="is-bold">{{ getSeparatorsName(separator) }}</span>
+                <span class="has-tooltip" v-tooltip="'Use Shift+Enter to switch to multiline input mode.'">
+                  URLs separated by newlines or <span class="is-bold is-lowercase">{{ getSeparatorsName(separator)
+                  }}</span>
+                </span>
               </label>
               <div class="field is-grouped">
                 <div class="control is-expanded">
-                  <input type="text" class="input" id="url" placeholder="URLs to download"
-                    :disabled="!socket.isConnected || addInProgress" v-model="form.url">
+                  <textarea v-if="isMultiLineInput" ref="urlTextarea" class="textarea" id="url"
+                    :disabled="!socket.isConnected || addInProgress" v-model="form.url" @keydown="handleKeyDown"
+                    @input="adjustTextareaHeight"
+                    style="resize: none; overflow-y: auto; min-height: 38px; max-height: 300px;" />
+                  <input v-else type="text" class="input" id="url" placeholder="URLs to download"
+                    :disabled="!socket.isConnected || addInProgress" v-model="form.url" @keydown="handleKeyDown"
+                    @paste="handlePaste">
                 </div>
                 <div class="control">
                   <button type="submit" class="button is-primary" :class="{ 'is-loading': addInProgress }"
-                    :disabled="!socket.isConnected || addInProgress || !form?.url">
+                    :disabled="!socket.isConnected || addInProgress || !hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                     <span>Add</span>
                   </button>
@@ -209,7 +217,7 @@
 
                 <div class="control" v-if="config.app.console_enabled" v-tooltip="'Run directly in console'">
                   <button type="button" class="button is-warning" @click="runCliCommand"
-                    :disabled="!socket.isConnected || !form?.url">
+                    :disabled="!socket.isConnected || !hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   </button>
                 </div>
@@ -217,15 +225,15 @@
                 <div class="control">
                   <button type="button" class="button is-info"
                     v-tooltip="'Get yt-dlp information for the provided URL.'"
-                    @click="emitter('getInfo', form.url, form.preset, form.cli)"
-                    :disabled="!socket.isConnected || addInProgress || !form?.url || multiURLs">
+                    @click="emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)"
+                    :disabled="!socket.isConnected || addInProgress || !hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                   </button>
                 </div>
 
                 <div class="control" v-if="config.app.console_enabled">
                   <button type="button" class="button is-success" @click="testDownloadOptions"
-                    :disabled="!socket.isConnected || !form?.url" v-tooltip="'Show compiled yt-dlp options.'">
+                    :disabled="!socket.isConnected || !hasValidUrl" v-tooltip="'Show compiled yt-dlp options.'">
                     <span class="icon"><i class="fa-solid fa-flask" /></span>
                   </button>
                 </div>
@@ -291,6 +299,7 @@ const testResultsData = ref<any>(null)
 const dlFieldsExtra = ['--no-download-archive', '--no-continue']
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
+const urlTextarea = ref<HTMLTextAreaElement | null>(null)
 
 const form = useStorage<item_request>('local_config_v1', {
   id: null,
@@ -304,14 +313,6 @@ const form = useStorage<item_request>('local_config_v1', {
 }) as Ref<item_request>
 
 
-const dialog_confirm = ref({
-  visible: false,
-  title: 'Confirm Action',
-  confirm: () => { },
-  message: '',
-  options: [],
-})
-
 const is_valid_dl_field = (dl_field: string): boolean => {
   if (dlFieldsExtra.includes(dl_field)) {
     return true
@@ -322,6 +323,81 @@ const is_valid_dl_field = (dl_field: string): boolean => {
   }
 
   return false;
+}
+
+const adjustTextareaHeight = async (): Promise<void> => {
+  await nextTick()
+  if (urlTextarea.value) {
+    urlTextarea.value.style.height = 'auto'
+    const newHeight = Math.min(urlTextarea.value.scrollHeight, 300)
+    urlTextarea.value.style.height = `${newHeight}px`
+  }
+}
+
+const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  const isTextarea = target.tagName === 'TEXTAREA'
+  if (event.key !== 'Enter') {
+    return
+  }
+
+  if (event.ctrlKey && isTextarea && !hasValidUrl.value) {
+    event.preventDefault()
+    addDownload()
+    return
+  }
+
+  if (event.shiftKey && !isTextarea) {
+    event.preventDefault()
+    const cursorPos = target.selectionStart || form.value.url.length
+    form.value.url = form.value.url.substring(0, cursorPos) + '\n' + form.value.url.substring(target.selectionEnd || cursorPos)
+
+    await nextTick()
+
+    if (urlTextarea.value) {
+      await adjustTextareaHeight()
+      urlTextarea.value.setSelectionRange(cursorPos + 1, cursorPos + 1)
+      urlTextarea.value.focus()
+    }
+  }
+}
+
+const handlePaste = async (event: ClipboardEvent): Promise<void> => {
+  const pastedText = event.clipboardData?.getData('text') || ''
+  if (!pastedText.includes('\n')) {
+    return
+  }
+
+  event.preventDefault()
+
+  const target = event.target as HTMLInputElement
+  const currentValue = form.value.url || ''
+  const start = target.selectionStart || currentValue.length
+  const end = target.selectionEnd || currentValue.length
+  form.value.url = currentValue.substring(0, start) + pastedText + currentValue.substring(end)
+
+  await nextTick()
+
+  if (urlTextarea.value) {
+    await adjustTextareaHeight()
+    const newPos = start + pastedText.length
+    urlTextarea.value.setSelectionRange(newPos, newPos)
+    urlTextarea.value.focus()
+  }
+}
+
+const splitUrls = (urlString: string): Array<string> => {
+  const lines = urlString.split('\n')
+  const urls: string[] = []
+
+  lines.forEach(line => line.split(separator.value).forEach(url => {
+    const trimmed = url.trim()
+    if (trimmed) {
+      urls.push(trimmed)
+    }
+  }))
+
+  return urls
 }
 
 const addDownload = async () => {
@@ -361,11 +437,7 @@ const addDownload = async () => {
 
   const request_data = [] as Array<item_request>
 
-  form.value.url.split(separator.value).forEach(async (url: string) => {
-    if (!url.trim()) {
-      return
-    }
-
+  splitUrls(form.value.url).forEach(async (url: string) => {
     const data = {
       url: url,
       preset: form.value.preset || config.app.default_preset,
@@ -441,7 +513,6 @@ const resetConfig = async () => {
   dlFields.value = {}
   showAdvanced.value = false
   toast.success('Local configuration has been reset.')
-  dialog_confirm.value.visible = false
 }
 
 const convertOptions = async (args: string) => {
@@ -509,7 +580,11 @@ onMounted(async () => {
   await nextTick()
 
   if (!separators.some(s => s.value === separator.value)) {
-    separator.value = separators[0]?.value ?? '.'
+    separator.value = separators[0]?.value ?? ','
+  }
+
+  if (isMultiLineInput.value && urlTextarea.value) {
+    await adjustTextareaHeight()
   }
 })
 
@@ -565,7 +640,7 @@ const runCliCommand = async (): Promise<void> => {
     const resp = await request('/api/yt-dlp/command', {
       method: 'POST',
       body: JSON.stringify({
-        url: form.value.url,
+        url: splitUrls(form.value.url).join(' '),
         preset: form.value.preset,
         folder: form.value.folder,
         cookies: form.value.cookies,
@@ -657,6 +732,7 @@ const CloseTestResults = () => {
   testResultsData.value = null
 }
 
+const isMultiLineInput = computed(() => !!form.value.url && form.value.url.includes('\n'))
 const hasFormatInConfig = computed((): boolean => !!form.value.cli?.match(/(?<!\S)(-f|--format)(=|\s)(\S+)/))
 
 const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
@@ -693,13 +769,17 @@ const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string
   return ret
 }
 
-// eslint-disable-next-line vue/no-side-effects-in-computed-properties
-const sortedDLFields = computed(() => config.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
+const sortedDLFields = computed(() => [...config.dl_fields].sort((a, b) => (a.order || 0) - (b.order || 0)))
+const hasValidUrl = computed(() => form.value.url && form.value.url.trim().length > 0)
 
-const multiURLs = computed(() => {
-  if (!form.value.url) {
-    return false
+watch(isMultiLineInput, async newValue => {
+  await nextTick()
+  if (newValue) {
+    await adjustTextareaHeight()
+    urlTextarea.value?.focus()
+    return
   }
-  return form.value.url.split(separator.value).filter((u: string) => u.trim()).length > 1
+  const inputElement = document.getElementById('url') as HTMLInputElement
+  inputElement?.focus()
 })
 </script>

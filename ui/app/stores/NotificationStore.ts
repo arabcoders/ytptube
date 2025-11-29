@@ -3,8 +3,8 @@ import { useStorage } from '@vueuse/core'
 import type { notification, notificationType } from '~/composables/useNotification'
 
 const _map: Record<notificationType, { level: number; color: string; icon: string }> = {
-  'error': { level: 3, color: 'is-danger', icon: 'fas fa-circle-exclamation' },
-  'warning': { level: 2, color: 'is-warning', icon: 'fas fa-triangle-exclamation' },
+  'error': { level: 3, color: 'is-danger', icon: 'fas fa-triangle-exclamation' },
+  'warning': { level: 2, color: 'is-warning', icon: 'fas fa-circle-exclamation' },
   'success': { level: 1, color: 'is-primary', icon: 'fas fa-circle-check' },
   'info': { level: 0, color: 'is-info', icon: 'fas fa-circle-info' }
 }
