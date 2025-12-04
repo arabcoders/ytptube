@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20251129-af84a03a",
-        "date": "2025-11-29T16:13:25+00:00",
+        "tag": "master-20251204-3ece6198",
+        "date": "2025-12-04T17:21:28+00:00",
         "commits": [
+            {
+                "sha": "5237a33d",
+                "message": "update external packages",
+                "author": "arabcoders",
+                "date": "2025-12-04T17:06:26+00:00",
+                "full_sha": "5237a33d7aa74d20cf60af0836e85275d40bf929"
+            },
+            {
+                "sha": "c9de6b9f",
+                "message": "Drop download_archive for generic extractors when using default presets. Fixes #506",
+                "author": "arabcoders",
+                "date": "2025-12-04T17:04:58+00:00",
+                "full_sha": "c9de6b9f2fc6e3528d4149904ccac721972efdcc"
+            },
             {
                 "sha": "a616a777",
                 "message": "Chore: remove $ from commands examples",
@@ -3182,7 +3196,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "af84a03ad19a42f11bc31f7108049c100391015f"
+        "full_sha": "3ece619834c3361b09ff169b1327fb44d6afc8e0"
     },
     {
         "tag": "master-20250616-c07465a6",
