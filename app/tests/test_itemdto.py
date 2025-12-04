@@ -279,3 +279,51 @@ class TestItemDTO:
         mock_utils_sidecar.assert_not_called()
         assert result is existing
         assert dto.sidecar is existing
+
+    def test_get_preset_returns_preset_instance(self):
+        """Test ItemDTO.get_preset returns the Preset instance."""
+        from app.library.Presets import Preset
+
+        mock_preset = Preset(id="test-id", name="test-preset", cli="--test")
+
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="test-preset")
+
+        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+            mock_presets.return_value.get.return_value = mock_preset
+
+            result = dto.get_preset()
+
+            mock_presets.return_value.get.assert_called_once_with("test-preset")
+            assert result is mock_preset
+            assert result.name == "test-preset"
+
+    def test_get_preset_uses_default_when_no_preset_set(self):
+        """Test ItemDTO.get_preset uses 'default' when preset is empty."""
+        from app.library.Presets import Preset
+
+        mock_preset = Preset(id="default-id", name="default", cli="--default")
+
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="")
+
+        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+            mock_presets.return_value.get.return_value = mock_preset
+
+            result = dto.get_preset()
+
+            mock_presets.return_value.get.assert_called_once_with("default")
+            assert result is mock_preset
+
+    def test_get_preset_returns_none_when_not_found(self):
+        """Test ItemDTO.get_preset returns None when preset not found."""
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="nonexistent")
+
+        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+            mock_presets.return_value.get.return_value = None
+
+            result = dto.get_preset()
+
+            mock_presets.return_value.get.assert_called_once_with("nonexistent")
+            assert result is None
