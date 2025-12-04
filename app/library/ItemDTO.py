@@ -538,6 +538,18 @@ class ItemDTO:
 
         return params
 
+    def get_preset(self) -> "Preset | None":
+        """
+        Get the preset for the item.
+
+        Returns:
+            Preset | None: The preset for the item. If not found, None.
+
+        """
+        from .Presets import Presets
+
+        return Presets.get_instance().get(self.preset if self.preset else "default")
+
     def archive_status(self, force: bool = False) -> None:
         """
         Recompute the archive status of the item.
