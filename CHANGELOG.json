@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "5237a33d7aa74d20cf60af0836e85275d40bf929",
+    "date": "2025-12-04T17:06:26+00:00",
+    "commits": [
+      {
+        "sha": "5237a33d",
+        "full_sha": "5237a33d7aa74d20cf60af0836e85275d40bf929",
+        "message": "update external packages",
+        "author": "arabcoders",
+        "date": "2025-12-04T17:06:26+00:00"
+      },
+      {
+        "sha": "c9de6b9f",
+        "full_sha": "c9de6b9f2fc6e3528d4149904ccac721972efdcc",
+        "message": "Drop download_archive for generic extractors when using default presets. Fixes #506",
+        "author": "arabcoders",
+        "date": "2025-12-04T17:04:58+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.9",
     "full_sha": "af84a03ad19a42f11bc31f7108049c100391015f",
     "date": "2025-11-29T16:13:25+00:00",
