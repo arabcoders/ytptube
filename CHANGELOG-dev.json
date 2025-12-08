@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251208-fa7292ac",
-        "date": "2025-12-08T14:19:11+00:00",
+        "tag": "dev-20251208-7e09bf7e",
+        "date": "2025-12-08T14:29:30+00:00",
         "commits": [
+            {
+                "sha": "7e09bf7e",
+                "message": "Fix: remove dev packages during final build",
+                "author": "arabcoders",
+                "date": "2025-12-08T14:29:30+00:00",
+                "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856"
+            },
             {
                 "sha": "fa7292ac",
                 "message": "Feat: set_preset key for condition to switch preset based on yt-dlp data",
@@ -3217,7 +3224,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646"
+        "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856"
     },
     {
         "tag": "dev-20250616-c07465a6",

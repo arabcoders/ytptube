@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646",
-    "date": "2025-12-08T14:19:11+00:00",
+    "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856",
+    "date": "2025-12-08T14:29:30+00:00",
     "commits": [
+      {
+        "sha": "7e09bf7e",
+        "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856",
+        "message": "Fix: remove dev packages during final build",
+        "author": "arabcoders",
+        "date": "2025-12-08T14:29:30+00:00"
+      },
       {
         "sha": "fa7292ac",
         "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646",
