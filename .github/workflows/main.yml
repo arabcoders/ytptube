@@ -121,6 +121,8 @@ jobs:
 
       - name: Build frontend
         working-directory: ui
+        env:
+          NODE_ENV: production
         run: pnpm run generate
 
       - name: Install GitPython
