@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20251204-5237a33d",
-        "date": "2025-12-04T17:06:26+00:00",
+        "tag": "dev-20251208-fa7292ac",
+        "date": "2025-12-08T14:19:11+00:00",
         "commits": [
+            {
+                "sha": "fa7292ac",
+                "message": "Feat: set_preset key for condition to switch preset based on yt-dlp data",
+                "author": "arabcoders",
+                "date": "2025-12-08T14:19:11+00:00",
+                "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646"
+            },
+            {
+                "sha": "eaa433e2",
+                "message": "Fix: incorrect usage of function name",
+                "author": "arabcoders",
+                "date": "2025-12-08T13:47:43+00:00",
+                "full_sha": "eaa433e264a374b80c32f0bdcd32bb6d1b3390b8"
+            },
+            {
+                "sha": "2b0d8424",
+                "message": "Chore: update external packages",
+                "author": "arabcoders",
+                "date": "2025-12-08T13:47:08+00:00",
+                "full_sha": "2b0d8424ea31a2d47df3573f038826379ab0ae23"
+            },
             {
                 "sha": "5237a33d",
                 "message": "update external packages",
@@ -3196,7 +3217,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "5237a33d7aa74d20cf60af0836e85275d40bf929"
+        "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646"
     },
     {
         "tag": "dev-20250616-c07465a6",

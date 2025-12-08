@@ -1,5 +1,33 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646",
+    "date": "2025-12-08T14:19:11+00:00",
+    "commits": [
+      {
+        "sha": "fa7292ac",
+        "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646",
+        "message": "Feat: set_preset key for condition to switch preset based on yt-dlp data",
+        "author": "arabcoders",
+        "date": "2025-12-08T14:19:11+00:00"
+      },
+      {
+        "sha": "eaa433e2",
+        "full_sha": "eaa433e264a374b80c32f0bdcd32bb6d1b3390b8",
+        "message": "Fix: incorrect usage of function name",
+        "author": "arabcoders",
+        "date": "2025-12-08T13:47:43+00:00"
+      },
+      {
+        "sha": "2b0d8424",
+        "full_sha": "2b0d8424ea31a2d47df3573f038826379ab0ae23",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-12-08T13:47:08+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.10",
     "full_sha": "3ece619834c3361b09ff169b1327fb44d6afc8e0",
     "date": "2025-12-04T17:21:28+00:00",
