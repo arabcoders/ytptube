@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856",
-    "date": "2025-12-08T14:29:30+00:00",
+    "full_sha": "b33cb0a8453294b5057d4c6fd96e00f809dc97da",
+    "date": "2025-12-08T14:44:05+00:00",
     "commits": [
+      {
+        "sha": "b33cb0a8",
+        "full_sha": "b33cb0a8453294b5057d4c6fd96e00f809dc97da",
+        "message": "Refactor: change how we build frontend inside docker.",
+        "author": "arabcoders",
+        "date": "2025-12-08T14:44:05+00:00"
+      },
       {
         "sha": "7e09bf7e",
         "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856",
