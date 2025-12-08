@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20251204-3ece6198",
-        "date": "2025-12-04T17:21:28+00:00",
+        "tag": "master-20251208-2214bc66",
+        "date": "2025-12-08T17:47:37+00:00",
         "commits": [
+            {
+                "sha": "ddc71cc1",
+                "message": "Feat: Add new PATCH api for updating the task and improved the no timer messaging",
+                "author": "arabcoders",
+                "date": "2025-12-08T16:43:06+00:00",
+                "full_sha": "ddc71cc1bdcbf4596699f7ee4b539729c02ef241"
+            },
+            {
+                "sha": "b33cb0a8",
+                "message": "Refactor: change how we build frontend inside docker.",
+                "author": "arabcoders",
+                "date": "2025-12-08T14:44:05+00:00",
+                "full_sha": "b33cb0a8453294b5057d4c6fd96e00f809dc97da"
+            },
+            {
+                "sha": "7e09bf7e",
+                "message": "Fix: remove dev packages during final build",
+                "author": "arabcoders",
+                "date": "2025-12-08T14:29:30+00:00",
+                "full_sha": "7e09bf7e183292a2fd150a9c7ab17ab751e16856"
+            },
+            {
+                "sha": "fa7292ac",
+                "message": "Feat: set_preset key for condition to switch preset based on yt-dlp data",
+                "author": "arabcoders",
+                "date": "2025-12-08T14:19:11+00:00",
+                "full_sha": "fa7292ac356ccae644ac2aadf2fad476916a2646"
+            },
+            {
+                "sha": "eaa433e2",
+                "message": "Fix: incorrect usage of function name",
+                "author": "arabcoders",
+                "date": "2025-12-08T13:47:43+00:00",
+                "full_sha": "eaa433e264a374b80c32f0bdcd32bb6d1b3390b8"
+            },
+            {
+                "sha": "2b0d8424",
+                "message": "Chore: update external packages",
+                "author": "arabcoders",
+                "date": "2025-12-08T13:47:08+00:00",
+                "full_sha": "2b0d8424ea31a2d47df3573f038826379ab0ae23"
+            },
             {
                 "sha": "5237a33d",
                 "message": "update external packages",
@@ -3196,7 +3238,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3ece619834c3361b09ff169b1327fb44d6afc8e0"
+        "full_sha": "2214bc66ded50a97126d9dda83ce1cca42b412f0"
     },
     {
         "tag": "master-20250616-c07465a6",
