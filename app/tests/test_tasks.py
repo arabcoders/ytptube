@@ -921,3 +921,156 @@ class TestTasks:
 
         # Verify download queue was NOT called (task was skipped)
         mock_download_queue_instance.add.assert_not_called()
+
+
+class TestHandleTaskInspect:
+    """Test the HandleTask inspect method with static_only parameter."""
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.Config")
+    @patch("app.library.Tasks.EventBus")
+    @patch("app.library.Tasks.Scheduler")
+    @patch("app.library.Tasks.DownloadQueue")
+    @patch("app.library.Tasks.Services")
+    async def test_inspect_with_static_only_true(
+        self, mock_services, mock_download_queue, mock_scheduler, mock_eventbus, mock_config
+    ):
+        """Test inspect with static_only=True returns immediately after can_handle check."""
+        mock_config_instance = Mock(
+            debug=False, default_preset="default", config_path="/tmp", tasks_handler_timer="15 */1 * * *"
+        )
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+        mock_scheduler.get_instance.return_value = Mock()
+        mock_download_queue.get_instance.return_value = Mock()
+
+        # Mock Services to simulate successful can_handle
+        mock_services_instance = Mock()
+        mock_services_instance.handle_sync = Mock(return_value=True)
+        mock_services_instance.handle_async = AsyncMock()  # Should NOT be called with static_only=True
+        mock_services.get_instance.return_value = mock_services_instance
+
+        # Create a mock handler
+        mock_handler = Mock()
+        mock_handler.__name__ = "TestHandler"
+        mock_handler.can_handle = Mock(return_value=True)
+        mock_handler.extract = AsyncMock()  # Should NOT be called with static_only=True
+
+        tasks = Tasks(file=None, config=mock_config_instance)
+        handler = tasks.get_handler()
+        handler._handlers = [mock_handler]
+
+        # Call inspect with static_only=True
+        result = await handler.inspect(
+            url="https://example.com/feed", preset="default", handler_name=None, static_only=True
+        )
+
+        # Verify result structure
+        assert hasattr(result, "items")
+        assert hasattr(result, "metadata")
+        assert result.items == []
+        assert result.metadata["matched"] is True
+        assert result.metadata["handler"] == "TestHandler"
+
+        # Verify handle_async (extract) was NOT called
+        mock_services_instance.handle_async.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.Config")
+    @patch("app.library.Tasks.EventBus")
+    @patch("app.library.Tasks.Scheduler")
+    @patch("app.library.Tasks.DownloadQueue")
+    @patch("app.library.Tasks.Services")
+    async def test_inspect_with_static_only_false(
+        self, mock_services, mock_download_queue, mock_scheduler, mock_eventbus, mock_config
+    ):
+        """Test inspect with static_only=False performs full extraction."""
+        from app.library.Tasks import TaskResult
+
+        mock_config_instance = Mock(
+            debug=False, default_preset="default", config_path="/tmp", tasks_handler_timer="15 */1 * * *"
+        )
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+        mock_scheduler.get_instance.return_value = Mock()
+        mock_download_queue.get_instance.return_value = Mock()
+
+        # Mock Services
+        mock_services_instance = Mock()
+        mock_services_instance.handle_sync = Mock(return_value=True)
+
+        # Mock successful extract result
+        mock_extract_result = TaskResult(
+            items=[{"url": "https://example.com/video1", "title": "Video 1"}],
+            metadata={"raw_count": 1},
+        )
+        mock_services_instance.handle_async = AsyncMock(return_value=mock_extract_result)
+        mock_services.get_instance.return_value = mock_services_instance
+
+        # Create a mock handler
+        mock_handler = Mock()
+        mock_handler.__name__ = "TestHandler"
+        mock_handler.can_handle = Mock(return_value=True)
+        mock_handler.extract = AsyncMock(return_value=mock_extract_result)
+
+        tasks = Tasks(file=None, config=mock_config_instance)
+        handler = tasks.get_handler()
+        handler._handlers = [mock_handler]
+
+        # Call inspect with static_only=False (default)
+        result = await handler.inspect(url="https://example.com/feed", preset="default", handler_name=None)
+
+        # Verify result structure includes extracted items
+        assert hasattr(result, "items")
+        assert hasattr(result, "metadata")
+        assert len(result.items) > 0
+        assert result.metadata["matched"] is True
+        assert result.metadata["handler"] == "TestHandler"
+        assert result.metadata["supported"] is True
+
+        # Verify handle_async (extract) WAS called
+        mock_services_instance.handle_async.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.Config")
+    @patch("app.library.Tasks.EventBus")
+    @patch("app.library.Tasks.Scheduler")
+    @patch("app.library.Tasks.DownloadQueue")
+    @patch("app.library.Tasks.Services")
+    async def test_inspect_static_only_with_no_handler_match(
+        self, mock_services, mock_download_queue, mock_scheduler, mock_eventbus, mock_config
+    ):
+        """Test inspect with static_only=True when no handler matches."""
+        from app.library.Tasks import TaskFailure
+
+        mock_config_instance = Mock(
+            debug=False, default_preset="default", config_path="/tmp", tasks_handler_timer="15 */1 * * *"
+        )
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+        mock_scheduler.get_instance.return_value = Mock()
+        mock_download_queue.get_instance.return_value = Mock()
+
+        # Mock Services to simulate failed can_handle
+        mock_services_instance = Mock()
+        mock_services_instance.handle_sync = Mock(return_value=False)
+        mock_services.get_instance.return_value = mock_services_instance
+
+        # Create a mock handler that won't match
+        mock_handler = Mock()
+        mock_handler.__name__ = "TestHandler"
+        mock_handler.can_handle = Mock(return_value=False)
+
+        tasks = Tasks(file=None, config=mock_config_instance)
+        handler = tasks.get_handler()
+        handler._handlers = [mock_handler]
+
+        # Call inspect with static_only=True
+        result = await handler.inspect(
+            url="https://unsupported.com/feed", preset="default", handler_name=None, static_only=True
+        )
+
+        # Verify result is a TaskFailure
+        assert isinstance(result, TaskFailure)
+        assert result.metadata["matched"] is False
+        assert result.metadata["handler"] is None

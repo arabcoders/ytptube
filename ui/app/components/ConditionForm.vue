@@ -164,6 +164,10 @@
                             <b>YTPTube</b> to ignore the download and directly mark the item as archived. this is useful
                             to skip certain kind of downloads.
                           </li>
+                          <li>The key <code>set_preset</code> with the name of an existing preset will instruct
+                            <b>YTPTube</b> to switch the download to use the specified preset. This is useful
+                            to apply different download settings based on content type or source.
+                          </li>
                         </ul>
                       </div>
                     </div>

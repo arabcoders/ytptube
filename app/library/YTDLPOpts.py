@@ -156,7 +156,7 @@ class YTDLPCli:
 
         if self.preset:
             if self.preset.cookies and cookie_file is None:
-                cookie_file = self.preset.get_cookie_file(config=self._config)
+                cookie_file = self.preset.get_cookies_file(config=self._config)
 
             if self.preset.folder and save_path is None:
                 save_path = str(Path(self._config.download_path) / self.preset.folder.lstrip("/"))

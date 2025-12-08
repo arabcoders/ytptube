@@ -37,7 +37,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
-    - [POST /api/tasks/{id}/toggle](#post-apitasksidtoggle)
+    - [PATCH /api/tasks/{id}](#patch-apitasksid)
     - [GET /api/task\_definitions/](#get-apitask_definitions)
     - [GET /api/task\_definitions/{identifier}](#get-apitask_definitionsidentifier)
     - [POST /api/task\_definitions/](#post-apitask_definitions)
@@ -783,11 +783,29 @@ or on error
 {
   "url": "https://example.com/feed",            // required, validated URL
   "preset": "news-preset",                     // optional preset override - In real scenarios, the preset come from the task.
-  "handler": "GenericTaskHandler"               // optional explicit handler class name, in real scenarios, the handler is resolved automatically.
+  "handler": "GenericTaskHandler",              // optional explicit handler class name, in real scenarios, the handler is resolved automatically.
+  "static_only": false                          // optional, if true performs only can_handle check without extracting items (faster, lightweight)
 }
 ```
 
-**Response (success)**:
+**Notes**:
+- When `static_only` is `true`, the endpoint only checks if a handler can process the URL using the `can_handle` method
+- This is much faster and lighter than the full inspection which calls the handler's `extract` method
+- Use `static_only: true` for quick validation checks (e.g., UI indicators)
+- Use `static_only: false` (default) for full inspection with item extraction
+
+**Response (success with static_only: true)**:
+```json
+{
+  "items": [],
+  "metadata": {
+    "matched": true,
+    "handler": "GenericTaskHandler"
+  }
+}
+```
+
+**Response (success with static_only: false)**:
 ```json
 {
   "matched": true,
@@ -924,42 +942,63 @@ or
 
 ---
 
-### POST /api/tasks/{id}/toggle
-**Purpose**: Toggle the enabled/disabled status of a scheduled task.
+### PATCH /api/tasks/{id}
+**Purpose**: Update specific fields of a scheduled task.
 
 **Path Parameter**:
 - `id`: Task ID.
 
+**Request Body**:
+JSON object with fields to update:
+```json
+{
+  "enabled": false,
+  "handler_enabled": true,
+  "timer": "0 */6 * * *",
+  "preset": "audio",
+  "folder": "downloads/music",
+  "template": "%(title)s.%(ext)s",
+  "cli": "--extract-audio",
+  "auto_start": true
+}
+```
+
+**Notes**:
+- Only include fields you want to update
+- All fields are optional
+
 **Response**:
-Returns the updated task object:
+Returns the updated task
 ```json
 {
   "id": "task_id",
   "name": "Task Name",
   "url": "https://example.com/playlist",
-  "preset": "default",
-  "folder": "",
-  "template": "",
-  "cli": "",
+  "preset": "audio",
+  "folder": "downloads/music",
+  "template": "%(title)s.%(ext)s",
+  "cli": "--extract-audio",
   "timer": "0 */6 * * *",
   "auto_start": true,
   "handler_enabled": true,
   "enabled": false
 }
 ```
-or
+
+**Error Responses**:
 ```json
 { "error": "Task 'task_id' does not exist." }
+{ "error": "Invalid JSON in request body.", "message": "..." }
+{ "error": "Request body must be a JSON object." }
+{ "error": "No valid fields to update." }
+{ "error": "Validation failed: Invalid timer format." }
 ```
 
-**Notes**:
-- When a task is disabled (`enabled: false`), it will not be executed by the scheduler
-
 **Status Codes**:
-- `200 OK` - Task status toggled successfully, returns updated task object
-- `400 Bad Request` - Missing task ID
+- `200 OK` - Task updated successfully
+- `400 Bad Request` - Missing task ID, invalid JSON, no valid fields, or validation error
 - `404 Not Found` - Task does not exist
-- `500 Internal Server Error` - Failed to update task status
+- `500 Internal Server Error` - Failed to update task
 
 ---
 

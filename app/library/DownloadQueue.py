@@ -828,6 +828,17 @@ class DownloadQueue(metaclass=Singleton):
                     )
                     return {"status": "ok"}
 
+                if condition.extras.get("set_preset") and (target_preset := condition.extras.get("set_preset")):
+                    if Presets.get_instance().has(target_preset):
+                        log_message: str = f"Switching preset from '{item.preset}' to '{target_preset}' for '{item_title}' as per condition '{condition.name}'."
+                        LOG.info(log_message)
+                        self._notify.emit(Events.LOG_INFO, data={}, title="Preset Switched", message=log_message)
+                        item = item.new_with(preset=target_preset)
+                    else:
+                        LOG.warning(
+                            f"Preset '{target_preset}' specified in condition '{condition.name}' does not exist. Ignoring set_preset."
+                        )
+
                 return await self.add(item=item.new_with(requeued=True, cli=condition.cli), already=already)
 
             _status, _msg = ytdlp_reject(entry=entry, yt_params=yt_conf)

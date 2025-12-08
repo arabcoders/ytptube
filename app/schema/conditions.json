@@ -38,18 +38,20 @@
     },
     "examples": [
       {
-        "id": "c1e2d3f4-5678-1234-9abc-def012345678",
-        "name": "Audio Only",
-        "filter": "type=audio",
-        "cli": "--extract-audio",
+        "id": "a2b3c4d5-6789-2345-0bcd-ef1234567890",
+        "name": "Long Videos",
+        "filter": "duration>3600",
         "extras": {
-          "priority": "high"
+          "ignore_download": true
         }
       },
       {
-        "id": "a2b3c4d5-6789-2345-0bcd-ef1234567890",
-        "name": "Long Videos",
-        "filter": "duration>3600"
+        "id": "b3c4d5e6-7890-3456-1cde-f23456789012",
+        "name": "Use Audio Preset for Music",
+        "filter": "categories~='Music'",
+        "extras": {
+          "set_preset": "audio-only"
+        }
       }
     ]
   }

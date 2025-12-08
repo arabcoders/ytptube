@@ -117,10 +117,12 @@ jobs:
         working-directory: ui
         env:
           NODE_ENV: production
-        run: pnpm install --frozen-lockfile --prod
+        run: pnpm install --frozen-lockfile --prod --ignore-scripts
 
       - name: Build frontend
         working-directory: ui
+        env:
+          NODE_ENV: production
         run: pnpm run generate
 
       - name: Install GitPython

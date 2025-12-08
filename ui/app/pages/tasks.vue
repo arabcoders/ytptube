@@ -170,9 +170,13 @@
                         </span>
                       </span>
                       &nbsp;
-                      <span class="icon-text">
-                        <span class="icon"><i class="fa-solid fa-rss" /></span>
-                        <span>{{ item.handler_enabled ? 'Enabled' : 'Disabled' }}</span>
+                      <span class="icon-text is-clickable" @click="toggleHandlerEnabled(item)"
+                        v-tooltip="'Click to ' + (item.handler_enabled !== false ? 'disable' : 'enable') + ' task handler'">
+                        <span class="icon">
+                          <i class="fa-solid fa-rss"
+                            :class="{ 'has-text-success': item.handler_enabled !== false, 'has-text-danger': item.handler_enabled === false }" />
+                        </span>
+                        <span>{{ item.handler_enabled !== false ? 'Enabled' : 'Disabled' }}</span>
                       </span>
                       &nbsp;
                       <span class="icon-text" v-if="item.preset">
@@ -185,9 +189,13 @@
                     <span v-if="item.timer" class="has-tooltip" v-tooltip="item.timer">
                       {{ tryParse(item.timer) }}
                     </span>
-                    <span v-else class="has-text-danger">
+                    <span v-else-if="!willTaskBeProcessed(item)" class="has-text-danger">
                       <span class="icon"> <i class="fa-solid fa-exclamation" /> </span>
-                      No timer is set
+                      No timer or handler
+                    </span>
+                    <span v-else>
+                      <span class="icon"> <i class="fa-solid fa-rss" /> </span>
+                      Handler only
                     </span>
                   </td>
                   <td class="is-vcentered is-items-center">
@@ -278,10 +286,11 @@
                         :class="{ 'fa-circle-pause has-text-success': item.auto_start, 'fa-circle-play has-text-danger': !item.auto_start }" />
                     </span>
                   </div>
-                  <div class="control">
-                    <span class="icon" v-tooltip="`Task handler is ${item.handler_enabled ? 'enabled' : 'disabled'}`">
+                  <div class="control is-clickable" @click="toggleHandlerEnabled(item)">
+                    <span class="icon"
+                      v-tooltip="`Task handler is ${item.handler_enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
                       <i class="fa-solid fa-rss"
-                        :class="{ 'has-text-success': item.handler_enabled, 'has-text-danger': !item.handler_enabled }" />
+                        :class="{ 'has-text-success': item.handler_enabled !== false, 'has-text-danger': item.handler_enabled === false }" />
                     </span>
                   </div>
                   <div class="control is-clickable" @click="toggleEnabled(item)">
@@ -308,15 +317,19 @@
               <div class="content">
                 <p class="is-text-overflow">
                   <span class="icon">
-                    <i class="fa-solid"
-                      :class="{ 'fa-clock': item.timer, 'has-text-danger fa-exclamation': !item.timer }" />
+                    <i class="fa-solid" :class="{
+                      'fa-clock': item.timer,
+                      'fa-rss': !item.timer && willTaskBeProcessed(item),
+                      'has-text-danger fa-exclamation': !willTaskBeProcessed(item)
+                    }" />
                   </span>
                   <span v-if="item.timer">
                     <NuxtLink target="_blank" :to="`https://crontab.guru/#${item.timer.replace(/ /g, '_')}`">
                       {{ item.timer }} - {{ tryParse(item.timer) }}
                     </NuxtLink>
                   </span>
-                  <span class="has-text-danger" v-else>No timer is set</span>
+                  <span v-else-if="willTaskBeProcessed(item)">Handler only</span>
+                  <span v-else class="has-text-danger">No timer or handler</span>
                 </p>
                 <p class="is-text-overflow" v-if="item.folder">
                   <span class="icon"><i class="fa-solid fa-folder" /></span>
@@ -458,12 +471,14 @@ import { useConfirm } from '~/composables/useConfirm'
 import TaskInspect from '~/components/TaskInspect.vue'
 import type { task_item, exported_task, error_response } from '~/types/tasks'
 import { sleep } from '~/utils'
+import { useSessionCache } from '~/utils/cache'
 
 const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const { confirmDialog: cDialog } = useDialog()
+const sessionCache = useSessionCache()
 const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
@@ -527,6 +542,66 @@ watch(() => socket.isConnected, async () => {
   }
 })
 
+const CACHE_KEY = 'tasks:handler_support'
+const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {})
+watch(taskHandlerSupport, (newValue) => sessionCache.set(CACHE_KEY, newValue), { deep: true })
+
+const getCacheKey = (task: task_item): string => `${task.id}:${task.url}`
+
+const cleanStaleCache = (currentTasks: Array<task_item>) => {
+  const validKeys = new Set(currentTasks.map(task => getCacheKey(task)))
+  const cacheKeys = Object.keys(taskHandlerSupport.value)
+
+  for (const key of cacheKeys) {
+    if (!validKeys.has(key)) {
+      taskHandlerSupport.value[key] = undefined as any
+    }
+  }
+}
+
+const recheckHandlerSupport = async (updatedTasks: Array<task_item>) => {
+  for (const task of updatedTasks) {
+    if (!task.timer && false !== task.handler_enabled) {
+      await checkHandlerSupport(task)
+    }
+  }
+}
+
+const checkHandlerSupport = async (task: task_item): Promise<boolean> => {
+  const cacheKey = getCacheKey(task)
+
+  if (undefined !== taskHandlerSupport.value[cacheKey]) {
+    return taskHandlerSupport.value[cacheKey] as boolean
+  }
+
+  try {
+    const response = await request('/api/tasks/inspect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: task.url, static_only: true })
+    })
+    const data = await response.json()
+    const supported = true === data?.matched
+    taskHandlerSupport.value[cacheKey] = supported
+    return supported
+  } catch {
+    taskHandlerSupport.value[cacheKey] = false
+    return false
+  }
+}
+
+const willTaskBeProcessed = (task: task_item): boolean => {
+  if (false === task.enabled) {
+    return false
+  }
+
+  const hasTimer = !!(task.timer && task.timer.trim())
+  const cacheKey = getCacheKey(task)
+  const hasHandler = false !== task.handler_enabled && true === taskHandlerSupport.value[cacheKey]
+
+  return hasTimer || hasHandler
+}
+
 const filteredTasks = computed<task_item[]>(() => {
   const q = query.value?.toLowerCase();
   if (!q) return tasks.value;
@@ -551,6 +626,8 @@ const reloadContent = async (fromMounted: boolean = false) => {
     }
 
     tasks.value = data
+    cleanStaleCache(data)
+    await recheckHandlerSupport(data)
   } catch (e) {
     if (fromMounted) {
       return
@@ -602,6 +679,8 @@ const updateTasks = async (items: Array<task_item>) => {
     }
 
     tasks.value = data
+    cleanStaleCache(data)
+    await recheckHandlerSupport(data)
     resetForm(true)
     return true
   } catch (e: any) {
@@ -686,7 +765,11 @@ const toggleEnabled = async (item: task_item) => {
   const actionText = newStatus ? 'enable' : 'disable'
 
   try {
-    const response = await request(`/api/tasks/${item.id}/toggle`, { method: 'POST' })
+    const response = await request(`/api/tasks/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: newStatus })
+    })
     const data = await response.json()
 
     if (data?.error) {
@@ -699,6 +782,31 @@ const toggleEnabled = async (item: task_item) => {
     toast[func](`Task '${item.name}' ${data.enabled ? 'enabled' : 'disabled'}.`)
   } catch (e: any) {
     toast.error(`Failed to ${actionText} task. ${e.message || 'Unknown error.'}`)
+  }
+}
+
+const toggleHandlerEnabled = async (item: task_item) => {
+  const newStatus = !item.handler_enabled
+  const actionText = newStatus ? 'enable' : 'disable'
+
+  try {
+    const response = await request(`/api/tasks/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handler_enabled: newStatus })
+    })
+    const data = await response.json()
+
+    if (data?.error) {
+      toast.error(data.error)
+      return
+    }
+
+    item.handler_enabled = data.handler_enabled
+    const func = data.handler_enabled ? 'success' : 'warning'
+    toast[func](`Task handler for '${item.name}' ${data.handler_enabled ? 'enabled' : 'disabled'}.`)
+  } catch (e: any) {
+    toast.error(`Failed to ${actionText} task handler. ${e.message || 'Unknown error.'}`)
   }
 }
 

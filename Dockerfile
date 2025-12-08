@@ -3,7 +3,12 @@ FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
-RUN if [ ! -f "/app/exported/index.html" ]; then npm install --production --prefer-offline --frozen-lockfile && npm run generate; else echo "Skipping UI build, already built."; fi
+ENV NODE_ENV=production
+RUN if [ ! -f "/app/exported/index.html" ]; then \
+  npm install -g pnpm && \
+  NODE_ENV=production pnpm install --frozen-lockfile --prod --ignore-scripts && \
+  pnpm run generate; \
+  else echo "Skipping UI build, already built."; fi
 
 FROM python:3.13-bookworm AS python_builder
 
@@ -17,8 +22,7 @@ ENV UV_CACHE_DIR=/root/.cache/uv
 ENV DEBIAN_FRONTEND=noninteractive
 ENV UV_INSTALL_DIR=/usr/bin
 
-SHELL ["/bin/bash","-lc"]
-RUN echo 1 && curl -LsSf https://astral.sh/uv/install.sh | sh
+COPY --from=astral/uv:latest /uv /usr/bin/
 
 WORKDIR /opt/
 
