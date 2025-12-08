@@ -20,22 +20,38 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @route("POST", "api/tasks/inspect", "task_handler_inspect")
 async def task_handler_inspect(request: Request, tasks: Tasks, encoder: Encoder, config: Config) -> Response:
+    """
+    Check if handler can process the given URL.
+
+    Args:
+        request (Request): The request object.
+        tasks (Tasks): The tasks instance.
+        encoder (Encoder): The encoder instance.
+        config (Config): The config instance.
+
+    Returns:
+        Response: The response object.
+
+    """
     data = await request.json()
 
     url: str | None = data.get("url") if isinstance(data, dict) else None
     if not url:
         return web.json_response({"error": "url is required."}, status=web.HTTPBadRequest.status_code)
-    try:
-        validate_url(url, allow_internal=config.allow_internal_urls)
-    except ValueError as e:
-        return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
+
+    static_only: bool = data.get("static_only", False) if isinstance(data, dict) else False
+    if not static_only:
+        try:
+            validate_url(url, allow_internal=config.allow_internal_urls)
+        except ValueError as e:
+            return web.json_response({"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
     preset: str = data.get("preset", "") if isinstance(data, dict) else ""
     handler_name: str | None = data.get("handler") if isinstance(data, dict) else None
 
     try:
         result: TaskResult | TaskFailure = await tasks.get_handler().inspect(
-            url=url, preset=preset, handler_name=handler_name
+            url=url, preset=preset, handler_name=handler_name, static_only=static_only
         )
     except Exception as e:
         LOG.exception(e)
@@ -345,10 +361,10 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         return web.json_response(data={"error": str(e)}, status=web.HTTPBadRequest.status_code)
 
 
-@route("POST", "api/tasks/{id}/toggle", "tasks_toggle_enabled")
-async def task_toggle_enabled(request: Request, encoder: Encoder) -> Response:
+@route("PATCH", "api/tasks/{id}", "tasks_update")
+async def task_update(request: Request, encoder: Encoder) -> Response:
     """
-    Toggle the enabled status of a task.
+    Update specific fields of a task.
 
     Args:
         request (Request): The request object.
@@ -358,10 +374,22 @@ async def task_toggle_enabled(request: Request, encoder: Encoder) -> Response:
         Response: The response object
 
     """
-    task_id: str = request.match_info.get("id", None)
-
-    if not task_id:
+    if not (task_id := request.match_info.get("id", None)):
         return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        data = await request.json()
+    except Exception as e:
+        return web.json_response(
+            data={"error": "Invalid JSON in request body.", "message": str(e)},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if not isinstance(data, dict):
+        return web.json_response(
+            {"error": "Request body must be a JSON object."},
+            status=web.HTTPBadRequest.status_code,
+        )
 
     tasks: Tasks = Tasks.get_instance()
     try:
@@ -371,13 +399,34 @@ async def task_toggle_enabled(request: Request, encoder: Encoder) -> Response:
                 data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
             )
 
-        task.enabled = not task.enabled
+        task_dict: dict = task.serialize()
+        protected_fields: set[str] = {"id"}
+        updated: bool = False
+
+        for key, value in data.items():
+            if key in protected_fields or key not in task_dict:
+                continue
+
+            setattr(task, key, value)
+            updated = True
+
+        if not updated:
+            return web.json_response(
+                data={"error": "No valid fields to update."},
+                status=web.HTTPBadRequest.status_code,
+            )
+
+        try:
+            Tasks.validate(task)
+        except ValueError as e:
+            return web.json_response({"error": f"Validation failed: {e!s}"}, status=web.HTTPBadRequest.status_code)
+
         tasks.save(tasks=tasks.get_all()).load()
 
-        return web.json_response(data=tasks.get(task_id), status=web.HTTPOk.status_code, dumps=encoder.encode)
+        return web.json_response(data=task, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except Exception as e:
         LOG.exception(e)
         return web.json_response(
-            data={"error": "Failed to toggle task status.", "message": str(e)},
+            data={"error": "Failed to update task.", "message": str(e)},
             status=web.HTTPInternalServerError.status_code,
         )

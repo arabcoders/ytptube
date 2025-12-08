@@ -884,6 +884,7 @@ class HandleTask:
         url: str,
         preset: str | None = None,
         handler_name: str | None = None,
+        static_only: bool = False,
     ) -> TaskResult | TaskFailure:
         if not self._handlers:
             self._handlers = self._discover()
@@ -936,6 +937,9 @@ class HandleTask:
                 )
 
         base_metadata: dict[str, Any] = {"matched": True, "handler": handler_cls.__name__}
+
+        if static_only:
+            return TaskResult(items=[], metadata=base_metadata)
 
         try:
             extraction: TaskResult | TaskFailure = await services.handle_async(
