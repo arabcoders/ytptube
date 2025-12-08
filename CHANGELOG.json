@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b33cb0a8453294b5057d4c6fd96e00f809dc97da",
-    "date": "2025-12-08T14:44:05+00:00",
+    "full_sha": "ddc71cc1bdcbf4596699f7ee4b539729c02ef241",
+    "date": "2025-12-08T16:43:06+00:00",
     "commits": [
+      {
+        "sha": "ddc71cc1",
+        "full_sha": "ddc71cc1bdcbf4596699f7ee4b539729c02ef241",
+        "message": "Feat: Add new PATCH api for updating the task and improved the no timer messaging",
+        "author": "arabcoders",
+        "date": "2025-12-08T16:43:06+00:00"
+      },
       {
         "sha": "b33cb0a8",
         "full_sha": "b33cb0a8453294b5057d4c6fd96e00f809dc97da",
