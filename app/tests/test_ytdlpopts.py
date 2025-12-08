@@ -960,7 +960,7 @@ class TestYTDLPCli:
         preset = Mock(spec=Preset)
         preset.name = "test_preset"
         preset.cookies = "preset_cookies"
-        preset.get_cookie_file = Mock(return_value=mock_cookie_path)
+        preset.get_cookies_file = Mock(return_value=mock_cookie_path)
         preset.folder = None
         preset.template = None
         preset.cli = None
@@ -972,7 +972,7 @@ class TestYTDLPCli:
         cli = YTDLPCli(item=item)
         command, _ = cli.build()
 
-        preset.get_cookie_file.assert_called_once_with(config=mock_config_instance)
+        preset.get_cookies_file.assert_called_once_with(config=mock_config_instance)
         assert "--cookies" in command
         assert "/preset/cookies.txt" in command
 
