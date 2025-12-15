@@ -2,6 +2,7 @@ import copy
 import json
 import logging
 from collections import OrderedDict
+from dataclasses import fields
 from datetime import UTC, datetime
 from email.utils import formatdate
 from enum import Enum
@@ -13,6 +14,9 @@ from .operations import matches_condition
 from .Utils import init_class
 
 LOG: logging.Logger = logging.getLogger("datastore")
+
+ITEM_DTO_FIELDS = {f.name for f in fields(ItemDTO)}
+"""Caching ItemDTO fields for performance."""
 
 
 class StoreType(str, Enum):
@@ -149,7 +153,7 @@ class DataStore:
             rowDate: datetime = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             data: dict = json.loads(row["data"])
             data.pop("_id", None)
-            item: ItemDTO = init_class(ItemDTO, data)
+            item: ItemDTO = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
             item._id = row["id"]
             item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
             items.append((row["id"], item))
@@ -294,7 +298,7 @@ class DataStore:
             rowDate: datetime = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
             data: dict = json.loads(row["data"])
             data.pop("_id", None)
-            item: ItemDTO = init_class(ItemDTO, data)
+            item: ItemDTO = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
             item._id = row["id"]
             item.datetime = formatdate(rowDate.replace(tzinfo=UTC).timestamp())
             items.append((row["id"], item))

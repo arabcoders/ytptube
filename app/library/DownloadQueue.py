@@ -1003,9 +1003,12 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
-    def get(self) -> dict[str, list[dict[str, ItemDTO]]]:
+    def get(self, mode: str = "all") -> dict[str, list[dict[str, ItemDTO]]]:
         """
         Get the download queue and the download history.
+
+        Args:
+            mode (str): The mode to get the items. Supported modes are 'all', 'queue', 'done'.
 
         Returns:
             dict: The download queue and the download history.
@@ -1013,23 +1016,27 @@ class DownloadQueue(metaclass=Singleton):
         """
         items = {"queue": {}, "done": {}}
 
-        for k, v in self.queue.saved_items():
-            items["queue"][k] = self._active[k].info if k in self._active else v
-
-        for k, v in self.done.saved_items():
-            v.get_file_sidecar()
-            items["done"][k] = v
-
-        for k, v in self.queue.items():
-            if k not in items["queue"]:
+        if mode in ("all", "queue"):
+            for k, v in self.queue.saved_items():
                 items["queue"][k] = self._active[k].info if k in self._active else v
 
-        for k, v in self.done.items():
-            if k in items["done"]:
-                continue
+        if mode in ("all", "done"):
+            for k, v in self.done.saved_items():
+                v.get_file_sidecar()
+                items["done"][k] = v
 
-            v.info.get_file_sidecar()
-            items["done"][k] = v.info
+        if mode in ("all", "queue"):
+            for k, v in self.queue.items():
+                if k not in items["queue"]:
+                    items["queue"][k] = self._active[k].info if k in self._active else v
+
+        if mode in ("all", "done"):
+            for k, v in self.done.items():
+                if k in items["done"]:
+                    continue
+
+                v.info.get_file_sidecar()
+                items["done"][k] = v.info
 
         return items
 
