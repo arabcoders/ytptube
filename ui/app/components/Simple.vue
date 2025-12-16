@@ -244,9 +244,10 @@ const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 
 const sortByNewest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
+const sortByOldest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0))
 
 const queueItems = computed<StoreItem[]>(() => sortByNewest(Object.values(queue.value ?? {})))
-const historyEntries = computed<StoreItem[]>(() => sortByNewest(Object.values(history.value ?? {})))
+const historyEntries = computed<StoreItem[]>(() => sortByOldest(Object.values(history.value ?? {})))
 const paginationInfo = computed(() => stateStore.getPagination())
 
 const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set(['downloading', 'postprocessing', 'preparing'])

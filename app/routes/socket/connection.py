@@ -45,7 +45,7 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
                 depth_limit=config.download_path_depth - 1,
             ),
             "history_count": queue.done.get_total_count(),
-            "queue": queue.get()["queue"],
+            "queue": queue.get("queue")["queue"],
         },
         title="Sending initial download data",
         message=f"Sending initial download data to client '{sid}'.",

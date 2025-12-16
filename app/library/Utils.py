@@ -1543,13 +1543,14 @@ def delete_dir(dir: Path) -> bool:
         return False
 
 
-def init_class(cls: type[T], data: dict) -> T:
+def init_class(cls: type[T], data: dict, _fields=None) -> T:
     """
     Initialize a class instance with data from a dictionary, filtering out keys not present in the class fields.
 
     Args:
         cls (type): The class to initialize.
         data (dict): The data to use for initialization.
+        _fields (set, optional): A set of field names to consider. If None, all fields from the class will be used.
 
     Returns:
         T: An instance of the class initialized with the provided data.
@@ -1557,7 +1558,8 @@ def init_class(cls: type[T], data: dict) -> T:
     """
     from dataclasses import fields
 
-    return cls(**{k: v for k, v in data.items() if k in {f.name for f in fields(cls)}})
+    _classMembers = _fields if _fields is not None else {f.name for f in fields(cls)}
+    return cls(**{k: v for k, v in data.items() if k in _classMembers})
 
 
 def load_modules(root_path: Path, directory: Path):
