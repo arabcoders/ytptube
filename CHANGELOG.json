@@ -1,9 +1,23 @@
 [
   {
-    "tag": "Unreleased (2214bc66)",
-    "full_sha": "2214bc66ded50a97126d9dda83ce1cca42b412f0",
-    "date": "2025-12-08T17:47:37+00:00",
+    "tag": "Unreleased (93ce7a73)",
+    "full_sha": "93ce7a730b17a2967d5713c319749d680887a3f0",
+    "date": "2025-12-16T12:33:06+00:00",
     "commits": [
+      {
+        "sha": "8a62f053",
+        "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820",
+        "message": "Fix: sorting order for more items in simple view.",
+        "author": "arabcoders",
+        "date": "2025-12-15T14:23:00+00:00"
+      },
+      {
+        "sha": "e4ffa5d7",
+        "full_sha": "e4ffa5d77affa489725516a82ecf5f451a702149",
+        "message": "Fix: Fix performance regression while loading items.",
+        "author": "arabcoders",
+        "date": "2025-12-15T14:22:41+00:00"
+      },
       {
         "sha": "ddc71cc1",
         "full_sha": "ddc71cc1bdcbf4596699f7ee4b539729c02ef241",
@@ -45,27 +59,6 @@
         "message": "Chore: update external packages",
         "author": "arabcoders",
         "date": "2025-12-08T13:47:08+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820",
-    "date": "2025-12-15T14:23:00+00:00",
-    "commits": [
-      {
-        "sha": "8a62f053",
-        "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820",
-        "message": "Fix: sorting order for more items in simple view.",
-        "author": "arabcoders",
-        "date": "2025-12-15T14:23:00+00:00"
-      },
-      {
-        "sha": "e4ffa5d7",
-        "full_sha": "e4ffa5d77affa489725516a82ecf5f451a702149",
-        "message": "Fix: Fix performance regression while loading items.",
-        "author": "arabcoders",
-        "date": "2025-12-15T14:22:41+00:00"
       }
     ]
   },

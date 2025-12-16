@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20251208-2214bc66",
-        "date": "2025-12-08T17:47:37+00:00",
+        "tag": "master-20251216-93ce7a73",
+        "date": "2025-12-16T12:33:06+00:00",
         "commits": [
+            {
+                "sha": "8a62f053",
+                "message": "Fix: sorting order for more items in simple view.",
+                "author": "arabcoders",
+                "date": "2025-12-15T14:23:00+00:00",
+                "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820"
+            },
+            {
+                "sha": "e4ffa5d7",
+                "message": "Fix: Fix performance regression while loading items.",
+                "author": "arabcoders",
+                "date": "2025-12-15T14:22:41+00:00",
+                "full_sha": "e4ffa5d77affa489725516a82ecf5f451a702149"
+            },
             {
                 "sha": "ddc71cc1",
                 "message": "Feat: Add new PATCH api for updating the task and improved the no timer messaging",
@@ -3238,7 +3252,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2214bc66ded50a97126d9dda83ce1cca42b412f0"
+        "full_sha": "93ce7a730b17a2967d5713c319749d680887a3f0"
     },
     {
         "tag": "master-20250616-c07465a6",
