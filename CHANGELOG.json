@@ -64,9 +64,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d",
-    "date": "2025-12-18T13:31:15+00:00",
+    "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
+    "date": "2025-12-18T14:08:18+00:00",
     "commits": [
+      {
+        "sha": "50f50bed",
+        "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
+        "message": "Refactor: do not load history items in DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-12-18T14:08:18+00:00"
+      },
       {
         "sha": "7a85bcdb",
         "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d",

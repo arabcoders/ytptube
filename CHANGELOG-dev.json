@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251218-7a85bcdb",
-        "date": "2025-12-18T13:31:15+00:00",
+        "tag": "dev-20251218-50f50bed",
+        "date": "2025-12-18T14:08:18+00:00",
         "commits": [
+            {
+                "sha": "50f50bed",
+                "message": "Refactor: do not load history items in DownloadQueue",
+                "author": "arabcoders",
+                "date": "2025-12-18T14:08:18+00:00",
+                "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412"
+            },
             {
                 "sha": "7a85bcdb",
                 "message": "Refactor: swap sqlite to aiosqlite and add queued db updates",
@@ -3259,7 +3266,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d"
+        "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412"
     },
     {
         "tag": "dev-20250616-c07465a6",
