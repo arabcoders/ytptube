@@ -64,9 +64,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
-    "date": "2025-12-18T14:08:18+00:00",
+    "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",
+    "date": "2025-12-18T14:19:23+00:00",
     "commits": [
+      {
+        "sha": "699e21f5",
+        "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",
+        "message": "revert: revert changes to DownloadQueue to load finished history",
+        "author": "arabcoders",
+        "date": "2025-12-18T14:19:23+00:00"
+      },
       {
         "sha": "50f50bed",
         "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
