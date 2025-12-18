@@ -64,9 +64,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
-    "date": "2025-12-18T15:21:34+00:00",
+    "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",
+    "date": "2025-12-18T15:58:11+00:00",
     "commits": [
+      {
+        "sha": "d5727ca3",
+        "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",
+        "message": "Fix: add fallback to placeholder if loading thumbnail fails",
+        "author": "arabcoders",
+        "date": "2025-12-18T15:58:11+00:00"
+      },
       {
         "sha": "b36d9fd6",
         "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
