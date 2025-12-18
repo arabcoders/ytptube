@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251215-8a62f053",
-        "date": "2025-12-15T14:23:00+00:00",
+        "tag": "dev-20251218-7a85bcdb",
+        "date": "2025-12-18T13:31:15+00:00",
         "commits": [
+            {
+                "sha": "7a85bcdb",
+                "message": "Refactor: swap sqlite to aiosqlite and add queued db updates",
+                "author": "arabcoders",
+                "date": "2025-12-18T13:31:15+00:00",
+                "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d"
+            },
             {
                 "sha": "8a62f053",
                 "message": "Fix: sorting order for more items in simple view.",
@@ -3252,7 +3259,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820"
+        "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d"
     },
     {
         "tag": "dev-20250616-c07465a6",
