@@ -89,7 +89,8 @@
                   <figure class="media-left">
                     <figure class="image is-16by9 queue-thumb" :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
                       role="presentation" @click="openPlayer(entry.item)">
-                      <img :src="resolveThumbnail(entry)" :alt="entry.item.title || 'Video thumbnail'" loading="lazy">
+                      <img :src="resolveThumbnail(entry)" :alt="entry.item.title || 'Video thumbnail'" loading="lazy"
+                        @error="onImgError">
                       <span v-if="getDurationLabel(entry.item)" class="queue-thumb__badge">
                         {{ getDurationLabel(entry.item) }}
                       </span>
@@ -688,18 +689,19 @@ const loadMoreHistory = async (): Promise<void> => {
   }
 }
 
-// Setup intersection observer for infinite scroll
-useIntersectionObserver(
-  loadMoreTrigger,
-  ([entry]) => {
-    if (entry?.isIntersecting && !paginationInfo.value.isLoading && paginationInfo.value.page < paginationInfo.value.total_pages) {
-      loadMoreHistory()
-    }
-  },
-  {
-    threshold: 0.5,
+const onImgError = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  if (target.src.endsWith('/images/placeholder.png')) {
+    return
   }
-)
+  target.src = '/images/placeholder.png'
+}
+
+useIntersectionObserver(loadMoreTrigger, ([entry]) => {
+  if (entry?.isIntersecting && !paginationInfo.value.isLoading && paginationInfo.value.page < paginationInfo.value.total_pages) {
+    loadMoreHistory()
+  }
+}, { threshold: 0.5 })
 
 </script>
 
