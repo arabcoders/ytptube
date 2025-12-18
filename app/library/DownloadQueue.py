@@ -170,6 +170,7 @@ class DownloadQueue(metaclass=Singleton):
             f"Using '{self.config.max_workers}' workers for downloading and '{self.config.max_workers_per_extractor}' per extractor."
         )
         asyncio.create_task(self._download_pool(), name="download_pool")
+        await self.done.load()
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
         """
