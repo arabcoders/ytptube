@@ -106,6 +106,15 @@ wheels = [
 ]
 
 [[package]]
+name = "aiosqlite"
+version = "0.22.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/0d/449c024bdabd0678ae07d804e60ed3b9786facd3add66f51eee67a0fccea/aiosqlite-0.22.0.tar.gz", hash = "sha256:7e9e52d72b319fcdeac727668975056c49720c995176dc57370935e5ba162bb9", size = 14707 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ef/39/b2181148075272edfbbd6d87e6cd78cc71dca243446fa3b381fd4116950b/aiosqlite-0.22.0-py3-none-any.whl", hash = "sha256:96007fac2ce70eda3ca1bba7a3008c435258a592b8fbf2ee3eeaa36d33971a09", size = 17263 },
+]
+
+[[package]]
 name = "altgraph"
 version = "0.17.5"
 source = { registry = "https://pypi.org/simple" }
@@ -222,15 +231,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e4/9c/d51486bf366fc7d6735f0e46b5b96ca58dc005b250263525a1eea3cd5d21/brotlicffi-1.2.0.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:33cfb408d0cff64cd50bef268c0fed397c46fbb53944aa37264148614a62e990", size = 1536547 },
     { url = "https://files.pythonhosted.org/packages/1b/37/293a9a0a7caf17e6e657668bebb92dfe730305999fe8c0e2703b8888789c/brotlicffi-1.2.0.0-cp38-abi3-win32.whl", hash = "sha256:23e5c912fdc6fd37143203820230374d24babd078fc054e18070a647118158f6", size = 343085 },
     { url = "https://files.pythonhosted.org/packages/07/6b/6e92009df3b8b7272f85a0992b306b61c34b7ea1c4776643746e61c380ac/brotlicffi-1.2.0.0-cp38-abi3-win_amd64.whl", hash = "sha256:f139a7cdfe4ae7859513067b736eb44d19fae1186f9e99370092f6915216451b", size = 378586 },
-]
-
-[[package]]
-name = "caribou"
-version = "0.4.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6c/74/de2c20c5a24811d69a2a6150d5cd841f2af21ffc65ff964a73f46738bb68/caribou-0.4.1.tar.gz", hash = "sha256:13a66fc9ef9b1c9e9ef220876d59a44ee5eff9e579655252271b7514fc0ad787", size = 14019 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/91/795eccdad6abd41b3634502d0971cb696d2e5c9cede67f8b38ebe30d2b1e/caribou-0.4.1-py2.py3-none-any.whl", hash = "sha256:5c7a036584b34021011f1512620152272924e55ca87c7c805073aeef31c5baed", size = 7203 },
 ]
 
 [[package]]
@@ -1823,13 +1823,13 @@ source = { virtual = "." }
 dependencies = [
     { name = "aiocron" },
     { name = "aiohttp" },
+    { name = "aiosqlite" },
     { name = "anyio" },
     { name = "apprise" },
     { name = "async-timeout" },
     { name = "bgutil-ytdlp-pot-provider" },
     { name = "brotli" },
     { name = "brotlicffi" },
-    { name = "caribou" },
     { name = "coloredlogs" },
     { name = "curl-cffi" },
     { name = "dateparser" },
@@ -1874,13 +1874,13 @@ dev = [
 requires-dist = [
     { name = "aiocron", specifier = ">=1.8" },
     { name = "aiohttp", specifier = ">=3.9.3" },
+    { name = "aiosqlite", specifier = ">=0.22.0" },
     { name = "anyio" },
     { name = "apprise", specifier = ">=1.9.3" },
     { name = "async-timeout" },
     { name = "bgutil-ytdlp-pot-provider", specifier = ">=1.2.1" },
     { name = "brotli" },
     { name = "brotlicffi" },
-    { name = "caribou", specifier = ">=0.3.0" },
     { name = "coloredlogs", specifier = ">=15.0.1" },
     { name = "curl-cffi", specifier = ">=0.13" },
     { name = "dateparser", specifier = ">=1.2.1" },

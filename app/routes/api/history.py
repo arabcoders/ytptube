@@ -47,30 +47,21 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
     """
     from app.library.DataStore import StoreType
 
-    store_type = request.query.get("type", "all").lower()
-    stores: list[str] = ["all", StoreType.QUEUE.value, StoreType.HISTORY.value]
-    if store_type not in stores:
+    store_type: str = request.query.get("type", "queue").lower()
+    try:
+        store_type: StoreType = StoreType.from_value(store_type)
+    except ValueError:
         return web.json_response(
-            data={"error": f"type must be one of {', '.join(stores)}."},
+            data={"error": f"type must be one of {', '.join(StoreType.all())}."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    # Legacy behavior: return all items without pagination, will be removed in future.
-    if "all" == store_type:
-        data: dict = {"queue": [], "history": []}
-        q = queue.get()
-
-        data["queue"].extend([q.get("queue", {}).get(k) for k in q.get("queue", {})])
-        data["history"].extend([q.get("done", {}).get(k) for k in q.get("done", {})])
-
-        return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
-
-    ds = queue.queue if store_type == StoreType.QUEUE.value else queue.done
+    ds = queue.queue if store_type == StoreType.QUEUE else queue.done
 
     try:
         page = int(request.query.get("page", 1))
         per_page = int(request.query.get("per_page", config.default_pagination))
-        order = request.query.get("order", "DESC").upper()
+        order: str = request.query.get("order", "DESC").upper()
     except ValueError:
         return web.json_response(
             data={"error": "page and per_page must be valid integers."},
@@ -92,25 +83,28 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
             status=web.HTTPBadRequest.status_code,
         )
 
-    # Parse status filter
     status_filter = request.query.get("status", None)
 
-    items, total, current_page, total_pages = ds.get_items_paginated(
+    items, total, current_page, total_pages = await ds.get_items_paginated(
         page=page, per_page=per_page, order=order, status_filter=status_filter
     )
-    data = {
-        "pagination": {
-            "page": current_page,
-            "per_page": per_page,
-            "total": total,
-            "total_pages": total_pages,
-            "has_next": current_page < total_pages,
-            "has_prev": current_page > 1,
-        },
-        "items": [item for _, item in items],
-    }
 
-    return web.json_response(data=data, status=web.HTTPOk.status_code, dumps=encoder.encode)
+    return web.json_response(
+        data={
+            "type": store_type.value,
+            "pagination": {
+                "page": current_page,
+                "per_page": per_page,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": current_page < total_pages,
+                "has_prev": current_page > 1,
+            },
+            "items": [item for _, item in items],
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
 
 
 @route("DELETE", "api/history/", "items_delete")
@@ -137,24 +131,26 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
 
     ids = data.get("ids")
     remove_file: bool = bool(data.get("remove_file", True))
-    _type = data.get("type", data.get("where"))
+    storeType = data.get("type", data.get("where"))
 
-    if not _type:
+    if not storeType:
         return web.json_response(data={"error": "Type is required."}, status=web.HTTPBadRequest.status_code)
 
-    if _type not in [StoreType.QUEUE.value, StoreType.HISTORY.value]:
+    try:
+        storeType: StoreType = StoreType.from_value(storeType)
+    except ValueError:
         return web.json_response(
-            data={"error": f"type must be '{StoreType.QUEUE.value}' or '{StoreType.HISTORY.value}'."},
+            data={"error": f"type must be one of '{StoreType.all()}'."},
             status=web.HTTPBadRequest.status_code,
         )
 
-    ds = queue.queue if _type == StoreType.QUEUE.value else queue.done
+    ds = queue.queue if storeType == StoreType.QUEUE else queue.done
 
     if ids:
         return web.json_response(
             data={
                 "items": await (
-                    queue.cancel(ids) if _type == StoreType.QUEUE.value else queue.clear(ids, remove_file=remove_file)
+                    queue.cancel(ids) if storeType == StoreType.QUEUE else queue.clear(ids, remove_file=remove_file)
                 ),
                 "deleted": len(ids),
             },
@@ -174,7 +170,7 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
     per_page = 1000
 
     while True:
-        items, _, current_page, total_pages = ds.get_items_paginated(
+        items, _, current_page, total_pages = await ds.get_items_paginated(
             page=page, per_page=per_page, order="DESC", status_filter=status_filter
         )
 
@@ -192,7 +188,7 @@ async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder)
         data={
             "items": await (
                 queue.cancel(items_to_delete)
-                if _type == StoreType.QUEUE.value
+                if storeType == StoreType.QUEUE
                 else queue.clear(items_to_delete, remove_file=remove_file)
             ),
             "deleted": len(items_to_delete),
@@ -221,7 +217,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     if not id:
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
-    item: Download | None = queue.done.get_by_id(id) or queue.queue.get_by_id(id)
+    item: Download | None = await queue.done.get_by_id(id) or await queue.queue.get_by_id(id)
     if not item:
         return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
 
@@ -263,7 +259,7 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
     if not id:
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
-    item: Download | None = queue.done.get_by_id(id)
+    item: Download | None = await queue.done.get_by_id(id)
     if not item:
         return web.json_response(data={"error": "item not found."}, status=web.HTTPNotFound.status_code)
 
@@ -285,7 +281,7 @@ async def item_update(request: Request, queue: DownloadQueue, encoder: Encoder, 
         LOG.debug(f"Updated '{k}' to '{v}' for '{item.info.id}'")
 
     if updated:
-        queue.done.put(item)
+        await queue.done.put(item)
         notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
@@ -394,7 +390,7 @@ async def item_archive_add(request: Request, queue: DownloadQueue, notify: Event
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
     try:
-        item: Download | None = queue.done.get_by_id(id)
+        item: Download | None = await queue.done.get_by_id(id)
         if not item:
             return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
     except KeyError:
@@ -425,7 +421,7 @@ async def item_archive_add(request: Request, queue: DownloadQueue, notify: Event
         )
 
     item.info.archive_status(force=True)
-    queue.done.put(item, no_notify=True)
+    await queue.done.put(item, no_notify=True)
     notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(
@@ -452,7 +448,7 @@ async def item_archive_delete(request: Request, queue: DownloadQueue, notify: Ev
         return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
 
     try:
-        item: Download | None = queue.done.get_by_id(id)
+        item: Download | None = await queue.done.get_by_id(id)
         if not item:
             return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
     except KeyError:
@@ -483,7 +479,7 @@ async def item_archive_delete(request: Request, queue: DownloadQueue, notify: Ev
         )
 
     item.info.archive_status(force=True)
-    queue.done.put(item, no_notify=True)
+    await queue.done.put(item, no_notify=True)
     notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(

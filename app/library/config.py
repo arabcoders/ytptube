@@ -441,6 +441,7 @@ class Config(metaclass=Singleton):
             ("urllib3.connectionpool", logging.WARNING),
             ("apprise", logging.WARNING),
             ("httpcore", logging.INFO),
+            ("aiosqlite", logging.INFO),
         )
         for _tool, _level in _log_levels:
             logging.getLogger(_tool).setLevel(_level)

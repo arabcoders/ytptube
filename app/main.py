@@ -9,16 +9,15 @@ if APP_ROOT not in sys.path:
 
 import asyncio
 import logging
-import sqlite3
 from pathlib import Path
 
-import caribou
 import magic
 from aiohttp import web
 
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.conditions import Conditions
 from app.library.config import Config
+from app.library.DataStore import SqliteStore
 from app.library.dl_fields import DLFields
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
@@ -50,18 +49,6 @@ class Main:
 
         self._check_folders()
 
-        LOG.debug(f"DB Version: '{caribou.get_version(self._config.db_file)}'.")
-        caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")
-
-        connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA journal_mode=wal")
-
-        async def _close_connection(_):
-            LOG.debug("Closing database connection.")
-            connection.close()
-            LOG.debug("Database connection closed.")
-
         try:
             db_file = Path(self._config.db_file)
             if "600" != oct(db_file.stat().st_mode)[-3:]:
@@ -69,11 +56,9 @@ class Main:
         except Exception:
             pass
 
-        self._queue = DownloadQueue(connection=connection)
+        self._queue = DownloadQueue(config=self._config)
         self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
         self._socket = HttpSocket(root_path=ROOT_PATH, queue=self._queue)
-
-        self._app.on_cleanup.append(_close_connection)
 
     def _check_folders(self):
         """Check if the required folders exist and create them if they do not."""
@@ -136,6 +121,7 @@ class Main:
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
         TaskDefinitions.get_instance().attach(self._app)
+        SqliteStore.get_instance().attach(self._app)
         self._background_worker.attach(self._app)
 
         EventBus.get_instance().emit(

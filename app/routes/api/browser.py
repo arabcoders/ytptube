@@ -402,7 +402,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                     if sidecar_renamed:
                         item.info.get_file_sidecar()
 
-                    queue.done.put(item)
+                    await queue.done.put(item)
                     notify.emit(Events.ITEM_UPDATED, data=item.info)
 
         if "delete" == action:
@@ -508,7 +508,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                     if sidecar_moved:
                         item.info.get_file_sidecar()
 
-                    queue.done.put(item)
+                    await queue.done.put(item)
                     notify.emit(Events.ITEM_UPDATED, data=item.info)
 
     return web.json_response(data=operations_status, status=web.HTTPOk.status_code)

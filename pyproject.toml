@@ -15,7 +15,6 @@ dependencies = [
   # Cross‐platform
   "python-socketio>=5.11.1",
   "aiohttp>=3.9.3",
-  "caribou>=0.3.0",
   "coloredlogs>=15.0.1",
   "aiocron>=1.8",
   "python-dotenv>=1.0.1",
@@ -44,6 +43,7 @@ dependencies = [
   "parsel>=1.10.0",
   "jmespath>=1.0.1",
   "jsonschema>=4.23.0",
+  "aiosqlite>=0.22.0",
 ]
 
 [tool.ruff]
