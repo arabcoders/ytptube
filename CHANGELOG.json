@@ -64,9 +64,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",
-    "date": "2025-12-18T14:19:23+00:00",
+    "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
+    "date": "2025-12-18T15:21:34+00:00",
     "commits": [
+      {
+        "sha": "b36d9fd6",
+        "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
+        "message": "Refactor: migrated whatleft of sync code to async",
+        "author": "arabcoders",
+        "date": "2025-12-18T15:21:34+00:00"
+      },
       {
         "sha": "699e21f5",
         "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",

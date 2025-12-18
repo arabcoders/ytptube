@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251218-699e21f5",
-        "date": "2025-12-18T14:19:23+00:00",
+        "tag": "dev-20251218-b36d9fd6",
+        "date": "2025-12-18T15:21:34+00:00",
         "commits": [
+            {
+                "sha": "b36d9fd6",
+                "message": "Refactor: migrated whatleft of sync code to async",
+                "author": "arabcoders",
+                "date": "2025-12-18T15:21:34+00:00",
+                "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237"
+            },
             {
                 "sha": "699e21f5",
                 "message": "revert: revert changes to DownloadQueue to load finished history",
@@ -3273,7 +3280,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd"
+        "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237"
     },
     {
         "tag": "dev-20250616-c07465a6",
