@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import logging
 from collections import OrderedDict
@@ -49,17 +48,11 @@ def _strip_transient_fields(item: ItemDTO) -> ItemDTO:
 
 
 class DataStore:
-    """
-    In-memory queue cache + optional write-behind to persistence.
-    History reads go straight to persistence.
-    """
-
     def __init__(self, type: StoreType, connection: SqliteStore):
         self._type = type
         self._connection: SqliteStore = connection
         self._dict: OrderedDict[str, Download] = OrderedDict()
 
-    # cache helpers
     async def load(self) -> None:
         saved = await self._connection.fetch_saved(str(self._type))
         for key, item in saved:
@@ -82,21 +75,27 @@ class DataStore:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
+
         for i in self._dict:
             if (key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url):
                 return self._dict[i]
+
         msg: str = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
     def get_item(self, **kwargs) -> Download | None:
         if not kwargs:
             return None
+
         for i in self._dict:
             if not self._dict[i].info:
                 continue
+
             info = self._dict[i].info.__dict__
+
             if any(matches_condition(key, value, info) for key, value in kwargs.items()):
                 return self._dict[i]
+
         return None
 
     async def get_by_id(self, id: str) -> Download | None:
@@ -107,7 +106,7 @@ class DataStore:
         if item := await self._connection.get_by_id(str(self._type), id):
             download = Download(info=item)
             self._dict[id] = download
-            return download
+            return self._dict[id]
 
         return None
 
@@ -117,18 +116,18 @@ class DataStore:
     async def put(self, value: Download, no_notify: bool = False) -> Download:
         _ = no_notify
         self._dict[value.info._id] = value
-        asyncio.create_task(self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(value.info)))
-        return value
+        await self._connection.enqueue_upsert(str(self._type), _strip_transient_fields(value.info))
+        return self._dict[value.info._id]
 
-    def delete(self, key: str) -> None:
+    async def delete(self, key: str) -> None:
         self._dict.pop(key, None)
-        asyncio.create_task(self._connection.enqueue_delete(str(self._type), key))
+        await self._connection.enqueue_delete(str(self._type), key)
 
     def next(self):
         return next(iter(self._dict.items()))
 
     def empty(self) -> bool:
-        return not bool(self._dict)
+        return 0 == len(self._dict)
 
     def has_downloads(self) -> bool:
         return any(self._dict[key].info.auto_start and self._dict[key].started() is False for key in self._dict)

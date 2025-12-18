@@ -311,19 +311,19 @@ class Config(metaclass=Singleton):
     def __init__(self, is_native: bool = False):
         baseDefaultPath: str = str(Path(__file__).parent.parent.parent.absolute())
 
-        self.is_native = is_native
-        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or str(Path(baseDefaultPath) / "var" / "tmp")
         self.config_path = os.environ.get("YTP_CONFIG_PATH", None) or str(Path(baseDefaultPath) / "var" / "config")
-        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
-            Path(baseDefaultPath) / "var" / "downloads"
-        )
-        self.app_path = Path(__file__).parent.parent.absolute()
-
         envFile: str = Path(self.config_path) / ".env"
 
         if envFile.exists():
             logging.info(f"Loading environment variables from '{envFile}'.")
             load_dotenv(envFile)
+
+        self.is_native = is_native
+        self.temp_path = os.environ.get("YTP_TEMP_PATH", None) or str(Path(baseDefaultPath) / "var" / "tmp")
+        self.download_path = os.environ.get("YTP_DOWNLOAD_PATH", None) or str(
+            Path(baseDefaultPath) / "var" / "downloads"
+        )
+        self.app_path = Path(__file__).parent.parent.absolute()
 
         for k, v in self._get_attributes().items():
             if k.startswith("_") or k in self._manual_vars:

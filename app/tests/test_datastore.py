@@ -128,7 +128,7 @@ class TestDataStore:
         assert row["id"] == item._id
 
         # Delete and ensure removal
-        store.delete(item._id)
+        await store.delete(item._id)
         await asyncio.sleep(0)
         await db.flush()
         cur2 = await db._conn.execute("SELECT * FROM history WHERE id=?", (item._id,))
@@ -638,7 +638,7 @@ class TestDataStore:
         store = DataStore(StoreType.QUEUE, db)
 
         # Should not raise error
-        store.delete("nonexistent_id")
+        await store.delete("nonexistent_id")
 
         # Verify nothing was deleted from database
         await store._connection.flush()

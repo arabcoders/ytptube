@@ -165,8 +165,6 @@ class DownloadQueue(metaclass=Singleton):
         """
         Initialize the download queue.
         """
-        await self.done.test()
-        await self.done.load()
         await self.queue.load()
         LOG.info(
             f"Using '{self.config.max_workers}' workers for downloading and '{self.config.max_workers_per_extractor}' per extractor."
@@ -904,7 +902,7 @@ class DownloadQueue(metaclass=Singleton):
             else:
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")
-                self.queue.delete(id)
+                await self.queue.delete(id)
                 self._notify.emit(
                     Events.ITEM_CANCELLED,
                     data=item.info,
@@ -986,7 +984,7 @@ class DownloadQueue(metaclass=Singleton):
                 except Exception as e:
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
-            self.done.delete(id)
+            await self.done.delete(id)
 
             _status: str = "Removed" if removed_files > 0 else "Cleared"
             self._notify.emit(
@@ -1169,7 +1167,7 @@ class DownloadQueue(metaclass=Singleton):
 
         if self.queue.exists(key=id):
             LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
-            self.queue.delete(key=id)
+            await self.queue.delete(key=id)
 
             nTitle: str | None = None
             nMessage: str | None = None
@@ -1331,7 +1329,7 @@ class DownloadQueue(metaclass=Singleton):
                 message=f"'{item_name}' record removed from history.",
             )
             titles.append(item_name)
-            self.done.delete(key)
+            await self.done.delete(key)
 
         if titles:
             LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")

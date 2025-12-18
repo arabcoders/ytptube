@@ -40,11 +40,6 @@ class _Op:
 
 
 class SqliteStore(metaclass=ThreadSafe):
-    """
-    Async persistence layer with back-pressure and write-behind queue.
-    Singleton per process (ThreadSafe). Owns its aiosqlite connection.
-    """
-
     @staticmethod
     def get_instance(db_path: str | None = None) -> "SqliteStore":
         return SqliteStore(db_path)
