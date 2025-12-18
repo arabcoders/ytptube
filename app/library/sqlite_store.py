@@ -12,6 +12,7 @@ import aiosqlite
 from aiohttp import web
 
 from .ItemDTO import ItemDTO
+from .operations import Operation, matches_condition
 from .Singleton import ThreadSafe
 from .Utils import init_class
 
@@ -70,7 +71,6 @@ class SqliteStore(metaclass=ThreadSafe):
     async def __aexit__(self, exc_type, exc, tb) -> None:
         await self.close()
 
-    # ---------- public API ----------
     async def fetch_saved(self, type_value: str) -> list[tuple[str, ItemDTO]]:
         await self._ensure_conn()
         cursor = await self._conn.execute(
@@ -89,6 +89,42 @@ class SqliteStore(metaclass=ThreadSafe):
                 items.append((row["id"], item))
         return items
 
+    async def exists(self, type_value: str, key: str | None = None, url: str | None = None) -> bool:
+        return await self.get(type_value, key=key, url=url) is not None
+
+    async def get(self, type_value: str, key: str | None = None, url: str | None = None) -> bool:
+        if not key and not url:
+            msg = "key or url must be provided."
+            raise KeyError(msg)
+
+        await self._ensure_conn()
+
+        clauses: list[str] = []
+        params: list[str] = []
+
+        if key:
+            clauses.append('"id" = ?')
+            params.append(key)
+
+        if url:
+            clauses.append("json_extract(data, '$.url') = ?")
+            params.append(url)
+
+        where_clause = " OR ".join(clauses)
+        query = f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? AND ({where_clause}) LIMIT 1'  # noqa: S608
+        cursor = await self._conn.execute(query, (type_value, *params))
+        row = await cursor.fetchone()
+        if not row:
+            return None
+
+        row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+        data = json.loads(row["data"])
+        data.pop("_id", None)
+        item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
+        item._id = row["id"]
+        item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
+        return item
+
     async def get_by_id(self, type_value: str, id: str) -> ItemDTO | None:
         await self._ensure_conn()
         cursor = await self._conn.execute(
@@ -106,6 +142,94 @@ class SqliteStore(metaclass=ThreadSafe):
         item._id = row["id"]
         item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
         return item
+
+    async def get_item(self, type_value: str, **kwargs) -> ItemDTO | None:
+        """
+        Return first item of type matching *any* condition.
+
+        Mirrors :meth:`DataStore.get_item` semantics: if any provided condition
+        matches (OR logic) return the first row by creation time. Returns None
+        when kwargs is empty or no row matches.
+        """
+        if not kwargs:
+            return None
+
+        await self._ensure_conn()
+
+        clauses: list[str] = []
+        params: list[str | float | int] = []
+
+        def _safe_key(key: str) -> str | None:
+            return key if key.replace("_", "").isalnum() else None
+
+        for key, raw_value in kwargs.items():
+            safe_key = _safe_key(key)
+            if not safe_key:
+                continue
+
+            if isinstance(raw_value, tuple) and len(raw_value) == 2:
+                operation, value = raw_value
+            else:
+                operation, value = Operation.EQUAL, raw_value
+
+            if isinstance(operation, str):
+                try:
+                    operation = Operation(operation)
+                except ValueError:
+                    operation = Operation.EQUAL
+
+            path = f"$.{safe_key}"
+            json_extract = f"json_extract(data, '{path}')"
+
+            if Operation.EQUAL == operation:
+                clauses.append(f"{json_extract} = ?")
+                params.append(value)
+            elif Operation.NOT_EQUAL == operation:
+                clauses.append(f"{json_extract} != ?")
+                params.append(value)
+            elif Operation.CONTAIN == operation:
+                clauses.append(f"{json_extract} LIKE ? ESCAPE '\\'")
+                params.append(f"%{value}%")
+            elif Operation.NOT_CONTAIN == operation:
+                clauses.append(f"({json_extract} IS NULL OR {json_extract} NOT LIKE ? ESCAPE '\\')")
+                params.append(f"%{value}%")
+            elif Operation.STARTS_WITH == operation:
+                clauses.append(f"{json_extract} LIKE ? ESCAPE '\\'")
+                params.append(f"{value}%")
+            elif Operation.ENDS_WITH == operation:
+                clauses.append(f"{json_extract} LIKE ? ESCAPE '\\'")
+                params.append(f"%{value}")
+            elif Operation.GREATER_THAN == operation:
+                clauses.append(f"{json_extract} > ?")
+                params.append(value)
+            elif Operation.LESS_THAN == operation:
+                clauses.append(f"{json_extract} < ?")
+                params.append(value)
+            elif Operation.GREATER_EQUAL == operation:
+                clauses.append(f"{json_extract} >= ?")
+                params.append(value)
+            elif Operation.LESS_EQUAL == operation:
+                clauses.append(f"{json_extract} <= ?")
+                params.append(value)
+
+        if not clauses:
+            return None
+
+        where_clause = " OR ".join(f"({clause})" for clause in clauses)
+        query = f'SELECT "id", "data", "created_at" FROM "history" WHERE "type" = ? AND ({where_clause}) ORDER BY "created_at" ASC LIMIT 1'  # noqa: S608
+        cursor = await self._conn.execute(query, (type_value, *params))
+        row = await cursor.fetchone()
+        if not row:
+            return None
+
+        row_date = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
+        data = json.loads(row["data"])
+        data.pop("_id", None)
+        item = init_class(ItemDTO, data, ITEM_DTO_FIELDS)
+        item._id = row["id"]
+        item.datetime = formatdate(row_date.replace(tzinfo=UTC).timestamp())
+
+        return item if any(matches_condition(k, v, item.__dict__) for k, v in kwargs.items()) else None
 
     async def count(self, type_value: str, status_filter: str | None = None) -> int:
         await self._ensure_conn()

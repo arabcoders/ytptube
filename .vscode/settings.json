@@ -17,6 +17,7 @@
     "ahash",
     "aiocron",
     "aiosqlite",
+    "alnum",
     "anyio",
     "Archiver",
     "arrowdown",

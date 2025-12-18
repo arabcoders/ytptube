@@ -145,19 +145,19 @@ class TestDataStore:
         await store.put(d)
         await store._connection.flush()
 
-        assert store.exists(key=item._id) is True
-        assert store.exists(url=item.url) is True
+        assert await store.exists(key=item._id) is True
+        assert await store.exists(url=item.url) is True
         with pytest.raises(KeyError):
-            store.exists()
+            await store.exists()
 
-        got = store.get(key=item._id)
+        got = await store.get(key=item._id)
         assert got.info._id == item._id
-        got2 = store.get(url=item.url)
+        got2 = await store.get(url=item.url)
         assert got2.info.url == item.url
         with pytest.raises(KeyError):
-            store.get()
+            await store.get()
         with pytest.raises(KeyError):
-            store.get(key="missing")
+            await store.get(key="missing")
         await store._connection.close()
 
     @pytest.mark.asyncio
@@ -212,7 +212,7 @@ class TestDataStore:
         db = await make_db()
         store = DataStore(StoreType.QUEUE, db)
 
-        result = store.get_item()
+        result = await store.get_item()
         assert result is None
         await db.close()
 
@@ -236,19 +236,19 @@ class TestDataStore:
         await store._connection.flush()
 
         # Test finding by title
-        result = store.get_item(title="Video 1")
+        result = await store.get_item(title="Video 1")
         assert result is not None
         assert result.info._id == "id1"
         assert result.info.title == "Video 1"
 
         # Test finding by folder
-        result = store.get_item(folder="folder2")
+        result = await store.get_item(folder="folder2")
         assert result is not None
         assert result.info._id == "id2"
         assert result.info.folder == "folder2"
 
         # Test finding by url
-        result = store.get_item(url="http://example.com/1")
+        result = await store.get_item(url="http://example.com/1")
         assert result is not None
         assert result.info._id == "id1"
         await db.close()
@@ -272,12 +272,12 @@ class TestDataStore:
         await store._connection.flush()
 
         # Test finding by multiple attributes where one matches
-        result = store.get_item(title="Video 1", folder="wrong_folder")
+        result = await store.get_item(title="Video 1", folder="wrong_folder")
         assert result is not None
         assert result.info._id == "id1"
 
         # Test finding where second attribute matches
-        result = store.get_item(title="Wrong Title", folder="folder2")
+        result = await store.get_item(title="Wrong Title", folder="folder2")
         assert result is not None
         assert result.info._id == "id2"
         await db.close()
@@ -295,11 +295,11 @@ class TestDataStore:
         await store._connection.flush()
 
         # Test with non-matching attribute
-        result = store.get_item(title="Nonexistent Video")
+        result = await store.get_item(title="Nonexistent Video")
         assert result is None
 
         # Test with non-existent attribute key
-        result = store.get_item(nonexistent_field="value")
+        result = await store.get_item(nonexistent_field="value")
         assert result is None
         await db.close()
 
@@ -324,7 +324,7 @@ class TestDataStore:
         store._dict["broken"] = BrokenDownload()
 
         # Should still find the valid item
-        result = store.get_item(title="Video 1")
+        result = await store.get_item(title="Video 1")
         assert result is not None
         assert result.info._id == "id1"
         await db.close()
@@ -349,7 +349,7 @@ class TestDataStore:
         await store._connection.flush()
 
         # Should return first match (note: OrderedDict maintains insertion order)
-        result = store.get_item(title="Same Title")
+        result = await store.get_item(title="Same Title")
         assert result is not None
         assert result.info._id == "id1"
         await db.close()
@@ -788,17 +788,17 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Test with explicit EQUAL operation
-        result = store.get_item(title=(Operation.EQUAL, "Exact Match"))
+        result = await store.get_item(title=(Operation.EQUAL, "Exact Match"))
         assert result is not None
         assert result.info._id == "id1"
 
         # Test default behavior (no operation specified)
-        result = store.get_item(title="Exact Match")
+        result = await store.get_item(title="Exact Match")
         assert result is not None
         assert result.info._id == "id1"
 
         # Test no match
-        result = store.get_item(title=(Operation.EQUAL, "No Match"))
+        result = await store.get_item(title=(Operation.EQUAL, "No Match"))
         assert result is None
         await db.close()
 
@@ -816,7 +816,7 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item where title is not "Video 1"
-        result = store.get_item(title=(Operation.NOT_EQUAL, "Video 1"))
+        result = await store.get_item(title=(Operation.NOT_EQUAL, "Video 1"))
         assert result is not None
         assert result.info._id == "id2"
         await db.close()
@@ -835,17 +835,17 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item with "Python" in title
-        result = store.get_item(title=(Operation.CONTAIN, "Python"))
+        result = await store.get_item(title=(Operation.CONTAIN, "Python"))
         assert result is not None
         assert result.info._id == "id1"
 
         # Find item with "Tutorial" in title
-        result = store.get_item(title=(Operation.CONTAIN, "Tutorial"))
+        result = await store.get_item(title=(Operation.CONTAIN, "Tutorial"))
         assert result is not None
         assert result.info._id == "id1"
 
         # No match
-        result = store.get_item(title=(Operation.CONTAIN, "Rust"))
+        result = await store.get_item(title=(Operation.CONTAIN, "Rust"))
         assert result is None
         await db.close()
 
@@ -863,7 +863,7 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item that doesn't contain "Python"
-        result = store.get_item(title=(Operation.NOT_CONTAIN, "Python"))
+        result = await store.get_item(title=(Operation.NOT_CONTAIN, "Python"))
         assert result is not None
         assert result.info._id == "id2"
         await db.close()
@@ -882,17 +882,17 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item starting with "Tutorial"
-        result = store.get_item(title=(Operation.STARTS_WITH, "Tutorial"))
+        result = await store.get_item(title=(Operation.STARTS_WITH, "Tutorial"))
         assert result is not None
         assert result.info._id == "id1"
 
         # Find item starting with "Course"
-        result = store.get_item(title=(Operation.STARTS_WITH, "Course"))
+        result = await store.get_item(title=(Operation.STARTS_WITH, "Course"))
         assert result is not None
         assert result.info._id == "id2"
 
         # No match
-        result = store.get_item(title=(Operation.STARTS_WITH, "Video"))
+        result = await store.get_item(title=(Operation.STARTS_WITH, "Video"))
         assert result is None
         await db.close()
 
@@ -910,17 +910,17 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item ending with "Python"
-        result = store.get_item(title=(Operation.ENDS_WITH, "Python"))
+        result = await store.get_item(title=(Operation.ENDS_WITH, "Python"))
         assert result is not None
         assert result.info._id == "id1"
 
         # Find item ending with "JavaScript"
-        result = store.get_item(title=(Operation.ENDS_WITH, "JavaScript"))
+        result = await store.get_item(title=(Operation.ENDS_WITH, "JavaScript"))
         assert result is not None
         assert result.info._id == "id2"
 
         # No match
-        result = store.get_item(title=(Operation.ENDS_WITH, "Course"))
+        result = await store.get_item(title=(Operation.ENDS_WITH, "Course"))
         assert result is None
         await db.close()
 
@@ -940,12 +940,12 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item with filesize > 1500
-        result = store.get_item(filesize=(Operation.GREATER_THAN, 1500))
+        result = await store.get_item(filesize=(Operation.GREATER_THAN, 1500))
         assert result is not None
         assert result.info._id == "id2"
 
         # Find item with filesize > 500 (should return first match)
-        result = store.get_item(filesize=(Operation.GREATER_THAN, 500))
+        result = await store.get_item(filesize=(Operation.GREATER_THAN, 500))
         assert result is not None
         assert result.info._id == "id1"
         await db.close()
@@ -966,7 +966,7 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item2))
 
         # Find item with filesize < 1500
-        result = store.get_item(filesize=(Operation.LESS_THAN, 1500))
+        result = await store.get_item(filesize=(Operation.LESS_THAN, 1500))
         assert result is not None
         assert result.info._id == "id1"
         await db.close()
@@ -983,17 +983,17 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Test >= with exact match
-        result = store.get_item(filesize=(Operation.GREATER_EQUAL, 1000))
+        result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 1000))
         assert result is not None
         assert result.info._id == "id1"
 
         # Test >= with less than
-        result = store.get_item(filesize=(Operation.GREATER_EQUAL, 500))
+        result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 500))
         assert result is not None
         assert result.info._id == "id1"
 
         # Test >= with greater than
-        result = store.get_item(filesize=(Operation.GREATER_EQUAL, 1500))
+        result = await store.get_item(filesize=(Operation.GREATER_EQUAL, 1500))
         assert result is None
         await db.close()
 
@@ -1009,15 +1009,15 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Test <= with exact match
-        result = store.get_item(filesize=(Operation.LESS_EQUAL, 1000))
+        result = await store.get_item(filesize=(Operation.LESS_EQUAL, 1000))
         assert result is not None
 
         # Test <= with greater than
-        result = store.get_item(filesize=(Operation.LESS_EQUAL, 1500))
+        result = await store.get_item(filesize=(Operation.LESS_EQUAL, 1500))
         assert result is not None
 
         # Test <= with less than
-        result = store.get_item(filesize=(Operation.LESS_EQUAL, 500))
+        result = await store.get_item(filesize=(Operation.LESS_EQUAL, 500))
         assert result is None
         await db.close()
 
@@ -1038,12 +1038,12 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item3))
 
         # Mix of operation and default (any match returns true)
-        result = store.get_item(title=(Operation.CONTAIN, "Python"), folder="tutorials")
+        result = await store.get_item(title=(Operation.CONTAIN, "Python"), folder="tutorials")
         assert result is not None
         assert result.info._id == "id1"
 
         # Mix where first condition matches
-        result = store.get_item(title=(Operation.CONTAIN, "JavaScript"), folder="nonexistent")
+        result = await store.get_item(title=(Operation.CONTAIN, "JavaScript"), folder="nonexistent")
         assert result is not None
         assert result.info._id == "id3"
         await db.close()
@@ -1060,15 +1060,15 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # CONTAIN with None field should return False
-        result = store.get_item(description=(Operation.CONTAIN, "test"))
+        result = await store.get_item(description=(Operation.CONTAIN, "test"))
         assert result is None
 
         # NOT_CONTAIN with None field should return True
-        result = store.get_item(description=(Operation.NOT_CONTAIN, "test"))
+        result = await store.get_item(description=(Operation.NOT_CONTAIN, "test"))
         assert result is not None
 
         # GREATER_THAN with None should return False
-        result = store.get_item(description=(Operation.GREATER_THAN, 100))
+        result = await store.get_item(description=(Operation.GREATER_THAN, 100))
         assert result is None
         await db.close()
 
@@ -1083,7 +1083,7 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Try to compare string with number using > (should return False/None)
-        result = store.get_item(title=(Operation.GREATER_THAN, 100))
+        result = await store.get_item(title=(Operation.GREATER_THAN, 100))
         assert result is None
         await db.close()
 
@@ -1098,12 +1098,12 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Using string operation value
-        result = store.get_item(title=("in", "Python"))
+        result = await store.get_item(title=("in", "Python"))
         assert result is not None
         assert result.info._id == "id1"
 
         # Using string for EQUAL
-        result = store.get_item(title=("==", "Python Tutorial"))
+        result = await store.get_item(title=("==", "Python Tutorial"))
         assert result is not None
         await db.close()
 
@@ -1118,9 +1118,9 @@ class TestDataStoreOperations:
         await store.put(StubDownload(info=item1))
 
         # Try to match on non-existent field
-        result = store.get_item(nonexistent_field=(Operation.EQUAL, "value"))
+        result = await store.get_item(nonexistent_field=(Operation.EQUAL, "value"))
         assert result is None
 
-        result = store.get_item(nonexistent_field=(Operation.CONTAIN, "value"))
+        result = await store.get_item(nonexistent_field=(Operation.CONTAIN, "value"))
         assert result is None
         await db.close()

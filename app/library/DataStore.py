@@ -61,17 +61,20 @@ class DataStore:
     async def saved_items(self) -> list[tuple[str, ItemDTO]]:
         return await self._connection.fetch_saved(str(self._type))
 
-    def exists(self, key: str | None = None, url: str | None = None) -> bool:
+    async def exists(self, key: str | None = None, url: str | None = None) -> bool:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
+
         if key and key in self._dict:
             return True
-        return any(
-            (key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url) for i in self._dict
-        )
 
-    def get(self, key: str | None = None, url: str | None = None) -> Download:
+        if any((key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url) for i in self._dict):
+            return True
+
+        return StoreType.HISTORY == self._type and await self._connection.exists(str(self._type), key=key, url=url)
+
+    async def get(self, key: str | None = None, url: str | None = None) -> Download:
         if not key and not url:
             msg = "key or url must be provided."
             raise KeyError(msg)
@@ -80,10 +83,14 @@ class DataStore:
             if (key and self._dict[i].info._id == key) or (url and self._dict[i].info.url == url):
                 return self._dict[i]
 
+        if StoreType.HISTORY == self._type and (item := await self._connection.get(str(self._type), key=key, url=url)):
+            self._dict[item._id] = Download(info=item)
+            return self._dict[item._id]
+
         msg: str = f"{key=} or {url=} not found."
         raise KeyError(msg)
 
-    def get_item(self, **kwargs) -> Download | None:
+    async def get_item(self, **kwargs) -> Download | None:
         if not kwargs:
             return None
 
@@ -96,6 +103,10 @@ class DataStore:
             if any(matches_condition(key, value, info) for key, value in kwargs.items()):
                 return self._dict[i]
 
+        if StoreType.HISTORY == self._type and (item := await self._connection.get_item(str(self._type), **kwargs)):
+            self._dict[item._id] = Download(info=item)
+            return self._dict[item._id]
+
         return None
 
     async def get_by_id(self, id: str) -> Download | None:
@@ -104,8 +115,7 @@ class DataStore:
             return val
 
         if item := await self._connection.get_by_id(str(self._type), id):
-            download = Download(info=item)
-            self._dict[id] = download
+            self._dict[item._id] = Download(info=item)
             return self._dict[id]
 
         return None

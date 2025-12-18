@@ -397,7 +397,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 for old_sidecar, new_sidecar in sidecar_renamed:
                     record(old_sidecar, ok=True, action=action, extra={"new_path": new_sidecar})
 
-                if item := queue.done.get_item(filename=str(path.relative_to(config.download_path))):
+                if item := await queue.done.get_item(filename=str(path.relative_to(config.download_path))):
                     item.info.filename = str(renamed.relative_to(config.download_path))
                     if sidecar_renamed:
                         item.info.get_file_sidecar()
@@ -503,7 +503,7 @@ async def path_actions(request: Request, config: Config, queue: DownloadQueue, n
                 for old_sidecar, new_sidecar in sidecar_moved:
                     record(old_sidecar, ok=True, action=action, extra={"new_path": new_sidecar})
 
-                if item := queue.done.get_item(filename=str(path.relative_to(config.download_path))):
+                if item := await queue.done.get_item(filename=str(path.relative_to(config.download_path))):
                     item.info.filename = str(moved.relative_to(config.download_path))
                     if sidecar_moved:
                         item.info.get_file_sidecar()

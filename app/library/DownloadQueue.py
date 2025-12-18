@@ -71,7 +71,6 @@ class DownloadQueue(metaclass=Singleton):
         self._active: dict[str, Download] = {}
         """Dictionary of active downloads."""
 
-        # Loading happens in async initialize to avoid blocking loop creation.
         self.paused.set()
 
     @staticmethod
@@ -170,7 +169,6 @@ class DownloadQueue(metaclass=Singleton):
             f"Using '{self.config.max_workers}' workers for downloading and '{self.config.max_workers_per_extractor}' per extractor."
         )
         asyncio.create_task(self._download_pool(), name="download_pool")
-        await self.done.load()
 
     async def start_items(self, ids: list[str]) -> dict[str, str]:
         """
@@ -188,7 +186,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for item_id in ids:
             try:
-                item: Download = self.queue.get(key=item_id)
+                item: Download = await self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -231,7 +229,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for item_id in ids:
             try:
-                item: Download = self.queue.get(key=item_id)
+                item: Download = await self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -444,7 +442,7 @@ class DownloadQueue(metaclass=Singleton):
         LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
 
         try:
-            _item: Download = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+            _item: Download = await self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
             err_msg: str = f"Removing {_item.info.name()} from history list."
             LOG.warning(err_msg)
             await self.clear([_item.info._id], remove_file=False)
@@ -452,7 +450,7 @@ class DownloadQueue(metaclass=Singleton):
             pass
 
         try:
-            _item: Download = self.queue.get(
+            _item: Download = await self.queue.get(
                 key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url"))
             )
             err_msg: str = f"Item {_item.info.name()} is already in download queue."
@@ -713,7 +711,7 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.is_archived():
                 if archive_id:
-                    store_type, _ = self.get_item(archive_id=archive_id)
+                    store_type, _ = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
@@ -801,7 +799,7 @@ class DownloadQueue(metaclass=Singleton):
 
                     log_message = f"Ignoring download of '{item_title}' as per condition '{condition.name}'{extra_msg}."
 
-                    store_type, _ = self.get_item(archive_id=archive_id)
+                    store_type, _ = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
@@ -886,7 +884,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item = self.queue.get(key=id)
+                item = await self.queue.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -940,7 +938,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item: Download = self.done.get(key=id)
+                item: Download = await self.done.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -1041,7 +1039,7 @@ class DownloadQueue(metaclass=Singleton):
 
         return items
 
-    def get_item(self, **kwargs) -> tuple[StoreType, Download] | tuple[None, None]:
+    async def get_item(self, **kwargs) -> tuple[StoreType, Download] | tuple[None, None]:
         """
         Get a specific item from the download queue or history.
 
@@ -1052,10 +1050,10 @@ class DownloadQueue(metaclass=Singleton):
             (StoreType, Download) | None: The requested item if found, otherwise None.
 
         """
-        if item := self.queue.get_item(**kwargs):
+        if item := await self.queue.get_item(**kwargs):
             return (StoreType.QUEUE, item)
 
-        if item := self.done.get_item(**kwargs):
+        if item := await self.done.get_item(**kwargs):
             return (StoreType.HISTORY, item)
 
         return (None, None)
@@ -1166,7 +1164,7 @@ class DownloadQueue(metaclass=Singleton):
 
             await entry.close()
 
-        if self.queue.exists(key=id):
+        if await self.queue.exists(key=id):
             LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
             await self.queue.delete(key=id)
 

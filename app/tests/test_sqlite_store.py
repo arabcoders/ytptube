@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.library.ItemDTO import ItemDTO
+from app.library.operations import Operation
 from app.library.sqlite_store import SqliteStore
 
 
@@ -172,6 +173,47 @@ async def test_paginate_out_of_range_returns_last_page():
 
 
 @pytest.mark.asyncio
+async def test_get_item_returns_none_without_kwargs():
+    store = await make_store()
+    await store.enqueue_upsert("queue", make_item(1))
+    await store.flush()
+
+    result = await store.get_item("queue")
+    assert result is None
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_get_item_matches_conditions():
+    store = await make_store()
+    first = make_item(1, status="finished")
+    second = make_item(2, status="pending")
+
+    await store.enqueue_upsert("queue", first)
+    await store.enqueue_upsert("queue", second)
+    await store.flush()
+
+    # equality match
+    match_equal = await store.get_item("queue", title=first.title)
+    assert match_equal is not None
+    assert match_equal._id == first._id
+
+    # NOT_EQUAL should find the second item
+    match_not_equal = await store.get_item("queue", status=(Operation.NOT_EQUAL, "finished"))
+    assert match_not_equal is not None
+    assert match_not_equal._id == second._id
+
+    # CONTAIN should find first created (first)
+    match_contain = await store.get_item("queue", title=(Operation.CONTAIN, "Video"))
+    assert match_contain is not None
+    assert match_contain._id == first._id
+
+    # No match returns None
+    no_match = await store.get_item("queue", title=(Operation.CONTAIN, "does-not-exist"))
+    assert no_match is None
+    await store.close()
+
+@pytest.mark.asyncio
 async def test_on_shutdown_closes_connection():
     store = await make_store()
     await store.enqueue_upsert("queue", make_item(1))
@@ -181,3 +223,34 @@ async def test_on_shutdown_closes_connection():
     assert store._conn is None
 
 
+@pytest.mark.asyncio
+async def test_exists_and_get_by_key_and_url():
+    store = await make_store()
+    item = make_item(42)
+    await store.enqueue_upsert("queue", item)
+    await store.flush()
+
+    assert await store.exists("queue", key=item._id) is True
+    assert await store.exists("queue", url=item.url) is True
+
+    fetched_by_key = await store.get("queue", key=item._id)
+    assert fetched_by_key is not None
+    assert fetched_by_key._id == item._id
+
+    fetched_by_url = await store.get("queue", url=item.url)
+    assert fetched_by_url is not None
+    assert fetched_by_url._id == item._id
+
+    assert await store.exists("queue", key="missing") is False
+    assert await store.get("queue", key="missing") is None
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_exists_and_get_raise_without_key_or_url():
+    store = await make_store()
+    with pytest.raises(KeyError):
+        await store.exists("queue")
+    with pytest.raises(KeyError):
+        await store.get("queue")
+    await store.close()
