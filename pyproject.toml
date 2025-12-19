@@ -22,7 +22,7 @@ dependencies = [
   "httpx[brotli,http2,socks,zstd]",
   "async-timeout",
   "pyjson5",
-  "curl_cffi>=0.13",
+  "curl_cffi==0.13",
   "pysubs2",
   "regex",
   "mutagen",
