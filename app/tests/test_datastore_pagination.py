@@ -5,6 +5,7 @@ import pytest
 import pytest_asyncio
 
 from app.library.DataStore import DataStore, StoreType
+from app.library.Download import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
 
@@ -75,8 +76,9 @@ class TestDataStorePagination:
             assert page == 1
             assert total_pages == 10
             for _, item in items:
-                assert isinstance(item, ItemDTO)
-                assert item._id.startswith("test-id-")
+                assert isinstance(item, Download)
+                assert isinstance(item.info, ItemDTO)
+                assert item.info._id.startswith("test-id-")
         finally:
             await db.close()
 
@@ -253,7 +255,7 @@ class TestDataStorePagination:
             assert len(items) == 50  # First page of finished items
             assert total == 100  # Only 100 finished items in fixture
             for _item_id, item in items:
-                assert item.status == "finished"
+                assert item.info.status == "finished"
 
             # Filter for pending items only
             items, total, _page, _total_pages = await datastore.get_items_paginated(
@@ -262,7 +264,7 @@ class TestDataStorePagination:
 
             assert len(items) == 1
             assert total == 1
-            assert items[0][1].status == "pending"
+            assert items[0][1].info.status == "pending"
         finally:
             await db.close()
 
@@ -317,10 +319,10 @@ class TestDataStorePagination:
             assert total == 2  # Only 2 non-finished items
             assert len(items) == 2
             for _item_id, item in items:
-                assert item.status != "finished"
+                assert item.info.status != "finished"
 
             # Verify we have pending and error
-            statuses = {item.status for _, item in items}
+            statuses = {item.info.status for _, item in items}
             assert statuses == {"pending", "error"}
         finally:
             await db.close()

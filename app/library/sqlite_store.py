@@ -13,6 +13,7 @@ from aiohttp import web
 
 from .ItemDTO import ItemDTO
 from .operations import Operation, matches_condition
+from .Services import Services
 from .Singleton import ThreadSafe
 from .Utils import init_class
 
@@ -43,25 +44,24 @@ class _Op:
 class SqliteStore(metaclass=ThreadSafe):
     @staticmethod
     def get_instance(db_path: str | None = None) -> "SqliteStore":
-        return SqliteStore(db_path)
+        return SqliteStore(db_path=db_path)
 
     def attach(self, app: web.Application):
-        """Get/create singleton bound to db_path."""
+        Services.get_instance().add("sqlite_store", self)
         app.on_shutdown.append(self.on_shutdown)
 
     async def on_shutdown(self, _: web.Application):
-        """Close singleton on app shutdown."""
         LOG.debug("Shutting down SqliteStore...")
         await self.close()
         LOG.debug("SqliteStore shut down complete.")
 
-    def __init__(self, db_path: str | None = None, *, max_pending: int = 200, flush_interval: float = 0.05):
-        self._db_path = db_path
+    def __init__(self, db_path: str, *, max_pending: int = 200, flush_interval: float = 0.05):
+        self._db_path: str = db_path
         self._conn: aiosqlite.Connection | None = None
         self._queue: asyncio.Queue[_Op] | None = None
         self._task: asyncio.Task | None = None
-        self._flush_interval = flush_interval
-        self._max_pending = max_pending
+        self._flush_interval: float = flush_interval
+        self._max_pending: int = max_pending
         self._lock = asyncio.Lock()
 
     async def __aenter__(self) -> "SqliteStore":
@@ -303,7 +303,6 @@ class SqliteStore(metaclass=ThreadSafe):
 
         return items, total_items, page, total_pages
 
-    # direct CRUD helpers (used by DataStore)
     async def upsert(self, type_value: str, item: ItemDTO) -> None:
         await self._ensure_conn()
         await self._upsert_now(type_value, item)
@@ -441,7 +440,7 @@ class SqliteStore(metaclass=ThreadSafe):
             return
 
         if not self._db_path:
-            msg = "SqliteStore requires db_path or injected connection."
+            msg = "No database path specified for SqliteStore."
             raise RuntimeError(msg)
 
         from app.library import migrate

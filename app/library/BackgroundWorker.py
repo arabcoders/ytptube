@@ -6,6 +6,7 @@ from queue import Empty, Queue
 
 from aiohttp import web
 
+from .Services import Services
 from .Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("BackgroundWorker")
@@ -35,6 +36,7 @@ class BackgroundWorker(metaclass=Singleton):
         return BackgroundWorker()
 
     def attach(self, app: web.Application):
+        Services.get_instance().add("background_worker", self)
         app.on_shutdown.append(self.on_shutdown)
 
         LOG.debug("Starting background worker...")

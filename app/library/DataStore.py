@@ -154,18 +154,25 @@ class DataStore:
 
     async def get_items_paginated(
         self, page: int = 1, per_page: int = 50, order: str = "DESC", status_filter: str | None = None
-    ):
+    ) -> tuple[list[tuple[str, Download]], int, int, int]:
         if page < 1:
             msg = "page must be >= 1"
             raise ValueError(msg)
+
         if per_page < 1:
             msg = "per_page must be >= 1"
             raise ValueError(msg)
+
         order = order.upper()
         if order not in ("ASC", "DESC"):
             msg = f"order must be 'ASC' or 'DESC', got '{order}'"
             raise ValueError(msg)
-        return await self._connection.paginate(str(self._type), page, per_page, order, status_filter)
+
+        items, total_items, current_page, total_pages = await self._connection.paginate(
+            str(self._type), page, per_page, order, status_filter
+        )
+
+        return [(item_id, Download(info=item)) for item_id, item in items], total_items, current_page, total_pages
 
     async def bulk_delete(self, ids: Iterable[str]) -> int:
         deleted = await self._connection.bulk_delete(str(self._type), ids)

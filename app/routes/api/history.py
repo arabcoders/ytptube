@@ -89,6 +89,16 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
         page=page, per_page=per_page, order=order, status_filter=status_filter
     )
 
+    if store_type == StoreType.HISTORY:
+        for _, download in items:
+            if not download.info:
+                continue
+
+            try:
+                download.info.sidecar = download.get_file_sidecar()
+            except Exception:
+                download.info.sidecar = {}
+
     return web.json_response(
         data={
             "type": store_type.value,
@@ -100,7 +110,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
                 "has_next": current_page < total_pages,
                 "has_prev": current_page > 1,
             },
-            "items": [item for _, item in items],
+            "items": [download.info for _, download in items],
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
@@ -227,6 +237,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     info: dict = {
         **item.info.serialize(),
         "ffprobe": {},
+        "sidecar": {},
     }
 
     if "finished" == item.info.status and (filename := item.info.get_file()):
@@ -234,6 +245,11 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
 
         try:
             info["ffprobe"] = await ffprobe(filename)
+        except Exception:
+            pass
+
+        try:
+            info["sidecar"] = item.info.get_file_sidecar()
         except Exception:
             pass
 

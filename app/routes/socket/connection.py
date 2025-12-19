@@ -52,6 +52,14 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
         to=sid,
     )
 
+    notify.emit(
+        Events.ACTIVE_QUEUE,
+        data={"queue": (await queue.get("queue"))["queue"]},
+        title="Sending initial active queue data",
+        message=f"Sending active queue data to client '{sid}'.",
+        to=sid,
+    )
+
 
 @route(RouteType.SOCKET, "disconnect", "socket_disconnect")
 async def disconnect(sio: socketio.AsyncServer, sid: str, data: str = None):

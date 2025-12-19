@@ -23,6 +23,7 @@ from .Events import EventBus, Events
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
+from .Services import Services
 from .Singleton import Singleton
 from .sqlite_store import SqliteStore
 from .Utils import (
@@ -54,9 +55,9 @@ class DownloadQueue(metaclass=Singleton):
         "Configuration instance."
         self._notify: EventBus = EventBus.get_instance()
         "Event bus instance."
-        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance(config.db_file))
+        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance())
         "DataStore for the completed downloads."
-        self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance(config.db_file))
+        self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
         "DataStore for the download queue."
         self.workers = asyncio.Semaphore(self.config.max_workers)
         "Semaphore to limit the number of concurrent downloads."
@@ -74,7 +75,7 @@ class DownloadQueue(metaclass=Singleton):
         self.paused.set()
 
     @staticmethod
-    def get_instance() -> "DownloadQueue":
+    def get_instance(config: Config | None = None) -> "DownloadQueue":
         """
         Get the instance of the DownloadQueue.
 
@@ -82,7 +83,7 @@ class DownloadQueue(metaclass=Singleton):
             DownloadQueue: The instance of the DownloadQueue
 
         """
-        return DownloadQueue()
+        return DownloadQueue(config=config)
 
     def _get_limit(self, extractor: str) -> asyncio.Semaphore:
         """
@@ -121,6 +122,7 @@ class DownloadQueue(metaclass=Singleton):
             _ (web.Application): The application to attach the download queue to.
 
         """
+        Services.get_instance().add("queue", self)
 
         async def event_handler(_, __):
             await self.initialize()
@@ -1021,7 +1023,6 @@ class DownloadQueue(metaclass=Singleton):
 
         if mode in ("all", "done"):
             for k, v in await self.done.saved_items():
-                v.get_file_sidecar()
                 items["done"][k] = v
 
         if mode in ("all", "queue"):
@@ -1034,7 +1035,6 @@ class DownloadQueue(metaclass=Singleton):
                 if k in items["done"]:
                     continue
 
-                v.info.get_file_sidecar()
                 items["done"][k] = v.info
 
         return items

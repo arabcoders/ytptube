@@ -17,7 +17,6 @@ from aiohttp import web
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.conditions import Conditions
 from app.library.config import Config
-from app.library.DataStore import SqliteStore
 from app.library.dl_fields import DLFields
 from app.library.DownloadQueue import DownloadQueue
 from app.library.Events import EventBus, Events
@@ -27,6 +26,7 @@ from app.library.Notifications import Notification
 from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
+from app.library.sqlite_store import SqliteStore
 from app.library.TaskDefinitions import TaskDefinitions
 from app.library.Tasks import Tasks
 
@@ -42,10 +42,8 @@ class Main:
         self._config.set_app_path(str(ROOT_PATH))
         self._app = web.Application()
         self._app.on_shutdown.append(self.on_shutdown)
-        self._background_worker = BackgroundWorker()
 
         Services.get_instance().add("app", self._app)
-        Services.get_instance().add("background_worker", self._background_worker)
 
         self._check_folders()
 
@@ -56,13 +54,12 @@ class Main:
         except Exception:
             pass
 
-        self._queue = DownloadQueue(config=self._config)
-        self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
-        self._socket = HttpSocket(root_path=ROOT_PATH, queue=self._queue)
+        self._http = HttpAPI(root_path=ROOT_PATH)
+        self._socket = HttpSocket(root_path=ROOT_PATH)
 
     def _check_folders(self):
         """Check if the required folders exist and create them if they do not."""
-        folders = (self._config.download_path, self._config.temp_path, self._config.config_path)
+        folders: tuple[str, str, str] = (self._config.download_path, self._config.temp_path, self._config.config_path)
 
         for folder in folders:
             folder = Path(folder)
@@ -109,20 +106,20 @@ class Main:
         if self._config.debug:
             EventBus.get_instance().debug_enable()
 
+        SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
+        BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
         self._http.attach(self._app)
-        self._queue.attach(self._app)
 
-        Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
+        Tasks.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
         TaskDefinitions.get_instance().attach(self._app)
-        SqliteStore.get_instance().attach(self._app)
-        self._background_worker.attach(self._app)
+        DownloadQueue.get_instance().attach(self._app)
 
         EventBus.get_instance().emit(
             Events.LOADED,
