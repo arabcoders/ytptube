@@ -64,9 +64,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",
-    "date": "2025-12-18T15:58:11+00:00",
+    "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1",
+    "date": "2025-12-19T17:12:01+00:00",
     "commits": [
+      {
+        "sha": "5a5f16c9",
+        "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1",
+        "message": "Refactor: make classes more modular",
+        "author": "arabcoders",
+        "date": "2025-12-19T17:12:01+00:00"
+      },
+      {
+        "sha": "71cdcc22",
+        "full_sha": "71cdcc220fd1273beefc5faaaae371fbab0353d9",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-12-19T16:48:22+00:00"
+      },
       {
         "sha": "d5727ca3",
         "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",

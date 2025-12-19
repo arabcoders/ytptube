@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251218-d5727ca3",
-        "date": "2025-12-18T15:58:11+00:00",
+        "tag": "dev-20251219-5a5f16c9",
+        "date": "2025-12-19T17:12:01+00:00",
         "commits": [
+            {
+                "sha": "5a5f16c9",
+                "message": "Refactor: make classes more modular",
+                "author": "arabcoders",
+                "date": "2025-12-19T17:12:01+00:00",
+                "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1"
+            },
+            {
+                "sha": "71cdcc22",
+                "message": "Chore: update external packages",
+                "author": "arabcoders",
+                "date": "2025-12-19T16:48:22+00:00",
+                "full_sha": "71cdcc220fd1273beefc5faaaae371fbab0353d9"
+            },
             {
                 "sha": "d5727ca3",
                 "message": "Fix: add fallback to placeholder if loading thumbnail fails",
@@ -3287,7 +3301,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e"
+        "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1"
     },
     {
         "tag": "dev-20250616-c07465a6",
