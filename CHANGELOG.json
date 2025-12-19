@@ -1,9 +1,58 @@
 [
   {
-    "tag": "Unreleased (93ce7a73)",
-    "full_sha": "93ce7a730b17a2967d5713c319749d680887a3f0",
-    "date": "2025-12-16T12:33:06+00:00",
+    "tag": "Unreleased (47ca5461)",
+    "full_sha": "47ca5461f11e33d89b45b534903914f7355347d5",
+    "date": "2025-12-19T19:11:36+00:00",
     "commits": [
+      {
+        "sha": "5a5f16c9",
+        "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1",
+        "message": "Refactor: make classes more modular",
+        "author": "arabcoders",
+        "date": "2025-12-19T17:12:01+00:00"
+      },
+      {
+        "sha": "71cdcc22",
+        "full_sha": "71cdcc220fd1273beefc5faaaae371fbab0353d9",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-12-19T16:48:22+00:00"
+      },
+      {
+        "sha": "d5727ca3",
+        "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",
+        "message": "Fix: add fallback to placeholder if loading thumbnail fails",
+        "author": "arabcoders",
+        "date": "2025-12-18T15:58:11+00:00"
+      },
+      {
+        "sha": "b36d9fd6",
+        "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
+        "message": "Refactor: migrated whatleft of sync code to async",
+        "author": "arabcoders",
+        "date": "2025-12-18T15:21:34+00:00"
+      },
+      {
+        "sha": "699e21f5",
+        "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",
+        "message": "revert: revert changes to DownloadQueue to load finished history",
+        "author": "arabcoders",
+        "date": "2025-12-18T14:19:23+00:00"
+      },
+      {
+        "sha": "50f50bed",
+        "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
+        "message": "Refactor: do not load history items in DownloadQueue",
+        "author": "arabcoders",
+        "date": "2025-12-18T14:08:18+00:00"
+      },
+      {
+        "sha": "7a85bcdb",
+        "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d",
+        "message": "Refactor: swap sqlite to aiosqlite and add queued db updates",
+        "author": "arabcoders",
+        "date": "2025-12-18T13:31:15+00:00"
+      },
       {
         "sha": "8a62f053",
         "full_sha": "8a62f053a58781da03978b2ed9b593a5035d7820",
@@ -59,62 +108,6 @@
         "message": "Chore: update external packages",
         "author": "arabcoders",
         "date": "2025-12-08T13:47:08+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1",
-    "date": "2025-12-19T17:12:01+00:00",
-    "commits": [
-      {
-        "sha": "5a5f16c9",
-        "full_sha": "5a5f16c9f802107112307bfb0188b5a7304701e1",
-        "message": "Refactor: make classes more modular",
-        "author": "arabcoders",
-        "date": "2025-12-19T17:12:01+00:00"
-      },
-      {
-        "sha": "71cdcc22",
-        "full_sha": "71cdcc220fd1273beefc5faaaae371fbab0353d9",
-        "message": "Chore: update external packages",
-        "author": "arabcoders",
-        "date": "2025-12-19T16:48:22+00:00"
-      },
-      {
-        "sha": "d5727ca3",
-        "full_sha": "d5727ca38750b8fa8723fafceb1f1d3d6bc4364e",
-        "message": "Fix: add fallback to placeholder if loading thumbnail fails",
-        "author": "arabcoders",
-        "date": "2025-12-18T15:58:11+00:00"
-      },
-      {
-        "sha": "b36d9fd6",
-        "full_sha": "b36d9fd64107ccb8ee78ba7d5bbeb808af03d237",
-        "message": "Refactor: migrated whatleft of sync code to async",
-        "author": "arabcoders",
-        "date": "2025-12-18T15:21:34+00:00"
-      },
-      {
-        "sha": "699e21f5",
-        "full_sha": "699e21f54d3a5f2659195b6b52c563b55125f0fd",
-        "message": "revert: revert changes to DownloadQueue to load finished history",
-        "author": "arabcoders",
-        "date": "2025-12-18T14:19:23+00:00"
-      },
-      {
-        "sha": "50f50bed",
-        "full_sha": "50f50bed9fca69b4fc3d9f1b4a294044f753c412",
-        "message": "Refactor: do not load history items in DownloadQueue",
-        "author": "arabcoders",
-        "date": "2025-12-18T14:08:18+00:00"
-      },
-      {
-        "sha": "7a85bcdb",
-        "full_sha": "7a85bcdb5c630531233aac09fb9dc8ab9891665d",
-        "message": "Refactor: swap sqlite to aiosqlite and add queued db updates",
-        "author": "arabcoders",
-        "date": "2025-12-18T13:31:15+00:00"
       }
     ]
   },
