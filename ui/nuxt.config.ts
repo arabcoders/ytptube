@@ -68,7 +68,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
-    process.env.NODE_ENV === 'development' ? '@nuxt/eslint' : '',
+    'development' === process.env.NODE_ENV ? '@nuxt/eslint' : '',
   ].filter(Boolean),
 
   nitro: {
@@ -80,6 +80,9 @@ export default defineNuxtConfig({
   vite: {
     server: {
       allowedHosts: true,
+    },
+    build: {
+      chunkSizeWarningLimit: 2000,
     }
   },
   telemetry: false,

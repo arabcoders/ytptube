@@ -828,11 +828,11 @@ class HandleTask:
             if archive_file and archive_id in downloaded:
                 continue
 
-            if download_queue.queue.exists(url=url):
+            if await download_queue.queue.exists(url=url):
                 continue
 
             try:
-                done = download_queue.done.get(url=url)
+                done = await download_queue.done.get(url=url)
                 if "error" != done.info.status:
                     continue
             except KeyError:

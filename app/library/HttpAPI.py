@@ -14,7 +14,6 @@ from app.library.Services import Services
 
 from .cache import Cache
 from .config import Config
-from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus
 from .router import RouteType, get_routes
@@ -24,8 +23,7 @@ LOG: logging.Logger = logging.getLogger("http_api")
 
 
 class HttpAPI:
-    def __init__(self, root_path: Path, queue: DownloadQueue):
-        self.queue: DownloadQueue = queue or DownloadQueue.get_instance()
+    def __init__(self, root_path: Path):
         self.encoder: Encoder = Encoder()
         self.config: Config = Config.get_instance()
         self._notify: EventBus = EventBus.get_instance()
@@ -33,12 +31,11 @@ class HttpAPI:
         self.cache = Cache()
         self.app: web.Application | None = None
 
-        services = Services.get_instance()
+        services: Services = Services.get_instance()
         services.add_all(
             {
                 k: v
                 for k, v in {
-                    "queue": self.queue,
                     "encoder": self.encoder,
                     "config": self.config,
                     "notify": self._notify,

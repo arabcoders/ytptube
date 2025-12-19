@@ -25,6 +25,7 @@ class Events:
     CONNECTED: str = "connected"
 
     CONFIGURATION: str = "configuration"
+    ACTIVE_QUEUE: str = "active_queue"
 
     LOG_INFO: str = "log_info"
     LOG_WARNING: str = "log_warning"
@@ -94,6 +95,7 @@ class Events:
         return [
             Events.CONFIGURATION,
             Events.CONNECTED,
+            Events.ACTIVE_QUEUE,
             Events.LOG_INFO,
             Events.LOG_WARNING,
             Events.LOG_ERROR,

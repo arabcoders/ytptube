@@ -9,7 +9,6 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from pathlib import Path
-from sqlite3 import Connection
 from typing import TYPE_CHECKING, Any
 
 import yt_dlp.utils
@@ -24,7 +23,9 @@ from .Events import EventBus, Events
 from .ItemDTO import Item, ItemDTO
 from .Presets import Presets
 from .Scheduler import Scheduler
+from .Services import Services
 from .Singleton import Singleton
+from .sqlite_store import SqliteStore
 from .Utils import (
     archive_add,
     arg_converter,
@@ -49,14 +50,14 @@ class DownloadQueue(metaclass=Singleton):
     DownloadQueue class is a singleton class that manages the download queue and the download history.
     """
 
-    def __init__(self, connection: Connection, config: Config | None = None):
+    def __init__(self, config: Config | None = None):
         self.config: Config = config or Config.get_instance()
         "Configuration instance."
         self._notify: EventBus = EventBus.get_instance()
         "Event bus instance."
-        self.done = DataStore(type=StoreType.HISTORY, connection=connection)
+        self.done = DataStore(type=StoreType.HISTORY, connection=SqliteStore.get_instance())
         "DataStore for the completed downloads."
-        self.queue = DataStore(type=StoreType.QUEUE, connection=connection)
+        self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
         "DataStore for the download queue."
         self.workers = asyncio.Semaphore(self.config.max_workers)
         "Semaphore to limit the number of concurrent downloads."
@@ -71,12 +72,10 @@ class DownloadQueue(metaclass=Singleton):
         self._active: dict[str, Download] = {}
         """Dictionary of active downloads."""
 
-        self.done.load()
-        self.queue.load()
         self.paused.set()
 
     @staticmethod
-    def get_instance() -> "DownloadQueue":
+    def get_instance(config: Config | None = None) -> "DownloadQueue":
         """
         Get the instance of the DownloadQueue.
 
@@ -84,7 +83,7 @@ class DownloadQueue(metaclass=Singleton):
             DownloadQueue: The instance of the DownloadQueue
 
         """
-        return DownloadQueue()
+        return DownloadQueue(config=config)
 
     def _get_limit(self, extractor: str) -> asyncio.Semaphore:
         """
@@ -123,6 +122,7 @@ class DownloadQueue(metaclass=Singleton):
             _ (web.Application): The application to attach the download queue to.
 
         """
+        Services.get_instance().add("queue", self)
 
         async def event_handler(_, __):
             await self.initialize()
@@ -166,6 +166,7 @@ class DownloadQueue(metaclass=Singleton):
         """
         Initialize the download queue.
         """
+        await self.queue.load()
         LOG.info(
             f"Using '{self.config.max_workers}' workers for downloading and '{self.config.max_workers_per_extractor}' per extractor."
         )
@@ -187,7 +188,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for item_id in ids:
             try:
-                item: Download = self.queue.get(key=item_id)
+                item: Download = await self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -199,7 +200,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = True
-            updated: Download = self.queue.put(item)
+            updated: Download = await self.queue.put(item)
             self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
             self._notify.emit(
                 Events.ITEM_RESUMED,
@@ -230,7 +231,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for item_id in ids:
             try:
-                item: Download = self.queue.get(key=item_id)
+                item: Download = await self.queue.get(key=item_id)
             except KeyError as e:
                 status[item_id] = f"not found: {e!s}"
                 status["status"] = "error"
@@ -246,7 +247,7 @@ class DownloadQueue(metaclass=Singleton):
                 continue
 
             item.info.auto_start = False
-            updated: Download = self.queue.put(item)
+            updated: Download = await self.queue.put(item)
             self._notify.emit(Events.ITEM_UPDATED, data=updated.info)
             self._notify.emit(
                 Events.ITEM_PAUSED,
@@ -443,7 +444,7 @@ class DownloadQueue(metaclass=Singleton):
         LOG.debug(f"Entry id '{entry.get('id')}' url '{entry.get('webpage_url')} - {entry.get('url')}'.")
 
         try:
-            _item: Download = self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
+            _item: Download = await self.done.get(key=entry.get("id"), url=entry.get("webpage_url") or entry.get("url"))
             err_msg: str = f"Removing {_item.info.name()} from history list."
             LOG.warning(err_msg)
             await self.clear([_item.info._id], remove_file=False)
@@ -451,7 +452,7 @@ class DownloadQueue(metaclass=Singleton):
             pass
 
         try:
-            _item: Download = self.queue.get(
+            _item: Download = await self.queue.get(
                 key=str(entry.get("id")), url=str(entry.get("webpage_url") or entry.get("url"))
             )
             err_msg: str = f"Item {_item.info.name()} is already in download queue."
@@ -534,7 +535,7 @@ class DownloadQueue(metaclass=Singleton):
                     message=nMessage,
                 )
 
-                itemDownload: Download = self.done.put(dlInfo)
+                itemDownload: Download = await self.done.put(dlInfo)
             elif not hasFormats:
                 ava: str = entry.get("availability", "public")
                 nTitle = "Download Error"
@@ -547,7 +548,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 dlInfo.info.error = nMessage.replace(f" for '{dl.title}'.", ".") + text_logs
                 dlInfo.info.status = "error"
-                itemDownload = self.done.put(dlInfo)
+                itemDownload = await self.done.put(dlInfo)
 
                 self._notify.emit(
                     Events.LOG_WARNING,
@@ -580,12 +581,12 @@ class DownloadQueue(metaclass=Singleton):
 
                 if _requeue:
                     nEvent = Events.ITEM_ADDED
-                    itemDownload = self.queue.put(dlInfo)
+                    itemDownload = await self.queue.put(dlInfo)
                     if item.auto_start:
                         self.event.set()
                 else:
                     dlInfo.info.status = "not_live"
-                    itemDownload = self.done.put(dlInfo)
+                    itemDownload = await self.done.put(dlInfo)
                     nStore = "history"
                     nEvent = Events.ITEM_MOVED
                     nTitle = "Premiering right now"
@@ -596,7 +597,7 @@ class DownloadQueue(metaclass=Singleton):
                 nEvent = Events.ITEM_ADDED
                 nTitle = "Item Added"
                 nMessage = f"Item '{dlInfo.info.title}' has been added to the download queue."
-                itemDownload = self.queue.put(dlInfo)
+                itemDownload = await self.queue.put(dlInfo)
                 if item.auto_start:
                     self.event.set()
                 else:
@@ -712,7 +713,7 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.is_archived():
                 if archive_id:
-                    store_type, _ = self.get_item(archive_id=archive_id)
+                    store_type, _ = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
@@ -732,7 +733,7 @@ class DownloadQueue(metaclass=Singleton):
                         if archive_file := dlInfo.info.get_ytdlp_opts().get_all().get("download_archive"):
                             dlInfo.info.msg += f" Found in archive '{archive_file}'."
 
-                        self.done.put(dlInfo)
+                        await self.done.put(dlInfo)
 
                         self._notify.emit(
                             Events.ITEM_MOVED,
@@ -800,7 +801,7 @@ class DownloadQueue(metaclass=Singleton):
 
                     log_message = f"Ignoring download of '{item_title}' as per condition '{condition.name}'{extra_msg}."
 
-                    store_type, _ = self.get_item(archive_id=archive_id)
+                    store_type, _ = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
@@ -816,7 +817,7 @@ class DownloadQueue(metaclass=Singleton):
                                 extras=item.extras,
                             )
                         )
-                        self.done.put(dlInfo)
+                        await self.done.put(dlInfo)
 
                     LOG.info(log_message)
                     self._notify.emit(Events.LOG_INFO, data={}, title="Ignored Download", message=log_message)
@@ -885,7 +886,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item = self.queue.get(key=id)
+                item = await self.queue.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -902,7 +903,7 @@ class DownloadQueue(metaclass=Singleton):
             else:
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")
-                self.queue.delete(id)
+                await self.queue.delete(id)
                 self._notify.emit(
                     Events.ITEM_CANCELLED,
                     data=item.info,
@@ -910,7 +911,7 @@ class DownloadQueue(metaclass=Singleton):
                     message=f"Download '{item.info.title}' has been cancelled.",
                 )
                 item.info.status = "cancelled"
-                self.done.put(item)
+                await self.done.put(item)
                 self._notify.emit(
                     Events.ITEM_MOVED,
                     data={"to": "history", "preset": item.info.preset, "item": item.info},
@@ -939,7 +940,7 @@ class DownloadQueue(metaclass=Singleton):
 
         for id in ids:
             try:
-                item: Download = self.done.get(key=id)
+                item: Download = await self.done.get(key=id)
             except KeyError as e:
                 status[id] = str(e)
                 status["status"] = "error"
@@ -984,7 +985,7 @@ class DownloadQueue(metaclass=Singleton):
                 except Exception as e:
                     LOG.error(f"Unable to remove '{itemRef}' local file '{filename}'. {e!s}")
 
-            self.done.delete(id)
+            await self.done.delete(id)
 
             _status: str = "Removed" if removed_files > 0 else "Cleared"
             self._notify.emit(
@@ -1003,7 +1004,7 @@ class DownloadQueue(metaclass=Singleton):
 
         return status
 
-    def get(self, mode: str = "all") -> dict[str, list[dict[str, ItemDTO]]]:
+    async def get(self, mode: str = "all") -> dict[str, list[dict[str, ItemDTO]]]:
         """
         Get the download queue and the download history.
 
@@ -1017,12 +1018,11 @@ class DownloadQueue(metaclass=Singleton):
         items = {"queue": {}, "done": {}}
 
         if mode in ("all", "queue"):
-            for k, v in self.queue.saved_items():
+            for k, v in await self.queue.saved_items():
                 items["queue"][k] = self._active[k].info if k in self._active else v
 
         if mode in ("all", "done"):
-            for k, v in self.done.saved_items():
-                v.get_file_sidecar()
+            for k, v in await self.done.saved_items():
                 items["done"][k] = v
 
         if mode in ("all", "queue"):
@@ -1035,12 +1035,11 @@ class DownloadQueue(metaclass=Singleton):
                 if k in items["done"]:
                     continue
 
-                v.info.get_file_sidecar()
                 items["done"][k] = v.info
 
         return items
 
-    def get_item(self, **kwargs) -> tuple[StoreType, Download] | tuple[None, None]:
+    async def get_item(self, **kwargs) -> tuple[StoreType, Download] | tuple[None, None]:
         """
         Get a specific item from the download queue or history.
 
@@ -1051,10 +1050,10 @@ class DownloadQueue(metaclass=Singleton):
             (StoreType, Download) | None: The requested item if found, otherwise None.
 
         """
-        if item := self.queue.get_item(**kwargs):
+        if item := await self.queue.get_item(**kwargs):
             return (StoreType.QUEUE, item)
 
-        if item := self.done.get_item(**kwargs):
+        if item := await self.done.get_item(**kwargs):
             return (StoreType.HISTORY, item)
 
         return (None, None)
@@ -1165,9 +1164,9 @@ class DownloadQueue(metaclass=Singleton):
 
             await entry.close()
 
-        if self.queue.exists(key=id):
+        if await self.queue.exists(key=id):
             LOG.debug(f"Download Task '{id}' is completed. Removing from queue.")
-            self.queue.delete(key=id)
+            await self.queue.delete(key=id)
 
             nTitle: str | None = None
             nMessage: str | None = None
@@ -1186,7 +1185,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage)
 
-            self.done.put(entry)
+            await self.done.put(entry)
             self._notify.emit(
                 Events.ITEM_MOVED,
                 data={"to": "history", "preset": entry.info.preset, "item": entry.info},
@@ -1288,7 +1287,7 @@ class DownloadQueue(metaclass=Singleton):
                     )
                 )
             except Exception as e:
-                self.done.put(item)
+                await self.done.put(item)
                 LOG.exception(e)
                 LOG.error(f"Failed to retry item '{item_ref}'. {e!s}")
 
@@ -1329,7 +1328,7 @@ class DownloadQueue(metaclass=Singleton):
                 message=f"'{item_name}' record removed from history.",
             )
             titles.append(item_name)
-            self.done.delete(key)
+            await self.done.delete(key)
 
         if titles:
             LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")

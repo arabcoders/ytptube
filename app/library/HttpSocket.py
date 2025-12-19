@@ -11,7 +11,6 @@ from app.library.Services import Services
 from app.library.Utils import load_modules
 
 from .config import Config
-from .DownloadQueue import DownloadQueue
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
 from .ItemDTO import Item
@@ -26,19 +25,16 @@ class HttpSocket:
 
     config: Config
     sio: socketio.AsyncServer
-    queue: DownloadQueue
     di_context: dict[str, Any] = {}
 
     def __init__(
         self,
         root_path: Path,
-        queue: DownloadQueue | None = None,
         encoder: Encoder | None = None,
         config: Config | None = None,
         sio: socketio.AsyncServer | None = None,
     ):
         self.config = config or Config.get_instance()
-        self.queue = queue or DownloadQueue.get_instance()
         self._notify = EventBus.get_instance()
 
         self.sio = sio or socketio.AsyncServer(
@@ -63,7 +59,6 @@ class HttpSocket:
                 k: v
                 for k, v in {
                     "config": self.config,
-                    "queue": self.queue,
                     "sio": self.sio,
                     "encoder": encoder,
                     "notify": self._notify,
@@ -104,7 +99,7 @@ class HttpSocket:
 
         async def event_handler(data: Event, _):
             if data and data.data:
-                await self.queue.add(item=Item.format(data.data))
+                await Services.get_instance().get("queue").add(item=Item.format(data.data))
 
         self._notify.subscribe(Events.ADD_URL, event_handler, f"{__class__.__name__}.add")
 

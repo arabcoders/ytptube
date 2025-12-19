@@ -193,13 +193,13 @@
             <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
               class="play-overlay">
               <div class="play-icon embed-icon"></div>
-              <img @load="(e: Event) => pImg(e)"
+              <img @load="pImg" @error="onImgError"
                 :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
                 v-if="item.extras?.thumbnail" />
               <img v-else src="/images/placeholder.png" />
             </span>
             <template v-else>
-              <img @load="(e: Event) => pImg(e)" v-if="item.extras?.thumbnail"
+              <img @load="pImg" @error="onImgError" v-if="item.extras?.thumbnail"
                 :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
               <img v-else src="/images/placeholder.png" />
             </template>
@@ -577,6 +577,14 @@ const pImg = (e: Event) => {
   if (target.naturalHeight > target.naturalWidth) {
     target.classList.add('image-portrait')
   }
+}
+
+const onImgError = (e: Event) => {
+  const target = e.target as HTMLImageElement
+  if (target.src.endsWith('/images/placeholder.png')) {
+    return
+  }
+  target.src = '/images/placeholder.png'
 }
 
 watch(embed_url, v => {

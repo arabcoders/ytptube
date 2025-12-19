@@ -397,11 +397,8 @@ class ItemDTO:
             dict: The serialized item.
 
         """
-        if "finished" == self.status:
-            if not self._recomputed:
-                self.archive_status()
-
-            self.get_file_sidecar()
+        if "finished" == self.status and not self._recomputed:
+            self.archive_status()
 
         item, _ = clean_item(self.__dict__.copy(), ItemDTO.removed_fields())
         return item
@@ -661,4 +658,3 @@ class ItemDTO:
         self.get_archive_id()
         self.get_archive_file()
         self.archive_status()
-        self.get_file_sidecar()

@@ -28,6 +28,7 @@ LOG = logging.getLogger("seed_db")
 
 USED_IDS: set[str] = set()
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Seed history/queue with synthetic records for performance testing.")
     parser.add_argument(
@@ -141,13 +142,21 @@ def _build_row(
         "live_in": None,
         "file_size": stat.st_size,
         "options": {},
-        "extras": {},
+        "extras": {
+            "source_name": "Tester",
+            "source_id": "0ddc40f3-9227-4ffa-9f3c-c52bcf33ef2f",
+            "source_handler": "YoutubeHandler",
+            "metadata": {
+                "published": formatdate(timestamp.timestamp()),
+            },
+            "is_video": True,
+            "is_audio": True,
+        },
         "cli": "",
         "auto_start": True,
         "is_archivable": True,
         "is_archived": True,
         "archive_id": archive_id,
-        "sidecar": {},
         "tmpfilename": None,
         "filename": filename,
         "total_bytes": stat.st_size,
@@ -157,8 +166,6 @@ def _build_row(
         "percent": 100,
         "speed": None,
         "eta": None,
-        "_recomputed": True,
-        "_archive_file": None,
     }
 
     created_at = timestamp.strftime("%Y-%m-%d %H:%M:%S")

@@ -118,15 +118,19 @@ export const useSocketStore = defineStore('socket', () => {
         config.add('folders', json.data.folders)
       }
 
-      if (json.data?.queue) {
-        stateStore.addAll('queue', json.data.queue || {})
-      }
-
       if (typeof json.data?.history_count === 'number') {
         stateStore.setHistoryCount(json.data.history_count)
       }
 
       error.value = null;
+    })
+
+    on('active_queue', stream => {
+      const json = JSON.parse(stream);
+      if (!json?.data?.queue) {
+        return;
+      }
+      stateStore.addAll('queue', json.data.queue || {})
     })
 
     on('item_added', stream => {

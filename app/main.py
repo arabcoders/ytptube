@@ -9,10 +9,8 @@ if APP_ROOT not in sys.path:
 
 import asyncio
 import logging
-import sqlite3
 from pathlib import Path
 
-import caribou
 import magic
 from aiohttp import web
 
@@ -28,6 +26,7 @@ from app.library.Notifications import Notification
 from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
+from app.library.sqlite_store import SqliteStore
 from app.library.TaskDefinitions import TaskDefinitions
 from app.library.Tasks import Tasks
 
@@ -43,24 +42,10 @@ class Main:
         self._config.set_app_path(str(ROOT_PATH))
         self._app = web.Application()
         self._app.on_shutdown.append(self.on_shutdown)
-        self._background_worker = BackgroundWorker()
 
         Services.get_instance().add("app", self._app)
-        Services.get_instance().add("background_worker", self._background_worker)
 
         self._check_folders()
-
-        LOG.debug(f"DB Version: '{caribou.get_version(self._config.db_file)}'.")
-        caribou.upgrade(self._config.db_file, ROOT_PATH / "migrations")
-
-        connection = sqlite3.connect(database=self._config.db_file, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA journal_mode=wal")
-
-        async def _close_connection(_):
-            LOG.debug("Closing database connection.")
-            connection.close()
-            LOG.debug("Database connection closed.")
 
         try:
             db_file = Path(self._config.db_file)
@@ -69,15 +54,12 @@ class Main:
         except Exception:
             pass
 
-        self._queue = DownloadQueue(connection=connection)
-        self._http = HttpAPI(root_path=ROOT_PATH, queue=self._queue)
-        self._socket = HttpSocket(root_path=ROOT_PATH, queue=self._queue)
-
-        self._app.on_cleanup.append(_close_connection)
+        self._http = HttpAPI(root_path=ROOT_PATH)
+        self._socket = HttpSocket(root_path=ROOT_PATH)
 
     def _check_folders(self):
         """Check if the required folders exist and create them if they do not."""
-        folders = (self._config.download_path, self._config.temp_path, self._config.config_path)
+        folders: tuple[str, str, str] = (self._config.download_path, self._config.temp_path, self._config.config_path)
 
         for folder in folders:
             folder = Path(folder)
@@ -124,19 +106,20 @@ class Main:
         if self._config.debug:
             EventBus.get_instance().debug_enable()
 
+        SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
+        BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
         self._http.attach(self._app)
-        self._queue.attach(self._app)
 
-        Tasks.get_instance().attach(self._app)
         Presets.get_instance().attach(self._app)
+        Tasks.get_instance().attach(self._app)
         Notification.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
         TaskDefinitions.get_instance().attach(self._app)
-        self._background_worker.attach(self._app)
+        DownloadQueue.get_instance().attach(self._app)
 
         EventBus.get_instance().emit(
             Events.LOADED,
@@ -148,6 +131,7 @@ class Main:
         def started(_):
             LOG.info("=" * 40)
             LOG.info(f"YTPTube {self._config.app_version} - started on http://{host}:{port}{self._config.base_path}")
+            LOG.info(f"Download path: {self._config.download_path}")
             if self._config.is_native:
                 LOG.info("Running in native mode.")
             LOG.info("=" * 40)
