@@ -9,7 +9,7 @@
                 <span class="icon"><i class="fa-solid fa-link" /></span>
                 <span class="has-tooltip" v-tooltip="'Use Shift+Enter to switch to multiline input mode.'">
                   URLs separated by newlines or <span class="is-bold is-lowercase">{{ getSeparatorsName(separator)
-                  }}</span>
+                    }}</span>
                 </span>
               </label>
               <div class="field is-grouped">
@@ -474,8 +474,14 @@ const addDownload = async () => {
       if (false !== item.status) {
         return
       }
-      toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+
       had_errors = true
+
+      if (item?.hidden) {
+        return
+      }
+
+      toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
     })
 
     if (false === had_errors) {
