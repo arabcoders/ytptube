@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
 from aiohttp.web import Request, Response
@@ -375,15 +375,18 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         except ValueError as e:
             return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
-    status: list = await asyncio.wait_for(
+    status: list[dict] = await asyncio.wait_for(
         fut=asyncio.gather(*[queue.add(item=item) for item in items]),
         timeout=None,
     )
 
-    response: list = []
+    response: list[dict[str, Any]] = []
 
     for i, item in enumerate(items):
-        response.append({"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")})
+        it = {"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")}
+        if status[i].get("hidden"):
+            it["hidden"] = True
+        response.append(it)
 
     return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
