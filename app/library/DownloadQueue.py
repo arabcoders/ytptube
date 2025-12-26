@@ -373,11 +373,12 @@ class DownloadQueue(metaclass=Singleton):
 
                 newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
 
-                if "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0:
-                    LOG.warning(f"Unexpected formats entries in --flat-playlist for {item_name}, treating as video.")
-                    return await self._add_video(
-                        entry=merge_dict(merge_dict({"_type": "video"}, etr), entry), item=newItem, logs=[]
-                    )
+                if ("video" == etr.get("_type") and etr.get("url")) or (
+                    "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0
+                ):
+                    dct = merge_dict(merge_dict({"_type": "video"}, etr), entry)
+                    dct.pop("entries", None)
+                    return await self.add(item=newItem, entry=dct, already=already)
 
                 return await self.add(item=newItem, already=already)
             finally:
@@ -651,13 +652,14 @@ class DownloadQueue(metaclass=Singleton):
 
         return {"status": "error", "msg": f'Unsupported event type "{event_type}".'}
 
-    async def add(self, item: Item, already: set | None = None):
+    async def add(self, item: Item, already: set | None = None, entry: dict | None = None) -> dict[str, str]:
         """
         Add an item to the download queue.
 
         Args:
             item (Item): The item to be added to the queue.
             already (set): Set of already downloaded items.
+            entry (dict): The entry associated with the item.
 
         Returns:
             dict[str, str]: The status of the download.
@@ -683,7 +685,7 @@ class DownloadQueue(metaclass=Singleton):
         yt_conf = {}
         cookie_file: Path = Path(self.config.temp_path) / f"c_{uuid.uuid4().hex}.txt"
 
-        LOG.info(f"Adding '{item.__repr__()}'.")
+        LOG.info(f"Adding '{item!r}'.")
 
         already = set() if already is None else already
 
@@ -709,7 +711,7 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
                 item.extras.update({"external_downloader": True})
 
-            archive_id = item.get_archive_id()
+            archive_id: str | None = item.get_archive_id()
 
             if item.is_archived():
                 if archive_id:
@@ -744,12 +746,11 @@ class DownloadQueue(metaclass=Singleton):
                         return {"status": "ok"}
 
                 message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
-                LOG.error(message)
+                LOG.warning(message)
                 self._notify.emit(
                     Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
                 )
-
-                return {"status": "error", "msg": message}
+                return {"status": "error", "msg": message, "hidden": True}
 
             started: float = time.perf_counter()
 
@@ -761,22 +762,23 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(msg)
                     return {"status": "error", "msg": msg}
 
-            LOG.info(f"Checking '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else 'no cookies'}.")
+            LOG.info(f"Extracting '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else ''}.")
 
-            entry: dict | None = await asyncio.wait_for(
-                fut=asyncio.get_running_loop().run_in_executor(
-                    None,
-                    functools.partial(
-                        extract_info,
-                        config=yt_conf,
-                        url=item.url,
-                        debug=bool(self.config.ytdlp_debug),
-                        no_archive=False,
-                        follow_redirect=True,
+            if not entry:
+                entry: dict | None = await asyncio.wait_for(
+                    fut=asyncio.get_running_loop().run_in_executor(
+                        None,
+                        functools.partial(
+                            extract_info,
+                            config=yt_conf,
+                            url=item.url,
+                            debug=bool(self.config.ytdlp_debug),
+                            no_archive=False,
+                            follow_redirect=True,
+                        ),
                     ),
-                ),
-                timeout=self.config.extract_info_timeout,
-            )
+                    timeout=self.config.extract_info_timeout,
+                )
 
             if not entry:
                 LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
