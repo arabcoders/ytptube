@@ -112,6 +112,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "9ba68dcfafbad255b446c518d15f6fb633729889",
+    "date": "2025-12-26T17:02:09+00:00",
+    "commits": [
+      {
+        "sha": "9ba68dcf",
+        "full_sha": "9ba68dcfafbad255b446c518d15f6fb633729889",
+        "message": "Fix: some extractors dont support --flat-playlist, so expand support to cover them",
+        "author": "arabcoders",
+        "date": "2025-12-26T17:02:09+00:00"
+      },
+      {
+        "sha": "2ae5f7e3",
+        "full_sha": "2ae5f7e3c8704d4cd788510b619a273e16f353c0",
+        "message": "Fix: double video in archive message",
+        "author": "arabcoders",
+        "date": "2025-12-26T16:58:32+00:00"
+      },
+      {
+        "sha": "01eecbff",
+        "full_sha": "01eecbffad9b34d99dee4c2f7ec0e224e414c482",
+        "message": "Chore: update external packages",
+        "author": "arabcoders",
+        "date": "2025-12-26T16:39:40+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.10",
     "full_sha": "3ece619834c3361b09ff169b1327fb44d6afc8e0",
     "date": "2025-12-04T17:21:28+00:00",
