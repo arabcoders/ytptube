@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b",
-    "date": "2025-12-27T17:46:05+00:00",
+    "full_sha": "561f7d03875bc49e9bb93b28aeeeb501d6a6f705",
+    "date": "2025-12-27T18:43:08+00:00",
     "commits": [
+      {
+        "sha": "561f7d03",
+        "full_sha": "561f7d03875bc49e9bb93b28aeeeb501d6a6f705",
+        "message": "Refactor: remove direct as_posix calls",
+        "author": "arabcoders",
+        "date": "2025-12-27T18:43:08+00:00"
+      },
+      {
+        "sha": "3268cd47",
+        "full_sha": "3268cd4791bc5445461b760012d93fe4f0e2d66a",
+        "message": "Fix: fix history items sort in simple view",
+        "author": "arabcoders",
+        "date": "2025-12-27T18:42:13+00:00"
+      },
       {
         "sha": "54f0f89d",
         "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b",

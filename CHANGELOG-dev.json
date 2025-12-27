@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251227-54f0f89d",
-        "date": "2025-12-27T17:46:05+00:00",
+        "tag": "dev-20251227-561f7d03",
+        "date": "2025-12-27T18:43:08+00:00",
         "commits": [
+            {
+                "sha": "561f7d03",
+                "message": "Refactor: remove direct as_posix calls",
+                "author": "arabcoders",
+                "date": "2025-12-27T18:43:08+00:00",
+                "full_sha": "561f7d03875bc49e9bb93b28aeeeb501d6a6f705"
+            },
+            {
+                "sha": "3268cd47",
+                "message": "Fix: fix history items sort in simple view",
+                "author": "arabcoders",
+                "date": "2025-12-27T18:42:13+00:00",
+                "full_sha": "3268cd4791bc5445461b760012d93fe4f0e2d66a"
+            },
             {
                 "sha": "54f0f89d",
                 "message": "Refactor: switch native builds to onedir",
@@ -3329,7 +3343,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b"
+        "full_sha": "561f7d03875bc49e9bb93b28aeeeb501d6a6f705"
     },
     {
         "tag": "dev-20250616-c07465a6",
