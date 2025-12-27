@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251227-b6b16666",
-        "date": "2025-12-27T18:46:21+00:00",
+        "tag": "dev-20251227-4ad218e9",
+        "date": "2025-12-27T18:52:41+00:00",
         "commits": [
+            {
+                "sha": "4ad218e9",
+                "message": "Fix: returning response from finally block",
+                "author": "arabcoders",
+                "date": "2025-12-27T18:52:41+00:00",
+                "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54"
+            },
             {
                 "sha": "b6b16666",
                 "message": "make the release notes retain the previous text",
@@ -3350,7 +3357,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b6b16666f653fc20473432d75c6f18211bb1af4a"
+        "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54"
     },
     {
         "tag": "dev-20250616-c07465a6",

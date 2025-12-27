@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b6b16666f653fc20473432d75c6f18211bb1af4a",
-    "date": "2025-12-27T18:46:21+00:00",
+    "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54",
+    "date": "2025-12-27T18:52:41+00:00",
     "commits": [
+      {
+        "sha": "4ad218e9",
+        "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54",
+        "message": "Fix: returning response from finally block",
+        "author": "arabcoders",
+        "date": "2025-12-27T18:52:41+00:00"
+      },
       {
         "sha": "b6b16666",
         "full_sha": "b6b16666f653fc20473432d75c6f18211bb1af4a",
