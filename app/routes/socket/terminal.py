@@ -38,7 +38,7 @@ async def cli_post(config: Config, notify: EventBus, sid: str, data: str):
     try:
         LOG.info(f"Cli command from client '{sid}'. '{data}'")
 
-        args: list[str] = ["yt-dlp", *shlex.split(data)]
+        args: list[str] = ["yt-dlp", *shlex.split(data, posix=os.name != "nt")]
         _env: dict[str, str] = os.environ.copy()
         _env.update(
             {

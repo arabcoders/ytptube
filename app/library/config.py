@@ -117,13 +117,13 @@ class Config(metaclass=Singleton):
     extract_info_timeout: int = 70
     """The timeout to use for extracting video information."""
 
-    db_file: str = "{config_path}/ytptube.db"
+    db_file: str = "{config_path}{os_sep}ytptube.db"
     """The path to the database file."""
 
-    archive_file: str = "{config_path}/archive.log"
+    archive_file: str = "{config_path}{os_sep}archive.log"
     """The path to the download archive file."""
 
-    apprise_config: str = "{config_path}/apprise.yml"
+    apprise_config: str = "{config_path}{os_sep}apprise.yml"
     """The path to the Apprise configuration file."""
 
     ui_update_title: bool = True
@@ -294,6 +294,9 @@ class Config(metaclass=Singleton):
 
     _manager: SyncManager | None = None
     "The manager instance."
+
+    os_sep: str = os.path.sep
+    "The system path separator."
 
     @staticmethod
     def get_instance(is_native: bool = False) -> "Config":
@@ -528,7 +531,7 @@ class Config(metaclass=Singleton):
             dict[str, str]: The replacer variables.
 
         """
-        keys: tuple[str] = ("download_path", "temp_path", "config_path", "archive_file")
+        keys: tuple[str] = ("os_sep", "download_path", "temp_path", "config_path", "archive_file")
         return {k: getattr(self, k) for k in keys}
 
     @staticmethod
