@@ -1702,6 +1702,9 @@ def list_folders(path: Path, base: Path, depth_limit: int) -> list[str]:
         list[str]: A list of folder paths relative to the base path, up to the specified
 
     """
+    if "/" == str(path):
+        return []
+
     rel_depth: int = len(path.relative_to(base).parts)
     if rel_depth > depth_limit:
         return []
