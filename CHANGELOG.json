@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "633f192c8fc59c4ec7a17fb5484d99f57e8c8790",
+    "date": "2025-12-27T19:52:51+00:00",
+    "commits": [
+      {
+        "sha": "633f192c",
+        "full_sha": "633f192c8fc59c4ec7a17fb5484d99f57e8c8790",
+        "message": "Fix: Dont crash on download_path being set to root",
+        "author": "arabcoders",
+        "date": "2025-12-27T19:52:51+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.12",
     "full_sha": "54dedb6696be7cead466d6107012a83435e0b005",
     "date": "2025-12-27T19:06:00+00:00",
