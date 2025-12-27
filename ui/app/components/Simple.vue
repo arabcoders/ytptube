@@ -243,27 +243,25 @@ const addInProgress = ref<boolean>(false)
 const showExtras = ref<boolean>(false)
 const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
-
-const sortByNewest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
-const sortByOldest = (items: StoreItem[]): StoreItem[] => items.slice().sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0))
-
-const queueItems = computed<StoreItem[]>(() => sortByNewest(Object.values(queue.value ?? {})))
-const historyEntries = computed<StoreItem[]>(() => sortByOldest(Object.values(history.value ?? {})))
 const paginationInfo = computed(() => stateStore.getPagination())
+
+const queueItems = computed<StoreItem[]>(() => Object.values(queue.value ?? {}).slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)))
+
+const historyEntries = computed<StoreItem[]>(() => {
+  const items = Object.values(history.value ?? {})
+  return items.slice().sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
+})
 
 const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set(['downloading', 'postprocessing', 'preparing'])
 
 const isDownloading = (status: ItemStatus | null): boolean => downloadingStatuses.has(status)
 
-const downloadingItems = computed<StoreItem[]>(() => queueItems.value.filter(item => isDownloading(item.status)))
-const queuedItems = computed<StoreItem[]>(() => queueItems.value.filter(item => !isDownloading(item.status)))
-
 type DisplayEntry = { item: StoreItem; source: 'queue' | 'history' }
 
 const displayItems = computed<DisplayEntry[]>(() => [
-  ...downloadingItems.value.map(item => ({ item, source: 'queue' as const })),
-  ...queuedItems.value.map(item => ({ item, source: 'queue' as const })),
-  ...historyEntries.value.map(item => ({ item, source: 'history' as const })),
+  ...queueItems.value.filter(item => isDownloading(item.status)).map(item => ({ item, source: 'queue' as const })),
+  ...queueItems.value.filter(item => !isDownloading(item.status)).map(item => ({ item, source: 'queue' as const })),
+  ...historyEntries.value.map(item => ({ item, source: 'history' as const }))
 ])
 
 const hasActiveQueue = computed<boolean>(() => queueItems.value.length > 0)

@@ -243,7 +243,7 @@ class Download:
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
                     )
-                    params["cookiefile"] = str(create_cookies_file(self.info.cookies, cookie_file).as_posix())
+                    params["cookiefile"] = str(create_cookies_file(self.info.cookies, cookie_file))
                 except Exception as e:
                     err_msg: str = f"Failed to create cookie file for '{self.info.id}: {self.info.title}'. '{e!s}'."
                     self.logger.error(err_msg)
