@@ -4,6 +4,7 @@ import time
 
 from aiohttp import web
 from aiohttp.web import Request, Response
+from aiohttp.web_runner import GracefulExit
 
 from app.library.config import Config
 from app.library.DownloadQueue import DownloadQueue
@@ -117,6 +118,7 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
         await asyncio.sleep(0.5)
         await app.shutdown()
         await app.cleanup()
+        raise GracefulExit
 
     # Schedule shutdown after response
     asyncio.create_task(do_shutdown())

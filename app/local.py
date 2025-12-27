@@ -69,6 +69,8 @@ def open_browser_when_ready(url: str, timeout: float = 5.0) -> None:
 def app_start(host: str, port: int) -> None:
     import asyncio
 
+    from aiohttp.web_runner import GracefulExit
+
     from app.main import Main
 
     try:
@@ -77,7 +79,10 @@ def app_start(host: str, port: int) -> None:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    Main(is_native=True).start(host, port)
+    try:
+        Main(is_native=True).start(host, port)
+    except GracefulExit:
+        sys.exit(0)
 
 
 def update_env_file(env_file: pathlib.Path, port: int) -> None:
