@@ -528,7 +528,7 @@ class Config(metaclass=Singleton):
             dict[str, str]: The replacer variables.
 
         """
-        keys: tuple[str] = ("download_path", "temp_path", "config_path")
+        keys: tuple[str] = ("download_path", "temp_path", "config_path", "archive_file")
         return {k: getattr(self, k) for k in keys}
 
     @staticmethod

@@ -756,7 +756,7 @@ class DownloadQueue(metaclass=Singleton):
 
             if item.cookies:
                 try:
-                    yt_conf["cookiefile"] = str(create_cookies_file(item.cookies, cookie_file).as_posix())
+                    yt_conf["cookiefile"] = str(create_cookies_file(item.cookies, cookie_file))
                 except Exception as e:
                     msg = f"Failed to create cookie file for '{item.url}'. '{e!s}'."
                     LOG.error(msg)

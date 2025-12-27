@@ -112,7 +112,6 @@ def preload_static(root_path: Path, config: Config) -> None:
             continue
 
         uri_path: str = f"/{file.relative_to(static_dir).as_posix()!s}"
-        # uri_path: str = f"/{str(file.as_posix()).replace(f'{static_dir.as_posix()!s}/', '')}"
         contentType = EXT_TO_MIME.get(file.suffix)
         if not contentType:
             contentType = MIME.from_file(str(file))
