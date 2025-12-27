@@ -596,5 +596,5 @@ async def stream_zip_download(request: Request, config: Config, cache: Cache) ->
         LOG.info("Download cancelled by client.")
     except Exception as e:
         LOG.error(f"Streaming zip download error. {type(e).__name__}: {e}")
-    finally:
-        return response  # noqa: B012
+
+    return response
