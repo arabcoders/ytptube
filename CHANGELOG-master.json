@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20251227-54dedb66",
-        "date": "2025-12-27T19:06:00+00:00",
+        "tag": "master-20251228-b5276feb",
+        "date": "2025-12-27T21:15:30+00:00",
         "commits": [
+            {
+                "sha": "ac4ce99b",
+                "message": "Fix: fixes for windows native",
+                "author": "arabcoders",
+                "date": "2025-12-27T20:58:36+00:00",
+                "full_sha": "ac4ce99b0132d9aac6806a33dd1b4a4d988cdc4a"
+            },
+            {
+                "sha": "633f192c",
+                "message": "Fix: Dont crash on download_path being set to root",
+                "author": "arabcoders",
+                "date": "2025-12-27T19:52:51+00:00",
+                "full_sha": "633f192c8fc59c4ec7a17fb5484d99f57e8c8790"
+            },
             {
                 "sha": "4773e73d",
                 "message": "refactor: dont raise GracefulExit on app_shutdown",
@@ -3364,7 +3378,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "54dedb6696be7cead466d6107012a83435e0b005"
+        "full_sha": "b5276feba01b87a4d95fc0a20e28949ae347c0e0"
     },
     {
         "tag": "master-20250616-c07465a6",
