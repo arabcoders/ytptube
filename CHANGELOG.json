@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54",
-    "date": "2025-12-27T18:52:41+00:00",
+    "full_sha": "4773e73d88556f4943ecc6859f44b13fd29f2240",
+    "date": "2025-12-27T18:58:32+00:00",
     "commits": [
+      {
+        "sha": "4773e73d",
+        "full_sha": "4773e73d88556f4943ecc6859f44b13fd29f2240",
+        "message": "refactor: dont raise GracefulExit on app_shutdown",
+        "author": "arabcoders",
+        "date": "2025-12-27T18:58:32+00:00"
+      },
       {
         "sha": "4ad218e9",
         "full_sha": "4ad218e97dd67b79f44201b6782cf27bb4488d54",
