@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251226-9ba68dcf",
-        "date": "2025-12-26T17:02:09+00:00",
+        "tag": "dev-20251227-54f0f89d",
+        "date": "2025-12-27T17:46:05+00:00",
         "commits": [
+            {
+                "sha": "54f0f89d",
+                "message": "Refactor: switch native builds to onedir",
+                "author": "arabcoders",
+                "date": "2025-12-27T17:46:05+00:00",
+                "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b"
+            },
             {
                 "sha": "9ba68dcf",
                 "message": "Fix: some extractors dont support --flat-playlist, so expand support to cover them",
@@ -3322,7 +3329,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9ba68dcfafbad255b446c518d15f6fb633729889"
+        "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b"
     },
     {
         "tag": "dev-20250616-c07465a6",

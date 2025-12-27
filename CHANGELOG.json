@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b",
+    "date": "2025-12-27T17:46:05+00:00",
+    "commits": [
+      {
+        "sha": "54f0f89d",
+        "full_sha": "54f0f89dc8e30831b1894688fe92488cd2e9556b",
+        "message": "Refactor: switch native builds to onedir",
+        "author": "arabcoders",
+        "date": "2025-12-27T17:46:05+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.11",
     "full_sha": "20e6c129ba75150f3129c0ad672fd04570d32724",
     "date": "2025-12-26T17:08:38+00:00",
