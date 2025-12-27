@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "633f192c8fc59c4ec7a17fb5484d99f57e8c8790",
-    "date": "2025-12-27T19:52:51+00:00",
+    "full_sha": "ac4ce99b0132d9aac6806a33dd1b4a4d988cdc4a",
+    "date": "2025-12-27T20:58:36+00:00",
     "commits": [
+      {
+        "sha": "ac4ce99b",
+        "full_sha": "ac4ce99b0132d9aac6806a33dd1b4a4d988cdc4a",
+        "message": "Fix: fixes for windows native",
+        "author": "arabcoders",
+        "date": "2025-12-27T20:58:36+00:00"
+      },
       {
         "sha": "633f192c",
         "full_sha": "633f192c8fc59c4ec7a17fb5484d99f57e8c8790",
