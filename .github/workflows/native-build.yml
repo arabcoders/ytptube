@@ -60,6 +60,7 @@ jobs:
 
       - name: Replace app.spec with version from workflow branch
         if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
+        shell: bash
         run: cp temp-spec/app.spec ./app.spec
 
       - name: Cache Python venv
@@ -78,6 +79,7 @@ jobs:
           architecture: "x64"
 
       - name: Install Python dependencies
+        shell: bash
         run: |
           pip install uv
           uv venv --system-site-packages --relocatable
@@ -97,18 +99,34 @@ jobs:
 
       - name: Build frontend
         working-directory: ui
+        shell: bash
         run: |
           pnpm install --production --prefer-offline --frozen-lockfile
           pnpm run generate
 
+      - name: Clean build outputs (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: rm -rf build dist release || true
+
+      - name: Clean build outputs (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          if (Test-Path build)   { Remove-Item -Recurse -Force build }
+          if (Test-Path dist)    { Remove-Item -Recurse -Force dist }
+          if (Test-Path release) { Remove-Item -Recurse -Force release }
+
       - name: Build native binary (Windows)
         if: matrix.os == 'windows-latest'
+        shell: powershell
         run: |
           .\.venv\Scripts\activate
           uv run pyinstaller ./app.spec
 
       - name: Build native binary (Linux/macOS)
         if: matrix.os != 'windows-latest'
+        shell: bash
         run: |
           . .venv/bin/activate
           uv run pyinstaller ./app.spec
@@ -117,34 +135,45 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}
-          path: dist/*
+          path: dist/YTPTube/**
 
       - name: Package artifact (Unix)
         if: startsWith(env.TAG_NAME, 'v') && runner.os != 'Windows'
+        shell: bash
         run: |
           mkdir -p release
+          PKG_DIR="YTPTube-${{ env.TAG_NAME }}"
           ZIP_NAME="ytptube-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}.zip"
 
-          if [ ! -d dist ] || [ -z "$(ls -A dist)" ]; then
-            echo "dist directory is empty, skipping packaging."
+          if [ ! -f "dist/YTPTube/YTPTube" ]; then
+            echo "Missing dist/YTPTube/YTPTube"
+            find dist -maxdepth 3 -type f | head -n 200
             exit 1
           fi
 
-          zip -r "release/${ZIP_NAME}" dist/
+          rm -rf "dist/${PKG_DIR}"
+          mv "dist/YTPTube" "dist/${PKG_DIR}"
+
+          zip -r "release/${ZIP_NAME}" "dist/${PKG_DIR}"
 
       - name: Package artifact (Windows)
         if: startsWith(env.TAG_NAME, 'v') && runner.os == 'Windows'
         shell: powershell
         run: |
+          $pkgDir = "YTPTube-${{ env.TAG_NAME }}"
           $zipName = "ytptube-${{ runner.os }}-${{ matrix.arch }}-${{ env.TAG_NAME }}.zip"
           New-Item -ItemType Directory -Force -Path release | Out-Null
 
-          if (!(Test-Path dist) -or !(Get-ChildItem -Path dist)) {
-            Write-Host "dist directory is empty, skipping packaging."
+          if (!(Test-Path "dist\YTPTube\YTPTube.exe")) {
+            Write-Host "Missing dist\YTPTube\YTPTube.exe"
+            Get-ChildItem -Recurse dist | Select-Object -First 200 | Format-Table -AutoSize
             exit 1
           }
 
-          Compress-Archive -Path dist\* -DestinationPath "release\$zipName"
+          if (Test-Path "dist\$pkgDir") { Remove-Item -Recurse -Force "dist\$pkgDir" }
+          Move-Item "dist\YTPTube" "dist\$pkgDir"
+
+          Compress-Archive -Path "dist\$pkgDir" -DestinationPath "release\$zipName" -Force
 
       - name: Upload to GitHub Release
         if: startsWith(env.TAG_NAME, 'v')
