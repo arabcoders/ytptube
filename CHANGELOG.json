@@ -28,6 +28,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "450b14056171fb4ef3acf51cf6cc7ce354805729",
+    "date": "2025-12-28T18:56:36+00:00",
+    "commits": [
+      {
+        "sha": "450b1405",
+        "full_sha": "450b14056171fb4ef3acf51cf6cc7ce354805729",
+        "message": "Fix: prevent sending only space as download path",
+        "author": "arabcoders",
+        "date": "2025-12-28T18:56:36+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.12",
     "full_sha": "54dedb6696be7cead466d6107012a83435e0b005",
     "date": "2025-12-27T19:06:00+00:00",
