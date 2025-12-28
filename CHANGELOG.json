@@ -21,6 +21,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "0c0fe9f5e673ffff5c4fb2cceee5850261e5178d",
+    "date": "2025-12-28T13:35:42+00:00",
+    "commits": [
+      {
+        "sha": "0c0fe9f5",
+        "full_sha": "0c0fe9f5e673ffff5c4fb2cceee5850261e5178d",
+        "message": "Feat: Introduce random delays to task handlers to stagger requests to sites.",
+        "author": "arabcoders",
+        "date": "2025-12-28T13:35:42+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.12",
     "full_sha": "54dedb6696be7cead466d6107012a83435e0b005",
     "date": "2025-12-27T19:06:00+00:00",

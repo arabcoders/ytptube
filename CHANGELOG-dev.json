@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251227-ac4ce99b",
-        "date": "2025-12-27T20:58:36+00:00",
+        "tag": "dev-20251228-0c0fe9f5",
+        "date": "2025-12-28T13:35:42+00:00",
         "commits": [
+            {
+                "sha": "0c0fe9f5",
+                "message": "Feat: Introduce random delays to task handlers to stagger requests to sites.",
+                "author": "arabcoders",
+                "date": "2025-12-28T13:35:42+00:00",
+                "full_sha": "0c0fe9f5e673ffff5c4fb2cceee5850261e5178d"
+            },
             {
                 "sha": "ac4ce99b",
                 "message": "Fix: fixes for windows native",
@@ -3378,7 +3385,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ac4ce99b0132d9aac6806a33dd1b4a4d988cdc4a"
+        "full_sha": "0c0fe9f5e673ffff5c4fb2cceee5850261e5178d"
     },
     {
         "tag": "dev-20250616-c07465a6",
