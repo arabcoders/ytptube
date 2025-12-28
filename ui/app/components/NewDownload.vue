@@ -9,7 +9,7 @@
                 <span class="icon"><i class="fa-solid fa-link" /></span>
                 <span class="has-tooltip" v-tooltip="'Use Shift+Enter to switch to multiline input mode.'">
                   URLs separated by newlines or <span class="is-bold is-lowercase">{{ getSeparatorsName(separator)
-                    }}</span>
+                  }}</span>
                 </span>
               </label>
               <div class="field is-grouped">
@@ -401,6 +401,16 @@ const splitUrls = (urlString: string): Array<string> => {
 }
 
 const addDownload = async () => {
+  if (' ' === form.value?.folder) {
+    toast.warning('The download folder contain only spaces. Resetting to default.')
+    form.value.folder = ''
+    await nextTick()
+  }
+
+  if (form.value.folder) {
+    form.value.folder = form.value.folder.trim()
+  }
+
   let form_cli = (form.value?.cli || '').trim()
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
@@ -568,6 +578,16 @@ onMounted(async () => {
     form.value.preset = config.app.default_preset
   }
 
+  if (' ' === form.value?.folder) {
+    toast.warning('The download folder contain only spaces. Resetting to default.')
+    form.value.folder = ''
+    await nextTick()
+  }
+
+  if (form.value.folder) {
+    form.value.folder = form.value.folder.trim()
+  }
+
   if (config.isLoaded() && form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
     form.value.preset = config.app.default_preset
   }
@@ -678,6 +698,9 @@ const testDownloadOptions = async (): Promise<void> => {
   }
 
   let form_cli = (form.value?.cli || '').trim()
+  if (' ' === form.value?.folder) {
+    form.value.folder = ''
+  }
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
     const joined = []
