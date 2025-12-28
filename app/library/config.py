@@ -201,6 +201,9 @@ class Config(metaclass=Singleton):
     default_pagination: int = 50
     """The default number of items per page for pagination."""
 
+    task_handler_random_delay: float = 60.0
+    """The maximum random delay in seconds before starting a task handler."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -264,6 +267,9 @@ class Config(metaclass=Singleton):
         "simple_mode",
     )
     "The variables that are booleans."
+
+    _float_vars: tuple = ("task_handler_random_delay",)
+    "The variables that are floats."
 
     _frontend_vars: tuple = (
         "download_path",
@@ -364,6 +370,9 @@ class Config(metaclass=Singleton):
 
             if k in self._int_vars:
                 setattr(self, k, int(v))
+
+            if k in self._float_vars:
+                setattr(self, k, float(v))
 
         if isinstance(self.pictures_backends, str) and self.pictures_backends:
             self.pictures_backends = self.pictures_backends.split(",")

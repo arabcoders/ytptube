@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import pkgutil
+import random
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -696,6 +697,8 @@ class HandleTask:
     def _dispatcher(self):
         s: dict[list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
+        handler_groups: dict[str, list[tuple[Task, type]]] = {}
+
         for task in self._tasks.get_all():
             if not task.enabled or not task.handler_enabled:
                 s["d"].append(task.name)
@@ -712,18 +715,52 @@ class HandleTask:
                     s["u"].append(task.name)
                     continue
 
-                coro = self.dispatch(task, handler=handler)
-                t = asyncio.create_task(coro, name=f"task-{task.id}")
-                t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
+                handler_name = handler.__name__
+                if handler_name not in handler_groups:
+                    handler_groups[handler_name] = []
+                handler_groups[handler_name].append((task, handler))
                 s["h"].append(task.name)
             except Exception as e:
                 LOG.error(f"Failed to handle task '{task.name}'. '{e!s}'.")
                 s["f"].append(task.name)
 
+        for tasks_with_handlers in handler_groups.values():
+            for idx, (task, handler) in enumerate(tasks_with_handlers):
+                try:
+                    t = asyncio.create_task(
+                        coro=self._dispatch(
+                            task,
+                            handler,
+                            delay=0.0 if 0 == idx else random.uniform(1.0, self._config.task_handler_random_delay),
+                        ),
+                        name=f"task-{task.id}",
+                    )
+                    t.add_done_callback(lambda fut, t=task: self._handle_exception(fut, t))
+                except Exception as e:
+                    LOG.error(f"Failed to dispatch task '{task.name}'. '{e!s}'.")
+
         if len(self._tasks.get_all()) > 0:
             LOG.info(
                 f"Tasks handler summary: Handled: {len(s['h'])}, Unhandled: {len(s['u'])}, Disabled: {len(s['d'])}, Failed: {len(s['f'])}."
             )
+
+    async def _dispatch(self, task: Task, handler: type, delay: float) -> TaskResult | TaskFailure | None:
+        """
+        Dispatch a task after a random delay to avoid rate limiting.
+
+        Args:
+            task (Task): The task to dispatch.
+            handler (type): The handler to use.
+            delay (float): The delay in seconds before dispatching.
+
+        Returns:
+            TaskResult|TaskFailure|None: The dispatch result.
+
+        """
+        if delay > 0:
+            LOG.debug(f"Delaying dispatch of task '{task.name}' by {delay:.1f} seconds.")
+            await asyncio.sleep(delay)
+        return await self.dispatch(task, handler=handler)
 
     def _handle_exception(self, fut: asyncio.Task, task: Task) -> None:
         if fut.cancelled():
