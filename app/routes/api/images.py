@@ -120,7 +120,7 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
 
     try:
         IS_REQUESTING_BACKGROUND = True
-        backend = random.choice(config.pictures_backends)  # noqa: S311
+        backend = random.choice(config.pictures_backends)
         CACHE_KEY_BING = "random_background_bing"
         CACHE_KEY = "random_background"
 
