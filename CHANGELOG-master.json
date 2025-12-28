@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20251228-3d14a50f",
-        "date": "2025-12-28T14:52:38+00:00",
+        "tag": "master-20251228-c9ba2b0f",
+        "date": "2025-12-28T20:20:34+00:00",
         "commits": [
+            {
+                "sha": "450b1405",
+                "message": "Fix: prevent sending only space as download path",
+                "author": "arabcoders",
+                "date": "2025-12-28T18:56:36+00:00",
+                "full_sha": "450b14056171fb4ef3acf51cf6cc7ce354805729"
+            },
             {
                 "sha": "0c0fe9f5",
                 "message": "Feat: Introduce random delays to task handlers to stagger requests to sites.",
@@ -3385,7 +3392,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3d14a50f07b52edd2e1f372293ca6bd43f391f6c"
+        "full_sha": "c9ba2b0f4cb3cdd79b76a359c3a310015a5b58c3"
     },
     {
         "tag": "master-20250616-c07465a6",
