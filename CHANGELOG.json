@@ -1,9 +1,23 @@
 [
   {
-    "tag": "Unreleased (c9ba2b0f)",
-    "full_sha": "c9ba2b0f4cb3cdd79b76a359c3a310015a5b58c3",
-    "date": "2025-12-28T20:20:34+00:00",
+    "tag": "Unreleased (714b6d95)",
+    "full_sha": "714b6d95ba5ca69b7d9533303bcd31f28fc9fdcc",
+    "date": "2025-12-29T20:07:07+00:00",
     "commits": [
+      {
+        "sha": "f2eebbcd",
+        "full_sha": "f2eebbcd3d7f4f0f7f265d210140c3e3ab74ac6a",
+        "message": "Refactor: expand ytdlp tests",
+        "author": "arabcoders",
+        "date": "2025-12-29T14:59:38+00:00"
+      },
+      {
+        "sha": "0dccfad5",
+        "full_sha": "0dccfad5c88a83014691a7c439534fa31b64682c",
+        "message": "Refactor: improve UX to prevent accidental space as download path",
+        "author": "arabcoders",
+        "date": "2025-12-29T14:44:47+00:00"
+      },
       {
         "sha": "450b1405",
         "full_sha": "450b14056171fb4ef3acf51cf6cc7ce354805729",
@@ -31,27 +45,6 @@
         "message": "Fix: Dont crash on download_path being set to root",
         "author": "arabcoders",
         "date": "2025-12-27T19:52:51+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "f2eebbcd3d7f4f0f7f265d210140c3e3ab74ac6a",
-    "date": "2025-12-29T14:59:38+00:00",
-    "commits": [
-      {
-        "sha": "f2eebbcd",
-        "full_sha": "f2eebbcd3d7f4f0f7f265d210140c3e3ab74ac6a",
-        "message": "Refactor: expand ytdlp tests",
-        "author": "arabcoders",
-        "date": "2025-12-29T14:59:38+00:00"
-      },
-      {
-        "sha": "0dccfad5",
-        "full_sha": "0dccfad5c88a83014691a7c439534fa31b64682c",
-        "message": "Refactor: improve UX to prevent accidental space as download path",
-        "author": "arabcoders",
-        "date": "2025-12-29T14:44:47+00:00"
       }
     ]
   },
