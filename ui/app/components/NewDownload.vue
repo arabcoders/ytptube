@@ -9,7 +9,7 @@
                 <span class="icon"><i class="fa-solid fa-link" /></span>
                 <span class="has-tooltip" v-tooltip="'Use Shift+Enter to switch to multiline input mode.'">
                   URLs separated by newlines or <span class="is-bold is-lowercase">{{ getSeparatorsName(separator)
-                  }}</span>
+                    }}</span>
                 </span>
               </label>
               <div class="field is-grouped">
@@ -33,11 +33,14 @@
             </div>
 
             <div class="column is-4-tablet is-12-mobile">
+              <label class="label" for="preset">
+                <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                <span>Preset</span>
+              </label>
               <div class="field has-addons">
                 <div class="control" @click="show_description = !show_description">
                   <label class="button is-static">
                     <span class="icon"><i class="fa-solid fa-sliders" /></span>
-                    <span>Preset</span>
                   </label>
                 </div>
                 <div class="control is-expanded">
@@ -62,22 +65,25 @@
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
-              <div class="field has-addons" v-tooltip="'Folder relative to ' + config.app.download_path">
-                <div class="control">
+              <label class="label" for="folder">
+                <span class="icon"><i class="fa-solid fa-save" /></span>
+                <span>Download path</span>
+              </label>
+              <div class="field has-addons">
+                <div class="control" v-tooltip="`Download path relative to: ${config.app.download_path}`">
                   <label class="button is-static">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    <span>Save in</span>
+                    <span>{{ shortPath(config.app.download_path) }}</span>
                   </label>
                 </div>
                 <div class="control is-expanded">
-                  <input type="text" class="input is-fullwidth" id="path" v-model="form.folder"
+                  <input type="text" class="input is-fullwidth" id="folder" v-model="form.folder"
                     :placeholder="getDefault('folder', '/')" :disabled="!socket.isConnected || addInProgress"
                     list="folders">
                 </div>
               </div>
             </div>
 
-            <div class="column">
+            <div class="column is-align-content-end">
               <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
                 :disabled="!socket.isConnected">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
@@ -161,7 +167,7 @@
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>Use the <NuxtLink target="_blank"
                       to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp">
-                      Recommended addon</NuxtLink> by yt-dlp to export cookies. <span class="has-text-danger">The
+                      Recommended addon</NuxtLink> to export cookies. <span class="has-text-danger">The
                       cookies MUST be in Netscape HTTP Cookie format.</span>
                   </span>
                 </span>
@@ -401,12 +407,6 @@ const splitUrls = (urlString: string): Array<string> => {
 }
 
 const addDownload = async () => {
-  if (' ' === form.value?.folder) {
-    toast.warning('The download folder contain only spaces. Resetting to default.')
-    form.value.folder = ''
-    await nextTick()
-  }
-
   if (form.value.folder) {
     form.value.folder = form.value.folder.trim()
   }
@@ -578,14 +578,9 @@ onMounted(async () => {
     form.value.preset = config.app.default_preset
   }
 
-  if (' ' === form.value?.folder) {
-    toast.warning('The download folder contain only spaces. Resetting to default.')
-    form.value.folder = ''
-    await nextTick()
-  }
-
-  if (form.value.folder) {
+  if (form.value?.folder) {
     form.value.folder = form.value.folder.trim()
+    await nextTick()
   }
 
   if (config.isLoaded() && form.value?.preset && !config.presets.some(p => p.name === form.value.preset)) {
@@ -618,6 +613,11 @@ const runCliCommand = async (): Promise<void> => {
   if (!form.value.url) {
     toast.warning('Please enter a URL first')
     return
+  }
+
+  if (form.value?.folder) {
+    form.value.folder = form.value.folder.trim()
+    await nextTick()
   }
 
   const { status } = await dialog.confirmDialog({
@@ -697,10 +697,12 @@ const testDownloadOptions = async (): Promise<void> => {
     return
   }
 
-  let form_cli = (form.value?.cli || '').trim()
-  if (' ' === form.value?.folder) {
-    form.value.folder = ''
+  if (form.value?.folder) {
+    form.value.folder = form.value.folder.trim()
+    await nextTick()
   }
+
+  let form_cli = (form.value?.cli || '').trim()
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
     const joined = []

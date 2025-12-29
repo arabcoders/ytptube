@@ -129,7 +129,7 @@
                   <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'folder'), 'is-clickable': true }"
                     v-if="item.folder" @click="toggleExpand(item.id, 'folder')"
                     :title="!isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
+                    <span class="icon"><i class="fa-solid fa-save" /></span>
                     <span>{{ calcPath(item.folder) }}</span>
                   </p>
                   <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'template'), 'is-clickable': true }"
