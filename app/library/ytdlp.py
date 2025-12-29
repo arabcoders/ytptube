@@ -85,14 +85,14 @@ class YTDLP(yt_dlp.YoutubeDL):
         if not (archive_id := self._make_archive_id(info_dict)):
             return
 
-        assert archive_id
+        assert archive_id, "Expected non-empty archive ID"
 
         self.write_debug(f"Adding to archive: {archive_id}")
         self.archive.add(archive_id)
         old_archive_ids = info_dict.get("_old_archive_ids", [])
         if old_archive_ids and isinstance(old_archive_ids, list) and len(old_archive_ids) > 0:
             for old_id in old_archive_ids:
-                if old_id == archive_id or not old_id.startswith("generic "):
+                if old_id == archive_id:
                     continue
 
                 self.write_debug(f"Adding to archive (old id): {old_id}")
