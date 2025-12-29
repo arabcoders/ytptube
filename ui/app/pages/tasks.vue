@@ -332,7 +332,7 @@
                   <span v-else class="has-text-danger">No timer or handler</span>
                 </p>
                 <p class="is-text-overflow" v-if="item.folder">
-                  <span class="icon"><i class="fa-solid fa-folder" /></span>
+                  <span class="icon"><i class="fa-solid fa-save" /></span>
                   <span>{{ calcPath(item.folder) }}</span>
                 </p>
                 <p class="is-text-overflow" v-if="item.template">

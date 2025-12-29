@@ -1,7 +1,7 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
-      <form autocomplete="off" id="presetForm" @submit.prevent="checkInfo()">
+      <form autocomplete="off" id="presetForm" @submit.prevent="checkInfo">
         <div class="card">
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
@@ -104,28 +104,32 @@
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="folder">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    Default Download path
-                  </label>
-                  <div class="control">
+                <label class="label is-inline" for="folder">
+                  <span class="icon"><i class="fa-solid fa-save" /></span>
+                  download path
+                </label>
+                <div class="field has-addons">
+                  <div class="control" v-tooltip="`Full Path: ${config.app.download_path}`">
+                    <span class="button is-static">
+                      <span>{{ shortPath(config.app.download_path) }}</span>
+                    </span>
+                  </div>
+                  <div class="control is-expanded">
                     <input type="text" class="input" id="folder" placeholder="Leave empty to use default download path"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
                   </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this folder if non is given with URL. Leave empty to use default download path. Default
-                      download path <code>{{ config.app.download_path }}</code>.</span>
-                  </span>
                 </div>
+                <span class="help is-bold">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span>Use this defined path if non are given with the URL.</span>
+                </span>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="output_template">
                     <span class="icon"><i class="fa-solid fa-file" /></span>
-                    Default Output template
+                    Output template
                   </label>
                   <div class="control">
                     <input type="text" class="input" id="output_template" :disabled="addInProgress"
@@ -133,10 +137,7 @@
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this output template if non are given with URL. if not set, it will defaults to
-                      <code>{{ config.app.output_template }}</code>. For more information visit <NuxtLink
-                        href="https://github.com/yt-dlp/yt-dlp#output-template" target="_blank">this page</NuxtLink>.
-                    </span>
+                    <span>Use this output template if non are given with URL.</span>
                   </span>
                 </div>
               </div>
@@ -275,6 +276,11 @@ const checkInfo = async (): Promise<void> => {
       toast.error(`The ${key} field is required.`)
       return
     }
+  }
+
+  if (form.folder) {
+    form.folder = form.folder.trim()
+    await nextTick()
   }
 
   if (form.cli && '' !== form.cli) {

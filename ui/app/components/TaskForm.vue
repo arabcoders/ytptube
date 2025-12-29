@@ -191,8 +191,8 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">
-                      The CRON timer expression to use for this task. If not set, the task will be disabled. For more
-                      information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
+                      The CRON timer expression to use for this task. If not set, the task runner will be disabled. For
+                      more information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
                         crontab.guru</NuxtLink>.
                     </span>
                   </span>
@@ -200,21 +200,27 @@
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="folder">
-                    <span class="icon"><i class="fa-solid fa-folder" /></span>
-                    Save in
-                  </label>
-                  <div class="control">
+                <label class="label is-inline" for="folder">
+                  <span class="icon"><i class="fa-solid fa-save" /></span>
+                  Download path
+                </label>
+                <div class="field has-addons">
+                  <div class="control" v-tooltip="`Full Path: ${config.app.download_path}`">
+                    <span class="button is-static">
+                      <span>{{ shortPath(config.app.download_path) }}</span>
+                    </span>
+                  </div>
+                  <div class="control is-expanded">
                     <input type="text" class="input" id="folder" :placeholder="getDefault('folder', '/')"
                       v-model="form.folder" :disabled="addInProgress" list="folders">
                   </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">All folders are sub-folders of
-                      <code>{{ config.app.download_path }}</code>.</span>
-                  </span>
                 </div>
+                <span class="help">
+                  <span class="icon"><i class="fa-solid fa-info" /></span>
+                  <span class="is-bold">
+                    Path relative to the download path, leave empty to use preset or default download path.
+                  </span>
+                </span>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
@@ -230,7 +236,9 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">The template to use for the output file name.</span>
+                    <span class="is-bold">
+                      The template to use for the output file name. Leave empty to use preset or default template.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -251,7 +259,8 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">Some URLs have special handlers to monitor for new content. Like YouTube
-                      channels/playlists.</span>
+                      channels/playlists. <span class="has-text-danger">Handlers run regardless of task timer.</span>
+                    </span>
                   </span>
                 </div>
               </div>
@@ -324,6 +333,10 @@
       <Message class="is-info" :newStyle="true">
         <span>
           <ul>
+            <li><strong>Tasks:</strong> requires <code>--download-archive</code> in
+              <code>Command options for yt-dlp</code> can be set via presets or manually. Default presets already
+              include this option.
+            </li>
             <li><strong>YouTube RSS:</strong> Use <code>channel_id</code> or <code>playlist_id</code> URLs. Other link
               types (custom names, handles, user profiles) are not supported.
             </li>
@@ -333,9 +346,6 @@
             </li>
             <li><strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls scheduled downloads to
               yt-dlp. Disable <code>Enable Handler</code> to disable RSS monitoring.
-            </li>
-            <li><strong>Archive Requirement:</strong> RSS monitoring requires <code>--download-archive</code> in
-              <code>Command options for yt-dlp</code> (set in task or preset).
             </li>
           </ul>
         </span>
@@ -418,6 +428,11 @@ const checkInfo = async (): Promise<void> => {
       toast.error(`The ${key} field is required.`)
       return
     }
+  }
+
+  if (form.folder) {
+    form.folder = form.folder.trim()
+    await nextTick()
   }
 
   if (form.timer) {

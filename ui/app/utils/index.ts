@@ -703,11 +703,26 @@ const stripPath = (base_path: string, real_path: string): string => {
 
   return real_path.replace(base_path, '').replace(/^\//, '')
 }
+const shortPath = (path: string, prefix: string = '...'): string => {
+  if (typeof path !== 'string') {
+    return path;
+  }
+
+  const hasTrailingSlash = /\/$/.test(path);
+  const clean = path.replace(/\/+$/, '');
+  const parts = clean.split('/').filter(Boolean);
+
+  if (parts.length <= 1) {
+    return path;
+  }
+
+  return `${prefix}/${parts.at(-1)}${hasTrailingSlash ? '/' : ''}`;
+}
 
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath
 }
