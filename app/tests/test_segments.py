@@ -178,9 +178,7 @@ async def test_build_ffmpeg_args_no_dri_falls_back_to_software(tmp_path: Path, m
     monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
     # Simulate no /dev/dri present but GPU encoders otherwise available
     monkeypatch.setattr("app.library.SegmentEncoders.has_dri_devices", lambda: False)
-    monkeypatch.setattr(
-        "app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_nvenc", "h264_qsv", "h264_amf"}
-    )
+    monkeypatch.setattr("app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_nvenc", "h264_qsv", "h264_amf"})
 
     # reset encoder cache to ensure clean selection in this test
     from app.library.Segments import Segments as _Seg
@@ -257,8 +255,7 @@ async def test_stream_gpu_failure_falls_back_to_software(
     assert len(resp.data) > 0
     # Ensure we logged the reason for GPU failure (message text may vary)
     assert any(
-        ("Hardware encoder failed" in r.message) or ("transcoding has failed" in r.message)
-        for r in caplog.records
+        ("Hardware encoder failed" in r.message) or ("transcoding has failed" in r.message) for r in caplog.records
     )
     assert any("nvenc failure" in r.message for r in caplog.records)
     # Verify second invocation switched codec to a safe fallback (software)
@@ -269,9 +266,7 @@ async def test_stream_gpu_failure_falls_back_to_software(
 
 
 @pytest.mark.asyncio
-async def test_stream_gpu_fallback_switches_codec(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+async def test_stream_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 

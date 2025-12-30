@@ -27,9 +27,7 @@ async def add_url(queue: DownloadQueue, notify: EventBus, sid: str, data: dict):
         )
     except ValueError as e:
         LOG.exception(e)
-        notify.emit(
-            Events.LOG_ERROR, data={"preset": item.preset}, title="Error Adding URL", message=str(e), to=sid
-        )
+        notify.emit(Events.LOG_ERROR, data={"preset": item.preset}, title="Error Adding URL", message=str(e), to=sid)
 
 
 @route(RouteType.SOCKET, "item_cancel", "item_cancel")

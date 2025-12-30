@@ -75,40 +75,33 @@ exclude = [
   "venv",
 ]
 
-# Same as Black.
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.11
-target-version = "py311"
+target-version = "py313"
 
 [project.optional-dependencies]
 installer = ["pyinstaller"]
 
 [tool.ruff.lint]
-# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
-# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
-# McCabe complexity (`C901`) by default.
-#select = ["E4", "E7", "E9", "F", "G", "W"]
-#ignore = ["PTH", "G0", "G1", "G201"]
-select = [
-  "ALL", # include all the rules, including new ones
-]
-# Ignore some rules in test files.
-per-file-ignores = { "test_*.py" = ["D"] }
+select = ["ALL"]
+per-file-ignores = { "test_*.py" = [
+  "ALL",
+], "migrations/versions/*.py" = [
+  "ALL",
+] }
 
 ignore = [
-  #### modules
-  "ANN", # flake8-annotations
-  "COM", # flake8-commas
-  "C90", # mccabe complexity
-  "DJ",  # django
-  "EXE", # flake8-executable
-  "T10", # debugger
-  "TID", # flake8-tidy-imports
+  "ANN",
+  "COM",
+  "C90",
+  "DJ",
+  "EXE",
+  "T10",
+  "TID",
+  "PTH",
 
-  #### specific rules
-  "D100",    # ignore missing docs
+  "D100",
   "D101",
   "D102",
   "D103",
@@ -122,14 +115,13 @@ ignore = [
   "D400",
   "D401",
   "D415",
-  "E402",    # false positives for local imports
-  "E501",    # line too long
-  "TRY003",  # external messages in exceptions are too verbose
+  "E402",
+  "E501",
+  "TRY003",
   "TD002",
   "TD003",
-  "FIX002",  # too verbose descriptions of todos,
-  "N806",    # variable names should be snake_case
-  "PTH",     # prefer using absolute imports
+  "FIX002",
+  "N806",
   "PGH003",
   "D404",
   "PLR0913",
@@ -165,48 +157,24 @@ ignore = [
   "PLC0415",
   "S603",
   "D203",
-  "TRY004", # Like it's our choice to use ValuesError :|
+  "TRY004",
   "PT011",
-  "RUF001", # We like unicode chars.
-  "S311", # Not used for cryptography
+  "RUF001",
+  "S311",
 ]
 
-# Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
 unfixable = []
 
-# Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.format]
-# Like Black, use double quotes for strings.
 quote-style = "double"
-
-# Like Black, indent with spaces, rather than tabs.
 indent-style = "space"
-
-# Like Black, respect magic trailing commas.
 skip-magic-trailing-comma = false
-
-# Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
-
-# Enable auto-formatting of code examples in docstrings. Markdown,
-# reStructuredText code/literal blocks and doctests are all supported.
-#
-# This is currently disabled by default, but it is planned for this
-# to be opt-out in the future.
 docstring-code-format = false
-
-# Set the line length limit used when formatting code snippets in
-# docstrings.
-#
-# This only has an effect when the `docstring-code-format` setting is
-# enabled.
 docstring-code-line-length = "dynamic"
-
-[tool.autopep8]
---max-line-length = 120
 
 [tool.uv]
 link-mode = "copy"

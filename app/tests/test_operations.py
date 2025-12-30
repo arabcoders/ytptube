@@ -1,6 +1,5 @@
 """Tests for the generic operations module."""
 
-
 from app.library.operations import (
     Operation,
     filter_items,

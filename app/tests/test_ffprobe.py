@@ -17,6 +17,7 @@ class TestFFProbe:
     def teardown_method(self):
         """Clean up test files."""
         import shutil
+
         shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
@@ -64,6 +65,7 @@ class TestFFProbe:
         # Mock subprocess to avoid actual ffprobe execution
         call_count = 0
         with patch("asyncio.create_subprocess_exec") as mock_subprocess:
+
             def create_mock_process(*_args, **_kwargs):
                 nonlocal call_count
                 call_count += 1
@@ -130,20 +132,11 @@ class TestFFProbe:
         assert result.metadata == {}
 
         # Test adding streams
-        video_stream = FFStream({
-            "index": 0,
-            "codec_type": "video",
-            "codec_name": "h264",
-            "width": 1920,
-            "height": 1080
-        })
+        video_stream = FFStream(
+            {"index": 0, "codec_type": "video", "codec_name": "h264", "width": 1920, "height": 1080}
+        )
 
-        audio_stream = FFStream({
-            "index": 1,
-            "codec_type": "audio",
-            "codec_name": "aac",
-            "channels": 2
-        })
+        audio_stream = FFStream({"index": 1, "codec_type": "audio", "codec_name": "aac", "channels": 2})
 
         result.video.append(video_stream)
         result.audio.append(audio_stream)
@@ -158,13 +151,9 @@ class TestFFProbe:
         from app.library.ffprobe import FFStream
 
         # Test video stream
-        video_stream = FFStream({
-            "codec_type": "video",
-            "codec_name": "h264",
-            "width": 1920,
-            "height": 1080,
-            "duration": "10.5"
-        })
+        video_stream = FFStream(
+            {"codec_type": "video", "codec_name": "h264", "width": 1920, "height": 1080, "duration": "10.5"}
+        )
 
         assert video_stream.is_video()
         assert not video_stream.is_audio()
@@ -172,12 +161,7 @@ class TestFFProbe:
         assert not video_stream.is_attachment()
 
         # Test audio stream
-        audio_stream = FFStream({
-            "codec_type": "audio",
-            "codec_name": "aac",
-            "channels": 2,
-            "sample_rate": "44100"
-        })
+        audio_stream = FFStream({"codec_type": "audio", "codec_name": "aac", "channels": 2, "sample_rate": "44100"})
 
         assert not audio_stream.is_video()
         assert audio_stream.is_audio()
@@ -185,10 +169,7 @@ class TestFFProbe:
         assert not audio_stream.is_attachment()
 
         # Test subtitle stream
-        subtitle_stream = FFStream({
-            "codec_type": "subtitle",
-            "codec_name": "subrip"
-        })
+        subtitle_stream = FFStream({"codec_type": "subtitle", "codec_name": "subrip"})
 
         assert not subtitle_stream.is_video()
         assert not subtitle_stream.is_audio()
@@ -196,10 +177,7 @@ class TestFFProbe:
         assert not subtitle_stream.is_attachment()
 
         # Test attachment stream
-        attachment_stream = FFStream({
-            "codec_type": "attachment",
-            "codec_name": "ttf"
-        })
+        attachment_stream = FFStream({"codec_type": "attachment", "codec_name": "ttf"})
 
         assert not attachment_stream.is_video()
         assert not attachment_stream.is_audio()

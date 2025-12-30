@@ -103,6 +103,7 @@ async def test_paginate_order_and_bounds():
     assert items_desc[0][0] == _list[14]._id
     await store.close()
 
+
 @pytest.mark.asyncio
 async def test_get_by_id():
     store = await make_store()
@@ -111,6 +112,7 @@ async def test_get_by_id():
     await store.flush()
     assert item._id == (await store.get_by_id("queue", item._id))._id
     await store.close()
+
 
 @pytest.mark.asyncio
 async def test_shutdown_closes_worker_queue():
@@ -212,6 +214,7 @@ async def test_get_item_matches_conditions():
     no_match = await store.get_item("queue", title=(Operation.CONTAIN, "does-not-exist"))
     assert no_match is None
     await store.close()
+
 
 @pytest.mark.asyncio
 async def test_on_shutdown_closes_connection():

@@ -96,7 +96,7 @@ class TwitchHandler(BaseHandler):
             archive_id: str = entry.get("archive_id")
             task_items.append(TaskItem(url=url, title=entry.get("title"), archive_id=archive_id))
 
-        return TaskResult( items=task_items, metadata={ "feed_url": feed_url, "has_entries": has_items } )
+        return TaskResult(items=task_items, metadata={"feed_url": feed_url, "has_entries": has_items})
 
     @staticmethod
     def parse(url: str) -> str | None:

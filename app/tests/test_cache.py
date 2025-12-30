@@ -172,6 +172,7 @@ class TestCache:
 
     def test_async_set(self):
         """Test async set method using asyncio.run."""
+
         async def async_test():
             await self.cache.aset("async_key", "async_value")
             assert self.cache.get("async_key") == "async_value"
@@ -180,6 +181,7 @@ class TestCache:
 
     def test_async_set_with_ttl(self):
         """Test async set with TTL using asyncio.run."""
+
         async def async_test():
             await self.cache.aset("async_temp", "async_value", ttl=0.1)
             assert self.cache.get("async_temp") == "async_value"

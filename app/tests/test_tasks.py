@@ -888,9 +888,7 @@ class TestTasks:
     @patch("app.library.Tasks.EventBus")
     @patch("app.library.Tasks.Scheduler")
     @patch("app.library.Tasks.DownloadQueue")
-    async def test_tasks_runner_disabled_task(
-        self, mock_download_queue, mock_scheduler, mock_eventbus, mock_config
-    ):
+    async def test_tasks_runner_disabled_task(self, mock_download_queue, mock_scheduler, mock_eventbus, mock_config):
         """Test that disabled tasks are skipped by the runner."""
         mock_config_instance = Mock(
             debug=False, default_preset="default", config_path="/tmp", tasks_handler_timer="15 */1 * * *"

@@ -54,6 +54,7 @@ class TestEncoder:
 
     def test_object_with_serialize_method(self):
         """Test that objects with serialize method use it."""
+
         class CustomObject:
             def serialize(self):
                 return {"custom": "data", "type": "test"}
@@ -64,6 +65,7 @@ class TestEncoder:
 
     def test_object_with_dict_fallback(self):
         """Test that objects without serialize method fall back to __dict__."""
+
         class SimpleObject:
             def __init__(self):
                 self.name = "test"
@@ -81,12 +83,7 @@ class TestEncoder:
 
     def test_json_dumps_integration(self):
         """Test full JSON serialization with various types."""
-        data = {
-            "path": Path("/tmp/test.txt"),
-            "date": date(2024, 1, 1),
-            "number": 42,
-            "string": "test"
-        }
+        data = {"path": Path("/tmp/test.txt"), "date": date(2024, 1, 1), "number": 42, "string": "test"}
 
         result = json.dumps(data, cls=Encoder)
         parsed = json.loads(result)
@@ -98,15 +95,13 @@ class TestEncoder:
 
     def test_json_dumps_with_custom_object(self):
         """Test JSON serialization with custom objects."""
+
         class TestObject:
             def __init__(self):
                 self.name = "test"
                 self.items = [1, 2, 3]
 
-        data = {
-            "object": TestObject(),
-            "regular": "data"
-        }
+        data = {"object": TestObject(), "regular": "data"}
 
         result = json.dumps(data, cls=Encoder)
         parsed = json.loads(result)
@@ -117,6 +112,7 @@ class TestEncoder:
 
     def test_nested_serialization(self):
         """Test serialization of nested structures with various types."""
+
         class CustomObj:
             def serialize(self):
                 return {"serialized": True}
@@ -125,10 +121,7 @@ class TestEncoder:
             "paths": [Path("/tmp/1.txt"), Path("/tmp/2.txt")],
             "dates": [date(2024, 1, 1), date(2024, 12, 31)],
             "custom": CustomObj(),
-            "nested": {
-                "path": Path("/nested/path"),
-                "date": date(2024, 6, 15)
-            }
+            "nested": {"path": Path("/nested/path"), "date": date(2024, 6, 15)},
         }
 
         result = json.dumps(data, cls=Encoder)
@@ -149,6 +142,7 @@ class TestEncoder:
 
         # Mock isinstance to return True for DateRange
         import builtins
+
         original_isinstance = builtins.isinstance
 
         def mock_isinstance(obj, cls):

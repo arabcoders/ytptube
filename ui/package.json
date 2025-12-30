@@ -14,7 +14,8 @@
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ci": "vitest run --silent --reporter=dot"
+    "test:ci": "vitest run --silent --reporter=dot",
+    "lint:tsc": "vue-tsc --noEmit"
   },
   "web-types": "./web-types.json",
   "dependencies": {

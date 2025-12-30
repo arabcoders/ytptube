@@ -237,7 +237,7 @@ class FFProbeResult:
 
 
 @timed_lru_cache(ttl_seconds=300, max_size=128)
-async def ffprobe(file: Path|str) -> FFProbeResult:
+async def ffprobe(file: Path | str) -> FFProbeResult:
     """
     Run ffprobe on a file and return the parsed data as a dictionary.
 

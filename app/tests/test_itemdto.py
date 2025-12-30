@@ -252,7 +252,9 @@ class TestItemDTO:
         }
 
         with (
-            patch("app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=Path("/downloads/video.mp4")) as mock_get_file,
+            patch(
+                "app.library.ItemDTO.ItemDTO.get_file", autospec=True, return_value=Path("/downloads/video.mp4")
+            ) as mock_get_file,
             patch("app.library.ItemDTO.get_file_sidecar", return_value=expected_sidecar) as mock_utils_sidecar,
         ):
             result = dto.get_file_sidecar()

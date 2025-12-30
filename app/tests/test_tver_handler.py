@@ -130,7 +130,10 @@ async def test_tver_handler_extract(monkeypatch):
     assert "木村拓哉がタクシー 運転手！目黒蓮が木村と二人旅" == result.items[0].title
 
     assert result.items[1].url == "https://tver.jp/episodes/epejwb9mvx"
-    assert "木村拓哉がタクシー運転手！蒼井優＆上戸彩高校の同級生コンビがディズニーリゾートを大満喫！" == result.items[1].title
+    assert (
+        "木村拓哉がタクシー運転手！蒼井優＆上戸彩高校の同級生コンビがディズニーリゾートを大満喫！"
+        == result.items[1].title
+    )
 
     assert result.metadata.get("has_entries") is True
     assert "callSeriesEpisodes" in result.metadata.get("feed_url", "")

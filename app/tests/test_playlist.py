@@ -27,6 +27,7 @@ async def test_make_playlist_no_subtitles(tmp_path: Path, monkeypatch: pytest.Mo
 
     # Patch module-level quote to be robust for Path objects
     from urllib.parse import quote as _std_quote
+
     monkeypatch.setattr("app.library.Playlist.quote", lambda v: _std_quote(str(v)))
 
     pl = Playlist(download_path=base, url="http://localhost/")
@@ -67,6 +68,7 @@ async def test_make_playlist_with_subtitles(tmp_path: Path, monkeypatch: pytest.
     monkeypatch.setattr("app.library.Playlist.get_file_sidecar", lambda _f: sidecar)
 
     from urllib.parse import quote as _std_quote
+
     monkeypatch.setattr("app.library.Playlist.quote", lambda v: _std_quote(str(v)))
 
     pl = Playlist(download_path=base, url="https://server/")

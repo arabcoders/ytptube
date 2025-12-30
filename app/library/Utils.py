@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache, wraps
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 from Crypto.Cipher import AES
 from yt_dlp.utils import age_restricted
@@ -84,9 +84,6 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 "Regex to find tags in templates."
 DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
 "Regex to match ISO 8601 datetime strings."
-
-T = TypeVar("T")
-"Generic type variable."
 
 
 class StreamingError(Exception):
@@ -1543,7 +1540,7 @@ def delete_dir(dir: Path) -> bool:
         return False
 
 
-def init_class(cls: type[T], data: dict, _fields=None) -> T:
+def init_class[T](cls: type[T], data: dict, _fields=None) -> T:
     """
     Initialize a class instance with data from a dictionary, filtering out keys not present in the class fields.
 

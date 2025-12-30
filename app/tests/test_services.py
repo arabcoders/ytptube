@@ -77,11 +77,7 @@ class TestServices:
     def test_add_all_services(self):
         """Test adding multiple services at once."""
         services = Services()
-        services_dict = {
-            "service1": "value1",
-            "service2": "value2",
-            "service3": "value3"
-        }
+        services_dict = {"service1": "value1", "service2": "value2", "service3": "value3"}
 
         services.add_all(services_dict)
 
@@ -394,6 +390,7 @@ class TestServices:
         # Lambda function replacement
         def lambda_handler(x):
             return f"Lambda: {x}"
+
         services.add("x", "lambda_value")
         result = services.handle_sync(lambda_handler)
         assert result == "Lambda: lambda_value"
@@ -448,10 +445,7 @@ class TestServices:
         services = Services()
         services.add("existing", "original")
 
-        new_services = {
-            "existing": "overwritten",
-            "new": "value"
-        }
+        new_services = {"existing": "overwritten", "new": "value"}
 
         services.add_all(new_services)
 
@@ -531,7 +525,9 @@ class TestServices:
         assert result == "anon: value"
 
         # Function with minimal signature info
-        def minimal(param): return param
+        def minimal(param):
+            return param
+
         result = services.handle_sync(minimal)
         assert result == "value"
 

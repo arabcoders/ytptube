@@ -29,6 +29,7 @@ class TestSingleton:
 
     def test_singleton_same_instance(self):
         """Test that Singleton returns same instance for same class."""
+
         class TestClass(metaclass=Singleton):
             def __init__(self, value=None):
                 self.value = value
@@ -44,6 +45,7 @@ class TestSingleton:
 
     def test_singleton_different_classes(self):
         """Test that Singleton creates different instances for different classes."""
+
         class ClassA(metaclass=Singleton):
             def __init__(self):
                 self.name = "A"
@@ -68,6 +70,7 @@ class TestSingleton:
 
     def test_threadsafe_same_instance(self):
         """Test that ThreadSafe returns same instance for same class."""
+
         class TestClass(metaclass=ThreadSafe):
             def __init__(self, value=None):
                 self.value = value
@@ -83,6 +86,7 @@ class TestSingleton:
 
     def test_threadsafe_different_classes(self):
         """Test that ThreadSafe creates different instances for different classes."""
+
         class ClassA(metaclass=ThreadSafe):
             def __init__(self):
                 self.name = "A"
@@ -153,6 +157,7 @@ class TestSingleton:
 
     def test_singleton_inheritance(self):
         """Test singleton behavior with inheritance."""
+
         class BaseClass(metaclass=Singleton):
             def __init__(self):
                 self.base_value = "base"
@@ -182,6 +187,7 @@ class TestSingleton:
 
     def test_threadsafe_inheritance(self):
         """Test threadsafe singleton behavior with inheritance."""
+
         class BaseClass(metaclass=ThreadSafe):
             def __init__(self):
                 self.base_value = "base"
@@ -211,6 +217,7 @@ class TestSingleton:
 
     def test_singleton_with_args_and_kwargs(self):
         """Test singleton behavior with various constructor arguments."""
+
         class ConfigClass(metaclass=Singleton):
             def __init__(self, name, value=None, **kwargs):
                 self.name = name
@@ -231,6 +238,7 @@ class TestSingleton:
 
     def test_threadsafe_with_args_and_kwargs(self):
         """Test threadsafe singleton behavior with various constructor arguments."""
+
         class ConfigClass(metaclass=ThreadSafe):
             def __init__(self, name, value=None, **kwargs):
                 self.name = name
@@ -252,4 +260,5 @@ class TestSingleton:
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__])
