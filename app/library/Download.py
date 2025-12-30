@@ -296,8 +296,9 @@ class Download:
                         f"Live stream detected for '{self.info.title}', The following opts '{deletedOpts=}' have been deleted."
                     )
 
-            hasFormats: bool = len(self.info_dict.get("formats", [])) > 0 or self.info_dict.get("url")
-            if isinstance(self.info_dict, dict) and not hasFormats:
+            if isinstance(self.info_dict, dict) and not (
+                len(self.info_dict.get("formats", [])) > 0 or self.info_dict.get("url")
+            ):
                 msg: str = f"Failed to extract any formats for '{self.info.url}'."
                 if filtered_logs := extract_ytdlp_logs(self.logs):
                     msg += " " + ", ".join(filtered_logs)

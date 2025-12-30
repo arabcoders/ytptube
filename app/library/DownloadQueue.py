@@ -28,6 +28,7 @@ from .Singleton import Singleton
 from .sqlite_store import SqliteStore
 from .Utils import (
     archive_add,
+    archive_read,
     arg_converter,
     calc_download_path,
     create_cookies_file,
@@ -727,37 +728,38 @@ class DownloadQueue(metaclass=Singleton):
 
             archive_id: str | None = item.get_archive_id()
 
-            if item.is_archived():
-                if archive_id:
-                    store_type, _ = await self.get_item(archive_id=archive_id)
-                    if not store_type:
-                        dlInfo = Download(
-                            info=ItemDTO(
-                                id=archive_id.split()[1],
-                                title=archive_id,
-                                url=item.url,
-                                preset=item.preset,
-                                folder=item.folder,
-                                status="skip",
-                                cookies=item.cookies,
-                                template=item.template,
-                                msg="URL is already downloaded.",
-                                extras=item.extras,
-                            )
+            # Early archive check to avoid unnecessary extraction calls
+            # This sometimes can be different from the final extracted ID, so we need to verify again after extraction.
+            if archive_id and item.is_archived():
+                store_type, _ = await self.get_item(archive_id=archive_id)
+                if not store_type:
+                    dlInfo = Download(
+                        info=ItemDTO(
+                            id=archive_id.split()[1],
+                            title=archive_id,
+                            url=item.url,
+                            preset=item.preset,
+                            folder=item.folder,
+                            status="skip",
+                            cookies=item.cookies,
+                            template=item.template,
+                            msg="URL is already downloaded.",
+                            extras=item.extras,
                         )
+                    )
 
-                        if archive_file := dlInfo.info.get_ytdlp_opts().get_all().get("download_archive"):
-                            dlInfo.info.msg += f" Found in archive '{archive_file}'."
+                    if archive_file := dlInfo.info.get_ytdlp_opts().get_all().get("download_archive"):
+                        dlInfo.info.msg += f" Found in archive '{archive_file}'."
 
-                        await self.done.put(dlInfo)
+                    await self.done.put(dlInfo)
 
-                        self._notify.emit(
-                            Events.ITEM_MOVED,
-                            data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
-                            title="Download History Update",
-                            message=f"Download history updated with '{item.url}'.",
-                        )
-                        return {"status": "ok"}
+                    self._notify.emit(
+                        Events.ITEM_MOVED,
+                        data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                        title="Download History Update",
+                        message=f"Download history updated with '{item.url}'.",
+                    )
+                    return {"status": "ok"}
 
                 message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
                 LOG.warning(message)
@@ -776,7 +778,7 @@ class DownloadQueue(metaclass=Singleton):
                     LOG.error(msg)
                     return {"status": "error", "msg": msg}
 
-            LOG.info(f"Extracting '{item.url}' with {'cookies' if yt_conf.get('cookiefile') else ''}.")
+            LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
 
             if not entry:
                 entry: dict | None = await asyncio.wait_for(
@@ -797,6 +799,66 @@ class DownloadQueue(metaclass=Singleton):
             if not entry:
                 LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
                 return {"status": "error", "msg": "Unable to extract info." + "\n".join(logs)}
+
+            # Sometimes playlists or extractor returns different ID than what we get from the make_archive_id()
+            # So, we need to re-check the archive after extraction to be sure the item was not downloaded.
+            # This also apply to old archive IDs that might have been used before.
+            if _archive_file := item.get_archive_file():
+                extra_ids: list[str] = []
+
+                if entry.get("_old_archive_ids") and isinstance(entry.get("_old_archive_ids"), list):
+                    extra_ids.extend(entry.get("_old_archive_ids", []))
+
+                new_archive_id: str | None = None
+
+                if entry.get("extractor_key") and entry.get("id"):
+                    new_archive_id: str = f"{entry.get('extractor_key').lower()} {entry.get('id')}"
+                    if new_archive_id != archive_id:
+                        extra_ids.append(new_archive_id)
+
+                if len(extra_ids) > 0:
+                    archive_ids: list[str] = archive_read(_archive_file, extra_ids)
+                    if len(archive_ids) > 0:
+                        store_type = None
+                        for n in archive_ids:
+                            store_type, _ = await self.get_item(archive_id=n)
+                            if store_type:
+                                break
+
+                        if not store_type:
+                            new_archive_id = new_archive_id or extra_ids.pop(0)
+                            dlInfo = Download(
+                                info=ItemDTO(
+                                    id=new_archive_id.split()[1],
+                                    title=new_archive_id,
+                                    url=entry.get("url") or entry.get("webpage_url") or item.url,
+                                    preset=item.preset,
+                                    folder=item.folder,
+                                    status="skip",
+                                    cookies=item.cookies,
+                                    template=item.template,
+                                    msg="URL is already downloaded.",
+                                    extras=item.extras,
+                                )
+                            )
+
+                            dlInfo.info.msg += f" Found in archive '{_archive_file}'."
+                            await self.done.put(dlInfo)
+
+                            self._notify.emit(
+                                Events.ITEM_MOVED,
+                                data={"to": "history", "preset": dlInfo.info.preset, "item": dlInfo.info},
+                                title="Download History Update",
+                                message=f"Download history updated with '{item.url}'.",
+                            )
+                            return {"status": "ok"}
+
+                        message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
+                        LOG.warning(message)
+                        self._notify.emit(
+                            Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
+                        )
+                        return {"status": "error", "msg": message, "hidden": True}
 
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
                 already.pop()
@@ -972,7 +1034,7 @@ class DownloadQueue(metaclass=Singleton):
 
             LOG.debug(f"{remove_file=} {itemRef} - Removing local files: {item.info.status=}")
 
-            if remove_file and "finished" == item.info.status:
+            if remove_file and "finished" == item.info.status and item.info.filename:
                 filename = str(item.info.filename)
                 if item.info.folder:
                     filename = f"{item.info.folder}/{item.info.filename}"
