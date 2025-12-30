@@ -5,6 +5,7 @@ Migration Name: add_status_index
 Migration Version: 20251116173731
 """
 
+
 async def upgrade(connection):
     """
     Add index on json_extract(data, '$.status') for better query performance.
@@ -16,6 +17,7 @@ async def upgrade(connection):
     CREATE INDEX IF NOT EXISTS "history_status" ON "history" (json_extract("data", '$.status'));
     """
     await connection.execute(sql)
+
 
 async def downgrade(connection):
     """

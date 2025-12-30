@@ -63,11 +63,7 @@ class TestTargetRequest:
 
     def test_target_request_creation_defaults(self):
         """Test creating a TargetRequest with defaults."""
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
 
         assert request.type == "json"
         assert request.method == "POST"
@@ -79,14 +75,10 @@ class TestTargetRequest:
         """Test creating a TargetRequest with headers."""
         headers = [
             TargetRequestHeader(key="Authorization", value="Bearer token"),
-            TargetRequestHeader(key="Content-Type", value="application/json")
+            TargetRequestHeader(key="Content-Type", value="application/json"),
         ]
         request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook",
-            headers=headers,
-            data_key="payload"
+            type="json", method="POST", url="https://example.com/webhook", headers=headers, data_key="payload"
         )
 
         assert len(request.headers) == 2
@@ -97,11 +89,7 @@ class TestTargetRequest:
         """Test serializing a TargetRequest."""
         headers = [TargetRequestHeader(key="X-Token", value="abc123")]
         request = TargetRequest(
-            type="json",
-            method="PUT",
-            url="https://api.example.com/notify",
-            headers=headers,
-            data_key="content"
+            type="json", method="PUT", url="https://api.example.com/notify", headers=headers, data_key="content"
         )
 
         serialized = request.serialize()
@@ -110,17 +98,13 @@ class TestTargetRequest:
             "method": "PUT",
             "url": "https://api.example.com/notify",
             "data_key": "content",
-            "headers": [{"key": "X-Token", "value": "abc123"}]
+            "headers": [{"key": "X-Token", "value": "abc123"}],
         }
         assert serialized == expected
 
     def test_target_request_json(self):
         """Test JSON serialization of TargetRequest."""
-        request = TargetRequest(
-            type="form",
-            method="POST",
-            url="https://webhook.site/test"
-        )
+        request = TargetRequest(type="form", method="POST", url="https://webhook.site/test")
         json_str = request.json()
 
         parsed = json.loads(json_str)
@@ -130,11 +114,7 @@ class TestTargetRequest:
 
     def test_target_request_get(self):
         """Test get method of TargetRequest."""
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
 
         assert request.get("type") == "json"
         assert request.get("method") == "POST"
@@ -146,16 +126,8 @@ class TestTarget:
 
     def test_target_creation_minimal(self):
         """Test creating a Target with minimal required fields."""
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Test Webhook",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="Test Webhook", request=request)
 
         assert target.name == "Test Webhook"
         assert target.on == []
@@ -165,17 +137,13 @@ class TestTarget:
     def test_target_creation_full(self):
         """Test creating a Target with all fields."""
         target_id = str(uuid.uuid4())
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
         target = Target(
             id=target_id,
             name="Full Test Webhook",
             on=["item_completed", "item_failed"],
             presets=["default", "audio_only"],
-            request=request
+            request=request,
         )
 
         assert target.id == target_id
@@ -186,18 +154,8 @@ class TestTarget:
     def test_target_serialize(self):
         """Test serializing a Target."""
         target_id = str(uuid.uuid4())
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=target_id,
-            name="Test Target",
-            on=["item_completed"],
-            presets=["default"],
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=target_id, name="Test Target", on=["item_completed"], presets=["default"], request=request)
 
         serialized = target.serialize()
         assert serialized["id"] == target_id
@@ -208,16 +166,8 @@ class TestTarget:
 
     def test_target_json(self):
         """Test JSON serialization of Target."""
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="JSON Test",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="JSON Test", request=request)
 
         json_str = target.json()
         parsed = json.loads(json_str)
@@ -225,16 +175,8 @@ class TestTarget:
 
     def test_target_get(self):
         """Test get method of Target."""
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Get Test",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="Get Test", request=request)
 
         assert target.get("name") == "Get Test"
         assert target.get("nonexistent", "default") == "default"
@@ -299,11 +241,7 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     def test_notification_singleton(self, mock_background_worker, mock_config):
         """Test that Notification follows singleton pattern."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False,
-            config_path="/tmp",
-            app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_background_worker.get_instance.return_value = Mock()
 
         instance1 = Notification.get_instance()
@@ -316,11 +254,7 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     def test_notification_init_default_params(self, mock_background_worker, mock_config):
         """Test Notification initialization with default parameters."""
-        mock_config_instance = Mock(
-            debug=False,
-            config_path="/tmp/test",
-            app_version="1.0.0"
-        )
+        mock_config_instance = Mock(debug=False, config_path="/tmp/test", app_version="1.0.0")
         mock_config.get_instance.return_value = mock_config_instance
         mock_background_worker.get_instance.return_value = Mock()
 
@@ -337,11 +271,7 @@ class TestNotification:
     def test_notification_init_custom_params(self, mock_background_worker, mock_config):
         """Test Notification initialization with custom parameters."""
         _ = mock_background_worker, mock_config  # Suppress unused variable warnings
-        mock_config_instance = Mock(
-            debug=True,
-            config_path="/custom/path",
-            app_version="2.0.0"
-        )
+        mock_config_instance = Mock(debug=True, config_path="/custom/path", app_version="2.0.0")
         mock_client = Mock(spec=httpx.AsyncClient)
         mock_encoder = Mock(spec=Encoder)
         mock_worker = Mock(spec=BackgroundWorker)
@@ -354,7 +284,7 @@ class TestNotification:
             client=mock_client,
             encoder=mock_encoder,
             config=mock_config_instance,
-            background_worker=mock_worker
+            background_worker=mock_worker,
         )
 
         assert notification._debug is True
@@ -365,12 +295,11 @@ class TestNotification:
 
     def test_get_targets_empty(self):
         """Test get_targets when no targets are loaded."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
@@ -381,12 +310,11 @@ class TestNotification:
 
     def test_clear_targets(self):
         """Test clearing notification targets."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
@@ -405,25 +333,15 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     def test_save_targets(self, mock_worker, mock_config):
         """Test saving targets to file."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             temp_path = temp_file.name
 
         # Create a test target
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Test Target",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="Test Target", request=request)
 
         notification = Notification.get_instance(file=temp_path)
         result = notification.save([target])
@@ -445,9 +363,7 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     def test_load_targets_empty_file(self, mock_worker, mock_config):
         """Test loading targets from empty file."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
@@ -468,9 +384,7 @@ class TestNotification:
     @patch("app.library.Notifications.Presets")
     def test_load_targets_valid_file(self, mock_presets, mock_worker, mock_config):
         """Test loading targets from valid file."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         # Mock preset with name attribute
@@ -478,19 +392,21 @@ class TestNotification:
         mock_preset.name = "default"
         mock_presets.get_instance.return_value.get_all.return_value = [mock_preset]
 
-        target_data = [{
-            "id": str(uuid.uuid4()),
-            "name": "Test Webhook",
-            "on": ["item_completed"],
-            "presets": ["default"],
-            "request": {
-                "type": "json",
-                "method": "POST",
-                "url": "https://example.com/webhook",
-                "data_key": "data",
-                "headers": []
+        target_data = [
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Test Webhook",
+                "on": ["item_completed"],
+                "presets": ["default"],
+                "request": {
+                    "type": "json",
+                    "method": "POST",
+                    "url": "https://example.com/webhook",
+                    "data_key": "data",
+                    "headers": [],
+                },
             }
-        }]
+        ]
 
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
             json.dump(target_data, temp_file)
@@ -508,12 +424,11 @@ class TestNotification:
 
     def test_make_target(self):
         """Test make_target method."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
@@ -528,8 +443,8 @@ class TestNotification:
                     "method": "POST",
                     "url": "https://example.com/webhook",
                     "data_key": "payload",
-                    "headers": [{"key": "Authorization", "value": "Bearer token"}]
-                }
+                    "headers": [{"key": "Authorization", "value": "Bearer token"}],
+                },
             }
 
             target = notification.make_target(target_dict)
@@ -548,14 +463,13 @@ class TestNotification:
         target_dict = {
             "id": str(uuid.uuid4()),
             "name": "Valid Target",
-            "request": {
-                "url": "https://example.com/webhook"
-            }
+            "request": {"url": "https://example.com/webhook"},
         }
 
-        with patch("app.library.Notifications.NotificationEvents.get_events") as mock_events, \
-             patch("app.library.Notifications.Presets") as mock_presets:
-
+        with (
+            patch("app.library.Notifications.NotificationEvents.get_events") as mock_events,
+            patch("app.library.Notifications.Presets") as mock_presets,
+        ):
             mock_events.return_value.values.return_value = ["item_completed"]
             mock_presets.get_instance.return_value.get_all.return_value = []
 
@@ -564,12 +478,7 @@ class TestNotification:
 
     def test_validate_target_missing_id(self):
         """Test validate method with missing ID."""
-        target_dict = {
-            "name": "Missing ID Target",
-            "request": {
-                "url": "https://example.com/webhook"
-            }
-        }
+        target_dict = {"name": "Missing ID Target", "request": {"url": "https://example.com/webhook"}}
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. No ID found\."):
             Notification.validate(target_dict)
@@ -579,9 +488,7 @@ class TestNotification:
         target_dict = {
             "id": "invalid-uuid",
             "name": "Invalid ID Target",
-            "request": {
-                "url": "https://example.com/webhook"
-            }
+            "request": {"url": "https://example.com/webhook"},
         }
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. No ID found\."):
@@ -589,33 +496,21 @@ class TestNotification:
 
     def test_validate_target_missing_name(self):
         """Test validate method with missing name."""
-        target_dict = {
-            "id": str(uuid.uuid4()),
-            "request": {
-                "url": "https://example.com/webhook"
-            }
-        }
+        target_dict = {"id": str(uuid.uuid4()), "request": {"url": "https://example.com/webhook"}}
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. No name found\."):
             Notification.validate(target_dict)
 
     def test_validate_target_missing_request(self):
         """Test validate method with missing request."""
-        target_dict = {
-            "id": str(uuid.uuid4()),
-            "name": "Missing Request Target"
-        }
+        target_dict = {"id": str(uuid.uuid4()), "name": "Missing Request Target"}
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. No request details found\."):
             Notification.validate(target_dict)
 
     def test_validate_target_missing_url(self):
         """Test validate method with missing URL."""
-        target_dict = {
-            "id": str(uuid.uuid4()),
-            "name": "Missing URL Target",
-            "request": {}
-        }
+        target_dict = {"id": str(uuid.uuid4()), "name": "Missing URL Target", "request": {}}
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. No URL found\."):
             Notification.validate(target_dict)
@@ -627,8 +522,8 @@ class TestNotification:
             "name": "Invalid Method Target",
             "request": {
                 "url": "https://example.com/webhook",
-                "method": "GET"  # Only POST and PUT are allowed
-            }
+                "method": "GET",  # Only POST and PUT are allowed
+            },
         }
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. Invalid method found\."):
@@ -641,8 +536,8 @@ class TestNotification:
             "name": "Invalid Type Target",
             "request": {
                 "url": "https://example.com/webhook",
-                "type": "xml"  # Only json and form are allowed
-            }
+                "type": "xml",  # Only json and form are allowed
+            },
         }
 
         with pytest.raises(ValueError, match=r"Invalid notification target\. Invalid type found\."):
@@ -653,9 +548,7 @@ class TestNotification:
     @patch("app.library.Notifications.EventBus")
     def test_attach(self, mock_eventbus, mock_worker, mock_config):
         """Test attach method."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
         mock_eventbus_instance = Mock()
         mock_eventbus.get_instance.return_value = mock_eventbus_instance
@@ -674,16 +567,11 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     async def test_send_no_targets(self, mock_worker, mock_config):
         """Test send method with no targets."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         notification = Notification.get_instance()
-        event = Event(
-            event="test",
-            data={"test": "data"}
-        )
+        event = Event(event="test", data={"test": "data"})
 
         result = await notification.send(event)
         assert result == []
@@ -693,28 +581,18 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     async def test_send_invalid_event_data(self, mock_worker, mock_config):
         """Test send method with invalid event data."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         notification = Notification.get_instance()
         # Add a target
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Test Target",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="Test Target", request=request)
         notification._targets = [target]
 
         event = Event(
             event="test",
-            data="invalid_string_data"  # Should be ItemDTO or dict
+            data="invalid_string_data",  # Should be ItemDTO or dict
         )
 
         result = await notification.send(event)
@@ -725,9 +603,7 @@ class TestNotification:
     @patch("app.library.Notifications.BackgroundWorker")
     async def test_send_with_http_target(self, mock_worker, mock_config):
         """Test send method with HTTP target."""
-        mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0"
-        )
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
         mock_worker.get_instance.return_value = Mock()
 
         # Mock HTTP client
@@ -740,29 +616,15 @@ class TestNotification:
         notification = Notification.get_instance(client=mock_client)
 
         # Add HTTP target
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="https://example.com/webhook"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Test HTTP Target",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+        target = Target(id=str(uuid.uuid4()), name="Test HTTP Target", request=request)
         notification._targets = [target]
 
         # Create test event
         item_dto = ItemDTO(
-            id="test_id",
-            url="https://youtube.com/watch?v=test",
-            title="Test Video",
-            folder="/downloads"
+            id="test_id", url="https://youtube.com/watch?v=test", title="Test Video", folder="/downloads"
         )
-        event = Event(
-            event="item_completed",
-            data=item_dto
-        )
+        event = Event(event="item_completed", data=item_dto)
 
         result = await notification.send(event)
 
@@ -777,35 +639,21 @@ class TestNotification:
     async def test_send_with_apprise_target(self, mock_worker, mock_config):
         """Test send method with Apprise target."""
         mock_config.get_instance.return_value = Mock(
-            debug=False, config_path="/tmp", app_version="1.0.0",
-            apprise_config="/tmp/apprise.conf"
+            debug=False, config_path="/tmp", app_version="1.0.0", apprise_config="/tmp/apprise.conf"
         )
         mock_worker.get_instance.return_value = Mock()
 
         notification = Notification.get_instance()
 
         # Add Apprise target (non-HTTP URL)
-        request = TargetRequest(
-            type="json",
-            method="POST",
-            url="discord://webhook_id/webhook_token"
-        )
-        target = Target(
-            id=str(uuid.uuid4()),
-            name="Test Discord Target",
-            request=request
-        )
+        request = TargetRequest(type="json", method="POST", url="discord://webhook_id/webhook_token")
+        target = Target(id=str(uuid.uuid4()), name="Test Discord Target", request=request)
         notification._targets = [target]
 
         # Create test event
-        event = Event(
-            event="item_completed",
-            data={"test": "data"}
-        )
+        event = Event(event="item_completed", data={"test": "data"})
 
-        with patch("app.library.Notifications.Path") as mock_path, \
-             patch("builtins.__import__") as mock_import:
-
+        with patch("app.library.Notifications.Path") as mock_path, patch("builtins.__import__") as mock_import:
             # Mock apprise config file doesn't exist
             mock_path.return_value.exists.return_value = False
 
@@ -825,103 +673,70 @@ class TestNotification:
 
     def test_check_preset_no_presets(self):
         """Test _check_preset method with target having no preset filters."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
 
-            request = TargetRequest(
-                type="json",
-                method="POST",
-                url="https://example.com/webhook"
-            )
+            request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
             target = Target(
                 id=str(uuid.uuid4()),
                 name="No Preset Filter",
                 presets=[],  # No preset filter
-                request=request
+                request=request,
             )
 
-            event = Event(
-                event="item_completed",
-                data={"preset": "default"}
-            )
+            event = Event(event="item_completed", data={"preset": "default"})
 
             result = notification._check_preset(target, event)
             assert result is True  # Should pass when no preset filter
 
     def test_check_preset_with_matching_preset(self):
         """Test _check_preset method with matching preset."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
 
-            request = TargetRequest(
-                type="json",
-                method="POST",
-                url="https://example.com/webhook"
-            )
+            request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
             target = Target(
-                id=str(uuid.uuid4()),
-                name="Preset Filter",
-                presets=["default", "audio_only"],
-                request=request
+                id=str(uuid.uuid4()), name="Preset Filter", presets=["default", "audio_only"], request=request
             )
 
             # Test with ItemDTO
             item_dto = ItemDTO(
-                id="test_id",
-                url="https://youtube.com/test",
-                title="Test Video",
-                folder="/downloads",
-                preset="default"
+                id="test_id", url="https://youtube.com/test", title="Test Video", folder="/downloads", preset="default"
             )
-            event = Event(
-                event="item_completed",
-                data=item_dto
-            )
+            event = Event(event="item_completed", data=item_dto)
 
             result = notification._check_preset(target, event)
             assert result is True
 
     def test_check_preset_with_non_matching_preset(self):
         """Test _check_preset method with non-matching preset."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()
 
-            request = TargetRequest(
-                type="json",
-                method="POST",
-                url="https://example.com/webhook"
-            )
-            target = Target(
-                id=str(uuid.uuid4()),
-                name="Preset Filter",
-                presets=["audio_only"],
-                request=request
-            )
+            request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+            target = Target(id=str(uuid.uuid4()), name="Preset Filter", presets=["audio_only"], request=request)
 
             event = Event(
                 event="item_completed",
-                data={"preset": "video_only"}  # Different preset
+                data={"preset": "video_only"},  # Different preset
             )
 
             result = notification._check_preset(target, event)
@@ -929,35 +744,23 @@ class TestNotification:
 
     def test_emit_invalid_event(self):
         """Test emit method with invalid event."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker_instance = Mock()
             mock_worker.get_instance.return_value = mock_worker_instance
 
             notification = Notification.get_instance()
 
             # Add a target
-            request = TargetRequest(
-                type="json",
-                method="POST",
-                url="https://example.com/webhook"
-            )
-            target = Target(
-                id=str(uuid.uuid4()),
-                name="Test Target",
-                request=request
-            )
+            request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+            target = Target(id=str(uuid.uuid4()), name="Test Target", request=request)
             notification._targets = [target]
 
             # Create invalid event
-            event = Event(
-                event="invalid_event",
-                data={"test": "data"}
-            )
+            event = Event(event="invalid_event", data={"test": "data"})
 
             with patch("app.library.Notifications.NotificationEvents.is_valid", return_value=False):
                 result = notification.emit(event, None)
@@ -968,35 +771,23 @@ class TestNotification:
 
     def test_emit_valid_event(self):
         """Test emit method with valid event."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker_instance = Mock()
             mock_worker.get_instance.return_value = mock_worker_instance
 
             notification = Notification.get_instance()
 
             # Add a target
-            request = TargetRequest(
-                type="json",
-                method="POST",
-                url="https://example.com/webhook"
-            )
-            target = Target(
-                id=str(uuid.uuid4()),
-                name="Test Target",
-                request=request
-            )
+            request = TargetRequest(type="json", method="POST", url="https://example.com/webhook")
+            target = Target(id=str(uuid.uuid4()), name="Test Target", request=request)
             notification._targets = [target]
 
             # Create valid event
-            event = Event(
-                event="item_completed",
-                data={"test": "data"}
-            )
+            event = Event(event="item_completed", data={"test": "data"})
 
             with patch("app.library.Notifications.NotificationEvents.is_valid", return_value=True):
                 result = notification.emit(event, None)
@@ -1008,12 +799,11 @@ class TestNotification:
     @pytest.mark.asyncio
     async def test_noop(self):
         """Test noop method."""
-        with patch("app.library.Notifications.Config") as mock_config, \
-             patch("app.library.Notifications.BackgroundWorker") as mock_worker:
-
-            mock_config.get_instance.return_value = Mock(
-                debug=False, config_path="/tmp", app_version="1.0.0"
-            )
+        with (
+            patch("app.library.Notifications.Config") as mock_config,
+            patch("app.library.Notifications.BackgroundWorker") as mock_worker,
+        ):
+            mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
             mock_worker.get_instance.return_value = Mock()
 
             notification = Notification.get_instance()

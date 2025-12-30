@@ -272,4 +272,3 @@ def find_all(items: list[dict], **conditions) -> list[dict]:
 
     """
     return filter_items(items, **conditions)
-

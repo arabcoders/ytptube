@@ -216,7 +216,9 @@ class TestActionAndCheck:
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
     @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_upgrade_skip_when_latest(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
+    def test_action_upgrade_skip_when_latest(
+        self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path
+    ) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = "2.0.0"
         mock_get_latest.return_value = "2.0.0"
@@ -226,7 +228,9 @@ class TestActionAndCheck:
     @patch.object(PackageInstaller, "_install_pkg")
     @patch.object(PackageInstaller, "_get_installed_version")
     @patch.object(PackageInstaller, "_get_latest_version")
-    def test_action_upgrade_runs_when_newer_available(self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path) -> None:
+    def test_action_upgrade_runs_when_newer_available(
+        self, mock_get_latest, mock_get_installed, mock_install, tmp_path: Path
+    ) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_get_installed.return_value = "1.0.0"
         mock_get_latest.return_value = "1.1.0"

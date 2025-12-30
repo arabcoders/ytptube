@@ -1,4 +1,9 @@
 # flake8: noqa: S608
+"""
+This module is a fork of the Caribou library
+(https://pypi.org/project/caribou/) modified to work for our specific use case.
+"""
+
 import contextlib
 import datetime
 import glob
@@ -17,6 +22,7 @@ if TYPE_CHECKING:
 UTC_LENGTH = 14
 
 __version__ = "1.0.0"
+
 
 class Error(Exception):
     """Base class for all Caribou errors."""

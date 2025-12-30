@@ -48,11 +48,7 @@ class TestCondition:
         extras = {"key": "value", "number": 42}
 
         condition = Condition(
-            id=test_id,
-            name="full_test",
-            filter="uploader = 'test'",
-            cli="--format best",
-            extras=extras
+            id=test_id, name="full_test", filter="uploader = 'test'", cli="--format best", extras=extras
         )
 
         assert condition.id == test_id
@@ -64,10 +60,7 @@ class TestCondition:
     def test_condition_serialize(self):
         """Test condition serialization to dict."""
         condition = Condition(
-            name="serialize_test",
-            filter="title ~= 'test'",
-            cli="--audio-quality 0",
-            extras={"tag": "music"}
+            name="serialize_test", filter="title ~= 'test'", cli="--audio-quality 0", extras={"tag": "music"}
         )
 
         serialized = condition.serialize()
@@ -93,11 +86,7 @@ class TestCondition:
 
     def test_condition_get_method(self):
         """Test condition get method for accessing fields."""
-        condition = Condition(
-            name="get_test",
-            filter="view_count > 1000",
-            extras={"category": "popular"}
-        )
+        condition = Condition(name="get_test", filter="view_count > 1000", extras={"category": "popular"})
 
         assert condition.get("name") == "get_test"
         assert condition.get("filter") == "view_count > 1000"
@@ -165,7 +154,7 @@ class TestConditions:
             # Add some test conditions
             conditions._items = [
                 Condition(name="test1", filter="duration > 60"),
-                Condition(name="test2", filter="uploader = 'test'")
+                Condition(name="test2", filter="uploader = 'test'"),
             ]
 
             result = conditions.clear()
@@ -219,15 +208,15 @@ class TestConditions:
                     "name": "short_videos",
                     "filter": "duration < 300",
                     "cli": "--format worst",
-                    "extras": {"category": "short"}
+                    "extras": {"category": "short"},
                 },
                 {
                     "id": str(uuid.uuid4()),
                     "name": "music_videos",
                     "filter": "title ~= 'music'",
                     "cli": "--audio-quality 0",
-                    "extras": {"type": "audio"}
-                }
+                    "extras": {"type": "audio"},
+                },
             ]
 
             file_path.write_text(json.dumps(test_data, indent=4))
@@ -254,12 +243,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "no_id_conditions.json"
 
             # Create test data without ID
-            test_data = [
-                {
-                    "name": "no_id_test",
-                    "filter": "duration > 120"
-                }
-            ]
+            test_data = [{"name": "no_id_test", "filter": "duration > 120"}]
 
             file_path.write_text(json.dumps(test_data))
 
@@ -280,13 +264,7 @@ class TestConditions:
         with tempfile.TemporaryDirectory() as temp_dir:
             file_path = Path(temp_dir) / "no_extras_conditions.json"
 
-            test_data = [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": "no_extras_test",
-                    "filter": "uploader = 'test'"
-                }
-            ]
+            test_data = [{"id": str(uuid.uuid4()), "name": "no_extras_test", "filter": "uploader = 'test'"}]
 
             file_path.write_text(json.dumps(test_data))
 
@@ -321,7 +299,7 @@ class TestConditions:
             # Missing required fields
             test_data = [
                 {"id": "valid", "name": "valid", "filter": "duration > 60"},
-                {"invalid": "data"}  # Missing required fields
+                {"invalid": "data"},  # Missing required fields
             ]
 
             file_path.write_text(json.dumps(test_data))
@@ -345,7 +323,7 @@ class TestConditions:
                 "name": "valid_test",
                 "filter": "duration > 60",
                 "cli": "--format best",
-                "extras": {"key": "value"}
+                "extras": {"key": "value"},
             }
 
             result = conditions.validate(valid_condition)
@@ -357,10 +335,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "validate_obj_test.json"
             conditions = Conditions(file=file_path)
 
-            valid_condition = Condition(
-                name="valid_obj_test",
-                filter="uploader = 'test'"
-            )
+            valid_condition = Condition(name="valid_obj_test", filter="uploader = 'test'")
 
             result = conditions.validate(valid_condition)
             assert result is True
@@ -371,10 +346,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "no_id_validate.json"
             conditions = Conditions(file=file_path)
 
-            invalid_condition = {
-                "name": "no_id_test",
-                "filter": "duration > 60"
-            }
+            invalid_condition = {"name": "no_id_test", "filter": "duration > 60"}
 
             with pytest.raises(ValueError, match="No id found"):
                 conditions.validate(invalid_condition)
@@ -385,10 +357,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "no_name_validate.json"
             conditions = Conditions(file=file_path)
 
-            invalid_condition = {
-                "id": str(uuid.uuid4()),
-                "filter": "duration > 60"
-            }
+            invalid_condition = {"id": str(uuid.uuid4()), "filter": "duration > 60"}
 
             with pytest.raises(ValueError, match="No name found"):
                 conditions.validate(invalid_condition)
@@ -399,10 +368,7 @@ class TestConditions:
             file_path = Path(temp_dir) / "no_filter_validate.json"
             conditions = Conditions(file=file_path)
 
-            invalid_condition = {
-                "id": str(uuid.uuid4()),
-                "name": "no_filter_test"
-            }
+            invalid_condition = {"id": str(uuid.uuid4()), "name": "no_filter_test"}
 
             with pytest.raises(ValueError, match="No filter found"):
                 conditions.validate(invalid_condition)
@@ -419,7 +385,7 @@ class TestConditions:
                 "name": "invalid_filter_test",
                 "filter": "duration > & < 60",  # Invalid syntax with consecutive operators
                 "cli": "",
-                "extras": {}
+                "extras": {},
             }
 
             with pytest.raises(ValueError, match="Invalid filter"):
@@ -435,7 +401,7 @@ class TestConditions:
                 "id": str(uuid.uuid4()),
                 "name": "invalid_cli_test",
                 "filter": "duration > 60",
-                "cli": "--invalid-option-that-does-not-exist"
+                "cli": "--invalid-option-that-does-not-exist",
             }
 
             with pytest.raises(ValueError, match="Invalid command options"):
@@ -451,7 +417,7 @@ class TestConditions:
                 "id": str(uuid.uuid4()),
                 "name": "invalid_extras_test",
                 "filter": "duration > 60",
-                "extras": "not a dict"
+                "extras": "not a dict",
             }
 
             with pytest.raises(ValueError, match="Extras must be a dictionary"):
@@ -474,7 +440,7 @@ class TestConditions:
 
             test_conditions = [
                 Condition(name="save_test1", filter="duration > 60"),
-                Condition(name="save_test2", filter="uploader = 'test'")
+                Condition(name="save_test2", filter="uploader = 'test'"),
             ]
 
             result = conditions.save(test_conditions)
@@ -495,13 +461,7 @@ class TestConditions:
             conditions = Conditions(file=file_path)
 
             test_conditions = [
-                {
-                    "id": str(uuid.uuid4()),
-                    "name": "dict_test",
-                    "filter": "duration < 300",
-                    "cli": "",
-                    "extras": {}
-                }
+                {"id": str(uuid.uuid4()), "name": "dict_test", "filter": "duration < 300", "cli": "", "extras": {}}
             ]
 
             conditions.save(test_conditions)

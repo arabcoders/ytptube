@@ -77,6 +77,7 @@ class TestDownloadHooks:
                 return Cfg
 
         monkeypatch.setattr("app.library.Download.Config", Cfg)
+
         # EventBus.get_instance is used during __init__ and start, we don't hit start here
         class EB:
             @staticmethod
@@ -113,7 +114,17 @@ class TestDownloadHooks:
         assert ev["action"] == "progress"
         # ensure only whitelisted keys included
         assert "other" not in ev
-        for k in ("tmpfilename", "filename", "status", "msg", "total_bytes", "total_bytes_estimate", "downloaded_bytes", "speed", "eta"):
+        for k in (
+            "tmpfilename",
+            "filename",
+            "status",
+            "msg",
+            "total_bytes",
+            "total_bytes_estimate",
+            "downloaded_bytes",
+            "speed",
+            "eta",
+        ):
             assert k in ev
 
     def test_postprocessor_hook_movefiles_sets_final_name(self, tmp_path: Path) -> None:

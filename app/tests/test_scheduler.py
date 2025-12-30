@@ -228,7 +228,17 @@ class TestScheduler:
     def test_add_executes_function_when_cron_runs(self, cron_patch) -> None:
         # Cron stub that auto-runs the function on creation when start=True
         class AutoRunCron(DummyCron):
-            def __init__(self, *_, spec: str, func: callable, args: tuple = (), kwargs: dict | None = None, uuid: str | None = None, start: bool | None = None, loop: asyncio.AbstractEventLoop | None = None):
+            def __init__(
+                self,
+                *_,
+                spec: str,
+                func: callable,
+                args: tuple = (),
+                kwargs: dict | None = None,
+                uuid: str | None = None,
+                start: bool | None = None,
+                loop: asyncio.AbstractEventLoop | None = None,
+            ):
                 super().__init__(spec=spec, func=func, args=args, kwargs=kwargs, uuid=uuid, start=start, loop=loop)
                 if start:
                     # Simulate immediate execution
@@ -253,7 +263,17 @@ class TestScheduler:
     async def test_event_schedule_runs_function(self, cron_patch) -> None:
         # Cron stub that auto-runs the function on creation
         class AutoRunCron(DummyCron):
-            def __init__(self, *_, spec: str, func: callable, args: tuple = (), kwargs: dict | None = None, uuid: str | None = None, start: bool | None = None, loop: asyncio.AbstractEventLoop | None = None):
+            def __init__(
+                self,
+                *_,
+                spec: str,
+                func: callable,
+                args: tuple = (),
+                kwargs: dict | None = None,
+                uuid: str | None = None,
+                start: bool | None = None,
+                loop: asyncio.AbstractEventLoop | None = None,
+            ):
                 super().__init__(spec=spec, func=func, args=args, kwargs=kwargs, uuid=uuid, start=start, loop=loop)
                 if start:
                     self.func(*self.args, **self.kwargs)

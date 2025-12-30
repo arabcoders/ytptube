@@ -33,6 +33,7 @@ if TYPE_CHECKING:
 LOG: logging.Logger = logging.getLogger(__name__)
 CACHE: Cache = Cache()
 
+
 @dataclass(slots=True)
 class MatchRule:
     """Represents a single URL matcher compiled to regex."""
@@ -720,12 +721,16 @@ class GenericTaskHandler(BaseHandler):
                     )
 
                     if not info:
-                        LOG.error(f"[{definition.name}]: '{task.name}': Failed to extract info for URL '{url}' to generate archive ID. Skipping.")
+                        LOG.error(
+                            f"[{definition.name}]: '{task.name}': Failed to extract info for URL '{url}' to generate archive ID. Skipping."
+                        )
                         CACHE.set(cache_key, None)
                         continue
 
                     if not info.get("id") or not info.get("extractor_key"):
-                        LOG.error(f"[{definition.name}]: '{task.name}': Incomplete info extracted for URL '{url}' to generate archive ID. Skipping.")
+                        LOG.error(
+                            f"[{definition.name}]: '{task.name}': Incomplete info extracted for URL '{url}' to generate archive ID. Skipping."
+                        )
                         CACHE.set(cache_key, None)
                         continue
 

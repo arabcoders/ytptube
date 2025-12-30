@@ -109,6 +109,10 @@ jobs:
         working-directory: ui
         run: pnpm run typecheck
 
+      - name: Run frontend tsc
+        working-directory: ui
+        run: pnpm run lint:tsc
+
       - name: Run frontend tests
         working-directory: ui
         run: pnpm run test:ci
