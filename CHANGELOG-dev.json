@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251230-f32e3233",
-        "date": "2025-12-30T17:42:50+00:00",
+        "tag": "dev-20251230-c3f230de",
+        "date": "2025-12-30T19:55:15+00:00",
         "commits": [
+            {
+                "sha": "c3f230de",
+                "message": "Refactor: playlists sometimes return different ID what we got",
+                "author": "arabcoders",
+                "date": "2025-12-30T19:55:15+00:00",
+                "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603"
+            },
             {
                 "sha": "f32e3233",
                 "message": "Refactor: improve linting and formatting",
@@ -3420,7 +3427,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f32e3233099b8f550b25737f68b3170216a8c895"
+        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603"
     },
     {
         "tag": "dev-20250616-c07465a6",
