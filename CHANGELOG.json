@@ -50,9 +50,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "9595a69b50bd1fcda879047c86c1a9d5c8b5cd1f",
-    "date": "2025-12-30T14:05:59+00:00",
+    "full_sha": "f32e3233099b8f550b25737f68b3170216a8c895",
+    "date": "2025-12-30T17:42:50+00:00",
     "commits": [
+      {
+        "sha": "f32e3233",
+        "full_sha": "f32e3233099b8f550b25737f68b3170216a8c895",
+        "message": "Refactor: improve linting and formatting",
+        "author": "arabcoders",
+        "date": "2025-12-30T17:42:50+00:00"
+      },
       {
         "sha": "9595a69b",
         "full_sha": "9595a69b50bd1fcda879047c86c1a9d5c8b5cd1f",

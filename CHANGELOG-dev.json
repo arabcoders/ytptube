@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251230-9595a69b",
-        "date": "2025-12-30T14:05:59+00:00",
+        "tag": "dev-20251230-f32e3233",
+        "date": "2025-12-30T17:42:50+00:00",
         "commits": [
+            {
+                "sha": "f32e3233",
+                "message": "Refactor: improve linting and formatting",
+                "author": "arabcoders",
+                "date": "2025-12-30T17:42:50+00:00",
+                "full_sha": "f32e3233099b8f550b25737f68b3170216a8c895"
+            },
             {
                 "sha": "9595a69b",
                 "message": "Refactor: stagger tasks creation for playlist processing",
@@ -3413,7 +3420,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "9595a69b50bd1fcda879047c86c1a9d5c8b5cd1f"
+        "full_sha": "f32e3233099b8f550b25737f68b3170216a8c895"
     },
     {
         "tag": "dev-20250616-c07465a6",
