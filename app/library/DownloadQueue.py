@@ -322,8 +322,6 @@ class DownloadQueue(metaclass=Singleton):
         playlistCount = entry.get("playlist_count")
         playlistCount: int = int(playlistCount) if playlistCount else len(entries)
 
-        results = []
-
         playlist_keys: dict[str, Any] = {
             "playlist_count": playlistCount,
             "playlist": entry.get("title") or entry.get("id"),
@@ -339,17 +337,15 @@ class DownloadQueue(metaclass=Singleton):
         }
 
         async def playlist_processor(i: int, etr: dict):
+            acquired = False
             try:
                 item_name: str = (
                     f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
                 )
                 LOG.debug(f"Waiting to acquire lock for {item_name}")
                 await self.processors.acquire()
+                acquired = True
                 LOG.debug(f"Acquired lock for {item_name}")
-
-                if self.is_paused():
-                    LOG.warning(f"Download is paused. Skipping processing of '{item_name}'.")
-                    return {"status": "ok"}
 
                 LOG.info(f"Processing '{item_name}'.")
 
@@ -382,26 +378,44 @@ class DownloadQueue(metaclass=Singleton):
 
                 return await self.add(item=newItem, already=already)
             finally:
-                self.processors.release()
+                if acquired:
+                    self.processors.release()
 
         max_downloads: int = -1
         ytdlp_opts: dict[str, Any] = item.get_ytdlp_opts().get_all()
         if ytdlp_opts.get("max_downloads") and isinstance(ytdlp_opts.get("max_downloads"), int):
             max_downloads: int = ytdlp_opts.get("max_downloads")
 
-        tasks: list[asyncio.Task] = []
+        batch_size: int = max(50, int(self.config.playlist_items_concurrency) * 10)
+
+        async def run_batch(batch: list[tuple[int, dict]]) -> list[dict]:
+            tasks: list[asyncio.Task] = []
+            for i, etr in batch:
+                task = asyncio.create_task(
+                    playlist_processor(i, etr),
+                    name=f"playlist_processor_{etr.get('id')}_{i}",
+                )
+                task.add_done_callback(self._handle_task_exception)
+                tasks.append(task)
+
+            batch_results: list[dict] = await asyncio.gather(*tasks)
+            await asyncio.sleep(0)
+            return batch_results
+
+        results: list[dict] = []
+        batch: list[tuple[int, dict]] = []
+
         for i, etr in enumerate(entries, start=1):
             if max_downloads > 0 and i > max_downloads:
                 break
 
-            task = asyncio.create_task(
-                playlist_processor(i, etr),
-                name=f"playlist_processor_{etr.get('id')}_{i}",
-            )
-            task.add_done_callback(self._handle_task_exception)
-            tasks.append(task)
+            batch.append((i, etr))
+            if len(batch) >= batch_size:
+                results.extend(await run_batch(batch))
+                batch.clear()
 
-        results: list[dict] = await asyncio.gather(*tasks)
+        if batch:
+            results.extend(await run_batch(batch))
 
         log_msg: str = f"Playlist '{playlist_name}' processing completed with '{len(results)}' entries."
         if max_downloads > 0 and len(entries) > max_downloads:
