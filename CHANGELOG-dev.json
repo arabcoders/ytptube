@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20251230-c3f230de",
-        "date": "2025-12-30T19:55:15+00:00",
+        "tag": "dev-20251231-7b51c6f2",
+        "date": "2025-12-31T18:27:59+00:00",
         "commits": [
+            {
+                "sha": "7b51c6f2",
+                "message": "Refactor: improve filtering capabilities in downloads page with detailed usage examples.",
+                "author": "arabcoders",
+                "date": "2025-12-31T18:27:59+00:00",
+                "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658"
+            },
             {
                 "sha": "c3f230de",
                 "message": "Refactor: playlists sometimes return different ID what we got",
@@ -3427,7 +3434,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603"
+        "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658"
     },
     {
         "tag": "dev-20250616-c07465a6",
