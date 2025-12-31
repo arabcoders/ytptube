@@ -284,6 +284,20 @@
       <Message message_class="is-warning" title="Filter results" :newStyle="true" icon="fas fa-search" :useClose="true"
         @close="() => emitter('clear_search')" v-if="query">
         <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+        <hr>
+        <p>
+          You can search using any value shown in the item’s <code><span class="icon"><i
+              class="fa-solid fa-info-circle" /></span> Local Information</code>. You can also do a targeted search
+          using <code><u>key</u>:value</code>.
+        </p>
+
+        <h5>Examples:</h5>
+
+        <ul>
+          <li><code>youtube.com</code> - items containing that text</li>
+          <li><code>is_live:true</code> - only live downloads</li>
+          <li><code>source_name:task_name</code> - items added by the specified task.</li>
+        </ul>
       </Message>
       <Message message_class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false"
         :newStyle="true" v-else>
@@ -306,6 +320,7 @@ import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 import { useConfirm } from '~/composables/useConfirm'
+import { deepIncludes } from '~/utils'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
@@ -349,9 +364,7 @@ const filteredItems = computed<StoreItem[]>(() => {
   if (!q) {
     return Object.values(stateStore.queue)
   }
-  return Object.values(stateStore.queue).filter((i: StoreItem) =>
-    Object.values(i).some(v => typeof v === 'string' && v.toLowerCase().includes(q))
-  )
+  return Object.values(stateStore.queue).filter((i: StoreItem) => deepIncludes(i, q, new WeakSet()))
 })
 
 const hasSelected = computed(() => 0 < selectedElms.value.length)

@@ -719,10 +719,82 @@ const shortPath = (path: string, prefix: string = '...'): string => {
   return `${prefix}/${parts.at(-1)}${hasTrailingSlash ? '/' : ''}`;
 }
 
+/**
+ * Recursively test if a value (including nested objects/arrays) contains a query string.
+ * - Plain queries match keys or values (case-insensitive).
+ * - key:value queries require the value to be under a matching key in the path.
+ *
+ * @param value - Value to search within.
+ * @param query - Raw query string.
+ * @param seen - Optional WeakSet to prevent circular reference loops.
+ * @param kv - Internal: parsed key/value pair when using key:value mode.
+ * @param keyMatched - Internal: whether current recursion path matched the key.
+ */
+const deepIncludes = (
+  value: unknown,
+  query: string,
+  seen: WeakSet<object> = new WeakSet(),
+  kv: { key: string; val: string } | null = null,
+  keyMatched: boolean = false
+): boolean => {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized || null === value || undefined === value) {
+    return false
+  }
+
+  const pair = kv ?? (() => {
+    const idx = normalized.indexOf(':')
+    if (idx <= 0 || idx >= normalized.length - 1) {
+      return null
+    }
+    const key = normalized.slice(0, idx).trim()
+    const val = normalized.slice(idx + 1).trim()
+    if (!key || !val) {
+      return null
+    }
+    return { key, val }
+  })()
+
+  const matchPrimitive = (val: unknown, q: string): boolean => String(val).toLowerCase().includes(q)
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    if (!pair) {
+      return matchPrimitive(value, normalized)
+    }
+    return keyMatched && matchPrimitive(value, pair.val)
+  }
+
+  if (Array.isArray(value)) {
+    return value.some(entry => deepIncludes(entry, normalized, seen, pair, keyMatched))
+  }
+
+  if ('object' === typeof value) {
+    const obj = value as Record<string, unknown>
+    if (seen.has(obj)) {
+      return false
+    }
+    seen.add(obj)
+    for (const [key, val] of Object.entries(obj)) {
+      const keyLower = key.toLowerCase()
+
+      if (!pair && keyLower.includes(normalized)) {
+        return true
+      }
+
+      const nextKeyMatched = pair ? keyMatched || keyLower.includes(pair.key) : keyMatched
+      if (deepIncludes(val, normalized, seen, pair, nextKeyMatched)) {
+        return true
+      }
+    }
+  }
+
+  return false
+}
+
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes
 }

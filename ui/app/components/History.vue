@@ -415,6 +415,20 @@
       <Message message_class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
         @close="() => emitter('clear_search')" v-if="query" :newStyle="true">
         <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+        <hr>
+        <p>
+          You can search using any value shown in the item’s <code><span class="icon"><i
+              class="fa-solid fa-info-circle" /></span> Local Information</code>. You can also do a targeted search
+          using <code><u>key</u>:value</code>.
+        </p>
+
+        <h5>Examples:</h5>
+
+        <ul>
+          <li><code>youtube.com</code> - items containing that text</li>
+          <li><code>is_live:true</code> - only live downloads</li>
+          <li><code>source_name:task_name</code> - items added by the specified task.</li>
+        </ul>
       </Message>
       <Message message_class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
         v-else-if="socket.isConnected" :new-style="true">
@@ -463,6 +477,7 @@ import moment from 'moment'
 import { useStorage, useIntersectionObserver } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 import { useConfirm } from '~/composables/useConfirm'
+import { deepIncludes } from '~/utils'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
@@ -578,9 +593,7 @@ const filterItem = (item: StoreItem) => {
   if (!q) {
     return true
   }
-  return Object.values(item).some(v =>
-    typeof v === 'string' && v.toLowerCase().includes(q)
-  )
+  return deepIncludes(item, q, new WeakSet())
 }
 
 watch(masterSelectAll, (value) => {
