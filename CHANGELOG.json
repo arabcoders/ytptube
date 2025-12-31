@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (2f6dcbb4)",
-    "full_sha": "2f6dcbb4d442347830b6d5b3d5458a3fcfa5035b",
-    "date": "2025-12-30T20:28:41+00:00",
-    "commits": [
-      {
-        "sha": "c3f230de",
-        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603",
-        "message": "Refactor: playlists sometimes return different ID what we got",
-        "author": "arabcoders",
-        "date": "2025-12-30T19:55:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658",
-    "date": "2025-12-31T18:27:59+00:00",
+    "tag": "Unreleased (b8934d40)",
+    "full_sha": "b8934d40eb9aef54409550a2d3e8cbdea6fa732f",
+    "date": "2025-12-31T18:37:28+00:00",
     "commits": [
       {
         "sha": "7b51c6f2",
@@ -24,6 +10,13 @@
         "message": "Refactor: improve filtering capabilities in downloads page with detailed usage examples.",
         "author": "arabcoders",
         "date": "2025-12-31T18:27:59+00:00"
+      },
+      {
+        "sha": "c3f230de",
+        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603",
+        "message": "Refactor: playlists sometimes return different ID what we got",
+        "author": "arabcoders",
+        "date": "2025-12-30T19:55:15+00:00"
       }
     ]
   },
