@@ -1,9 +1,23 @@
 [
   {
-    "tag": "Unreleased (3b55c4d6)",
-    "full_sha": "3b55c4d677d2b331a808336e3642053b639b0c00",
-    "date": "2026-01-01T18:03:22+00:00",
+    "tag": "Unreleased (b9421f44)",
+    "full_sha": "b9421f442a4ed8d414f385dd3ac037bc1c1285fa",
+    "date": "2026-01-01T19:37:44+00:00",
     "commits": [
+      {
+        "sha": "f32bb266",
+        "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
+        "message": "Refactor: make it possible to enable/disable simple mode via query param",
+        "author": "arabcoders",
+        "date": "2026-01-01T19:32:48+00:00"
+      },
+      {
+        "sha": "770d7c71",
+        "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
+        "message": "Refactor: reduce cf_solver priority  to allow impersonate to work",
+        "author": "arabcoders",
+        "date": "2026-01-01T18:52:47+00:00"
+      },
       {
         "sha": "47be76fd",
         "full_sha": "47be76fd73ae853eea95af9b57933b02e7add695",
@@ -38,27 +52,6 @@
         "message": "Refactor: playlists sometimes return different ID what we got",
         "author": "arabcoders",
         "date": "2025-12-30T19:55:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
-    "date": "2026-01-01T19:32:48+00:00",
-    "commits": [
-      {
-        "sha": "f32bb266",
-        "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
-        "message": "Refactor: make it possible to enable/disable simple mode via query param",
-        "author": "arabcoders",
-        "date": "2026-01-01T19:32:48+00:00"
-      },
-      {
-        "sha": "770d7c71",
-        "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
-        "message": "Refactor: reduce cf_solver priority  to allow impersonate to work",
-        "author": "arabcoders",
-        "date": "2026-01-01T18:52:47+00:00"
       }
     ]
   },
