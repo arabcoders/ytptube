@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20251231-7b51c6f2",
-        "date": "2025-12-31T18:27:59+00:00",
+        "tag": "dev-20260101-6c1421b3",
+        "date": "2026-01-01T17:27:07+00:00",
         "commits": [
+            {
+                "sha": "6c1421b3",
+                "message": "Feat: Added Cloudflare solver handler",
+                "author": "arabcoders",
+                "date": "2026-01-01T17:27:07+00:00",
+                "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0"
+            },
+            {
+                "sha": "baacf839",
+                "message": "Refactor: run extract_info in separate thread",
+                "author": "arabcoders",
+                "date": "2026-01-01T17:19:31+00:00",
+                "full_sha": "baacf83974ed483d75aa7aa644c5ebfce151c56b"
+            },
             {
                 "sha": "7b51c6f2",
                 "message": "Refactor: improve filtering capabilities in downloads page with detailed usage examples.",
@@ -3434,7 +3448,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658"
+        "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0"
     },
     {
         "tag": "dev-20250616-c07465a6",

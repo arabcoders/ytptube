@@ -21,6 +21,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0",
+    "date": "2026-01-01T17:27:07+00:00",
+    "commits": [
+      {
+        "sha": "6c1421b3",
+        "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0",
+        "message": "Feat: Added Cloudflare solver handler",
+        "author": "arabcoders",
+        "date": "2026-01-01T17:27:07+00:00"
+      },
+      {
+        "sha": "baacf839",
+        "full_sha": "baacf83974ed483d75aa7aa644c5ebfce151c56b",
+        "message": "Refactor: run extract_info in separate thread",
+        "author": "arabcoders",
+        "date": "2026-01-01T17:19:31+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.13",
     "full_sha": "18673f0a55330f22f894cfcc2a2ef1a4812cf361",
     "date": "2025-12-30T17:50:44+00:00",
