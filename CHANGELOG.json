@@ -42,6 +42,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
+    "date": "2026-01-01T18:52:47+00:00",
+    "commits": [
+      {
+        "sha": "770d7c71",
+        "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
+        "message": "Refactor: reduce cf_solver priority  to allow impersonate to work",
+        "author": "arabcoders",
+        "date": "2026-01-01T18:52:47+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.13",
     "full_sha": "18673f0a55330f22f894cfcc2a2ef1a4812cf361",
     "date": "2025-12-30T17:50:44+00:00",
