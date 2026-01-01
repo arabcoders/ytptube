@@ -3,54 +3,57 @@
 Certain configuration values can be set via environment variables, using the `-e` parameter on the docker command line, 
 or the `environment:` section in `compose.yaml` file.
 
-| Environment Variable           | Description                                                         | Default               |
-| ------------------------------ | ------------------------------------------------------------------- | --------------------- |
-| TZ                             | The timezone to use for the application                             | `(not_set)`           |
-| YTP_OUTPUT_TEMPLATE            | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
-| YTP_DEFAULT_PRESET             | The default preset to use for the download                          | `default`             |
-| YTP_INSTANCE_TITLE             | The title of the instance                                           | `(not_set)`           |
-| YTP_FILE_LOGGING               | Whether to log to file                                              | `false`               |
-| YTP_DOWNLOAD_PATH              | Path to where the downloads will be saved                           | `/downloads`          |
-| YTP_MAX_WORKERS                | The maximum number of workers to use for downloading                | `20`                  |
-| YTP_MAX_WORKERS_PER_EXTRACTOR  | The maximum number of concurrent downloads per extractor            | `2`                   |
-| YTP_AUTH_USERNAME              | Username for basic authentication                                   | `(not_set)`           |
-| YTP_AUTH_PASSWORD              | Password for basic authentication                                   | `(not_set)`           |
-| YTP_CONSOLE_ENABLED            | Whether to enable the console                                       | `false`               |
-| YTP_REMOVE_FILES               | Remove the actual file when clicking the remove button              | `false`               |
-| YTP_CONFIG_PATH                | Path to where the config files will be stored.                      | `/config`             |
-| YTP_TEMP_PATH                  | Path to where tmp files are stored.                                 | `/tmp`                |
-| YTP_TEMP_KEEP                  | Whether to keep the Individual video temp directory or remove it    | `false`               |
-| YTP_HOST                       | Which IP address to bind to                                         | `0.0.0.0`             |
-| YTP_PORT                       | Which port to bind to                                               | `8081`                |
-| YTP_LOG_LEVEL                  | Log level                                                           | `info`                |
-| YTP_STREAMER_VCODEC            | The video encoding codec, default to GPU and fallback to software   | `""`                  |
-| YTP_STREAMER_ACODEC            | The audio codec to use for in-browser streaming                     | `aac`                 |
-| YTP_VAAPI_DEVICE               | The VAAPI device to use for hardware acceleration.                  | `/dev/dri/renderD128` |
-| YTP_ACCESS_LOG                 | Whether to log access to the web server                             | `true`                |
-| YTP_DEBUG                      | Whether to turn on debug mode                                       | `false`               |
-| YTP_DEBUGPY_PORT               | The port to use for the debugpy debugger                            | `5678`                |
-| YTP_EXTRACT_INFO_TIMEOUT       | The timeout for extracting video information                        | `70`                  |
-| YTP_UI_UPDATE_TITLE            | Whether to update the title of the page with the current stats      | `true`                |
-| YTP_PIP_PACKAGES               | A space separated list of pip packages to install                   | `(not_set)`           |
-| YTP_PIP_IGNORE_UPDATES         | Do not update the custom pip packages                               | `false`               |
-| YTP_PICTURES_BACKENDS          | A comma separated list of pictures urls to use                      | `(not_set)`           |
-| YTP_BROWSER_CONTROL_ENABLED    | Whether to enable the file browser actions                          | `false`               |
-| YTP_YTDLP_AUTO_UPDATE          | Whether to enable the auto update for yt-dlp                        | `true`                |
-| YTP_YTDLP_DEBUG                | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
-| YTP_YTDLP_VERSION              | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
-| YTP_BASE_PATH                  | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
-| YTP_PREVENT_LIVE_PREMIERE      | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
-| YTP_LIVE_PREMIERE_BUFFER       | buffer time in minutes to add to video duration                     | `5`                   |
-| YTP_TASKS_HANDLER_TIMER        | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
-| YTP_PLAYLIST_ITEMS_CONCURRENCY | The number of playlist items be to processed at same time           | `1`                   |
-| YTP_TEMP_DISABLED              | Disable temp files handling.                                        | `false`               |
-| YTP_DOWNLOAD_PATH_DEPTH        | How many subdirectories to show in auto complete.                   | `1`                   |
-| YTP_ALLOW_INTERNAL_URLS        | Allow requests to internal URLs                                     | `false`               |
-| YTP_SIMPLE_MODE                | Switch default interface to Simple mode.                            | `false`               |
-| YTP_STATIC_UI_PATH             | Path to custom static UI files.                                     | `(not_set)`           |
-| YTP_AUTO_CLEAR_HISTORY_DAYS    | Number of days after which completed download history is cleared.   | `0`                   |
-| YTP_DEFAULT_PAGINATION         | The default number of items per page for history.                   | `50`                  |
-| YTP_TASK_HANDLER_RANDOM_DELAY  | The maximum random delay in seconds before starting a task handler. | `60`                  |
+| Environment Variable            | Description                                                         | Default               |
+| ------------------------------- | ------------------------------------------------------------------- | --------------------- |
+| TZ                              | The timezone to use for the application                             | `(not_set)`           |
+| YTP_OUTPUT_TEMPLATE             | The template for the filenames of the downloaded videos             | `%(title)s.%(ext)s`   |
+| YTP_DEFAULT_PRESET              | The default preset to use for the download                          | `default`             |
+| YTP_INSTANCE_TITLE              | The title of the instance                                           | `(not_set)`           |
+| YTP_FILE_LOGGING                | Whether to log to file                                              | `false`               |
+| YTP_DOWNLOAD_PATH               | Path to where the downloads will be saved                           | `/downloads`          |
+| YTP_MAX_WORKERS                 | The maximum number of workers to use for downloading                | `20`                  |
+| YTP_MAX_WORKERS_PER_EXTRACTOR   | The maximum number of concurrent downloads per extractor            | `2`                   |
+| YTP_AUTH_USERNAME               | Username for basic authentication                                   | `(not_set)`           |
+| YTP_AUTH_PASSWORD               | Password for basic authentication                                   | `(not_set)`           |
+| YTP_CONSOLE_ENABLED             | Whether to enable the console                                       | `false`               |
+| YTP_REMOVE_FILES                | Remove the actual file when clicking the remove button              | `false`               |
+| YTP_CONFIG_PATH                 | Path to where the config files will be stored.                      | `/config`             |
+| YTP_TEMP_PATH                   | Path to where tmp files are stored.                                 | `/tmp`                |
+| YTP_TEMP_KEEP                   | Whether to keep the Individual video temp directory or remove it    | `false`               |
+| YTP_HOST                        | Which IP address to bind to                                         | `0.0.0.0`             |
+| YTP_PORT                        | Which port to bind to                                               | `8081`                |
+| YTP_LOG_LEVEL                   | Log level                                                           | `info`                |
+| YTP_STREAMER_VCODEC             | The video encoding codec, default to GPU and fallback to software   | `""`                  |
+| YTP_STREAMER_ACODEC             | The audio codec to use for in-browser streaming                     | `aac`                 |
+| YTP_VAAPI_DEVICE                | The VAAPI device to use for hardware acceleration.                  | `/dev/dri/renderD128` |
+| YTP_ACCESS_LOG                  | Whether to log access to the web server                             | `true`                |
+| YTP_DEBUG                       | Whether to turn on debug mode                                       | `false`               |
+| YTP_DEBUGPY_PORT                | The port to use for the debugpy debugger                            | `5678`                |
+| YTP_EXTRACT_INFO_TIMEOUT        | The timeout for extracting video information                        | `70`                  |
+| YTP_UI_UPDATE_TITLE             | Whether to update the title of the page with the current stats      | `true`                |
+| YTP_PIP_PACKAGES                | A space separated list of pip packages to install                   | `(not_set)`           |
+| YTP_PIP_IGNORE_UPDATES          | Do not update the custom pip packages                               | `false`               |
+| YTP_PICTURES_BACKENDS           | A comma separated list of pictures urls to use                      | `(not_set)`           |
+| YTP_BROWSER_CONTROL_ENABLED     | Whether to enable the file browser actions                          | `false`               |
+| YTP_YTDLP_AUTO_UPDATE           | Whether to enable the auto update for yt-dlp                        | `true`                |
+| YTP_YTDLP_DEBUG                 | Whether to turn debug logging for the internal `yt-dlp` package     | `false`               |
+| YTP_YTDLP_VERSION               | The version of yt-dlp to use. Defaults to latest version            | `(not_set)`           |
+| YTP_FLARESOLVERR_URL            | FlareSolverr endpoint URL.                                          | `(not_set)`           |
+| YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr challenge timeout in seconds                       | `120`                 |
+| YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr             | `120`                 |
+| YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
+| YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
+| YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |
+| YTP_TASKS_HANDLER_TIMER         | The cron expression for the tasks handler timer                     | `15 */1 * * *`        |
+| YTP_PLAYLIST_ITEMS_CONCURRENCY  | The number of playlist items be to processed at same time           | `1`                   |
+| YTP_TEMP_DISABLED               | Disable temp files handling.                                        | `false`               |
+| YTP_DOWNLOAD_PATH_DEPTH         | How many subdirectories to show in auto complete.                   | `1`                   |
+| YTP_ALLOW_INTERNAL_URLS         | Allow requests to internal URLs                                     | `false`               |
+| YTP_SIMPLE_MODE                 | Switch default interface to Simple mode.                            | `false`               |
+| YTP_STATIC_UI_PATH              | Path to custom static UI files.                                     | `(not_set)`           |
+| YTP_AUTO_CLEAR_HISTORY_DAYS     | Number of days after which completed download history is cleared.   | `0`                   |
+| YTP_DEFAULT_PAGINATION          | The default number of items per page for history.                   | `50`                  |
+| YTP_TASK_HANDLER_RANDOM_DELAY   | The maximum random delay in seconds before starting a task handler. | `60`                  |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.
@@ -569,3 +572,35 @@ YTP_LIVE_PREMIERE_BUFFER=10
 Where `YTP_LIVE_PREMIERE_BUFFER` is the buffer time in minutes to add to the video duration before the download starts. 
 This will help in case the premiere has a longer loading screen than usual.
 
+# How to bypass CF challenges?
+
+You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and then set the `YTP_FLARESOLVERR_URL` environment variable to point to your FlareSolverr instance. For example:
+
+```yaml
+services:
+  ytptube:
+    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
+    image: ghcr.io/arabcoders/ytptube:latest
+    container_name: ytptube
+    restart: unless-stopped
+    environment:
+      - YTP_FLARESOLVERR_URL=http://flaresolverr:8191/v1
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./config:/config:rw
+      - ./downloads:/downloads:rw
+    tmpfs:
+      - /tmp
+    depends_on:
+      - flaresolverr
+  flaresolverr:
+    image: flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    restart: unless-stopped    
+```
+
+For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) project.
+
+> [!NOTE]
+> This will only work for yt-dlp part of the project. Anything else will not be affected by this setting for now.
