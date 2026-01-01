@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import json
 import logging
 import time
@@ -163,13 +165,20 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             },
         }
 
-        data = extract_info(
-            config=ytdlp_opts,
-            url=url,
-            debug=False,
-            no_archive=True,
-            follow_redirect=True,
-            sanitize_info=True,
+        data: dict | None = await asyncio.wait_for(
+            fut=asyncio.get_running_loop().run_in_executor(
+                None,
+                functools.partial(
+                    extract_info,
+                    config=ytdlp_opts,
+                    url=url,
+                    debug=False,
+                    no_archive=True,
+                    follow_redirect=True,
+                    sanitize_info=True,
+                ),
+            ),
+            timeout=120,
         )
 
         if not data or not isinstance(data, dict):
