@@ -22,9 +22,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0",
-    "date": "2026-01-01T17:27:07+00:00",
+    "full_sha": "47be76fd73ae853eea95af9b57933b02e7add695",
+    "date": "2026-01-01T17:55:57+00:00",
     "commits": [
+      {
+        "sha": "47be76fd",
+        "full_sha": "47be76fd73ae853eea95af9b57933b02e7add695",
+        "message": "Refactor: add caching for FlareSolverr solutions.",
+        "author": "arabcoders",
+        "date": "2026-01-01T17:55:57+00:00"
+      },
       {
         "sha": "6c1421b3",
         "full_sha": "6c1421b3b48c63ad1bc87cf7de7da47bb71bfee0",
