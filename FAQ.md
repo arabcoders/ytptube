@@ -41,6 +41,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_FLARESOLVERR_URL            | FlareSolverr endpoint URL.                                          | `(not_set)`           |
 | YTP_FLARESOLVERR_MAX_TIMEOUT    | Max FlareSolverr challenge timeout in seconds                       | `120`                 |
 | YTP_FLARESOLVERR_CLIENT_TIMEOUT | HTTP client timeout (seconds) when calling FlareSolverr             | `120`                 |
+| YTP_FLARESOLVERR_CACHE_TTL      | The cache TTL (in seconds) for FlareSolverr solutions               | `600`                 |
 | YTP_BASE_PATH                   | Set this if you are serving YTPTube from sub-folder                 | `/`                   |
 | YTP_PREVENT_LIVE_PREMIERE       | Prevents the initial youtube premiere stream from being downloaded  | `false`               |
 | YTP_LIVE_PREMIERE_BUFFER        | buffer time in minutes to add to video duration                     | `5`                   |

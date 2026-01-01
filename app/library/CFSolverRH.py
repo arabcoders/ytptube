@@ -4,7 +4,9 @@ from __future__ import annotations
 import http.cookiejar
 import json
 import logging
+import time
 import urllib.request
+from abc import ABC
 from collections.abc import Callable
 from typing import Any, ClassVar
 from urllib.parse import urlparse
@@ -25,6 +27,7 @@ from yt_dlp.utils.networking import clean_headers
 LOG: logging.Logger = logging.getLogger(__name__)
 
 SolverFn = Callable[[Request, Response, RequestHandler], Request | None]
+CacheEntry = dict[str, Any]
 
 
 def cf_solver(request: Request, _response: Response, handler: RequestHandler) -> Request | None:
@@ -106,9 +109,14 @@ def cf_solver(request: Request, _response: Response, handler: RequestHandler) ->
     solution = result.get("solution") or {}
     _cookiejar_from_solution(solution.get("cookies"), request, handler)
 
-    ua = solution.get("userAgent")
-    if ua:
+    if ua := solution.get("userAgent"):
         request.headers["User-Agent"] = ua
+
+    CFSolverRH.cache[urlparse(request.url).netloc] = {
+        "cookies": solution.get("cookies") or [],
+        "userAgent": ua,
+        "expires_at": time.time() + config.flaresolverr_cache_ttl,
+    }
 
     return request
 
@@ -163,25 +171,14 @@ def _cookiejar_from_solution(cookies, request: Request, handler: RequestHandler)
         )
 
 
-@register_preference()
-def _prefer_cf_handler(handler: RequestHandler, _request: Request) -> int:
-    """Prefer Cloudflare handler when configured with endpoint."""
-    from app.library.config import Config
-
-    if not Config.get_instance().flaresolverr_url:
-        return 0
-
-    hand = getattr(handler, "RH_KEY", "")
-    return 1000 if hand == "CFSolver" else 0
-
-
 @register_rh
-class CFSolverRH(RequestHandler):
+class CFSolverRH(RequestHandler, ABC):
     """Request handler that intercepts Cloudflare challenges"""
 
     _SUPPORTED_URL_SCHEMES = ("http", "https")
     _SUPPORTED_PROXY_SCHEMES = ("http", "https", "socks4", "socks4a", "socks5", "socks5h")
     solver: ClassVar[SolverFn | None] = None
+    cache: ClassVar[dict[str, CacheEntry]] = {}
 
     def __init__(self, *, solver: SolverFn | None = None, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -271,7 +268,22 @@ class CFSolverRH(RequestHandler):
         response.close()
         return director.send(solved_request)
 
+    def _inject_cookie(self, request: Request) -> None:
+        cache_key: str = urlparse(request.url).netloc
+        if not (cached := self.cache.get(cache_key)):
+            return
+
+        if cached.get("expires_at", 0) <= time.time():
+            self.cache.pop(cache_key, None)
+            return
+
+        LOG.info(f"Injecting cached Cloudflare cookies for '{cache_key}'.")
+        _cookiejar_from_solution(cached.get("cookies"), request, self)
+        if ua := cached.get("userAgent"):
+            request.headers["User-Agent"] = ua
+
     def _send(self, request: Request) -> Response:
+        self._inject_cookie(request)
         director: RequestDirector = self._build_fallback()
 
         try:
@@ -285,3 +297,13 @@ class CFSolverRH(RequestHandler):
             return self._retry_with_clearance(request, response, director)
 
         return response
+
+
+@register_preference(CFSolverRH)
+def cf_solver_preference(_handler: RequestHandler, _request: Request) -> int:
+    from app.library.config import Config
+
+    if not Config.get_instance().flaresolverr_url:
+        return 0
+
+    return 1000

@@ -192,6 +192,9 @@ class Config(metaclass=Singleton):
     flaresolverr_client_timeout: int = 120
     """HTTP client timeout (seconds) when calling FlareSolverr."""
 
+    flaresolverr_cache_ttl: int = 600
+    """The cache TTL (in seconds) for FlareSolverr solutions."""
+
     is_native: bool = False
     "Is the application running in natively."
 
@@ -255,6 +258,7 @@ class Config(metaclass=Singleton):
         "default_pagination",
         "flaresolverr_max_timeout",
         "flaresolverr_client_timeout",
+        "flaresolverr_cache_ttl",
     )
     "The variables that are integers."
 

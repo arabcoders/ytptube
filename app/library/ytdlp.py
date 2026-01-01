@@ -4,6 +4,7 @@ from typing import Any
 import yt_dlp
 from yt_dlp.utils import make_archive_id
 
+# imported to register the handler with yt-dlp.
 from app.library.CFSolverRH import set_cf_handler
 
 
@@ -51,7 +52,6 @@ class YTDLP(yt_dlp.YoutubeDL):
 
     def __init__(self, params=None, auto_init=True):
         # Avoid yt-dlp preloading the archive file by stripping the param first
-        set_cf_handler(None)
         orig_file = None
         patched_params = None
         if params is not None:
