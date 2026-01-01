@@ -1,29 +1,8 @@
 [
   {
-    "tag": "Unreleased (b8934d40)",
-    "full_sha": "b8934d40eb9aef54409550a2d3e8cbdea6fa732f",
-    "date": "2025-12-31T18:37:28+00:00",
-    "commits": [
-      {
-        "sha": "7b51c6f2",
-        "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658",
-        "message": "Refactor: improve filtering capabilities in downloads page with detailed usage examples.",
-        "author": "arabcoders",
-        "date": "2025-12-31T18:27:59+00:00"
-      },
-      {
-        "sha": "c3f230de",
-        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603",
-        "message": "Refactor: playlists sometimes return different ID what we got",
-        "author": "arabcoders",
-        "date": "2025-12-30T19:55:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "47be76fd73ae853eea95af9b57933b02e7add695",
-    "date": "2026-01-01T17:55:57+00:00",
+    "tag": "Unreleased (3b55c4d6)",
+    "full_sha": "3b55c4d677d2b331a808336e3642053b639b0c00",
+    "date": "2026-01-01T18:03:22+00:00",
     "commits": [
       {
         "sha": "47be76fd",
@@ -45,6 +24,20 @@
         "message": "Refactor: run extract_info in separate thread",
         "author": "arabcoders",
         "date": "2026-01-01T17:19:31+00:00"
+      },
+      {
+        "sha": "7b51c6f2",
+        "full_sha": "7b51c6f245f3020987d2eed0fd59aa0b75e7c658",
+        "message": "Refactor: improve filtering capabilities in downloads page with detailed usage examples.",
+        "author": "arabcoders",
+        "date": "2025-12-31T18:27:59+00:00"
+      },
+      {
+        "sha": "c3f230de",
+        "full_sha": "c3f230de7363ca2cc145a3640cf511ef915d6603",
+        "message": "Refactor: playlists sometimes return different ID what we got",
+        "author": "arabcoders",
+        "date": "2025-12-30T19:55:15+00:00"
       }
     ]
   },
