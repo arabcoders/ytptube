@@ -192,8 +192,14 @@ class CFSolverRH(RequestHandler, ABC):
 
     def _check_extensions(self, extensions) -> None:
         super()._check_extensions(extensions)
-        for key in ("cookiejar", "timeout", "legacy_ssl", "keep_header_casing", "impersonate", "cf_retry"):
+        for key in ("cookiejar", "timeout", "legacy_ssl", "keep_header_casing", "cf_retry"):
             extensions.pop(key, None)
+
+    def _validate(self, request: Request):  # type: ignore[override]
+        self._check_url_scheme(request)
+        self._check_proxies(request.proxies or self.proxies)
+        extensions = request.extensions.copy()
+        self._check_extensions(extensions)
 
     def _build_fallback(self) -> RequestDirector:
         if self._fallback_director:
@@ -203,6 +209,7 @@ class CFSolverRH(RequestHandler, ABC):
         for handler_cls in _REQUEST_HANDLERS.values():
             if handler_cls.RH_KEY == self.RH_KEY:
                 continue
+
             director.add_handler(
                 handler_cls(
                     logger=self._logger,
@@ -218,6 +225,7 @@ class CFSolverRH(RequestHandler, ABC):
                     legacy_ssl_support=self.legacy_ssl_support,
                 )
             )
+
         director.preferences.update(_RH_PREFERENCES)
         self._fallback_director = director
         return director
@@ -306,4 +314,4 @@ def cf_solver_preference(_handler: RequestHandler, _request: Request) -> int:
     if not Config.get_instance().flaresolverr_url:
         return 0
 
-    return 1000
+    return 100
