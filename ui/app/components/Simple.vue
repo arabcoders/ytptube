@@ -649,6 +649,13 @@ const connectionStatusColor = computed(() => {
 
 // Load history via API on mount
 onMounted(async () => {
+  const route = useRoute()
+
+  if (route.query?.simple !== undefined) {
+    const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false)
+    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
+  }
+
   if (socketStore.isConnected && !paginationInfo.value.isLoaded) {
     try {
       await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')

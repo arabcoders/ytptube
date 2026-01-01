@@ -164,6 +164,13 @@ watch(() => route.query.tab, (newTab) => {
 })
 
 onMounted(() => {
+  const route = useRoute()
+
+  if (route.query?.simple !== undefined) {
+    const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
+    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
+  }
+
   activeTab.value = getInitialTab()
   useHead({ title: getTitle() })
 })
