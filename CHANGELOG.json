@@ -43,9 +43,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
-    "date": "2026-01-01T18:52:47+00:00",
+    "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
+    "date": "2026-01-01T19:32:48+00:00",
     "commits": [
+      {
+        "sha": "f32bb266",
+        "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
+        "message": "Refactor: make it possible to enable/disable simple mode via query param",
+        "author": "arabcoders",
+        "date": "2026-01-01T19:32:48+00:00"
+      },
       {
         "sha": "770d7c71",
         "full_sha": "770d7c71b60e9259073b92ffe3b0fb6903f48dc7",
