@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import logging
 import uuid
 from collections import OrderedDict
@@ -153,14 +155,22 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         preset: str = params.get("preset", config.default_preset)
         key: str = cache.hash(url + str(preset))
         if not cache.has(key):
-            data: dict = extract_info(
-                config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
-                url=url,
-                debug=False,
-                no_archive=True,
-                follow_redirect=True,
-                sanitize_info=True,
+            data: dict | None = await asyncio.wait_for(
+                fut=asyncio.get_running_loop().run_in_executor(
+                    None,
+                    functools.partial(
+                        extract_info,
+                        config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
+                        url=url,
+                        debug=False,
+                        no_archive=True,
+                        follow_redirect=True,
+                        sanitize_info=True,
+                    ),
+                ),
+                timeout=120,
             )
+
             if not data:
                 return web.json_response(
                     data={"error": f"Failed to extract info from '{url!s}'."},
