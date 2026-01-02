@@ -32,6 +32,7 @@ Example of the Simple mode interface.
 * Basic authentication support.
 * Supports `curl-cffi`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#impersonation). `In docker only`.
 * Bundled `pot provider plugin`. See [yt-dlp documentation](https://github.com/yt-dlp/yt-dlp/wiki/PO-Token-Guide). `In docker only`.
+* Support using [flaresolverr/flaresolverr](https://github.com/flaresolverr/flaresolverr) to bypass Cloudflare protections for yt-dlp and internal http client. See [related FAQ](FAQ.md#how-to-bypass-cf-challenges).
 * Automatic updates for `yt-dlp` and custom `pip` packages. `In docker only`.
 * Conditions feature to apply custom options based on `yt-dlp` returned info.
 * Custom browser extensions, bookmarklets and iOS shortcuts to send links to YTPTube instance.

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urljoin
 
-import httpx
 import jmespath
 from parsel import Selector
 from parsel.selector import SelectorList
@@ -22,12 +21,14 @@ from yt_dlp.utils.networking import random_user_agent
 
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.httpx_client import async_client
 from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
 from app.library.Utils import extract_info, get_archive_id
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
+    import httpx
     from parsel.selector import SelectorList
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -474,7 +475,7 @@ def load_task_definitions(config: Config | None = None) -> list[TaskDefinition]:
                 LOG.error(f"[{path.name}] Unsupported response type '{response_type}'.")
                 continue
 
-            response_config = ResponseConfig(format=response_type)  # type: ignore[arg-type]
+            response_config = ResponseConfig(format=response_type)
 
         parse_raw: Mapping | None = raw.get("parse")
         if not isinstance(parse_raw, Mapping):
@@ -826,7 +827,7 @@ class GenericTaskHandler(BaseHandler):
 
         timeout_value: float | Any = definition.request.timeout or ytdlp_opts.get("socket_timeout", 120)
 
-        async with httpx.AsyncClient(**client_options) as client:
+        async with async_client(**client_options) as client:
             response: httpx.Response = await client.request(
                 method=definition.request.normalized_method(),
                 url=url,

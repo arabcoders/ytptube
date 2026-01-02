@@ -1,4 +1,6 @@
 import { io, type Socket as IOSocket, type SocketOptions, type ManagerOptions } from "socket.io-client"
+import { ref, readonly } from 'vue'
+import { defineStore } from 'pinia'
 import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
 
@@ -15,6 +17,8 @@ export const useSocketStore = defineStore('socket', () => {
   const connectionStatus = ref<connectionStatus>('disconnected')
   const error = ref<string | null>(null)
   const error_count = ref<number>(0)
+  const wasHidden = ref<boolean>(false)
+  const reconnectTimeout = ref<NodeJS.Timeout | null>(null)
 
   const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
   const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
@@ -33,6 +37,46 @@ export const useSocketStore = defineStore('socket', () => {
 
   const getSessionId = (): string | null => socket.value?.id || null
 
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      wasHidden.value = true
+      return
+    }
+
+    if (true === wasHidden.value && false === isConnected.value) {
+      if (null !== reconnectTimeout.value) {
+        clearTimeout(reconnectTimeout.value)
+        reconnectTimeout.value = null
+      }
+
+      reconnectTimeout.value = setTimeout(() => {
+        if (false === isConnected.value) {
+          console.debug('[SocketStore] Page visible after background, reconnecting...')
+          reconnect()
+        }
+        reconnectTimeout.value = null
+      }, 100)
+    }
+
+    wasHidden.value = false
+  }
+
+  const setupVisibilityListener = () => {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }
+
+  const cleanupVisibilityListener = () => {
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+    if (null !== reconnectTimeout.value) {
+      clearTimeout(reconnectTimeout.value)
+      reconnectTimeout.value = null
+    }
+  }
+
   const reconnect = () => {
     if (true === isConnected.value) {
       return;
@@ -49,6 +93,7 @@ export const useSocketStore = defineStore('socket', () => {
     socket.value = null;
     isConnected.value = false;
     connectionStatus.value = 'disconnected';
+    cleanupVisibilityListener();
   }
 
   const connect = () => {
@@ -234,6 +279,8 @@ export const useSocketStore = defineStore('socket', () => {
 
     on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
     on('dlfields_update', (data: string) => config.update('dl_fields', JSON.parse(data).data || []));
+
+    setupVisibilityListener();
   }
 
   if (false === isConnected.value) {
@@ -243,7 +290,7 @@ export const useSocketStore = defineStore('socket', () => {
   return {
     connect, reconnect, disconnect,
     on, off, emit,
-    socket, isConnected,
+    isConnected,
     getSessionId,
     connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
     error: readonly(error) as Readonly<Ref<string | null>>,

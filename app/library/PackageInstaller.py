@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import httpx
+from .httpx_client import sync_client
 
 LOG: logging.Logger = logging.getLogger("package_installer")
 
@@ -17,7 +17,7 @@ def parse_version(v: str) -> tuple[int, ...]:
 
 class Packages:
     def __init__(self, env: str | None, file: str | None, upgrade: bool = False):
-        from_env = env.split() if env else []
+        from_env: list[str] = env.split() if env else []
         from_file = []
 
         if file:
@@ -89,7 +89,7 @@ class PackageInstaller:
     def _get_latest_version(self, pkg: str) -> str | None:
         url: str = f"https://pypi.org/pypi/{pkg}/json"
         try:
-            with httpx.Client(timeout=5.0) as client:
+            with sync_client(timeout=5.0) as client:
                 resp = client.get(url)
                 if 200 == resp.status_code:
                     return resp.json()["info"]["version"]

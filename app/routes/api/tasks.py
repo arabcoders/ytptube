@@ -307,8 +307,9 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         filename.write_text(xml_content, encoding="utf-8")
 
         try:
-            import httpx
             from yt_dlp.utils.networking import random_user_agent
+
+            from app.library.httpx_client import async_client
 
             ytdlp_args: dict = task.get_ytdlp_opts().get_all()
             opts: dict[str, Any] = {
@@ -331,7 +332,7 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
             except Exception:
                 pass
 
-            async with httpx.AsyncClient(**opts) as client:
+            async with async_client(**opts) as client:
                 for key in info.get("thumbnails", {}):
                     try:
                         url = info["thumbnails"][key]
