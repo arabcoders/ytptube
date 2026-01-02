@@ -863,8 +863,7 @@ class DownloadQueue(metaclass=Singleton):
             if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
                 already.pop()
 
-                item_title = entry.get("title") or entry.get("id") or item.url
-                message = f"Condition '{condition.name}' matched for '{item_title}'."
+                message = f"Condition '{condition.name}' matched for '{item!r}'."
 
                 if condition.cli:
                     message += f" Re-queuing with '{condition.cli}'."
@@ -873,18 +872,19 @@ class DownloadQueue(metaclass=Singleton):
 
                 if condition.extras.get("ignore_download", False):
                     extra_msg: str = ""
-                    if yt_conf.get("download_archive") and not condition.extras.get("no_archive", False):
-                        archive_add(yt_conf.get("download_archive"), [archive_id])
-                        extra_msg = f" and added to archive '{yt_conf.get('download_archive')}'"
+                    if _archive_file and not condition.extras.get("no_archive", False):
+                        archive_add(_archive_file, [archive_id])
+                        extra_msg = f" and added to archive file '{_archive_file}'"
 
-                    log_message = f"Ignoring download of '{item_title}' as per condition '{condition.name}'{extra_msg}."
+                    _name = entry.get("title", entry.get("id"))
+                    log_message = f"Ignoring download of '{_name!r}' as per condition '{condition.name}'{extra_msg}."
 
                     store_type, _ = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
                                 id=entry.get("id"),
-                                title=item_title,
+                                title=_name,
                                 url=item.url,
                                 preset=item.preset,
                                 folder=item.folder,
@@ -909,7 +909,7 @@ class DownloadQueue(metaclass=Singleton):
 
                 if condition.extras.get("set_preset") and (target_preset := condition.extras.get("set_preset")):
                     if Presets.get_instance().has(target_preset):
-                        log_message: str = f"Switching preset from '{item.preset}' to '{target_preset}' for '{item_title}' as per condition '{condition.name}'."
+                        log_message: str = f"Switching preset from '{item.preset}' to '{target_preset}' for '{item!r}' as per condition '{condition.name}'."
                         LOG.info(log_message)
                         self._notify.emit(Events.LOG_INFO, data={}, title="Preset Switched", message=log_message)
                         item = item.new_with(preset=target_preset)
