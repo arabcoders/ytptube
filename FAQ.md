@@ -575,7 +575,8 @@ This will help in case the premiere has a longer loading screen than usual.
 
 # How to bypass CF challenges?
 
-You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and then set the `YTP_FLARESOLVERR_URL` environment variable to point to your FlareSolverr instance. For example:
+You need to setup [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) and then set the `YTP_FLARESOLVERR_URL` 
+environment variable to point to your FlareSolverr instance. For example:
 
 ```yaml
 services:
@@ -602,6 +603,3 @@ services:
 ```
 
 For more information please visit [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) project.
-
-> [!NOTE]
-> This will only work for yt-dlp part of the project. Anything else will not be affected by this setting for now.
