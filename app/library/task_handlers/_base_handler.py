@@ -5,6 +5,7 @@ import httpx
 from yt_dlp.utils.networking import random_user_agent
 
 from app.library.config import Config
+from app.library.httpx_client import async_client
 from app.library.Tasks import Task, TaskFailure, TaskResult
 
 
@@ -73,7 +74,7 @@ class BaseHandler:
         if proxy := ytdlp_opts.get("proxy", None):
             opts["proxy"] = proxy
 
-        async with httpx.AsyncClient(**opts) as client:
+        async with async_client(**opts) as client:
             method = kwargs.pop("method", "GET").upper()
             timeout = ytdlp_opts.get("timeout", ytdlp_opts.get("socket_timeout", 120))
             return await client.request(method=method, url=url, timeout=timeout, **kwargs)

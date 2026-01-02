@@ -3,7 +3,6 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
-import httpx
 from aiohttp import web
 from aiohttp.web import Request, Response
 from yt_dlp.utils.networking import random_user_agent
@@ -86,7 +85,9 @@ async def get_doc(request: Request, config: Config, cache: Cache) -> Response:
         except Exception:
             pass
 
-        async with httpx.AsyncClient(**opts) as client:
+        from app.library.httpx_client import async_client
+
+        async with async_client(**opts) as client:
             LOG.debug(f"Fetching doc from '{url}'.")
             response = await client.request(method="GET", url=url, follow_redirects=True)
             dct = {

@@ -95,7 +95,7 @@ class TestInstalledAndLatest:
         mock_version.side_effect = PackageNotFoundError
         assert inst._get_installed_version("bar") is None
 
-    @patch("app.library.PackageInstaller.httpx.Client")
+    @patch("app.library.PackageInstaller.sync_client")
     def test_get_latest_version_success(self, mock_client, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
 
@@ -108,7 +108,7 @@ class TestInstalledAndLatest:
 
         assert inst._get_latest_version("foo") == "9.9.9"
 
-    @patch("app.library.PackageInstaller.httpx.Client")
+    @patch("app.library.PackageInstaller.sync_client")
     def test_get_latest_version_non_200(self, mock_client, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         client = MagicMock()
@@ -118,7 +118,7 @@ class TestInstalledAndLatest:
         mock_client.return_value.__enter__.return_value = client
         assert inst._get_latest_version("foo") is None
 
-    @patch("app.library.PackageInstaller.httpx.Client")
+    @patch("app.library.PackageInstaller.sync_client")
     def test_get_latest_version_exception(self, mock_client, tmp_path: Path) -> None:
         inst = PackageInstaller(pkg_path=tmp_path)
         mock_client.side_effect = RuntimeError("boom")

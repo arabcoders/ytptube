@@ -1,11 +1,11 @@
 # flake8: noqa: F401
+import sys
 from typing import Any
 
 import yt_dlp
 from yt_dlp.utils import make_archive_id
 
-# imported to register the handler with yt-dlp.
-from app.library.CFSolverRH import set_cf_handler
+from app.library.cf_solver_handler import set_cf_handler
 
 
 class _ArchiveProxy:

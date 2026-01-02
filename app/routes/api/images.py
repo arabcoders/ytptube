@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
 
-import httpx
 from aiohttp import web
 from aiohttp.web import Request, Response
 from yt_dlp.utils.networking import random_user_agent
@@ -67,7 +66,9 @@ async def get_thumbnail(request: Request, config: Config) -> Response:
         except Exception:
             pass
 
-        async with httpx.AsyncClient(**opts) as client:
+        from app.library.httpx_client import async_client
+
+        async with async_client(**opts) as client:
             LOG.debug(f"Fetching thumbnail from '{url}'.")
             response = await client.request(method="GET", url=url, follow_redirects=True)
 
@@ -158,7 +159,9 @@ async def get_background(request: Request, config: Config, cache: Cache) -> Resp
         except Exception:
             pass
 
-        async with httpx.AsyncClient(**opts) as client:
+        from app.library.httpx_client import async_client
+
+        async with async_client(**opts) as client:
             if backend.startswith("https://www.bing.com/HPImageArchive.aspx"):
                 if not cache.has(CACHE_KEY_BING):
                     response = await client.request(method="GET", url=backend)

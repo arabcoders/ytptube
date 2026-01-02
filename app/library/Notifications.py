@@ -15,6 +15,7 @@ from .BackgroundWorker import BackgroundWorker
 from .config import Config
 from .encoder import Encoder
 from .Events import Event, EventBus, Events
+from .httpx_client import async_client
 from .ItemDTO import Item, ItemDTO
 from .Presets import Preset, Presets
 from .Singleton import Singleton
@@ -147,7 +148,7 @@ class Notification(metaclass=Singleton):
         "Debug mode."
         self._file: Path = Path(file) if file else Path(config.config_path).joinpath("notifications.json")
         "File to store notification targets."
-        self._client: httpx.AsyncClient = client or httpx.AsyncClient()
+        self._client: httpx.AsyncClient = client or async_client()
         "HTTP client to send requests."
         self._encoder: Encoder = encoder or Encoder()
         "Encoder to encode data."
