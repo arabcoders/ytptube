@@ -1,8 +1,43 @@
 [
     {
-        "tag": "master-20260101-b9421f44",
-        "date": "2026-01-01T19:37:44+00:00",
+        "tag": "master-20260102-67f3a245",
+        "date": "2026-01-02T17:34:48+00:00",
         "commits": [
+            {
+                "sha": "a21fbbc2",
+                "message": "Fix: Removed outdated info",
+                "author": "arabcoders",
+                "date": "2026-01-02T17:25:33+00:00",
+                "full_sha": "a21fbbc2ccb145118971bb31fac27839cf48e6a3"
+            },
+            {
+                "sha": "3c9362d7",
+                "message": "Refactor: update README",
+                "author": "arabcoders",
+                "date": "2026-01-02T17:22:15+00:00",
+                "full_sha": "3c9362d763b94cc808e5aad748c7398448c35c8f"
+            },
+            {
+                "sha": "837de278",
+                "message": "Refactor: change ignore download message",
+                "author": "arabcoders",
+                "date": "2026-01-02T16:55:18+00:00",
+                "full_sha": "837de278b26d8e759f668bc188ceb6da6ce74166"
+            },
+            {
+                "sha": "e1297f37",
+                "message": "Fix: sometimes the socket does not reconnect on mobile",
+                "author": "arabcoders",
+                "date": "2026-01-02T16:25:31+00:00",
+                "full_sha": "e1297f3799bf8f75a4c0421c197ebc7d90d1adff"
+            },
+            {
+                "sha": "5dec5431",
+                "message": "Refactor: integrate cf solver for both yt-dlp and httpx",
+                "author": "arabcoders",
+                "date": "2026-01-02T15:44:52+00:00",
+                "full_sha": "5dec543169a5489c8099d6880df2700604549973"
+            },
             {
                 "sha": "f32bb266",
                 "message": "Refactor: make it possible to enable/disable simple mode via query param",
@@ -3469,7 +3504,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b9421f442a4ed8d414f385dd3ac037bc1c1285fa"
+        "full_sha": "67f3a24580f1aa74cdde441a64afe7cf1e568e65"
     },
     {
         "tag": "master-20250616-c07465a6",

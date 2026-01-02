@@ -1,9 +1,44 @@
 [
   {
-    "tag": "Unreleased (b9421f44)",
-    "full_sha": "b9421f442a4ed8d414f385dd3ac037bc1c1285fa",
-    "date": "2026-01-01T19:37:44+00:00",
+    "tag": "Unreleased (67f3a245)",
+    "full_sha": "67f3a24580f1aa74cdde441a64afe7cf1e568e65",
+    "date": "2026-01-02T17:34:48+00:00",
     "commits": [
+      {
+        "sha": "a21fbbc2",
+        "full_sha": "a21fbbc2ccb145118971bb31fac27839cf48e6a3",
+        "message": "Fix: Removed outdated info",
+        "author": "arabcoders",
+        "date": "2026-01-02T17:25:33+00:00"
+      },
+      {
+        "sha": "3c9362d7",
+        "full_sha": "3c9362d763b94cc808e5aad748c7398448c35c8f",
+        "message": "Refactor: update README",
+        "author": "arabcoders",
+        "date": "2026-01-02T17:22:15+00:00"
+      },
+      {
+        "sha": "837de278",
+        "full_sha": "837de278b26d8e759f668bc188ceb6da6ce74166",
+        "message": "Refactor: change ignore download message",
+        "author": "arabcoders",
+        "date": "2026-01-02T16:55:18+00:00"
+      },
+      {
+        "sha": "e1297f37",
+        "full_sha": "e1297f3799bf8f75a4c0421c197ebc7d90d1adff",
+        "message": "Fix: sometimes the socket does not reconnect on mobile",
+        "author": "arabcoders",
+        "date": "2026-01-02T16:25:31+00:00"
+      },
+      {
+        "sha": "5dec5431",
+        "full_sha": "5dec543169a5489c8099d6880df2700604549973",
+        "message": "Refactor: integrate cf solver for both yt-dlp and httpx",
+        "author": "arabcoders",
+        "date": "2026-01-02T15:44:52+00:00"
+      },
       {
         "sha": "f32bb266",
         "full_sha": "f32bb266bdce31de9bc2ce6d5a5fea6d1f310362",
@@ -52,48 +87,6 @@
         "message": "Refactor: playlists sometimes return different ID what we got",
         "author": "arabcoders",
         "date": "2025-12-30T19:55:15+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "a21fbbc2ccb145118971bb31fac27839cf48e6a3",
-    "date": "2026-01-02T17:25:33+00:00",
-    "commits": [
-      {
-        "sha": "a21fbbc2",
-        "full_sha": "a21fbbc2ccb145118971bb31fac27839cf48e6a3",
-        "message": "Fix: Removed outdated info",
-        "author": "arabcoders",
-        "date": "2026-01-02T17:25:33+00:00"
-      },
-      {
-        "sha": "3c9362d7",
-        "full_sha": "3c9362d763b94cc808e5aad748c7398448c35c8f",
-        "message": "Refactor: update README",
-        "author": "arabcoders",
-        "date": "2026-01-02T17:22:15+00:00"
-      },
-      {
-        "sha": "837de278",
-        "full_sha": "837de278b26d8e759f668bc188ceb6da6ce74166",
-        "message": "Refactor: change ignore download message",
-        "author": "arabcoders",
-        "date": "2026-01-02T16:55:18+00:00"
-      },
-      {
-        "sha": "e1297f37",
-        "full_sha": "e1297f3799bf8f75a4c0421c197ebc7d90d1adff",
-        "message": "Fix: sometimes the socket does not reconnect on mobile",
-        "author": "arabcoders",
-        "date": "2026-01-02T16:25:31+00:00"
-      },
-      {
-        "sha": "5dec5431",
-        "full_sha": "5dec543169a5489c8099d6880df2700604549973",
-        "message": "Refactor: integrate cf solver for both yt-dlp and httpx",
-        "author": "arabcoders",
-        "date": "2026-01-02T15:44:52+00:00"
       }
     ]
   },
