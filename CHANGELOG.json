@@ -91,6 +91,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "8e91eb4ac78f24ba1a58d5a136d2149517380a2b",
+    "date": "2026-01-02T18:04:43+00:00",
+    "commits": [
+      {
+        "sha": "8e91eb4a",
+        "full_sha": "8e91eb4ac78f24ba1a58d5a136d2149517380a2b",
+        "message": "Refactor: streamline contributing guidelines",
+        "author": "arabcoders",
+        "date": "2026-01-02T18:04:43+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.13",
     "full_sha": "18673f0a55330f22f894cfcc2a2ef1a4812cf361",
     "date": "2025-12-30T17:50:44+00:00",
