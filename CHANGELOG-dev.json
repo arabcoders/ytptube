@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260102-8e91eb4a",
-        "date": "2026-01-02T18:04:43+00:00",
+        "tag": "dev-20260103-1c5b4f34",
+        "date": "2026-01-03T14:39:22+00:00",
         "commits": [
+            {
+                "sha": "1c5b4f34",
+                "message": "Refactor: re-design the settings page.",
+                "author": "arabcoders",
+                "date": "2026-01-03T14:39:22+00:00",
+                "full_sha": "1c5b4f344d68e1f5f1b6cd24c677519fbc972414"
+            },
             {
                 "sha": "8e91eb4a",
                 "message": "Refactor: streamline contributing guidelines",
@@ -3511,7 +3518,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "8e91eb4ac78f24ba1a58d5a136d2149517380a2b"
+        "full_sha": "1c5b4f344d68e1f5f1b6cd24c677519fbc972414"
     },
     {
         "tag": "dev-20250616-c07465a6",
