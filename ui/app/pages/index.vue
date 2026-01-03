@@ -163,12 +163,16 @@ watch(() => route.query.tab, (newTab) => {
   activeTab.value = newTab as TabType
 })
 
-onMounted(() => {
+onMounted(async () => {
   const route = useRoute()
 
   if (route.query?.simple !== undefined) {
     const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
     simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
+    await nextTick()
+    const url = new URL(window.location.href)
+    url.searchParams.delete('simple')
+    window.history.replaceState({}, '', url.toString())
   }
 
   activeTab.value = getInitialTab()
