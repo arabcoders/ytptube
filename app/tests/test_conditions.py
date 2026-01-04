@@ -212,6 +212,8 @@ class TestConditions:
                     "cli": "--format worst",
                     "extras": {"category": "short"},
                     "enabled": True,
+                    "priority": 0,
+                    "description": "Download short videos",
                 },
                 {
                     "id": str(uuid.uuid4()),
@@ -220,6 +222,8 @@ class TestConditions:
                     "cli": "--audio-quality 0",
                     "extras": {"type": "audio"},
                     "enabled": False,
+                    "priority": 5,
+                    "description": "High priority music videos",
                 },
             ]
 
@@ -237,11 +241,15 @@ class TestConditions:
             assert conditions._items[0].cli == "--format worst"
             assert conditions._items[0].extras == {"category": "short"}
             assert conditions._items[0].enabled is True
+            assert conditions._items[0].priority == 0
+            assert conditions._items[0].description == "Download short videos"
 
             # Check second condition
             assert conditions._items[1].name == "music_videos"
             assert conditions._items[1].filter == "title ~= 'music'"
             assert conditions._items[1].enabled is False
+            assert conditions._items[1].priority == 5
+            assert conditions._items[1].description == "High priority music videos"
 
     def test_load_conditions_without_id(self):
         """Test loading conditions that don't have ID (should generate ID)."""
@@ -301,6 +309,48 @@ class TestConditions:
                 # Should have generated enabled=True
                 assert len(conditions._items) == 1
                 assert conditions._items[0].enabled is True
+
+                # Should call save due to changes
+                mock_save.assert_called_once()
+
+    def test_load_conditions_without_priority(self):
+        """Test loading conditions that don't have priority field (should default to 0)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "no_priority_conditions.json"
+
+            test_data = [{"id": str(uuid.uuid4()), "name": "no_priority_test", "filter": "duration > 60", "extras": {}}]
+
+            file_path.write_text(json.dumps(test_data))
+
+            with patch.object(Conditions, "save") as mock_save:
+                conditions = Conditions(file=file_path)
+                conditions.load()
+
+                # Should have generated priority=0
+                assert len(conditions._items) == 1
+                assert conditions._items[0].priority == 0
+
+                # Should call save due to changes
+                mock_save.assert_called_once()
+
+    def test_load_conditions_without_description(self):
+        """Test loading conditions that don't have description field (should default to empty string)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "no_description_conditions.json"
+
+            test_data = [
+                {"id": str(uuid.uuid4()), "name": "no_description_test", "filter": "duration > 60", "extras": {}}
+            ]
+
+            file_path.write_text(json.dumps(test_data))
+
+            with patch.object(Conditions, "save") as mock_save:
+                conditions = Conditions(file=file_path)
+                conditions.load()
+
+                # Should have generated description=''
+                assert len(conditions._items) == 1
+                assert conditions._items[0].description == ""
 
                 # Should call save due to changes
                 mock_save.assert_called_once()
@@ -447,6 +497,74 @@ class TestConditions:
             }
 
             with pytest.raises(ValueError, match="Extras must be a dictionary"):
+                conditions.validate(invalid_condition)
+
+    def test_validate_invalid_enabled_type(self):
+        """Test validating condition with non-boolean enabled field."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "invalid_enabled.json"
+            conditions = Conditions(file=file_path)
+
+            invalid_condition = {
+                "id": str(uuid.uuid4()),
+                "name": "invalid_enabled_test",
+                "filter": "duration > 60",
+                "extras": {},
+                "enabled": "yes",  # Should be boolean, not string
+            }
+
+            with pytest.raises(ValueError, match="Enabled must be a boolean"):
+                conditions.validate(invalid_condition)
+
+    def test_validate_invalid_priority_type(self):
+        """Test validating condition with non-integer priority field."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "invalid_priority_type.json"
+            conditions = Conditions(file=file_path)
+
+            invalid_condition = {
+                "id": str(uuid.uuid4()),
+                "name": "invalid_priority_type_test",
+                "filter": "duration > 60",
+                "extras": {},
+                "priority": "10",  # Should be integer, not string
+            }
+
+            with pytest.raises(ValueError, match="Priority must be an integer"):
+                conditions.validate(invalid_condition)
+
+    def test_validate_invalid_priority_negative(self):
+        """Test validating condition with negative priority."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "invalid_priority_negative.json"
+            conditions = Conditions(file=file_path)
+
+            invalid_condition = {
+                "id": str(uuid.uuid4()),
+                "name": "invalid_priority_negative_test",
+                "filter": "duration > 60",
+                "extras": {},
+                "priority": -5,  # Should be >= 0
+            }
+
+            with pytest.raises(ValueError, match="Priority must be >= 0"):
+                conditions.validate(invalid_condition)
+
+    def test_validate_invalid_description_type(self):
+        """Test validating condition with non-string description field."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "invalid_description.json"
+            conditions = Conditions(file=file_path)
+
+            invalid_condition = {
+                "id": str(uuid.uuid4()),
+                "name": "invalid_description_test",
+                "filter": "duration > 60",
+                "extras": {},
+                "description": 123,  # Should be string, not integer
+            }
+
+            with pytest.raises(ValueError, match="Description must be a string"):
                 conditions.validate(invalid_condition)
 
     def test_validate_invalid_item_type(self):
@@ -660,6 +778,32 @@ class TestConditions:
             assert result is enabled_condition
             # Should only call match_str once for enabled condition
             mock_match_str.assert_called_once_with("duration > 120", info_dict)
+
+    @patch("app.library.conditions.match_str")
+    def test_match_priority_sorting(self, mock_match_str):
+        """Test that conditions are evaluated by priority (highest first)."""
+        # All filters will match, so we test that highest priority wins
+        mock_match_str.return_value = True
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "priority_test.json"
+            conditions = Conditions(file=file_path)
+
+            # Add conditions with different priorities (not in priority order)
+            low_priority = Condition(name="low", filter="duration > 60", priority=1)
+            high_priority = Condition(name="high", filter="duration > 60", priority=10)
+            default_priority = Condition(name="default", filter="duration > 60", priority=0)
+
+            # Add in wrong order to verify sorting
+            conditions._items = [low_priority, default_priority, high_priority]
+
+            info_dict = {"duration": 120}
+            result = conditions.match(info_dict)
+
+            # Should match high_priority first (priority=10)
+            assert result is high_priority
+            # Should only call match_str once for highest priority condition
+            mock_match_str.assert_called_once_with("duration > 60", info_dict)
 
     def test_match_empty_filter(self):
         """Test matching with condition that has empty filter."""

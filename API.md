@@ -1511,11 +1511,17 @@ or an error:
     "filter": "...",
     "cli": "...",
     "extras": {},
-    "enabled": true
+    "enabled": true,
+    "priority": 0,
+    "description": "What this condition does"
   },
   ...
 ]
 ```
+
+**Notes**:
+- Conditions are evaluated in priority order (higher priority first).
+- Priority defaults to 0 when not specified.
 
 ---
 
@@ -1531,7 +1537,9 @@ or an error:
     "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
     "cli": "--proxy http://myproxy.com:8080",
     "extras": {},
-    "enabled": true
+    "enabled": true,
+    "priority": 10,
+    "description": "Apply proxy for region-locked videos"
   },
   ...
 ]
@@ -1546,7 +1554,9 @@ or an error:
     "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
     "cli": "--proxy http://myproxy.com:8080",
     "extras": {},
-    "enabled": true
+    "enabled": true,
+    "priority": 10,
+    "description": "Apply proxy for region-locked videos"
   },
   ...
 ]
@@ -1555,6 +1565,7 @@ or an error:
 **Notes**:
 - Disabled conditions (`enabled: false`) will be stored but ignored during matching.
 - All conditions are enabled by default when the `enabled` field is not provided.
+- Priority determines check order. Higher priority conditions are checked first.
 
 ---
 
