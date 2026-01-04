@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260104-0f7e4eff",
-        "date": "2026-01-04T13:47:32+00:00",
+        "tag": "dev-20260104-b03d4ab4",
+        "date": "2026-01-04T15:23:09+00:00",
         "commits": [
+            {
+                "sha": "b03d4ab4",
+                "message": "Refactor: add priority and description fields to conditions",
+                "author": "arabcoders",
+                "date": "2026-01-04T15:23:09+00:00",
+                "full_sha": "b03d4ab42eaffe6eab21a3c8de01d49313c2dc30"
+            },
             {
                 "sha": "0f7e4eff",
                 "message": "Refactor: add enabled field to conditions.",
@@ -3525,7 +3532,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0f7e4effd8c864cc2f4aca93729e739959741872"
+        "full_sha": "b03d4ab42eaffe6eab21a3c8de01d49313c2dc30"
     },
     {
         "tag": "dev-20250616-c07465a6",

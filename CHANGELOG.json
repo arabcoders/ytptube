@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b03d4ab42eaffe6eab21a3c8de01d49313c2dc30",
+    "date": "2026-01-04T15:23:09+00:00",
+    "commits": [
+      {
+        "sha": "b03d4ab4",
+        "full_sha": "b03d4ab42eaffe6eab21a3c8de01d49313c2dc30",
+        "message": "Refactor: add priority and description fields to conditions",
+        "author": "arabcoders",
+        "date": "2026-01-04T15:23:09+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.14",
     "full_sha": "a924ddb718c99501b2eaa583e2ac631631b1037a",
     "date": "2026-01-04T14:30:15+00:00",
