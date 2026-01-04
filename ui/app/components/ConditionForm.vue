@@ -49,7 +49,7 @@
                 </span>
               </div>
 
-              <div class="column is-12">
+              <div class="column is-9-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="name">
                     <span class="icon"><i class="fa-solid fa-tag" /></span>
@@ -62,6 +62,26 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The name that refers to this condition.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-3-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="enabled">
+                    <span class="icon"><i class="fa-solid fa-power-off" /></span>
+                    Enabled
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="enabled" class="is-unselectable">
+                      {{ form.enabled ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Whether the condition is enabled.</span>
                   </span>
                 </div>
               </div>
@@ -276,6 +296,7 @@
 </template>
 
 <script setup lang="ts">
+import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete';
@@ -441,6 +462,10 @@ const importItem = async (): Promise<void> => {
 
     if (item.extras) {
       form.extras = { ...item.extras }
+    }
+
+    if (item.enabled !== undefined) {
+      form.enabled = item.enabled
     }
 
     import_string.value = ''

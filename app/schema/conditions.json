@@ -34,6 +34,11 @@
         "type": "object",
         "description": "Any extra data to store with the condition.",
         "default": {}
+      },
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the condition is enabled.",
+        "default": true
       }
     },
     "examples": [
@@ -43,7 +48,8 @@
         "filter": "duration>3600",
         "extras": {
           "ignore_download": true
-        }
+        },
+        "enabled": true
       },
       {
         "id": "b3c4d5e6-7890-3456-1cde-f23456789012",
@@ -51,7 +57,8 @@
         "filter": "categories~='Music'",
         "extras": {
           "set_preset": "audio-only"
-        }
+        },
+        "enabled": false
       }
     ]
   }

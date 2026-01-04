@@ -50,9 +50,19 @@
               <header class="card-header">
                 <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
                 <div class="card-header-icon">
-                  <a class="has-text-info" v-tooltip="'Export item.'" @click.prevent="exportItem(cond)">
-                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                  </a>
+                  <div class="field is-grouped">
+                    <div class="control" @click="toggleEnabled(cond)">
+                      <span class="icon" :class="cond.enabled ? 'has-text-success' : 'has-text-danger'"
+                        v-tooltip="`Condition is ${cond.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
+                        <i class="fa-solid" :class="cond.enabled ? 'fa-check-circle' : 'fa-times-circle'" />
+                      </span>
+                    </div>
+                    <div class="control">
+                      <a class="has-text-info" v-tooltip="'Export item'" @click.prevent="exportItem(cond)">
+                        <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </header>
               <div class="card-content is-flex-grow-1">
@@ -193,11 +203,11 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
   try {
     addInProgress.value = true
 
-    const validItems = newItems.map(({ id, name, filter, cli, extras }) => {
+    const validItems = newItems.map(({ id, name, filter, cli, extras, enabled }) => {
       if (!name || !filter) {
         throw new Error('Name and filter are required.')
       }
-      return { id, name, filter, cli, extras }
+      return { id, name, filter, cli, extras, enabled }
     })
 
     const response = await request('/api/conditions', {
@@ -271,6 +281,26 @@ const editItem = (_item: ConditionItem): void => {
   item.value = { ..._item }
   itemRef.value = _item.id
   toggleForm.value = true
+}
+
+const toggleEnabled = async (cond: ConditionItem): Promise<void> => {
+  const index = items.value.findIndex(t => t?.id === cond.id)
+  if (-1 === index) {
+    toast.error('Item not found.')
+    return
+  }
+
+  const item = items.value[index]
+  if (!item) {
+    toast.error('Item not found.')
+    return
+  }
+
+  item.enabled = !item.enabled
+  const status = await updateItems(items.value)
+  if (status) {
+    toast[item.enabled ? 'success' : 'warning'](`Condition is ${item.enabled ? 'enabled' : 'disabled'}.`)
+  }
 }
 
 const exportItem = (cond: ConditionItem): void => {
