@@ -37,6 +37,12 @@ class Condition:
     enabled: bool = True
     """Whether the condition is enabled."""
 
+    priority: int = 0
+    """Priority of the condition."""
+
+    description: str = ""
+    """A description of what the condition does."""
+
     def serialize(self) -> dict:
         return self.__dict__
 
@@ -145,6 +151,14 @@ class Conditions(metaclass=Singleton):
                     item["enabled"] = True
                     need_save = True
 
+                if "priority" not in item:
+                    item["priority"] = 0
+                    need_save = True
+
+                if "description" not in item:
+                    item["description"] = ""
+                    need_save = True
+
                 item: Condition = init_class(Condition, item)
 
                 self._items.append(item)
@@ -218,6 +232,23 @@ class Conditions(metaclass=Singleton):
 
         if not isinstance(item.get("extras"), dict):
             msg = "Extras must be a dictionary."
+            raise ValueError(msg)
+
+        if item.get("enabled") is not None and not isinstance(item.get("enabled"), bool):
+            msg = "Enabled must be a boolean."
+            raise ValueError(msg)
+
+        if item.get("priority") is not None:
+            priority = item.get("priority")
+            if not isinstance(priority, int):
+                msg = "Priority must be an integer."
+                raise ValueError(msg)
+            if priority < 0:
+                msg = "Priority must be >= 0."
+                raise ValueError(msg)
+
+        if item.get("description") and not isinstance(item.get("description"), str):
+            msg = "Description must be a string."
             raise ValueError(msg)
 
         return True
@@ -305,7 +336,7 @@ class Conditions(metaclass=Singleton):
         if len(self._items) < 1 or not info or not isinstance(info, dict) or len(info) < 1:
             return None
 
-        for item in self.get_all():
+        for item in sorted(self.get_all(), key=lambda x: x.priority, reverse=True):
             if not item.enabled:
                 continue
 

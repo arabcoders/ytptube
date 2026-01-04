@@ -49,7 +49,7 @@
                 </span>
               </div>
 
-              <div class="column is-9-tablet is-12-mobile">
+              <div class="column is-12">
                 <div class="field">
                   <label class="label is-inline" for="name">
                     <span class="icon"><i class="fa-solid fa-tag" /></span>
@@ -66,7 +66,7 @@
                 </div>
               </div>
 
-              <div class="column is-3-tablet is-12-mobile">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="enabled">
                     <span class="icon"><i class="fa-solid fa-power-off" /></span>
@@ -82,6 +82,23 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">Whether the condition is enabled.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="priority">
+                    <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                    Priority
+                  </label>
+                  <div class="control">
+                    <input type="number" class="input" id="priority" v-model.number="form.priority"
+                      :disabled="addInProgress" min="0" placeholder="0">
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Higher priority conditions are checked first.</span>
                   </span>
                 </div>
               </div>
@@ -133,7 +150,7 @@
                 <div class="field">
                   <label class="label is-inline">
                     <span class="icon"><i class="fa-solid fa-plus-square" /></span>
-                    Extra Options
+                    Extra/Custom Options
                   </label>
                   <div class="content">
                     <div v-if="form.extras && Object.keys(form.extras).length > 0" class="mb-3">
@@ -179,7 +196,7 @@
                         <ul>
                           <li>For advanced users only. This feature is meant to be expanded later.</li>
                           <li>Keys must be lowercase with underscores (e.g., custom_field).</li>
-                          <li>You must click on Add to actually add the option.</li>
+                          <li class="has-text-danger is-bold">You must click on Add to actually add the option.</li>
                           <li>The key <code>ignore_download</code> with value of <code>true</code> will instruct
                             <b>YTPTube</b> to ignore the download and directly mark the item as archived. this is useful
                             to skip certain kind of downloads.
@@ -194,6 +211,24 @@
                   </span>
                 </div>
               </div>
+
+              <div class="column is-12">
+                <div class="field">
+                  <label class="label is-inline" for="description">
+                    <span class="icon"><i class="fa-solid fa-comment" /></span>
+                    Description
+                  </label>
+                  <div class="control">
+                    <textarea class="textarea" id="description" v-model="form.description" :disabled="addInProgress"
+                      placeholder="Describe what this condition does" />
+                  </div>
+                  <span class="help is-bold">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span>Use this field to help understand the purpose of this condition.</span>
+                  </span>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -333,9 +368,20 @@ const test_data = ref<{
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 
-// Initialize extras if not present
 if (!form.extras) {
   form.extras = {}
+}
+
+if (form.enabled === undefined) {
+  form.enabled = true
+}
+
+if (form.priority === undefined) {
+  form.priority = 0
+}
+
+if (form.description === undefined) {
+  form.description = ''
 }
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
@@ -466,6 +512,14 @@ const importItem = async (): Promise<void> => {
 
     if (item.enabled !== undefined) {
       form.enabled = item.enabled
+    }
+
+    if (item.priority !== undefined) {
+      form.priority = item.priority
+    }
+
+    if (item.description !== undefined) {
+      form.description = item.description
     }
 
     import_string.value = ''

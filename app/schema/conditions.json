@@ -39,6 +39,17 @@
         "type": "boolean",
         "description": "Whether the condition is enabled.",
         "default": true
+      },
+      "priority": {
+        "type": "integer",
+        "description": "Priority of the condition.",
+        "default": 0,
+        "minimum": 0
+      },
+      "description": {
+        "type": "string",
+        "description": "A description of what the condition does.",
+        "default": ""
       }
     },
     "examples": [
@@ -49,7 +60,9 @@
         "extras": {
           "ignore_download": true
         },
-        "enabled": true
+        "enabled": true,
+        "priority": 10,
+        "description": "Ignore downloads for videos longer than 1 hour."
       },
       {
         "id": "b3c4d5e6-7890-3456-1cde-f23456789012",
@@ -58,7 +71,9 @@
         "extras": {
           "set_preset": "audio-only"
         },
-        "enabled": false
+        "enabled": false,
+        "priority": 0,
+        "description": "Apply audio-only preset for videos in the Music category."
       }
     ]
   }

@@ -51,6 +51,12 @@
                 <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
                 <div class="card-header-icon">
                   <div class="field is-grouped">
+                    <div class="control" v-if="cond.priority > 0">
+                      <span class="tag is-dark">
+                        <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                        <span v-text="cond.priority" />
+                      </span>
+                    </div>
                     <div class="control" @click="toggleEnabled(cond)">
                       <span class="icon" :class="cond.enabled ? 'has-text-success' : 'has-text-danger'"
                         v-tooltip="`Condition is ${cond.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
@@ -82,6 +88,11 @@
                         <strong>{{ key }}</strong>: {{ value }}
                       </span>
                     </span>
+                  </p>
+                  <p class="is-clickable" :class="{ 'is-text-overflow': !isExpanded(cond.id, 'description') }"
+                    v-if="cond.description" @click="toggleExpand(cond.id, 'description')">
+                    <span class="icon"><i class="fa-solid fa-comment" /></span>
+                    <span>{{ cond.description }}</span>
                   </p>
                 </div>
               </div>
@@ -154,7 +165,27 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
-const remove_keys = ['in_progress', 'raw']
+const remove_keys = ['raw', 'toggle_description']
+const expandedItems = ref<Record<string, Set<string>>>({})
+
+const toggleExpand = (itemId: string | undefined, field: string) => {
+  if (!itemId) return
+
+  if (!expandedItems.value[itemId]) {
+    expandedItems.value[itemId] = new Set()
+  }
+
+  if (expandedItems.value[itemId].has(field)) {
+    expandedItems.value[itemId].delete(field)
+  } else {
+    expandedItems.value[itemId].add(field)
+  }
+}
+
+const isExpanded = (itemId: string | undefined, field: string): boolean => {
+  if (!itemId) return false
+  return expandedItems.value[itemId]?.has(field) ?? false
+}
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
@@ -203,11 +234,11 @@ const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
   try {
     addInProgress.value = true
 
-    const validItems = newItems.map(({ id, name, filter, cli, extras, enabled }) => {
+    const validItems = newItems.map(({ id, name, filter, cli, extras, enabled, priority, description }) => {
       if (!name || !filter) {
         throw new Error('Name and filter are required.')
       }
-      return { id, name, filter, cli, extras, enabled }
+      return { id, name, filter, cli, extras, enabled, priority, description }
     })
 
     const response = await request('/api/conditions', {

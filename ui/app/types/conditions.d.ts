@@ -5,6 +5,8 @@ export type ConditionItem = {
   cli: string
   extras: Record<string, any>
   enabled: boolean
+  priority: number
+  description: string
 }
 
 export type ImportedConditionItem = ConditionItem & {
