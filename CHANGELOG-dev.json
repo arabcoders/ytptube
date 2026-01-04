@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260104-a6b68ed3",
-        "date": "2026-01-04T16:31:41+00:00",
+        "tag": "dev-20260104-6f717de3",
+        "date": "2026-01-04T20:26:09+00:00",
         "commits": [
+            {
+                "sha": "6f717de3",
+                "message": "Refactor: make the UI buttons more consistent",
+                "author": "arabcoders",
+                "date": "2026-01-04T20:26:09+00:00",
+                "full_sha": "6f717de34531ce749daa2fc6c1b602b4f6ef72ac"
+            },
+            {
+                "sha": "c272fa90",
+                "message": "Feat: Add popover component with the ability to disable it",
+                "author": "arabcoders",
+                "date": "2026-01-04T20:25:30+00:00",
+                "full_sha": "c272fa903df2ce473a8a66bbd1411d779fc2151f"
+            },
             {
                 "sha": "a6b68ed3",
                 "message": "Refactor: add enabled field to notifications.",
@@ -3546,7 +3560,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a6b68ed3e46520a84e642d9827749ed1073387f0"
+        "full_sha": "6f717de34531ce749daa2fc6c1b602b4f6ef72ac"
     },
     {
         "tag": "dev-20250616-c07465a6",
