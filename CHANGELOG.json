@@ -92,9 +92,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "1c5b4f344d68e1f5f1b6cd24c677519fbc972414",
-    "date": "2026-01-03T14:39:22+00:00",
+    "full_sha": "0f7e4effd8c864cc2f4aca93729e739959741872",
+    "date": "2026-01-04T13:47:32+00:00",
     "commits": [
+      {
+        "sha": "0f7e4eff",
+        "full_sha": "0f7e4effd8c864cc2f4aca93729e739959741872",
+        "message": "Refactor: add enabled field to conditions.",
+        "author": "arabcoders",
+        "date": "2026-01-04T13:47:32+00:00"
+      },
       {
         "sha": "1c5b4f34",
         "full_sha": "1c5b4f344d68e1f5f1b6cd24c677519fbc972414",
