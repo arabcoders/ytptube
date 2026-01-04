@@ -2,38 +2,16 @@
 
   <template v-if="simpleMode">
     <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-    <Simple @show_settings="() => show_settings = true" />
+    <Simple @show_settings="() =>show_settings = true"
+      :class="{ 'settings-open': show_settings }" />
   </template>
 
-  <template v-if="show_settings">
-    <Modal @close="closeSettings()"
-      :content-class="isMobile ? 'modal-content-max is-overflow-scroll ' : 'modal-content-max'">
-      <div class="columns is-multiline" style="width:100%">
-        <div class="column is-12">
-          <div class="card">
-            <header class="card-header">
-              <p class="card-header-title">WebUI Settings</p>
-              <span class="card-header-icon">
-                <span class="icon"><i class="fas fa-cog" /></span>
-              </span>
-            </header>
-            <div class="card-content">
-              <div class="columns is-multiline">
-                <div class="column is-12">
-                  <settings v-if="show_settings" :isLoading="loadingImage" @reload_bg="() => loadImage(true)"
-                    @close="closeSettings()" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Modal>
-  </template>
+  <SettingsPanel :isOpen="show_settings" :isLoading="loadingImage" @close="closeSettings()"
+    @reload_bg="() => loadImage(true)" direction="right" />
 
   <template v-if="!simpleMode">
     <Shutdown v-if="app_shutdown" />
-    <div id="main_container" class="container" v-else>
+    <div id="main_container" class="container" :class="{ 'settings-open': show_settings }" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
       <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
       <nav class="navbar is-mobile is-dark">
@@ -142,11 +120,11 @@
             </div>
 
             <div class="navbar-item">
-              <NuxtLink class="button is-dark " :class="{ 'has-tooltip-bottom mr-4': !isMobile }" to="/settings"
-                @click.prevent="(e: MouseEvent) => changeRoute(e)">
+              <button class="button is-dark " :class="{ 'has-tooltip-bottom mr-4': !isMobile }"
+                @click="show_settings = !show_settings">
                 <span class="icon"><i class="fas fa-cog" /></span>
                 <span v-if="isMobile">WebUI Settings</span>
-              </NuxtLink>
+              </button>
             </div>
 
           </div>
@@ -226,7 +204,6 @@ import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
 import Connection from '~/components/Connection.vue'
-import Settings from "~/pages/settings.vue";
 
 const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
@@ -241,7 +218,6 @@ const isMobile = useMediaQuery({ maxWidth: 1024 })
 const app_shutdown = ref<boolean>(false)
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
 const show_settings = ref(false)
-
 const doc = ref<{ file: string }>({ file: '' })
 
 const applyPreferredColorScheme = (scheme: string) => {
@@ -525,3 +501,23 @@ const connectionStatusColor = computed(() => {
 
 const scrollToTop = () => document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' });
 </script>
+
+<style>
+#main_container,
+.basic-wrapper {
+  transition: transform 0.3s ease, margin-right 0.3s ease;
+}
+
+#main_container.settings-open,
+.basic-wrapper.settings-open {
+  transform: translateX(-300px);
+}
+
+@media screen and (max-width: 768px) {
+
+  #main_container.settings-open,
+  .basic-wrapper.settings-open {
+    transform: translateX(0);
+  }
+}
+</style>

@@ -41,6 +41,7 @@ class TestCondition:
         # Check defaults
         assert condition.cli == ""
         assert condition.extras == {}
+        assert condition.enabled is True
 
     def test_condition_creation_with_all_fields(self):
         """Test creating a condition with all fields specified."""
@@ -48,7 +49,7 @@ class TestCondition:
         extras = {"key": "value", "number": 42}
 
         condition = Condition(
-            id=test_id, name="full_test", filter="uploader = 'test'", cli="--format best", extras=extras
+            id=test_id, name="full_test", filter="uploader = 'test'", cli="--format best", extras=extras, enabled=False
         )
 
         assert condition.id == test_id
@@ -56,6 +57,7 @@ class TestCondition:
         assert condition.filter == "uploader = 'test'"
         assert condition.cli == "--format best"
         assert condition.extras == extras
+        assert condition.enabled is False
 
     def test_condition_serialize(self):
         """Test condition serialization to dict."""
@@ -209,6 +211,7 @@ class TestConditions:
                     "filter": "duration < 300",
                     "cli": "--format worst",
                     "extras": {"category": "short"},
+                    "enabled": True,
                 },
                 {
                     "id": str(uuid.uuid4()),
@@ -216,6 +219,7 @@ class TestConditions:
                     "filter": "title ~= 'music'",
                     "cli": "--audio-quality 0",
                     "extras": {"type": "audio"},
+                    "enabled": False,
                 },
             ]
 
@@ -232,10 +236,12 @@ class TestConditions:
             assert conditions._items[0].filter == "duration < 300"
             assert conditions._items[0].cli == "--format worst"
             assert conditions._items[0].extras == {"category": "short"}
+            assert conditions._items[0].enabled is True
 
             # Check second condition
             assert conditions._items[1].name == "music_videos"
             assert conditions._items[1].filter == "title ~= 'music'"
+            assert conditions._items[1].enabled is False
 
     def test_load_conditions_without_id(self):
         """Test loading conditions that don't have ID (should generate ID)."""
@@ -275,6 +281,26 @@ class TestConditions:
                 # Should have generated empty extras
                 assert len(conditions._items) == 1
                 assert conditions._items[0].extras == {}
+
+                # Should call save due to changes
+                mock_save.assert_called_once()
+
+    def test_load_conditions_without_enabled(self):
+        """Test loading conditions that don't have enabled field (should default to True)."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "no_enabled_conditions.json"
+
+            test_data = [{"id": str(uuid.uuid4()), "name": "no_enabled_test", "filter": "duration > 60", "extras": {}}]
+
+            file_path.write_text(json.dumps(test_data))
+
+            with patch.object(Conditions, "save") as mock_save:
+                conditions = Conditions(file=file_path)
+                conditions.load()
+
+                # Should have generated enabled=True
+                assert len(conditions._items) == 1
+                assert conditions._items[0].enabled is True
 
                 # Should call save due to changes
                 mock_save.assert_called_once()
@@ -613,6 +639,28 @@ class TestConditions:
 
             assert result is None
 
+    @patch("app.library.conditions.match_str")
+    def test_match_disabled_condition(self, mock_match_str):
+        """Test that disabled conditions are skipped during matching."""
+        mock_match_str.return_value = True
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "disabled_match_test.json"
+            conditions = Conditions(file=file_path)
+
+            # Add disabled condition
+            disabled_condition = Condition(name="disabled_test", filter="duration > 60", enabled=False)
+            enabled_condition = Condition(name="enabled_test", filter="duration > 120", enabled=True)
+            conditions._items = [disabled_condition, enabled_condition]
+
+            info_dict = {"duration": 150}
+            result = conditions.match(info_dict)
+
+            # Should skip disabled condition and match enabled one
+            assert result is enabled_condition
+            # Should only call match_str once for enabled condition
+            mock_match_str.assert_called_once_with("duration > 120", info_dict)
+
     def test_match_empty_filter(self):
         """Test matching with condition that has empty filter."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -685,6 +733,21 @@ class TestConditions:
             info_dict = {"duration": 120}
             result = conditions.single_match("no_filter_single", info_dict)
 
+            assert result is None
+
+    def test_single_match_disabled_condition(self):
+        """Test single matching with disabled condition."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            file_path = Path(temp_dir) / "disabled_single_test.json"
+            conditions = Conditions(file=file_path)
+
+            test_condition = Condition(name="disabled_single", filter="duration > 60", enabled=False)
+            conditions._items = [test_condition]
+
+            info_dict = {"duration": 120}
+            result = conditions.single_match("disabled_single", info_dict)
+
+            # Should return None because condition is disabled
             assert result is None
 
     def test_single_match_invalid_inputs(self):

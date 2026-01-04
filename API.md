@@ -1510,7 +1510,8 @@ or an error:
     "name": "condition_name",
     "filter": "...",
     "cli": "...",
-    ...
+    "extras": {},
+    "enabled": true
   },
   ...
 ]
@@ -1529,6 +1530,8 @@ or an error:
     "name": "Use proxy for region locked content",
     "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
     "cli": "--proxy http://myproxy.com:8080",
+    "extras": {},
+    "enabled": true
   },
   ...
 ]
@@ -1542,10 +1545,16 @@ or an error:
     "name": "Use proxy for region locked content",
     "filter": "availability = 'needs_auth' & channel_id = 'channel_id'",
     "cli": "--proxy http://myproxy.com:8080",
+    "extras": {},
+    "enabled": true
   },
   ...
 ]
 ```
+
+**Notes**:
+- Disabled conditions (`enabled: false`) will be stored but ignored during matching.
+- All conditions are enabled by default when the `enabled` field is not provided.
 
 ---
 

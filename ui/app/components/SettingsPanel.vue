@@ -1,51 +1,39 @@
 <template>
-  <main class="m-6">
-
-    <div>
-      <template v-if="!simpleMode">
-        <span class="title is-4">
-          <span class="icon-text">
-            <span class="icon"><i class="fas fa-cog" /></span>
-            <p class="card-header-title">WebUI Settings</p>
-          </span>
-        </span>
-        <span class="field is-horizontal" />
-      </template>
-
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Page View</label>
-        </div>
-        <div class="field-body">
+  <div class="modal" :class="{ 'is-active': isOpen }">
+    <div class="modal-background" @click="emitter('close')" />
+    <div class="modal-card"
+      :class="{ 'slide-from-right': direction === 'right', 'slide-from-left': direction === 'left' }">
+      <header class="modal-card-head is-rounded-less">
+        <p class="modal-card-title">WebUI Settings</p>
+        <button class="delete" @click="emitter('close')" aria-label="close" />
+      </header>
+      <section class="modal-card-body">
+        <div class="box">
           <div class="field">
-            <div class="control is-expanded has-icons-left">
+            <label class="label">Page View</label>
+            <div class="control">
               <input id="view_mode" type="checkbox" class="switch is-success" v-model="simpleMode">
               <label for="view_mode" class="is-unselectable">
                 {{ simpleMode ? 'Simple View' : 'Regular View' }}
               </label>
             </div>
             <p class="help">
-              <span class="icon"> <i class="fa-solid fa-info-circle" /></span>
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
               The simple view is ideal for non-technical users and mobile devices.
             </p>
           </div>
         </div>
-      </div>
 
-      <span class="field title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-palette" /></span>
-          <p class="card-header-title">Theming</p>
-        </span>
-      </span>
-      <span class="field is-horizontal" />
+        <div class="box">
+          <p class="title is-5 mb-4">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-palette" /></span>
+              <span>Theming</span>
+            </span>
+          </p>
 
-      <div class="field is-horizontal">
-        <div class="field-label">
-          <label class="label">Color scheme</label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
+          <div class="field">
+            <label class="label">Color scheme</label>
             <div class="control">
               <label for="auto" class="radio">
                 <input id="auto" type="radio" v-model="selectedTheme" value="auto">
@@ -64,15 +52,9 @@
               </label>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Show Background</label>
-        </div>
-        <div class="field-body">
           <div class="field">
+            <label class="label">Show Background</label>
             <div class="control">
               <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable">
               <label for="random_bg" class="is-unselectable">
@@ -80,62 +62,42 @@
               </label>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label"></label>
-        </div>
-        <div class="field-body">
-          <div class="field">
+          <div class="field" v-if="bg_enable">
             <div class="control">
-              <template v-if="bg_enable">
-                <button @click="$emit('reload_bg')" class="has-text-link" :disabled="isLoading">
-                  <span class="icon-text">
-                    <span class="icon"><i class="fa"
-                        :class="{ 'fa-spin fa-spinner': isLoading, 'fa-file-image': !isLoading }" /></span>
-                    <span>Reload Background</span>
-                  </span>
-                </button>
-              </template>
+              <button @click="$emit('reload_bg')" class="button is-link is-light is-fullwidth" :disabled="isLoading">
+                <span class="icon"><i class="fa"
+                    :class="{ 'fa-spin fa-spinner': isLoading, 'fa-file-image': !isLoading }" /></span>
+                <span>Reload Background</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="field" v-if="bg_enable">
+            <label class="label">Background visibility</label>
+            <div class="field has-addons">
+              <div class="control">
+                <a class="button is-static">
+                  <code>{{ parseFloat(String(1.0 - bg_opacity)).toFixed(2) }}</code>
+                </a>
+              </div>
+              <div class="control is-expanded">
+                <input class="input" type="range" v-model="bg_opacity" min="0.50" max="1.00" step="0.05">
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Background visibility</label>
-        </div>
-        <div class="field-body">
-          <div class="field is-expanded">
-            <a class="button is-static is-small">
-              <code>{{ parseFloat(String(1.0 - bg_opacity)).toFixed(2) }}</code>
-            </a>
+        <div class="box">
+          <p class="title is-5 mb-4">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-home" /></span>
+              <span>Dashboard</span>
+            </span>
+          </p>
 
-            <div class="control">
-              <input id="random_bg_opacity" style="width: 100%" type="range" v-model="bg_opacity" min="0.50" max="1.00"
-                step="0.05">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <span class="field title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-home" /></span>
-          <p class="card-header-title">Dashboard</p>
-        </span>
-      </span>
-      <span class="field is-horizontal" />
-
-      <div class="field is-horizontal" v-if="!simpleMode">
-        <div class="field-label is-normal">
-          <label class="label">URL Separator</label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
+          <div class="field" v-if="!simpleMode">
+            <label class="label">URL Separator</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select v-model="separator">
@@ -146,17 +108,10 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Show Thumbnails</label>
-        </div>
-
-        <div class="field-body">
-          <div class="control">
-            <div class="field">
+          <div class="field">
+            <label class="label">Show Thumbnails</label>
+            <div class="control">
               <input id="show_thumbnail" type="checkbox" class="switch is-success" v-model="show_thumbnail">
               <label for="show_thumbnail" class="is-unselectable">
                 {{ show_thumbnail ? 'Yes' : 'No' }}
@@ -167,17 +122,10 @@
               Show videos thumbnail if available
             </p>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal" v-if="show_thumbnail">
-        <div class="field-label is-normal">
-          <label class="label">Aspect Ratio</label>
-        </div>
-
-        <div class="field-body">
-          <div class="control">
-            <div class="field">
+          <div class="field" v-if="show_thumbnail">
+            <label class="label">Aspect Ratio</label>
+            <div class="control">
               <label for="ratio_16by9" class="radio">
                 <input id="ratio_16by9" type="radio" v-model="thumbnail_ratio" value="is-16by9">
                 <span>&nbsp;16:9</span>
@@ -193,39 +141,27 @@
             </p>
           </div>
         </div>
-      </div>
 
-      <span class="field title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-bell" /></span>
-          <p class="card-header-title">Notifications</p>
-        </span>
-      </span>
-      <span class="field is-horizontal" />
+        <div class="box">
+          <p class="title is-5 mb-4">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-bell" /></span>
+              <span>Notifications</span>
+            </span>
+          </p>
 
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label class="label">Show notifications</label>
-        </div>
-
-        <div class="field-body">
-          <div class="control">
-            <div class="field">
+          <div class="field">
+            <label class="label">Show notifications</label>
+            <div class="control">
               <input id="allow_toasts" type="checkbox" class="switch is-success" v-model="allow_toasts">
               <label for="allow_toasts" class="is-unselectable">
                 {{ allow_toasts ? 'Yes' : 'No' }}
               </label>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal" v-if="allow_toasts">
-        <div class="field-label is-normal">
-          <label class="label">Notification target</label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
+          <div class="field" v-if="allow_toasts">
+            <label class="label">Notification target</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select v-model="toast_target" @change="onNotificationTargetChange">
@@ -244,15 +180,9 @@
               </template>
             </p>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal" v-if="allow_toasts && toast_target === 'toast'">
-        <div class="field-label is-normal">
-          <label class="label">Notifications position</label>
-        </div>
-        <div class="field-body">
-          <div class="field is-narrow">
+          <div class="field" v-if="allow_toasts && toast_target === 'toast'">
+            <label class="label">Notifications position</label>
             <div class="control">
               <div class="select is-fullwidth">
                 <select v-model="toast_position">
@@ -266,17 +196,10 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <div class="field is-horizontal" v-if="allow_toasts && toast_target === 'toast'">
-        <div class="field-label is-normal">
-          <label class="label">Dismiss notification on click</label>
-        </div>
-
-        <div class="field-body">
-          <div class="control">
-            <div class="field">
+          <div class="field" v-if="allow_toasts && toast_target === 'toast'">
+            <label class="label">Dismiss notification on click</label>
+            <div class="control">
               <input id="dismiss_on_click" type="checkbox" class="switch is-success" v-model="toast_dismiss_on_click">
               <label for="dismiss_on_click" class="is-unselectable">
                 {{ toast_dismiss_on_click ? 'Yes' : 'No' }}
@@ -284,22 +207,31 @@
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
 import 'assets/css/bulma-switch.css'
+import { watch, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useStorage } from '@vueuse/core'
-import { ref, onMounted } from 'vue'
 import { POSITION } from 'vue-toastification'
 import { useConfigStore } from '~/stores/ConfigStore'
 import { useNotification } from '~/composables/useNotification'
 import type { notificationTarget } from '~/composables/useNotification'
 
-defineProps<{ isLoading: boolean }>()
-const emitter = defineEmits<{ (e: 'reload_bg' | 'close'): void }>()
+const props = withDefaults(defineProps<{
+  isOpen?: boolean
+  direction?: 'left' | 'right'
+  isLoading?: boolean
+}>(), {
+  isOpen: false,
+  direction: 'right',
+  isLoading: false
+})
+
+const emitter = defineEmits<{ (e: 'close' | 'reload_bg'): void }>()
 
 const config = useConfigStore()
 const notification = useNotification()
@@ -317,13 +249,26 @@ const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
 const isSecureContext = ref<boolean>(false)
 
+const handleKeydown = (e: KeyboardEvent) => {
+  if ('Escape' === e.key && props.isOpen) {
+    e.preventDefault()
+    e.stopPropagation()
+    emitter('close')
+  }
+}
+
 onMounted(async () => {
   isSecureContext.value = window.isSecureContext
   await nextTick()
+
   if ('browser' === toast_target.value && !isSecureContext.value) {
     toast_target.value = 'toast'
   }
+
+  document.addEventListener('keydown', handleKeydown)
 })
+
+onBeforeUnmount(() => document.removeEventListener('keydown', handleKeydown))
 
 const onNotificationTargetChange = async (): Promise<void> => {
   if ('browser' === toast_target.value) {
@@ -335,5 +280,74 @@ const onNotificationTargetChange = async (): Promise<void> => {
   }
 }
 
-watch(simpleMode, async () => emitter('close'))
+watch(() => props.isOpen, isOpen => {
+  if (isOpen) {
+    document.body.classList.add('settings-panel-open')
+  } else {
+    document.body.classList.remove('settings-panel-open')
+  }
+})
 </script>
+
+<style scoped>
+.modal-card.slide-from-right {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  width: 600px;
+  max-width: 90vw;
+  transition: transform 0.3s ease;
+  transform: translateX(100%);
+}
+
+.modal.is-active .modal-card.slide-from-right {
+  transform: translateX(0);
+}
+
+.modal-card.slide-from-left {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  max-height: 100vh;
+  margin: 0;
+  width: 600px;
+  max-width: 90vw;
+  transition: transform 0.3s ease;
+  transform: translateX(-100%);
+}
+
+.modal.is-active .modal-card.slide-from-left {
+  transform: translateX(0);
+}
+
+.modal-card-body {
+  overflow-y: auto;
+}
+
+@media screen and (max-width: 768px) {
+
+  .modal-card.slide-from-right,
+  .modal-card.slide-from-left {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+:global(body.settings-panel-open) {
+  overflow: hidden;
+}
+
+#main_container {
+  transition: transform 0.3s ease;
+}
+
+@media screen and (min-width: 769px) {
+  :global(.settings-open #main_container) {
+    transform: translateX(-300px);
+  }
+}
+</style>

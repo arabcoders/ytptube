@@ -4,6 +4,7 @@ export type ConditionItem = {
   filter: string
   cli: string
   extras: Record<string, any>
+  enabled: boolean
 }
 
 export type ImportedConditionItem = ConditionItem & {

@@ -34,6 +34,9 @@ class Condition:
     extras: dict[str, Any] = field(default_factory=dict)
     """Any extra data to store with the condition."""
 
+    enabled: bool = True
+    """Whether the condition is enabled."""
+
     def serialize(self) -> dict:
         return self.__dict__
 
@@ -138,6 +141,10 @@ class Conditions(metaclass=Singleton):
                     item["extras"] = {}
                     need_save = True
 
+                if "enabled" not in item:
+                    item["enabled"] = True
+                    need_save = True
+
                 item: Condition = init_class(Condition, item)
 
                 self._items.append(item)
@@ -146,7 +153,7 @@ class Conditions(metaclass=Singleton):
                 continue
 
         if need_save:
-            LOG.info("Saving conditions due changes.")
+            LOG.warning("Saving conditions due to schema changes.")
             self.save(self._items)
 
         return self
@@ -299,6 +306,9 @@ class Conditions(metaclass=Singleton):
             return None
 
         for item in self.get_all():
+            if not item.enabled:
+                continue
+
             if not item.filter:
                 LOG.error(f"Filter is empty for '{item.name}'.")
                 continue
@@ -330,7 +340,7 @@ class Conditions(metaclass=Singleton):
             return None
 
         item = self.get(name)
-        if not item or not item.filter:
+        if not item or not item.enabled or not item.filter:
             return None
 
         return item if match_str(item.filter, info) else None

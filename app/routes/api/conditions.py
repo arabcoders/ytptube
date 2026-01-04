@@ -94,6 +94,9 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
         if not item.get("extras"):
             item["extras"] = {}
 
+        if "enabled" not in item:
+            item["enabled"] = True
+
         if not item.get("id", None) or not validate_uuid(item.get("id"), version=4):
             item["id"] = str(uuid.uuid4())
 

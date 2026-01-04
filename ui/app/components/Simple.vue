@@ -1,10 +1,11 @@
 <template>
-  <div class="basic-wrapper">
+  <div class="basic-wrapper" :class="{ 'settings-open': settingsOpen }">
     <div class="form-container" :class="{ 'is-centered': shouldCenterForm }">
       <section class="download-form box">
         <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
           <label class="label" for="download-url">
-            {{ greetingMessage }}
+            <template v-if="!isMobile">{{ greetingMessage }}</template>
+            <template v-else>What would you like to download?</template>
             <span class="is-pulled-right">
               <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
                 v-tooltip="'WebUI Settings'">
@@ -106,7 +107,9 @@
                   </figure>
                   <div class="media-content is-grid">
                     <p class="title is-6 mb-0 queue-title">
-                      <NuxtLink target="_blank" :href="entry.item.url">{{ entry.item.title }}</NuxtLink>
+                      <NuxtLink target="_blank" :href="entry.item.url" v-tooltip="entry.item.title">
+                        {{ entry.item.title || 'Untitled' }}
+                      </NuxtLink>
                     </p>
                     <div class="field is-grouped is-unselectable">
                       <div class="control">
@@ -205,7 +208,6 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
     </div>
-
   </div>
 </template>
 
@@ -225,10 +227,19 @@ import { ag, encodePath, formatTime, makeDownload, request, stripPath, ucFirst, 
 
 defineEmits<{ (e: 'show_settings'): void }>()
 
+withDefaults(defineProps<{
+  settingsOpen?: boolean
+}>(), {
+  settingsOpen: false
+})
+
 const configStore = useConfigStore()
 const stateStore = useStateStore()
 const socketStore = useSocketStore()
 const toast = useNotification()
+const dlFields = useStorage<Record<string, any>>('dl_fields', {})
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const { app, paused, presets } = storeToRefs(configStore)
 const { queue, history } = storeToRefs(stateStore)
@@ -241,12 +252,9 @@ const formUrl = ref<string>('')
 const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
 const addInProgress = ref<boolean>(false)
 const showExtras = ref<boolean>(false)
-const dlFields = useStorage<Record<string, any>>('dl_fields', {})
-const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+
 const paginationInfo = computed(() => stateStore.getPagination())
-
 const queueItems = computed<StoreItem[]>(() => Object.values(queue.value ?? {}).slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)))
-
 const historyEntries = computed<StoreItem[]>(() => {
   const items = Object.values(history.value ?? {})
   return items.slice().sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
@@ -654,6 +662,10 @@ onMounted(async () => {
   if (route.query?.simple !== undefined) {
     const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false)
     simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
+    await nextTick()
+    const url = new URL(window.location.href)
+    url.searchParams.delete('simple')
+    window.history.replaceState({}, '', url.toString())
   }
 
   if (socketStore.isConnected && !paginationInfo.value.isLoaded) {
@@ -718,6 +730,17 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
   align-items: center;
   gap: 2.5rem;
   padding: 2rem 1rem 4rem;
+  transition: transform 0.3s ease;
+}
+
+.basic-wrapper.settings-open {
+  transform: translateX(-300px);
+}
+
+@media screen and (max-width: 768px) {
+  .basic-wrapper.settings-open {
+    transform: translateX(0);
+  }
 }
 
 .form-container {
