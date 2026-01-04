@@ -73,18 +73,31 @@
                   <span class="tag is-info" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
+                  <span class="icon is-pointer" v-if="item.download_dir"
+                    v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
+                    <i class="fa-solid fa-folder-open" />
+                  </span>
                 </div>
-                <div v-if="showThumbnails && item.extras?.thumbnail">
-                  <FloatingImage
-                    :image="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                    :title="item.title">
-                    <div class="is-text-overflow">
-                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                    </div>
-                  </FloatingImage>
+                <div v-if="show_popover">
+                  <div class="is-text-overflow">
+                    <Popover :showDelay="400" :maxWidth="450">
+                      <template #trigger>
+                        <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                      </template>
+                      <template #title>
+                        <strong>
+                          {{ item.title }}
+                          <span class="tag is-info is-unselectable">{{ item.preset }}</span>
+                        </strong>
+                      </template>
+                      <img v-if="showThumbnails && getImage(config.app.download_path, item)"
+                        :src="getImage(config.app.download_path, item)" class="mt-2 mb-2" />
+                      <p v-if="item.description">{{ item.description }}</p>
+                    </Popover>
+                  </div>
                 </div>
                 <template v-else>
-                  <div class="is-text-overflow" v-tooltip="item.title">
+                  <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
                     <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                   </div>
                 </template>
@@ -162,15 +175,28 @@
       v-for="item in filteredItems" :key="item._id">
       <div class="card">
         <header class="card-header">
-          <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-            <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+          <div class="card-header-title is-text-overflow is-block">
+            <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
+              <template #trigger>
+                <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+              </template>
+              <template #title><strong>{{ item.title }}</strong></template>
+              <p v-if="item.description">{{ item.description }}</p>
+            </Popover>
+            <template v-else>
+              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+            </template>
           </div>
           <div class="card-header-icon">
             <div class="field is-grouped">
-
               <div class="control">
-                <span class="tag is-info" v-if="item.extras?.duration">
+                <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
                   {{ formatTime(item.extras.duration) }}
+                </span>
+              </div>
+              <div class="control" v-if="item.download_dir">
+                <span class="icon" v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
+                  <i class="fa-solid fa-folder-open" />
                 </span>
               </div>
               <div class="control">
@@ -193,14 +219,13 @@
             <span v-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
               class="play-overlay">
               <div class="play-icon embed-icon"></div>
-              <img @load="pImg" @error="onImgError"
-                :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))"
-                v-if="item.extras?.thumbnail" />
+              <img @load="pImg" @error="onImgError" v-if="getImage(config.app.download_path, item)"
+                :src="getImage(config.app.download_path, item)" />
               <img v-else src="/images/placeholder.png" />
             </span>
             <template v-else>
-              <img @load="pImg" @error="onImgError" v-if="item.extras?.thumbnail"
-                :src="uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))" />
+              <img @load="pImg" @error="onImgError" v-if="getImage(config.app.download_path, item)"
+                :src="getImage(config.app.download_path, item)" />
               <img v-else src="/images/placeholder.png" />
             </template>
           </figure>
@@ -221,7 +246,7 @@
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
               <span class="icon"><i class="fa-solid fa-sliders" /></span>
-              <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
+              <span v-tooltip="`Preset: ${item.preset}`" class="has-tooltip">{{ item.preset }}</span>
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
               <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
@@ -344,6 +369,7 @@ const display_style = useStorage('display_style', 'grid')
 const bg_enable = useStorage('random_bg', true)
 const bg_opacity = useStorage('random_bg_opacity', 0.95)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
+const show_popover = useStorage<boolean>('show_popover', true)
 
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)

@@ -82,21 +82,21 @@
                     <td class="is-vcentered is-items-center">
                       <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                          <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
-                            @click="exportItem(item)">
+                          <button class="button is-info is-small is-fullwidth" @click="exportItem(item)">
                             <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                            <span v-if="!isMobile">Export</span>
                           </button>
                         </div>
                         <div class="control">
-                          <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
-                            @click="editItem(item)">
+                          <button class="button is-warning is-small is-fullwidth" @click="editItem(item)">
                             <span class="icon"><i class="fa-solid fa-cog" /></span>
+                            <span v-if="!isMobile">Edit</span>
                           </button>
                         </div>
                         <div class="control">
-                          <button class="button is-danger is-small is-fullwidth" v-tooltip="'Delete'"
-                            @click="deleteItem(item)">
+                          <button class="button is-danger is-small is-fullwidth" @click="deleteItem(item)">
                             <span class="icon"><i class="fa-solid fa-trash" /></span>
+                            <span v-if="!isMobile">Delete</span>
                           </button>
                         </div>
                       </div>

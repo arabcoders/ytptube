@@ -114,17 +114,32 @@
                 </label>
               </td>
               <td class="is-text-overflow is-vcentered">
-                <div class="is-inline is-pulled-right" v-if="item.extras?.duration">
-                  <span class="tag is-info" v-if="item.extras?.duration">
+                <div class="is-inline is-pulled-right" v-if="item.extras?.duration || item?.download_dir">
+                  <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
+                  <span class="icon is-pointer" v-if="item.download_dir"
+                    v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
+                    <i class="fa-solid fa-folder-open" />
+                  </span>
                 </div>
-                <div v-if="showThumbnails && getImage(item)">
-                  <FloatingImage :image="getImage(item)" :title="`[${item.preset}] - ${item.title}`">
-                    <div class="is-text-overflow">
-                      <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                    </div>
-                  </FloatingImage>
+                <div v-if="show_popover">
+                  <div class="is-text-overflow">
+                    <Popover :showDelay="400" :maxWidth="450">
+                      <template #trigger>
+                        <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+                      </template>
+                      <template #title>
+                        <strong>
+                          {{ item.title }}
+                          <span class="tag is-info is-unselectable">{{ item.preset }}</span>
+                        </strong>
+                      </template>
+                      <img v-if="showThumbnails && getImage(config.app.download_path, item)"
+                        :src="getImage(config.app.download_path, item)" class="mt-2 mb-2" />
+                      <p v-if="item.description">{{ item.description }}</p>
+                    </Popover>
+                  </div>
                 </div>
                 <template v-else>
                   <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
@@ -143,17 +158,17 @@
                 <span>{{ setStatus(item) }}</span>
               </td>
               <td class="is-vcentered has-text-centered is-unselectable">
-                <span class="user-hint" :date-datetime="item.datetime"
+                <span class="has-tooltip" :date-datetime="item.datetime"
                   v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
               </td>
               <td class="is-vcentered has-text-centered is-unselectable"
-                v-if="item.live_in && 'not_live' === item.status">
-                <span :date-datetime="item.live_in" class="user-hint"
-                  v-tooltip="'Will automatically be retried at: ' + moment(item.live_in).format('YYYY-M-DD H:mm Z')"
-                  v-rtime="item.live_in" />
+                v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)">
+                <span :date-datetime="item.live_in || item.extras?.release_in" class="has-tooltip"
+                  v-tooltip="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
+                  v-rtime="item.live_in || item.extras?.release_in" />
               </td>
               <td class="is-vcentered has-text-centered is-unselectable" v-else>
-                {{ item.file_size ? formatBytes(item.file_size) : '-' }}
+                {{ item.file_size ? formatBytes(item.file_size) : 'N/A' }}
               </td>
               <td class="is-vcentered is-items-center">
                 <div class="field is-grouped is-grouped-centered">
@@ -240,17 +255,33 @@
       <div class="card is-flex is-full-height is-flex-direction-column"
         :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
         <header class="card-header">
-          <div class="card-header-title is-text-overflow is-block" v-tooltip="item.title">
-            <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+          <div class="card-header-title is-text-overflow is-block">
+            <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
+              <template #trigger>
+                <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+              </template>
+              <template #title><strong>{{ item.title }}</strong></template>
+              <p v-if="item.description">{{ item.description }}</p>
+            </Popover>
+            <template v-else>
+              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
+            </template>
           </div>
 
           <div class="card-header-icon">
             <div class="field is-grouped">
               <div class="control">
-                <span class="tag is-info" v-if="item.extras?.duration">
+                <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
                   {{ formatTime(item.extras.duration) }}
                 </span>
               </div>
+
+              <div class="control" v-if="item.download_dir">
+                <span class="icon" v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
+                  <i class="fa-solid fa-folder-open" />
+                </span>
+              </div>
+
               <div class="control">
                 <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
                   <span class="icon"><i class="fa-solid"
@@ -263,7 +294,6 @@
                     :value="item._id">
                 </label>
               </div>
-
             </div>
           </div>
         </header>
@@ -271,17 +301,20 @@
           <figure :class="['image', thumbnail_ratio]">
             <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
               <div class="play-icon"></div>
-              <img @load="pImg" @error="onImgError" :src="getImage(item)" v-if="getImage(item)" />
+              <img @load="pImg" @error="onImgError" :src="getImage(config.app.download_path, item)"
+                v-if="getImage(config.app.download_path, item)" />
               <img v-else src="/images/placeholder.png" />
             </span>
             <span v-else-if="isEmbedable(item.url)" @click="embed_url = getEmbedable(item.url) as string"
               class="play-overlay">
               <div class="play-icon embed-icon"></div>
-              <img @load="pImg" @error="onImgError" :src="getImage(item)" v-if="getImage(item)" />
+              <img @load="pImg" @error="onImgError" :src="getImage(config.app.download_path, item)"
+                v-if="getImage(config.app.download_path, item)" />
               <img v-else src="/images/placeholder.png" />
             </span>
             <template v-else>
-              <img @load="pImg" @error="onImgError" v-if="getImage(item)" :src="getImage(item)" />
+              <img @load="pImg" @error="onImgError" v-if="getImage(config.app.download_path, item)"
+                :src="getImage(config.app.download_path, item)" />
               <img v-else src="/images/placeholder.png" />
             </template>
           </figure>
@@ -294,21 +327,20 @@
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
               <span class="icon"><i class="fa-solid fa-sliders" /></span>
-              <span v-tooltip="`Preset: ${item.preset}`" class="user-hint">{{ item.preset }}</span>
+              <span v-tooltip="`Preset: ${item.preset}`" class="has-tooltip">{{ item.preset }}</span>
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
               v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)">
-              <span :date-datetime="item.live_in || item.extras?.release_in" class="user-hint"
-                v-tooltip="'Will be downloaded at: ' + moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')"
+              <span :date-datetime="item.live_in || item.extras?.release_in" class="has-tooltip"
+                v-tooltip="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
                 v-rtime="item.live_in || item.extras?.release_in" />
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-              <span class="user-hint" :date-datetime="item.datetime"
+              <span class="has-tooltip" :date-datetime="item.datetime"
                 v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable" v-if="item.file_size">
-              <span class="has-tooltip" v-tooltip="`Path: ${makePath(item)}`">{{
-                formatBytes(item.file_size) }}</span>
+              <span class="has-tooltip">{{ formatBytes(item.file_size) }}</span>
             </div>
           </div>
           <div class="columns is-mobile is-multiline">
@@ -477,7 +509,7 @@ import moment from 'moment'
 import { useStorage, useIntersectionObserver } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 import { useConfirm } from '~/composables/useConfirm'
-import { deepIncludes } from '~/utils'
+import { deepIncludes, getPath, getImage } from '~/utils'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
@@ -504,6 +536,7 @@ const display_style = useStorage<'grid' | 'list'>('display_style', 'grid')
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
+const show_popover = useStorage<boolean>('show_popover', true)
 
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
@@ -978,25 +1011,5 @@ const is_queued = (item: StoreItem) => {
     return ''
   }
   return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin fa-spin-10' : ''
-}
-
-const makePath = (item: StoreItem) => {
-  if (!item?.filename) {
-    return ''
-  }
-  const real_path = eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/')
-  return stripPath(config.app.download_path, real_path)
-}
-
-const getImage = (item: StoreItem): string => {
-  if (item.sidecar?.image && item.sidecar.image.length > 0) {
-    return uri('/api/download/' + encodeURIComponent(stripPath(config.app.download_path, item.sidecar.image[0]?.file || '')))
-  }
-
-  if (!item?.extras?.thumbnail) {
-    return '/images/placeholder.png'
-  }
-
-  return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))
 }
 </script>

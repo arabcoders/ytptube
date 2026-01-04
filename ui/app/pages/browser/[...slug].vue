@@ -97,6 +97,7 @@
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
                 :disabled="isLoading">
                 <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -186,7 +187,7 @@
                   <td class="has-text-centered is-vcentered" v-if="config.app.browser_control_enabled">
                     <input type="checkbox" v-model="selectedElms" :value="item.path" />
                   </td>
-                  <td class="has-text-centered is-vcentered user-hint" v-tooltip="item.name">
+                  <td class="has-text-centered is-vcentered has-tooltip" v-tooltip="item.name">
                     <span class="icon"><i class="fas fa-2x fa-solid" :class="setIcon(item)" /></span>
                   </td>
                   <td class="is-text-overflow is-vcentered">

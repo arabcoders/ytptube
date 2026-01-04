@@ -2,8 +2,7 @@
 
   <template v-if="simpleMode">
     <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-    <Simple @show_settings="() =>show_settings = true"
-      :class="{ 'settings-open': show_settings }" />
+    <Simple @show_settings="() => show_settings = true" :class="{ 'settings-open': show_settings }" />
   </template>
 
   <SettingsPanel :isOpen="show_settings" :isLoading="loadingImage" @close="closeSettings()"
@@ -179,7 +178,7 @@
         </div>
         <div class="column is-narrow" v-if="config.app?.started">
           <div class="has-text-right">
-            <span class="user-hint"
+            <span class="has-tooltip"
               v-tooltip="'App Started: ' + moment.unix(config.app?.started).format('YYYY-M-DD H:mm Z')">
               {{ moment.unix(config.app?.started).fromNow() }}
             </span>
@@ -428,10 +427,7 @@ const useVersionUpdate = () => {
 
 const { newVersionIsAvailable } = useVersionUpdate()
 
-const closeSettings = () => {
-  show_settings.value = false
-  navigateTo('/')
-}
+const closeSettings = () => show_settings.value = false
 
 const shutdownApp = async () => {
   const { alertDialog, confirmDialog: confirm_message } = useDialog()

@@ -19,14 +19,14 @@
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = true"
                 v-tooltip="'Add new notification target.'">
-                <span class="icon"><i class="fas fa-add"></i></span>
+                <span class="icon"><i class="fas fa-add" /></span>
                 <span v-if="!isMobile">New Notification</span>
               </button>
             </p>
             <p class="control" v-if="notifications.length > 0">
               <button class="button is-warning" @click="sendTest" v-tooltip="'Send test notification.'"
                 :class="{ 'is-loading': isLoading }" :disabled="isLoading">
-                <span class="icon"><i class="fas fa-paper-plane"></i></span>
+                <span class="icon"><i class="fas fa-paper-plane" /></span>
                 <span v-if="!isMobile">Send Test</span>
               </button>
             </p>
@@ -45,7 +45,8 @@
             <p class="control" v-if="notifications.length > 0">
               <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="isLoading || notifications.length < 1">
-                <span class="icon"><i class="fas fa-refresh"></i></span>
+                <span class="icon"><i class="fas fa-refresh" /></span>
+                <span v-if="!isMobile">Reload</span>
               </button>
             </p>
           </div>
@@ -109,21 +110,21 @@
                   <td class="is-vcentered is-items-center">
                     <div class="field is-grouped is-grouped-centered">
                       <div class="control">
-                        <button class="button is-info is-small is-fullwidth" v-tooltip="'Export'"
-                          @click="exportItem(item)">
+                        <button class="button is-info is-small is-fullwidth" @click="exportItem(item)">
                           <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                          <span v-if="!isMobile">Export</span>
                         </button>
                       </div>
                       <div class="control">
-                        <button class="button is-warning is-small is-fullwidth" v-tooltip="'Edit'"
-                          @click="editItem(item)">
+                        <button class="button is-warning is-small is-fullwidth" @click="editItem(item)">
                           <span class="icon"><i class="fa-solid fa-edit" /></span>
+                          <span v-if="!isMobile">Edit</span>
                         </button>
                       </div>
                       <div class="control">
-                        <button class="button is-danger is-small is-fullwidth" v-tooltip="'Delete'"
-                          @click="deleteItem(item)">
+                        <button class="button is-danger is-small is-fullwidth" @click="deleteItem(item)">
                           <span class="icon"><i class="fa-solid fa-trash" /></span>
+                          <span v-if="!isMobile">Delete</span>
                         </button>
                       </div>
                     </div>
