@@ -95,7 +95,7 @@
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent(path, true)" :class="{ 'is-loading': isLoading }"
-                :disabled="!socket.isConnected || isLoading">
+                :disabled="isLoading">
                 <span class="icon"><i class="fas fa-refresh" /></span>
               </button>
             </p>

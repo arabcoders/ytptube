@@ -24,7 +24,7 @@
             </p>
             <p class="control">
               <button class="button is-info" @click="reloadContent(false)" :class="{ 'is-loading': isLoading }"
-                :disabled="!socket.isConnected || isLoading" v-if="items && items.length > 0">
+                :disabled="isLoading" v-if="items && items.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
               </button>

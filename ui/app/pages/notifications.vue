@@ -25,7 +25,7 @@
             </p>
             <p class="control" v-if="notifications.length > 0">
               <button class="button is-warning" @click="sendTest" v-tooltip="'Send test notification.'"
-                :class="{ 'is-loading': isLoading }" :disabled="!socket.isConnected || isLoading">
+                :class="{ 'is-loading': isLoading }" :disabled="isLoading">
                 <span class="icon"><i class="fas fa-paper-plane"></i></span>
                 <span v-if="!isMobile">Send Test</span>
               </button>
@@ -44,7 +44,7 @@
 
             <p class="control" v-if="notifications.length > 0">
               <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
-                :disabled="!socket.isConnected || isLoading || notifications.length < 1">
+                :disabled="isLoading || notifications.length < 1">
                 <span class="icon"><i class="fas fa-refresh"></i></span>
               </button>
             </p>
