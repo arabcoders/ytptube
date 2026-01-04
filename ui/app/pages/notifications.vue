@@ -96,6 +96,14 @@
                         <span class="icon"><i class="fa-solid fa-sliders" /></span>
                         <span>Presets: {{ join_presets(item.presets) }}</span>
                       </span>
+                      &nbsp;
+                      <span class="icon-text is-clickable" @click="toggleEnabled(item)">
+                        <span class="icon" :class="item.enabled ? 'has-text-success' : 'has-text-danger'"
+                          v-tooltip="`Notification is ${item.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
+                          <i class="fa-solid fa-power-off" />
+                        </span>
+                        <span>{{ item.enabled ? 'Enabled' : 'Disabled' }}</span>
+                      </span>
                     </div>
                   </td>
                   <td class="is-vcentered is-items-center">
@@ -135,13 +143,25 @@
                     <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
                   </div>
                   <div class="card-header-icon">
-                    <a class="has-text-info" v-tooltip="'Export target.'" @click.prevent="exportItem(item)">
-                      <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                    </a>
-                    <button @click="item.raw = !item.raw">
-                      <span class="icon"><i class="fa-solid"
-                          :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw }" /></span>
-                    </button>
+                    <div class="field is-grouped">
+                      <div class="control" @click="toggleEnabled(item)">
+                        <span class="icon" :class="item.enabled ? 'has-text-success' : 'has-text-danger'"
+                          v-tooltip="`Notification is ${item.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
+                          <i class="fa-solid fa-power-off" />
+                        </span>
+                      </div>
+                      <div class="control">
+                        <a class="has-text-info" v-tooltip="'Export target.'" @click.prevent="exportItem(item)">
+                          <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                        </a>
+                      </div>
+                      <div class="control">
+                        <button @click="item.raw = !item.raw">
+                          <span class="icon"><i class="fa-solid"
+                              :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw }" /></span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </header>
                 <div class="card-content is-flex-grow-1">
@@ -156,13 +176,13 @@
                     </p>
                     <p v-if="item.request?.headers && item.request.headers.length > 0">
                       <span class="icon"><i class="fa-solid fa-heading" /></span>
-                      <span>{{item.request.headers.map(h => h.key).join(', ')}}</span>
+                      <span>Headers: {{item.request.headers.map(h => h.key).join(', ')}}</span>
                     </p>
                   </div>
                 </div>
                 <div class="card-content" v-if="item?.raw">
                   <div class="content">
-                    <pre><code>{{ filterItem(item) }}</code></pre>
+                    <pre><code>{{ JSON.stringify(cleanObject(item, ['raw']), null, 2) }}</code></pre>
                   </div>
                 </div>
                 <div class="card-footer mt-auto">
@@ -226,6 +246,8 @@ import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
 import { useConfirm } from '~/composables/useConfirm'
 
+type notificationItemWithUI = notification & { raw?: boolean }
+
 const toast = useNotification()
 const socket = useSocketStore()
 const box = useConfirm()
@@ -233,12 +255,13 @@ const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const allowedEvents = ref<string[]>([])
-const notifications = ref<notification[]>([])
+const notifications = ref<notificationItemWithUI[]>([])
 
 const defaultState = (): notification => ({
   name: '',
   on: [],
   presets: [],
+  enabled: true,
   request: { method: 'POST', url: '', type: 'json', headers: [], data_key: 'data' },
 })
 
@@ -333,6 +356,26 @@ const deleteItem = async (item: notification) => {
   toast.success('Notification target deleted.')
 }
 
+const toggleEnabled = async (item: notification) => {
+  const index = notifications.value.findIndex(i => i?.id === item.id)
+  if (-1 === index) {
+    toast.error('Notification target not found.')
+    return
+  }
+
+  const target = notifications.value[index]
+  if (!target) {
+    toast.error('Notification target not found.')
+    return
+  }
+
+  target.enabled = !target.enabled
+  const status = await updateData(notifications.value)
+  if (status) {
+    toast[target.enabled ? 'success' : 'warning'](`Notification is ${target.enabled ? 'enabled' : 'disabled'}.`)
+  }
+}
+
 const updateItem = async ({ reference, item }: { reference: string | null, item: notification }) => {
   if (reference) {
     const index = notifications.value.findIndex(i => i?.id === reference)
@@ -352,11 +395,6 @@ const updateItem = async ({ reference, item }: { reference: string | null, item:
   } finally {
     addInProgress.value = false
   }
-}
-
-const filterItem = (item: notification) => {
-  const { raw, ...rest } = item as any
-  return JSON.stringify(rest, null, 2)
 }
 
 const editItem = (item: notification) => {

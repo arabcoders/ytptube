@@ -60,7 +60,7 @@
                     <div class="control" @click="toggleEnabled(cond)">
                       <span class="icon" :class="cond.enabled ? 'has-text-success' : 'has-text-danger'"
                         v-tooltip="`Condition is ${cond.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
-                        <i class="fa-solid" :class="cond.enabled ? 'fa-check-circle' : 'fa-times-circle'" />
+                        <i class="fa-solid fa-power-off" />
                       </span>
                     </div>
                     <div class="control">

@@ -17,7 +17,7 @@ type notification = {
   request: notificationRequest;
   on: Array<string>;
   presets: Array<string>;
-  raw?: boolean;
+  enabled: boolean;
 };
 
 type notificationImport = notification & {
