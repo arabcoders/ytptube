@@ -9,22 +9,20 @@
                 <span class="icon"><i class="fa-solid fa-link" /></span>
                 <span class="has-tooltip" v-tooltip="'Use Shift+Enter to switch to multiline input mode.'">
                   URLs separated by newlines or <span class="is-bold is-lowercase">{{ getSeparatorsName(separator)
-                    }}</span>
+                  }}</span>
                 </span>
               </label>
               <div class="field is-grouped">
                 <div class="control is-expanded">
                   <textarea v-if="isMultiLineInput" ref="urlTextarea" class="textarea" id="url"
-                    :disabled="!socket.isConnected || addInProgress" v-model="form.url" @keydown="handleKeyDown"
-                    @input="adjustTextareaHeight"
+                    :disabled="addInProgress" v-model="form.url" @keydown="handleKeyDown" @input="adjustTextareaHeight"
                     style="resize: none; overflow-y: auto; min-height: 38px; max-height: 300px;" />
                   <input v-else type="text" class="input" id="url" placeholder="URLs to download"
-                    :disabled="!socket.isConnected || addInProgress" v-model="form.url" @keydown="handleKeyDown"
-                    @paste="handlePaste">
+                    :disabled="addInProgress" v-model="form.url" @keydown="handleKeyDown" @paste="handlePaste">
                 </div>
                 <div class="control">
                   <button type="submit" class="button is-primary" :class="{ 'is-loading': addInProgress }"
-                    :disabled="!socket.isConnected || addInProgress || !hasValidUrl">
+                    :disabled="addInProgress || !hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                     <span>Add</span>
                   </button>
@@ -45,8 +43,8 @@
                 </div>
                 <div class="control is-expanded">
                   <div class="select is-fullwidth">
-                    <select id="preset" class="is-fullwidth"
-                      :disabled="!socket.isConnected || addInProgress || hasFormatInConfig" v-model="form.preset"
+                    <select id="preset" class="is-fullwidth" :disabled="addInProgress || hasFormatInConfig"
+                      v-model="form.preset"
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                         <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
@@ -77,15 +75,13 @@
                 </div>
                 <div class="control is-expanded">
                   <input type="text" class="input is-fullwidth" id="folder" v-model="form.folder"
-                    :placeholder="getDefault('folder', '/')" :disabled="!socket.isConnected || addInProgress"
-                    list="folders">
+                    :placeholder="getDefault('folder', '/')" :disabled="addInProgress" list="folders">
                 </div>
               </div>
             </div>
 
             <div class="column is-align-content-end">
-              <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced"
-                :disabled="!socket.isConnected">
+              <button type="button" class="button is-info" @click="showAdvanced = !showAdvanced">
                 <span class="icon"><i class="fa-solid fa-cog" /></span>
                 <span>Advanced Options</span>
               </button>
@@ -104,24 +100,22 @@
           <div class="columns is-multiline is-mobile" v-if="showAdvanced">
             <div class="column is-2-tablet is-12-mobile">
               <DLInput id="force_download" type="bool" label="Force download" icon="fa-solid fa-download"
-                v-model="dlFields['--no-download-archive']" :disabled="!socket.isConnected || addInProgress"
-                description="Ignore archive." />
+                v-model="dlFields['--no-download-archive']" :disabled="addInProgress" description="Ignore archive." />
             </div>
 
             <div class="column is-2-tablet is-12-mobile">
               <DLInput id="auto_start" type="bool" label="Auto start" v-model="auto_start" icon="fa-solid fa-play"
-                :disabled="!socket.isConnected || addInProgress" description="Download automatically." />
+                :disabled="addInProgress" description="Download automatically." />
             </div>
 
             <div class="column is-2-tablet is-12-mobile">
               <DLInput id="no_cache" type="bool" label="Bypass cache" icon="fa-solid fa-broom"
-                v-model="dlFields['--no-continue']" :disabled="!socket.isConnected || addInProgress"
-                description="Remove temporary files." />
+                v-model="dlFields['--no-continue']" :disabled="addInProgress" description="Remove temporary files." />
             </div>
 
             <div class="column is-6-tablet is-12-mobile">
               <DLInput id="output_template" type="string" label="Output template" v-model="form.template"
-                icon="fa-solid fa-file" :disabled="!socket.isConnected || addInProgress"
+                icon="fa-solid fa-file" :disabled="addInProgress"
                 :placeholder="getDefault('template', config.app.output_template || '%(title)s.%(ext)s')">
                 <template #help>
                   <span class="help is-bold is-unselectable">
@@ -140,7 +134,7 @@
                   <span>Command options for yt-dlp</span>
                 </label>
                 <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                  :placeholder="getDefault('cli', '')" :disabled="!socket.isConnected || addInProgress" />
+                  :placeholder="getDefault('cli', '')" :disabled="addInProgress" />
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span>
@@ -161,7 +155,7 @@
                   </span>
                 </label>
                 <TextDropzone ref="cookiesDropzoneRef" id="ytdlpCookies" v-model="form.cookies"
-                  :disabled="!socket.isConnected || addInProgress" @error="(msg: string) => toast.error(msg)"
+                  :disabled="addInProgress" @error="(msg: string) => toast.error(msg)"
                   :placeholder="getDefault('cookies', 'Leave empty to use default cookies. Or drag & drop a cookie file here.')" />
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -177,8 +171,7 @@
               <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"
                 :key="fi.id || `dlf-${index}`">
                 <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
-                  :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field"
-                  :disabled="!socket.isConnected || addInProgress" />
+                  :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field" :disabled="addInProgress" />
               </div>
             </template>
             <div class="column is-12 is-hidden-tablet">
@@ -216,14 +209,13 @@
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
                   <button type="button" class="button is-purple" @click="() => showFields = true"
-                    :disabled="!socket.isConnected" v-tooltip="'Manage custom fields'">
+                    v-tooltip="'Manage custom fields'">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                   </button>
                 </div>
 
                 <div class="control" v-if="config.app.console_enabled" v-tooltip="'Run directly in console'">
-                  <button type="button" class="button is-warning" @click="runCliCommand"
-                    :disabled="!socket.isConnected || !hasValidUrl">
+                  <button type="button" class="button is-warning" @click="runCliCommand" :disabled="!hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   </button>
                 </div>
@@ -232,21 +224,21 @@
                   <button type="button" class="button is-info"
                     v-tooltip="'Get yt-dlp information for the provided URL.'"
                     @click="emitter('getInfo', splitUrls(form.url || '')[0] || '', form.preset, form.cli)"
-                    :disabled="!socket.isConnected || addInProgress || !hasValidUrl">
+                    :disabled="addInProgress || !hasValidUrl">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                   </button>
                 </div>
 
                 <div class="control" v-if="config.app.console_enabled">
-                  <button type="button" class="button is-success" @click="testDownloadOptions"
-                    :disabled="!socket.isConnected || !hasValidUrl" v-tooltip="'Show compiled yt-dlp options.'">
+                  <button type="button" class="button is-success" @click="testDownloadOptions" :disabled="!hasValidUrl"
+                    v-tooltip="'Show compiled yt-dlp options.'">
                     <span class="icon"><i class="fa-solid fa-flask" /></span>
                   </button>
                 </div>
 
                 <div class="control">
-                  <button type="button" class="button is-danger" @click="resetConfig"
-                    :disabled="!!(!socket.isConnected || form?.id)" v-tooltip="'Reset local settings'">
+                  <button type="button" class="button is-danger" @click="resetConfig" :disabled="!!(form?.id)"
+                    v-tooltip="'Reset local settings'">
                     <span class="icon"><i class="fa-solid fa-rotate-left" /></span>
                   </button>
                 </div>
@@ -286,7 +278,6 @@ const emitter = defineEmits<{
   (e: 'clear_form'): void
 }>()
 const config = useConfigStore()
-const socket = useSocketStore()
 const toast = useNotification()
 const dialog = useDialog()
 

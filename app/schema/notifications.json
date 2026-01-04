@@ -133,6 +133,11 @@
           "description": "Restrict notifications to downloads created by these presets.",
           "default": []
         },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether the notification target is enabled.",
+          "default": true
+        },
         "request": {
           "$ref": "#/definitions/request"
         }

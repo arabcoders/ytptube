@@ -9,7 +9,7 @@
           </span>
         </span>
 
-        <div class="is-pulled-right" v-if="socket.isConnected">
+        <div class="is-pulled-right">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter">
               <input type="search" v-model.lazy="query" class="input" id="filter"
@@ -114,7 +114,6 @@ import type { StoreItem } from '~/types/store'
 
 const config = useConfigStore()
 const stateStore = useStateStore()
-const socket = useSocketStore()
 const route = useRoute()
 const router = useRouter()
 

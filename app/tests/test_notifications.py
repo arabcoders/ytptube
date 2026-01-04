@@ -132,6 +132,7 @@ class TestTarget:
         assert target.name == "Test Webhook"
         assert target.on == []
         assert target.presets == []
+        assert target.enabled is True
         assert target.request == request
 
     def test_target_creation_full(self):
@@ -143,6 +144,7 @@ class TestTarget:
             name="Full Test Webhook",
             on=["item_completed", "item_failed"],
             presets=["default", "audio_only"],
+            enabled=False,
             request=request,
         )
 
@@ -150,6 +152,7 @@ class TestTarget:
         assert target.name == "Full Test Webhook"
         assert target.on == ["item_completed", "item_failed"]
         assert target.presets == ["default", "audio_only"]
+        assert target.enabled is False
 
     def test_target_serialize(self):
         """Test serializing a Target."""
@@ -382,6 +385,48 @@ class TestNotification:
     @patch("app.library.Notifications.Config")
     @patch("app.library.Notifications.BackgroundWorker")
     @patch("app.library.Notifications.Presets")
+    def test_load_targets_schema_update(self, mock_presets, mock_worker, mock_config):
+        """Test that load automatically updates file schema when enabled field is missing."""
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
+        mock_worker.get_instance.return_value = Mock()
+        mock_preset = Mock()
+        mock_preset.name = "default"
+        mock_presets.get_instance.return_value.get_all.return_value = [mock_preset]
+
+        # Create target data without enabled field (old schema)
+        target_data = [
+            {
+                "id": str(uuid.uuid4()),
+                "name": "Old Schema Target",
+                "on": ["item_completed"],
+                "presets": ["default"],
+                "request": {"type": "json", "method": "POST", "url": "https://example.com/webhook"},
+            }
+        ]
+
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+            json.dump(target_data, temp_file)
+            temp_path = temp_file.name
+
+        notification = Notification.get_instance(file=temp_path)
+
+        # Mock the save method to verify it's called
+        with patch.object(notification, "save") as mock_save:
+            notification.load()
+
+            # Verify save was called due to schema update
+            mock_save.assert_called_once()
+
+            # Verify the target has enabled=True by default
+            assert len(notification._targets) == 1
+            assert notification._targets[0].enabled is True
+
+        # Clean up
+        Path(temp_path).unlink()
+
+    @patch("app.library.Notifications.Config")
+    @patch("app.library.Notifications.BackgroundWorker")
+    @patch("app.library.Notifications.Presets")
     def test_load_targets_valid_file(self, mock_presets, mock_worker, mock_config):
         """Test loading targets from valid file."""
         mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
@@ -543,6 +588,38 @@ class TestNotification:
         with pytest.raises(ValueError, match=r"Invalid notification target\. Invalid type found\."):
             Notification.validate(target_dict)
 
+    def test_validate_target_invalid_enabled(self):
+        """Test validating a target with invalid enabled field."""
+        target_dict = {
+            "id": str(uuid.uuid4()),
+            "name": "Test Target",
+            "enabled": "yes",  # Should be boolean
+            "request": {
+                "url": "https://example.com/webhook",
+                "method": "POST",
+                "type": "json",
+            },
+        }
+
+        with pytest.raises(ValueError, match=r"Enabled must be a boolean\."):
+            Notification.validate(target_dict)
+
+    def test_validate_target_enabled_defaults_to_true(self):
+        """Test that enabled defaults to True when not provided."""
+        target_dict = {
+            "id": str(uuid.uuid4()),
+            "name": "Test Target",
+            "request": {
+                "url": "https://example.com/webhook",
+                "method": "POST",
+                "type": "json",
+            },
+        }
+
+        result = Notification.validate(target_dict)
+        assert result is True
+        assert target_dict.get("enabled") is True
+
     @patch("app.library.Notifications.Config")
     @patch("app.library.Notifications.BackgroundWorker")
     @patch("app.library.Notifications.EventBus")
@@ -631,6 +708,45 @@ class TestNotification:
         assert len(result) == 1
         assert result[0]["status"] == 200
         assert result[0]["text"] == "OK"
+        mock_client.request.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch("app.library.Notifications.Config")
+    @patch("app.library.Notifications.BackgroundWorker")
+    async def test_send_skips_disabled_targets(self, mock_worker, mock_config):
+        """Test that send method skips disabled targets."""
+        mock_config.get_instance.return_value = Mock(debug=False, config_path="/tmp", app_version="1.0.0")
+        mock_worker.get_instance.return_value = Mock()
+
+        # Mock HTTP client
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = "OK"
+        mock_client = AsyncMock()
+        mock_client.request = AsyncMock(return_value=mock_response)
+
+        notification = Notification.get_instance(client=mock_client)
+
+        # Add enabled and disabled targets
+        enabled_request = TargetRequest(type="json", method="POST", url="https://example.com/enabled")
+        enabled_target = Target(id=str(uuid.uuid4()), name="Enabled Target", enabled=True, request=enabled_request)
+
+        disabled_request = TargetRequest(type="json", method="POST", url="https://example.com/disabled")
+        disabled_target = Target(id=str(uuid.uuid4()), name="Disabled Target", enabled=False, request=disabled_request)
+
+        notification._targets = [enabled_target, disabled_target]
+
+        # Create test event
+        item_dto = ItemDTO(
+            id="test_id", url="https://youtube.com/watch?v=test", title="Test Video", folder="/downloads"
+        )
+        event = Event(event="item_completed", data=item_dto)
+
+        result = await notification.send(event)
+
+        # Only enabled target should be called
+        assert len(result) == 1
+        assert result[0]["status"] == 200
         mock_client.request.assert_called_once()
 
     @pytest.mark.asyncio

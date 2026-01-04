@@ -25,7 +25,7 @@
             </p>
 
             <p class="control">
-              <button @click="() => inspect = true" class="button is-primary is-light">
+              <button @click="() => inspect = true" class="button is-warning">
                 <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
                 <span v-if="!isMobile">Inspect</span>
               </button>
@@ -80,7 +80,7 @@
                 </td>
                 <td class="is-vcentered has-text-centered">{{ definition.priority }}</td>
                 <td class="is-vcentered has-text-centered">
-                  <span class="user-hint" :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                  <span class="has-tooltip" :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-tooltip="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-rtime="definition.updated_at" />
                 </td>
@@ -137,7 +137,7 @@
               <p>
                 <span class="icon-text">
                   <span class="icon"><i class="fa-solid fa-clock" /></span>
-                  <span>Updated: <span class="user-hint"
+                  <span>Updated: <span class="has-tooltip"
                       :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                       v-tooltip="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                       v-rtime="definition.updated_at" />

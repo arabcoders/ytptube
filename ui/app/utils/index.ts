@@ -791,10 +791,33 @@ const deepIncludes = (
   return false
 }
 
+const getPath = (basePath: string, item: StoreItem): string => {
+  if (!item.download_dir) {
+    return ''
+  }
+
+  if (!item?.filename) {
+    return item.download_dir
+  }
+
+  return stripPath(basePath, eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/'))
+}
+const getImage = (basePath: string, item: StoreItem): string => {
+  if (item.sidecar?.image && item.sidecar.image.length > 0) {
+    return uri('/api/download/' + encodeURIComponent(stripPath(basePath, item.sidecar.image[0]?.file || '')))
+  }
+
+  if (!item?.extras?.thumbnail) {
+    return '/images/placeholder.png'
+  }
+
+  return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))
+}
+
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes, getPath, getImage
 }

@@ -140,6 +140,19 @@
               Choose the aspect ratio for thumbnail display.
             </p>
           </div>
+          <div class="field">
+            <label class="label">Popover</label>
+            <div class="control">
+              <input id="show_popover" type="checkbox" class="switch is-success" v-model="show_popover">
+              <label for="show_popover" class="is-unselectable">
+                {{ show_popover ? 'Yes' : 'No' }}
+              </label>
+            </div>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+              Show additional information over certain elements.
+            </p>
+          </div>
         </div>
 
         <div class="box">
@@ -244,6 +257,7 @@ const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true)
 const toast_target = useStorage<notificationTarget>('toast_target', 'toast')
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
+const show_popover = useStorage<boolean>('show_popover', true)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)

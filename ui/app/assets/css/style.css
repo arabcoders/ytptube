@@ -45,12 +45,6 @@ hr {
   white-space: nowrap;
 }
 
-.user-hint {
-  user-select: none;
-  cursor: help;
-  border-bottom: 1px dotted;
-}
-
 .has-tooltip {
   cursor: help;
   border-bottom: 1px dotted;

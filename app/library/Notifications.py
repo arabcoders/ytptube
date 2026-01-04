@@ -76,6 +76,7 @@ class Target:
     on: list[str] = field(default_factory=list)
     presets: list[str] = field(default_factory=list)
     request: TargetRequest
+    enabled: bool = True
 
     def serialize(self) -> dict:
         return {
@@ -84,6 +85,7 @@ class Target:
             "on": self.on,
             "presets": self.presets,
             "request": self.request.serialize(),
+            "enabled": self.enabled,
         }
 
     def json(self) -> str:
@@ -234,8 +236,18 @@ class Notification(metaclass=Singleton):
         except Exception as e:
             LOG.error(f"Error loading '{self._file}'. '{e!s}'")
 
+        if not targets or len(targets) < 1:
+            LOG.debug(f"No targets were found in '{self._file}'.")
+            return self
+
+        need_save = False
+
         for target in targets:
             try:
+                if "enabled" not in target:
+                    target["enabled"] = True
+                    need_save = True
+
                 try:
                     Notification.validate(target)
                     target: Target = self.make_target(target)
@@ -251,6 +263,10 @@ class Notification(metaclass=Singleton):
                 )
             except Exception as e:
                 LOG.error(f"Error loading notification target '{target}'. '{e!s}'")
+
+        if need_save:
+            LOG.warning("Saving notifications due to schema changes.")
+            self.save(self._targets)
 
         return self
 
@@ -270,6 +286,7 @@ class Notification(metaclass=Singleton):
             name=target.get("name"),
             on=target.get("on", []),
             presets=target.get("presets", []),
+            enabled=target.get("enabled", True),
             request=TargetRequest(
                 type=target.get("request", {}).get("type", "json"),
                 method=target.get("request", {}).get("method", "POST"),
@@ -318,6 +335,13 @@ class Notification(metaclass=Singleton):
 
         if "data_key" not in target["request"]:
             target["request"]["data_key"] = "data"
+
+        if "enabled" not in target:
+            target["enabled"] = True
+
+        if target.get("enabled") is not None and not isinstance(target.get("enabled"), bool):
+            msg = "Enabled must be a boolean."
+            raise ValueError(msg)
 
         if "method" in target["request"] and target["request"]["method"].upper() not in ["POST", "PUT"]:
             msg = "Invalid notification target. Invalid method found."
@@ -390,6 +414,9 @@ class Notification(metaclass=Singleton):
         apprise_targets: list[Target] = []
 
         for target in self._targets:
+            if not target.enabled:
+                continue
+
             if len(target.on) > 0 and ev.event not in target.on and "test" != ev.event:
                 continue
 

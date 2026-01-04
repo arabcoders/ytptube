@@ -207,7 +207,27 @@
                 </div>
               </div>
 
-              <div class="column is-12" v-if="!isApprise">
+              <div class="column" :class="isApprise ? 'is-12' : 'is-6-tablet is-12-mobile'">
+                <div class="field">
+                  <label class="label is-inline" for="enabled">
+                    <span class="icon"><i class="fa-solid fa-power-off" /></span>
+                    Enabled
+                  </label>
+                  <div class="control is-unselectable">
+                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
+                      class="switch is-success" />
+                    <label for="enabled" class="is-unselectable">
+                      {{ form.enabled ? 'Yes' : 'No' }}
+                    </label>
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Whether the notification target is enabled.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
                 <div class="field">
                   <label class="label is-inline" for="data_key">
                     Data field
@@ -308,7 +328,7 @@
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
 import type { notification, notificationImport } from '~/types/notification'
-import {useConfirm} from '~/composables/useConfirm'
+import { useConfirm } from '~/composables/useConfirm'
 
 const emitter = defineEmits(['cancel', 'submit'])
 const toast = useNotification()
@@ -345,6 +365,9 @@ const import_string = ref('')
 onMounted(() => {
   if (!form.request.data_key) {
     form.request.data_key = 'data'
+  }
+  if (form.enabled === undefined) {
+    form.enabled = true
   }
 })
 
@@ -447,6 +470,10 @@ const importItem = async () => {
           form.presets.push(p)
         }
       })
+    }
+
+    if (item.enabled !== undefined) {
+      form.enabled = item.enabled
     }
 
     import_string.value = ''
