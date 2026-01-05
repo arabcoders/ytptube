@@ -1,3 +1,4 @@
+import type { Preset } from "./presets";
 import type { YTDLPOption } from './ytdlp';
 import type { DLField } from "./dl_fields"
 
@@ -46,42 +47,23 @@ type AppConfig = {
   default_pagination: number
 }
 
-type Preset = {
-  /** Unique identifier for the preset */
-  id?: string
-  /** Preset name, e.g. "default" */
-  name: string
-  /** Optional description for the preset */
-  description: string
-  /** Folder where files will be saved, e.g. "/downloads" */
-  folder: string
-  /** Output template for the preset, e.g. "%(title)s.%(ext)s" */
-  template: string
-  /** Cookies for the preset, e.g. "cookies.txt" */
-  cookies: string
-  /** Additional command line options for yt-dlp */
-  cli: string
-  /** Indicates if this is the default preset */
-  default: boolean
-}
-
 type ConfigState = {
   /** Show or hide the download form */
   showForm: RemovableRef<boolean>
   /** Application configuration */
   app: AppConfig
   /** List of presets */
-  presets: Preset[]
+  presets: Array<Preset>
   /** List of custom download fields */
-  dl_fields: DLField[]
+  dl_fields: Array<DLField>
   /** List of folders where files can be saved */
-  folders: string[]
+  folders: Array<string>
   /** List of yt-dlp options */
-  ytdlp_options: YTDLPOption[]
+  ytdlp_options: Array<YTDLPOption>
   /** Indicates if downloads are currently paused */
   paused: boolean
   /** Indicates if the configuration has been loaded */
   is_loaded: boolean
 }
 
-export type { AppConfig, Preset, ConfigState }
+export type { AppConfig, ConfigState }

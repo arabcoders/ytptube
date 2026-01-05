@@ -329,3 +329,57 @@ class TestItemDTO:
 
             mock_presets.return_value.get.assert_called_once_with("nonexistent")
             assert result is None
+
+
+class TestItemAddExtras:
+    def test_add_extras_to_empty_dict(self):
+        """Test adding extras when extras dict is empty."""
+        item = Item(url="https://example.com")
+        item.extras = {}
+
+        item.add_extras("key1", "value1")
+
+        assert item.extras["key1"] == "value1"
+
+    def test_add_extras_when_extras_is_none(self):
+        """Test adding extras when extras is None."""
+        item = Item(url="https://example.com")
+        item.extras = None
+
+        item.add_extras("key1", "value1")
+
+        assert item.extras == {"key1": "value1"}
+
+    def test_add_extras_to_existing_dict(self):
+        """Test adding extras to an existing extras dict."""
+        item = Item(url="https://example.com", extras={"existing": "data"})
+
+        item.add_extras("new_key", "new_value")
+
+        assert item.extras["existing"] == "data"
+        assert item.extras["new_key"] == "new_value"
+
+    def test_add_extras_overwrites_existing_key(self):
+        """Test that adding extras overwrites existing keys."""
+        item = Item(url="https://example.com", extras={"key1": "old_value"})
+
+        item.add_extras("key1", "new_value")
+
+        assert item.extras["key1"] == "new_value"
+
+    def test_add_extras_with_various_types(self):
+        """Test adding extras with various data types."""
+        item = Item(url="https://example.com")
+        item.extras = {}
+
+        item.add_extras("string", "value")
+        item.add_extras("number", 42)
+        item.add_extras("boolean", True)
+        item.add_extras("list", [1, 2, 3])
+        item.add_extras("dict", {"nested": "data"})
+
+        assert item.extras["string"] == "value"
+        assert item.extras["number"] == 42
+        assert item.extras["boolean"] is True
+        assert item.extras["list"] == [1, 2, 3]
+        assert item.extras["dict"] == {"nested": "data"}

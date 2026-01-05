@@ -11,6 +11,7 @@ import socket
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from email.utils import formatdate
 from functools import lru_cache, wraps
 from http.cookiejar import MozillaCookieJar
 from pathlib import Path
@@ -1847,3 +1848,78 @@ def create_cookies_file(cookies: str, file: Path | None = None) -> Path:
     load_cookies(file)
 
     return file
+
+
+def get_thumbnail(thumbnails: list) -> str | None:
+    """
+    Extract thumbnail URL from a yt-dlp entry.
+
+    Args:
+        thumbnails (list): The list of thumbnail dictionaries from yt-dlp entry.
+
+    Returns:
+        str | None: The thumbnail URL if available, otherwise None.
+
+    """
+    if not thumbnails or not isinstance(thumbnails, list):
+        return None
+
+    def _thumb_sort_key(thumb: dict) -> tuple:
+        return (
+            thumb.get("preference") if thumb.get("preference") is not None else -1,
+            thumb.get("width") if thumb.get("width") is not None else -1,
+            thumb.get("height") if thumb.get("height") is not None else -1,
+            thumb.get("id") if thumb.get("id") is not None else "",
+            thumb.get("url"),
+        )
+
+    return max(thumbnails, key=_thumb_sort_key, default=None)
+
+
+def get_extras(entry: dict, kind: str = "video") -> dict:
+    """
+    Extract useful information from a yt-dlp entry.
+
+    Args:
+        entry (dict): The entry data from yt-dlp.
+        kind (str): The type of the item (e.g., "video", "playlist").
+
+    Returns:
+        dict: The extracted data.
+
+    """
+    extras = {}
+
+    if not entry or not isinstance(entry, dict):
+        return extras
+
+    if "playlist" == kind:
+        for property in ("id", "title", "uploader", "uploader_id"):
+            if val := entry.get(property):
+                extras[f"playlist_{property}"] = val
+
+    if thumbnail := get_thumbnail(entry.get("thumbnails", [])):
+        extras["thumbnail"] = thumbnail.get("url")
+    elif thumbnail := entry.get("thumbnail"):
+        extras["thumbnail"] = thumbnail
+
+    for property in ("uploader", "channel"):
+        if val := entry.get(property):
+            extras[property] = val
+
+    if release_in := entry.get("release_timestamp"):
+        extras["release_in"] = formatdate(release_in, usegmt=True)
+
+    if release_in and "is_upcoming" == entry.get("live_status"):
+        extras["is_live"] = release_in
+
+    if duration := entry.get("duration"):
+        extras["duration"] = duration
+
+    extras["is_premiere"] = bool(entry.get("is_premiere", False))
+
+    extractor_key = entry.get("ie_key") or entry.get("extractor_key") or entry.get("extractor") or ""
+    if "thumbnail" not in extras and "youtube" in str(extractor_key).lower():
+        extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**entry)
+
+    return extras

@@ -35,6 +35,7 @@ from .Utils import (
     dt_delta,
     extract_info,
     extract_ytdlp_logs,
+    get_extras,
     merge_dict,
     str_to_dt,
     ytdlp_reject,
@@ -365,8 +366,9 @@ class DownloadQueue(metaclass=Singleton):
                     if property in entry:
                         extras[f"playlist_{property}"] = entry.get(property)
 
-                if "thumbnail" not in etr and "youtube:" in entry.get("extractor", ""):
-                    extras["thumbnail"] = f"https://img.youtube.com/vi/{etr['id']}/maxresdefault.jpg"
+                extractor_key = entry.get("ie_key") or entry.get("extractor_key") or entry.get("extractor") or ""
+                if "thumbnail" not in etr and "youtube" in str(extractor_key).lower():
+                    extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**etr)
 
                 newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
 
@@ -521,7 +523,7 @@ class DownloadQueue(metaclass=Singleton):
             options=options,
             cli=item.cli,
             auto_start=item.auto_start,
-            extras=item.extras,
+            extras=merge_dict(item.extras, get_extras(entry)),
         )
 
         try:
@@ -731,7 +733,7 @@ class DownloadQueue(metaclass=Singleton):
             # Early archive check to avoid unnecessary extraction calls
             # This sometimes can be different from the final extracted ID, so we need to verify again after extraction.
             if archive_id and item.is_archived():
-                store_type, _ = await self.get_item(archive_id=archive_id)
+                store_type, dlInfo = await self.get_item(archive_id=archive_id)
                 if not store_type:
                     dlInfo = Download(
                         info=ItemDTO(
@@ -821,7 +823,7 @@ class DownloadQueue(metaclass=Singleton):
                     if len(archive_ids) > 0:
                         store_type = None
                         for n in archive_ids:
-                            store_type, _ = await self.get_item(archive_id=n)
+                            store_type, dlInfo = await self.get_item(archive_id=n)
                             if store_type:
                                 break
 
@@ -838,7 +840,7 @@ class DownloadQueue(metaclass=Singleton):
                                     cookies=item.cookies,
                                     template=item.template,
                                     msg="URL is already downloaded.",
-                                    extras=item.extras,
+                                    extras=merge_dict(item.extras, get_extras(entry)),
                                 )
                             )
 
@@ -879,7 +881,7 @@ class DownloadQueue(metaclass=Singleton):
                     _name = entry.get("title", entry.get("id"))
                     log_message = f"Ignoring download of '{_name!r}' as per condition '{condition.name}'{extra_msg}."
 
-                    store_type, _ = await self.get_item(archive_id=archive_id)
+                    store_type, dlInfo = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
@@ -892,7 +894,7 @@ class DownloadQueue(metaclass=Singleton):
                                 cookies=item.cookies,
                                 template=item.template,
                                 msg=log_message,
-                                extras=item.extras,
+                                extras=merge_dict(item.extras, get_extras(entry)),
                             )
                         )
                         await self.done.put(dlInfo)

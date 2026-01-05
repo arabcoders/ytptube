@@ -340,7 +340,7 @@
                 v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')" v-rtime="item.datetime" />
             </div>
             <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable" v-if="item.file_size">
-              <span class="has-tooltip">{{ formatBytes(item.file_size) }}</span>
+              {{ formatBytes(item.file_size) }}
             </div>
           </div>
           <div class="columns is-mobile is-multiline">
