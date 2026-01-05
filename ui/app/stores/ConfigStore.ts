@@ -35,7 +35,8 @@ export const useConfigStore = defineStore('config', () => {
         'template': '',
         'cookies': '',
         'cli': '',
-        'default': true
+        'default': true,
+        'priority': 0
       }
     ],
     dl_fields: [],

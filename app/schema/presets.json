@@ -43,6 +43,12 @@
       "type": "boolean",
       "description": "Whether this preset is a default preset.",
       "default": false
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Priority of the preset for sorting. Higher priority presets appear first.",
+      "default": 0,
+      "minimum": 0
     }
   },
   "required": [
@@ -54,12 +60,14 @@
       "id": "3e163c6c-64eb-4448-924f-814b629b3810",
       "name": "default",
       "default": true,
+      "priority": 0,
       "cli": "--socket-timeout 30 --download-archive %(config_path)s/archive.log",
       "description": "Default preset for yt-dlp. It will download whatever yt-dlp decides is the best quality for the video and audio."
     },
     {
       "id": "a6fd4b25-2b3e-458d-bb57-b75e41cc4330",
       "name": "Audio Only",
+      "priority": 5,
       "cli": "--extract-audio --add-chapters --embed-metadata --embed-thumbnail --format 'bestaudio/best'",
       "description": "This preset is designed to download only the audio of the video. It will extract the audio, add chapters, metadata, and thumbnail."
     }

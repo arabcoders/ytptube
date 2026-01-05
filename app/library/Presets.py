@@ -103,6 +103,9 @@ class Preset:
     default: bool = False
     """If True, the preset is a default preset."""
 
+    priority: int = 0
+    """Priority of the preset."""
+
     _cookies_file: Path | None = field(init=False, default=None)
     """The path to the cookies file."""
 
@@ -219,7 +222,7 @@ class Presets(metaclass=Singleton):
 
     def get_all(self) -> list[Preset]:
         """Return the items."""
-        return self._default + self._items
+        return sorted(self._default + self._items, key=lambda x: x.priority, reverse=True)
 
     def load(self) -> "Presets":
         """
@@ -249,6 +252,10 @@ class Presets(metaclass=Singleton):
 
         for i, preset in enumerate(presets):
             try:
+                if "priority" not in preset:
+                    preset["priority"] = 0
+                    need_save = True
+
                 if "id" not in preset:
                     preset["id"] = str(uuid.uuid4())
                     need_save = True
@@ -272,7 +279,7 @@ class Presets(metaclass=Singleton):
                 continue
 
         if need_save:
-            LOG.info(f"Saving '{self._file}'.")
+            LOG.warning("Saving presets due to schema changes.")
             self.save(self._items)
 
         return self
@@ -327,6 +334,15 @@ class Presets(metaclass=Singleton):
             except Exception as e:
                 msg = f"Invalid command options for yt-dlp. '{e!s}'."
                 raise ValueError(msg) from e
+
+        if item.get("priority") is not None:
+            priority = item.get("priority")
+            if not isinstance(priority, int):
+                msg = "Priority must be an integer."
+                raise ValueError(msg)
+            if priority < 0:
+                msg = "Priority must be >= 0."
+                raise ValueError(msg)
 
         return True
 

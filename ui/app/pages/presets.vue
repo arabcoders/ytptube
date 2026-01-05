@@ -74,10 +74,23 @@
                 <tbody>
                   <tr v-for="item in presetsNoDefault" :key="item.id">
                     <td class="is-text-overflow is-vcentered">
-                      {{ item.name }}
-                      <span class="icon" v-if="item.cookies" v-tooltip="'Has cookies'">
-                        <i class="fa-solid fa-cookie has-text-primary" />
-                      </span>
+                      <div class="is-text-overflow is-bold">
+                        {{ item.name }}
+                      </div>
+                      <div class="is-unselectable">
+                        <span class="icon-text" :class="{ 'has-text-primary': item.cookies }">
+                          <span class="icon"><i class="fa-solid fa-cookie" /></span>
+                          <span>{{ item.cookies ? 'Has cookies' : 'No cookies' }}</span>
+                        </span>
+                        &nbsp;
+                        <template v-if="item.priority > 0">
+                          &nbsp;
+                          <span class="icon-text">
+                            <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                            <span>Priority: {{ item.priority }}</span>
+                          </span>
+                        </template>
+                      </div>
                     </td>
                     <td class="is-vcentered is-items-center">
                       <div class="field is-grouped is-grouped-centered">
@@ -116,16 +129,32 @@
                   :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }" @click="toggleExpand(item.id, 'title')"
                   :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'" v-text="item.name" />
                 <div class="card-header-icon">
-                  <span v-if="item.cookies" class="icon" v-tooltip="'Has cookies'">
-                    <i class="fa-solid fa-cookie has-text-primary" />
-                  </span>
-                  <button class="has-text-info" v-tooltip="'Export preset'" @click="exportItem(item)">
-                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                  </button>
+                  <div class="field is-grouped">
+                    <div class="control" v-if="item.priority > 0">
+                      <span class="tag is-dark">
+                        <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                        <span v-text="item.priority" />
+                      </span>
+                    </div>
+                    <div class="control" v-if="item.cookies" v-tooltip="'This preset has cookies'">
+                      <span class="icon has-text-primary"><i class="fa-solid fa-cookie" /></span>
+                    </div>
+                    <div class="control">
+                      <button class="has-text-info" v-tooltip="'Export preset'" @click="exportItem(item)">
+                        <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </header>
               <div class="card-content is-flex-grow-1">
                 <div class="content">
+                  <template v-if="item.priority > 0">
+                    <p>
+                      <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                      <span>Priority: {{ item.priority }}</span>
+                    </p>
+                  </template>
                   <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'folder'), 'is-clickable': true }"
                     v-if="item.folder" @click="toggleExpand(item.id, 'folder')"
                     :title="!isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'">
@@ -204,6 +233,8 @@ import { useStorage } from '@vueuse/core'
 import type { Preset } from '~/types/presets'
 import { useConfirm } from '~/composables/useConfirm'
 
+type PresetWithUI = Preset & { raw?: boolean, toggle_description?: boolean }
+
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
@@ -212,7 +243,7 @@ const box = useConfirm()
 const display_style = useStorage<string>('preset_display_style', 'cards')
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-const presets = ref<Preset[]>([])
+const presets = ref<PresetWithUI[]>([])
 const preset = ref<Partial<Preset>>({})
 const presetRef = ref<string | null>('')
 const toggleForm = ref(false)

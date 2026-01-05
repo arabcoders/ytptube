@@ -86,8 +86,7 @@
 
               </template>
 
-
-              <div class="column is-12">
+              <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
                   <label class="label is-inline" for="name">
                     <span class="icon"><i class="fa-solid fa-tag" /></span>
@@ -99,6 +98,23 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>The name to refers to this preset of settings.</span>
+                  </span>
+                </div>
+              </div>
+
+              <div class="column is-6-tablet is-12-mobile">
+                <div class="field">
+                  <label class="label is-inline" for="priority">
+                    <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                    Priority
+                  </label>
+                  <div class="control">
+                    <input type="number" class="input" id="priority" v-model.number="form.priority"
+                      :disabled="addInProgress" min="0" placeholder="0">
+                  </div>
+                  <span class="help">
+                    <span class="icon"><i class="fa-solid fa-info" /></span>
+                    <span class="is-bold">Higher priority presets appear first in the list.</span>
                   </span>
                 </div>
               </div>
@@ -262,6 +278,10 @@ const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
 
+if (form.priority === undefined) {
+  form.priority = 0
+}
+
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
   .flatMap(opt => opt.flags
@@ -373,6 +393,10 @@ const importItem = async (): Promise<void> => {
       form.description = item.description
     }
 
+    if (item.priority !== undefined) {
+      form.priority = item.priority
+    }
+
     import_string.value = ''
     showImport.value = false
   } catch (e: any) {
@@ -399,6 +423,7 @@ const import_existing_preset = async (): Promise<void> => {
   form.template = preset.template || ''
   form.cookies = preset.cookies || ''
   form.description = preset.description || ''
+  form.priority = preset.priority ?? 0
 
   await nextTick()
   selected_preset.value = ''

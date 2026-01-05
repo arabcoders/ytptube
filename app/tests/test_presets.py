@@ -39,6 +39,7 @@ class TestPreset:
             cookies="test_cookies",
             cli="--test-option",
             default=True,
+            priority=10,
         )
 
         assert preset.id == preset_id
@@ -48,6 +49,7 @@ class TestPreset:
         assert preset.template == "test_template"
         assert preset.cookies == "test_cookies"
         assert preset.cli == "--test-option"
+        assert preset.priority == 10
         assert preset.default is True
 
     def test_preset_serialize(self):
@@ -597,3 +599,100 @@ class TestPresets:
 
             # Should have logged errors for invalid presets
             mock_log.error.assert_called()
+
+    @patch("app.library.Presets.Config")
+    @patch("app.library.Presets.EventBus")
+    def test_preset_priority_validation_integer(self, mock_eventbus, mock_config):
+        """Test that priority must be an integer."""
+        mock_config_instance = Mock(config_path="/tmp", default_preset="default")
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            presets_file = Path(temp_dir) / "presets.json"
+            presets = Presets(file=presets_file, config=mock_config_instance)
+
+            # Test with non-integer priority
+            invalid_preset = {"id": str(uuid.uuid4()), "name": "test", "priority": "not_an_int"}
+
+            with pytest.raises(ValueError, match="Priority must be an integer"):
+                presets.validate(invalid_preset)
+
+    @patch("app.library.Presets.Config")
+    @patch("app.library.Presets.EventBus")
+    def test_preset_priority_validation_negative(self, mock_eventbus, mock_config):
+        """Test that priority must be >= 0."""
+        mock_config_instance = Mock(config_path="/tmp", default_preset="default")
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            presets_file = Path(temp_dir) / "presets.json"
+            presets = Presets(file=presets_file, config=mock_config_instance)
+
+            # Test with negative priority
+            invalid_preset = {"id": str(uuid.uuid4()), "name": "test", "priority": -5}
+
+            with pytest.raises(ValueError, match="Priority must be >= 0"):
+                presets.validate(invalid_preset)
+
+    @patch("app.library.Presets.Config")
+    @patch("app.library.Presets.EventBus")
+    def test_preset_priority_sorting(self, mock_eventbus, mock_config):
+        """Test that presets are sorted by priority in descending order."""
+        mock_config_instance = Mock(config_path="/tmp", default_preset="default")
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            presets_file = Path(temp_dir) / "presets.json"
+            presets = Presets(file=presets_file, config=mock_config_instance)
+
+            # Create presets with different priorities
+            preset1 = Preset(name="low", priority=1)
+            preset2 = Preset(name="high", priority=10)
+            preset3 = Preset(name="medium", priority=5)
+
+            presets.save([preset1, preset2, preset3]).load()
+
+            all_presets = presets.get_all()
+            non_default = [p for p in all_presets if not p.default]
+
+            # Should be sorted by priority descending
+            assert non_default[0].name == "high"
+            assert non_default[0].priority == 10
+            assert non_default[1].name == "medium"
+            assert non_default[1].priority == 5
+            assert non_default[2].name == "low"
+            assert non_default[2].priority == 1
+
+    @patch("app.library.Presets.Config")
+    @patch("app.library.Presets.EventBus")
+    def test_preset_priority_default_zero(self, mock_eventbus, mock_config):
+        """Test that priority defaults to 0 if not specified."""
+        preset = Preset(name="test")
+        assert preset.priority == 0
+
+    @patch("app.library.Presets.Config")
+    @patch("app.library.Presets.EventBus")
+    def test_preset_priority_migration(self, mock_eventbus, mock_config):
+        """Test that old presets without priority get it added on load."""
+        mock_config_instance = Mock(config_path="/tmp", default_preset="default")
+        mock_config.get_instance.return_value = mock_config_instance
+        mock_eventbus.get_instance.return_value = Mock()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            presets_file = Path(temp_dir) / "presets.json"
+
+            # Create a preset file without priority field
+            old_preset_data = [{"id": str(uuid.uuid4()), "name": "old_preset", "cli": ""}]
+            presets_file.write_text(json.dumps(old_preset_data))
+
+            # Load presets - should migrate by adding priority
+            presets = Presets(file=presets_file, config=mock_config_instance)
+            presets.load()
+
+            # Check that priority was added
+            loaded_data = json.loads(presets_file.read_text())
+            assert "priority" in loaded_data[0]
+            assert loaded_data[0]["priority"] == 0
