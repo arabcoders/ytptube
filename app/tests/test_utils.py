@@ -2487,3 +2487,191 @@ class TestMoveFile:
 
         # Original file should still exist
         assert test_file.exists()
+
+
+class TestGetThumbnail:
+    def test_returns_none_for_empty_list(self):
+        """Test that None is returned for an empty thumbnail list."""
+        from app.library.Utils import get_thumbnail
+
+        assert get_thumbnail([]) is None
+
+    def test_returns_none_for_non_list(self):
+        """Test that None is returned for non-list input."""
+        from app.library.Utils import get_thumbnail
+
+        assert get_thumbnail(None) is None
+        assert get_thumbnail("not a list") is None
+        assert get_thumbnail({"not": "list"}) is None
+
+    def test_returns_highest_preference_thumbnail(self):
+        """Test that the thumbnail with highest preference is returned."""
+        from app.library.Utils import get_thumbnail
+
+        thumbnails = [
+            {"url": "low.jpg", "preference": 1, "width": 100, "height": 100},
+            {"url": "high.jpg", "preference": 10, "width": 200, "height": 200},
+            {"url": "medium.jpg", "preference": 5, "width": 150, "height": 150},
+        ]
+
+        result = get_thumbnail(thumbnails)
+        assert result == {"url": "high.jpg", "preference": 10, "width": 200, "height": 200}
+
+    def test_returns_highest_width_when_preference_equal(self):
+        """Test that the thumbnail with highest width is returned when preference is equal."""
+        from app.library.Utils import get_thumbnail
+
+        thumbnails = [
+            {"url": "small.jpg", "preference": 1, "width": 100, "height": 100},
+            {"url": "large.jpg", "preference": 1, "width": 200, "height": 200},
+            {"url": "medium.jpg", "preference": 1, "width": 150, "height": 150},
+        ]
+
+        result = get_thumbnail(thumbnails)
+        assert result == {"url": "large.jpg", "preference": 1, "width": 200, "height": 200}
+
+    def test_handles_missing_attributes(self):
+        """Test that thumbnails with missing attributes are handled correctly."""
+        from app.library.Utils import get_thumbnail
+
+        thumbnails = [
+            {"url": "no_pref.jpg", "width": 100},
+            {"url": "with_pref.jpg", "preference": 5, "width": 50},
+        ]
+
+        result = get_thumbnail(thumbnails)
+        assert result["url"] == "with_pref.jpg"
+
+    def test_returns_first_when_all_equal(self):
+        """Test that any thumbnail is returned when all attributes are equal."""
+        from app.library.Utils import get_thumbnail
+
+        thumbnails = [
+            {"url": "first.jpg"},
+            {"url": "second.jpg"},
+        ]
+
+        result = get_thumbnail(thumbnails)
+        assert result is not None
+        assert result["url"] in ["first.jpg", "second.jpg"]
+
+
+class TestGetExtras:
+    def test_returns_empty_dict_for_none(self):
+        """Test that empty dict is returned for None input."""
+        from app.library.Utils import get_extras
+
+        assert get_extras(None) == {}
+
+    def test_returns_empty_dict_for_non_dict(self):
+        """Test that empty dict is returned for non-dict input."""
+        from app.library.Utils import get_extras
+
+        assert get_extras("not a dict") == {}
+        assert get_extras([]) == {}
+
+    def test_extracts_video_information(self):
+        """Test extracting information from a video entry."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "id": "test123",
+            "title": "Test Video",
+            "uploader": "Test Uploader",
+            "channel": "Test Channel",
+            "thumbnails": [{"url": "thumb.jpg", "preference": 1}],
+            "duration": 120,
+        }
+
+        result = get_extras(entry, kind="video")
+
+        assert result["uploader"] == "Test Uploader"
+        assert result["channel"] == "Test Channel"
+        assert result["thumbnail"] == "thumb.jpg"
+        assert result["duration"] == 120
+        assert result["is_premiere"] is False
+
+    def test_extracts_playlist_information(self):
+        """Test extracting information from a playlist entry."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "id": "playlist123",
+            "title": "Test Playlist",
+            "uploader": "Playlist Owner",
+            "uploader_id": "owner123",
+        }
+
+        result = get_extras(entry, kind="playlist")
+
+        assert result["playlist_id"] == "playlist123"
+        assert result["playlist_title"] == "Test Playlist"
+        assert result["playlist_uploader"] == "Playlist Owner"
+        assert result["playlist_uploader_id"] == "owner123"
+
+    def test_handles_release_timestamp(self):
+        """Test handling of release_timestamp for upcoming content."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "release_timestamp": 1234567890,
+        }
+
+        result = get_extras(entry)
+
+        assert "release_in" in result
+        assert result["release_in"] == "Fri, 13 Feb 2009 23:31:30 GMT"
+
+    def test_handles_upcoming_live_stream(self):
+        """Test handling of upcoming live stream."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "release_timestamp": 1234567890,
+            "live_status": "is_upcoming",
+        }
+
+        result = get_extras(entry)
+
+        assert result["is_live"] == 1234567890
+        assert "release_in" in result
+
+    def test_handles_premiere_flag(self):
+        """Test handling of is_premiere flag."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "is_premiere": True,
+        }
+
+        result = get_extras(entry)
+        assert result["is_premiere"] is True
+
+        entry2 = {"is_premiere": False}
+        result2 = get_extras(entry2)
+        assert result2["is_premiere"] is False
+
+    def test_youtube_fallback_thumbnail(self):
+        """Test fallback thumbnail generation for YouTube videos."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "id": "dQw4w9WgXcQ",
+            "ie_key": "Youtube",
+        }
+
+        result = get_extras(entry)
+
+        assert result["thumbnail"] == "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg"
+
+    def test_thumbnail_string_fallback(self):
+        """Test fallback to thumbnail string when thumbnails list not available."""
+        from app.library.Utils import get_extras
+
+        entry = {
+            "thumbnail": "https://example.com/thumb.jpg",
+        }
+
+        result = get_extras(entry)
+
+        assert result["thumbnail"] == "https://example.com/thumb.jpg"

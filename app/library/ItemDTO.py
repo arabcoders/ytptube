@@ -102,6 +102,20 @@ class Item:
         """
         return self.extras and len(self.extras) > 0
 
+    def add_extras(self, key: str, value: Any) -> None:
+        """
+        Add an extra data to the item.
+
+        Args:
+            key (str): The key of the extra data.
+            value (Any): The value of the extra data.
+
+        """
+        if not self.extras:
+            self.extras = {}
+
+        self.extras[key] = value
+
     def has_cli(self) -> bool:
         """
         Check if the item has any command options for yt-dlp associated with it.
