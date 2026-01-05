@@ -733,7 +733,7 @@ class DownloadQueue(metaclass=Singleton):
             # Early archive check to avoid unnecessary extraction calls
             # This sometimes can be different from the final extracted ID, so we need to verify again after extraction.
             if archive_id and item.is_archived():
-                store_type, _ = await self.get_item(archive_id=archive_id)
+                store_type, dlInfo = await self.get_item(archive_id=archive_id)
                 if not store_type:
                     dlInfo = Download(
                         info=ItemDTO(
@@ -823,7 +823,7 @@ class DownloadQueue(metaclass=Singleton):
                     if len(archive_ids) > 0:
                         store_type = None
                         for n in archive_ids:
-                            store_type, _ = await self.get_item(archive_id=n)
+                            store_type, dlInfo = await self.get_item(archive_id=n)
                             if store_type:
                                 break
 
@@ -881,7 +881,7 @@ class DownloadQueue(metaclass=Singleton):
                     _name = entry.get("title", entry.get("id"))
                     log_message = f"Ignoring download of '{_name!r}' as per condition '{condition.name}'{extra_msg}."
 
-                    store_type, _ = await self.get_item(archive_id=archive_id)
+                    store_type, dlInfo = await self.get_item(archive_id=archive_id)
                     if not store_type:
                         dlInfo = Download(
                             info=ItemDTO(
