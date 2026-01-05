@@ -42,6 +42,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
+    "date": "2026-01-05T15:19:55+00:00",
+    "commits": [
+      {
+        "sha": "3c715754",
+        "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
+        "message": "Refactor: add priority to presets",
+        "author": "arabcoders",
+        "date": "2026-01-05T15:19:55+00:00"
+      },
+      {
+        "sha": "459dee77",
+        "full_sha": "459dee77db14bd331c7e16c69919dd957194381b",
+        "message": "Refactor: try to keep extra information available in all stages of the request process",
+        "author": "arabcoders",
+        "date": "2026-01-05T14:37:52+00:00"
+      },
+      {
+        "sha": "d7fc66a6",
+        "full_sha": "d7fc66a63a633be29d64d14cb6412eb21f5a78b9",
+        "message": "Refactor: remove underline for file_size in history.",
+        "author": "arabcoders",
+        "date": "2026-01-04T20:42:20+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.14",
     "full_sha": "a924ddb718c99501b2eaa583e2ac631631b1037a",
     "date": "2026-01-04T14:30:15+00:00",

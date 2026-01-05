@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20260104-6f717de3",
-        "date": "2026-01-04T20:26:09+00:00",
+        "tag": "dev-20260105-3c715754",
+        "date": "2026-01-05T15:19:55+00:00",
         "commits": [
+            {
+                "sha": "3c715754",
+                "message": "Refactor: add priority to presets",
+                "author": "arabcoders",
+                "date": "2026-01-05T15:19:55+00:00",
+                "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50"
+            },
+            {
+                "sha": "459dee77",
+                "message": "Refactor: try to keep extra information available in all stages of the request process",
+                "author": "arabcoders",
+                "date": "2026-01-05T14:37:52+00:00",
+                "full_sha": "459dee77db14bd331c7e16c69919dd957194381b"
+            },
+            {
+                "sha": "d7fc66a6",
+                "message": "Refactor: remove underline for file_size in history.",
+                "author": "arabcoders",
+                "date": "2026-01-04T20:42:20+00:00",
+                "full_sha": "d7fc66a63a633be29d64d14cb6412eb21f5a78b9"
+            },
             {
                 "sha": "6f717de3",
                 "message": "Refactor: make the UI buttons more consistent",
@@ -3560,7 +3581,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6f717de34531ce749daa2fc6c1b602b4f6ef72ac"
+        "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50"
     },
     {
         "tag": "dev-20250616-c07465a6",
