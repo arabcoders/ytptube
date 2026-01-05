@@ -43,9 +43,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
-    "date": "2026-01-05T15:19:55+00:00",
+    "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
+    "date": "2026-01-05T15:53:01+00:00",
     "commits": [
+      {
+        "sha": "f74229fd",
+        "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
+        "message": "Fix: access to uninitialized variable",
+        "author": "arabcoders",
+        "date": "2026-01-05T15:53:01+00:00"
+      },
       {
         "sha": "3c715754",
         "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
