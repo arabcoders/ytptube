@@ -1,9 +1,37 @@
 [
   {
-    "tag": "Unreleased (d5ae882d)",
-    "full_sha": "d5ae882df01558286cc98b60bb24318f03a325c4",
-    "date": "2026-01-04T20:37:50+00:00",
+    "tag": "Unreleased (0a70c02b)",
+    "full_sha": "0a70c02b3e155aa142270a71f5fa9d882681b80c",
+    "date": "2026-01-05T16:02:10+00:00",
     "commits": [
+      {
+        "sha": "f74229fd",
+        "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
+        "message": "Fix: access to uninitialized variable",
+        "author": "arabcoders",
+        "date": "2026-01-05T15:53:01+00:00"
+      },
+      {
+        "sha": "3c715754",
+        "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
+        "message": "Refactor: add priority to presets",
+        "author": "arabcoders",
+        "date": "2026-01-05T15:19:55+00:00"
+      },
+      {
+        "sha": "459dee77",
+        "full_sha": "459dee77db14bd331c7e16c69919dd957194381b",
+        "message": "Refactor: try to keep extra information available in all stages of the request process",
+        "author": "arabcoders",
+        "date": "2026-01-05T14:37:52+00:00"
+      },
+      {
+        "sha": "d7fc66a6",
+        "full_sha": "d7fc66a63a633be29d64d14cb6412eb21f5a78b9",
+        "message": "Refactor: remove underline for file_size in history.",
+        "author": "arabcoders",
+        "date": "2026-01-04T20:42:20+00:00"
+      },
       {
         "sha": "6f717de3",
         "full_sha": "6f717de34531ce749daa2fc6c1b602b4f6ef72ac",
@@ -38,41 +66,6 @@
         "message": "Refactor: add priority and description fields to conditions",
         "author": "arabcoders",
         "date": "2026-01-04T15:23:09+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
-    "date": "2026-01-05T15:53:01+00:00",
-    "commits": [
-      {
-        "sha": "f74229fd",
-        "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
-        "message": "Fix: access to uninitialized variable",
-        "author": "arabcoders",
-        "date": "2026-01-05T15:53:01+00:00"
-      },
-      {
-        "sha": "3c715754",
-        "full_sha": "3c7157542d628015d6bae3a1aba6f6cc8fdc4d50",
-        "message": "Refactor: add priority to presets",
-        "author": "arabcoders",
-        "date": "2026-01-05T15:19:55+00:00"
-      },
-      {
-        "sha": "459dee77",
-        "full_sha": "459dee77db14bd331c7e16c69919dd957194381b",
-        "message": "Refactor: try to keep extra information available in all stages of the request process",
-        "author": "arabcoders",
-        "date": "2026-01-05T14:37:52+00:00"
-      },
-      {
-        "sha": "d7fc66a6",
-        "full_sha": "d7fc66a63a633be29d64d14cb6412eb21f5a78b9",
-        "message": "Refactor: remove underline for file_size in history.",
-        "author": "arabcoders",
-        "date": "2026-01-04T20:42:20+00:00"
       }
     ]
   },
