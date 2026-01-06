@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260105-f74229fd",
-        "date": "2026-01-05T15:53:01+00:00",
+        "tag": "dev-20260106-700847f4",
+        "date": "2026-01-06T14:51:55+00:00",
         "commits": [
+            {
+                "sha": "700847f4",
+                "message": "Refactor: more UX consistency changes",
+                "author": "arabcoders",
+                "date": "2026-01-06T14:51:55+00:00",
+                "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5"
+            },
             {
                 "sha": "f74229fd",
                 "message": "Fix: access to uninitialized variable",
@@ -3588,7 +3595,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9"
+        "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5"
     },
     {
         "tag": "dev-20250616-c07465a6",

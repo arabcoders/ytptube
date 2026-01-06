@@ -70,6 +70,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
+    "date": "2026-01-06T14:51:55+00:00",
+    "commits": [
+      {
+        "sha": "700847f4",
+        "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
+        "message": "Refactor: more UX consistency changes",
+        "author": "arabcoders",
+        "date": "2026-01-06T14:51:55+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.14",
     "full_sha": "a924ddb718c99501b2eaa583e2ac631631b1037a",
     "date": "2026-01-04T14:30:15+00:00",
