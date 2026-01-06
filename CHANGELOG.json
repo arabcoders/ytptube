@@ -1,9 +1,16 @@
 [
   {
-    "tag": "Unreleased (0a70c02b)",
-    "full_sha": "0a70c02b3e155aa142270a71f5fa9d882681b80c",
-    "date": "2026-01-05T16:02:10+00:00",
+    "tag": "Unreleased (163be088)",
+    "full_sha": "163be08803d198228257f88f5ef70f81e91f7abe",
+    "date": "2026-01-06T15:02:40+00:00",
     "commits": [
+      {
+        "sha": "700847f4",
+        "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
+        "message": "Refactor: more UX consistency changes",
+        "author": "arabcoders",
+        "date": "2026-01-06T14:51:55+00:00"
+      },
       {
         "sha": "f74229fd",
         "full_sha": "f74229fdc1fe27b7016782f0d9e84ee09f9c48d9",
@@ -66,20 +73,6 @@
         "message": "Refactor: add priority and description fields to conditions",
         "author": "arabcoders",
         "date": "2026-01-04T15:23:09+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
-    "date": "2026-01-06T14:51:55+00:00",
-    "commits": [
-      {
-        "sha": "700847f4",
-        "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
-        "message": "Refactor: more UX consistency changes",
-        "author": "arabcoders",
-        "date": "2026-01-06T14:51:55+00:00"
       }
     ]
   },
