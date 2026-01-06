@@ -792,26 +792,27 @@ const deepIncludes = (
 }
 
 const getPath = (basePath: string, item: StoreItem): string => {
-  if (!item.download_dir) {
-    return ''
+  if (!item.folder && ((!item.filename && item.download_dir === basePath) || !item.download_dir)) {
+    return shortPath(basePath)
   }
 
   if (!item?.filename) {
-    return item.download_dir
+    return stripPath(eTrim(basePath, '/'), '/' + sTrim(eTrim(item.download_dir || item.folder, '/'), '/'))
   }
 
-  return stripPath(basePath, eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/'))
+  return stripPath(eTrim(basePath, '/'), '/' + eTrim(item.download_dir, '/') + '/' + sTrim(item.filename, '/'))
 }
-const getImage = (basePath: string, item: StoreItem): string => {
+
+const getImage = (basePath: string, item: StoreItem, fallback: boolean = true): string => {
   if (item.sidecar?.image && item.sidecar.image.length > 0) {
     return uri('/api/download/' + encodeURIComponent(stripPath(basePath, item.sidecar.image[0]?.file || '')))
   }
 
-  if (!item?.extras?.thumbnail) {
-    return '/images/placeholder.png'
+  if (item?.extras?.thumbnail) {
+    return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))
   }
 
-  return uri('/api/thumbnail?id=' + item._id + '&url=' + encodePath(item.extras.thumbnail))
+  return fallback ? uri('/images/placeholder.png') : ''
 }
 
 export {

@@ -114,11 +114,12 @@
                 </label>
               </td>
               <td class="is-text-overflow is-vcentered">
-                <div class="is-inline is-pulled-right" v-if="item.extras?.duration || item?.download_dir">
+                <div class="is-inline is-pulled-right"
+                  v-if="item.extras?.duration || getPath(config.app.download_path, item)">
                   <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
-                  <span class="icon is-pointer" v-if="item.download_dir"
+                  <span class="icon is-pointer" v-if="getPath(config.app.download_path, item)"
                     v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
                     <i class="fa-solid fa-folder-open" />
                   </span>
@@ -135,8 +136,8 @@
                           <span class="tag is-info is-unselectable">{{ item.preset }}</span>
                         </strong>
                       </template>
-                      <img v-if="showThumbnails && getImage(config.app.download_path, item)"
-                        :src="getImage(config.app.download_path, item)" class="mt-2 mb-2" />
+                      <img v-if="showThumbnails && getImage(config.app.download_path, item, false)"
+                        :src="getImage(config.app.download_path, item, false)" class="mt-2 mb-2" />
                       <p v-if="item.description">{{ item.description }}</p>
                     </Popover>
                   </div>
@@ -276,7 +277,7 @@
                 </span>
               </div>
 
-              <div class="control" v-if="item.download_dir">
+              <div class="control" v-if="getPath(config.app.download_path, item)">
                 <span class="icon" v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
                   <i class="fa-solid fa-folder-open" />
                 </span>
