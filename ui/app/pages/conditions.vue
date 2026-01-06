@@ -197,7 +197,7 @@
                       <span class="icon"><i class="fa-solid fa-list" /></span>
                       <span>Extras:
                         <span v-for="(value, key) in cond.extras" :key="key" class="tag is-info mr-2">
-                          <strong>{{ key }}</strong>: {{ value }}
+                          <b>{{ key }}</b>: {{ value }}
                         </span>
                       </span>
                     </p>
