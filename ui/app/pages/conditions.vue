@@ -235,9 +235,9 @@
       <div class="message is-info">
         <div class="message-body content pl-0">
           <ul>
-            <li>Filtering is based on yt-dlp’s <b>--match-filter</b> logic. Any expression that works with yt-dlp
+            <li>Filtering is based on yt-dlp’s <code>--match-filter</code> logic. Any expression that works with yt-dlp
               will also work here, including the same boolean operators. We added extended support for the
-              <b>OR</b> ( <b>||</b> ) operator, which yt-dlp does not natively support. This allows you to combine
+              <code>OR</code> ( <code>||</code> ) operator, which yt-dlp does not natively support. This allows you to combine
               multiple conditions more flexibly.
             </li>
             <li>
@@ -245,7 +245,7 @@
             </li>
             <li>
               For example, i follow specific channel that sometimes region lock some videos, by using the following
-              filter i am able to bypass it <b>availability = 'needs_auth' & channel_id = 'channel_id'</b>.
+              filter i am able to bypass it <code>availability = 'needs_auth' & channel_id = 'channel_id'</code>.
               and set proxy for that specific video, while leaving the rest of the videos to be downloaded normally.
             </li>
             <li>
