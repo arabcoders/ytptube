@@ -1,9 +1,37 @@
 [
   {
-    "tag": "Unreleased (163be088)",
-    "full_sha": "163be08803d198228257f88f5ef70f81e91f7abe",
-    "date": "2026-01-06T15:02:40+00:00",
+    "tag": "Unreleased (1189d31f)",
+    "full_sha": "1189d31f5cc9201641bcaaca089ca9f48e25040a",
+    "date": "2026-01-07T15:03:29+00:00",
     "commits": [
+      {
+        "sha": "4a3f0316",
+        "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
+        "message": "fix: update folder reference in socket store and adjust history count logic in state store",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:57:53+00:00"
+      },
+      {
+        "sha": "cf8704a2",
+        "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
+        "message": "feat: add flag to ignore already archived items from being added to download history.",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:42:08+00:00"
+      },
+      {
+        "sha": "ff9fd6a0",
+        "full_sha": "ff9fd6a061d262f934256750f181dc0517425794",
+        "message": "refactor: change how global buttons are rendered",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:16:47+00:00"
+      },
+      {
+        "sha": "ffc0b45b",
+        "full_sha": "ffc0b45bc9eac2c08736900fc3e536f835134e5d",
+        "message": "Fix: use b instead of strong for tag items.",
+        "author": "arabcoders",
+        "date": "2026-01-06T15:14:24+00:00"
+      },
       {
         "sha": "700847f4",
         "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5",
@@ -73,41 +101,6 @@
         "message": "Refactor: add priority and description fields to conditions",
         "author": "arabcoders",
         "date": "2026-01-04T15:23:09+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
-    "date": "2026-01-07T14:57:53+00:00",
-    "commits": [
-      {
-        "sha": "4a3f0316",
-        "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
-        "message": "fix: update folder reference in socket store and adjust history count logic in state store",
-        "author": "arabcoders",
-        "date": "2026-01-07T14:57:53+00:00"
-      },
-      {
-        "sha": "cf8704a2",
-        "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
-        "message": "feat: add flag to ignore already archived items from being added to download history.",
-        "author": "arabcoders",
-        "date": "2026-01-07T14:42:08+00:00"
-      },
-      {
-        "sha": "ff9fd6a0",
-        "full_sha": "ff9fd6a061d262f934256750f181dc0517425794",
-        "message": "refactor: change how global buttons are rendered",
-        "author": "arabcoders",
-        "date": "2026-01-07T14:16:47+00:00"
-      },
-      {
-        "sha": "ffc0b45b",
-        "full_sha": "ffc0b45bc9eac2c08736900fc3e536f835134e5d",
-        "message": "Fix: use b instead of strong for tag items.",
-        "author": "arabcoders",
-        "date": "2026-01-06T15:14:24+00:00"
       }
     ]
   },
