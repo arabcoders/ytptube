@@ -72,36 +72,36 @@
       </div>
     </div>
 
-    <div class="columns is-multiline is-mobile" v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
-      <div class="column">
-        <button type="button" class="button is-fullwidth is-ghost is-inverted"
-          @click="masterSelectAll = !masterSelectAll">
-          <span class="icon-text is-block">
-            <span class="icon">
-              <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-            </span>
-            <span v-if="!masterSelectAll">Select All</span>
-            <span v-else>Unselect All</span>
+    <div class="columns is-multiline is-mobile is-justify-content-flex-end" v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
+      <div class="column is-narrow">
+        <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
+          :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
+          <span class="icon">
+            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
+          </span>
+          <span v-if="!masterSelectAll">Select</span>
+          <span v-else>Unselect</span>
+          <span v-if="selectedElms.length > 0">
+            &nbsp;(<u class="has-text-danger">{{ selectedElms.length }}</u>)
           </span>
         </button>
       </div>
 
-      <div class="column">
-        <button class="button is-purple is-fullwidth" @click="runConfirm()"
-          :disabled="selectedElms.length < 1 || massRun" :class="{ 'is-loading': massRun }">
-          <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
-          <span>Run Selected</span>
-        </button>
-      </div>
-
-      <div class="column">
-        <button type="button" class="button is-fullwidth is-danger" @click="deleteConfirm()"
-          :disabled="selectedElms.length < 1 || massDelete" :class="{ 'is-loading': massDelete }">
-          <span class="icon-text is-block">
+      <div class="column is-2-tablet is-5-mobile">
+        <Dropdown label="Actions" icons="fa-solid fa-list">
+          <a class="dropdown-item has-text-purple"
+            @click="(selectedElms.length > 0 && !massRun) ? runConfirm() : null"
+            :style="{ opacity: (selectedElms.length < 1 || massRun) ? 0.5 : 1, cursor: (selectedElms.length < 1 || massRun) ? 'not-allowed' : 'pointer' }">
+            <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
+            <span>Run Selected</span>
+          </a>
+          <a class="dropdown-item has-text-danger"
+            @click="(selectedElms.length > 0 && !massDelete) ? deleteConfirm() : null"
+            :style="{ opacity: (selectedElms.length < 1 || massDelete) ? 0.5 : 1, cursor: (selectedElms.length < 1 || massDelete) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
             <span>Remove Selected</span>
-          </span>
-        </button>
+          </a>
+        </Dropdown>
       </div>
     </div>
 

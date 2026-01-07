@@ -176,7 +176,12 @@ export const useStateStore = defineStore('state', () => {
 
   const getPagination = () => state.pagination
 
-  const setHistoryCount = (count: number) => state.pagination.total = count
+  const setHistoryCount = (count: number) => {
+    state.pagination.total = count
+    if (count > 0 && !state.pagination.isLoaded) {
+      state.pagination.isLoaded = false
+    }
+  }
 
   /**
    * Delete items by specific IDs or status filter.

@@ -734,7 +734,7 @@ class DownloadQueue(metaclass=Singleton):
             # This sometimes can be different from the final extracted ID, so we need to verify again after extraction.
             if archive_id and item.is_archived():
                 store_type, dlInfo = await self.get_item(archive_id=archive_id)
-                if not store_type:
+                if not store_type and not self.config.ignore_archived_items:
                     dlInfo = Download(
                         info=ItemDTO(
                             id=archive_id.split()[1],
@@ -763,7 +763,7 @@ class DownloadQueue(metaclass=Singleton):
                     )
                     return {"status": "ok"}
 
-                message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
+                message: str = f"The URL '{item.url}':'{archive_id}' is already downloaded and recorded in archive."
                 LOG.warning(message)
                 self._notify.emit(
                     Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
@@ -827,7 +827,7 @@ class DownloadQueue(metaclass=Singleton):
                             if store_type:
                                 break
 
-                        if not store_type:
+                        if not store_type and not self.config.ignore_archived_items:
                             new_archive_id = new_archive_id or extra_ids.pop(0)
                             dlInfo = Download(
                                 info=ItemDTO(
@@ -855,7 +855,7 @@ class DownloadQueue(metaclass=Singleton):
                             )
                             return {"status": "ok"}
 
-                        message: str = f"The URL '{item.url}' is already downloaded and recorded in archive."
+                        message: str = f"The URL '{item.url}':'{archive_ids.pop(0)}' is already downloaded and recorded in archive."
                         LOG.warning(message)
                         self._notify.emit(
                             Events.LOG_INFO, data={"preset": item.preset}, title="Already Downloaded", message=message
