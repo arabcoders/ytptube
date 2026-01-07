@@ -78,9 +78,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
-    "date": "2026-01-07T14:42:08+00:00",
+    "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
+    "date": "2026-01-07T14:57:53+00:00",
     "commits": [
+      {
+        "sha": "4a3f0316",
+        "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
+        "message": "fix: update folder reference in socket store and adjust history count logic in state store",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:57:53+00:00"
+      },
       {
         "sha": "cf8704a2",
         "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
