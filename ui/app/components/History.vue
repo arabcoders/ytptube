@@ -1,64 +1,48 @@
 <template>
-  <div class="columns is-multiline is-mobile has-text-centered" v-if="hasItems">
-    <div class="column is-half-mobile">
-      <button type="button" class="button is-fullwidth is-ghost is-inverted"
-        @click="masterSelectAll = !masterSelectAll">
-        <span v-if="selectedElms.length > 0" class="mr-2 tag is-danger">
-          {{ selectedElms.length }}
+  <div class="columns is-multiline is-mobile has-text-centered is-justify-content-flex-end" v-if="hasItems">
+    <div class="column is-narrow">
+      <button type="button" class="button is-fullwidth" @click="masterSelectAll = !masterSelectAll"
+        :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
+        <span class="icon">
+          <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </span>
-        <span class="icon-text is-block">
-          <span class="icon">
-            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-          </span>
-          <span v-if="!masterSelectAll">Select All</span>
-          <span v-else>Unselect All</span>
+        <span v-if="!masterSelectAll">Select</span>
+        <span v-else>Unselect</span>
+        <span v-if="selectedElms.length > 0">
+          &nbsp;(<u class="has-text-danger">{{ selectedElms.length }}</u>)
         </span>
       </button>
     </div>
-    <div class="column is-half-mobile">
-      <button type="button" class="button is-fullwidth is-link" @click="downloadSelected"
-        :disabled="!hasDownloaded || !hasSelected"
-        v-tooltip="!hasSelected || !hasDownloaded ? '' : 'Download items as zip'">
-        <span class="icon-text is-block">
+    <div class="column is-2-tablet is-5-mobile">
+      <Dropdown label="Actions" icons="fa-solid fa-list">
+        <a class="dropdown-item has-text-link" @click="(hasDownloaded && hasSelected) ? downloadSelected() : null"
+          :style="{ opacity: (!hasDownloaded || !hasSelected) ? 0.5 : 1, cursor: (!hasDownloaded || !hasSelected) ? 'not-allowed' : 'pointer' }"
+          v-tooltip="!hasSelected || !hasDownloaded ? '' : 'Download items as zip'">
           <span class="icon"><i class="fa-solid fa-compress-alt" /></span>
           <span>Download</span>
-        </span>
-      </button>
-    </div>
-    <div class="column is-half-mobile">
-      <button type="button" class="button is-fullwidth is-danger" @click="deleteSelectedItems" :disabled="!hasSelected">
-        <span class="icon-text is-block">
+        </a>
+        <a class="dropdown-item has-text-danger" @click="hasSelected ? deleteSelectedItems() : null"
+          :style="{ opacity: !hasSelected ? 0.5 : 1, cursor: !hasSelected ? 'not-allowed' : 'pointer' }">
           <span class="icon"><i class="fa-solid fa-trash-can" /></span>
           <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
-        </span>
-      </button>
-    </div>
-    <div class="column is-half-mobile" v-if="hasCompleted">
-      <button type="button" class="button is-fullwidth is-primary is-inverted" @click="clearCompleted">
-        <span class="icon-text is-block">
+        </a>
+        <hr class="dropdown-divider" v-if="hasCompleted || hasIncomplete">
+        <a v-if="hasCompleted" class="dropdown-item has-text-primary" @click="clearCompleted">
           <span class="icon"><i class="fa-solid fa-circle-check" /></span>
           <span>Clear Completed</span>
-        </span>
-      </button>
-    </div>
-    <div class="column is-half-mobile" v-if="hasIncomplete">
-      <button type="button" class="button is-fullwidth is-info is-inverted" @click="clearIncomplete">
-        <span class="icon-text is-block">
+        </a>
+        <a v-if="hasIncomplete" class="dropdown-item has-text-info" @click="clearIncomplete">
           <span class="icon"><i class="fa-solid fa-circle-xmark" /></span>
           <span>Clear Incomplete</span>
-        </span>
-      </button>
-    </div>
-    <div class="column is-half-mobile" v-if="hasIncomplete">
-      <button type="button" class="button is-fullwidth is-warning is-inverted" @click="retryIncomplete">
-        <span class="icon-text is-block">
+        </a>
+        <a v-if="hasIncomplete" class="dropdown-item has-text-warning" @click="retryIncomplete">
           <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
           <span>Retry Incomplete</span>
-        </span>
-      </button>
+        </a>
+      </Dropdown>
     </div>
-    <div class="column is-1-tablet">
-      <button type="button" class="button is-fullwidth" @click="direction = direction === 'desc' ? 'asc' : 'desc'">
+    <div class="column is-narrow">
+      <button type="button" class="button" @click="direction = direction === 'desc' ? 'asc' : 'desc'">
         <span class="icon-text is-block">
           <span class="icon">
             <i class="fa-solid" :class="direction === 'desc' ? 'fa-arrow-down-a-z' : 'fa-arrow-up-a-z'" />
@@ -725,7 +709,10 @@ const clearCompleted = async () => {
     return
   }
   selectedElms.value = []
-  await stateStore.deleteItems('history', { status: 'finished', removeFile: false })
+  Promise.all([
+    stateStore.deleteItems('history', { status: 'finished', removeFile: false }),
+    stateStore.deleteItems('history', { status: 'skip', removeFile: false })
+  ])
 }
 
 const clearIncomplete = async () => {

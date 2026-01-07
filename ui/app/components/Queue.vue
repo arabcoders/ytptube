@@ -1,37 +1,37 @@
 <template>
-  <div class="columns is-multiline is-mobile has-text-centered" v-if="filteredItems.length > 0">
-    <div class="column is-half-mobile">
-      <button type="button" class="button is-fullwidth is-ghost" @click="masterSelectAll = !masterSelectAll">
-        <span v-if="selectedElms.length > 0" class="mr-2 tag is-danger">
-          {{ selectedElms.length }}
+  <div class="columns is-multiline is-mobile has-text-centered is-justify-content-flex-end"
+    v-if="filteredItems.length > 0">
+    <div class="column is-narrow">
+      <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
+        :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
+        <span class="icon">
+          <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
         </span>
-        <span class="icon-text is-block">
-          <span class="icon">
-            <i class="fas" :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-          </span>
-          <span v-if="!masterSelectAll">Select All</span>
-          <span v-else> Unselect All</span>
+        <span v-if="!masterSelectAll">Select</span>
+        <span v-else>Unselect</span>
+        <span v-if="selectedElms.length > 0">
+          &nbsp;(<u class="has-text-danger">{{ selectedElms.length }}</u>)
         </span>
       </button>
     </div>
-    <div class="column is-half-mobile" v-if="hasManualStart">
-      <button type="button" class="button is-fullwidth is-success" :disabled="!hasSelected" @click="startItems">
-        <span class="icon"><i class="fa-solid fa-circle-play" /></span>
-        <span>Start</span>
-      </button>
-    </div>
-    <div class="column is-half-mobile" v-if="hasPausable">
-      <button type="button" class="button is-fullwidth is-warning is-background-warning-85" :disabled="!hasSelected"
-        @click="pauseSelected">
-        <span class="icon"><i class="fa-solid fa-pause" /></span>
-        <span>Pause</span>
-      </button>
-    </div>
-    <div class="column is-half-mobile">
-      <button type="button" class="button is-fullwidth is-warning" :disabled="!hasSelected" @click="cancelSelected">
-        <span class="icon"><i class="fa-solid fa-eject" /></span>
-        <span>Cancel</span>
-      </button>
+    <div class="column is-2-tablet is-5-mobile">
+      <Dropdown label="Actions" icons="fa-solid fa-list">
+        <a v-if="hasManualStart" class="dropdown-item has-text-success" @click="hasSelected ? startItems() : null"
+          :style="{ opacity: !hasSelected ? 0.5 : 1, cursor: !hasSelected ? 'not-allowed' : 'pointer' }">
+          <span class="icon"><i class="fa-solid fa-circle-play" /></span>
+          <span>Start</span>
+        </a>
+        <a v-if="hasPausable" class="dropdown-item has-text-warning" @click="hasSelected ? pauseSelected() : null"
+          :style="{ opacity: !hasSelected ? 0.5 : 1, cursor: !hasSelected ? 'not-allowed' : 'pointer' }">
+          <span class="icon"><i class="fa-solid fa-pause" /></span>
+          <span>Pause</span>
+        </a>
+        <a class="dropdown-item has-text-warning" @click="hasSelected ? cancelSelected() : null"
+          :style="{ opacity: !hasSelected ? 0.5 : 1, cursor: !hasSelected ? 'not-allowed' : 'pointer' }">
+          <span class="icon"><i class="fa-solid fa-eject" /></span>
+          <span>Cancel</span>
+        </a>
+      </Dropdown>
     </div>
   </div>
 

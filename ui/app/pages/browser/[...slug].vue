@@ -105,36 +105,36 @@
       </div>
     </div>
 
-    <div class="columns is-mobile is-multiline" v-if="config.app.browser_control_enabled && items && items.length > 0">
-      <div class="column is-12-mobile">
-        <button type="button" class="button is-fullwidth is-ghost is-inverted"
-          @click="masterSelectAll = !masterSelectAll" :disabled="isLoading || items.length < 1">
-          <span class="icon-text is-block">
-            <span class="icon">
-              <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-            </span>
-            <span v-if="!masterSelectAll">Select All</span>
-            <span v-else>Unselect All</span>
+    <div class="columns is-mobile is-multiline is-justify-content-flex-end" v-if="config.app.browser_control_enabled && items && items.length > 0">
+      <div class="column is-narrow">
+        <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
+          :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }"
+          :disabled="isLoading || items.length < 1">
+          <span class="icon">
+            <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
+          </span>
+          <span v-if="!masterSelectAll">Select</span>
+          <span v-else>Unselect</span>
+          <span v-if="selectedElms.length > 0">
+            &nbsp;(<u class="has-text-danger">{{ selectedElms.length }}</u>)
           </span>
         </button>
       </div>
-      <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-danger" @click="deleteSelected"
-          :disabled="selectedElms.length < 1 || isLoading || items.length < 1">
-          <span class="icon-text is-block">
+      <div class="column is-2-tablet is-5-mobile">
+        <Dropdown label="Actions" icons="fa-solid fa-list">
+          <a class="dropdown-item has-text-danger"
+            @click="(selectedElms.length > 0 && !isLoading) ? deleteSelected() : null"
+            :style="{ opacity: (selectedElms.length < 1 || isLoading) ? 0.5 : 1, cursor: (selectedElms.length < 1 || isLoading) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-            <span>Delete {{ selectedElms.length > 0 ? selectedElms.length : '' }} items</span>
-          </span>
-        </button>
-      </div>
-      <div class="column is-half-mobile">
-        <button type="button" class="button is-fullwidth is-link" @click="moveSelected"
-          :disabled="selectedElms.length < 1 || isLoading || items.length < 1">
-          <span class="icon-text is-block">
+            <span>Delete{{ selectedElms.length > 0 ? ` (${selectedElms.length})` : '' }}</span>
+          </a>
+          <a class="dropdown-item has-text-link"
+            @click="(selectedElms.length > 0 && !isLoading) ? moveSelected() : null"
+            :style="{ opacity: (selectedElms.length < 1 || isLoading) ? 0.5 : 1, cursor: (selectedElms.length < 1 || isLoading) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-arrows-alt" /></span>
-            <span>Move {{ selectedElms.length > 0 ? selectedElms.length : '' }} items</span>
-          </span>
-        </button>
+            <span>Move{{ selectedElms.length > 0 ? ` (${selectedElms.length})` : '' }}</span>
+          </a>
+        </Dropdown>
       </div>
     </div>
 
