@@ -159,7 +159,7 @@ export const useSocketStore = defineStore('socket', () => {
         return;
       }
 
-      if (json.data?.folder) {
+      if (json.data?.folders) {
         config.add('folders', json.data.folders)
       }
 
