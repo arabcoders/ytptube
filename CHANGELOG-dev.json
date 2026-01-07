@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20260106-700847f4",
-        "date": "2026-01-06T14:51:55+00:00",
+        "tag": "dev-20260107-cf8704a2",
+        "date": "2026-01-07T14:42:08+00:00",
         "commits": [
+            {
+                "sha": "cf8704a2",
+                "message": "feat: add flag to ignore already archived items from being added to download history.",
+                "author": "arabcoders",
+                "date": "2026-01-07T14:42:08+00:00",
+                "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02"
+            },
+            {
+                "sha": "ff9fd6a0",
+                "message": "refactor: change how global buttons are rendered",
+                "author": "arabcoders",
+                "date": "2026-01-07T14:16:47+00:00",
+                "full_sha": "ff9fd6a061d262f934256750f181dc0517425794"
+            },
+            {
+                "sha": "ffc0b45b",
+                "message": "Fix: use b instead of strong for tag items.",
+                "author": "arabcoders",
+                "date": "2026-01-06T15:14:24+00:00",
+                "full_sha": "ffc0b45bc9eac2c08736900fc3e536f835134e5d"
+            },
             {
                 "sha": "700847f4",
                 "message": "Refactor: more UX consistency changes",
@@ -3595,7 +3616,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "700847f4adbf82d6e6215672ceb40f555a78d7d5"
+        "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02"
     },
     {
         "tag": "dev-20250616-c07465a6",

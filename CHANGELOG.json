@@ -77,6 +77,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
+    "date": "2026-01-07T14:42:08+00:00",
+    "commits": [
+      {
+        "sha": "cf8704a2",
+        "full_sha": "cf8704a2aae60d4b8f10a72e661a94531bac1e02",
+        "message": "feat: add flag to ignore already archived items from being added to download history.",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:42:08+00:00"
+      },
+      {
+        "sha": "ff9fd6a0",
+        "full_sha": "ff9fd6a061d262f934256750f181dc0517425794",
+        "message": "refactor: change how global buttons are rendered",
+        "author": "arabcoders",
+        "date": "2026-01-07T14:16:47+00:00"
+      },
+      {
+        "sha": "ffc0b45b",
+        "full_sha": "ffc0b45bc9eac2c08736900fc3e536f835134e5d",
+        "message": "Fix: use b instead of strong for tag items.",
+        "author": "arabcoders",
+        "date": "2026-01-06T15:14:24+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.14",
     "full_sha": "a924ddb718c99501b2eaa583e2ac631631b1037a",
     "date": "2026-01-04T14:30:15+00:00",
