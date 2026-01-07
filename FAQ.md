@@ -55,6 +55,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_AUTO_CLEAR_HISTORY_DAYS     | Number of days after which completed download history is cleared.   | `0`                   |
 | YTP_DEFAULT_PAGINATION          | The default number of items per page for history.                   | `50`                  |
 | YTP_TASK_HANDLER_RANDOM_DELAY   | The maximum random delay in seconds before starting a task handler. | `60`                  |
+| YTP_IGNORE_ARCHIVED_ITEMS       | Don't report archived items in the download history.                | `false`               |
 
 > [!NOTE]
 > To raise the maximum workers for specific extractor, you need to add a ENV variable that follows the pattern `YTP_MAX_WORKERS_FOR_<EXTRACTOR_NAME>`.

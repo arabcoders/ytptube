@@ -216,6 +216,9 @@ class Config(metaclass=Singleton):
     task_handler_random_delay: float = 60.0
     """The maximum random delay in seconds before starting a task handler."""
 
+    ignore_archived_items: bool = False
+    """Dont report archived items in the download history."""
+
     pictures_backends: list[str] = [
         "https://unsplash.it/1920/1080?random",
         "https://picsum.photos/1920/1080",
@@ -280,6 +283,7 @@ class Config(metaclass=Singleton):
         "temp_disabled",
         "allow_internal_urls",
         "simple_mode",
+        "ignore_archived_items",
     )
     "The variables that are booleans."
 
