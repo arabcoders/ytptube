@@ -34,6 +34,7 @@ from app.library.Utils import (
     get_files,
     get_mime_type,
     get_possible_images,
+    get_static_ytdlp,
     init_class,
     is_private_address,
     list_folders,
@@ -41,6 +42,7 @@ from app.library.Utils import (
     load_modules,
     merge_dict,
     move_file,
+    parse_outtmpl,
     parse_tags,
     read_logfile,
     rename_file,
@@ -2675,3 +2677,180 @@ class TestGetExtras:
         result = get_extras(entry)
 
         assert result["thumbnail"] == "https://example.com/thumb.jpg"
+
+
+class TestGetStaticYtdlp:
+    """Test the get_static_ytdlp function."""
+
+    def test_get_static_ytdlp_returns_instance(self):
+        """Test that get_static_ytdlp returns a YTDLP instance."""
+        from app.library.Utils import get_static_ytdlp
+        from app.library.ytdlp import YTDLP
+
+        # Force reload to ensure we get a real instance, not a mock
+        instance = get_static_ytdlp(reload=True)
+
+        assert instance is not None
+        assert isinstance(instance, YTDLP)
+
+    def test_get_static_ytdlp_returns_same_instance(self):
+        """Test that get_static_ytdlp returns the same cached instance."""
+        from app.library.Utils import get_static_ytdlp
+
+        instance1 = get_static_ytdlp()
+        instance2 = get_static_ytdlp()
+
+        assert instance1 is instance2
+
+    def test_get_static_ytdlp_reload(self):
+        """Test that get_static_ytdlp can reload and return a new instance."""
+        from app.library.Utils import get_static_ytdlp
+
+        instance1 = get_static_ytdlp()
+        instance2 = get_static_ytdlp(reload=True)
+
+        assert instance1 is not instance2
+        assert instance2 is not None
+
+    def test_get_static_ytdlp_has_correct_params(self):
+        """Test that get_static_ytdlp initializes with correct parameters."""
+        from app.library.Utils import get_static_ytdlp
+
+        instance = get_static_ytdlp(reload=True)
+
+        # Access the internal params
+        params = instance.params
+
+        assert params.get("color") == "no_color"
+        assert params.get("extract_flat") is True
+        assert params.get("skip_download") is True
+        assert params.get("ignoreerrors") is True
+        assert params.get("ignore_no_formats_error") is True
+        assert params.get("quiet") is True
+
+
+class TestParseOuttmpl:
+    """Test the parse_outtmpl function."""
+
+    def test_parse_outtmpl_basic(self):
+        """Test basic template parsing with simple placeholders."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(title)s.%(ext)s"
+        info_dict = {
+            "title": "Test Video",
+            "ext": "mp4",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "Test Video.mp4"
+
+    def test_parse_outtmpl_with_id(self):
+        """Test template parsing with video ID."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "[%(id)s] %(title)s.%(ext)s"
+        info_dict = {
+            "id": "dQw4w9WgXcQ",
+            "title": "Never Gonna Give You Up",
+            "ext": "webm",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "[dQw4w9WgXcQ] Never Gonna Give You Up.webm"
+
+    def test_parse_outtmpl_with_uploader(self):
+        """Test template parsing with uploader information."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(uploader)s - %(title)s.%(ext)s"
+        info_dict = {
+            "uploader": "Rick Astley",
+            "title": "Never Gonna Give You Up",
+            "ext": "mp4",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "Rick Astley - Never Gonna Give You Up.mp4"
+
+    def test_parse_outtmpl_with_nested_path(self):
+        """Test template parsing with nested directory structure."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(uploader)s/%(title)s.%(ext)s"
+        info_dict = {
+            "uploader": "Test Channel",
+            "title": "Test Video",
+            "ext": "mkv",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "Test Channel/Test Video.mkv"
+
+    def test_parse_outtmpl_with_missing_field(self):
+        """Test template parsing with missing field defaults to NA."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(title)s - %(upload_date)s.%(ext)s"
+        info_dict = {
+            "title": "Test Video",
+            "ext": "mp4",
+            # upload_date is missing
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "Test Video - NA.mp4"
+
+    def test_parse_outtmpl_complex(self):
+        """Test complex template with multiple fields."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(uploader)s/%(playlist_title)s/%(playlist_index)03d - %(title)s [%(id)s].%(ext)s"
+        info_dict = {
+            "uploader": "Test Channel",
+            "playlist_title": "Best Videos",
+            "playlist_index": 5,
+            "title": "Amazing Content",
+            "id": "abc123xyz",
+            "ext": "mp4",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "Test Channel/Best Videos/005 - Amazing Content [abc123xyz].mp4"
+
+    def test_parse_outtmpl_with_special_characters(self):
+        """Test template parsing handles special characters in values."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(title)s.%(ext)s"
+        info_dict = {
+            "title": "Test: Video / With \\ Special | Characters",
+            "ext": "mp4",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        # yt-dlp sanitizes special characters in filenames
+        assert ".mp4" in result
+        assert "Test" in result
+
+    def test_parse_outtmpl_with_playlist_info(self):
+        """Test template parsing with playlist information."""
+        from app.library.Utils import parse_outtmpl
+
+        template = "%(playlist)s/%(title)s.%(ext)s"
+        info_dict = {
+            "playlist": "My Playlist",
+            "title": "Video Title",
+            "ext": "webm",
+        }
+
+        result = parse_outtmpl(template, info_dict)
+
+        assert result == "My Playlist/Video Title.webm"

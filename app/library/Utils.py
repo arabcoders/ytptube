@@ -65,7 +65,7 @@ REMOVE_KEYS: list = [
 ]
 "Keys to remove from yt-dlp options at various levels."
 
-YTDLP_INFO_CLS: YTDLP = None
+YTDLP_INFO_CLS: YTDLP | None = None
 "Cached YTDLP info class."
 
 ALLOWED_SUBS_EXTENSIONS: set[str] = {".srt", ".vtt", ".ass"}
@@ -94,6 +94,32 @@ class StreamingError(Exception):
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
+
+
+def get_static_ytdlp(reload: bool = False) -> YTDLP:
+    """
+    Get a static YTDLP instance for info extraction.
+
+    Args:
+        reload (bool): If True, forces re-creation of the instance.
+
+    Returns:
+        YTDLP: A static YTDLP instance.
+
+    """
+    global YTDLP_INFO_CLS  # noqa: PLW0603
+    if YTDLP_INFO_CLS is None or reload:
+        YTDLP_INFO_CLS = YTDLP(
+            params={
+                "color": "no_color",
+                "extract_flat": True,
+                "skip_download": True,
+                "ignoreerrors": True,
+                "ignore_no_formats_error": True,
+                "quiet": True,
+            }
+        )
+    return YTDLP_INFO_CLS
 
 
 def patch_metadataparser() -> None:
@@ -382,7 +408,7 @@ def extract_info(
     if not data["is_premiere"]:
         data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
 
-    return YTDLP.sanitize_info(data) if sanitize_info else data
+    return YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
 
 
 def _is_safe_key(key: any) -> bool:
@@ -1406,27 +1432,13 @@ def get_archive_id(url: str) -> dict[str, str | None]:
         }
 
     """
-    global YTDLP_INFO_CLS  # noqa: PLW0603
-
     idDict: dict[str, None] = {
         "id": None,
         "ie_key": None,
         "archive_id": None,
     }
 
-    if YTDLP_INFO_CLS is None:
-        YTDLP_INFO_CLS = YTDLP(
-            params={
-                "color": "no_color",
-                "extract_flat": True,
-                "skip_download": True,
-                "ignoreerrors": True,
-                "ignore_no_formats_error": True,
-                "quiet": True,
-            }
-        )
-
-    for key, _ie in YTDLP_INFO_CLS._ies.items():
+    for key, _ie in get_static_ytdlp()._ies.items():
         try:
             if not _ie.suitable(url):
                 continue
@@ -1923,3 +1935,18 @@ def get_extras(entry: dict, kind: str = "video") -> dict:
         extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**entry)
 
     return extras
+
+
+def parse_outtmpl(output_template: str, info_dict: dict) -> str:
+    """
+    Parse yt-dlp output template with given info_dict.
+
+    Args:
+        output_template (str): The output template string.
+        info_dict (dict): The info dictionary from yt-dlp.
+
+    Returns:
+        str: The parsed output string.
+
+    """
+    return get_static_ytdlp().prepare_filename(info_dict=info_dict, outtmpl=output_template)

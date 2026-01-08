@@ -72,7 +72,8 @@
       </div>
     </div>
 
-    <div class="columns is-multiline is-mobile is-justify-content-flex-end" v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
+    <div class="columns is-multiline is-mobile is-justify-content-flex-end"
+      v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
       <div class="column is-narrow">
         <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
           :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
@@ -89,8 +90,7 @@
 
       <div class="column is-2-tablet is-5-mobile">
         <Dropdown label="Actions" icons="fa-solid fa-list">
-          <a class="dropdown-item has-text-purple"
-            @click="(selectedElms.length > 0 && !massRun) ? runConfirm() : null"
+          <a class="dropdown-item has-text-purple" @click="(selectedElms.length > 0 && !massRun) ? runConfirm() : null"
             :style="{ opacity: (selectedElms.length < 1 || massRun) ? 0.5 : 1, cursor: (selectedElms.length < 1 || massRun) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
             <span>Run Selected</span>
@@ -446,6 +446,11 @@
             </li>
             <li><strong>Custom Handlers:</strong> Leave timer empty for custom handler definitions. The handler runs
               hourly and doesn't require timer.
+            </li>
+            <li><strong>Generate metadata:</strong> will attempt first to save metadata based on the task <code>Download
+            path</code> if not set, it will fallback to the <code>Output template</code> with the
+              priority of <code>task</code>, <code>preset</code> and then finally to <code>YTP_OUTPUT_TEMPLATE</code>.
+              The final path must resolve inside <code>{{ config.app.download_path }}</code>.
             </li>
           </ul>
         </Message>
@@ -847,10 +852,10 @@ const editItem = (item: task_item) => {
 }
 
 const calcPath = (path: string) => {
-  const loc = config.app.download_path || '/downloads'
+  const loc = shortPath(config.app.download_path || '/downloads')
 
   if (path) {
-    return loc + '/' + sTrim(path, '/')
+    return eTrim(loc, '/') + '/' + sTrim(path, '/')
   }
 
   return loc
@@ -1068,14 +1073,10 @@ const unarchiveAll = async (item: task_item) => {
 
 const generateMeta = async (item: task_item) => {
   try {
-    let path = '/';
-    if (item.folder) {
-      path = `/${sTrim(item.folder, '/')}`
-    }
     const { status } = await cDialog({
       rawHTML: `
       <p>
-        Generate '${item.name}' metadata in '<b class="has-text-danger">${path}</b>'? you will be notified when it is done.
+        Generate '${item.name}' metadata? you will be notified when it is done.
       </p>
       <p>
         <b>This action will generate:</b>
@@ -1092,7 +1093,6 @@ const generateMeta = async (item: task_item) => {
           <span class="icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
           <span>Warning</span>: This will overwrite existing metadata files if they exist.
       </p>`
-
     })
 
     if (true !== status) {
