@@ -152,9 +152,9 @@ class TestDownloadHooks:
         d = Download(make_item())
         q = DummyQueue()
         d.status_queue = q
-        d.post_hooks(None)
+        d._post_hooks(None)
         assert len(q.items) == 0
-        d.post_hooks("name.ext")
+        d._post_hooks("name.ext")
         assert len(q.items) == 1
         assert q.items[0]["filename"] == "name.ext"
 

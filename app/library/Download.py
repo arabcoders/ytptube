@@ -189,7 +189,7 @@ class Download:
         dataDict = {k: v for k, v in data.items() if k in self._ytdlp_fields}
         self.status_queue.put({"id": self.id, "action": "postprocessing", **dataDict, "status": "postprocessing"})
 
-    def post_hooks(self, filename: str | None = None) -> None:
+    def _post_hooks(self, filename: str | None = None) -> None:
         if not filename:
             return
 
@@ -227,7 +227,7 @@ class Download:
                 {
                     "progress_hooks": [self._progress_hook],
                     "postprocessor_hooks": [self._postprocessor_hook],
-                    "post_hooks": [self.post_hooks],
+                    "post_hooks": [self._post_hooks],
                 }
             )
 
@@ -329,6 +329,8 @@ class Download:
                     raise SystemExit(130)  # noqa: TRY301
 
                 signal.signal(signal.SIGUSR1, mark_cancelled)
+
+            self.status_queue.put({"id": self.id, "status": "downloading"})
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")

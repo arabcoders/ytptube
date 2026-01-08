@@ -1,3 +1,5 @@
+import asyncio
+import functools
 import logging
 import uuid
 from typing import TYPE_CHECKING, Any
@@ -10,7 +12,7 @@ from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.router import route
 from app.library.Tasks import Task, TaskFailure, TaskResult, Tasks
-from app.library.Utils import get_channel_images, get_file, init_class, validate_url, validate_uuid
+from app.library.Utils import get_channel_images, get_file, init_class, parse_outtmpl, validate_url, validate_uuid
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -252,9 +254,37 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         if not save_path.exists():
             save_path.mkdir(parents=True, exist_ok=True)
 
-        metadata, status, message = task.fetch_metadata(full=False)
+        metadata, status, message = await asyncio.wait_for(
+            fut=asyncio.get_running_loop().run_in_executor(
+                None,
+                functools.partial(task.fetch_metadata, full=False),
+            ),
+            timeout=120,
+        )
         if not status:
             return web.json_response(data={"error": message}, status=web.HTTPBadRequest.status_code)
+
+        if not task.folder:
+            try:
+                outtmpl = parse_outtmpl(
+                    output_template=task.get_ytdlp_opts().get_all().get("outtmpl", {}).get("default", "{title} [{id}]"),
+                    info_dict=metadata,
+                )
+                if outtmpl:
+                    _path = save_path / outtmpl
+                    if not _path.is_dir():
+                        _path = _path.parent
+
+                    (save_path, _) = get_file(config.download_path, _path.relative_to(config.download_path))
+                    if not str(save_path or "").startswith(str(config.download_path)):
+                        return web.json_response(
+                            data={"error": "Invalid final path folder."}, status=web.HTTPBadRequest.status_code
+                        )
+
+                    if not save_path.exists():
+                        save_path.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                LOG.warning(f"Failed to resolve final path from outtmpl. '{e!s}'")
 
         info = {
             "id": ag(metadata, ["id", "channel_id"]),
@@ -277,12 +307,12 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 
         title: str = sanitize_filename(info.get("title"))
-        filename: Path = save_path / f"{title} [{info.get('id')}].info.json"
-        filename.write_text(encoder.encode(metadata), encoding="utf-8")
-        info["json_file"] = str(filename.relative_to(config.download_path))
+        info_file: Path = save_path / f"{title} [{info.get('id')}].info.json"
+        info_file.write_text(encoder.encode(metadata), encoding="utf-8")
+        info["json_file"] = str(info_file.relative_to(config.download_path))
 
-        filename = save_path / "tvshow.nfo"
-        info["nfo_file"] = f"{save_path}/{filename}"
+        xml_file: Path = save_path / "tvshow.nfo"
+        info["nfo_file"] = str(xml_file.relative_to(config.download_path))
 
         xml_content = "<tvshow>\n"
         xml_content += f"  <title>{NFOMakerPP._escape_text(info.get('title'))}</title>\n"
@@ -303,8 +333,7 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
             xml_content += f"  <year>{info.get('year')}</year>\n"
         xml_content += "  <status>Continuing</status>\n"
         xml_content += "</tvshow>\n"
-
-        filename.write_text(xml_content, encoding="utf-8")
+        xml_file.write_text(xml_content, encoding="utf-8")
 
         try:
             from yt_dlp.utils.networking import random_user_agent
@@ -348,9 +377,9 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
 
                         resp = await client.request(method="GET", url=url, follow_redirects=True)
 
-                        filename = save_path / f"{key}.jpg"
-                        filename.write_bytes(resp.content)
-                        info["thumbnails"][key] = str(filename.relative_to(config.download_path))
+                        img_file = save_path / f"{key}.jpg"
+                        img_file.write_bytes(resp.content)
+                        info["thumbnails"][key] = str(img_file.relative_to(config.download_path))
                     except Exception as e:
                         LOG.warning(f"Failed to fetch thumbnail '{key}' from '{url}'. '{e!s}'")
                         continue

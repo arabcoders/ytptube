@@ -77,6 +77,9 @@ class Task:
         if self.cli:
             params = params.add_cli(self.cli, from_user=True)
 
+        if self.template:
+            params = params.add({"outtmpl": {"default": self.template}}, from_user=False)
+
         return params
 
     def mark(self) -> tuple[bool, str]:
@@ -140,7 +143,9 @@ class Task:
 
         params = params.get_all()
 
-        ie_info: dict | None = extract_info(params, self.url, no_archive=True, follow_redirect=False, cache=True)
+        ie_info: dict | None = extract_info(
+            params, self.url, no_archive=True, follow_redirect=False, sanitize_info=True
+        )
         if not ie_info or not isinstance(ie_info, dict):
             return ({}, False, "Failed to extract information from URL.")
 
