@@ -1,9 +1,23 @@
 [
   {
-    "tag": "Unreleased (1189d31f)",
-    "full_sha": "1189d31f5cc9201641bcaaca089ca9f48e25040a",
-    "date": "2026-01-07T15:03:29+00:00",
+    "tag": "Unreleased (2435144c)",
+    "full_sha": "2435144cb1012658932578d36aed3623bbdf77bb",
+    "date": "2026-01-08T17:05:47+00:00",
     "commits": [
+      {
+        "sha": "c8e2fc5d",
+        "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f",
+        "message": "fix: put status downloading to prevent live stream from showing preparing endlessly",
+        "author": "arabcoders",
+        "date": "2026-01-08T16:08:39+00:00"
+      },
+      {
+        "sha": "cf2ee306",
+        "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30",
+        "message": "feat: support using output template for metadata generation. Closes #539",
+        "author": "arabcoders",
+        "date": "2026-01-08T14:03:22+00:00"
+      },
       {
         "sha": "4a3f0316",
         "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773",
@@ -101,27 +115,6 @@
         "message": "Refactor: add priority and description fields to conditions",
         "author": "arabcoders",
         "date": "2026-01-04T15:23:09+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f",
-    "date": "2026-01-08T16:08:39+00:00",
-    "commits": [
-      {
-        "sha": "c8e2fc5d",
-        "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f",
-        "message": "fix: put status downloading to prevent live stream from showing preparing endlessly",
-        "author": "arabcoders",
-        "date": "2026-01-08T16:08:39+00:00"
-      },
-      {
-        "sha": "cf2ee306",
-        "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30",
-        "message": "feat: support using output template for metadata generation. Closes #539",
-        "author": "arabcoders",
-        "date": "2026-01-08T14:03:22+00:00"
       }
     ]
   },
