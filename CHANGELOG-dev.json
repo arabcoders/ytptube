@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260108-cf2ee306",
-        "date": "2026-01-08T14:03:22+00:00",
+        "tag": "dev-20260108-c8e2fc5d",
+        "date": "2026-01-08T16:08:39+00:00",
         "commits": [
+            {
+                "sha": "c8e2fc5d",
+                "message": "fix: put status downloading to prevent live stream from showing preparing endlessly",
+                "author": "arabcoders",
+                "date": "2026-01-08T16:08:39+00:00",
+                "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f"
+            },
             {
                 "sha": "cf2ee306",
                 "message": "feat: support using output template for metadata generation. Closes #539",
@@ -3630,7 +3637,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30"
+        "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f"
     },
     {
         "tag": "dev-20250616-c07465a6",
