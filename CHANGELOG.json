@@ -105,6 +105,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30",
+    "date": "2026-01-08T14:03:22+00:00",
+    "commits": [
+      {
+        "sha": "cf2ee306",
+        "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30",
+        "message": "feat: support using output template for metadata generation. Closes #539",
+        "author": "arabcoders",
+        "date": "2026-01-08T14:03:22+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.14",
     "full_sha": "a924ddb718c99501b2eaa583e2ac631631b1037a",
     "date": "2026-01-04T14:30:15+00:00",

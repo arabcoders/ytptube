@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260107-4a3f0316",
-        "date": "2026-01-07T14:57:53+00:00",
+        "tag": "dev-20260108-cf2ee306",
+        "date": "2026-01-08T14:03:22+00:00",
         "commits": [
+            {
+                "sha": "cf2ee306",
+                "message": "feat: support using output template for metadata generation. Closes #539",
+                "author": "arabcoders",
+                "date": "2026-01-08T14:03:22+00:00",
+                "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30"
+            },
             {
                 "sha": "4a3f0316",
                 "message": "fix: update folder reference in socket store and adjust history count logic in state store",
@@ -3623,7 +3630,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4a3f0316ea8f9b25378016739dd90c3eec02a773"
+        "full_sha": "cf2ee306d2508deeff361386a406b71beecaea30"
     },
     {
         "tag": "dev-20250616-c07465a6",
