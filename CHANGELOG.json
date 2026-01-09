@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4",
-    "date": "2026-01-09T18:11:39+00:00",
+    "full_sha": "b4de0d9eb442881ac8b69c1bb656f59b7d98daec",
+    "date": "2026-01-09T19:26:02+00:00",
     "commits": [
+      {
+        "sha": "b4de0d9e",
+        "full_sha": "b4de0d9eb442881ac8b69c1bb656f59b7d98daec",
+        "message": "Fix: remove hardcoded test version",
+        "author": "arabcoders",
+        "date": "2026-01-09T19:26:02+00:00"
+      },
       {
         "sha": "81a4ef0f",
         "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4",
