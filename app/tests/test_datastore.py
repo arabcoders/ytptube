@@ -523,8 +523,7 @@ class TestDataStore:
         assert "id1" in ids
         assert "id2" in ids
 
-        # Verify order is maintained (OrderedDict)
-        assert result[0][0] == "id1"
+        assert result[0][0] == "id1", "Verify order is maintained (OrderedDict)"
         assert result[1][0] == "id2"
         await db.close()
 

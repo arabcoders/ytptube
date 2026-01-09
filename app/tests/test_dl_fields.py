@@ -71,8 +71,7 @@ class TestDLField:
         """Test creating a DLField with default values."""
         field = DLField(name="test_field", description="Test description", field="--test-option")
 
-        # Check that ID is generated
-        assert field.id
+        assert field.id, "Check that ID is generated"
         assert isinstance(field.id, str)
 
         # Check required fields
@@ -80,8 +79,7 @@ class TestDLField:
         assert field.description == "Test description"
         assert field.field == "--test-option"
 
-        # Check defaults
-        assert field.kind == FieldType.TEXT
+        assert field.kind == FieldType.TEXT, "Check defaults"
         assert field.icon == ""
         assert field.order == 0
         assert field.value == ""
@@ -272,8 +270,7 @@ class TestDLFields:
         fields = DLFields(file=str(temp_file))
         fields.load()
 
-        # Should handle error gracefully and return empty list
-        assert fields.get_all() == []
+        assert fields.get_all() == [], "Should handle error gracefully and return empty list"
 
     @patch("app.library.dl_fields.Config")
     def test_dl_fields_load_missing_id_auto_generation(self, mock_config, temp_file):
@@ -490,8 +487,7 @@ class TestDLFields:
 
         fields.save(test_fields)
 
-        # Verify file was written
-        assert temp_file.exists()
+        assert temp_file.exists(), "Verify file was written"
 
         # Verify content
         saved_data = json.loads(temp_file.read_text())

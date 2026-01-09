@@ -13,12 +13,13 @@ class TestMsToTimestamp:
         assert ms_to_timestamp(9) == "0:00:00.00"
         assert ms_to_timestamp(10) == "0:00:00.01"
         assert ms_to_timestamp(12345) == "0:00:12.34"
-        # 1 hour, 2 minutes, 3 seconds
-        assert ms_to_timestamp(3600000 + 120000 + 3000) == "1:02:03.00"
-        # Over 10 hours (SubStation limit is < 10h, our override must exceed)
-        assert ms_to_timestamp(12 * 3600000 + 34 * 60000 + 56 * 1000 + 780) == "12:34:56.78"
-        # Well over 36 hours to ensure no clamping at 9:59:59.99
-        assert ms_to_timestamp(37 * 3600000 + 12 * 60000 + 34 * 1000 + 560) == "37:12:34.56"
+        assert ms_to_timestamp(3600000 + 120000 + 3000) == "1:02:03.00", "1 hour, 2 minutes, 3 seconds"
+        assert ms_to_timestamp(12 * 3600000 + 34 * 60000 + 56 * 1000 + 780) == "12:34:56.78", (
+            "Over 10 hours (SubStation limit is < 10h, our override must exceed)"
+        )
+        assert ms_to_timestamp(37 * 3600000 + 12 * 60000 + 34 * 1000 + 560) == "37:12:34.56", (
+            "Well over 36 hours to ensure no clamping at 9:59:59.99"
+        )
 
 
 @pytest.mark.asyncio
@@ -77,8 +78,7 @@ async def test_make_single_event_returns_vtt(tmp_path: Path) -> None:
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
-        # Snapshot should contain the single event
-        assert d.snapshot == [1000]
+        assert d.snapshot == [1000], "Snapshot should contain the single event"
 
 
 @pytest.mark.asyncio
@@ -94,8 +94,7 @@ async def test_make_two_events_pop_first_when_ends_equal(tmp_path: Path) -> None
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
-        # Since ends are equal, first should be popped => only last remains
-        assert d.snapshot == [5000]
+        assert d.snapshot == [5000], "Since ends are equal, first should be popped => only last remains"
 
 
 @pytest.mark.asyncio
@@ -111,5 +110,4 @@ async def test_make_two_events_no_pop_when_different(tmp_path: Path) -> None:
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
-        # Both remain since ends differ
-        assert d.snapshot == [5000, 6000]
+        assert d.snapshot == [5000, 6000], "Both remain since ends differ"

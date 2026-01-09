@@ -130,8 +130,7 @@ class TestScheduler:
         assert sched.has("job1") is True
         new_job = sched.get("job1")
         assert new_job is not old
-        # Old job should have been stopped via remove()
-        assert old.stopped is True
+        assert old.stopped is True, "Old job should have been stopped via remove()"
 
     @patch("app.library.Scheduler.Cron", new=DummyCron)
     def test_remove_single_job_success(self) -> None:
@@ -154,8 +153,7 @@ class TestScheduler:
         result = sched.remove("jobB")
 
         assert result is False
-        # Job should remain since stop failed
-        assert sched.has("jobB") is True
+        assert sched.has("jobB") is True, "Job should remain since stop failed"
 
     @patch("app.library.Scheduler.Cron", new=DummyCron)
     def test_remove_list_of_jobs(self) -> None:
@@ -193,8 +191,9 @@ class TestScheduler:
         sched = Scheduler()
         sched.attach(app)
 
-        # on_shutdown handler should be registered
-        assert Scheduler.on_shutdown in [cb.__func__ if hasattr(cb, "__func__") else cb for cb in app.on_shutdown]
+        assert Scheduler.on_shutdown in [cb.__func__ if hasattr(cb, "__func__") else cb for cb in app.on_shutdown], (
+            "on_shutdown handler should be registered"
+        )
 
         # Patch add to verify it is called from event handler
         add_spy = MagicMock(wraps=sched.add)

@@ -34,7 +34,7 @@ from app.library.Utils import (
     get_files,
     get_mime_type,
     get_possible_images,
-    get_static_ytdlp,
+    get_ytdlp,
     init_class,
     is_private_address,
     list_folders,
@@ -137,9 +137,8 @@ class TestTimedLruCache:
         def test_function(x):
             return x * 2
 
-        # Test that methods exist
-        assert hasattr(test_function, "cache_clear")
-        assert hasattr(test_function, "cache_info")
+        assert hasattr(test_function, "cache_clear"), "Cached function should have cache_clear method"
+        assert hasattr(test_function, "cache_info"), "Cached function should have cache_info method"
 
         # Call function to populate cache
         test_function(5)
@@ -256,9 +255,8 @@ class TestAsyncTimedLruCache:
         async def async_method_test(x):
             return x + 1
 
-        # Test that cache methods exist
-        assert hasattr(async_method_test, "cache_clear")
-        assert hasattr(async_method_test, "cache_info")
+        assert hasattr(async_method_test, "cache_clear"), "Async cached function should have cache_clear method"
+        assert hasattr(async_method_test, "cache_info"), "Async cached function should have cache_info method"
 
         # Test cache_info
         info = async_method_test.cache_info()
@@ -286,12 +284,11 @@ class TestAsyncTimedLruCache:
         # Fill cache beyond max_size
         result1 = await async_limited_func(1)
         result2 = await async_limited_func(2)
-        result3 = await async_limited_func(3)  # Should evict oldest entry
+        result3 = await async_limited_func(3)
 
-        # Verify results
-        assert result1 == 4
-        assert result2 == 8
-        assert result3 == 12
+        assert result1 == 4, "async_limited_func(1) should return 4"
+        assert result2 == 8, "async_limited_func(2) should return 8"
+        assert result3 == 12, "async_limited_func(3) should return 12 (should evict oldest entry)"
 
         # Check cache size is limited
         info = async_limited_func.cache_info()
@@ -664,9 +661,8 @@ class TestMergeDict:
         source = {"nested": {"a": 1}}
         destination = {"nested": {"b": 2}, "other": 3}
         result = merge_dict(source, destination)
-        # Should merge nested dictionaries
-        assert "nested" in result
-        assert "other" in result
+        assert "nested" in result, "Should merge nested dictionaries"
+        assert "other" in result, "Should preserve other keys"
 
     def test_merge_dict_empty_source(self):
         """Test merging with empty source."""
@@ -695,7 +691,7 @@ class TestMergeDict:
         destination = {"existing": "data"}
         result = merge_dict(source, destination)
 
-        assert "__class__" not in result, "__class__ should be filtered out"
+        assert "__class__" not in result, "__class__ attribute pollution should be blocked"
         assert result["safe"] == "value", "Safe values should be preserved"
         assert result["existing"] == "data", "Existing data should be preserved"
 
@@ -742,11 +738,10 @@ class TestMergeDict:
         # All dangerous attributes should be filtered out
         dangerous_keys = ["__class__", "__dict__", "__globals__", "__builtins__"]
         for key in dangerous_keys:
-            assert key not in result, f"{key} should be filtered out"
+            assert key not in result, f"{key} should be filtered out (all dangerous attributes)"
 
-        # Safe data should be preserved
-        assert result["safe_key"] == "safe_value"
-        assert result["existing"] == "data"
+        assert result["safe_key"] == "safe_value", "Safe data should be preserved"
+        assert result["existing"] == "data", "Existing data should be preserved"
 
     def test_merge_dict_nested_dunder_pollution(self):
         """Test that nested dangerous attributes are handled correctly."""
@@ -754,11 +749,9 @@ class TestMergeDict:
         destination = {"nested": {"existing_nested": "original"}}
         result = merge_dict(source, destination)
 
-        # Nested dangerous attributes should be filtered out
-        assert "__class__" not in result["nested"], "Nested __class__ should be filtered"
-        # Safe nested data should be preserved
-        assert result["nested"]["safe_nested"] == "value"
-        assert result["nested"]["existing_nested"] == "original"
+        assert "__class__" not in result["nested"], "Nested dangerous attributes should be filtered out"
+        assert result["nested"]["safe_nested"] == "value", "Safe nested data should be preserved"
+        assert result["nested"]["existing_nested"] == "original", "Existing nested data should be preserved"
 
     def test_merge_dict_prototype_pollution_attempt(self):
         """Test protection against prototype pollution attempts."""
@@ -766,10 +759,10 @@ class TestMergeDict:
         destination = {"existing": "value"}
         result = merge_dict(source, destination)
 
-        # These should be treated as regular keys (not filtered unless explicitly in the filter list)
-        # The function filters Python-specific dangerous attributes, not JavaScript ones
-        assert result["safe"] == "data"
-        assert result["existing"] == "value"
+        assert result["safe"] == "data", (
+            "Function filters Python-specific dangerous attributes, not JS ones like __proto__"
+        )
+        assert result["existing"] == "value", "Existing data should be preserved"
 
     def test_merge_dict_special_method_pollution(self):
         """Test with various Python special methods."""
@@ -784,10 +777,10 @@ class TestMergeDict:
         destination = {"target": "data"}
         result = merge_dict(source, destination)
 
-        # These are not in the current filter list, so they should pass through
-        # This test documents current behavior - may need updating if more filters are added
-        assert result["safe"] == "value"
-        assert result["target"] == "data"
+        assert result["safe"] == "value", (
+            "Safe data should be preserved (special methods not in filter list, documents current behavior)"
+        )
+        assert result["target"] == "data", "Target data should be preserved"
 
     def test_merge_dict_list_pollution_safe(self):
         """Test that list merging doesn't allow dangerous manipulation."""
@@ -795,8 +788,9 @@ class TestMergeDict:
         destination = {"items": ["old1", "old2"]}
         result = merge_dict(source, destination)
 
-        # Lists should be concatenated safely (destination + source)
-        assert result["items"] == ["old1", "old2", "new1", "new2"]
+        assert result["items"] == ["old1", "old2", "new1", "new2"], (
+            "Lists should be concatenated safely (destination + source)"
+        )
 
     def test_merge_dict_deep_nested_pollution(self):
         """Test with deeply nested dangerous attributes."""
@@ -812,13 +806,13 @@ class TestMergeDict:
         destination = {"level1": {"level2": {"existing": "data"}}}
         result = merge_dict(source, destination)
 
-        # The function should now properly filter all dangerous keys recursively
-        assert "__class__" not in result["level1"]["level2"], "Deep __class__ should be filtered"
-        assert "__globals__" not in result["level1"]["level2"]["level3"], "Very deep __globals__ should be filtered"
+        assert "__class__" not in result["level1"]["level2"], (
+            "Function should properly filter all dangerous keys recursively (deep __class__)"
+        )
+        assert "__globals__" not in result["level1"]["level2"]["level3"], "Function should filter very deep __globals__"
 
-        # Safe data should be preserved
-        assert result["level1"]["level2"]["safe_deep"] == "value"
-        assert result["level1"]["level2"]["existing"] == "data"
+        assert result["level1"]["level2"]["safe_deep"] == "value", "Safe nested data should be preserved"
+        assert result["level1"]["level2"]["existing"] == "data", "Existing nested data should be preserved"
 
     def test_merge_dict_type_validation(self):
         """Test that non-dict parameters are properly rejected."""
@@ -845,13 +839,13 @@ class TestMergeDict:
 
         result = merge_dict(original_source, original_destination)
 
-        # Original dictionaries should be unchanged
-        assert original_source == source_copy, "Source should not be modified"
-        assert original_destination == destination_copy, "Destination should not be modified"
+        assert original_source == source_copy, "Original source dictionary should be unchanged (immutability)"
+        assert original_destination == destination_copy, (
+            "Original destination dictionary should be unchanged (immutability)"
+        )
 
-        # Result should be different from both originals
-        assert result != original_source
-        assert result != original_destination
+        assert result != original_source, "Result should be different from source original"
+        assert result != original_destination, "Result should be different from destination original"
 
     def test_merge_dict_custom_max_depth(self):
         """Test custom max_depth parameter."""
@@ -900,16 +894,14 @@ class TestMergeDict:
         source = {"items": list(range(3000))}
         destination = {"items": list(range(2000, 5000))}  # 3000 items
 
-        # Total would be 6000 items, but limit is 4000
         result = merge_dict(source, destination, max_list_size=4000)
 
-        # Should have original destination (3000) + truncated source (1000) = 4000
-        assert len(result["items"]) == 4000
+        assert len(result["items"]) == 4000, (
+            "Total would be 6000 items, but limit is 4000: destination (3000) + truncated source (1000)"
+        )
 
-        # First 3000 should be from destination
-        assert result["items"][:3000] == list(range(2000, 5000))
-        # Next 1000 should be from source (truncated)
-        assert result["items"][3000:] == list(range(1000))
+        assert result["items"][:3000] == list(range(2000, 5000)), "First 3000 items should be from destination"
+        assert result["items"][3000:] == list(range(1000)), "Next 1000 items should be from source (truncated)"
 
     def test_merge_dict_nested_with_limits(self):
         """Test nested merging with both depth and size limits."""
@@ -2018,8 +2010,7 @@ class TestDecryptDataCornerCases:
         encrypted = encrypt_data("test data", correct_key)
         result = decrypt_data(encrypted, wrong_key)
 
-        # Should return None on decryption failure
-        assert result is None
+        assert result is None, "Should return None on decryption failure with wrong key"
 
     def test_decrypt_data_truncated(self):
         """Test decrypting truncated encrypted data."""
@@ -2175,11 +2166,10 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        # Assertions
-        assert new_path.exists()
-        assert "renamed_video.mp4" == new_path.name
-        assert not test_file.exists()
-        assert 0 == len(sidecars)
+        assert new_path.exists(), "Renamed file should exist"
+        assert "renamed_video.mp4" == new_path.name, "File should have new name"
+        assert not test_file.exists(), "Original file should not exist"
+        assert 0 == len(sidecars), "Should have no sidecar files"
 
     def test_rename_file_with_subtitle_sidecar(self, tmp_path: Path):
         """Test renaming a file with subtitle sidecar."""
@@ -2193,12 +2183,11 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        # Assertions
-        assert new_path.exists()
-        assert "renamed_video.mp4" == new_path.name
-        assert not test_file.exists()
+        assert new_path.exists(), "Renamed file should exist"
+        assert "renamed_video.mp4" == new_path.name, "File should have new name"
+        assert not test_file.exists(), "Original file should not exist after rename"
 
-        assert 1 == len(sidecars)
+        assert 1 == len(sidecars), "Should have renamed 1 sidecar file"
         old_sidecar, new_sidecar = sidecars[0]
         assert new_sidecar.exists()
         assert "renamed_video.en.srt" == new_sidecar.name
@@ -2223,12 +2212,11 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed_video.mp4")
 
-        # Assertions
-        assert new_path.exists()
-        assert "renamed_video.mp4" == new_path.name
-        assert not test_file.exists()
+        assert new_path.exists(), "Renamed file should exist"
+        assert "renamed_video.mp4" == new_path.name, "File should have new name"
+        assert not test_file.exists(), "Original file should not exist after rename"
 
-        assert 3 == len(sidecars)
+        assert 3 == len(sidecars), "Should have renamed 3 sidecar files"
 
         # Check all sidecars were renamed
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
@@ -2236,10 +2224,9 @@ class TestRenameFile:
         assert "renamed_video.fr.srt" in sidecar_names
         assert "renamed_video.info.json" in sidecar_names
 
-        # Check old files don't exist
-        assert not subtitle_en.exists()
-        assert not subtitle_fr.exists()
-        assert not info_file.exists()
+        assert not subtitle_en.exists(), "Old subtitle file should not exist after rename"
+        assert not subtitle_fr.exists(), "Old subtitle file should not exist after rename"
+        assert not info_file.exists(), "Old info file should not exist after rename"
 
     def test_rename_file_destination_exists(self, tmp_path: Path):
         """Test renaming a file when destination already exists."""
@@ -2254,9 +2241,8 @@ class TestRenameFile:
         with pytest.raises(ValueError, match="already exists"):
             rename_file(test_file, "renamed_video.mp4")
 
-        # Original files should still exist
-        assert test_file.exists()
-        assert existing_file.exists()
+        assert test_file.exists(), "Original file should still exist when rename fails"
+        assert existing_file.exists(), "Existing file should still exist when rename fails"
 
     def test_rename_file_sidecar_destination_exists(self, tmp_path: Path):
         """Test renaming when sidecar destination already exists."""
@@ -2295,11 +2281,10 @@ class TestRenameFile:
         # Rename file
         new_path, sidecars = rename_file(test_file, "renamed.mp4")
 
-        # Assertions
-        assert new_path.exists()
-        assert "renamed.mp4" == new_path.name
+        assert new_path.exists(), "Renamed file should exist"
+        assert "renamed.mp4" == new_path.name, "File should have new name"
 
-        assert 2 == len(sidecars)
+        assert 2 == len(sidecars), "Should have renamed 2 sidecar files"
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
         assert "renamed.en-US.ass" in sidecar_names
         assert "renamed.thumb.jpg" in sidecar_names
@@ -2322,12 +2307,11 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        # Assertions
-        assert new_path.exists()
-        assert "video.mp4" == new_path.name
-        assert new_path.parent == target_dir
-        assert not test_file.exists()
-        assert 0 == len(sidecars)
+        assert new_path.exists(), "Moved file should exist at destination"
+        assert "video.mp4" == new_path.name, "File should keep same name"
+        assert new_path.parent == target_dir, "File should be in target directory"
+        assert not test_file.exists(), "Original file should not exist after move"
+        assert 0 == len(sidecars), "Should have no sidecar files"
 
     def test_move_file_with_subtitle_sidecar(self, tmp_path: Path):
         """Test moving a file with subtitle sidecar."""
@@ -2346,13 +2330,12 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        # Assertions
-        assert new_path.exists()
-        assert "video.mp4" == new_path.name
-        assert new_path.parent == target_dir
-        assert not test_file.exists()
+        assert new_path.exists(), "Moved file should exist at destination"
+        assert "video.mp4" == new_path.name, "File should keep same name"
+        assert new_path.parent == target_dir, "File should be in target directory"
+        assert not test_file.exists(), "Original file should not exist after move"
 
-        assert 1 == len(sidecars)
+        assert 1 == len(sidecars), "Should have moved 1 sidecar file"
         old_sidecar, new_sidecar = sidecars[0]
         assert new_sidecar.exists()
         assert "video.en.srt" == new_sidecar.name
@@ -2383,13 +2366,12 @@ class TestMoveFile:
         # Move file
         new_path, sidecars = move_file(test_file, target_dir)
 
-        # Assertions
-        assert new_path.exists()
-        assert "video.mp4" == new_path.name
-        assert new_path.parent == target_dir
-        assert not test_file.exists()
+        assert new_path.exists(), "Moved file should exist at destination"
+        assert "video.mp4" == new_path.name, "File should keep same name"
+        assert new_path.parent == target_dir, "File should be in target directory"
+        assert not test_file.exists(), "Original file should not exist after move"
 
-        assert 3 == len(sidecars)
+        assert 3 == len(sidecars), "Should have moved 3 sidecar files"
 
         # Check all sidecars were moved
         sidecar_names = {new_sidecar.name for old_sidecar, new_sidecar in sidecars}
@@ -2399,12 +2381,11 @@ class TestMoveFile:
 
         # Check all are in target directory
         for _old_sidecar, new_sidecar in sidecars:
-            assert new_sidecar.parent == target_dir
+            assert new_sidecar.parent == target_dir, "All sidecars should be in target directory"
 
-        # Check old files don't exist
-        assert not subtitle_en.exists()
-        assert not subtitle_fr.exists()
-        assert not info_file.exists()
+        assert not subtitle_en.exists(), "Old subtitle file should not exist after move"
+        assert not subtitle_fr.exists(), "Old subtitle file should not exist after move"
+        assert not info_file.exists(), "Old info file should not exist after move"
 
     def test_move_file_destination_exists(self, tmp_path: Path):
         """Test moving a file when destination already exists."""
@@ -2423,9 +2404,8 @@ class TestMoveFile:
         with pytest.raises(ValueError, match="already exists"):
             move_file(test_file, target_dir)
 
-        # Original files should still exist
-        assert test_file.exists()
-        assert existing_file.exists()
+        assert test_file.exists(), "Original file should still exist when move fails"
+        assert existing_file.exists(), "Existing file should still exist when move fails"
 
     def test_move_file_sidecar_destination_exists(self, tmp_path: Path):
         """Test moving when sidecar destination already exists."""
@@ -2682,41 +2662,43 @@ class TestGetExtras:
 class TestGetStaticYtdlp:
     """Test the get_static_ytdlp function."""
 
+    def setup_method(self):
+        """Reset YTDLP singleton state before each test."""
+        import app.library.Utils as Utils
+
+        Utils.YTDLP_INFO_CLS = None
+
     def test_get_static_ytdlp_returns_instance(self):
         """Test that get_static_ytdlp returns a YTDLP instance."""
-        from app.library.Utils import get_static_ytdlp
         from app.library.ytdlp import YTDLP
 
-        # Force reload to ensure we get a real instance, not a mock
-        instance = get_static_ytdlp(reload=True)
+        # Get the cached instance
+        instance = get_ytdlp()
 
         assert instance is not None
         assert isinstance(instance, YTDLP)
 
     def test_get_static_ytdlp_returns_same_instance(self):
         """Test that get_static_ytdlp returns the same cached instance."""
-        from app.library.Utils import get_static_ytdlp
 
-        instance1 = get_static_ytdlp()
-        instance2 = get_static_ytdlp()
+        instance1 = get_ytdlp()
+        instance2 = get_ytdlp()
 
         assert instance1 is instance2
 
-    def test_get_static_ytdlp_reload(self):
-        """Test that get_static_ytdlp can reload and return a new instance."""
-        from app.library.Utils import get_static_ytdlp
+    def test_get_static_ytdlp_with_params(self):
+        """Test that get_static_ytdlp returns a new instance when params are provided."""
 
-        instance1 = get_static_ytdlp()
-        instance2 = get_static_ytdlp(reload=True)
+        instance1 = get_ytdlp()
+        instance2 = get_ytdlp(params={"quiet": False})
 
         assert instance1 is not instance2
         assert instance2 is not None
 
     def test_get_static_ytdlp_has_correct_params(self):
         """Test that get_static_ytdlp initializes with correct parameters."""
-        from app.library.Utils import get_static_ytdlp
 
-        instance = get_static_ytdlp(reload=True)
+        instance = get_ytdlp()
 
         # Access the internal params
         params = instance.params
@@ -2732,9 +2714,14 @@ class TestGetStaticYtdlp:
 class TestParseOuttmpl:
     """Test the parse_outtmpl function."""
 
+    def setup_method(self):
+        """Reset YTDLP singleton state before each test."""
+        import app.library.Utils as Utils
+
+        Utils.YTDLP_INFO_CLS = None
+
     def test_parse_outtmpl_basic(self):
         """Test basic template parsing with simple placeholders."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(title)s.%(ext)s"
         info_dict = {
@@ -2748,7 +2735,6 @@ class TestParseOuttmpl:
 
     def test_parse_outtmpl_with_id(self):
         """Test template parsing with video ID."""
-        from app.library.Utils import parse_outtmpl
 
         template = "[%(id)s] %(title)s.%(ext)s"
         info_dict = {
@@ -2763,7 +2749,6 @@ class TestParseOuttmpl:
 
     def test_parse_outtmpl_with_uploader(self):
         """Test template parsing with uploader information."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(uploader)s - %(title)s.%(ext)s"
         info_dict = {
@@ -2778,7 +2763,6 @@ class TestParseOuttmpl:
 
     def test_parse_outtmpl_with_nested_path(self):
         """Test template parsing with nested directory structure."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(uploader)s/%(title)s.%(ext)s"
         info_dict = {
@@ -2793,22 +2777,19 @@ class TestParseOuttmpl:
 
     def test_parse_outtmpl_with_missing_field(self):
         """Test template parsing with missing field defaults to NA."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(title)s - %(upload_date)s.%(ext)s"
         info_dict = {
             "title": "Test Video",
             "ext": "mp4",
-            # upload_date is missing
         }
 
         result = parse_outtmpl(template, info_dict)
 
-        assert result == "Test Video - NA.mp4"
+        assert result == "Test Video - NA.mp4", "Missing field upload_date should default to NA"
 
     def test_parse_outtmpl_complex(self):
         """Test complex template with multiple fields."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(uploader)s/%(playlist_title)s/%(playlist_index)03d - %(title)s [%(id)s].%(ext)s"
         info_dict = {
@@ -2826,7 +2807,6 @@ class TestParseOuttmpl:
 
     def test_parse_outtmpl_with_special_characters(self):
         """Test template parsing handles special characters in values."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(title)s.%(ext)s"
         info_dict = {
@@ -2836,13 +2816,11 @@ class TestParseOuttmpl:
 
         result = parse_outtmpl(template, info_dict)
 
-        # yt-dlp sanitizes special characters in filenames
-        assert ".mp4" in result
-        assert "Test" in result
+        assert ".mp4" in result, "yt-dlp should sanitize special characters but preserve extension"
+        assert "Test" in result, "yt-dlp should preserve safe parts of title"
 
     def test_parse_outtmpl_with_playlist_info(self):
         """Test template parsing with playlist information."""
-        from app.library.Utils import parse_outtmpl
 
         template = "%(playlist)s/%(title)s.%(ext)s"
         info_dict = {
@@ -2854,3 +2832,19 @@ class TestParseOuttmpl:
         result = parse_outtmpl(template, info_dict)
 
         assert result == "My Playlist/Video Title.webm"
+
+    def test_parse_outtmpl_with_restrict_filename(self):
+        """Test template parsing with restrict_filename parameter."""
+
+        template = "%(uploader)s/%(title)s.%(ext)s"
+        info_dict = {
+            "uploader": "Foobar's Workshop",
+            "title": "Test Video",
+            "ext": "mp4",
+        }
+
+        result_unrestricted: str = parse_outtmpl(template, info_dict)
+        assert result_unrestricted == "Foobar's Workshop/Test Video.mp4"
+
+        result_restricted: str = parse_outtmpl(template, info_dict, params={"restrictfilenames": True})
+        assert result_restricted == "Foobar_s_Workshop/Test_Video.mp4"

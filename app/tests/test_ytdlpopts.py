@@ -474,8 +474,7 @@ class TestYTDLPOpts:
             assert "Failed to load" in error_args
             assert "Cookie Preset" in error_args
 
-            # cookiefile should not be set
-            assert "cookiefile" not in opts._preset_opts
+            assert "cookiefile" not in opts._preset_opts, "cookiefile should not be set"
 
     def test_replacer_substitution_in_cli(self):
         """Test that CLI arguments get replacer substitution."""
@@ -540,13 +539,11 @@ class TestARGSMerger:
 
         merger.add(cli_with_comments)
 
-        # Comments should be filtered out
-        assert "#" not in merger.as_string()
+        assert "#" not in merger.as_string(), "Comments should be filtered out"
         assert "This is a comment" not in merger.as_string()
         assert "Another comment" not in merger.as_string()
 
-        # Valid options should remain
-        assert "--format" in merger.args
+        assert "--format" in merger.args, "Valid options should remain"
         assert "best" in merger.args
         assert "--output" in merger.args
         assert "test.mp4" in merger.args
@@ -566,14 +563,12 @@ class TestARGSMerger:
 
         merger.add(cli_with_indented_comments)
 
-        # Comments should be filtered out
         result = merger.as_string()
-        assert "# Indented comment with spaces" not in result
+        assert "# Indented comment with spaces" not in result, "Comments should be filtered out"
         assert "# Indented comment with tabs" not in result
         assert "# Another indented comment" not in result
 
-        # Valid options should remain
-        assert "--format" in merger.args
+        assert "--format" in merger.args, "Valid options should remain"
         assert "--output" in merger.args
         assert "--socket-timeout" in merger.args
 
@@ -591,13 +586,14 @@ class TestARGSMerger:
 
         result = merger.as_string()
 
-        # Commented lines should be filtered out completely
-        assert "player_js_version=actual" not in result
-        # Check the specific commented variant (with comma before web_safari, not dash)
-        assert "mweb,web_safari;formats=incomplete" not in result
+        assert "player_js_version=actual" not in result, "Commented lines should be filtered out completely"
+        assert "mweb,web_safari;formats=incomplete" not in result, (
+            "Check the specific commented variant (with comma before web_safari, not dash)"
+        )
 
-        # Valid extractor-args should remain (with -web_safari, note the dash)
-        assert "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete" in result
+        assert "youtube:player-client=default,tv,mweb,-web_safari;formats=incomplete" in result, (
+            "Valid extractor-args should remain (with -web_safari, note the dash)"
+        )
         assert "--socket-timeout" in merger.args
         assert "60" in merger.args
 
@@ -839,8 +835,7 @@ class TestYTDLPCli:
         cli = YTDLPCli(item=item)
         command, info = cli.build()
 
-        # Should use preset values
-        assert info["merged"]["template"] == "%(channel)s/%(title)s.%(ext)s"
+        assert info["merged"]["template"] == "%(channel)s/%(title)s.%(ext)s", "Should use preset values"
         assert info["merged"]["save_path"] == "/downloads/preset_folder"
         assert "--format 720p" in command
 
@@ -879,11 +874,9 @@ class TestYTDLPCli:
         cli = YTDLPCli(item=item)
         command, info = cli.build()
 
-        # Should use user values, not preset
-        assert info["merged"]["template"] == "%(id)s.%(ext)s"
+        assert info["merged"]["template"] == "%(id)s.%(ext)s", "Should use user values, not preset"
         assert info["merged"]["save_path"] == "/downloads/user_folder"
-        # User CLI should appear after preset CLI in command
-        assert "--format best" in command
+        assert "--format best" in command, "User CLI should appear after preset CLI in command"
 
     @patch("app.library.Presets.Presets")
     @patch("app.library.YTDLPOpts.Config")
@@ -998,8 +991,9 @@ class TestYTDLPCli:
         cli = YTDLPCli(item=item)
         command, info = cli.build()
 
-        # The implementation strips leading slash and joins with download_path
-        assert info["merged"]["save_path"] == "/downloads/absolute/path"
+        assert info["merged"]["save_path"] == "/downloads/absolute/path", (
+            "The implementation strips leading slash and joins with download_path"
+        )
         assert "--paths" in command
 
     @patch("app.library.Presets.Presets")
@@ -1053,5 +1047,4 @@ class TestYTDLPCli:
         preset_format_idx = args_list.index("720p") if "720p" in args_list else -1
         user_format_idx = args_list.index("best") if "best" in args_list else -1
 
-        # User's 'best' should appear after preset's '720p'
-        assert user_format_idx > preset_format_idx
+        assert user_format_idx > preset_format_idx, "User's 'best' should appear after preset's '720p'"

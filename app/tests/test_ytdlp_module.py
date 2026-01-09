@@ -75,8 +75,7 @@ class TestYtDlpOptions:
 
         # For any ignored flag that actually exists in yt-dlp parser, ensure it is marked ignored
         present_ignored_flags = [f for f in ignored_flags if f in flag_to_ignored]
-        # We expect at least one to be present (e.g., -P / --paths, etc.)
-        assert len(present_ignored_flags) > 0
+        assert len(present_ignored_flags) > 0, "We expect at least one to be present (e.g., -P / --paths, etc.)"
         assert all(flag_to_ignored[f] is True for f in present_ignored_flags)
 
 
@@ -111,8 +110,7 @@ class TestYTDLP:
         # Our __init__ code manually sets these after super()
         ytdlp.params["download_archive"] = "/tmp/archive.txt"
 
-        # Verify download_archive was restored to params
-        assert ytdlp.params["download_archive"] == "/tmp/archive.txt"
+        assert ytdlp.params["download_archive"] == "/tmp/archive.txt", "Verify download_archive was restored to params"
 
         # Verify archive proxy was set up
         assert isinstance(ytdlp.archive, _ArchiveProxy)
@@ -133,8 +131,7 @@ class TestYTDLP:
         assert call_kwargs["params"]["quiet"] is True
         assert call_kwargs["auto_init"] is False
 
-        # Verify archive proxy is falsey
-        assert isinstance(ytdlp.archive, _ArchiveProxy)
+        assert isinstance(ytdlp.archive, _ArchiveProxy), "Verify archive proxy is falsey"
         assert not ytdlp.archive
 
     @patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__")
@@ -230,8 +227,7 @@ class TestYTDLP:
         assert ytdlp.archive.add.call_count == 3
         calls = [call[0][0] for call in ytdlp.archive.add.call_args_list]
 
-        # First call is main archive_id
-        assert calls[0] == "youtube new123"
+        assert calls[0] == "youtube new123", "First call is main archive_id"
 
         # Should add old IDs except the duplicate
         assert "youtube old123" in calls

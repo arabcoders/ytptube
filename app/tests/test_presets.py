@@ -23,8 +23,7 @@ class TestPreset:
         assert preset.cookies == ""
         assert preset.cli == ""
         assert preset.default is False
-        # ID should be auto-generated UUID
-        assert len(preset.id) == 36  # UUID4 string length
+        assert len(preset.id) == 36, "ID should be auto-generated UUID"  # UUID4 string length
         assert "-" in preset.id
 
     def test_preset_creation_with_all_fields(self):
@@ -228,8 +227,7 @@ class TestPresets:
             assert len(presets._items) == 1
             loaded_preset = presets._items[0]
             assert loaded_preset.name == "old_preset"
-            # Should have migrated format to cli
-            assert "best[height<=720]" in loaded_preset.cli
+            assert "best[height<=720]" in loaded_preset.cli, "Should have migrated format to cli"
             assert "--format" in loaded_preset.cli
             # Should have generated ID
             assert loaded_preset.id is not None
@@ -322,8 +320,7 @@ class TestPresets:
 
             all_presets = presets.get_all()
 
-            # Should include both default and custom presets
-            assert len(all_presets) > 1
+            assert len(all_presets) > 1, "Should include both default and custom presets"
             assert any(p.name == "custom" for p in all_presets)
             assert any(p.default is True for p in all_presets)
 
@@ -462,7 +459,7 @@ class TestPresets:
 
             # Note: The actual chmod might fail in test environment,
             # but we're testing that the code attempts it
-            assert presets is not None
+            assert presets is not None, "but we're testing that the code attempts it"
 
     def test_default_presets_validation(self):
         """Test that all default presets are valid."""
@@ -519,8 +516,7 @@ class TestPresets:
             with patch.object(presets, "get", return_value=None):
                 # The actual config instance stored in presets should be checked
                 presets.attach(mock_app)
-                # Should have reset default_preset to "default"
-                assert presets._config.default_preset == "default"
+                assert presets._config.default_preset == "default", "Should have reset default_preset to 'default'"
 
     @pytest.mark.asyncio
     @patch("app.library.Presets.Config")
@@ -567,8 +563,7 @@ class TestPresets:
             presets = Presets(file=presets_file, config=mock_config_instance)
             presets.load()
 
-            # Should only load the valid preset
-            assert len(presets._items) == 1
+            assert len(presets._items) == 1, "Should only load the valid preset"
             assert presets._items[0].name == "valid_preset", f"Expected 'valid_preset', got '{presets._items}'"
 
             # Should have logged an error for the invalid preset
@@ -658,8 +653,7 @@ class TestPresets:
             all_presets = presets.get_all()
             non_default = [p for p in all_presets if not p.default]
 
-            # Should be sorted by priority descending
-            assert non_default[0].name == "high"
+            assert non_default[0].name == "high", "Should be sorted by priority descending"
             assert non_default[0].priority == 10
             assert non_default[1].name == "medium"
             assert non_default[1].priority == 5
