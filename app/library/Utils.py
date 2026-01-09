@@ -96,29 +96,34 @@ class FileLogFormatter(logging.Formatter):
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
 
 
-def get_static_ytdlp(reload: bool = False) -> YTDLP:
+def get_ytdlp(params: dict | None = None) -> YTDLP:
     """
     Get a static YTDLP instance for info extraction.
 
     Args:
-        reload (bool): If True, forces re-creation of the instance.
+        params (dict|None): YTDLP parameters.
 
     Returns:
         YTDLP: A static YTDLP instance.
 
     """
     global YTDLP_INFO_CLS  # noqa: PLW0603
-    if YTDLP_INFO_CLS is None or reload:
-        YTDLP_INFO_CLS = YTDLP(
-            params={
-                "color": "no_color",
-                "extract_flat": True,
-                "skip_download": True,
-                "ignoreerrors": True,
-                "ignore_no_formats_error": True,
-                "quiet": True,
-            }
-        )
+
+    default_params: dict[str, Any] = {
+        "color": "no_color",
+        "extract_flat": True,
+        "skip_download": True,
+        "ignoreerrors": True,
+        "ignore_no_formats_error": True,
+        "quiet": True,
+    }
+
+    if params:
+        return YTDLP(params=merge_dict(params, default_params))
+
+    if YTDLP_INFO_CLS is None:
+        YTDLP_INFO_CLS = YTDLP(params=default_params)
+
     return YTDLP_INFO_CLS
 
 
@@ -1438,7 +1443,7 @@ def get_archive_id(url: str) -> dict[str, str | None]:
         "archive_id": None,
     }
 
-    for key, _ie in get_static_ytdlp()._ies.items():
+    for key, _ie in get_ytdlp()._ies.items():
         try:
             if not _ie.suitable(url):
                 continue
@@ -1937,16 +1942,17 @@ def get_extras(entry: dict, kind: str = "video") -> dict:
     return extras
 
 
-def parse_outtmpl(output_template: str, info_dict: dict) -> str:
+def parse_outtmpl(output_template: str, info_dict: dict, params: dict | None = None) -> str:
     """
     Parse yt-dlp output template with given info_dict.
 
     Args:
         output_template (str): The output template string.
         info_dict (dict): The info dictionary from yt-dlp.
+        params (dict|None): Additional parameters for yt-dlp.
 
     Returns:
         str: The parsed output string.
 
     """
-    return get_static_ytdlp().prepare_filename(info_dict=info_dict, outtmpl=output_template)
+    return get_ytdlp(params=params).prepare_filename(info_dict=info_dict, outtmpl=output_template)
