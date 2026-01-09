@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260108-c8e2fc5d",
-        "date": "2026-01-08T16:08:39+00:00",
+        "tag": "dev-20260109-b9121865",
+        "date": "2026-01-09T15:57:51+00:00",
         "commits": [
+            {
+                "sha": "b9121865",
+                "message": "chore: update tests assertion messages",
+                "author": "arabcoders",
+                "date": "2026-01-09T15:57:51+00:00",
+                "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff"
+            },
+            {
+                "sha": "345337a1",
+                "message": "refactor: support more yt-dlp options for metadata save_path. ref #539",
+                "author": "arabcoders",
+                "date": "2026-01-09T15:57:25+00:00",
+                "full_sha": "345337a1a281640bd519f43f46c58ebe603ccf19"
+            },
             {
                 "sha": "c8e2fc5d",
                 "message": "fix: put status downloading to prevent live stream from showing preparing endlessly",
@@ -3637,7 +3651,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c8e2fc5dc9aa2b16c6bcee10dd6187576f8a9f5f"
+        "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff"
     },
     {
         "tag": "dev-20250616-c07465a6",

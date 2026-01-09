@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff",
+    "date": "2026-01-09T15:57:51+00:00",
+    "commits": [
+      {
+        "sha": "b9121865",
+        "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff",
+        "message": "chore: update tests assertion messages",
+        "author": "arabcoders",
+        "date": "2026-01-09T15:57:51+00:00"
+      },
+      {
+        "sha": "345337a1",
+        "full_sha": "345337a1a281640bd519f43f46c58ebe603ccf19",
+        "message": "refactor: support more yt-dlp options for metadata save_path. ref #539",
+        "author": "arabcoders",
+        "date": "2026-01-09T15:57:25+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.0.15",
     "full_sha": "2435144cb1012658932578d36aed3623bbdf77bb",
     "date": "2026-01-08T17:05:47+00:00",
