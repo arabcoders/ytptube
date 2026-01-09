@@ -1805,6 +1805,31 @@ or an error:
 
 ---
 
+### POST /api/system/check-updates
+**Purpose**: Manually trigger a check for application updates from GitHub releases.
+
+**Response**:
+```json
+{
+  "status": "update_available",
+  "current_version": "v1.0.14",
+  "new_version": "v1.0.15"
+}
+```
+
+**Status values**:
+- `disabled`: Update checking is disabled in configuration
+- `up_to_date`: No updates available
+- `update_available`: New version is available
+- `error`: Error occurred during check (HTTP error, network issue, etc.)
+
+- `400 Bad Request` if update checking is disabled in configuration (`check_for_updates: false`).
+- `new_version` will be `null` when status is `up_to_date`, `disabled`, or `error`.
+- The check runs synchronously and returns the result immediately.
+- Results are also stored in config and pushed to frontend via WebSocket.
+
+---
+
 ### GET /api/dev/loop
 **Purpose**: Development-only. Show event loop details and running tasks.
 

@@ -11,6 +11,7 @@ from app.library.DownloadQueue import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route
+from app.library.UpdateChecker import UpdateChecker
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -126,6 +127,53 @@ async def shutdown_system(request: Request, config: Config, encoder: Encoder, no
     return web.json_response(
         data={
             "message": "The application shutting down.",
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("POST", "api/system/check-updates", "system.check_updates")
+async def check_updates(config: Config, encoder: Encoder, update_checker: UpdateChecker) -> Response:
+    """
+    Manually trigger update check.
+
+    Args:
+        config (Config): The config instance.
+        encoder (Encoder): The encoder instance.
+        update_checker (UpdateChecker): The update checker instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    if not config.check_for_updates:
+        return web.json_response(
+            {"error": "Update checking is disabled in configuration."},
+            status=web.HTTPBadRequest.status_code,
+            dumps=encoder.encode,
+        )
+
+    # If update already found, return cached result
+    if config.new_version:
+        return web.json_response(
+            data={
+                "status": "update_available",
+                "current_version": config.app_version,
+                "new_version": config.new_version,
+            },
+            status=web.HTTPOk.status_code,
+            dumps=encoder.encode,
+        )
+
+    # Run check and await result
+    status, new_version = await update_checker.check_for_updates()
+
+    return web.json_response(
+        data={
+            "status": status,
+            "current_version": config.app_version,
+            "new_version": new_version,
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,

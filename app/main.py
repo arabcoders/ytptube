@@ -29,6 +29,7 @@ from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
 from app.library.TaskDefinitions import TaskDefinitions
 from app.library.Tasks import Tasks
+from app.library.UpdateChecker import UpdateChecker
 
 LOG = logging.getLogger("app")
 MIME = magic.Magic(mime=True)
@@ -120,6 +121,7 @@ class Main:
         DLFields.get_instance().attach(self._app)
         TaskDefinitions.get_instance().attach(self._app)
         DownloadQueue.get_instance().attach(self._app)
+        UpdateChecker.get_instance().attach(self._app)
 
         EventBus.get_instance().emit(
             Events.LOADED,

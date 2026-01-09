@@ -26,6 +26,8 @@ export const useConfigStore = defineStore('config', () => {
       app_env: 'production',
       simple_mode: false,
       default_pagination: 50,
+      check_for_updates: true,
+      new_version: '',
     },
     presets: [
       {
