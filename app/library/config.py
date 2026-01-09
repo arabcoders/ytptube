@@ -229,7 +229,7 @@ class Config(metaclass=Singleton):
     static_ui_path: str = ""
     "The path to the static UI files."
 
-    check_for_updates: bool = False
+    check_for_updates: bool = True
     "Check for application updates."
 
     new_version: str = ""

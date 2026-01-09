@@ -159,7 +159,6 @@ class UpdateChecker(metaclass=Singleton):
             LOG.info("Checking for application updates...")
 
             current_version: str = APP_VERSION.lstrip("v")
-            current_version: str = "1.0.14"
 
             async with async_client(timeout=10.0) as client:
                 response = await client.get(
