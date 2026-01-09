@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff",
-    "date": "2026-01-09T15:57:51+00:00",
+    "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4",
+    "date": "2026-01-09T18:11:39+00:00",
     "commits": [
+      {
+        "sha": "81a4ef0f",
+        "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4",
+        "message": "Feat: add version checker and refactor the page footer.",
+        "author": "arabcoders",
+        "date": "2026-01-09T18:11:39+00:00"
+      },
       {
         "sha": "b9121865",
         "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff",

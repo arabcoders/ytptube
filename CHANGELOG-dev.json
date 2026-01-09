@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260109-b9121865",
-        "date": "2026-01-09T15:57:51+00:00",
+        "tag": "dev-20260109-81a4ef0f",
+        "date": "2026-01-09T18:11:39+00:00",
         "commits": [
+            {
+                "sha": "81a4ef0f",
+                "message": "Feat: add version checker and refactor the page footer.",
+                "author": "arabcoders",
+                "date": "2026-01-09T18:11:39+00:00",
+                "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4"
+            },
             {
                 "sha": "b9121865",
                 "message": "chore: update tests assertion messages",
@@ -3651,7 +3658,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff"
+        "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4"
     },
     {
         "tag": "dev-20250616-c07465a6",
