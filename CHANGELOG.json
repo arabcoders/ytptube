@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b4de0d9eb442881ac8b69c1bb656f59b7d98daec",
-    "date": "2026-01-09T19:26:02+00:00",
+    "full_sha": "2b02cd1a126f2fea16ce88188ee8f80360996206",
+    "date": "2026-01-10T14:29:15+00:00",
     "commits": [
+      {
+        "sha": "2b02cd1a",
+        "full_sha": "2b02cd1a126f2fea16ce88188ee8f80360996206",
+        "message": "fix: premiere video with --live-from-start",
+        "author": "arabcoders",
+        "date": "2026-01-10T14:29:15+00:00"
+      },
       {
         "sha": "b4de0d9e",
         "full_sha": "b4de0d9eb442881ac8b69c1bb656f59b7d98daec",
