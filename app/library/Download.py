@@ -306,7 +306,7 @@ class Download:
                 raise ValueError(msg)  # noqa: TRY301
 
             self.logger.info(
-                f'Task {self.info.name()}, preset="{self.info.preset}", cookies="{bool(params.get("cookiefile"))}" started.'
+                f'Download {self.info.name()}, preset="{self.info.preset}", cookies="{bool(params.get("cookiefile"))}" started.'
             )
 
             if self.debug:
@@ -336,7 +336,13 @@ class Download:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
                 _dct: dict = self.info_dict.copy()
                 if isinstance(self.info.extras, dict) and len(self.info.extras) > 0:
-                    _dct.update({k: v for k, v in self.info.extras.items() if k not in _dct or not _dct.get(k)})
+                    _dct.update(
+                        {
+                            k: v
+                            for k, v in self.info.extras.items()
+                            if k not in _dct and v is not None and k not in ("is_live",)
+                        }
+                    )
 
                 cls.process_ie_result(ie_result=_dct, download=True)
                 ret: int = cls._download_retcode

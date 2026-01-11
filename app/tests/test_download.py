@@ -55,8 +55,7 @@ class TestNestedLogger:
         assert levels.count(logging.INFO) == 1
         msgs = [r.getMessage() for r in cap.records]
         assert "[debug]" not in msgs[0]
-        # [download] prefix is not stripped by NestedLogger
-        assert msgs[1] == "[download] progress"
+        assert msgs[1] == "[download] progress", "[download] prefix is not stripped by NestedLogger"
         assert msgs[2] == "info message"
 
 
@@ -112,8 +111,7 @@ class TestDownloadHooks:
         ev = q.items[0]
         assert ev["id"] == d.id
         assert ev["action"] == "progress"
-        # ensure only whitelisted keys included
-        assert "other" not in ev
+        assert "other" not in ev, "ensure only whitelisted keys included"
         for k in (
             "tmpfilename",
             "filename",

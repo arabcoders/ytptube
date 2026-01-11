@@ -30,16 +30,14 @@ class TestCondition:
         """Test creating a condition with default values."""
         condition = Condition(name="test", filter="duration > 60")
 
-        # Check that ID is generated
-        assert condition.id
+        assert condition.id, "Check that ID is generated"
         assert isinstance(condition.id, str)
 
         # Check required fields
         assert condition.name == "test"
         assert condition.filter == "duration > 60"
 
-        # Check defaults
-        assert condition.cli == ""
+        assert condition.cli == "", "Check defaults"
         assert condition.extras == {}
         assert condition.enabled is True
 
@@ -235,8 +233,7 @@ class TestConditions:
             assert result is conditions
             assert len(conditions._items) == 2
 
-            # Check first condition
-            assert conditions._items[0].name == "short_videos"
+            assert conditions._items[0].name == "short_videos", "Check first condition"
             assert conditions._items[0].filter == "duration < 300"
             assert conditions._items[0].cli == "--format worst"
             assert conditions._items[0].extras == {"category": "short"}
@@ -244,8 +241,7 @@ class TestConditions:
             assert conditions._items[0].priority == 0
             assert conditions._items[0].description == "Download short videos"
 
-            # Check second condition
-            assert conditions._items[1].name == "music_videos"
+            assert conditions._items[1].name == "music_videos", "Check second condition"
             assert conditions._items[1].filter == "title ~= 'music'"
             assert conditions._items[1].enabled is False
             assert conditions._items[1].priority == 5
@@ -265,8 +261,7 @@ class TestConditions:
                 conditions = Conditions(file=file_path)
                 conditions.load()
 
-                # Should have generated ID
-                assert len(conditions._items) == 1
+                assert len(conditions._items) == 1, "Should have generated ID"
                 assert conditions._items[0].id
                 assert conditions._items[0].name == "no_id_test"
 
@@ -286,8 +281,7 @@ class TestConditions:
                 conditions = Conditions(file=file_path)
                 conditions.load()
 
-                # Should have generated empty extras
-                assert len(conditions._items) == 1
+                assert len(conditions._items) == 1, "Should have generated empty extras"
                 assert conditions._items[0].extras == {}
 
                 # Should call save due to changes
@@ -306,8 +300,7 @@ class TestConditions:
                 conditions = Conditions(file=file_path)
                 conditions.load()
 
-                # Should have generated enabled=True
-                assert len(conditions._items) == 1
+                assert len(conditions._items) == 1, "Should have generated enabled=True"
                 assert conditions._items[0].enabled is True
 
                 # Should call save due to changes
@@ -326,8 +319,7 @@ class TestConditions:
                 conditions = Conditions(file=file_path)
                 conditions.load()
 
-                # Should have generated priority=0
-                assert len(conditions._items) == 1
+                assert len(conditions._items) == 1, "Should have generated priority=0"
                 assert conditions._items[0].priority == 0
 
                 # Should call save due to changes
@@ -348,8 +340,7 @@ class TestConditions:
                 conditions = Conditions(file=file_path)
                 conditions.load()
 
-                # Should have generated description=''
-                assert len(conditions._items) == 1
+                assert len(conditions._items) == 1, "Should have generated description=''"
                 assert conditions._items[0].description == ""
 
                 # Should call save due to changes
@@ -383,8 +374,7 @@ class TestConditions:
             conditions = Conditions(file=file_path)
             result = conditions.load()
 
-            # Should load only valid conditions
-            assert result is conditions
+            assert result is conditions, "Should load only valid conditions"
             assert len(conditions._items) == 1
             assert conditions._items[0].name == "valid"
 
@@ -731,14 +721,11 @@ class TestConditions:
             test_condition = Condition(name="test", filter="duration > 60")
             conditions._items = [test_condition]
 
-            # Test with None
-            assert conditions.match(None) is None
+            assert conditions.match(None) is None, "Test with None"
 
-            # Test with empty dict
-            assert conditions.match({}) is None
+            assert conditions.match({}) is None, "Test with empty dict"
 
-            # Test with non-dict
-            assert conditions.match("not a dict") is None
+            assert conditions.match("not a dict") is None, "Test with non-dict"
 
     @patch("app.library.conditions.match_str")
     def test_match_filter_evaluation_error(self, mock_match_str):
@@ -774,8 +761,7 @@ class TestConditions:
             info_dict = {"duration": 150}
             result = conditions.match(info_dict)
 
-            # Should skip disabled condition and match enabled one
-            assert result is enabled_condition
+            assert result is enabled_condition, "Should skip disabled condition and match enabled one"
             # Should only call match_str once for enabled condition
             mock_match_str.assert_called_once_with("duration > 120", info_dict)
 
@@ -800,8 +786,7 @@ class TestConditions:
             info_dict = {"duration": 120}
             result = conditions.match(info_dict)
 
-            # Should match high_priority first (priority=10)
-            assert result is high_priority
+            assert result is high_priority, "Should match high_priority first (priority=10)"
             # Should only call match_str once for highest priority condition
             mock_match_str.assert_called_once_with("duration > 60", info_dict)
 
@@ -891,8 +876,7 @@ class TestConditions:
             info_dict = {"duration": 120}
             result = conditions.single_match("disabled_single", info_dict)
 
-            # Should return None because condition is disabled
-            assert result is None
+            assert result is None, "Should return None because condition is disabled"
 
     def test_single_match_invalid_inputs(self):
         """Test single matching with invalid inputs."""
@@ -900,14 +884,10 @@ class TestConditions:
             file_path = Path(temp_dir) / "invalid_single_test.json"
             conditions = Conditions(file=file_path)
 
-            # Test with empty conditions
-            assert conditions.single_match("test", {"duration": 120}) is None
+            assert conditions.single_match("test", {"duration": 120}) is None, "Test with empty conditions"
 
-            # Test with None info
-            assert conditions.single_match("test", None) is None
+            assert conditions.single_match("test", None) is None, "Test with None info"
 
-            # Test with empty info dict
-            assert conditions.single_match("test", {}) is None
+            assert conditions.single_match("test", {}) is None, "Test with empty info dict"
 
-            # Test with non-dict info
-            assert conditions.single_match("test", "not a dict") is None
+            assert conditions.single_match("test", "not a dict") is None, "Test with non-dict info"

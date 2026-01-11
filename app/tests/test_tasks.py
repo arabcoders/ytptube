@@ -321,8 +321,7 @@ class TestTasks:
             tasks_file = Path(temp_dir) / "tasks.json"
             tasks = Tasks(file=tasks_file, config=mock_config_instance)
 
-            # Check initialization
-            assert tasks._debug is True
+            assert tasks._debug is True, "Check initialization"
             assert tasks._default_preset == "test_preset"
             assert tasks._file == tasks_file
             assert tasks._tasks == []
@@ -505,8 +504,7 @@ class TestTasks:
 
             assert result == tasks
             assert tasks_file.exists()
-            # Verify file content was written
-            assert tasks_file.stat().st_size > 0
+            assert tasks_file.stat().st_size > 0, "Verify file content was written"
 
     @patch("app.library.Tasks.Config")
     @patch("app.library.Tasks.EventBus")
@@ -788,8 +786,7 @@ class TestTasks:
             }
         )
 
-        # Verify events were emitted
-        assert mock_eventbus_instance.emit.call_count == 2
+        assert mock_eventbus_instance.emit.call_count == 2, "Verify events were emitted"
 
     @pytest.mark.asyncio
     @patch("app.library.Tasks.Config")
@@ -963,8 +960,7 @@ class TestHandleTaskInspect:
             url="https://example.com/feed", preset="default", handler_name=None, static_only=True
         )
 
-        # Verify result structure
-        assert hasattr(result, "items")
+        assert hasattr(result, "items"), "Verify result structure"
         assert hasattr(result, "metadata")
         assert result.items == []
         assert result.metadata["matched"] is True
@@ -1018,8 +1014,7 @@ class TestHandleTaskInspect:
         # Call inspect with static_only=False (default)
         result = await handler.inspect(url="https://example.com/feed", preset="default", handler_name=None)
 
-        # Verify result structure includes extracted items
-        assert hasattr(result, "items")
+        assert hasattr(result, "items"), "Verify result structure includes extracted items"
         assert hasattr(result, "metadata")
         assert len(result.items) > 0
         assert result.metadata["matched"] is True

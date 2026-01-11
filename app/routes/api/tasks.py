@@ -2,6 +2,7 @@ import asyncio
 import functools
 import logging
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from aiohttp import web
@@ -266,14 +267,16 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
 
         if not task.folder:
             try:
-                outtmpl = parse_outtmpl(
-                    output_template=task.get_ytdlp_opts().get_all().get("outtmpl", {}).get("default", "{title} [{id}]"),
+                ytdlp_opts: dict = task.get_ytdlp_opts().get_all()
+                outtmpl: str = parse_outtmpl(
+                    output_template=ytdlp_opts.get("outtmpl", {}).get("default", "{title} [{id}]"),
                     info_dict=metadata,
+                    params=ytdlp_opts,
                 )
                 if outtmpl:
-                    _path = save_path / outtmpl
+                    _path: Path = save_path / outtmpl
                     if not _path.is_dir():
-                        _path = _path.parent
+                        _path: Path = _path.parent
 
                     (save_path, _) = get_file(config.download_path, _path.relative_to(config.download_path))
                     if not str(save_path or "").startswith(str(config.download_path)):
@@ -301,6 +304,8 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
             return web.json_response(
                 data={"error": "Failed to get title from metadata."}, status=web.HTTPBadRequest.status_code
             )
+
+        LOG.info(f"Generating metadata for task '{task.name}' in '{save_path!s}'")
 
         from yt_dlp.utils import sanitize_filename
 

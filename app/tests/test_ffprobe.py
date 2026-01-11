@@ -55,8 +55,9 @@ class TestFFProbe:
         """Test that ffprobe results are cached with enhanced async timed_lru_cache."""
         from app.library.ffprobe import ffprobe
 
-        # Test that the function has been decorated with caching
-        assert hasattr(ffprobe, "cache_clear"), "ffprobe should have cache_clear method from timed_lru_cache"
+        assert hasattr(ffprobe, "cache_clear"), (
+            "Test that the function has been decorated with caching - ffprobe should have cache_clear method from timed_lru_cache"
+        )
         assert hasattr(ffprobe, "cache_info"), "ffprobe should have cache_info method from timed_lru_cache"
 
         # Clear cache to start fresh
@@ -91,12 +92,13 @@ class TestFFProbe:
                 assert result2 is not None
                 assert isinstance(result2.metadata, dict)
 
-                # The subprocess should not be called again for the actual ffprobe execution
-                # (it may be called for the -h check, but the main execution should be cached)
-                assert call_count == first_call_count, "Second call should use cached result"
+                assert call_count == first_call_count, (
+                    "The subprocess should not be called again for the actual ffprobe execution (it may be called for the -h check, but the main execution should be cached) - Second call should use cached result"
+                )
 
-                # Results should be equivalent (same data, may not be same object due to async nature)
-                assert result1.metadata == result2.metadata
+                assert result1.metadata == result2.metadata, (
+                    "Results should be equivalent (same data, may not be same object due to async nature)"
+                )
 
     @pytest.mark.asyncio
     async def test_ffprobe_with_path_object(self):
@@ -124,8 +126,7 @@ class TestFFProbe:
 
         result = FFProbeResult()
 
-        # Test empty result
-        assert result.video == []
+        assert result.video == [], "Test empty result"
         assert result.audio == []
         assert result.subtitle == []
         assert result.attachment == []

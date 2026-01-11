@@ -32,8 +32,7 @@ class TestItemFormatAndBasics:
             item = Item.format(data)
 
         assert isinstance(item, Item)
-        # URL normalized to full YouTube URL
-        assert item.url.startswith("https://www.youtube.com/watch?v=")
+        assert item.url.startswith("https://www.youtube.com/watch?v="), "URL normalized to full YouTube URL"
         assert item.preset == "custom"
         assert item.folder == "media"
         assert item.cookies == "abc"
@@ -146,8 +145,7 @@ class TestItemDTO:
 
     def test_archive_add_and_delete_paths(self):
         dto = ItemDTO(id="id", title="t", url="u", folder="f")
-        # Precondition not met yet
-        assert dto.archive_add() is False
+        assert dto.archive_add() is False, "Precondition not met yet"
 
         # Set up to allow add
         dto.archive_id = "arch"

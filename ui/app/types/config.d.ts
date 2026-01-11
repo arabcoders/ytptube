@@ -45,6 +45,10 @@ type AppConfig = {
   app_env: "production" | "development"
   /** Default number of items per page for pagination */
   default_pagination: number
+  /** Indicates if the app should check for updates */
+  check_for_updates: boolean
+  /** New version available, empty string if none */
+  new_version: string
 }
 
 type ConfigState = {

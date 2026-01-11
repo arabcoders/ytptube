@@ -216,13 +216,11 @@ class TestNotificationEvents:
 
     def test_is_valid(self):
         """Test is_valid static method."""
-        # Valid events
-        assert NotificationEvents.is_valid("test")
+        assert NotificationEvents.is_valid("test"), "Valid events"
         assert NotificationEvents.is_valid("item_added")
         assert NotificationEvents.is_valid("item_completed")
 
-        # Invalid events
-        assert not NotificationEvents.is_valid("invalid_event")
+        assert not NotificationEvents.is_valid("invalid_event"), "Invalid events"
         assert not NotificationEvents.is_valid("")
         assert not NotificationEvents.is_valid(None)
 
@@ -417,8 +415,7 @@ class TestNotification:
             # Verify save was called due to schema update
             mock_save.assert_called_once()
 
-            # Verify the target has enabled=True by default
-            assert len(notification._targets) == 1
+            assert len(notification._targets) == 1, "Verify the target has enabled=True by default"
             assert notification._targets[0].enabled is True
 
         # Clean up
@@ -744,8 +741,7 @@ class TestNotification:
 
         result = await notification.send(event)
 
-        # Only enabled target should be called
-        assert len(result) == 1
+        assert len(result) == 1, "Only enabled target should be called"
         assert result[0]["status"] == 200
         mock_client.request.assert_called_once()
 
@@ -783,8 +779,7 @@ class TestNotification:
 
             result = await notification.send(event)
 
-            # Should return empty dict from _apprise method
-            assert len(result) == 1
+            assert len(result) == 1, "Should return empty dict from _apprise method"
             assert result[0] == {}
 
     def test_check_preset_no_presets(self):
@@ -881,8 +876,7 @@ class TestNotification:
             with patch("app.library.Notifications.NotificationEvents.is_valid", return_value=False):
                 result = notification.emit(event, None)
 
-                # Should return None and not submit to background worker
-                assert result is None
+                assert result is None, "Should return None and not submit to background worker"
                 mock_worker_instance.submit.assert_not_called()
 
     def test_emit_valid_event(self):
@@ -908,8 +902,7 @@ class TestNotification:
             with patch("app.library.Notifications.NotificationEvents.is_valid", return_value=True):
                 result = notification.emit(event, None)
 
-                # Should return None but submit to background worker
-                assert result is None
+                assert result is None, "Should return None but submit to background worker"
                 mock_worker_instance.submit.assert_called_once_with(notification.send, event)
 
     @pytest.mark.asyncio

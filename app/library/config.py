@@ -229,6 +229,12 @@ class Config(metaclass=Singleton):
     static_ui_path: str = ""
     "The path to the static UI files."
 
+    check_for_updates: bool = True
+    "Check for application updates."
+
+    new_version: str = ""
+    "The new version available."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -245,6 +251,7 @@ class Config(metaclass=Singleton):
         "app_commit_sha",
         "app_build_date",
         "app_branch",
+        "new_version",
     )
     "The variables that are immutable."
 
@@ -284,6 +291,7 @@ class Config(metaclass=Singleton):
         "allow_internal_urls",
         "simple_mode",
         "ignore_archived_items",
+        "check_for_updates",
     )
     "The variables that are booleans."
 
@@ -314,6 +322,8 @@ class Config(metaclass=Singleton):
         "app_build_date",
         "app_branch",
         "default_pagination",
+        "check_for_updates",
+        "new_version",
     )
     "The variables that are relevant to the frontend."
 

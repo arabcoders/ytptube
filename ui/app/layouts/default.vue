@@ -157,34 +157,113 @@
         </ClientOnly>
       </div>
 
-      <div class="columns mt-3 is-mobile">
-        <div class="column">
-          <div class="has-text-left" v-if="config.app?.app_version">
-            © {{ Year }} - <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank">YTPTube</NuxtLink>
-            (<span class="has-tooltip"
-              v-tooltip="`Build Date: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, commit: ${config.app?.app_commit_sha}`">
-              {{ config?.app?.app_version || 'unknown' }}</span>)
-            - <NuxtLink target="_blank" href="https://github.com/yt-dlp/yt-dlp">yt-dlp</NuxtLink>
-            <span>&nbsp;({{ config?.app?.ytdlp_version || 'unknown' }})</span>
-            - <NuxtLink to="/changelog">CHANGELOG</NuxtLink>
-            - <NuxtLink @click="doc.file = '/api/docs/FAQ.md'">FAQ</NuxtLink>
-            - <NuxtLink @click="doc.file = '/api/docs/README.md'">README</NuxtLink>
-            - <NuxtLink @click="doc.file = '/api/docs/API.md'">API</NuxtLink>
-            - <NuxtLink @click="scrollToTop">
-              <span class="icon"><i class="fas fa-arrow-up" /></span>
-              <span>Top</span>
-            </NuxtLink>
+      <footer class="footer py-5 mt-6 is-unselectable" v-if="socket.isConnected">
+        <div class="columns is-multiline is-variable is-8">
+          <div class="column is-12-mobile is-6-tablet">
+            <div class="mb-3">
+              <NuxtLink href="https://github.com/ArabCoders/ytptube" target="_blank"
+                class="has-text-weight-semibold is-size-6">
+                <span class="icon-text">
+                  <span class="icon"><i class="fab fa-github" /></span>
+                  <span>YTPTube</span>
+                </span>
+              </NuxtLink>
+              <span class="is-size-7 ml-2 has-tooltip" style="opacity: 0.7"
+                v-tooltip="`Build: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, SHA: ${config.app?.app_commit_sha}`">
+                {{ config?.app?.app_version || 'unknown' }}
+              </span>
+            </div>
+
+            <template v-if="config.app?.check_for_updates">
+              <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
+                <span class="icon-text">
+                  <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
+                  <span>Update available:</span>
+                  <NuxtLink :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
+                    target="_blank" class="has-text-weight-semibold ml-1">
+                    {{ config.app.new_version }}
+                  </NuxtLink>
+                </span>
+              </p>
+
+              <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
+                <button @click="checkForUpdates" :disabled="checkingUpdates" class="is-text is-small p-0 is-size-7"
+                  :class="{ 'is-loading': checkingUpdates }"
+                  style="opacity: 0.8; height: auto; vertical-align: baseline; border: none; text-decoration: none; background: none;">
+                  <span class="icon-text">
+                    <span class="icon">
+                      <i class="fas" :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'" />
+                    </span>
+                    <span>{{ updateCheckMessage }}</span>
+                  </span>
+                </button>
+              </p>
+            </template>
+
+            <p v-if="config.app?.started" class="is-size-7 mb-0" style="opacity: 0.6">
+              <span class="icon-text">
+                <span class="icon"><i class="fas fa-clock" /></span>
+                <span class="has-tooltip"
+                  v-tooltip="'Started: ' + moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')">
+                  {{ moment.unix(config.app?.started).fromNow() }}
+                </span>
+              </span>
+            </p>
+          </div>
+
+          <div class="column is-12-mobile is-3-tablet">
+            <div class="footer-divider"
+              style="border-left: 1px solid rgba(128,128,128,0.2); border-right: 1px solid rgba(128,128,128,0.2); padding: 0 2rem;">
+              <p class="is-size-7 mb-2" style="opacity: 0.7">Powered by</p>
+              <NuxtLink href="https://github.com/yt-dlp/yt-dlp" target="_blank" class="has-text-weight-semibold">
+                <span class="icon-text">
+                  <span class="icon"><i class="fab fa-github" /></span>
+                  <span>yt-dlp</span>
+                </span>
+              </NuxtLink>
+              <span class="is-size-7 ml-1" style="opacity: 0.6">{{ config?.app?.ytdlp_version || 'unknown' }}</span>
+            </div>
+          </div>
+
+          <div class="column is-12-mobile is-3-tablet">
+            <p class="is-size-7 mb-2" style="opacity: 0.7">Quick Links</p>
+            <div
+              class="is-flex is-flex-direction-row is-flex-wrap-wrap is-justify-content-flex-start is-justify-content-flex-end-tablet"
+              style="gap: 0.75rem;">
+              <NuxtLink to="/changelog" class="is-size-7">
+                <span class="icon-text">
+                  <span class="icon"><i class="fas fa-list" /></span>
+                  <span>Changelog</span>
+                </span>
+              </NuxtLink>
+              <NuxtLink @click="doc.file = '/api/docs/FAQ.md'" class="is-size-7">
+                <span class="icon-text">
+                  <span class="icon"><i class="fas fa-question-circle" /></span>
+                  <span>FAQ</span>
+                </span>
+              </NuxtLink>
+              <NuxtLink @click="doc.file = '/api/docs/README.md'" class="is-size-7">
+                <span class="icon-text">
+                  <span class="icon"><i class="fas fa-book" /></span>
+                  <span>Docs</span>
+                </span>
+              </NuxtLink>
+              <NuxtLink @click="doc.file = '/api/docs/API.md'" class="is-size-7">
+                <span class="icon-text">
+                  <span class="icon"><i class="fas fa-code" /></span>
+                  <span>API</span>
+                </span>
+              </NuxtLink>
+              <button @click="scrollToTop" class="is-size-7 button is-text is-small p-0">
+                <span class="icon-text">
+                  <span class="icon"><i class="fas fa-arrow-up" /></span>
+                  <span>Top</span>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="column is-narrow" v-if="config.app?.started">
-          <div class="has-text-right">
-            <span class="has-tooltip"
-              v-tooltip="'App Started: ' + moment.unix(config.app?.started).format('YYYY-M-DD H:mm Z')">
-              {{ moment.unix(config.app?.started).fromNow() }}
-            </span>
-          </div>
-        </div>
-      </div>
+      </footer>
     </div>
   </template>
 </template>
@@ -204,7 +283,6 @@ import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
 import Connection from '~/components/Connection.vue'
 
-const Year = new Date().getFullYear()
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
 const config = useConfigStore()
@@ -218,6 +296,53 @@ const app_shutdown = ref<boolean>(false)
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
 const show_settings = ref(false)
 const doc = ref<{ file: string }>({ file: '' })
+const checkingUpdates = ref(false)
+const updateCheckMessage = ref('Up to date - Click to check')
+
+const checkForUpdates = async () => {
+  if (checkingUpdates.value) {
+    return
+  }
+
+  const msg = 'Up to date - Click to check'
+
+  try {
+    checkingUpdates.value = true
+    updateCheckMessage.value = 'Checking...'
+
+    const response = await fetch('/api/system/check-updates', { method: 'POST' })
+
+    if (!response.ok) {
+      await response.json()
+      updateCheckMessage.value = 'Check failed'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+      return
+    }
+
+    const data = await response.json()
+
+    switch (data.status) {
+      case 'update_available':
+        updateCheckMessage.value = 'Update found!'
+        config.app.new_version = data.new_version
+        break
+      case 'up_to_date':
+        updateCheckMessage.value = 'Up to date ✓'
+        setTimeout(() => updateCheckMessage.value = msg, 3000)
+        break
+      case 'error':
+        updateCheckMessage.value = 'Check failed'
+        setTimeout(() => updateCheckMessage.value = msg, 3000)
+        break
+    }
+  } catch (e) {
+    console.error('Update check failed:', e)
+    updateCheckMessage.value = 'Check failed'
+    setTimeout(() => updateCheckMessage.value = msg, 3000)
+  } finally {
+    checkingUpdates.value = false
+  }
+}
 
 const applyPreferredColorScheme = (scheme: string) => {
   if (!scheme || scheme === 'auto') {
@@ -514,6 +639,15 @@ const scrollToTop = () => document.getElementById('top')?.scrollIntoView({ behav
   #main_container.settings-open,
   .basic-wrapper.settings-open {
     transform: translateX(0);
+  }
+
+  .footer .footer-divider {
+    border-left: none !important;
+    border-right: none !important;
+    padding: 0 !important;
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+    padding-top: 1.5rem !important;
+    margin-top: 1.5rem !important;
   }
 }
 </style>
