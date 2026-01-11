@@ -408,25 +408,13 @@ const editItem = (item: Preset) => {
 onMounted(async () => (socket.isConnected ? await reloadContent(true) : ''))
 
 const exportItem = (item: Preset) => {
-  const keys = ['id', 'default', 'raw', 'cookies', 'toggle_description']
-  const data = JSON.parse(JSON.stringify(item))
-
-  for (const key of keys) {
-    if (key in data) {
-      const { [key]: _, ...rest } = data
-      Object.assign(data, rest)
-    }
-  }
-
-  const userData: Record<string, any> = {}
-  for (const key of Object.keys(data)) {
-    if (data[key]) {
-      userData[key] = data[key]
-    }
-  }
+  const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description']
+  const userData = Object.fromEntries(
+    Object.entries(JSON.parse(JSON.stringify(item))).filter(([key, value]) => !excludedKeys.includes(key) && value)
+  )
 
   userData['_type'] = 'preset'
-  userData['_version'] = '2.5'
+  userData['_version'] = '2.6'
 
   copyText(encode(userData))
 }
