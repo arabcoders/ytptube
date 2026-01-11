@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "2b02cd1a126f2fea16ce88188ee8f80360996206",
-    "date": "2026-01-10T14:29:15+00:00",
+    "full_sha": "044bad41e109103a8b0ba695163fa4b24461bd8d",
+    "date": "2026-01-11T18:26:03+00:00",
     "commits": [
+      {
+        "sha": "044bad41",
+        "full_sha": "044bad41e109103a8b0ba695163fa4b24461bd8d",
+        "message": "Fix: preset export was exporting cookies due to inverted check.",
+        "author": "arabcoders",
+        "date": "2026-01-11T18:26:03+00:00"
+      },
       {
         "sha": "2b02cd1a",
         "full_sha": "2b02cd1a126f2fea16ce88188ee8f80360996206",
