@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20260108-2435144c",
-        "date": "2026-01-08T17:05:47+00:00",
+        "tag": "master-20260111-3b496782",
+        "date": "2026-01-11T18:36:42+00:00",
         "commits": [
+            {
+                "sha": "044bad41",
+                "message": "Fix: preset export was exporting cookies due to inverted check.",
+                "author": "arabcoders",
+                "date": "2026-01-11T18:26:03+00:00",
+                "full_sha": "044bad41e109103a8b0ba695163fa4b24461bd8d"
+            },
+            {
+                "sha": "2b02cd1a",
+                "message": "fix: premiere video with --live-from-start",
+                "author": "arabcoders",
+                "date": "2026-01-10T14:29:15+00:00",
+                "full_sha": "2b02cd1a126f2fea16ce88188ee8f80360996206"
+            },
+            {
+                "sha": "b4de0d9e",
+                "message": "Fix: remove hardcoded test version",
+                "author": "arabcoders",
+                "date": "2026-01-09T19:26:02+00:00",
+                "full_sha": "b4de0d9eb442881ac8b69c1bb656f59b7d98daec"
+            },
+            {
+                "sha": "81a4ef0f",
+                "message": "Feat: add version checker and refactor the page footer.",
+                "author": "arabcoders",
+                "date": "2026-01-09T18:11:39+00:00",
+                "full_sha": "81a4ef0f36018607095476849554ca8a75c66be4"
+            },
+            {
+                "sha": "b9121865",
+                "message": "chore: update tests assertion messages",
+                "author": "arabcoders",
+                "date": "2026-01-09T15:57:51+00:00",
+                "full_sha": "b9121865027b462c515524c1eb255a179b0b32ff"
+            },
+            {
+                "sha": "345337a1",
+                "message": "refactor: support more yt-dlp options for metadata save_path. ref #539",
+                "author": "arabcoders",
+                "date": "2026-01-09T15:57:25+00:00",
+                "full_sha": "345337a1a281640bd519f43f46c58ebe603ccf19"
+            },
             {
                 "sha": "c8e2fc5d",
                 "message": "fix: put status downloading to prevent live stream from showing preparing endlessly",
@@ -3637,7 +3679,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2435144cb1012658932578d36aed3623bbdf77bb"
+        "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662"
     },
     {
         "tag": "master-20250616-c07465a6",
