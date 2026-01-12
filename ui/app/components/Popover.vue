@@ -15,6 +15,11 @@
       <div v-if="isOpen" class="popover-portal" ref="portal">
         <div ref="popover" class="popover-card box" :class="placementClass" role="tooltip" :style="portalStyle"
           @mouseenter="handleHoverEnter" @mouseleave="handleHoverLeave">
+          <button type="button" class="button is-bold is-fullwidth is-hidden-tablet" @click="closePopover">
+            <span class="icon"><i class="fas fa-times" /></span>
+            <span>Close</span>
+          </button>
+
           <header v-if="hasTitleContent" class="popover-title mb-2">
             <slot name="title">
               <p class="title is-6 mb-1">{{ title }}</p>
@@ -206,23 +211,47 @@ const updatePosition = () => {
   const triggerRect = triggerRef.value.getBoundingClientRect()
   const popoverRect = popover.value.getBoundingClientRect()
   const offset = props.offset
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  let effectivePlacement = props.placement
+
+  if ('top' === props.placement) {
+    const spaceAbove = triggerRect.top - offset
+    if (spaceAbove < popoverRect.height) {
+      effectivePlacement = 'bottom'
+    }
+  } else if ('bottom' === props.placement) {
+    const spaceBelow = viewportHeight - triggerRect.bottom - offset
+    if (spaceBelow < popoverRect.height) {
+      effectivePlacement = 'top'
+    }
+  } else if ('left' === props.placement) {
+    const spaceLeft = triggerRect.left - offset
+    if (spaceLeft < popoverRect.width) {
+      effectivePlacement = 'right'
+    }
+  } else if ('right' === props.placement) {
+    const spaceRight = viewportWidth - triggerRect.right - offset
+    if (spaceRight < popoverRect.width) {
+      effectivePlacement = 'left'
+    }
+  }
 
   let top = triggerRect.bottom + offset
   let left = triggerRect.left + (triggerRect.width - popoverRect.width) / 2
 
-  if ('top' == props.placement) {
+  if ('top' === effectivePlacement) {
     top = triggerRect.top - popoverRect.height - offset
-  } else if ('left' == props.placement) {
+  } else if ('left' === effectivePlacement) {
     top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2
     left = triggerRect.left - popoverRect.width - offset
-  } else if ('right' == props.placement) {
+  } else if ('right' === effectivePlacement) {
     top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2
     left = triggerRect.right + offset
   }
 
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
   const maxLeft = viewportWidth - popoverRect.width - 8
   const maxTop = viewportHeight - popoverRect.height - 8
 
@@ -284,7 +313,7 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.popover-trigger > * {
+.popover-trigger>* {
   max-width: 100%;
   min-width: 0;
 }
