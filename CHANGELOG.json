@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf",
+    "date": "2026-01-12T14:14:29+00:00",
+    "commits": [
+      {
+        "sha": "d37cc612",
+        "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf",
+        "message": "refactor: move popover to separate button",
+        "author": "arabcoders",
+        "date": "2026-01-12T14:14:29+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.1.0",
     "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662",
     "date": "2026-01-11T18:36:42+00:00",

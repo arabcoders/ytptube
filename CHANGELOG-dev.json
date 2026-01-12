@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260111-044bad41",
-        "date": "2026-01-11T18:26:03+00:00",
+        "tag": "dev-20260112-d37cc612",
+        "date": "2026-01-12T14:14:29+00:00",
         "commits": [
+            {
+                "sha": "d37cc612",
+                "message": "refactor: move popover to separate button",
+                "author": "arabcoders",
+                "date": "2026-01-12T14:14:29+00:00",
+                "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf"
+            },
             {
                 "sha": "044bad41",
                 "message": "Fix: preset export was exporting cookies due to inverted check.",
@@ -3679,7 +3686,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "044bad41e109103a8b0ba695163fa4b24461bd8d"
+        "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf"
     },
     {
         "tag": "dev-20250616-c07465a6",
