@@ -7,7 +7,7 @@ from aiohttp.web import Request, Response
 from aiohttp.web_runner import GracefulExit
 
 from app.library.config import Config
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route

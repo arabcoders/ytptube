@@ -7,7 +7,7 @@ import socketio
 
 from app.library.config import Config
 from app.library.dl_fields import DLFields
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.Presets import Presets
 from app.library.router import RouteType, route

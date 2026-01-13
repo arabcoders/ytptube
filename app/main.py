@@ -18,7 +18,7 @@ from app.library.BackgroundWorker import BackgroundWorker
 from app.library.conditions import Conditions
 from app.library.config import Config
 from app.library.dl_fields import DLFields
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
 from app.library.HttpSocket import HttpSocket

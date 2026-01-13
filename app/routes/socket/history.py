@@ -1,6 +1,6 @@
 import logging
 
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
 from app.library.router import RouteType, route

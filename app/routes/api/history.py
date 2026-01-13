@@ -7,8 +7,7 @@ from aiohttp.web import Request, Response
 
 from app.library.config import Config
 from app.library.DataStore import StoreType
-from app.library.Download import Download
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import Download, DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
@@ -16,7 +15,7 @@ from app.library.Presets import Preset, Presets
 from app.library.router import route
 
 if TYPE_CHECKING:
-    from library.Download import Download
+    from library.downloads import Download
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ from typing import Any
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("Events")
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class Events:

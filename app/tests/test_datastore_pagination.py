@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 
 from app.library.DataStore import DataStore, StoreType
-from app.library.Download import Download
+from app.library.downloads import Download
 from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
 

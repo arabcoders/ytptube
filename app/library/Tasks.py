@@ -14,7 +14,7 @@ from typing import Any
 from aiohttp import web
 
 from .config import Config
-from .DownloadQueue import DownloadQueue
+from .downloads import DownloadQueue
 from .encoder import Encoder
 from .Events import EventBus, Events
 from .ItemDTO import Item, ItemDTO
