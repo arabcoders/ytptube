@@ -73,7 +73,7 @@
     </div>
 
     <div class="columns is-multiline is-mobile is-justify-content-flex-end"
-      v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
+      v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <div class="column is-narrow">
         <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
           :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
