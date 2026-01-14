@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",
-    "date": "2026-01-14T16:50:35+00:00",
+    "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
+    "date": "2026-01-14T17:02:48+00:00",
     "commits": [
+      {
+        "sha": "072a45ef",
+        "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
+        "message": "refactor: missed loading check.",
+        "author": "arabcoders",
+        "date": "2026-01-14T17:02:48+00:00"
+      },
       {
         "sha": "ad54d800",
         "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",

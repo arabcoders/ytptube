@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260114-ad54d800",
-        "date": "2026-01-14T16:50:35+00:00",
+        "tag": "dev-20260114-072a45ef",
+        "date": "2026-01-14T17:02:48+00:00",
         "commits": [
+            {
+                "sha": "072a45ef",
+                "message": "refactor: missed loading check.",
+                "author": "arabcoders",
+                "date": "2026-01-14T17:02:48+00:00",
+                "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5"
+            },
             {
                 "sha": "ad54d800",
                 "message": "Refactor: better final filename status tracking",
@@ -3714,7 +3721,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1"
+        "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5"
     },
     {
         "tag": "dev-20250616-c07465a6",
