@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "55a298e0ff84e31797b8b5dd3f9301ad871cf8e3",
-    "date": "2026-01-13T17:05:01+00:00",
+    "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
+    "date": "2026-01-14T15:56:07+00:00",
     "commits": [
+      {
+        "sha": "e0a47e2f",
+        "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
+        "message": "Refactor: facelift the WebUI",
+        "author": "arabcoders",
+        "date": "2026-01-14T15:56:07+00:00"
+      },
+      {
+        "sha": "48e653b7",
+        "full_sha": "48e653b70af63c469ac966151304d5625f1b0933",
+        "message": "refactor: limit concurrent extract info  calls to prevent loop blocking",
+        "author": "arabcoders",
+        "date": "2026-01-14T13:11:21+00:00"
+      },
       {
         "sha": "55a298e0",
         "full_sha": "55a298e0ff84e31797b8b5dd3f9301ad871cf8e3",
