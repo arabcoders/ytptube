@@ -105,7 +105,8 @@
       </div>
     </div>
 
-    <div class="columns is-mobile is-multiline is-justify-content-flex-end" v-if="config.app.browser_control_enabled && items && items.length > 0">
+    <div class="columns is-mobile is-multiline is-justify-content-flex-end"
+      v-if="config.app.browser_control_enabled && items && items.length > 0">
       <div class="column is-narrow">
         <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
           :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }"
@@ -341,8 +342,8 @@
       </template>
 
       <div class="column is-12" v-if="search && filteredItems.length < 1">
-        <Message message_class="has-background-warning-90 has-text-dark" title="No results" icon="fas fa-filter"
-          :useClose="true" @close="() => search = ''" v-if="search">
+        <Message class="is-warning" title="No results" icon="fas fa-filter" :useClose="true"
+          @close="() => search = ''" v-if="search">
           <p class="is-block">
             No results found for '<span class="is-underlined is-bold">{{ search }}</span>'.
           </p>
@@ -350,13 +351,12 @@
       </div>
 
       <div class="column is-12" v-if="!items || items.length < 1">
-        <Message title="Loading content" class="has-background-info-90 has-text-dark" icon="fas fa-refresh fa-spin"
+        <Message title="Loading content" class="is-info" icon="fas fa-refresh fa-spin"
           v-if="isLoading">
           Loading file browser contents...
         </Message>
-        <Message v-else title="No Content" class="is-background-warning-80 has-text-dark"
-          icon="fas fa-exclamation-circle">
-          No content found in this directory.
+        <Message v-else title="No Content" class="is-warning" icon="fas fa-exclamation-circle">
+          Directory is empty.
         </Message>
       </div>
       <div class="column is-12" v-if="!config.app.browser_control_enabled">
@@ -446,13 +446,10 @@ const filteredItems = computed<FileItem[]>(() => {
   }
 
   const searchLower = search.value.toLowerCase()
-  return sortedItems(items.value.filter((item: FileItem) => {
-    return item.name.toLowerCase().includes(searchLower)
-  }))
+  return sortedItems(items.value.filter((item: FileItem) => deepIncludes(item, searchLower, new WeakSet())))
 })
 
 const sortedItems = (items: FileItem[]): FileItem[] => {
-
   if (!items || items.length < 1) {
     return []
   }

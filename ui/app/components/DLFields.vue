@@ -132,13 +132,9 @@
             </div>
           </div>
           <div class="column is-12">
-            <Message message_class="has-background-warning-90 has-text-dark" v-if="items.length === 0">
-              <span class="icon">
-                <i class="fas fa-exclamation-circle" />
-              </span>
-              <span>
-                No custom fields found, you can add new fields using the button above.
-              </span>
+            <Message class="is-warning" v-if="items.length === 0">
+              <span class="icon"><i class="fas fa-exclamation-circle" /></span>
+              <span>No custom fields found, you can add new fields using the button above.</span>
             </Message>
           </div>
         </div>
@@ -250,7 +246,6 @@ const addNewField = () => items.value.push({
 const deleteField = (index: number) => items.value.splice(index, 1)
 
 const validateItem = (item: DLField, index: number): boolean => {
-
   const requiredFields = ['name', 'field', 'kind', 'description']
 
   for (const field of requiredFields) {
@@ -282,9 +277,10 @@ const validateItem = (item: DLField, index: number): boolean => {
 const sortedDLFields = computed(() => items.value.sort((a, b) => (a.order || 0) - (b.order || 0)))
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOptions.value = newOptions
-  .filter(opt => !opt.ignored).flatMap(opt => opt.flags
-    .filter(flag => flag.startsWith('--'))
-    .map(flag => ({ value: flag, description: opt.description || '' }))),
+  .filter(opt => !opt.ignored)
+  .flatMap(
+    opt => opt.flags.filter(flag => flag.startsWith('--')
+    ).map(flag => ({ value: flag, description: opt.description || '' }))),
   { immediate: true }
 )
 onMounted(async () => {

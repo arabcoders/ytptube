@@ -85,15 +85,10 @@
         </div>
       </div>
 
-      <Message v-if="!guiSupported" message_class="is-warning">
-        <p>
-          <span>
-            <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
-            <span>This task definition uses features that cannot be represented with the visual editor. You can still
-              update it
-              via the advanced view.</span>
-          </span>
-        </p>
+      <Message v-if="!guiSupported" class="is-warning">
+        <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
+        <span>This task definition uses features that cannot be represented with the visual editor. You can still
+          update it via the advanced view.</span>
       </Message>
 
       <div v-if="'gui' === mode">

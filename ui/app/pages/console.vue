@@ -85,7 +85,7 @@
           </p>
         </header>
         <div v-show="!isHistoryCollapsed" class="card-content p-2">
-          <Message :newStyle="true" class="is-info" v-if="commandHistory.length < 1">
+          <Message class="is-info" v-if="commandHistory.length < 1">
             Commands history is empty.
           </Message>
           <div class="table-container" v-if="commandHistory.length > 0">

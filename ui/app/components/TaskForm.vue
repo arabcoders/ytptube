@@ -1,16 +1,15 @@
 <template>
   <main class="columns mt-2 is-multiline">
     <div class="column is-12" v-if="form?.url && is_yt_handle(form.url)">
-      <Message title="Information" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
-        <span>You are using a YouTube link with <b>@handle</b> instead of <b>channel_id</b>. To activate RSS feed
-          support for URL click on the <NuxtLink @click="async () => form.url = await convert_url(form.url)"><b>Convert
-              URL</b></NuxtLink> link.</span>
+      <Message title="Information" class="is-info" icon="fas fa-info-circle">
+        You are using a YouTube link with <code>@handle</code> instead of <code>channel_id</code>. To activate RSS
+        feed support for URL click on the <b>Convert URL</b> link.
       </Message>
     </div>
     <div class="column is-12" v-if="form?.url && is_generic_rss(form.url)">
-      <Message title="Information" class="is-info is-background-info-80 has-text-dark" icon="fas fa-info-circle">
-        <span>You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found
-          in this feed.</span>
+      <Message title="Information" class="is-warning" icon="fas fa-info-circle">
+        You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found
+        in this feed.
       </Message>
     </div>
     <div class="column is-12">
@@ -330,7 +329,7 @@
     </div>
 
     <div class="column is-12">
-      <Message class="is-info" :newStyle="true">
+      <Message class="is-info">
         <span>
           <ul>
             <li><strong>Tasks:</strong> requires <code>--download-archive</code> in

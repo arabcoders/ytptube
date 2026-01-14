@@ -86,7 +86,7 @@ code {
       </div>
     </form>
 
-    <Message v-if="loading" class="has-background-info-90 has-text-dark mt-5">
+    <Message v-if="loading" class="is-info">
       <p>
         <span class="icon-text">
           <span class="icon"><i class="fas fa-spinner fa-spin" /></span>
@@ -96,7 +96,7 @@ code {
     </Message>
 
     <div v-if="response" class="mt-4">
-      <Message v-if="response.error" message_class="has-background-danger-90 has-text-dark" title="Error"
+      <Message v-if="response.error" class="is-danger" title="Error"
         icon="fas fa-exclamation-triangle">
         <p>{{ response.error }}</p>
         <p v-if="response.message">{{ response.message }}</p>
@@ -108,7 +108,6 @@ code {
     </div>
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'

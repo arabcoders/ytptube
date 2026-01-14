@@ -71,8 +71,9 @@ code {
         </div>
 
         <div style="position: relative" v-if="!isLoading">
-          <Message v-if="error" message_class="has-background-warning-90 has-text-dark" title="Error"
-            icon="fas fa-exclamation" :message="error" />
+          <Message v-if="error" class="is-warning" title="Error" icon="fas fa-exclamation">
+            {{ error }}
+          </Message>
           <div class="card" v-else>
             <div class="card-body p-4">
               <div class="content" v-html="content" />

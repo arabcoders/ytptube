@@ -434,9 +434,9 @@
 
   <div class="columns is-multiline" v-if="!hasItems && !paginationInfo.isLoading">
     <div class="column is-12">
-      <Message message_class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
-        @close="() => emitter('clear_search')" v-if="query" :newStyle="true">
-        <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+      <Message class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
+        @close="() => emitter('clear_search')" v-if="query">
+        <span class="is-block">No results found for: <code>{{ query }}</code>.</span>
         <hr>
         <p>
           You can search using any value shown in the item’s <code><span class="icon"><i
@@ -452,9 +452,9 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message message_class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
-        v-else-if="socket.isConnected" :new-style="true">
-        <p>Your download history is empty. Once queued downloads are completed, they will appear here.</p>
+      <Message v-else-if="socket.isConnected" class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
+        :new-style="true">
+        <p>Download history is empty.</p>
       </Message>
     </div>
   </div>
