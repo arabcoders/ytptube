@@ -12,7 +12,7 @@ from app.library.Utils import dt_delta, str_to_dt
 if TYPE_CHECKING:
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("downloads.monitors")
 
 
 async def check_for_stale(queue: "DownloadQueue") -> None:

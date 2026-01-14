@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("downloads.video")
 
 
 async def add_video(queue: "DownloadQueue", entry: dict, item: "Item", logs: list[str] | None = None) -> dict[str, str]:

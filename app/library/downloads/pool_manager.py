@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from .queue_manager import DownloadQueue
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("downloads.pool")
 
 
 class PoolManager:
