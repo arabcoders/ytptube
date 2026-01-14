@@ -47,8 +47,9 @@ hr {
 
     <div class="columns is-multiline" v-if="isLoading">
       <div class="column is-12">
-        <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
-          message="Loading data. Please wait..." />
+        <Message class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
+          Loading data. Please wait...
+        </Message>
       </div>
     </div>
 
@@ -92,8 +93,8 @@ hr {
 
       <div class="columns is-multiline" v-if="!filteredLogs || filteredLogs.length < 1">
         <div class="column is-12">
-          <Message title="No Results" class="is-background-warning-80 has-text-dark" icon="fas fa-search"
-            v-if="query" :useClose="true" @close="query = ''">
+          <Message title="No Results" class="is-warning" icon="fas fa-search" v-if="query"
+            :useClose="true" @close="query = ''">
             <p>No changelog entries found for the query: <strong>{{ query }}</strong>.</p>
             <p>Please try a different search term.</p>
           </Message>
@@ -135,29 +136,21 @@ const filteredLogs = computed<changelogs>(() => {
   const q = query.value?.toLowerCase()
   if (!q) return logs.value
 
-  return logs.value
-    .map(log => {
-      // Check if tag matches
-      const tagMatches = log.tag.toLowerCase().includes(q)
+  return logs.value.map(log => {
+    const tagMatches = log.tag.toLowerCase().includes(q)
 
-      // Filter commits that match the query
-      const filteredCommits = log.commits?.filter(commit =>
-        commit.message.toLowerCase().includes(q) ||
-        commit.author.toLowerCase().includes(q) ||
-        commit.full_sha.toLowerCase().includes(q)
-      ) ?? []
+    const filteredCommits = log.commits?.filter(commit =>
+      commit.message.toLowerCase().includes(q) ||
+      commit.author.toLowerCase().includes(q) ||
+      commit.full_sha.toLowerCase().includes(q)
+    ) ?? []
 
-      // Return log only if tag matches OR if there are matching commits
-      if (tagMatches || filteredCommits.length > 0) {
-        return {
-          ...log,
-          commits: tagMatches ? log.commits : filteredCommits
-        }
-      }
+    if (tagMatches || filteredCommits.length > 0) {
+      return { ...log, commits: tagMatches ? log.commits : filteredCommits }
+    }
 
-      return null
-    })
-    .filter((log): log is changeset => log !== null)
+    return null
+  }).filter((log): log is changeset => log !== null)
 })
 
 const loadContent = async () => {

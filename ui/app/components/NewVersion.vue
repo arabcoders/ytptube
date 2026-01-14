@@ -1,5 +1,5 @@
 <template>
-  <Message message_class="is-success has-background-success-90 has-text-dark">
+  <Message class="is-success">
     <span class="icon"><i class="fas fa-info-circle" /></span>
     <span>
       A New WebUI Version installed, please

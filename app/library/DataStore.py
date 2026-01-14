@@ -4,7 +4,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from enum import Enum
 
-from .Download import Download
+from .downloads import Download
 from .ItemDTO import ItemDTO
 from .operations import matches_condition
 from .sqlite_store import SqliteStore

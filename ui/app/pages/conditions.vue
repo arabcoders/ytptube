@@ -16,6 +16,19 @@
         </span>
         <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
+            <p class="control has-icons-left" v-if="toggleFilter && items && items.length > 0">
+              <input type="search" v-model.lazy="query" class="input" id="filter"
+                placeholder="Filter displayed content">
+              <span class="icon is-left"><i class="fas fa-filter" /></span>
+            </p>
+
+            <p class="control" v-if="items && items.length > 0">
+              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
+                <span class="icon"><i class="fas fa-filter" /></span>
+                <span v-if="!isMobile">Filter</span>
+              </button>
+            </p>
+
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;">
                 <span class="icon"><i class="fas fa-add" /></span>
@@ -44,7 +57,7 @@
         </div>
         <div class="is-hidden-mobile" v-if="!toggleForm">
           <span class="subtitle">
-            Run yt-dlp custom match filter on returned info. and apply cli arguments if matched.
+            Run yt-dlp custom match filter on returned info. and apply options.
           </span>
         </div>
       </div>
@@ -53,192 +66,202 @@
         <ConditionForm :addInProgress="addInProgress" :reference="itemRef" :item="item as ConditionItem"
           @cancel="resetForm(true)" @submit="updateItem" />
       </div>
+    </div>
 
-      <div class="column is-12" v-if="!toggleForm">
-        <div class="columns is-multiline" v-if="items.length > 0">
-          <template v-if="'list' === display_style">
-            <div class="column is-12">
-              <div class="table-container">
-                <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-                  style="min-width: 850px; table-layout: fixed;">
-                  <thead>
-                    <tr class="has-text-centered is-unselectable">
-                      <th width="80%">
+    <div class="columns is-multiline" v-if="!isLoading && !toggleForm && (filteredItems && filteredItems.length > 0)">
+      <div class="column is-12" v-if="'list' === display_style">
+        <div class="table-container">
+          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
+            style="min-width: 850px; table-layout: fixed;">
+            <thead>
+              <tr class="has-text-centered is-unselectable">
+                <th width="80%">
+                  <span class="icon"><i class="fa-solid fa-filter" /></span>
+                  <span>Condition</span>
+                </th>
+                <th width="20%">
+                  <span class="icon"><i class="fa-solid fa-gear" /></span>
+                  <span>Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cond in filteredItems" :key="cond.id">
+                <td class="is-vcentered">
+                  <div class="is-text-overflow is-bold">
+                    {{ cond.name }}
+                  </div>
+                  <div class="is-unselectable">
+                    <span class="icon-text is-clickable" @click="toggleEnabled(cond)"
+                      v-tooltip="'Click to ' + (cond.enabled !== false ? 'disable' : 'enable') + ' condition'">
+                      <span class="icon">
+                        <i class="fa-solid fa-power-off"
+                          :class="{ 'has-text-success': cond.enabled !== false, 'has-text-danger': cond.enabled === false }" />
+                      </span>
+                      <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                    </span>
+                    &nbsp;
+                    <Popover :maxWidth="450">
+                      <template #trigger>
+                        <span class="is-clickable">
+                          <span class="icon"> <i class="fa-solid fa-info-circle" /></span>
+                          <span>Show Details</span>
+                        </span>
+                      </template>
+
+                      <template #title><strong>Condition Details</strong></template>
+
+                      <div v-if="cond.filter">
                         <span class="icon"><i class="fa-solid fa-filter" /></span>
-                        <span>Condition</span>
-                      </th>
-                      <th width="20%">
-                        <span class="icon"><i class="fa-solid fa-gear" /></span>
-                        <span>Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="cond in items" :key="cond.id">
-                      <td class="is-vcentered">
-                        <div class="is-text-overflow is-bold">
-                          {{ cond.name }}
-                        </div>
-                        <div class="is-unselectable">
-                          <span class="icon-text is-clickable" @click="toggleEnabled(cond)"
-                            v-tooltip="'Click to ' + (cond.enabled !== false ? 'disable' : 'enable') + ' condition'">
-                            <span class="icon">
-                              <i class="fa-solid fa-power-off"
-                                :class="{ 'has-text-success': cond.enabled !== false, 'has-text-danger': cond.enabled === false }" />
-                            </span>
-                            <span>{{ cond.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
-                          </span>
-                          &nbsp;
-                          <Popover :maxWidth="450">
-                            <template #trigger>
-                              <span class="is-clickable">
-                                <span class="icon"> <i class="fa-solid fa-info-circle" /></span>
-                                <span>Show Details</span>
-                              </span>
-                            </template>
-
-                            <template #title><strong>Condition Details</strong></template>
-
-                            <div v-if="cond.filter">
-                              <span class="icon"><i class="fa-solid fa-filter" /></span>
-                              <code>{{ cond.filter }}</code>
-                            </div>
-
-                            <div v-if="cond.cli">
-                              <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                              <code>{{ cond.cli }}</code>
-                            </div>
-
-                            <span v-if="cond.extras && Object.keys(cond.extras).length > 0">
-                              <template v-for="(value, key) in cond.extras" :key="key">
-                                <div>
-                                  <span class="icon"><i class="fa-solid fa-list" /></span>
-                                  <code>{{ key }}: {{ value }}</code>
-                                </div>
-                              </template>
-                            </span>
-                          </Popover>
-                          <template v-if="cond.priority > 0">
-                            &nbsp;
-                            <span class="icon-text">
-                              <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                              <span>Priority: {{ cond.priority }}</span>
-                            </span>
-                          </template>
-                        </div>
-                      </td>
-                      <td class="is-vcentered is-items-center">
-                        <div class="field is-grouped is-grouped-centered">
-                          <div class="control">
-                            <button class="button is-info is-small is-fullwidth" @click="exportItem(cond)">
-                              <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                              <span v-if="!isMobile">Export</span>
-                            </button>
-                          </div>
-                          <div class="control">
-                            <button class="button is-warning is-small is-fullwidth" @click="editItem(cond)">
-                              <span class="icon"><i class="fa-solid fa-edit" /></span>
-                              <span v-if="!isMobile">Edit</span>
-                            </button>
-                          </div>
-                          <div class="control">
-                            <button class="button is-danger is-small is-fullwidth" @click="deleteItem(cond)">
-                              <span class="icon"><i class="fa-solid fa-trash" /></span>
-                              <span v-if="!isMobile">Delete</span>
-                            </button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </template>
-
-          <template v-else>
-            <div class="column is-6" v-for="cond in items" :key="cond.id">
-              <div class="card is-flex is-full-height is-flex-direction-column">
-                <header class="card-header">
-                  <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
-                  <div class="card-header-icon">
-                    <div class="field is-grouped">
-                      <div class="control" v-if="cond.priority > 0">
-                        <span class="tag is-dark">
-                          <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                          <span v-text="cond.priority" />
-                        </span>
+                        <code>{{ cond.filter }}</code>
                       </div>
-                      <div class="control" @click="toggleEnabled(cond)">
-                        <span class="icon" :class="cond.enabled ? 'has-text-success' : 'has-text-danger'"
-                          v-tooltip="`Condition is ${cond.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
-                          <i class="fa-solid fa-power-off" />
-                        </span>
+
+                      <div v-if="cond.cli">
+                        <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                        <code>{{ cond.cli }}</code>
                       </div>
-                      <div class="control">
-                        <a class="has-text-info" v-tooltip="'Export item'" @click.prevent="exportItem(cond)">
-                          <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                        </a>
-                      </div>
+
+                      <span v-if="cond.extras && Object.keys(cond.extras).length > 0">
+                        <template v-for="(value, key) in cond.extras" :key="key">
+                          <div>
+                            <span class="icon"><i class="fa-solid fa-list" /></span>
+                            <code>{{ key }}: {{ value }}</code>
+                          </div>
+                        </template>
+                      </span>
+                    </Popover>
+                    <template v-if="cond.priority > 0">
+                      &nbsp;
+                      <span class="icon-text">
+                        <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                        <span>Priority: {{ cond.priority }}</span>
+                      </span>
+                    </template>
+                  </div>
+                </td>
+                <td class="is-vcentered is-items-center">
+                  <div class="field is-grouped is-grouped-centered">
+                    <div class="control">
+                      <button class="button is-info is-small is-fullwidth" @click="exportItem(cond)">
+                        <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                        <span v-if="!isMobile">Export</span>
+                      </button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-warning is-small is-fullwidth" @click="editItem(cond)">
+                        <span class="icon"><i class="fa-solid fa-edit" /></span>
+                        <span v-if="!isMobile">Edit</span>
+                      </button>
+                    </div>
+                    <div class="control">
+                      <button class="button is-danger is-small is-fullwidth" @click="deleteItem(cond)">
+                        <span class="icon"><i class="fa-solid fa-trash" /></span>
+                        <span v-if="!isMobile">Delete</span>
+                      </button>
                     </div>
                   </div>
-                </header>
-                <div class="card-content is-flex-grow-1">
-                  <div class="content">
-                    <p class="is-text-overflow">
-                      <span class="icon"><i class="fa-solid fa-filter" /></span>
-                      <span v-text="cond.filter" />
-                    </p>
-                    <p class="is-text-overflow" v-if="cond.cli">
-                      <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                      <span>{{ cond.cli }}</span>
-                    </p>
-                    <p class="is-text-overflow" v-if="cond.extras && Object.keys(cond.extras).length > 0">
-                      <span class="icon"><i class="fa-solid fa-list" /></span>
-                      <span>Extras:
-                        <span v-for="(value, key) in cond.extras" :key="key" class="tag is-info mr-2">
-                          <b>{{ key }}</b>: {{ value }}
-                        </span>
-                      </span>
-                    </p>
-                    <p class="is-clickable" :class="{ 'is-text-overflow': !isExpanded(cond.id, 'description') }"
-                      v-if="cond.description" @click="toggleExpand(cond.id, 'description')">
-                      <span class="icon"><i class="fa-solid fa-comment" /></span>
-                      <span>{{ cond.description }}</span>
-                    </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <template v-else>
+        <div class="column is-6" v-for="cond in filteredItems" :key="cond.id">
+          <div class="card is-flex is-full-height is-flex-direction-column">
+            <header class="card-header">
+              <div class="card-header-title is-text-overflow is-block" v-text="cond.name" />
+              <div class="card-header-icon">
+                <div class="field is-grouped">
+                  <div class="control" v-if="cond.priority > 0">
+                    <span class="tag is-dark">
+                      <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
+                      <span v-text="cond.priority" />
+                    </span>
                   </div>
-                </div>
-                <div class="card-footer mt-auto">
-                  <div class="card-footer-item">
-                    <button class="button is-warning is-fullwidth" @click="editItem(cond)">
-                      <span class="icon"><i class="fa-solid fa-edit" /></span>
-                      <span>Edit</span>
-                    </button>
+                  <div class="control" @click="toggleEnabled(cond)">
+                    <span class="icon" :class="cond.enabled ? 'has-text-success' : 'has-text-danger'"
+                      v-tooltip="`Condition is ${cond.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`">
+                      <i class="fa-solid fa-power-off" />
+                    </span>
                   </div>
-                  <div class="card-footer-item">
-                    <button class="button is-danger is-fullwidth" @click="deleteItem(cond)">
-                      <span class="icon"><i class="fa-solid fa-trash" /></span>
-                      <span>Delete</span>
-                    </button>
+                  <div class="control">
+                    <a class="has-text-info" v-tooltip="'Export item'" @click.prevent="exportItem(cond)">
+                      <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                    </a>
                   </div>
                 </div>
               </div>
+            </header>
+            <div class="card-content is-flex-grow-1">
+              <div class="content">
+                <p class="is-text-overflow">
+                  <span class="icon"><i class="fa-solid fa-filter" /></span>
+                  <span v-text="cond.filter" />
+                </p>
+                <p class="is-text-overflow" v-if="cond.cli">
+                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
+                  <span>{{ cond.cli }}</span>
+                </p>
+                <p class="is-text-overflow" v-if="cond.extras && Object.keys(cond.extras).length > 0">
+                  <span class="icon"><i class="fa-solid fa-list" /></span>
+                  <span>Extras:
+                    <span v-for="(value, key) in cond.extras" :key="key" class="tag is-info mr-2">
+                      <b>{{ key }}</b>: {{ value }}
+                    </span>
+                  </span>
+                </p>
+                <p class="is-clickable" :class="{ 'is-text-overflow': !isExpanded(cond.id, 'description') }"
+                  v-if="cond.description" @click="toggleExpand(cond.id, 'description')">
+                  <span class="icon"><i class="fa-solid fa-comment" /></span>
+                  <span>{{ cond.description }}</span>
+                </p>
+              </div>
             </div>
-          </template>
+            <div class="card-footer mt-auto">
+              <div class="card-footer-item">
+                <button class="button is-warning is-fullwidth" @click="editItem(cond)">
+                  <span class="icon"><i class="fa-solid fa-edit" /></span>
+                  <span>Edit</span>
+                </button>
+              </div>
+              <div class="card-footer-item">
+                <button class="button is-danger is-fullwidth" @click="deleteItem(cond)">
+                  <span class="icon"><i class="fa-solid fa-trash" /></span>
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <Message title="No items" message="There are no custom conditions defined."
-          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle"
-          v-if="!items || items.length < 1" />
+      </template>
+    </div>
+
+    <div class="columns is-multiline" v-if="!toggleForm && (isLoading || !filteredItems || filteredItems.length < 1)">
+      <div class="column is-12">
+        <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
+          Loading data. Please wait...
+        </Message>
+        <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+          @close="query = ''">
+          <p>No results found for the query: <code>{{ query }}</code>.</p>
+          <p>Please try a different search term.</p>
+        </Message>
+        <Message v-else title="No items" class="is-warning" icon="fas fa-exclamation-circle">
+          There are no custom defined conditions yet. Click the <span class="icon"><i class="fas fa-add" /></span>
+          <strong>New Condition</strong> button to add your first condition.
+        </Message>
       </div>
     </div>
-    <div class="column is-12" v-if="items && items.length > 0 && !toggleForm">
-      <div class="message is-info">
-        <div class="message-body content pl-0">
+
+    <div class="columns is-multiline" v-if="filteredItems && filteredItems.length > 0 && !toggleForm">
+      <div class="column is-12">
+        <Message class="is-info" :body_class="'pl-0'">
           <ul>
-            <li>Filtering is based on yt-dlp’s <code>--match-filter</code> logic. Any expression that works with yt-dlp
-              will also work here, including the same boolean operators. We added extended support for the
-              <code>OR</code> ( <code>||</code> ) operator, which yt-dlp does not natively support. This allows you to combine
-              multiple conditions more flexibly.
+            <li>Filtering is based on yt-dlp’s <code>--match-filter</code> logic. Any expression that works with
+              yt-dlp will also work here, including the same boolean operators. We added extended support for the
+              <code>OR</code> ( <code>||</code> ) operator, which yt-dlp does not natively support. This allows you to
+              combine multiple conditions more flexibly.
             </li>
             <li>
               The primary use case for this feature is to apply custom cli arguments to specific returned info.
@@ -254,7 +277,7 @@
               filter matches or not.
             </li>
           </ul>
-        </div>
+        </Message>
       </div>
     </div>
   </div>
@@ -280,8 +303,17 @@ const toggleForm = ref(false)
 const isLoading = ref(false)
 const initialLoad = ref(true)
 const addInProgress = ref(false)
+const query = ref<string>('')
+const toggleFilter = ref(false)
+
 const remove_keys = ['raw', 'toggle_description']
 const expandedItems = ref<Record<string, Set<string>>>({})
+
+const filteredItems = computed<ConditionItemWithUI[]>(() => {
+  const q = query.value?.toLowerCase();
+  if (!q) return items.value;
+  return items.value.filter((item: ConditionItemWithUI) => deepIncludes(item, q, new WeakSet()));
+});
 
 const toggleExpand = (itemId: string | undefined, field: string) => {
   if (!itemId) return
@@ -306,6 +338,12 @@ watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
     await reloadContent(true)
     initialLoad.value = false
+  }
+})
+
+watch(toggleFilter, (val) => {
+  if (!val) {
+    query.value = ''
   }
 })
 

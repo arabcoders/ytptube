@@ -98,32 +98,36 @@
                 </label>
               </td>
               <td class="is-text-overflow is-vcentered">
-                <div class="is-inline is-pulled-right"
-                  v-if="item.extras?.duration || getPath(config.app.download_path, item)">
+                <div class="is-inline is-pulled-right" v-if="item.extras?.duration || show_popover">
                   <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
                     {{ formatTime(item.extras.duration) }}
                   </span>
-                  <span class="icon is-pointer" v-if="getPath(config.app.download_path, item)"
-                    v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
-                    <i class="fa-solid fa-folder-open" />
-                  </span>
+
+                  <Popover :showDelay="400" :maxWidth="450" v-if="show_popover">
+                    <template #trigger>
+                      <span class="icon is-pointer"><i class="fa-solid fa-info-circle" /></span>
+                    </template>
+                    <template #title>
+                      <strong>
+                        {{ item.title }}
+                        <span class="tag is-info is-unselectable">{{ item.preset }}</span>
+                      </strong>
+                    </template>
+                    <p v-if="getPath(config.app.download_path, item)">
+                      <b>Path:</b> {{ getPath(config.app.download_path, item) }}
+                    </p>
+                    <hr
+                      v-if="(showThumbnails && getImage(config.app.download_path, item, false)) || item.description" />
+                    <img v-if="showThumbnails && getImage(config.app.download_path, item, false)"
+                      :src="getImage(config.app.download_path, item, false)" class="card-image mt-2 mb-2" />
+                    <p v-if="item.description">{{ item.description }}</p>
+                  </Popover>
                 </div>
                 <div v-if="show_popover">
                   <div class="is-text-overflow">
-                    <Popover :showDelay="400" :maxWidth="450">
-                      <template #trigger>
-                        <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                      </template>
-                      <template #title>
-                        <strong>
-                          {{ item.title }}
-                          <span class="tag is-info is-unselectable">{{ item.preset }}</span>
-                        </strong>
-                      </template>
-                      <img v-if="showThumbnails && getImage(config.app.download_path, item, false)"
-                        :src="getImage(config.app.download_path, item, false)" class="mt-2 mb-2" />
-                      <p v-if="item.description">{{ item.description }}</p>
-                    </Popover>
+                    <NuxtLink class="is-text-overflow" v-tooltip="`${item.preset}: ${item.title}`" target="_blank"
+                      :href="item.url">
+                      {{ item.title }}</NuxtLink>
                   </div>
                 </div>
                 <template v-else>
@@ -241,16 +245,7 @@
         :class="{ 'is-bordered-danger': item.status === 'error', 'is-bordered-info': item.live_in || item.is_live }">
         <header class="card-header">
           <div class="card-header-title is-text-overflow is-block">
-            <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
-              <template #trigger>
-                <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-              </template>
-              <template #title><strong>{{ item.title }}</strong></template>
-              <p v-if="item.description">{{ item.description }}</p>
-            </Popover>
-            <template v-else>
-              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-            </template>
+            <NuxtLink target="_blank" v-tooltip="item.title" :href="item.url">{{ item.title }}</NuxtLink>
           </div>
 
           <div class="card-header-icon">
@@ -261,10 +256,20 @@
                 </span>
               </div>
 
-              <div class="control" v-if="getPath(config.app.download_path, item)">
-                <span class="icon" v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
-                  <i class="fa-solid fa-folder-open" />
-                </span>
+              <div class="control" v-if="show_popover && getPath(config.app.download_path, item)">
+                <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
+                  <template #trigger>
+                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+                  </template>
+                  <template #title><strong>{{ item.title }}</strong></template>
+                  <p v-if="getPath(config.app.download_path, item)">
+                    <b>Path:</b> {{ getPath(config.app.download_path, item) }}
+                  </p>
+                  <template v-if="item.description">
+                    <hr>
+                    <p>{{ item.description }}</p>
+                  </template>
+                </Popover>
               </div>
 
               <div class="control">
@@ -429,9 +434,9 @@
 
   <div class="columns is-multiline" v-if="!hasItems && !paginationInfo.isLoading">
     <div class="column is-12">
-      <Message message_class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
-        @close="() => emitter('clear_search')" v-if="query" :newStyle="true">
-        <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+      <Message class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
+        @close="() => emitter('clear_search')" v-if="query">
+        <span class="is-block">No results found for: <code>{{ query }}</code>.</span>
         <hr>
         <p>
           You can search using any value shown in the item’s <code><span class="icon"><i
@@ -447,9 +452,9 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message message_class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
-        v-else-if="socket.isConnected" :new-style="true">
-        <p>Your download history is empty. Once queued downloads are completed, they will appear here.</p>
+      <Message v-else-if="socket.isConnected" class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
+        :new-style="true">
+        <p>Download history is empty.</p>
       </Message>
     </div>
   </div>

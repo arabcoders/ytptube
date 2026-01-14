@@ -73,7 +73,7 @@
     </div>
 
     <div class="columns is-multiline is-mobile is-justify-content-flex-end"
-      v-if="!toggleForm && filteredTasks && filteredTasks.length > 0">
+      v-if="!isLoading && !toggleForm && filteredTasks && filteredTasks.length > 0">
       <div class="column is-narrow">
         <button type="button" class="button" @click="masterSelectAll = !masterSelectAll"
           :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }">
@@ -407,29 +407,26 @@
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="!filteredTasks || filteredTasks.length < 1">
+    <div class="columns is-multiline" v-if="!toggleForm && (isLoading || !filteredTasks || filteredTasks.length < 1)">
       <div class="column is-12">
-
-        <Message :newStyle="true" message_class="is-info" v-if="isLoading">
-          <p><span class="icon"><i class="fas fa-spinner fa-spin" /></span> Loading data. Please wait...</p>
+        <Message class="is-info" title="Loading" icon="fas fa-spinner fa-spin" v-if="isLoading">
+          Loading data. Please wait...
         </Message>
-        <Message title="No Results" message_class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
-          @close="query = ''" :newStyle="true">
-          <p>No results found for the query: <strong>{{ query }}</strong>.</p>
+        <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+          @close="query = ''">
+          <p>No results found for the query: <code>{{ query }}</code>.</p>
           <p>Please try a different search term.</p>
         </Message>
-        <Message message_class="is-warning" :newStyle="true" v-else>
-          <p>
-            <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-            <span>No tasks are defined.</span>
-          </p>
+        <Message class="is-warning" icon="fa-solid fa-info-circle" title="No tasks." v-else>
+          There are no tasks defined yet. Click the <span class="icon"><i class="fas fa-add" /></span> <strong>New
+            Task</strong> button to create your first automated download task.
         </Message>
       </div>
     </div>
 
     <div class="columns is-multiline" v-if="!toggleForm && tasks && tasks.length > 0">
       <div class="column is-12">
-        <Message :newStyle="true" message_class="is-info">
+        <Message class="is-info">
           <ul>
             <li class="has-text-danger">
               <span class="icon">
@@ -611,9 +608,7 @@ const filteredTasks = computed<task_item[]>(() => {
   const q = query.value?.toLowerCase();
   if (!q) return tasks.value;
 
-  return tasks.value.filter(
-    task => Object.values(task).some(value => typeof value === 'string' && value.toLowerCase().includes(q))
-  );
+  return tasks.value.filter(task => deepIncludes(task, q, new WeakSet()));
 });
 
 const reloadContent = async (fromMounted: boolean = false) => {

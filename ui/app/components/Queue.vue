@@ -68,39 +68,34 @@
                 </label>
               </td>
               <td class="is-text-overflow is-vcentered">
-                <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || item.extras?.duration">
+                <div class="is-inline is-pulled-right" v-if="item.downloaded_bytes || show_popover">
                   <span class="tag" v-if="item.downloaded_bytes">{{ formatBytes(item.downloaded_bytes) }}</span>
-                  <span class="tag is-info" v-if="item.extras?.duration">
-                    {{ formatTime(item.extras.duration) }}
-                  </span>
-                  <span class="icon is-pointer" v-if="item.download_dir"
-                    v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
-                    <i class="fa-solid fa-folder-open" />
-                  </span>
+                  <Popover :showDelay="400" :maxWidth="450" v-if="show_popover">
+                    <template #trigger>
+                      <span class="icon is-pointer"><i class="fa-solid fa-info-circle" /></span>
+                    </template>
+                    <template #title>
+                      <strong>
+                        {{ item.title }}
+                        <span class="tag is-info is-unselectable">{{ item.preset }}</span>
+                      </strong>
+                    </template>
+                    <p v-if="item.extras?.duration">
+                      <b>Duration</b>: {{ formatTime(item.extras.duration) }}
+                    </p>
+                    <p v-if="getPath(config.app.download_path, item)">
+                      <b>Path:</b> {{ getPath(config.app.download_path, item) }}
+                    </p>
+                    <hr
+                      v-if="(showThumbnails && getImage(config.app.download_path, item, false)) || item.description" />
+                    <img v-if="showThumbnails && getImage(config.app.download_path, item, false)"
+                      :src="getImage(config.app.download_path, item, false)" class="card-image mt-2 mb-2" />
+                    <p v-if="item.description">{{ item.description }}</p>
+                  </Popover>
                 </div>
-                <div v-if="show_popover">
-                  <div class="is-text-overflow">
-                    <Popover :showDelay="400" :maxWidth="450">
-                      <template #trigger>
-                        <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                      </template>
-                      <template #title>
-                        <strong>
-                          {{ item.title }}
-                          <span class="tag is-info is-unselectable">{{ item.preset }}</span>
-                        </strong>
-                      </template>
-                      <img v-if="showThumbnails && getImage(config.app.download_path, item)"
-                        :src="getImage(config.app.download_path, item)" class="mt-2 mb-2" />
-                      <p v-if="item.description">{{ item.description }}</p>
-                    </Popover>
-                  </div>
+                <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
+                  <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
                 </div>
-                <template v-else>
-                  <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
-                    <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                  </div>
-                </template>
               </td>
               <td class="has-text-centered is-text-overflow is-unselectable">
                 <span class="icon" :class="setIconColor(item)">
@@ -176,16 +171,7 @@
       <div class="card">
         <header class="card-header">
           <div class="card-header-title is-text-overflow is-block">
-            <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
-              <template #trigger>
-                <NuxtLink class="is-text-overflow" target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-              </template>
-              <template #title><strong>{{ item.title }}</strong></template>
-              <p v-if="item.description">{{ item.description }}</p>
-            </Popover>
-            <template v-else>
-              <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-            </template>
+            <NuxtLink target="_blank" v-tooltip="item.title" :href="item.url">{{ item.title }}</NuxtLink>
           </div>
           <div class="card-header-icon">
             <div class="field is-grouped">
@@ -194,11 +180,22 @@
                   {{ formatTime(item.extras.duration) }}
                 </span>
               </div>
-              <div class="control" v-if="item.download_dir">
-                <span class="icon" v-tooltip="`Path: ${getPath(config.app.download_path, item)}`">
-                  <i class="fa-solid fa-folder-open" />
-                </span>
-              </div>
+              <Popover :showDelay="400" :maxWidth="450" v-if="show_popover">
+                <template #trigger>
+                  <span class="icon is-pointer"><i class="fa-solid fa-info-circle" /></span>
+                </template>
+                <template #title>
+                  <strong>
+                    {{ item.title }}
+                    <span class="tag is-info is-unselectable">{{ item.preset }}</span>
+                  </strong>
+                </template>
+                <p v-if="getPath(config.app.download_path, item)">
+                  <b>Path:</b> {{ getPath(config.app.download_path, item) }}
+                </p>
+                <hr v-if="item.description" />
+                <p v-if="item.description">{{ item.description }}</p>
+              </Popover>
               <div class="control">
                 <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
                   <span class="icon"><i class="fa-solid"
@@ -252,8 +249,7 @@
               <span v-tooltip="moment(item.datetime).format('MMMM Do YYYY, h:mm:ss a')" :data-datetime="item.datetime"
                 v-rtime="item.datetime" />
             </div>
-            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
-              v-if="item.downloaded_bytes" v-tooltip="`Saving to: ${makePath(item)}`">
+            <div class="column is-half-mobile has-text-centered is-unselectable" v-if="item.downloaded_bytes">
               {{ formatBytes(item.downloaded_bytes) }}
             </div>
 
@@ -306,9 +302,9 @@
 
   <div class="columns is-multiline" v-if="filteredItems.length < 1">
     <div class="column is-12">
-      <Message message_class="is-warning" title="Filter results" :newStyle="true" icon="fas fa-search" :useClose="true"
+      <Message class="is-warning" title="Filter results" icon="fas fa-search" :useClose="true"
         @close="() => emitter('clear_search')" v-if="query">
-        <span class="is-block">No results found for '<span class="is-underlined is-bold">{{ query }}</span>'.</span>
+        <span class="is-block">No results found for: <code>{{ query }}</code>.</span>
         <hr>
         <p>
           You can search using any value shown in the item’s <code><span class="icon"><i
@@ -324,9 +320,8 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message message_class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false"
-        :newStyle="true" v-else>
-        <p>The download queue is empty.</p>
+      <Message v-else class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false">
+        <p>Download queue is empty.</p>
       </Message>
     </div>
   </div>
@@ -452,6 +447,11 @@ const setStatus = (item: StoreItem): string => {
   if ('downloading' === item.status && item.is_live) {
     return 'Streaming'
   }
+
+  if ('started' === item.status) {
+    return 'Starting'
+  }
+
   if ('preparing' === item.status) {
     return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..'
   }
@@ -462,7 +462,7 @@ const setStatus = (item: StoreItem): string => {
 }
 
 const setIconColor = (item: StoreItem): string => {
-  if ('downloading' === item.status) {
+  if (['downloading', 'started'].includes(item.status as string)) {
     return 'has-text-success'
   }
   if ('postprocessing' === item.status) {
@@ -515,9 +515,18 @@ const updateProgress = (item: StoreItem): string => {
   if (null === item.status && true === config.paused) {
     return 'Global Pause'
   }
+
+  if ('started' === item.status) {
+    return 'Starting'
+  }
+
   if ('postprocessing' === item.status) {
+    if (item.postprocessor) {
+      return `PP Running: ${item.postprocessor}`
+    }
     return 'Post-processors are running.'
   }
+
   if ('preparing' === item.status) {
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
   }
@@ -632,15 +641,4 @@ watch(embed_url, v => {
   }
   document.querySelector('body')?.setAttribute('style', `opacity: ${v ? 1 : bg_opacity.value}`)
 })
-
-const makePath = (item: StoreItem) => {
-  const parts = [
-    eTrim(item.download_dir, '/').replace(config.app.download_path, ''),
-  ]
-  if (item?.filename) {
-    parts.push(eTrim(item.filename, '/'))
-  }
-
-  return '/' + sTrim(parts.filter(p => !!p).map(p => p.replace(/\\/g, '/').replace(/\/+/g, '/')).join('/'), '/')
-}
 </script>

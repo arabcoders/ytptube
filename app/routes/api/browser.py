@@ -9,7 +9,7 @@ from aiohttp.web import Request, Response
 
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ffprobe import ffprobe

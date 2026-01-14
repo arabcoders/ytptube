@@ -16,6 +16,19 @@
         </span>
         <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
+            <p class="control has-icons-left" v-if="toggleFilter && presets && presets.length > 0">
+              <input type="search" v-model.lazy="query" class="input" id="filter"
+                placeholder="Filter displayed content">
+              <span class="icon is-left"><i class="fas fa-filter" /></span>
+            </p>
+
+            <p class="control" v-if="presets && presets.length > 0">
+              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
+                <span class="icon"><i class="fas fa-filter" /></span>
+                <span v-if="!isMobile">Filter</span>
+              </button>
+            </p>
+
             <p class="control">
               <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;"
                 v-tooltip.bottom="'Toggle add form'">
@@ -35,6 +48,7 @@
                 </span>
               </button>
             </p>
+
             <p class="control">
               <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
                 :disabled="isLoading" v-if="presets && presets.length > 0">
@@ -59,7 +73,7 @@
     </div>
 
     <template v-if="!toggleForm">
-      <div class="columns is-multiline" v-if="presetsNoDefault && presetsNoDefault.length > 0">
+      <div class="columns is-multiline" v-if="!isLoading && presetsNoDefault && presetsNoDefault.length > 0">
         <template v-if="'list' === display_style">
           <div class="column is-12">
             <div class="table-container">
@@ -72,7 +86,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in presetsNoDefault" :key="item.id">
+                  <tr v-for="item in filteredPresets" :key="item.id">
                     <td class="is-text-overflow is-vcentered">
                       <div class="is-text-overflow is-bold">
                         {{ item.name }}
@@ -122,7 +136,7 @@
         </template>
 
         <template v-else>
-          <div class="column is-6" v-for="item in presetsNoDefault" :key="item.id">
+          <div class="column is-6" v-for="item in filteredPresets" :key="item.id">
             <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
                 <div class="card-header-title is-block is-clickable"
@@ -204,24 +218,30 @@
         </template>
       </div>
 
-      <div class="columns is-multiline" v-if="!presets || presets.length < 1">
+      <div class="columns is-multiline"
+        v-if="!toggleForm && (isLoading || !filteredPresets || filteredPresets.length < 1)">
         <div class="column is-12">
-          <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
-            message="Loading data. Please wait..." v-if="isLoading" />
-          <Message title="No presets" message="There are no custom defined presets."
-            class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle" v-else />
+          <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
+            Loading data. Please wait...
+          </Message>
+          <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+            @close="query = ''">
+            <p>No results found for the query: <code>{{ query }}</code>.</p>
+            <p>Please try a different search term.</p>
+          </Message>
+          <Message v-else title="No presets" class="is-warning" icon="fas fa-exclamation-circle">
+            There are no custom defined presets.
+          </Message>
         </div>
       </div>
 
-      <div class="columns is-multiline" v-if="presets && presets.length > 0">
+      <div class="columns is-multiline" v-if="!query && presets && presets.length > 0">
         <div class="column is-12">
-          <div class="message is-info">
-            <p class="message-body">
-              <span class="icon"> <i class="fas fa-info-circle" /></span>
-              When you export preset, it doesn't include the <strong>cookies</strong> field contents for security
-              reasons.
-            </p>
-          </div>
+          <Message class="is-info">
+            <span class="icon"><i class="fas fa-info-circle" /></span>
+            When you <b>export</b> preset, it doesn't include the <code>cookies</code> field contents for security
+            reasons.
+          </Message>
         </div>
       </div>
     </template>
@@ -243,6 +263,9 @@ const box = useConfirm()
 const display_style = useStorage<string>('preset_display_style', 'cards')
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
+const query = ref<string>('')
+const toggleFilter = ref(false)
+
 const presets = ref<PresetWithUI[]>([])
 const preset = ref<Partial<Preset>>({})
 const presetRef = ref<string | null>('')
@@ -254,6 +277,12 @@ const remove_keys = ['raw', 'toggle_description']
 const expandedItems = ref<Record<string, Set<string>>>({})
 
 const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
+
+const filteredPresets = computed<PresetWithUI[]>(() => {
+  const q = query.value?.toLowerCase();
+  if (!q) return presetsNoDefault.value;
+  return presetsNoDefault.value.filter((item: PresetWithUI) => deepIncludes(item, q, new WeakSet()));
+});
 
 const toggleExpand = (itemId: string | undefined, field: string) => {
   if (!itemId) return
@@ -278,6 +307,12 @@ watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
     await reloadContent(true)
     initialLoad.value = false
+  }
+})
+
+watch(toggleFilter, (val) => {
+  if (!val) {
+    query.value = ''
   }
 })
 

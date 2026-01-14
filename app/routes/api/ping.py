@@ -1,7 +1,7 @@
 from aiohttp import web
 from aiohttp.web import Response
 
-from app.library.DownloadQueue import DownloadQueue
+from app.library.downloads import DownloadQueue
 from app.library.router import route
 
 

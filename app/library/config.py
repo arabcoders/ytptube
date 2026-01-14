@@ -117,6 +117,9 @@ class Config(metaclass=Singleton):
     extract_info_timeout: int = 70
     """The timeout to use for extracting video information."""
 
+    extract_info_concurrency: int = 4
+    """The number of concurrent extract_info calls allowed."""
+
     db_file: str = "{config_path}{os_sep}ytptube.db"
     """The path to the database file."""
 

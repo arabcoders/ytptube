@@ -80,7 +80,8 @@
                 </td>
                 <td class="is-vcentered has-text-centered">{{ definition.priority }}</td>
                 <td class="is-vcentered has-text-centered">
-                  <span class="has-tooltip" :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                  <span class="has-tooltip"
+                    :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-tooltip="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-rtime="definition.updated_at" />
                 </td>
@@ -170,11 +171,14 @@
 
     <div class="columns is-multiline" v-if="!definitions.length">
       <div class="column is-12">
-        <Message message_class="has-background-info-90 has-text-dark" title="Loading" icon="fas fa-spinner fa-spin"
-          message="Loading data. Please wait..." v-if="isLoading" />
-        <Message title="No definitions" message="No task definitions are configured yet. Create one to get started."
-          class="is-background-warning-80 has-text-dark" icon="fas fa-exclamation-circle"
-          v-if="!isLoading && !isEditorOpen" />
+        <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
+          Loading data. Please wait...
+        </Message>
+        <Message v-if="!isLoading && !isEditorOpen" title="No definitions" class="is-warning"
+          icon="fas fa-exclamation-circle">
+          There are no task definitions. Click the <span class="icon"><i class="fas fa-add" /></span> <strong>New
+            Definition</strong> button to create your first task definition.
+        </Message>
       </div>
     </div>
 

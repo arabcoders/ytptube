@@ -132,7 +132,7 @@
       <div>
         <NuxtLoadingIndicator />
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
-        <Message v-if="!config.is_loaded" class="mt-5" :newStyle="true" title="Loading Configuration"
+        <Message v-if="!config.is_loaded" class="is-info mt-5" title="Loading Configuration"
           icon="fas fa-spinner fa-spin">
           <p>This usually takes less than a second.
             <span v-if="!socket.isConnected" class="mt-2">
