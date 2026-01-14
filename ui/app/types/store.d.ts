@@ -1,4 +1,4 @@
-type ItemStatus = 'finished' | 'preparing' | 'error' | 'cancelled' | 'downloading' | 'postprocessing' | 'not_live' | 'skip' | null;
+type ItemStatus = 'started' | 'finished' | 'preparing' | 'error' | 'cancelled' | 'downloading' | 'postprocessing' | 'not_live' | 'skip' | null;
 
 type SideCar = {
   file: string
@@ -106,6 +106,8 @@ type StoreItem = {
   is_archived?: boolean
   /** Item archive ID */
   archive_id?: string | null
+  /** Postprocessor running for the item if available */
+  postprocessor?: string | null
 }
 
 export type { ItemStatus, StoreItem }

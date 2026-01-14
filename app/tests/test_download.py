@@ -128,35 +128,13 @@ class TestDownloadHooks:
         ):
             assert k in ev, f"Key '{k}' should be in event"
 
-    def test_postprocessor_hook_movefiles_sets_final_name(self, tmp_path: Path) -> None:
-        d = Download(make_item())
-        q = DummyQueue()
-        hooks = HookHandlers(d.id, q, d.logger, d.debug)
-
-        finaldir = tmp_path / "out"
-        finaldir.mkdir()
-        path = finaldir / "file.mp4"
-        payload = {
-            "postprocessor": "MoveFiles",
-            "status": "finished",
-            "info_dict": {"__finaldir": str(finaldir), "filepath": str(path)},
-        }
-        hooks.postprocessor_hook(payload)
-        assert 1 == len(q.items), "Should have 1 item in queue"
-        ev = q.items[0]
-        assert ev["action"] == "moved", "Action should be 'moved'"
-        assert ev["status"] == "finished", "Status should be 'finished'"
-        assert ev["final_name"].endswith("file.mp4"), "Final name should end with 'file.mp4'"
-
     def test_post_hooks_pushes_filename(self) -> None:
         d = Download(make_item())
         q = DummyQueue()
         hooks = HookHandlers(d.id, q, d.logger, d.debug)
-        hooks.post_hook(None)
-        assert 0 == len(q.items), "Should have no items when filename is None"
         hooks.post_hook("name.ext")
         assert 1 == len(q.items), "Should have 1 item when filename is provided"
-        assert q.items[0]["filename"] == "name.ext", "Filename should match"
+        assert q.items[0]["final_name"] == "name.ext", "Filename should match"
 
 
 class TestDownloadStale:

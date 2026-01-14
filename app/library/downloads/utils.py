@@ -23,6 +23,7 @@ YTDLP_PROGRESS_FIELDS = (
     "downloaded_bytes",
     "speed",
     "eta",
+    "postprocessor",
 )
 
 # Live Stream Options (known to cause issues)

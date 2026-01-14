@@ -66,6 +66,9 @@ class StatusTracker:
             status: Status dictionary from yt-dlp hooks
 
         """
+        if self.final_update:
+            return
+
         if status.get("id") != self.id or len(status) < 2:
             self.logger.warning(f"Received invalid status update. {status}")
             return
@@ -79,22 +82,9 @@ class StatusTracker:
 
         self.tmpfilename = status.get("tmpfilename")
 
-        fl = None
-        if "final_name" in status:
-            fl = Path(status.get("final_name"))
-            self.info.filename = safe_relative_path(fl, Path(self.download_dir), self.temp_path)
-
-            if fl.is_file() and fl.exists():
-                self.final_update = True
-                self.logger.debug(f"Final file name: '{fl}'.")
-
-                try:
-                    self.info.file_size = fl.stat().st_size
-                except FileNotFoundError:
-                    self.info.file_size = 0
-
         self.info.status = status.get("status", self.info.status)
         self.info.msg = status.get("msg")
+        self.info.postprocessor = status.get("postprocessor", None)
 
         if "error" == self.info.status and "error" in status:
             self.info.error = status.get("error")
@@ -118,24 +108,35 @@ class StatusTracker:
         self.info.speed = status.get("speed")
         self.info.eta = status.get("eta")
 
-        if "finished" == self.info.status and fl and fl.is_file() and fl.exists():
-            self.info.file_size = fl.stat().st_size
+        if final_name := status.get("final_name", None):
+            final_name = Path(final_name)
             self.info.datetime = str(formatdate(time.time()))
+            self.info.status = "finished"
+            self.final_update = True
+            self.info.filename = safe_relative_path(final_name, Path(self.download_dir), self.temp_path)
+            self.logger.debug(f"Final file name: '{final_name}'.")
 
-            try:
-                ff = await ffprobe(str(fl))
-                self.info.extras["is_video"] = ff.has_video()
-                self.info.extras["is_audio"] = ff.has_audio()
-                if (ff.has_video() or ff.has_audio()) and not self.info.extras.get("duration"):
-                    self.info.extras["duration"] = int(float(ff.metadata.get("duration", 0.0)))
-            except Exception as e:
-                self.info.extras["is_video"] = True
-                self.info.extras["is_audio"] = True
-                self.logger.exception(e)
-                self.logger.error(f"Failed to run ffprobe. {e}")
+            if final_name.is_file() and final_name.exists():
+                try:
+                    self.info.file_size = final_name.stat().st_size
+                except FileNotFoundError:
+                    self.info.file_size = 0
 
-        if not self.final_update or fl:
-            self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+                try:
+                    ff = await ffprobe(final_name)
+                    self.info.extras["is_video"] = ff.has_video()
+                    self.info.extras["is_audio"] = ff.has_audio()
+                    if ff.has_video() or ff.has_audio():
+                        self.info.extras["duration"] = int(
+                            float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
+                        )
+                except Exception as e:
+                    self.info.extras["is_video"] = True
+                    self.info.extras["is_audio"] = True
+                    self.logger.exception(e)
+                    self.logger.error(f"Failed to run ffprobe. {e}")
+
+        self._notify.emit(Events.ITEM_UPDATED, data=self.info)
 
     async def progress_update(self) -> None:
         """

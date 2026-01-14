@@ -320,8 +320,7 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message v-else class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false"
-       >
+      <Message v-else class="is-info" title="No items" icon="fas fa-exclamation-triangle" :useClose="false">
         <p>Download queue is empty.</p>
       </Message>
     </div>
@@ -448,6 +447,11 @@ const setStatus = (item: StoreItem): string => {
   if ('downloading' === item.status && item.is_live) {
     return 'Streaming'
   }
+
+  if ('started' === item.status) {
+    return 'Starting'
+  }
+
   if ('preparing' === item.status) {
     return ag(item, 'extras.external_downloader') ? 'External-DL' : 'Preparing..'
   }
@@ -458,7 +462,7 @@ const setStatus = (item: StoreItem): string => {
 }
 
 const setIconColor = (item: StoreItem): string => {
-  if ('downloading' === item.status) {
+  if (['downloading', 'started'].includes(item.status as string)) {
     return 'has-text-success'
   }
   if ('postprocessing' === item.status) {
@@ -511,9 +515,18 @@ const updateProgress = (item: StoreItem): string => {
   if (null === item.status && true === config.paused) {
     return 'Global Pause'
   }
+
+  if ('started' === item.status) {
+    return 'Starting'
+  }
+
   if ('postprocessing' === item.status) {
+    if (item.postprocessor) {
+      return `PP Running: ${item.postprocessor}`
+    }
     return 'Post-processors are running.'
   }
+
   if ('preparing' === item.status) {
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
   }

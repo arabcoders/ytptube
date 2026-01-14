@@ -271,8 +271,7 @@ class Download:
         """
         self.status_queue = Config.get_manager().Queue()
 
-        temp_path = self._temp_manager.create_temp_path()
-        if temp_path:
+        if temp_path := self._temp_manager.create_temp_path():
             self.info.temp_path = str(temp_path)
 
         self._status_tracker = StatusTracker(

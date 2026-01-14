@@ -399,6 +399,7 @@ class ItemDTO:
     percent: int | None = None
     speed: str | None = None
     eta: str | None = None
+    postprocessor: str | None = None
 
     _recomputed: bool = False
     _archive_file: str | None = None

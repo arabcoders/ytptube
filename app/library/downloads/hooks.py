@@ -2,7 +2,6 @@
 
 import logging
 import re
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .utils import DEBUG_MESSAGE_PREFIXES, YTDLP_PROGRESS_FIELDS, create_debug_safe_dict
@@ -55,24 +54,17 @@ class HookHandlers:
             except Exception as e:
                 self.logger.debug(f"PP Hook: Error creating debug info: {e}")
 
-        if "MoveFiles" == data.get("postprocessor") and "finished" == data.get("status"):
-            if "__finaldir" in data.get("info_dict", {}) and "filepath" in data.get("info_dict", {}):
-                filename = str(Path(data["info_dict"]["__finaldir"]) / Path(data["info_dict"]["filepath"]).name)
-            else:
-                filename: str | None = data.get("info_dict", {}).get("filepath", data.get("filename"))
+        self.status_queue.put(
+            {
+                "id": self.id,
+                "action": "postprocessing",
+                **{k: v for k, v in data.items() if k in YTDLP_PROGRESS_FIELDS},
+                "status": "postprocessing",
+            }
+        )
 
-            self.logger.debug(f"Final filename: '{filename}'.")
-            self.status_queue.put({"id": self.id, "action": "moved", "status": "finished", "final_name": filename})
-            return
-
-        dataDict = {k: v for k, v in data.items() if k in YTDLP_PROGRESS_FIELDS}
-        self.status_queue.put({"id": self.id, "action": "postprocessing", **dataDict, "status": "postprocessing"})
-
-    def post_hook(self, filename: str | None = None) -> None:
-        if not filename:
-            return
-
-        self.status_queue.put({"id": self.id, "filename": filename})
+    def post_hook(self, filename: str) -> None:
+        self.status_queue.put({"id": self.id, "status": "finished", "final_name": filename})
 
 
 class NestedLogger:
