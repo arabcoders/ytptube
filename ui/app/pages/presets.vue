@@ -73,7 +73,7 @@
     </div>
 
     <template v-if="!toggleForm">
-      <div class="columns is-multiline" v-if="presetsNoDefault && presetsNoDefault.length > 0">
+      <div class="columns is-multiline" v-if="!isLoading && presetsNoDefault && presetsNoDefault.length > 0">
         <template v-if="'list' === display_style">
           <div class="column is-12">
             <div class="table-container">
@@ -218,13 +218,14 @@
         </template>
       </div>
 
-      <div class="columns is-multiline" v-if="!toggleForm && (!filteredPresets || filteredPresets.length < 1)">
+      <div class="columns is-multiline"
+        v-if="!toggleForm && (isLoading || !filteredPresets || filteredPresets.length < 1)">
         <div class="column is-12">
           <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
             Loading data. Please wait...
           </Message>
-          <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query"
-            :useClose="true" @close="query = ''">
+          <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+            @close="query = ''">
             <p>No results found for the query: <code>{{ query }}</code>.</p>
             <p>Please try a different search term.</p>
           </Message>

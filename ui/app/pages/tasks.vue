@@ -407,13 +407,13 @@
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="!toggleForm && (!filteredTasks || filteredTasks.length < 1)">
+    <div class="columns is-multiline" v-if="!toggleForm && (isLoading || !filteredTasks || filteredTasks.length < 1)">
       <div class="column is-12">
         <Message class="is-info" title="Loading" icon="fas fa-spinner fa-spin" v-if="isLoading">
           Loading data. Please wait...
         </Message>
-        <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query"
-          :useClose="true" @close="query = ''">
+        <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
+          @close="query = ''">
           <p>No results found for the query: <code>{{ query }}</code>.</p>
           <p>Please try a different search term.</p>
         </Message>
