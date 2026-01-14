@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
-    "date": "2026-01-14T15:56:07+00:00",
+    "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",
+    "date": "2026-01-14T16:50:35+00:00",
     "commits": [
+      {
+        "sha": "ad54d800",
+        "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",
+        "message": "Refactor: better final filename status tracking",
+        "author": "arabcoders",
+        "date": "2026-01-14T16:50:35+00:00"
+      },
       {
         "sha": "e0a47e2f",
         "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
