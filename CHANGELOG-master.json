@@ -1,8 +1,57 @@
 [
     {
-        "tag": "master-20260111-3b496782",
-        "date": "2026-01-11T18:36:42+00:00",
+        "tag": "master-20260114-be6b68ef",
+        "date": "2026-01-14T20:16:23+00:00",
         "commits": [
+            {
+                "sha": "45e27003",
+                "message": "fix: do not show action buttons while loading tasks",
+                "author": "arabcoders",
+                "date": "2026-01-14T17:05:06+00:00",
+                "full_sha": "45e27003c145d99a28454b458ea9ad50af6c2460"
+            },
+            {
+                "sha": "072a45ef",
+                "message": "refactor: missed loading check.",
+                "author": "arabcoders",
+                "date": "2026-01-14T17:02:48+00:00",
+                "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5"
+            },
+            {
+                "sha": "ad54d800",
+                "message": "Refactor: better final filename status tracking",
+                "author": "arabcoders",
+                "date": "2026-01-14T16:50:35+00:00",
+                "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1"
+            },
+            {
+                "sha": "e0a47e2f",
+                "message": "Refactor: facelift the WebUI",
+                "author": "arabcoders",
+                "date": "2026-01-14T15:56:07+00:00",
+                "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb"
+            },
+            {
+                "sha": "48e653b7",
+                "message": "refactor: limit concurrent extract info  calls to prevent loop blocking",
+                "author": "arabcoders",
+                "date": "2026-01-14T13:11:21+00:00",
+                "full_sha": "48e653b70af63c469ac966151304d5625f1b0933"
+            },
+            {
+                "sha": "55a298e0",
+                "message": "Refactor: download module into testable chunks",
+                "author": "arabcoders",
+                "date": "2026-01-13T17:05:01+00:00",
+                "full_sha": "55a298e0ff84e31797b8b5dd3f9301ad871cf8e3"
+            },
+            {
+                "sha": "d37cc612",
+                "message": "refactor: move popover to separate button",
+                "author": "arabcoders",
+                "date": "2026-01-12T14:14:29+00:00",
+                "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf"
+            },
             {
                 "sha": "044bad41",
                 "message": "Fix: preset export was exporting cookies due to inverted check.",
@@ -3679,7 +3728,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662"
+        "full_sha": "be6b68efdd5264ee6b09be5a861a6d8ab7912d15"
     },
     {
         "tag": "master-20250616-c07465a6",
