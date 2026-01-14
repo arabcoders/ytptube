@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
-    "date": "2026-01-14T17:02:48+00:00",
+    "full_sha": "45e27003c145d99a28454b458ea9ad50af6c2460",
+    "date": "2026-01-14T17:05:06+00:00",
     "commits": [
+      {
+        "sha": "45e27003",
+        "full_sha": "45e27003c145d99a28454b458ea9ad50af6c2460",
+        "message": "fix: do not show action buttons while loading tasks",
+        "author": "arabcoders",
+        "date": "2026-01-14T17:05:06+00:00"
+      },
       {
         "sha": "072a45ef",
         "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
