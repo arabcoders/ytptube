@@ -15,6 +15,7 @@ import magic
 from aiohttp import web
 
 from app.library.BackgroundWorker import BackgroundWorker
+from app.library.cache import Cache
 from app.library.conditions import Conditions
 from app.library.config import Config
 from app.library.dl_fields import DLFields
@@ -110,6 +111,7 @@ class Main:
         SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
+        Cache.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
         self._http.attach(self._app)

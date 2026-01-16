@@ -18,6 +18,7 @@ All cache operations and edge cases are covered.
 import asyncio
 import threading
 import time
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -254,6 +255,74 @@ class TestCache:
         self.cache.set("object_key", custom_obj)
         retrieved = self.cache.get("object_key")
         assert retrieved == custom_obj
+
+    @pytest.mark.asyncio
+    async def test_cleanup_removes_expired_entries(self):
+        """Test that _cleanup removes only expired entries."""
+        # Set some keys with different TTLs
+        self.cache.set("permanent", "value")
+        self.cache.set("short", "value1", ttl=0.1)
+        self.cache.set("medium", "value2", ttl=1.0)
+
+        # Wait for short to expire
+        time.sleep(0.15)
+
+        # Run cleanup
+        await self.cache.cleanup()
+
+        # Verify only expired key was removed
+        assert self.cache.get("permanent") == "value", "Should keep permanent key"
+        assert self.cache.get("medium") == "value2", "Should keep non-expired key"
+        assert self.cache.get("short") is None, "Should remove expired key"
+
+    @pytest.mark.asyncio
+    async def test_cleanup_with_no_expired_entries(self):
+        """Test that _cleanup handles cache with no expired entries."""
+        self.cache.set("key1", "value1")
+        self.cache.set("key2", "value2", ttl=1.0)
+
+        # Run cleanup when nothing is expired
+        await self.cache.cleanup()
+
+        # Verify all keys still exist
+        assert self.cache.get("key1") == "value1", "Should keep non-expired key"
+        assert self.cache.get("key2") == "value2", "Should keep non-expired key"
+
+    @pytest.mark.asyncio
+    async def test_cleanup_with_empty_cache(self):
+        """Test that _cleanup handles empty cache without errors."""
+        # Clear cache first
+        self.cache.clear()
+
+        # Should not raise any errors
+        await self.cache.cleanup()
+
+    @pytest.mark.asyncio
+    async def test_attach_registers_with_services(self):
+        """Test that attach method registers cache with Services and schedules cleanup."""
+        from app.library.Scheduler import Scheduler
+        from app.library.Services import Services
+
+        # Reset singletons
+        Cache._reset_singleton()
+        Scheduler._reset_singleton()
+        Services._reset_singleton()
+
+        # Get event loop for scheduler
+        loop = asyncio.get_event_loop()
+
+        # Create cache and attach
+        cache = Cache.get_instance()
+        mock_app = MagicMock()
+        cache.attach(mock_app)
+
+        # Verify cache is registered with Services
+        services = Services.get_instance()
+        assert services.get("cache") is cache, "Should register cache with Services"
+
+        # Verify cleanup job is scheduled
+        scheduler = Scheduler.get_instance(loop=loop)
+        assert scheduler.has(f"{Cache.__name__}.{Cache.cleanup.__name__}"), "Should schedule cleanup job"
 
 
 if __name__ == "__main__":
