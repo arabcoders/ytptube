@@ -56,6 +56,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "795943196e4f162a1ee07f2f2149def6ffe7d5dd",
+    "date": "2026-01-16T17:45:10+00:00",
+    "commits": [
+      {
+        "sha": "79594319",
+        "full_sha": "795943196e4f162a1ee07f2f2149def6ffe7d5dd",
+        "message": "Refactor: replace direct extract_info calls to async fetch_info",
+        "author": "arabcoders",
+        "date": "2026-01-16T17:45:10+00:00"
+      },
+      {
+        "sha": "ea572ec4",
+        "full_sha": "ea572ec4c51c780ad1bacde940cd320416744d07",
+        "message": "feat: implement cache cleanup",
+        "author": "arabcoders",
+        "date": "2026-01-16T17:42:51+00:00"
+      },
+      {
+        "sha": "d87995c4",
+        "full_sha": "d87995c4b05161bea85eabf44ad9ea4e081a5471",
+        "message": "fix: popover on mobile going over edge",
+        "author": "arabcoders",
+        "date": "2026-01-16T16:20:27+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.1.0",
     "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662",
     "date": "2026-01-11T18:36:42+00:00",
