@@ -203,16 +203,18 @@ const updatePosition = () => {
     return
   }
 
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  const constrainedMaxWidth = Math.min(props.maxWidth, viewportWidth * 0.96)
+
   popover.value.style.minWidth = `${props.minWidth}px`
-  popover.value.style.maxWidth = `${props.maxWidth}px`
+  popover.value.style.maxWidth = `${constrainedMaxWidth}px`
   popover.value.style.maxHeight = `${props.maxHeight}px`
   popover.value.style.overflowY = 'auto'
 
   const triggerRect = triggerRef.value.getBoundingClientRect()
   const popoverRect = popover.value.getBoundingClientRect()
   const offset = props.offset
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
 
   let effectivePlacement = props.placement
 
@@ -263,7 +265,7 @@ const updatePosition = () => {
     top: `${clampedTop}px`,
     left: `${clampedLeft}px`,
     minWidth: `${props.minWidth}px`,
-    maxWidth: `${props.maxWidth}px`,
+    maxWidth: `${constrainedMaxWidth}px`,
     maxHeight: `${props.maxHeight}px`,
     overflowY: 'auto'
   }
