@@ -55,11 +55,11 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
     "@nuxt/eslint-config": "^1.12.1",
-    "@typescript-eslint/parser": "^8.50.1",
+    "@typescript-eslint/parser": "^8.53.0",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.16",
+    "vitest": "^4.0.17",
     "vue-eslint-parser": "^10.2.0",
-    "vue-tsc": "^3.2.1"
+    "vue-tsc": "^3.2.2"
   }
 }
