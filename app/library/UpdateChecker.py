@@ -45,7 +45,7 @@ class UpdateChecker(metaclass=Singleton):
         self._notify: EventBus = notify or EventBus.get_instance()
         "Instance of EventBus for notifications."
 
-        self._cache: Cache = Cache()
+        self._cache: Cache = Cache.get_instance()
         "Instance of Cache for caching check results."
 
         self._job_id: str | None = None

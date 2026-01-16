@@ -6,7 +6,7 @@ from xml.etree.ElementTree import Element
 
 from app.library.cache import Cache
 from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
-from app.library.Utils import extract_info, get_archive_id
+from app.library.Utils import fetch_info, get_archive_id
 
 from ._base_handler import BaseHandler
 
@@ -179,7 +179,7 @@ class RssGenericHandler(BaseHandler):
                         "Doing real request to fetch yt-dlp archive ID."
                     )
 
-                    info = extract_info(
+                    info = await fetch_info(
                         config=params,
                         url=url,
                         no_archive=True,

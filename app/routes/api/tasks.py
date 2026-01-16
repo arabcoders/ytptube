@@ -1,5 +1,3 @@
-import asyncio
-import functools
 import logging
 import uuid
 from pathlib import Path
@@ -177,7 +175,7 @@ async def task_mark(request: Request, encoder: Encoder) -> Response:
                 data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
             )
 
-        _status, _message = task.mark()
+        _status, _message = await task.mark()
         if not _status:
             return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
 
@@ -212,7 +210,7 @@ async def task_unmark(request: Request, encoder: Encoder) -> Response:
                 data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
             )
 
-        _status, _message = task.unmark()
+        _status, _message = await task.unmark()
         if not _status:
             return web.json_response(data={"error": _message}, status=web.HTTPBadRequest.status_code)
 
@@ -255,13 +253,7 @@ async def task_metadata(request: Request, config: Config, encoder: Encoder) -> R
         if not save_path.exists():
             save_path.mkdir(parents=True, exist_ok=True)
 
-        metadata, status, message = await asyncio.wait_for(
-            fut=asyncio.get_running_loop().run_in_executor(
-                None,
-                functools.partial(task.fetch_metadata, full=False),
-            ),
-            timeout=120,
-        )
+        metadata, status, message = await task.fetch_metadata()
         if not status:
             return web.json_response(data={"error": message}, status=web.HTTPBadRequest.status_code)
 

@@ -43,8 +43,6 @@ class DownloadQueue(metaclass=Singleton):
         "DataStore for the download queue."
         self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
         "Semaphore to limit the number of concurrent processors."
-        self.extractors = asyncio.Semaphore(self.config.extract_info_concurrency)
-        "Semaphore to limit the number of concurrent extract_info calls."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
 

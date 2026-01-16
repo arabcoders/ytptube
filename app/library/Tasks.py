@@ -21,7 +21,7 @@ from .ItemDTO import Item, ItemDTO
 from .Scheduler import Scheduler
 from .Services import Services
 from .Singleton import Singleton
-from .Utils import archive_add, archive_delete, archive_read, extract_info, init_class, validate_url
+from .Utils import archive_add, archive_delete, archive_read, fetch_info, init_class, validate_url
 from .YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger("tasks")
@@ -82,7 +82,7 @@ class Task:
 
         return params
 
-    def mark(self) -> tuple[bool, str]:
+    async def mark(self) -> tuple[bool, str]:
         """
         Mark the task's items as downloaded in the archive file.
 
@@ -90,7 +90,7 @@ class Task:
             tuple[bool, str]: A tuple indicating success and a message.
 
         """
-        ret = self._mark_logic()
+        ret: tuple[bool, str] | set[tuple[Path, set[str]]] = await self._mark_logic()
         if isinstance(ret, tuple):
             return ret
 
@@ -102,7 +102,7 @@ class Task:
 
         return (True, f"Task '{self.name}' items marked as downloaded.")
 
-    def unmark(self) -> tuple[bool, str]:
+    async def unmark(self) -> tuple[bool, str]:
         """
         Unmark the task's items from the archive file.
 
@@ -110,7 +110,7 @@ class Task:
             tuple[bool, str]: A tuple indicating success and a message.
 
         """
-        ret: tuple[bool, str] | set[tuple[Path, set[str]]] = self._mark_logic()
+        ret: tuple[bool, str] | set[tuple[Path, set[str]]] = await self._mark_logic()
         if isinstance(ret, tuple):
             return ret
 
@@ -122,7 +122,7 @@ class Task:
 
         return (True, f"Removed '{self.name}' items from archive file.")
 
-    def fetch_metadata(self, full: bool = False) -> tuple[dict[str, Any] | None, bool, str]:
+    async def fetch_metadata(self, full: bool = False) -> tuple[dict[str, Any] | None, bool, str]:
         """
         Fetch metadata for the task's URL.
 
@@ -143,15 +143,20 @@ class Task:
 
         params = params.get_all()
 
-        ie_info: dict | None = extract_info(
-            params, self.url, no_archive=True, follow_redirect=False, sanitize_info=True
+        ie_info: dict | None = await fetch_info(
+            params,
+            self.url,
+            no_archive=True,
+            follow_redirect=False,
+            sanitize_info=True,
         )
+
         if not ie_info or not isinstance(ie_info, dict):
             return ({}, False, "Failed to extract information from URL.")
 
         return (ie_info, True, "")
 
-    def _mark_logic(self) -> tuple[bool, str] | set[tuple[Path, set[str]]]:
+    async def _mark_logic(self) -> tuple[bool, str] | set[tuple[Path, set[str]]]:
         if not self.url:
             return (False, "No URL found in task parameters.")
 
@@ -161,7 +166,7 @@ class Task:
 
         archive_file: Path = Path(archive_file)
 
-        ie_info: dict | None = extract_info(params, self.url, no_archive=True, follow_redirect=True)
+        ie_info: dict | None = await fetch_info(params, self.url, no_archive=True, follow_redirect=True)
         if not ie_info or not isinstance(ie_info, dict):
             return (False, "Failed to extract information from URL.")
 

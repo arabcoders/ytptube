@@ -1,5 +1,3 @@
-import asyncio
-import functools
 import logging
 import uuid
 from collections import OrderedDict
@@ -14,7 +12,7 @@ from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.mini_filter import match_str
 from app.library.router import route
-from app.library.Utils import extract_info, init_class, validate_uuid
+from app.library.Utils import fetch_info, init_class, validate_uuid
 from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -164,20 +162,13 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         preset: str = params.get("preset", config.default_preset)
         key: str = cache.hash(url + str(preset))
         if not cache.has(key):
-            data: dict | None = await asyncio.wait_for(
-                fut=asyncio.get_running_loop().run_in_executor(
-                    None,
-                    functools.partial(
-                        extract_info,
-                        config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
-                        url=url,
-                        debug=False,
-                        no_archive=True,
-                        follow_redirect=True,
-                        sanitize_info=True,
-                    ),
-                ),
-                timeout=120,
+            data: dict | None = await fetch_info(
+                config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
+                url=url,
+                debug=False,
+                no_archive=True,
+                follow_redirect=True,
+                sanitize_info=True,
             )
 
             if not data:

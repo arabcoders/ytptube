@@ -140,12 +140,13 @@ class TestTask:
         mock_opts_instance.preset.assert_called_once_with(name="test_preset")
         mock_preset_opts.add_cli.assert_called_once_with("--extract-flat", from_user=True)
 
+    @pytest.mark.asyncio
     @patch("app.library.Tasks.archive_add")
-    @patch("app.library.Tasks.extract_info")
-    def test_task_mark_success(self, mock_extract_info, mock_archive_add):
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_mark_success(self, mock_fetch_info, mock_archive_add):
         """Test successful task marking."""
-        # Mock extract_info to return playlist data
-        mock_extract_info.return_value = {
+        # Mock fetch_info to return playlist data
+        mock_fetch_info.return_value = {
             "_type": "playlist",
             "entries": [
                 {
@@ -167,7 +168,7 @@ class TestTask:
 
             task = Task(id="test_id", name="test_task", url="https://example.com/playlist")
 
-            success, message = task.mark()
+            success, message = await task.mark()
 
             assert success is True
             assert "marked as downloaded" in message
@@ -180,33 +181,36 @@ class TestTask:
             assert "youtube video1" in items
             assert "youtube video2" in items
 
-    def test_task_mark_no_url(self):
+    @pytest.mark.asyncio
+    async def test_task_mark_no_url(self):
         """Test task marking with no URL."""
         task = Task(id="test_id", name="test_task", url="")
 
-        success, message = task.mark()
+        success, message = await task.mark()
 
         assert success is False
         assert "No URL found" in message
 
-    def test_task_mark_no_archive_file(self):
+    @pytest.mark.asyncio
+    async def test_task_mark_no_archive_file(self):
         """Test task marking with no archive file configured."""
         with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
             mock_get_opts.return_value.get_all.return_value = {}
 
             task = Task(id="test_id", name="test_task", url="https://example.com/video")
 
-            success, message = task.mark()
+            success, message = await task.mark()
 
             assert success is False
             assert "No archive file found" in message
 
+    @pytest.mark.asyncio
     @patch("app.library.Tasks.archive_delete")
-    @patch("app.library.Tasks.extract_info")
-    def test_task_unmark_success(self, mock_extract_info, mock_archive_delete):
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_unmark_success(self, mock_fetch_info, mock_archive_delete):
         """Test successful task unmarking."""
-        # Mock extract_info to return playlist data
-        mock_extract_info.return_value = {
+        # Mock fetch_info to return playlist data
+        mock_fetch_info.return_value = {
             "_type": "playlist",
             "entries": [
                 {
@@ -223,34 +227,36 @@ class TestTask:
 
             task = Task(id="test_id", name="test_task", url="https://example.com/playlist")
 
-            success, message = task.unmark()
+            success, message = await task.unmark()
 
             assert success is True
             assert "Removed" in message
             assert "items from archive file" in message
             mock_archive_delete.assert_called_once()
 
-    @patch("app.library.Tasks.extract_info")
-    def test_task_mark_logic_invalid_extract_info(self, mock_extract_info):
-        """Test _mark_logic with invalid extract_info response."""
-        mock_extract_info.return_value = None
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_mark_logic_invalid_extract_info(self, mock_fetch_info):
+        """Test _mark_logic with invalid fetch_info response."""
+        mock_fetch_info.return_value = None
 
         with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
             mock_get_opts.return_value.get_all.return_value = {"download_archive": "/tmp/archive.txt"}
 
             task = Task(id="test_id", name="test_task", url="https://example.com/video")
 
-            result = task._mark_logic()
+            result = await task._mark_logic()
 
             assert isinstance(result, tuple)
             success, message = result
             assert success is False
             assert "Failed to extract information" in message
 
-    @patch("app.library.Tasks.extract_info")
-    def test_task_mark_logic_not_playlist(self, mock_extract_info):
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_mark_logic_not_playlist(self, mock_fetch_info):
         """Test _mark_logic with non-playlist type."""
-        mock_extract_info.return_value = {
+        mock_fetch_info.return_value = {
             "_type": "video",
             "id": "video1",
         }
@@ -260,12 +266,117 @@ class TestTask:
 
             task = Task(id="test_id", name="test_task", url="https://example.com/video")
 
-            result = task._mark_logic()
+            result = await task._mark_logic()
 
             assert isinstance(result, tuple)
             success, message = result
             assert success is False
             assert "Expected a playlist type" in message
+
+    @pytest.mark.asyncio
+    async def test_task_fetch_metadata_no_url(self):
+        """Test fetch_metadata with no URL."""
+        task = Task(id="test_id", name="test_task", url="")
+
+        metadata, success, message = await task.fetch_metadata()
+
+        assert success is False, "Should return False when URL is missing"
+        assert metadata == {}, "Should return empty dict for metadata"
+        assert "No URL found" in message, "Should indicate missing URL"
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_fetch_metadata_success_not_full(self, mock_fetch_info):
+        """Test fetch_metadata without full flag."""
+        mock_fetch_info.return_value = {
+            "_type": "playlist",
+            "id": "playlist123",
+            "title": "Test Playlist",
+            "entries": [{"id": "video1"}],
+        }
+
+        with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
+            mock_opts = Mock()
+            mock_opts.add_cli.return_value = mock_opts
+            mock_opts.get_all.return_value = {"download_archive": "/tmp/archive.txt"}
+            mock_get_opts.return_value = mock_opts
+
+            task = Task(id="test_id", name="test_task", url="https://example.com/playlist")
+
+            metadata, success, message = await task.fetch_metadata(full=False)
+
+            assert success is True, "Should return True on successful fetch"
+            assert metadata["_type"] == "playlist", "Should return playlist metadata"
+            assert metadata["id"] == "playlist123", "Should return correct ID"
+            assert message == "", "Should have empty message on success"
+            mock_opts.add_cli.assert_called_once_with("-I0", from_user=False)
+            mock_fetch_info.assert_called_once()
+            call_kwargs = mock_fetch_info.call_args[1]
+            assert call_kwargs["no_archive"] is True, "Should disable archive"
+            assert call_kwargs["follow_redirect"] is False, "Should not follow redirects"
+            assert call_kwargs["sanitize_info"] is True, "Should sanitize info"
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_fetch_metadata_success_full(self, mock_fetch_info):
+        """Test fetch_metadata with full flag."""
+        mock_fetch_info.return_value = {
+            "_type": "playlist",
+            "id": "playlist123",
+            "title": "Test Playlist",
+            "entries": [
+                {"id": "video1", "title": "Video 1"},
+                {"id": "video2", "title": "Video 2"},
+            ],
+        }
+
+        with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
+            mock_opts = Mock()
+            mock_opts.get_all.return_value = {}
+            mock_get_opts.return_value = mock_opts
+
+            task = Task(id="test_id", name="test_task", url="https://example.com/playlist")
+
+            metadata, success, message = await task.fetch_metadata(full=True)
+
+            assert success is True, "Should return True on successful fetch"
+            assert len(metadata["entries"]) == 2, "Should return full entries"
+            assert message == "", "Should have empty message on success"
+            mock_opts.add_cli.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_fetch_metadata_fetch_info_returns_none(self, mock_fetch_info):
+        """Test fetch_metadata when fetch_info returns None."""
+        mock_fetch_info.return_value = None
+
+        with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
+            mock_get_opts.return_value.get_all.return_value = {}
+
+            task = Task(id="test_id", name="test_task", url="https://example.com/video")
+
+            metadata, success, message = await task.fetch_metadata()
+
+            assert success is False, "Should return False when fetch_info fails"
+            assert metadata == {}, "Should return empty dict for metadata"
+            assert "Failed to extract information" in message, "Should indicate extraction failure"
+
+    @pytest.mark.asyncio
+    @patch("app.library.Tasks.fetch_info")
+    async def test_task_fetch_metadata_fetch_info_returns_invalid_type(self, mock_fetch_info):
+        """Test fetch_metadata when fetch_info returns non-dict."""
+        mock_fetch_info.return_value = "invalid"
+
+        with patch.object(Task, "get_ytdlp_opts") as mock_get_opts:
+            mock_get_opts.return_value.get_all.return_value = {}
+
+            task = Task(id="test_id", name="test_task", url="https://example.com/video")
+
+            metadata, success, message = await task.fetch_metadata()
+
+            assert success is False, "Should return False when fetch_info returns invalid type"
+            assert metadata == {}, "Should return empty dict for metadata"
+            assert "Failed to extract information" in message, "Should indicate extraction failure"
 
 
 class TestTasks:

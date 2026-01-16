@@ -309,11 +309,11 @@ async def test_generic_task_handler_inspect(monkeypatch):
 
     monkeypatch.setattr(GenericTaskHandler, "_fetch_content", staticmethod(fake_fetch_content))
 
-    # Mock extract_info to return valid info with required fields for archive ID generation
-    def fake_extract_info(config, url, **kwargs):  # noqa: ARG001
+    # Mock fetch_info to return valid info with required fields for archive ID generation
+    async def fake_fetch_info(config, url, **kwargs):  # noqa: ARG001
         return {"id": "test_video_1", "extractor_key": "Example"}
 
-    with patch("app.library.task_handlers.generic.extract_info", side_effect=fake_extract_info):
+    with patch("app.library.task_handlers.generic.fetch_info", side_effect=fake_fetch_info):
         task = Task(id="inspect", name="Inspect", url="https://example.com/api")
         result: TaskResult | TaskFailure = await GenericTaskHandler.extract(task)
 

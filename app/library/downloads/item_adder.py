@@ -11,7 +11,6 @@ This module handles the complete flow of adding items to the download queue:
 """
 
 import asyncio
-import functools
 import logging
 import time
 import uuid
@@ -29,7 +28,7 @@ from app.library.Utils import (
     archive_read,
     arg_converter,
     create_cookies_file,
-    extract_info,
+    fetch_info,
     get_extras,
     merge_dict,
     ytdlp_reject,
@@ -205,22 +204,14 @@ async def add(
             LOG.info(f"[P] Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
 
         if not entry:
-            async with queue.extractors:
-                LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
-                entry: dict | None = await asyncio.wait_for(
-                    fut=asyncio.get_running_loop().run_in_executor(
-                        None,
-                        functools.partial(
-                            extract_info,
-                            config=yt_conf,
-                            url=item.url,
-                            debug=bool(queue.config.ytdlp_debug),
-                            no_archive=False,
-                            follow_redirect=True,
-                        ),
-                    ),
-                    timeout=queue.config.extract_info_timeout,
-                )
+            LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
+            entry: dict | None = await fetch_info(
+                config=yt_conf,
+                url=item.url,
+                debug=bool(queue.config.ytdlp_debug),
+                no_archive=False,
+                follow_redirect=True,
+            )
 
         if not entry:
             LOG.error(f"Unable to extract info for '{item.url}'. Logs: {logs}")
