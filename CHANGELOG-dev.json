@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260116-79594319",
-        "date": "2026-01-16T17:45:10+00:00",
+        "tag": "dev-20260116-d663cfd7",
+        "date": "2026-01-16T17:50:38+00:00",
         "commits": [
+            {
+                "sha": "d663cfd7",
+                "message": "chore: update external packages.",
+                "author": "arabcoders",
+                "date": "2026-01-16T17:50:38+00:00",
+                "full_sha": "d663cfd77a47138765d8a5327fa8b9b12c55ec37"
+            },
             {
                 "sha": "79594319",
                 "message": "Refactor: replace direct extract_info calls to async fetch_info",
@@ -3749,7 +3756,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "795943196e4f162a1ee07f2f2149def6ffe7d5dd"
+        "full_sha": "d663cfd77a47138765d8a5327fa8b9b12c55ec37"
     },
     {
         "tag": "dev-20250616-c07465a6",
