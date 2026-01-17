@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260116-d663cfd7",
-        "date": "2026-01-16T17:50:38+00:00",
+        "tag": "dev-20260117-a85ca93d",
+        "date": "2026-01-17T20:32:39+00:00",
         "commits": [
+            {
+                "sha": "a85ca93d",
+                "message": "refactor: use sqlalchemy as base for sqlite",
+                "author": "arabcoders",
+                "date": "2026-01-17T20:32:39+00:00",
+                "full_sha": "a85ca93d5aa23a3ea0f0278b76af7a6de9313896"
+            },
             {
                 "sha": "d663cfd7",
                 "message": "chore: update external packages.",
@@ -3756,7 +3763,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d663cfd77a47138765d8a5327fa8b9b12c55ec37"
+        "full_sha": "a85ca93d5aa23a3ea0f0278b76af7a6de9313896"
     },
     {
         "tag": "dev-20250616-c07465a6",
