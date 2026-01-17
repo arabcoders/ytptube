@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import re
-import sqlite3
 import sys
 import time
 import uuid
@@ -13,6 +13,9 @@ from email.utils import formatdate
 from itertools import cycle, islice
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncConnection, create_async_engine
 
 APP_ROOT = str((Path(__file__).parent / ".." / "..").resolve())
 if APP_ROOT not in sys.path:
@@ -65,11 +68,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def connect_db(db_file: str) -> sqlite3.Connection:
-    conn = sqlite3.connect(database=db_file, isolation_level=None)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=wal")
-    return conn
+async def connect_db(db_file: str) -> AsyncConnection:
+    """Create async SQLAlchemy connection."""
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_file}")
+    conn = await engine.connect()
+    await conn.execute(text("PRAGMA journal_mode=wal"))
+    await conn.commit()
+    return conn, engine
 
 
 def find_files(root: Path, extension: str) -> list[Path]:
@@ -187,14 +192,15 @@ def generate_rows(
         yield _build_row(path, root, idx, status, preset, store)
 
 
-def insert_batches(
-    conn: sqlite3.Connection,
+async def insert_batches(
+    conn: AsyncConnection,
     rows: Iterable[tuple[str, str, str, str, str]],
     batch_size: int,
 ) -> int:
+    """Insert rows in batches using SQLAlchemy."""
     sql = """
     INSERT INTO "history" ("id", "type", "url", "data", "created_at")
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (:p0, :p1, :p2, :p3, :p4)
     ON CONFLICT("id") DO UPDATE SET
         "type" = excluded.type,
         "url" = excluded.url,
@@ -207,19 +213,24 @@ def insert_batches(
     for row in rows:
         batch.append(row)
         if len(batch) >= batch_size:
-            conn.executemany(sql, batch)
+            # Convert tuples to dicts for SQLAlchemy
+            params = [{"p0": r[0], "p1": r[1], "p2": r[2], "p3": r[3], "p4": r[4]} for r in batch]
+            await conn.execute(text(sql), params)
+            await conn.commit()
             total_written += len(batch)
             LOG.info("Inserted %d rows...", total_written)
             batch.clear()
 
     if batch:
-        conn.executemany(sql, batch)
+        params = [{"p0": r[0], "p1": r[1], "p2": r[2], "p3": r[3], "p4": r[4]} for r in batch]
+        await conn.execute(text(sql), params)
+        await conn.commit()
         total_written += len(batch)
 
     return total_written
 
 
-def main() -> None:
+async def main() -> None:
     args = parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -234,14 +245,15 @@ def main() -> None:
         return
 
     rows = generate_rows(files, args.root, args.count, args.status, args.preset, store)
-    conn = connect_db(args.db_file)
+    conn, engine = await connect_db(args.db_file)
     try:
-        written = insert_batches(conn, rows, args.batch)
+        written = await insert_batches(conn, rows, args.batch)
     finally:
-        conn.close()
+        await conn.close()
+        await engine.dispose()
 
     LOG.info("Done. Inserted %d rows into '%s'.", written, store.value)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

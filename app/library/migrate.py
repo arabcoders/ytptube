@@ -14,7 +14,8 @@ from importlib.machinery import ModuleSpec, SourceFileLoader
 from importlib.util import module_from_spec, spec_from_loader
 from typing import TYPE_CHECKING
 
-import aiosqlite
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -43,19 +44,19 @@ class InvalidNameError(Error):
 
 
 @contextlib.asynccontextmanager
-async def execute(
-    conn: aiosqlite.Connection, sql: str, params: Sequence[object] | None = None
-) -> AsyncIterator[aiosqlite.Cursor]:
-    params = [] if params is None else params
-    cursor = await conn.execute(sql, params)
+async def execute(conn: AsyncConnection, sql: str, params: Sequence[object] | None = None) -> AsyncIterator:
+    params = {} if params is None else params
+    result = await conn.execute(text(sql), params)
     try:
-        yield cursor
+        yield result
     finally:
-        await cursor.close()
+        pass
 
 
 @contextlib.asynccontextmanager
-async def transaction(conn: aiosqlite.Connection) -> AsyncIterator[None]:
+async def transaction(conn: AsyncConnection) -> AsyncIterator[None]:
+    # SQLAlchemy AsyncConnection manages transactions automatically
+    # when used with context managers, so we just yield
     try:
         yield
         await conn.commit()
@@ -104,10 +105,10 @@ class Migration:
             raise InvalidNameError(self.filename)
         return timestamp
 
-    async def upgrade(self, conn: aiosqlite.Connection) -> None:
+    async def upgrade(self, conn: AsyncConnection) -> None:
         await self.module.upgrade(conn)
 
-    async def downgrade(self, conn: aiosqlite.Connection) -> None:
+    async def downgrade(self, conn: AsyncConnection) -> None:
         await self.module.downgrade(conn)
 
     def has_method(self, name: str) -> bool:
@@ -118,7 +119,7 @@ class Migration:
 
 
 class Database:
-    def __init__(self, db_url: aiosqlite.Connection | str, version_table: str = "migration_version"):
+    def __init__(self, db_url: AsyncConnection | str, version_table: str = "migration_version"):
         if not db_url:
             msg = "Database requires db_url."
             raise ValueError(msg)
@@ -127,16 +128,18 @@ class Database:
 
         self._owns_connection = bool(isinstance(db_url, str))
         if self._owns_connection:
-            self.conn: aiosqlite.Connection | None = None
+            self.conn: AsyncConnection | None = None
             self.db_url: str = db_url
-            self._ensure_connection()
         else:
-            self.conn: aiosqlite.Connection = db_url
+            self.conn: AsyncConnection = db_url
 
     async def __aenter__(self) -> "Database":
-        if self._owns_connection:
-            await self._ensure_connection()
+        if self._owns_connection and self.conn is None:
+            # Create connection from string URL
+            from sqlalchemy.ext.asyncio import create_async_engine
 
+            self._engine = create_async_engine(f"sqlite+aiosqlite:///{self.db_url}")
+            self.conn = await self._engine.connect()
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:
@@ -147,23 +150,18 @@ class Database:
     async def close(self) -> None:
         if self._owns_connection and self.conn:
             await self.conn.close()
+            if hasattr(self, "_engine"):
+                await self._engine.dispose()
             self.conn = None
 
-    async def _ensure_connection(self) -> None:
-        if self.conn:
-            return
-        self.conn = await aiosqlite.connect(self.db_url)
-        self.conn.row_factory = aiosqlite.Row
-
     async def is_version_controlled(self) -> bool:
-        await self._ensure_connection()
         assert self.conn
-        sql = """SELECT * FROM sqlite_master WHERE type = 'table' AND name = ?"""
-        async with execute(self.conn, sql, [self.version_table]) as cursor:
-            return bool(await cursor.fetchall())
+        sql = """SELECT * FROM sqlite_master WHERE type = 'table' AND name = :version_table"""
+        async with execute(self.conn, sql, {"version_table": self.version_table}) as result:
+            rows = result.fetchall()
+            return bool(rows)
 
     async def upgrade(self, migrations: list[Migration], target_version: str | None = None) -> None:
-        await self._ensure_connection()
         assert self.conn
         if target_version:
             _assert_migration_exists(migrations, target_version)
@@ -183,7 +181,6 @@ class Database:
             database_version: str = new_version
 
     async def downgrade(self, migrations: list[Migration], target_version: str | int) -> None:
-        await self._ensure_connection()
         assert self.conn
         if target_version not in (0, "0"):
             _assert_migration_exists(migrations, target_version)
@@ -210,29 +207,26 @@ class Database:
         Return the database's version, or None if it is not under version
         control.
         """
-        await self._ensure_connection()
         assert self.conn
         if not await self.is_version_controlled():
             return None
         sql: str = f"SELECT version FROM {self.version_table}"
-        async with execute(self.conn, sql) as cursor:
-            result = await cursor.fetchall()
-            return result[0][0] if result else "0"
+        async with execute(self.conn, sql) as result:
+            rows = result.fetchall()
+            return rows[0][0] if rows else "0"
 
     async def update_version(self, version: str) -> None:
-        await self._ensure_connection()
         assert self.conn
-        sql: str = f"UPDATE {self.version_table} SET version = ?"
+        sql: str = f"UPDATE {self.version_table} SET version = :version"
         async with transaction(self.conn):
-            await self.conn.execute(sql, [version])
+            await self.conn.execute(text(sql), {"version": version})
 
     async def initialize_version_control(self) -> None:
-        await self._ensure_connection()
         assert self.conn
         sql: str = f"""CREATE TABLE IF NOT EXISTS {self.version_table} ( version TEXT ) """
         async with transaction(self.conn):
-            await self.conn.execute(sql)
-            await self.conn.execute(f"INSERT INTO {self.version_table} VALUES (0)")
+            await self.conn.execute(text(sql))
+            await self.conn.execute(text(f"INSERT INTO {self.version_table} VALUES (:version)"), {"version": "0"})
 
     def __repr__(self) -> str:
         return f'Database("{self.db_url if self._owns_connection else "external_connection"}")'
@@ -253,7 +247,7 @@ def load_migrations(directory: str) -> list[Migration]:
     return [Migration(f) for f in glob.glob(os.path.join(directory, "*.py"))]
 
 
-async def upgrade(db_url: aiosqlite.Connection | str, migration_dir: str, version: str | None = None) -> None:
+async def upgrade(db_url: AsyncConnection | str, migration_dir: str, version: str | None = None) -> None:
     """
     Upgrade the given database with the migrations contained in the
     migrations directory. If a version is not specified, upgrade
@@ -266,7 +260,7 @@ async def upgrade(db_url: aiosqlite.Connection | str, migration_dir: str, versio
         await db.upgrade(load_migrations(migration_dir), version)
 
 
-async def downgrade(db_url: str | aiosqlite.Connection, migration_dir: str, version: str) -> None:
+async def downgrade(db_url: str | AsyncConnection, migration_dir: str, version: str) -> None:
     """
     Downgrade the database to the given version with the migrations
     contained in the given migration directory.
@@ -279,7 +273,7 @@ async def downgrade(db_url: str | aiosqlite.Connection, migration_dir: str, vers
         await db.downgrade(migrations, version)
 
 
-async def get_version(db_url: aiosqlite.Connection | str) -> str | None:
+async def get_version(db_url: AsyncConnection | str) -> str | None:
     """Return the migration version of the given database."""
     async with Database(db_url) as db:
         return await db.get_version()
@@ -317,11 +311,13 @@ Migration Name: %(name)s
 Migration Version: %(version)s
 \"\"\"
 
+from sqlalchemy import text
+
 async def upgrade(c):
     # add your upgrade step here
-    await c.execute("SELECT 1")
+    await c.execute(text("SELECT 1"))
 
 async def downgrade(c):
     # add your downgrade step here
-    await c.execute("SELECT 1")
+    await c.execute(text("SELECT 1"))
 """

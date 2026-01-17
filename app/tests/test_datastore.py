@@ -13,11 +13,25 @@ from app.library.operations import Operation
 from app.library.sqlite_store import SqliteStore
 
 
+async def reset_sqlite_store() -> None:
+    """Close and reset SqliteStore singleton for testing."""
+    if SqliteStore in SqliteStore._instances:
+        instance = SqliteStore._instances[SqliteStore]
+        # Only close if there's an active connection to avoid event loop issues
+        if instance._conn is not None:
+            try:
+                await instance.close()
+            except RuntimeError:
+                # Event loop issues - just reset without closing
+                pass
+    SqliteStore._reset_singleton()
+
+
 async def make_db(data: int = 0) -> SqliteStore:
     """Create a temporary database with test data."""
-    SqliteStore._reset_singleton()
+    await reset_sqlite_store()
     ins = SqliteStore.get_instance(db_path=":memory:")
-    await ins._ensure_conn()
+    await ins.get_connection()
 
     base_time = datetime.now(UTC)
     for i in range(data):
@@ -33,7 +47,7 @@ async def make_db(data: int = 0) -> SqliteStore:
             "status": "finished",
         }
 
-        await ins._conn.execute(
+        await ins.execute_raw(
             'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
             (
                 f"test-id-{i}",
@@ -43,8 +57,6 @@ async def make_db(data: int = 0) -> SqliteStore:
                 created_at,
             ),
         )
-    if data > 0:
-        await ins._conn.commit()
 
     return ins
 
@@ -91,11 +103,10 @@ class TestDataStore:
         data = asdict(dto)
         data.pop("_id", None)
         created = datetime(2024, 1, 2, 3, 4, 5, tzinfo=UTC)
-        await db._conn.execute(
+        await db.execute_raw(
             "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
             ("abc", "queue", "http://x", json.dumps(data), created.strftime("%Y-%m-%d %H:%M:%S")),
         )
-        await db._conn.commit()
 
         items = await store.saved_items()
         assert len(items) == 1
@@ -119,21 +130,20 @@ class TestDataStore:
         assert ret is store._dict[item._id]
 
         # Verify row written; JSON should not contain datetime field
-        cur = await db._conn.execute("SELECT * FROM history WHERE id=?", (item._id,))
-        row = await cur.fetchone()
-        assert row is not None
-        assert row["type"] == "queue"
-        assert row["url"] == item.url
-        assert '"datetime"' not in row["data"]
-        assert row["id"] == item._id
+        rows = await db.fetch_raw("SELECT * FROM history WHERE id=?", (item._id,))
+        assert len(rows) == 1, "Should find one row"
+        row = rows[0]
+        assert row["type"] == "queue", "Type should be queue"
+        assert row["url"] == item.url, "URL should match"
+        assert '"datetime"' not in row["data"], "JSON should not contain datetime field"
+        assert row["id"] == item._id, "ID should match"
 
         # Delete and ensure removal
         await store.delete(item._id)
         await asyncio.sleep(0)
         await db.flush()
-        cur2 = await db._conn.execute("SELECT * FROM history WHERE id=?", (item._id,))
-        row2 = await cur2.fetchone()
-        assert row2 is None
+        rows2 = await db.fetch_raw("SELECT * FROM history WHERE id=?", (item._id,))
+        assert len(rows2) == 0, "Row should be deleted"
         await db.close()
 
     @pytest.mark.asyncio
@@ -368,7 +378,6 @@ class TestDataStore:
     async def test_load(self) -> None:
         """Test loading items from database into memory."""
         db = await make_db()
-        conn = db._conn
 
         # Insert items directly into database
         item1_data = asdict(make_item(id="vid1", url="http://example.com/1", title="Video 1"))
@@ -377,7 +386,7 @@ class TestDataStore:
         item2_data.pop("_id", None)
 
         created = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
-        await conn.execute(
+        await db.execute_raw(
             "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
             (
                 "id1",
@@ -387,7 +396,7 @@ class TestDataStore:
                 created.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
-        await conn.execute(
+        await db.execute_raw(
             "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
             (
                 "id2",
@@ -397,7 +406,6 @@ class TestDataStore:
                 created.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
-        await conn.commit()
 
         store = DataStore(StoreType.QUEUE, db)
         assert len(store._dict) == 0
@@ -414,7 +422,7 @@ class TestDataStore:
     async def test_load_with_different_store_types(self) -> None:
         """Test that load only loads items matching the store type."""
         db = await make_db()
-        conn = db._conn
+        # conn = db._conn  # No longer needed
 
         # Insert items with different types
         item1_data = asdict(make_item(id="vid1", url="http://example.com/1"))
@@ -423,7 +431,7 @@ class TestDataStore:
         item2_data.pop("_id", None)
 
         created = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
-        await conn.execute(
+        await db.execute_raw(
             "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
             (
                 "id1",
@@ -433,7 +441,7 @@ class TestDataStore:
                 created.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
-        await conn.execute(
+        await db.execute_raw(
             "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
             (
                 "id2",
@@ -443,7 +451,7 @@ class TestDataStore:
                 created.strftime("%Y-%m-%d %H:%M:%S"),
             ),
         )
-        await conn.commit()
+        # await conn.commit()  # Auto-committed
 
         # Load QUEUE store - should only get queue items
         queue_store = DataStore(StoreType.QUEUE, db)
@@ -541,18 +549,18 @@ class TestDataStore:
         """Test get_total_count with items in database."""
         store = await make_store_async(StoreType.QUEUE)
         db = store._connection
-        conn = db._conn
+        # conn = db._conn  # No longer needed
 
         # Add items directly to database
         created = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         for i in range(5):
             item_data = asdict(make_item(id=f"vid{i}"))
             item_data.pop("_id", None)
-            await conn.execute(
+            await db.execute_raw(
                 "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
                 (f"id{i}", str(StoreType.QUEUE), f"http://example.com/{i}", json.dumps(item_data), created),
             )
-        await conn.commit()
+        # await conn.commit()  # Auto-committed
 
         count = await store.get_total_count()
         assert count == 5
@@ -562,7 +570,7 @@ class TestDataStore:
     async def test_get_total_count_respects_store_type(self) -> None:
         """Test that get_total_count only counts items of the correct type."""
         db = await make_db()
-        conn = db._conn
+        # conn = db._conn  # No longer needed
 
         created = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
@@ -570,7 +578,7 @@ class TestDataStore:
         for i in range(3):
             item_data = asdict(make_item(id=f"vid{i}"))
             item_data.pop("_id", None)
-            await conn.execute(
+            await db.execute_raw(
                 "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
                 (f"q{i}", str(StoreType.QUEUE), f"http://example.com/queue/{i}", json.dumps(item_data), created),
             )
@@ -579,11 +587,11 @@ class TestDataStore:
         for i in range(2):
             item_data = asdict(make_item(id=f"vid{i}"))
             item_data.pop("_id", None)
-            await conn.execute(
+            await db.execute_raw(
                 "INSERT INTO history (id, type, url, data, created_at) VALUES (?, ?, ?, ?, ?)",
                 (f"h{i}", str(StoreType.HISTORY), f"http://example.com/history/{i}", json.dumps(item_data), created),
             )
-        await conn.commit()
+        # await conn.commit()  # Auto-committed
 
         queue_store = DataStore(StoreType.QUEUE, db)
         assert await queue_store.get_total_count() == 3
@@ -641,9 +649,8 @@ class TestDataStore:
 
         # Verify nothing was deleted from database
         await store._connection.flush()
-        cursor = await db._conn.execute("SELECT * FROM history WHERE id=?", ("nonexistent_id",))
-        row = await cursor.fetchone()
-        assert row is None
+        rows = await db.fetch_raw("SELECT * FROM history WHERE id=?", ("nonexistent_id",))
+        assert len(rows) == 0, "Should find no rows"
         await db.close()
 
     @pytest.mark.asyncio
@@ -720,10 +727,9 @@ class TestDataStore:
         await store._connection.flush()
 
         # Verify datetime field is not in stored JSON
-        cursor = await db._conn.execute("SELECT data FROM history WHERE id=?", (item._id,))
-        row = await cursor.fetchone()
-        assert row is not None
-        data = json.loads(row["data"])
+        rows = await db.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
+        assert len(rows) == 1, "Should find one row"
+        data = json.loads(rows[0]["data"])
         assert "datetime" not in data
         await db.close()
 
@@ -742,10 +748,9 @@ class TestDataStore:
         await store._connection.flush()
 
         # Verify live_in field is not in stored JSON when status is finished
-        cursor = await conn._conn.execute("SELECT data FROM history WHERE id=?", (item._id,))
-        row = await cursor.fetchone()
-        assert row is not None
-        data = json.loads(row["data"])
+        rows = await conn.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
+        assert len(rows) == 1, "Should find one row"
+        data = json.loads(rows[0]["data"])
         assert "live_in" not in data
         await store._connection.close()
 
@@ -764,10 +769,9 @@ class TestDataStore:
         await store._connection.flush()
 
         # Verify live_in field IS in stored JSON when status is not finished
-        cursor = await conn._conn.execute("SELECT data FROM history WHERE id=?", (item._id,))
-        row = await cursor.fetchone()
-        assert row is not None
-        data = json.loads(row["data"])
+        rows = await conn.fetch_raw("SELECT data FROM history WHERE id=?", (item._id,))
+        assert len(rows) == 1, "Should find one row"
+        data = json.loads(rows[0]["data"])
         assert "live_in" in data
         assert data["live_in"] == "PT5M"
         await store._connection.close()

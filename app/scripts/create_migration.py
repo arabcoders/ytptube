@@ -8,6 +8,7 @@ Provides commands to create, list, and apply database migrations.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import sys
 import traceback
 from pathlib import Path
@@ -40,32 +41,32 @@ def cmd_create(args: argparse.Namespace) -> None:
     o_print(f"created migration {path}")
 
 
-def cmd_version(args: argparse.Namespace) -> None:
-    version = migrate.get_version(args.database_path)
+async def cmd_version(args: argparse.Namespace) -> None:
+    version = await migrate.get_version(args.database_path)
     if version:
         o_print(f"the db [{args.database_path}] is at version {version}")
     else:
         o_print(f"the db [{args.database_path}] is not under version control")
 
 
-def cmd_upgrade(args: argparse.Namespace) -> None:
+async def cmd_upgrade(args: argparse.Namespace) -> None:
     if args.version:
         o_print(f"upgrading db [{args.database_path}] to version [{args.version}]")
     else:
         o_print(f"upgrading db [{args.database_path}] to most recent version")
 
-    migrate.upgrade(args.database_path, args.migration_dir, args.version)
+    await migrate.upgrade(args.database_path, args.migration_dir, args.version)
 
-    new_version = migrate.get_version(args.database_path)
+    new_version = await migrate.get_version(args.database_path)
     if args.version is not None:
         assert new_version == args.version
 
     o_print(f"upgraded [{args.database_path}] successfully to version [{new_version}]")
 
 
-def cmd_downgrade(args: argparse.Namespace) -> None:
+async def cmd_downgrade(args: argparse.Namespace) -> None:
     o_print(f"downgrading db [{args.database_path}] to version [{args.version}]")
-    migrate.downgrade(args.database_path, args.migration_dir, args.version)
+    await migrate.downgrade(args.database_path, args.migration_dir, args.version)
     o_print(f"downgraded [{args.database_path}] successfully to version [{args.version}]")
 
 
@@ -122,7 +123,11 @@ def run(argv: list[str]) -> int:
 
     try:
         func: Callable[[argparse.Namespace], None] = args.func
-        func(args)
+        # Check if function is async
+        if asyncio.iscoroutinefunction(func):
+            asyncio.run(func(args))
+        else:
+            func(args)
         return 0
 
     except migrate.InvalidMigrationError:

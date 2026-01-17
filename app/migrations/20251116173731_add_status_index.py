@@ -5,8 +5,10 @@ Migration Name: add_status_index
 Migration Version: 20251116173731
 """
 
+from sqlalchemy import text
 
-async def upgrade(connection):
+
+async def upgrade(c):
     """
     Add index on json_extract(data, '$.status') for better query performance.
 
@@ -16,14 +18,14 @@ async def upgrade(connection):
     sql = """
     CREATE INDEX IF NOT EXISTS "history_status" ON "history" (json_extract("data", '$.status'));
     """
-    await connection.execute(sql)
+    await c.execute(text(sql))
 
 
-async def downgrade(connection):
+async def downgrade(c):
     """
     Remove the status index.
     """
     sql = """
     DROP INDEX IF EXISTS "history_status";
     """
-    await connection.execute(sql)
+    await c.execute(text(sql))

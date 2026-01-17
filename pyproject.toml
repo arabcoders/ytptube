@@ -44,6 +44,8 @@ dependencies = [
   "jmespath>=1.0.1",
   "jsonschema>=4.23.0",
   "aiosqlite>=0.22.0",
+  "sqlalchemy>=2.0.45",
+  "pydantic>=2.12.5",
 ]
 
 [tool.ruff]
