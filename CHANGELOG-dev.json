@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260118-a0934393",
-        "date": "2026-01-18T19:17:07+00:00",
+        "tag": "dev-20260118-6da58254",
+        "date": "2026-01-18T19:57:39+00:00",
         "commits": [
+            {
+                "sha": "6da58254",
+                "message": "refactor: update validation logic to require cli or extras in Condition model",
+                "author": "arabcoders",
+                "date": "2026-01-18T19:57:39+00:00",
+                "full_sha": "6da58254bc96e6b321f2896f88671984388debdc"
+            },
             {
                 "sha": "a0934393",
                 "message": "refactor: conditions feature to db model",
@@ -3777,7 +3784,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060"
+        "full_sha": "6da58254bc96e6b321f2896f88671984388debdc"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060",
-    "date": "2026-01-18T19:17:07+00:00",
+    "full_sha": "6da58254bc96e6b321f2896f88671984388debdc",
+    "date": "2026-01-18T19:57:39+00:00",
     "commits": [
+      {
+        "sha": "6da58254",
+        "full_sha": "6da58254bc96e6b321f2896f88671984388debdc",
+        "message": "refactor: update validation logic to require cli or extras in Condition model",
+        "author": "arabcoders",
+        "date": "2026-01-18T19:57:39+00:00"
+      },
       {
         "sha": "a0934393",
         "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060",
