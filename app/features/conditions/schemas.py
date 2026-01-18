@@ -60,9 +60,9 @@ class Condition(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def _validate_filter_or_extras(self) -> Condition:
-        if not self.filter and not self.extras:
-            msg: str = "Either filter or extras must be set."
+    def _validate_cli_or_extras(self) -> Condition:
+        if not self.cli and not self.extras:
+            msg: str = "Either cli or extras must be set."
             raise ValueError(msg)
         return self
 
@@ -81,8 +81,7 @@ class ConditionPatch(Condition):
     description: str | None = None
 
     @model_validator(mode="after")
-    def _validate_filter_or_extras(self) -> ConditionPatch:
-        # Skip validation for PATCH - allow partial updates
+    def _validate_cli_or_extras(self) -> ConditionPatch:
         return self
 
 
