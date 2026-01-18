@@ -57,9 +57,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a85ca93d5aa23a3ea0f0278b76af7a6de9313896",
-    "date": "2026-01-17T20:32:39+00:00",
+    "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060",
+    "date": "2026-01-18T19:17:07+00:00",
     "commits": [
+      {
+        "sha": "a0934393",
+        "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060",
+        "message": "refactor: conditions feature to db model",
+        "author": "arabcoders",
+        "date": "2026-01-18T19:17:07+00:00"
+      },
+      {
+        "sha": "f98acbaa",
+        "full_sha": "f98acbaa428dfff755594146adbb0dc654803f6c",
+        "message": "refactor: clean up sqlalchemy connection maker",
+        "author": "arabcoders",
+        "date": "2026-01-18T16:18:00+00:00"
+      },
       {
         "sha": "a85ca93d",
         "full_sha": "a85ca93d5aa23a3ea0f0278b76af7a6de9313896",
