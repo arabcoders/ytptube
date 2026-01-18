@@ -183,7 +183,7 @@ link-mode = "copy"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["app/tests"]
+testpaths = ["app/tests", "app/features"]
 addopts = "-v --tb=short"
 filterwarnings = [
   "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",

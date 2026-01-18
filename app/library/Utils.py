@@ -1647,6 +1647,9 @@ def load_modules(root_path: Path, directory: Path):
     import pkgutil
 
     package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
+    # Ensure package name starts with 'app.' for proper module resolution
+    if not package_name.startswith("app."):
+        package_name = f"app.{package_name}"
 
     for _, name, _ in pkgutil.iter_modules([directory]):
         full_name: str = f"{package_name}.{name}"

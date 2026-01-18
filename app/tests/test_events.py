@@ -683,8 +683,10 @@ class TestEventBus:
 
         assert result is bus  # Should return self for chaining
         assert Events.TEST in bus._listeners
-        assert "test_subscriber" in bus._listeners[Events.TEST]
-        assert isinstance(bus._listeners[Events.TEST]["test_subscriber"], EventListener)
+        assert any(name == "test_subscriber" for name, _ in bus._listeners[Events.TEST])
+        listener = next((listener for name, listener in bus._listeners[Events.TEST] if name == "test_subscriber"), None)
+        assert listener is not None
+        assert isinstance(listener, EventListener)
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
@@ -703,7 +705,7 @@ class TestEventBus:
 
         for event in events:
             assert event in bus._listeners
-            assert "multi_subscriber" in bus._listeners[event]
+            assert any(name == "multi_subscriber" for name, _ in bus._listeners[event])
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
@@ -722,7 +724,7 @@ class TestEventBus:
         all_events = Events.get_all()
         for event in all_events:
             assert event in bus._listeners
-            assert "wildcard_subscriber" in bus._listeners[event]
+            assert any(name == "wildcard_subscriber" for name, _ in bus._listeners[event])
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
@@ -741,7 +743,7 @@ class TestEventBus:
         frontend_events = Events.frontend()
         for event in frontend_events:
             assert event in bus._listeners
-            assert "frontend_subscriber" in bus._listeners[event]
+            assert any(name == "frontend_subscriber" for name, _ in bus._listeners[event])
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")
@@ -779,7 +781,7 @@ class TestEventBus:
         assert len(bus._listeners[Events.TEST]) == 1
 
         # Name should be a UUID
-        subscriber_name = next(iter(bus._listeners[Events.TEST].keys()))
+        subscriber_name = bus._listeners[Events.TEST][0][0]
         assert len(subscriber_name) == 36  # UUID string length
 
     @patch("app.library.config.Config")
@@ -796,13 +798,13 @@ class TestEventBus:
 
         # First subscribe
         bus.subscribe(Events.TEST, test_callback, "test_subscriber")
-        assert "test_subscriber" in bus._listeners[Events.TEST]
+        assert any(name == "test_subscriber" for name, _ in bus._listeners[Events.TEST])
 
         # Then unsubscribe
         result = bus.unsubscribe(Events.TEST, "test_subscriber")
 
         assert result is bus
-        assert "test_subscriber" not in bus._listeners[Events.TEST]
+        assert not any(name == "test_subscriber" for name, _ in bus._listeners[Events.TEST])
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")

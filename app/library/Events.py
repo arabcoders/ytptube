@@ -219,7 +219,7 @@ class EventBus(metaclass=Singleton):
     """
 
     def __init__(self):
-        self._listeners: dict[str, list[str, EventListener]] = {}
+        self._listeners: dict[str, list[tuple[str, EventListener]]] = {}
         "The listeners for the events."
 
         self.debug: bool = False
@@ -275,9 +275,10 @@ class EventBus(metaclass=Singleton):
                 continue
 
             if e not in self._listeners:
-                self._listeners[e] = {}
+                self._listeners[e] = []
 
-            self._listeners[e][name] = EventListener(name, callback)
+            self._listeners[e] = [(n, listener) for n, listener in self._listeners[e] if n != name]
+            self._listeners[e].append((name, EventListener(name, callback)))
 
         LOG.debug(f"'{name}' subscribed to '{event}'.")
 
@@ -300,9 +301,11 @@ class EventBus(metaclass=Singleton):
 
         events = []
         for e in event:
-            if e in self._listeners and name in self._listeners[e]:
-                events.append(e)
-                del self._listeners[e][name]
+            if e in self._listeners:
+                original_len: int = len(self._listeners[e])
+                self._listeners[e] = [(n, listener) for n, listener in self._listeners[e] if n != name]
+                if len(self._listeners[e]) < original_len:
+                    events.append(e)
 
         if len(events) > 0:
             LOG.debug(f"'{name}' unsubscribed from '{events}'.")
@@ -337,22 +340,25 @@ class EventBus(metaclass=Singleton):
         try:
             loop = asyncio.get_running_loop()
 
-            for handler in self._listeners[event].values():
-                try:
-                    if handler.is_coroutine:
-                        coro = handler.call_back(ev, handler.name, **kwargs)
-                        if asyncio.iscoroutine(coro):
-                            loop.create_task(coro)
+            async def execute_handlers():
+                for _, handler in self._listeners[event]:
+                    try:
+                        if handler.is_coroutine:
+                            coro = handler.call_back(ev, handler.name, **kwargs)
+                            if asyncio.iscoroutine(coro):
+                                await coro
+                            else:
+                                LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
                         else:
-                            LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
-                    else:
-                        loop.create_task(self._call(handler, ev, kwargs), name=f"sync-handler-{handler.name}-{ev.id}")
-                except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+                            await self._call(handler, ev, kwargs)
+                    except Exception as e:
+                        LOG.exception(e)
+                        LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+
+            loop.create_task(execute_handlers())
         except RuntimeError:
             LOG.debug(f"No event loop detected - using BackgroundWorker for {len(self._listeners[event])} handlers")
-            for handler in self._listeners[event].values():
+            for _, handler in self._listeners[event]:
                 try:
                     if not self._offload:
                         self._offload = BackgroundWorker.get_instance()

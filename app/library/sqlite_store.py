@@ -13,6 +13,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncConnection
 
+from .Events import EventBus, Events
 from .ItemDTO import ItemDTO
 from .operations import Operation, matches_condition
 from .Services import Services
@@ -50,6 +51,12 @@ class SqliteStore(metaclass=ThreadSafe):
 
     def attach(self, app: web.Application):
         Services.get_instance().add("sqlite_store", self)
+
+        async def handle_event(_, __):
+            await self.get_connection()
+
+        EventBus.get_instance().subscribe(Events.STARTED, handle_event, "SqliteStore.get_connection")
+
         app.on_shutdown.append(self.on_shutdown)
 
     async def on_shutdown(self, _: web.Application):
@@ -60,13 +67,13 @@ class SqliteStore(metaclass=ThreadSafe):
     def __init__(self, db_path: str, *, max_pending: int = 200, flush_interval: float = 0.05):
         self._db_path: str = db_path
         self._engine: AsyncEngine | None = None
-        self._conn = None
+        self._conn: AsyncConnection | None = None
         self._sessionmaker: async_sessionmaker[AsyncSession] | None = None
         self._queue: asyncio.Queue[_Op] | None = None
         self._task: asyncio.Task | None = None
+        self._lock: asyncio.Lock = asyncio.Lock()
         self._flush_interval: float = flush_interval
         self._max_pending: int = max_pending
-        self._lock = asyncio.Lock()
 
     async def __aenter__(self) -> "SqliteStore":
         await self.get_connection()
@@ -90,7 +97,7 @@ class SqliteStore(metaclass=ThreadSafe):
 
         """
         if not self._sessionmaker:
-            msg = "Database connection not initialized. Call _ensure_conn() first or use within async context."
+            msg = "Database connection not initialized. Call get_connection() first or use within async context."
             raise RuntimeError(msg)
         return self._sessionmaker
 
@@ -414,7 +421,8 @@ class SqliteStore(metaclass=ThreadSafe):
         if self._engine:
             await self._engine.dispose()
             self._engine = None
-            self._sessionmaker = None
+
+        self._sessionmaker = None
 
     async def _enqueue(self, op: _Op) -> None:
         self._ensure_worker()
@@ -555,7 +563,7 @@ class SqliteStore(metaclass=ThreadSafe):
             echo=False,
             connect_args={"check_same_thread": False, "uri": self._db_path.startswith(":memory")},
         )
-        self._conn: AsyncConnection = await self._engine.connect()
+        self._conn = await self._engine.connect()
 
         if version := await migrate.get_version(self._conn):
             LOG.debug(f"DB Version: '{version}'.")

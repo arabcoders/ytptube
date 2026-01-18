@@ -351,9 +351,9 @@ class TestUpdateChecker:
                 checker.attach(app_mock)
 
                 # Verify subscription was created
-                subscriptions = notify._listeners.get("started", {})
+                subscriptions = notify._listeners.get("started", [])
                 assert len(subscriptions) > 0, "Should have subscribed to STARTED event"
-                assert any("UpdateChecker.attach" in name for name in subscriptions.keys()), (
+                assert any("UpdateChecker.attach" in name for name, _ in subscriptions), (
                     "Should have UpdateChecker.attach subscription"
                 )
         finally:
