@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260118-6da58254",
-        "date": "2026-01-18T19:57:39+00:00",
+        "tag": "dev-20260118-57d582e2",
+        "date": "2026-01-18T20:13:40+00:00",
         "commits": [
+            {
+                "sha": "57d582e2",
+                "message": "Fix: remove debug statement",
+                "author": "arabcoders",
+                "date": "2026-01-18T20:13:40+00:00",
+                "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395"
+            },
             {
                 "sha": "6da58254",
                 "message": "refactor: update validation logic to require cli or extras in Condition model",
@@ -3784,7 +3791,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "6da58254bc96e6b321f2896f88671984388debdc"
+        "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395"
     },
     {
         "tag": "dev-20250616-c07465a6",

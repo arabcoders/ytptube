@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "6da58254bc96e6b321f2896f88671984388debdc",
-    "date": "2026-01-18T19:57:39+00:00",
+    "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395",
+    "date": "2026-01-18T20:13:40+00:00",
     "commits": [
+      {
+        "sha": "57d582e2",
+        "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395",
+        "message": "Fix: remove debug statement",
+        "author": "arabcoders",
+        "date": "2026-01-18T20:13:40+00:00"
+      },
       {
         "sha": "6da58254",
         "full_sha": "6da58254bc96e6b321f2896f88671984388debdc",
