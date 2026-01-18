@@ -13,6 +13,26 @@ export type convert_args_response = {
   /** The download format if was provided */
   format?: string,
   /** The removed options from the original CLI args if any. */
-  removed_options?: string[],
+  removed_options?: Array<string>,
 }
 
+export type Pagination = {
+  page: number
+  per_page: number
+  total: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
+}
+
+export type Paginated<T> = {
+  items: Array<T>
+  pagination: Pagination
+}
+
+export interface APIResponse<T = unknown> {
+  success: boolean
+  error: string | null
+  detail: unknown
+  data?: T
+}

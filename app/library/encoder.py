@@ -16,16 +16,10 @@ class Encoder(json.JSONEncoder):
     def default(self, o):
         from .ItemDTO import ItemDTO
 
-        if isinstance(o, Path):
-            return str(o)
-
         if isinstance(o, DateRange):
             return {"start": str(o.start).replace("-", ""), "end": str(o.end).replace("-", "")}
 
-        if isinstance(o, date):
-            return str(o)
-
-        if isinstance(o, ImpersonateTarget):
+        if isinstance(o, (Path, date, ImpersonateTarget, ValueError)):
             return str(o)
 
         if isinstance(o, ItemDTO):
@@ -34,6 +28,9 @@ class Encoder(json.JSONEncoder):
         if isinstance(o, object):
             if hasattr(o, "serialize"):
                 return o.serialize()
+
+            if hasattr(o, "model_dump"):
+                return o.model_dump()
 
             if hasattr(o, "__dict__"):
                 return o.__dict__

@@ -1,4 +1,4 @@
-import * as utils from '../../app/utils/index'
+import * as utils from '~/utils/index'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useTaskDefinitions } from '~/composables/useTaskDefinitions'
 import type { TaskDefinitionSummary } from '~/types/task_definitions'

@@ -1,5 +1,5 @@
 import { useStorage } from '@vueuse/core'
-import type { convert_args_response } from '~/types/responses'
+import type { convert_args_response,Paginated } from '~/types/responses'
 import type { StoreItem } from '~/types/store'
 
 const AG_SEPARATOR = '.'
@@ -815,10 +815,59 @@ const getImage = (basePath: string, item: StoreItem, fallback: boolean = true): 
   return fallback ? uri('/images/placeholder.png') : ''
 }
 
+const parse_list_response = async <T>(json: unknown): Promise<Paginated<T>> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+
+  if (!json || 'object' !== typeof json) {
+    return { items: [], pagination: { page: 1, per_page: 20, total: 0, total_pages: 0, has_next: false, has_prev: false } }
+  }
+
+  const payload = json as Paginated<T>
+  const items = Array.isArray(payload.items) ? payload.items : []
+
+  const pagination = {
+    page: Number(payload.pagination?.page ?? 1),
+    per_page: Number(payload.pagination?.per_page ?? 20),
+    total: Number(payload.pagination?.total ?? 0),
+    total_pages: Number(payload.pagination?.total_pages ?? 0),
+    has_next: Boolean(payload.pagination?.has_next ?? false),
+    has_prev: Boolean(payload.pagination?.has_prev ?? false),
+  }
+
+  return { items: items as T[], pagination }
+}
+
+const parse_api_response = async <T>(json: unknown): Promise<T> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+  return json as T
+}
+
+const parse_api_error = async (json: unknown): Promise<string> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+
+  if (!json || 'object' !== typeof json) {
+    return 'Unknown error occurred'
+  }
+
+  const payload = json as {
+    error?: string;
+    message?: string;
+    detail?: string[];
+  }
+  return String(payload.error ?? payload.message ?? payload.detail?.[0] ?? 'Unknown error occurred')
+}
+
 export {
   separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes, getPath, getImage
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes, getPath, getImage,
+  parse_list_response, parse_api_response, parse_api_error
 }

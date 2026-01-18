@@ -1,15 +1,3 @@
-"""
-Item addition and entry routing.
-
-This module handles the complete flow of adding items to the download queue:
-- Preset and CLI validation
-- Cookie file management
-- Archive checking (early and post-extraction)
-- Info extraction with yt-dlp
-- Conditions matching and re-queuing
-- Entry type routing (playlist, video, URL)
-"""
-
 import asyncio
 import logging
 import time
@@ -19,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import yt_dlp.utils
 
-from app.library.conditions import Conditions
+from app.features.conditions.service import Conditions
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
 from app.library.Presets import Presets
@@ -279,7 +267,7 @@ async def add(
                     )
                     return {"status": "error", "msg": message, "hidden": True}
 
-        if not item.requeued and (condition := Conditions.get_instance().match(info=entry)):
+        if not item.requeued and (condition := await Conditions.get_instance().match(info=entry)):
             already.pop()
 
             message = f"Condition '{condition.name}' matched for '{item!r}'."

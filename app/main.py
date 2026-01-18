@@ -14,9 +14,9 @@ from pathlib import Path
 import magic
 from aiohttp import web
 
+from app.features.conditions.service import Conditions
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
-from app.library.conditions import Conditions
 from app.library.config import Config
 from app.library.dl_fields import DLFields
 from app.library.downloads import DownloadQueue

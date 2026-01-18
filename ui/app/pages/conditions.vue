@@ -47,8 +47,8 @@
               </button>
             </p>
             <p class="control">
-              <button class="button is-info" @click="reloadContent(false)" :class="{ 'is-loading': isLoading }"
-                :disabled="isLoading" v-if="items && items.length > 0">
+              <button class="button is-info" @click="async () => await loadContent(page)"
+                :class="{ 'is-loading': isLoading }" :disabled="isLoading" v-if="items && items.length > 0">
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
               </button>
@@ -62,8 +62,13 @@
         </div>
       </div>
 
+      <div class="column is-12" v-if="!toggleForm && paging?.total_pages > 1">
+        <Pager :page="paging.page" :last_page="paging.total_pages" :isLoading="isLoading"
+          @navigate="async (newPage) => { page = newPage; await loadContent(newPage); }" />
+      </div>
+
       <div class="column is-12" v-if="toggleForm">
-        <ConditionForm :addInProgress="addInProgress" :reference="itemRef" :item="item as ConditionItem"
+        <ConditionForm :addInProgress="conditions.addInProgress.value" :reference="itemRef" :item="item as Condition"
           @cancel="resetForm(true)" @submit="updateItem" />
       </div>
     </div>
@@ -285,29 +290,33 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
+import type { Condition } from '~/types/conditions'
 import { useConfirm } from '~/composables/useConfirm'
+import { useConditions } from '~/composables/useConditions'
+import type { APIResponse } from '~/types/responses'
 
-type ConditionItemWithUI = ConditionItem & { raw?: boolean }
+type ConditionItemWithUI = Condition & { raw?: boolean }
 
-const toast = useNotification()
 const socket = useSocketStore()
 const box = useConfirm()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const display_style = useStorage<'list' | 'grid'>('conditions_display_style', 'grid')
+const conditions = useConditions()
+const route = useRoute()
 
-const items = ref<ConditionItemWithUI[]>([])
-const item = ref<Partial<ConditionItem>>({})
-const itemRef = ref<string | null | undefined>("")
+const items = conditions.conditions as Ref<ConditionItemWithUI[]>
+const paging = conditions.pagination
+const isLoading = conditions.isLoading
+const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1)
+const item = ref<Partial<Condition>>({})
+const itemRef = ref<number | null | undefined>(null)
 const toggleForm = ref(false)
-const isLoading = ref(false)
 const initialLoad = ref(true)
-const addInProgress = ref(false)
 const query = ref<string>('')
 const toggleFilter = ref(false)
 
 const remove_keys = ['raw', 'toggle_description']
-const expandedItems = ref<Record<string, Set<string>>>({})
+const expandedItems = reactive<Record<number, Set<string>>>({})
 
 const filteredItems = computed<ConditionItemWithUI[]>(() => {
   const q = query.value?.toLowerCase();
@@ -315,194 +324,99 @@ const filteredItems = computed<ConditionItemWithUI[]>(() => {
   return items.value.filter((item: ConditionItemWithUI) => deepIncludes(item, q, new WeakSet()));
 });
 
-const toggleExpand = (itemId: string | undefined, field: string) => {
-  if (!itemId) return
-
-  if (!expandedItems.value[itemId]) {
-    expandedItems.value[itemId] = new Set()
-  }
-
-  if (expandedItems.value[itemId].has(field)) {
-    expandedItems.value[itemId].delete(field)
-  } else {
-    expandedItems.value[itemId].add(field)
+const loadContent = async (page: number = 1): Promise<void> => {
+  await conditions.loadConditions(page)
+  await nextTick()
+  if (conditions.pagination.value.total_pages > 1) {
+    useRouter().replace({ query: { ...route.query, page: page.toString() } })
   }
 }
 
-const isExpanded = (itemId: string | undefined, field: string): boolean => {
+const toggleExpand = (itemId: number | undefined, field: string) => {
+  if (!itemId) return
+
+  if (!expandedItems[itemId]) {
+    expandedItems[itemId] = new Set()
+  }
+
+  if (expandedItems[itemId].has(field)) {
+    expandedItems[itemId].delete(field)
+  } else {
+    expandedItems[itemId].add(field)
+  }
+}
+
+const isExpanded = (itemId: number | undefined, field: string): boolean => {
   if (!itemId) return false
-  return expandedItems.value[itemId]?.has(field) ?? false
+  return expandedItems[itemId]?.has(field) ?? false
 }
 
 watch(() => socket.isConnected, async () => {
   if (socket.isConnected && initialLoad.value) {
-    await reloadContent(true)
+    await loadContent(page.value)
     initialLoad.value = false
   }
 })
 
-watch(toggleFilter, (val) => {
+watch(toggleFilter, val => {
   if (!val) {
     query.value = ''
   }
 })
 
-
-const reloadContent = async (fromMounted = false): Promise<void> => {
-  try {
-    isLoading.value = true
-    const response = await request('/api/conditions')
-
-    if (fromMounted && !response.ok) {
-      return
-    }
-    const data = await response.json()
-    if (data.length < 1) {
-      return
-    }
-
-    items.value = data
-  } catch (e) {
-    if (!fromMounted) {
-      console.error(e)
-      toast.error('Failed to fetch page content.')
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
 const resetForm = (closeForm = false): void => {
   item.value = {}
   itemRef.value = null
-  addInProgress.value = false
   if (closeForm) {
     toggleForm.value = false
   }
 }
 
-const updateItems = async (newItems: ConditionItem[]): Promise<boolean> => {
-  let data: any
-
-  try {
-    addInProgress.value = true
-
-    const validItems = newItems.map(({ id, name, filter, cli, extras, enabled, priority, description }) => {
-      if (!name || !filter) {
-        throw new Error('Name and filter are required.')
-      }
-      return { id, name, filter, cli, extras, enabled, priority, description }
-    })
-
-    const response = await request('/api/conditions', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(validItems),
-    })
-
-    data = await response.json() as ConditionItem[]
-
-    if (response.status !== 200) {
-      toast.error(`Failed to update items. ${data.error}`)
-      return false
-    }
-
-    items.value = data
-    resetForm(true)
-    return true
-  } catch (e: any) {
-    toast.error(`Failed to update items. ${data?.error ?? ''} ${e.message}`)
-  } finally {
-    addInProgress.value = false
-  }
-
-  return false
-}
-
-const deleteItem = async (cond: ConditionItem): Promise<void> => {
+const deleteItem = async (cond: Condition): Promise<void> => {
   if (true !== (await box.confirm(`Delete '${cond.name}'?`))) {
     return
   }
-
-  const index = items.value.findIndex(t => t?.id === cond.id)
-  if (-1 === index) {
-    toast.error('Item not found.')
-    return
-  }
-
-  items.value.splice(index, 1)
-  const status = await updateItems(items.value)
-  if (status) {
-    toast.success('Item deleted.')
-  }
+  await conditions.deleteCondition(cond.id!)
 }
 
-const updateItem = async ({ reference, item: updatedItem, }: {
-  reference: string | null | undefined,
-  item: ConditionItem
+const updateItem = async ({ reference, item: updatedItem }: {
+  reference: number | null | undefined,
+  item: Condition
 }): Promise<void> => {
-  updatedItem = cleanObject(updatedItem, remove_keys) as ConditionItem
+  updatedItem = cleanObject(updatedItem, remove_keys) as Condition
+  const cb = (resp: APIResponse) => {
+    if (resp.success){
+      resetForm(true)
+    }
+  }
 
   if (reference) {
-    const index = items.value.findIndex(t => t?.id === reference)
-    if (index !== -1) {
-      items.value[index] = updatedItem
-    }
+    await conditions.patchCondition(reference, updatedItem, cb)
   } else {
-    items.value.push(updatedItem)
+    await conditions.createCondition(updatedItem, cb)
   }
-
-  const status = await updateItems(items.value)
-  if (!status) {
-    return
-  }
-
-  toast.success(`Item ${reference ? 'updated' : 'added'}.`)
-  resetForm(true)
 }
 
-const editItem = (_item: ConditionItem): void => {
+const editItem = (_item: Condition): void => {
   item.value = { ..._item }
   itemRef.value = _item.id
   toggleForm.value = true
 }
 
-const toggleEnabled = async (cond: ConditionItem): Promise<void> => {
-  const index = items.value.findIndex(t => t?.id === cond.id)
-  if (-1 === index) {
-    toast.error('Item not found.')
-    return
-  }
-
-  const item = items.value[index]
-  if (!item) {
-    toast.error('Item not found.')
-    return
-  }
-
-  item.enabled = !item.enabled
-  const status = await updateItems(items.value)
-  if (status) {
-    toast[item.enabled ? 'success' : 'warning'](`Condition is ${item.enabled ? 'enabled' : 'disabled'}.`)
-  }
+const toggleEnabled = async (cond: Condition): Promise<void> => {
+  const new_state = !cond.enabled
+  await conditions.patchCondition(cond.id!, { enabled: new_state })
 }
 
-const exportItem = (cond: ConditionItem): void => {
-  const clone: Partial<ImportedConditionItem> = JSON.parse(JSON.stringify(cond))
-  delete clone.id
-
-  const userData: ImportedConditionItem = {
-    ...Object.fromEntries(Object.entries(clone).filter(([_, v]) => !!v)),
-    _type: 'condition',
-    _version: '1.1',
-  } as ImportedConditionItem
-
-  copyText(encode(userData))
-}
+const exportItem = (cond: Condition): void => copyText(encode({
+  ...Object.fromEntries(Object.entries(cond).filter(([k, v]) => !!v && !['id', ...remove_keys].includes(k))),
+  _type: 'condition',
+  _version: '1.2',
+}))
 
 onMounted(async () => {
   if (socket.isConnected) {
-    await reloadContent(true)
+    await loadContent(page.value)
   }
 })
 </script>
