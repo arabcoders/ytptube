@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import Any
 
 from aiohttp import web
 
@@ -12,9 +12,6 @@ from .httpx_client import async_client
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .version import APP_VERSION
-
-if TYPE_CHECKING:
-    from app.library.dl_fields import Any
 
 LOG: logging.Logger = logging.getLogger("update_checker")
 

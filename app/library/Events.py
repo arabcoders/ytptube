@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import logging
 import uuid
-from collections.abc import Awaitable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -198,10 +198,10 @@ class Event:
 
 
 class EventListener:
-    def __init__(self, name: str, callback: callable):
+    def __init__(self, name: str, callback: Callable[..., Any]):
         self.name: str = name
         "The name of the listener."
-        self.call_back: callable = callback
+        self.call_back: Callable[..., Any] = callback
         "The callback function to call when the event is emitted."
         self.is_coroutine: bool = asyncio.iscoroutinefunction(callback)
         "Whether the callback is a coroutine function or not."
@@ -225,7 +225,7 @@ class EventBus(metaclass=Singleton):
         self.debug: bool = False
         "Whether to log debug messages or not."
 
-        self._offload: BackgroundWorker = None
+        self._offload: BackgroundWorker | None = None
         "The background worker to offload tasks to."
 
     @staticmethod
@@ -239,7 +239,7 @@ class EventBus(metaclass=Singleton):
         """
         return EventBus()
 
-    def subscribe(self, event: str | list | tuple, callback: Awaitable, name: str | None = None) -> "EventBus":
+    def subscribe(self, event: str | list | tuple, callback: Callable[..., Any], name: str | None = None) -> "EventBus":
         """
         Subscribe to an event.
 

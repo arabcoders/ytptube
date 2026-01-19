@@ -19,7 +19,7 @@ class Scheduler(metaclass=Singleton):
         self._jobs: dict[str, Cron] = {}
         "The scheduled jobs."
 
-        self._loop = loop or asyncio.get_event_loop()
+        self._loop: asyncio.AbstractEventLoop | None = loop
         "The event loop to use."
 
     @staticmethod
@@ -113,6 +113,13 @@ class Scheduler(metaclass=Singleton):
         """
         if id and id in self._jobs:
             self.remove(id)
+
+        if not self._loop:
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
 
         job = Cron(spec=timer, func=func, args=args, kwargs=kwargs, uuid=id, start=True, loop=self._loop)
 
