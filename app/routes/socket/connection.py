@@ -5,8 +5,8 @@ from typing import Any
 
 import socketio
 
+from app.features.dl_fields.service import DLFields
 from app.library.config import Config
-from app.library.dl_fields import DLFields
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.Presets import Presets
@@ -28,7 +28,7 @@ async def connect(config: Config, queue: DownloadQueue, notify: EventBus, sid: s
         data={
             "config": config.frontend(),
             "presets": Presets.get_instance().get_all(),
-            "dl_fields": DLFields.get_instance().get_all(),
+            "dl_fields": await DLFields.get_instance().get_all_serialized(),
             "paused": queue.is_paused(),
         },
         title="Client connected",

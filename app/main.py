@@ -15,10 +15,10 @@ import magic
 from aiohttp import web
 
 from app.features.conditions.service import Conditions
+from app.features.dl_fields.service import DLFields
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.dl_fields import DLFields
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI

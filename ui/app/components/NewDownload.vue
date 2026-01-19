@@ -176,7 +176,7 @@
             </template>
             <div class="column is-12 is-hidden-tablet">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
-                <NuxtLink class="dropdown-item" @click="() => showFields = true">
+                <NuxtLink class="dropdown-item" to="/dl_fields">
                   <span class="icon has-text-purple"><i class="fa-solid fa-plus" /></span>
                   <span>Custom Fields</span>
                 </NuxtLink>
@@ -208,7 +208,7 @@
             <div class="column is-12">
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
-                  <button type="button" class="button is-purple" @click="() => showFields = true"
+                  <button type="button" class="button is-purple" @click="() => navigateTo('/dl_fields')"
                     v-tooltip="'Manage custom fields'">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                   </button>
@@ -253,7 +253,7 @@
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
 
-    <DLFields v-if="showFields" @cancel="() => showFields = false" />
+
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
       <YTDLPOptions />
     </Modal>
@@ -289,7 +289,6 @@ const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const storedCommand = useStorage<string>('console_command', '')
 
 const addInProgress = ref<boolean>(false)
-const showFields = ref<boolean>(false)
 const showOptions = ref<boolean>(false)
 const showTestResults = ref<boolean>(false)
 const testResultsData = ref<any>(null)

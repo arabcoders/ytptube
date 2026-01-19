@@ -19,7 +19,7 @@ from sqlalchemy import delete, func, or_, select
 from app.features.conditions.models import ConditionModel
 from app.features.core.deps import get_session
 
-LOG: logging.Logger = logging.getLogger("app.features.conditions.repository")
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class ConditionsRepository(metaclass=Singleton):

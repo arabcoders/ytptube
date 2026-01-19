@@ -68,7 +68,7 @@
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <ConditionForm :addInProgress="conditions.addInProgress.value" :reference="itemRef" :item="item as Condition"
+        <ConditionForm :addInProgress="conditions.addInProgress.value" :reference="itemRef" :item="(item as Condition)"
           @cancel="resetForm(true)" @submit="updateItem" />
       </div>
     </div>
@@ -385,7 +385,7 @@ const updateItem = async ({ reference, item: updatedItem }: {
 }): Promise<void> => {
   updatedItem = cleanObject(updatedItem, remove_keys) as Condition
   const cb = (resp: APIResponse) => {
-    if (resp.success){
+    if (resp.success) {
       resetForm(true)
     }
   }

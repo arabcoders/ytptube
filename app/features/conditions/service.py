@@ -7,7 +7,6 @@ from app.features.conditions.repository import ConditionsRepository
 from app.library.Events import EventBus, Events
 from app.library.mini_filter import match_str
 from app.library.Singleton import Singleton
-from app.library.Utils import arg_converter
 
 LOG: logging.Logger = logging.getLogger("feature.conditions")
 
@@ -31,62 +30,6 @@ class Conditions(metaclass=Singleton):
 
     async def get_all(self) -> list[ConditionModel]:
         return await self._repo.list()
-
-    def validate(self, item: ConditionModel | dict) -> bool:
-        if not isinstance(item, dict):
-            if not isinstance(item, ConditionModel):
-                msg: str = f"Unexpected '{type(item).__name__}' item type."
-                raise ValueError(msg)
-
-            item = item.serialize()
-
-        if not item.get("id"):
-            msg: str = "No id found."
-            raise ValueError(msg)
-
-        if not item.get("name"):
-            msg: str = "No name found."
-            raise ValueError(msg)
-
-        if not item.get("filter"):
-            msg: str = "No filter found."
-            raise ValueError(msg)
-
-        try:
-            match_str(item.get("filter"), {})
-        except Exception as e:
-            msg: str = f"Invalid filter. '{e!s}'."
-            raise ValueError(msg) from e
-
-        if item.get("cli"):
-            try:
-                arg_converter(args=item.get("cli"))
-            except Exception as e:
-                msg = f"Invalid command options for yt-dlp. '{e!s}'."
-                raise ValueError(msg) from e
-
-        if not isinstance(item.get("extras"), dict):
-            msg = "Extras must be a dictionary."
-            raise ValueError(msg)
-
-        if item.get("enabled") is not None and not isinstance(item.get("enabled"), bool):
-            msg = "Enabled must be a boolean."
-            raise ValueError(msg)
-
-        if item.get("priority") is not None:
-            priority = item.get("priority")
-            if not isinstance(priority, int):
-                msg = "Priority must be an integer."
-                raise ValueError(msg)
-            if priority < 0:
-                msg = "Priority must be >= 0."
-                raise ValueError(msg)
-
-        if item.get("description") and not isinstance(item.get("description"), str):
-            msg = "Description must be a string."
-            raise ValueError(msg)
-
-        return True
 
     async def save(self, item: ConditionModel | dict) -> ConditionModel:
         """

@@ -81,7 +81,7 @@
 
           </div>
           <div class="navbar-end">
-            <div class="navbar-item has-dropdown" v-if="config.app?.file_logging || config.app?.console_enabled">
+            <div class="navbar-item has-dropdown">
               <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
                 <span class="icon"><i class="fas fa-tools" /></span>
                 <span>Other</span>
@@ -98,6 +98,11 @@
                   v-if="config.app.console_enabled">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   <span>Console</span>
+                </NuxtLink>
+
+                <NuxtLink class="navbar-item" to="/dl_fields" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
+                  <span>Custom fields</span>
                 </NuxtLink>
               </div>
             </div>
