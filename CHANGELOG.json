@@ -57,9 +57,30 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395",
-    "date": "2026-01-18T20:13:40+00:00",
+    "full_sha": "ea1fc59e8888684bdef4f8d6f1d4a56998ff58e0",
+    "date": "2026-01-20T13:27:04+00:00",
     "commits": [
+      {
+        "sha": "ea1fc59e",
+        "full_sha": "ea1fc59e8888684bdef4f8d6f1d4a56998ff58e0",
+        "message": "refactor: standardize config_update event for UI",
+        "author": "arabcoders",
+        "date": "2026-01-20T13:27:04+00:00"
+      },
+      {
+        "sha": "8a10627d",
+        "full_sha": "8a10627d6a03f2854cdb5ca9b988ec0bc351fef9",
+        "message": "refactor: migrated dl_fields to db model.",
+        "author": "arabcoders",
+        "date": "2026-01-19T15:31:16+00:00"
+      },
+      {
+        "sha": "c33827c6",
+        "full_sha": "c33827c6f7ac4d696bed26a9fadfd5ea1e0ddea5",
+        "message": "fix: minor typing fix",
+        "author": "arabcoders",
+        "date": "2026-01-19T14:15:10+00:00"
+      },
       {
         "sha": "57d582e2",
         "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395",
