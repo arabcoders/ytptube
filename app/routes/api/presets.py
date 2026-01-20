@@ -4,6 +4,7 @@ import uuid
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.schemas import CEAction, CEFeature, ConfigEvent
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.Presets import Preset, Presets
@@ -96,5 +97,12 @@ async def presets_add(request: Request, encoder: Encoder, notify: EventBus) -> R
             status=web.HTTPInternalServerError.status_code,
         )
 
-    notify.emit(Events.PRESETS_UPDATE, data=presets)
+    notify.emit(
+        Events.CONFIG_UPDATE,
+        data=ConfigEvent(
+            feature=CEFeature.PRESETS,
+            action=CEAction.REPLACE,
+            data=[preset.serialize() for preset in presets],
+        ),
+    )
     return web.json_response(data=presets, status=web.HTTPOk.status_code, dumps=encoder.encode)

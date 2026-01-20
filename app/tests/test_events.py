@@ -20,6 +20,7 @@ class TestEvents:
 
         # Connection events
         assert Events.CONNECTED == "connected"
+        assert Events.CONFIG_UPDATE == "config_update"
 
         # Log events
         assert Events.LOG_INFO == "log_info"
@@ -48,6 +49,7 @@ class TestEvents:
             "started",
             "shutdown",
             "connected",
+            "config_update",
             "log_info",
             "log_warning",
             "log_error",
@@ -85,6 +87,7 @@ class TestEvents:
         # Check some expected frontend events
         expected_frontend = [
             Events.CONNECTED,
+            Events.CONFIG_UPDATE,
             Events.LOG_INFO,
             Events.LOG_WARNING,
             Events.LOG_ERROR,

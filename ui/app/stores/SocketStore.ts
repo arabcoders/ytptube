@@ -3,6 +3,7 @@ import { ref, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
+import type { ConfigUpdatePayload } from "~/types/sockets";
 
 export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
 
@@ -277,8 +278,13 @@ export const useSocketStore = defineStore('socket', () => {
       toast.warning('Download queue paused.', { timeout: 10000 });
     }, true);
 
-    on('presets_update', (data: string) => config.update('presets', JSON.parse(data).data || []));
-    on('dlfields_update', (data: string) => config.update('dl_fields', JSON.parse(data).data || []));
+    on('config_update', (stream: string) => {
+      const json = JSON.parse(stream) as { data: ConfigUpdatePayload }
+      if (!json?.data) {
+        return
+      }
+      config.patch(json.data.feature, json.data.action, json.data.data)
+    })
 
     setupVisibilityListener();
   }

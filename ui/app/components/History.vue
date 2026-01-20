@@ -452,7 +452,7 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message v-else-if="socket.isConnected" class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
+      <Message v-else class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
         :new-style="true">
         <p>Download history is empty.</p>
       </Message>

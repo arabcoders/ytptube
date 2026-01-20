@@ -8,11 +8,12 @@ from pydantic import ValidationError
 
 from app.features.conditions.schemas import Condition, ConditionList, ConditionPatch
 from app.features.conditions.service import Conditions
-from app.features.core.schemas import Pagination
+from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
 from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
+from app.library.Events import EventBus, Events
 from app.library.router import route
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -136,7 +137,7 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
 
 
 @route("POST", "api/conditions/", name="condition_add")
-async def conditions_add(request: Request, encoder: Encoder) -> Response:
+async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Add Condition.
 
@@ -166,15 +167,14 @@ async def conditions_add(request: Request, encoder: Encoder) -> Response:
         )
 
     try:
-        data = _serialize(await Conditions.get_instance().save(item=item.model_dump()))
+        saved = _serialize(await Conditions.get_instance().save(item=item.model_dump()))
     except ValueError as exc:
         return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
 
-    return web.json_response(
-        data=data,
-        status=web.HTTPOk.status_code,
-        dumps=encoder.encode,
+    notify.emit(
+        Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.CONDITIONS, action=CEAction.CREATE, data=saved)
     )
+    return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("GET", "api/conditions/{id}", name="condition_get")
@@ -200,13 +200,14 @@ async def conditions_get(request: Request, encoder: Encoder) -> Response:
 
 
 @route("DELETE", "api/conditions/{id}", name="condition_delete")
-async def conditions_delete(request: Request, encoder: Encoder) -> Response:
+async def conditions_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Delete Condition.
 
     Args:
         request (Request): The request object.
         encoder (Encoder): The encoder instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -216,23 +217,24 @@ async def conditions_delete(request: Request, encoder: Encoder) -> Response:
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
     try:
-        return web.json_response(
-            data=_serialize(await Conditions.get_instance()._repo.delete(id)),
-            status=web.HTTPOk.status_code,
-            dumps=encoder.encode,
+        deleted = _serialize(await Conditions.get_instance()._repo.delete(id))
+        notify.emit(
+            Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.CONDITIONS, action=CEAction.DELETE, data=deleted)
         )
+        return web.json_response(data=deleted, status=web.HTTPOk.status_code, dumps=encoder.encode)
     except KeyError as exc:
         return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
 
 
 @route("PATCH", "api/conditions/{id}", name="condition_patch")
-async def conditions_patch(request: Request, encoder: Encoder) -> Response:
+async def conditions_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Patch Condition.
 
     Args:
         request (Request): The request object.
         encoder (Encoder): The encoder instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -268,23 +270,22 @@ async def conditions_patch(request: Request, encoder: Encoder) -> Response:
             status=web.HTTPConflict.status_code,
         )
 
-    dct = validated.model_dump(exclude_unset=True)
-
-    return web.json_response(
-        data=_serialize(await service._repo.update(model.id, dct)),
-        status=web.HTTPOk.status_code,
-        dumps=encoder.encode,
+    updated = _serialize(await service._repo.update(model.id, validated.model_dump(exclude_unset=True)))
+    notify.emit(
+        Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.CONDITIONS, action=CEAction.UPDATE, data=updated)
     )
+    return web.json_response(data=updated, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("PUT", "api/conditions/{id}", name="condition_update")
-async def conditions_update(request: Request, encoder: Encoder) -> Response:
+async def conditions_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Update Condition.
 
     Args:
         request (Request): The request object.
         encoder (Encoder): The encoder instance.
+        notify (EventBus): The event bus instance.
 
     Returns:
         Response: The response object.
@@ -320,8 +321,8 @@ async def conditions_update(request: Request, encoder: Encoder) -> Response:
             status=web.HTTPConflict.status_code,
         )
 
-    return web.json_response(
-        data=_serialize(await service._repo.update(model.id, validated.model_dump(exclude_unset=True))),
-        status=web.HTTPOk.status_code,
-        dumps=encoder.encode,
+    updated = _serialize(await service._repo.update(model.id, validated.model_dump(exclude_unset=True)))
+    notify.emit(
+        Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.CONDITIONS, action=CEAction.UPDATE, data=updated)
     )
+    return web.json_response(data=updated, status=web.HTTPOk.status_code, dumps=encoder.encode)

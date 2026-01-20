@@ -5,7 +5,7 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 from pydantic import ValidationError
 
-from app.features.core.schemas import Pagination
+from app.features.core.schemas import CEAction, CEFeature, ConfigEvent, Pagination
 from app.features.core.utils import build_pagination, format_validation_errors, normalize_pagination
 from app.features.dl_fields.schemas import DLField, DLFieldList, DLFieldPatch
 from app.features.dl_fields.service import DLFields
@@ -62,7 +62,7 @@ async def dl_fields_add(request: Request, encoder: Encoder, notify: EventBus) ->
     except ValueError as exc:
         return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
 
-    notify.emit(Events.DLFIELDS_UPDATE, data=[saved])
+    notify.emit(Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.DL_FIELDS, action=CEAction.CREATE, data=saved))
 
     return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
@@ -79,13 +79,17 @@ async def dl_fields_get(request: Request, encoder: Encoder) -> Response:
 
 
 @route("DELETE", "api/dl_fields/{id}", "dl_fields_delete")
-async def dl_fields_delete(request: Request, encoder: Encoder) -> Response:
+async def dl_fields_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
     try:
+        deleted = _serialize(await DLFields.get_instance()._repo.delete(identifier))
+        notify.emit(
+            Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.DL_FIELDS, action=CEAction.DELETE, data=deleted)
+        )
         return web.json_response(
-            data=_serialize(await DLFields.get_instance()._repo.delete(identifier)),
+            data=deleted,
             status=web.HTTPOk.status_code,
             dumps=encoder.encode,
         )
@@ -94,7 +98,7 @@ async def dl_fields_delete(request: Request, encoder: Encoder) -> Response:
 
 
 @route("PATCH", "api/dl_fields/{id}", "dl_fields_patch")
-async def dl_fields_patch(request: Request, encoder: Encoder) -> Response:
+async def dl_fields_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
@@ -123,17 +127,19 @@ async def dl_fields_patch(request: Request, encoder: Encoder) -> Response:
             status=web.HTTPConflict.status_code,
         )
 
-    dct = validated.model_dump(exclude_unset=True)
-
+    updated = _serialize(await DLFields.get_instance()._repo.update(model.id, validated.model_dump(exclude_unset=True)))
+    notify.emit(
+        Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.DL_FIELDS, action=CEAction.UPDATE, data=updated)
+    )
     return web.json_response(
-        data=_serialize(await DLFields.get_instance()._repo.update(model.id, dct)),
+        data=updated,
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
 
 
 @route("PUT", "api/dl_fields/{id}", "dl_fields_update")
-async def dl_fields_update(request: Request, encoder: Encoder) -> Response:
+async def dl_fields_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
 
@@ -162,8 +168,9 @@ async def dl_fields_update(request: Request, encoder: Encoder) -> Response:
             status=web.HTTPConflict.status_code,
         )
 
-    return web.json_response(
-        data=_serialize(await DLFields.get_instance()._repo.update(model.id, validated.model_dump(exclude_unset=True))),
-        status=web.HTTPOk.status_code,
-        dumps=encoder.encode,
+    updated = _serialize(await DLFields.get_instance()._repo.update(model.id, validated.model_dump(exclude_unset=True)))
+    notify.emit(
+        Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.DL_FIELDS, action=CEAction.UPDATE, data=updated)
     )
+
+    return web.json_response(data=updated, status=web.HTTPOk.status_code, dumps=encoder.encode)

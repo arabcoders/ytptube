@@ -72,6 +72,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/system/pause](#post-apisystempause)
     - [POST /api/system/resume](#post-apisystemresume)
     - [POST /api/system/shutdown](#post-apisystemshutdown)
+    - [POST /api/system/check-updates](#post-apisystemcheck-updates)
     - [GET /api/dev/loop](#get-apidevloop)
     - [GET /api/dev/pip](#get-apidevpip)
     - [GET /api/docs/{file}](#get-apidocsfile)
@@ -102,9 +103,7 @@ This document describes the available endpoints and their usage. All endpoints r
       - [`cli_post` (Client → Server)](#cli_post-client--server)
       - [`cli_output` (Server → Client)](#cli_output-server--client)
       - [`cli_close` (Server → Client)](#cli_close-server--client)
-    - [Configuration Events](#configuration-events)
-      - [`presets_update` (Server → Client)](#presets_update-server--client)
-      - [`dlfields_update` (Server → Client)](#dlfields_update-server--client)
+  - [Error Responses](#error-responses)
 
 ---
 
@@ -2086,19 +2085,6 @@ Emitted when CLI command execution completes.
 
 **Data Fields**:
 - `exitcode`: Command exit code (0 = success, non-zero = error)
-
-### Configuration Events
-
-#### `presets_update` (Server → Client)
-Emitted when download presets are updated or created.
-
-**Data**: Array of preset objects
-
-#### `dlfields_update` (Server → Client)
-Emitted when download fields configuration is updated.
-
-**Data**: Array of field objects
-```
 
 ---
 

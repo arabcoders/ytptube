@@ -8,7 +8,6 @@ from typing import Any
 from aiohttp import web
 
 from .config import Config
-from .Events import EventBus, Events
 from .Singleton import Singleton
 from .Utils import arg_converter, create_cookies_file, init_class
 
@@ -213,12 +212,6 @@ class Presets(metaclass=Singleton):
         if not self.get(self._config.default_preset):
             LOG.error(f"Default preset '{self._config.default_preset}' not found, using 'default' preset.")
             self._config.default_preset = "default"
-
-        async def event_handler(_, __):
-            msg = "Not implemented"
-            raise Exception(msg)
-
-        EventBus.get_instance().subscribe(Events.PRESETS_ADD, event_handler, f"{__class__.__name__}.add")
 
     def get_all(self) -> list[Preset]:
         """Return the items."""

@@ -25,6 +25,7 @@ class Events:
     CONNECTED: str = "connected"
 
     CONFIGURATION: str = "configuration"
+    CONFIG_UPDATE: str = "config_update"
     ACTIVE_QUEUE: str = "active_queue"
 
     LOG_INFO: str = "log_info"
@@ -58,16 +59,7 @@ class Events:
     TASK_FINISHED: str = "task_finished"
     TASK_ERROR: str = "task_error"
 
-    PRESETS_ADD: str = "presets_add"
-    PRESETS_UPDATE: str = "presets_update"
-
-    DLFIELDS_ADD: str = "dlfields_add"
-    DLFIELDS_UPDATE: str = "dlfields_update"
-
     SCHEDULE_ADD: str = "schedule_add"
-
-    CONDITIONS_ADD: str = "conditions_add"
-    CONDITIONS_UPDATE: str = "conditions_update"
 
     SUBSCRIBED: str = "subscribed"
     UNSUBSCRIBED: str = "unsubscribed"
@@ -94,6 +86,7 @@ class Events:
         """
         return [
             Events.CONFIGURATION,
+            Events.CONFIG_UPDATE,
             Events.CONNECTED,
             Events.ACTIVE_QUEUE,
             Events.LOG_INFO,
@@ -110,8 +103,6 @@ class Events:
             Events.RESUMED,
             Events.CLI_CLOSE,
             Events.CLI_OUTPUT,
-            Events.PRESETS_UPDATE,
-            Events.DLFIELDS_UPDATE,
         ]
 
     def only_debug() -> list:

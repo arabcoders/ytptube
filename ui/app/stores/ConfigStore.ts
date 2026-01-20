@@ -1,5 +1,8 @@
 import { useStorage } from '@vueuse/core'
 import type { ConfigState } from '~/types/config';
+import type { DLField } from '~/types/dl_fields';
+import type { Preset } from '~/types/presets';
+import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
 
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({
@@ -65,6 +68,7 @@ export const useConfigStore = defineStore('config', () => {
     }
     return (state as any)[key] ?? defaultValue
   }
+  const isLoaded = () => state.is_loaded
 
   const update = add
 
@@ -84,16 +88,62 @@ export const useConfigStore = defineStore('config', () => {
     state.is_loaded = true
   }
 
-  const isLoaded = () => state.is_loaded
+  const patch = (feature: ConfigFeature, action: ConfigUpdateAction, data: unknown): void => {
+    const supportedFeatures: ConfigFeature[] = ['dl_fields', 'presets']
+
+    if (!supportedFeatures.includes(feature)) {
+      return
+    }
+
+    if ('presets' === feature) {
+      if ('replace' === action) {
+        state.presets = data as Array<Preset>
+      }
+      return
+    }
+
+    if ('dl_fields' === feature) {
+      const item = data as DLField
+      const current = get(feature, []) as Array<DLField>
+
+      if ('create' === action) {
+        current.push(item)
+        return
+      }
+
+      if ('delete' === action) {
+        const index = current.findIndex(i => i.id === item.id)
+        if (-1 !== index) {
+          current.splice(index, 1)
+        }
+        return
+      }
+
+      if ('update' === action) {
+        const target = current.find(i => i.id === item.id)
+        if (target) {
+          Object.assign(target, item)
+        }
+        return
+      }
+      if ('replace' === action) {
+        state.dl_fields = data as Array<DLField>
+        return
+      }
+      return
+    }
+  }
+
 
   return {
-    ...toRefs(state), add, get, update, getAll, setAll, isLoaded,
+    ...toRefs(state), add, get, update, getAll, setAll, isLoaded, patch
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
     add: typeof add
     get: typeof get
     update: typeof update
     getAll: typeof getAll
     setAll: typeof setAll
+    patch: typeof patch
     isLoaded: typeof isLoaded
   }
 });

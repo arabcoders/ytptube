@@ -103,11 +103,9 @@ class TestPresets:
         Presets._reset_singleton()
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_singleton(self, mock_eventbus, mock_config):
+    def test_presets_singleton(self, mock_config):
         """Test that Presets follows singleton pattern."""
         mock_config.get_instance.return_value = Mock(config_path="/tmp", default_preset="default")
-        mock_eventbus.get_instance.return_value = Mock()
 
         instance1 = Presets.get_instance()
         instance2 = Presets.get_instance()
@@ -116,13 +114,10 @@ class TestPresets:
         assert isinstance(instance1, Presets)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_initialization(self, mock_eventbus, mock_config):
+    def test_presets_initialization(self, mock_config):
         """Test Presets initialization with default presets."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus_instance = Mock()
-        mock_eventbus.get_instance.return_value = mock_eventbus_instance
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -138,12 +133,10 @@ class TestPresets:
                 assert preset.default is True
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_load_empty_file(self, mock_eventbus, mock_config):
+    def test_presets_load_empty_file(self, mock_config):
         """Test loading presets from empty or non-existent file."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -157,13 +150,11 @@ class TestPresets:
             assert len(presets._default) > 0  # Should still have default presets
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.arg_converter")
-    def test_presets_load_valid_file(self, mock_arg_converter, mock_eventbus, mock_config):
+    def test_presets_load_valid_file(self, mock_arg_converter, mock_config):
         """Test loading presets from valid JSON file."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_arg_converter.return_value = []  # Mock successful CLI parsing
 
         test_presets = [
@@ -184,13 +175,11 @@ class TestPresets:
             assert presets._items[0].name == "test_preset_1"
             assert presets._items[1].name == "test_preset_2"
 
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.Config")
-    def test_presets_load_invalid_json(self, mock_eventbus, mock_config):
+    def test_presets_load_invalid_json(self, mock_config):
         """Test loading presets from invalid JSON file."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -204,13 +193,11 @@ class TestPresets:
             assert len(presets._items) == 0
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.arg_converter")
-    def test_presets_load_with_format_migration(self, mock_arg_converter, mock_eventbus, mock_config):
+    def test_presets_load_with_format_migration(self, mock_arg_converter, mock_config):
         """Test loading presets with old format that needs migration."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_arg_converter.return_value = []  # Mock successful CLI parsing
 
         # Old format preset with 'format' field instead of 'cli'
@@ -233,12 +220,10 @@ class TestPresets:
             assert loaded_preset.id is not None
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_validate_valid_preset(self, mock_eventbus, mock_config):
+    def test_presets_validate_valid_preset(self, mock_config):
         """Test validating a valid preset."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -250,12 +235,10 @@ class TestPresets:
             assert result is True
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_validate_invalid_preset(self, mock_eventbus, mock_config):
+    def test_presets_validate_invalid_preset(self, mock_config):
         """Test validating invalid presets."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -274,13 +257,11 @@ class TestPresets:
                 presets.validate("invalid_type")
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.arg_converter")
-    def test_presets_save(self, mock_arg_converter, mock_eventbus, mock_config):
+    def test_presets_save(self, mock_arg_converter, mock_config):
         """Test saving presets to file."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_arg_converter.return_value = []  # Mock successful CLI parsing
 
         test_presets = [
@@ -303,12 +284,10 @@ class TestPresets:
             assert saved_data[0]["name"] == "test1"
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_get_all(self, mock_eventbus, mock_config):
+    def test_presets_get_all(self, mock_config):
         """Test getting all presets (default + custom)."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -325,12 +304,10 @@ class TestPresets:
             assert any(p.default is True for p in all_presets)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_get_by_id(self, mock_eventbus, mock_config):
+    def test_presets_get_by_id(self, mock_config):
         """Test getting preset by ID."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -347,12 +324,10 @@ class TestPresets:
             assert found_preset.name == "test_preset"
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_get_by_name(self, mock_eventbus, mock_config):
+    def test_presets_get_by_name(self, mock_config):
         """Test getting preset by name."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -368,12 +343,10 @@ class TestPresets:
             assert found_preset.cli == "--test"
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_get_nonexistent(self, mock_eventbus, mock_config):
+    def test_presets_get_nonexistent(self, mock_config):
         """Test getting non-existent preset returns None."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -384,12 +357,10 @@ class TestPresets:
             assert found_preset is None
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_get_empty_parameter(self, mock_eventbus, mock_config):
+    def test_presets_get_empty_parameter(self, mock_config):
         """Test getting preset with empty string returns None."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -399,12 +370,10 @@ class TestPresets:
             assert presets.get(None) is None
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_has_method(self, mock_eventbus, mock_config):
+    def test_presets_has_method(self, mock_config):
         """Test has method for checking preset existence."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -418,12 +387,10 @@ class TestPresets:
             assert presets.has("nonexistent") is False
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_clear(self, mock_eventbus, mock_config):
+    def test_presets_clear(self, mock_config):
         """Test clearing all custom presets."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -441,12 +408,10 @@ class TestPresets:
             assert len(presets._items) == 0
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_file_permissions(self, mock_eventbus, mock_config):
+    def test_presets_file_permissions(self, mock_config):
         """Test that presets file gets correct permissions."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -483,12 +448,10 @@ class TestPresets:
             assert isinstance(preset, Preset)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_attach_method(self, mock_eventbus, mock_config):
+    def test_presets_attach_method(self, mock_config):
         """Test the attach method for aiohttp integration."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_app = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -501,12 +464,10 @@ class TestPresets:
                 mock_get.assert_called_once_with("default")
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_presets_attach_default_preset_not_found(self, mock_eventbus, mock_config):
+    def test_presets_attach_default_preset_not_found(self, mock_config):
         """Test attach method when default preset is not found."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="nonexistent")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_app = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -520,12 +481,10 @@ class TestPresets:
 
     @pytest.mark.asyncio
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    async def test_presets_on_shutdown(self, mock_eventbus, mock_config):
+    async def test_presets_on_shutdown(self, mock_config):
         """Test the on_shutdown method."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_app = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -536,14 +495,12 @@ class TestPresets:
             await presets.on_shutdown(mock_app)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.LOG")
     @patch("app.library.Presets.arg_converter")
-    def test_presets_load_invalid_preset_in_file(self, mock_arg_converter, mock_log, mock_eventbus, mock_config):
+    def test_presets_load_invalid_preset_in_file(self, mock_arg_converter, mock_log, mock_config):
         """Test loading file with some invalid presets."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
         mock_arg_converter.return_value = []  # Mock successful CLI parsing
 
         # Mix of valid and invalid presets
@@ -570,13 +527,11 @@ class TestPresets:
             mock_log.error.assert_called()
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
     @patch("app.library.Presets.LOG")
-    def test_presets_save_with_invalid_preset(self, mock_log, mock_eventbus, mock_config):
+    def test_presets_save_with_invalid_preset(self, mock_log, mock_config):
         """Test saving presets with some invalid ones."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         # Create preset with invalid CLI that will fail validation
         valid_preset = Preset(name="valid", cli="--valid-option")
@@ -596,12 +551,10 @@ class TestPresets:
             mock_log.error.assert_called()
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_preset_priority_validation_integer(self, mock_eventbus, mock_config):
+    def test_preset_priority_validation_integer(self, mock_config):
         """Test that priority must be an integer."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -614,12 +567,10 @@ class TestPresets:
                 presets.validate(invalid_preset)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_preset_priority_validation_negative(self, mock_eventbus, mock_config):
+    def test_preset_priority_validation_negative(self, mock_config):
         """Test that priority must be >= 0."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -632,12 +583,10 @@ class TestPresets:
                 presets.validate(invalid_preset)
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_preset_priority_sorting(self, mock_eventbus, mock_config):
+    def test_preset_priority_sorting(self, mock_config):
         """Test that presets are sorted by priority in descending order."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
@@ -661,19 +610,16 @@ class TestPresets:
             assert non_default[2].priority == 1
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_preset_priority_default_zero(self, mock_eventbus, mock_config):
+    def test_preset_priority_default_zero(self, mock_config):
         """Test that priority defaults to 0 if not specified."""
         preset = Preset(name="test")
         assert preset.priority == 0
 
     @patch("app.library.Presets.Config")
-    @patch("app.library.Presets.EventBus")
-    def test_preset_priority_migration(self, mock_eventbus, mock_config):
+    def test_preset_priority_migration(self, mock_config):
         """Test that old presets without priority get it added on load."""
         mock_config_instance = Mock(config_path="/tmp", default_preset="default")
         mock_config.get_instance.return_value = mock_config_instance
-        mock_eventbus.get_instance.return_value = Mock()
 
         with tempfile.TemporaryDirectory() as temp_dir:
             presets_file = Path(temp_dir) / "presets.json"
