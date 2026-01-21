@@ -398,7 +398,7 @@ const updateItem = async ({ reference, item: updatedItem }: {
 }
 
 const editItem = (_item: Condition): void => {
-  item.value = { ..._item }
+  item.value = JSON.parse(JSON.stringify(_item)) as Condition
   itemRef.value = _item.id
   toggleForm.value = true
 }

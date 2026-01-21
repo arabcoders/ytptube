@@ -56,7 +56,7 @@
             </p>
 
             <p class="control" v-if="notifications.length > 0">
-              <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
+              <button class="button is-info" @click="loadContent(page)" :class="{ 'is-loading': isLoading }"
                 :disabled="isLoading || notifications.length < 1">
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
@@ -71,8 +71,13 @@
         </div>
       </div>
 
+      <div class="column is-12" v-if="!toggleForm && paging?.total_pages > 1">
+        <Pager :page="paging.page" :last_page="paging.total_pages" :isLoading="isLoading"
+          @navigate="async (newPage) => { page = newPage; await loadContent(newPage); }" />
+      </div>
+
       <div class="column is-12" v-if="toggleForm">
-        <NotificationForm :addInProgress="addInProgress" :reference="targetRef as string" :item="target"
+        <NotificationForm :addInProgress="addInProgress" :reference="targetRef" :item="target"
           @cancel="resetForm(true);" @submit="updateItem" :allowedEvents="allowedEvents" />
       </div>
     </div>
@@ -171,12 +176,6 @@
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
                     </a>
                   </div>
-                  <div class="control">
-                    <button @click="item.raw = !item.raw">
-                      <span class="icon"><i class="fa-solid"
-                          :class="{ 'fa-arrow-down': !item?.raw, 'fa-arrow-up': item?.raw }" /></span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </header>
@@ -194,11 +193,6 @@
                   <span class="icon"><i class="fa-solid fa-heading" /></span>
                   <span>Headers: {{item.request.headers.map(h => h.key).join(', ')}}</span>
                 </p>
-              </div>
-            </div>
-            <div class="card-content" v-if="item?.raw">
-              <div class="content">
-                <pre><code>{{ JSON.stringify(cleanObject(item, ['raw']), null, 2) }}</code></pre>
               </div>
             </div>
             <div class="card-footer mt-auto">
@@ -272,19 +266,28 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import type { notification, notificationImport } from '~/types/notification'
+import type { notification } from '~/types/notification'
 import { useConfirm } from '~/composables/useConfirm'
-
-type notificationItemWithUI = notification & { raw?: boolean }
+import { useNotifications } from '~/composables/useNotifications'
+import type { ImportedItem } from '~/types'
 
 const toast = useNotification()
-const socket = useSocketStore()
 const box = useConfirm()
-const display_style = useStorage<string>("tasks_display_style", "cards")
+const display_style = useStorage<string>('notification_display_style', 'cards')
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-const allowedEvents = ref<string[]>([])
-const notifications = ref<notificationItemWithUI[]>([])
+const notificationsStore = useNotifications()
+const notifications = notificationsStore.notifications
+const paging = notificationsStore.pagination
+const allowedEvents = notificationsStore.events
+const isLoading = notificationsStore.isLoading
+const addInProgress = notificationsStore.addInProgress
+const lastError = notificationsStore.lastError
+
+const page = ref(1)
+const targetRef = ref<number | undefined>(undefined)
+const toggleForm = ref(false)
+const sendingTest = ref(false)
 
 const defaultState = (): notification => ({
   name: '',
@@ -295,21 +298,15 @@ const defaultState = (): notification => ({
 })
 
 const target = ref<notification>(defaultState())
-const targetRef = ref<string | null>('')
-const toggleForm = ref(false)
-const isLoading = ref(false)
-const initialLoad = ref(true)
-const addInProgress = ref(false)
-const sendingTest = ref(false)
-
 const query = ref<string>('')
 const toggleFilter = ref(false)
 
-const filteredTargets = computed<notificationItemWithUI[]>(() => {
-  const q = query.value?.toLowerCase();
-  if (!q) return notifications.value;
-  return notifications.value.filter((item: notificationItemWithUI) => deepIncludes(item, q, new WeakSet()));
-});
+const filteredTargets = computed<notification[]>(() => {
+  const q = query.value?.toLowerCase()
+  const items = notifications.value.map(item => ({ ...item })) as notification[]
+  if (!q) return items
+  return items.filter((item: notification) => deepIncludes(item, q, new WeakSet()))
+})
 
 watch(toggleFilter, (val) => {
   if (!val) {
@@ -317,68 +314,16 @@ watch(toggleFilter, (val) => {
   }
 })
 
-watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await reloadContent(true)
-    initialLoad.value = false
-  }
-})
-
-const reloadContent = async (fromMounted = false) => {
-  try {
-    isLoading.value = true
-    const response = await request('/api/notifications')
-
-    if (fromMounted && !response.ok) {
-      return
-    }
-
-    notifications.value = []
-
-    const data = await response.json()
-    if (data.length < 1) {
-      return
-    }
-
-    allowedEvents.value = data.allowedTypes
-    notifications.value = data.notifications
-  } catch (e) {
-    if (fromMounted) {
-      return
-    }
-    console.error(e)
-    toast.error('Failed to fetch notifications.')
-  } finally {
-    isLoading.value = false
-  }
+const loadContent = async (pageNumber = page.value) => {
+  await notificationsStore.loadNotifications(pageNumber)
 }
 
 const resetForm = (closeForm = false) => {
   target.value = defaultState()
-  targetRef.value = null
+  targetRef.value = undefined
   if (closeForm) {
     toggleForm.value = false
   }
-}
-
-const updateData = async (items: notification[]) => {
-  const response = await request('/api/notifications', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(items),
-  })
-
-  const data = await response.json()
-
-  if (200 !== response.status) {
-    toast.error(`Failed to update notifications. ${data.error}`)
-    return false
-  }
-
-  notifications.value = data.notifications
-  return true
 }
 
 const deleteItem = async (item: notification) => {
@@ -386,65 +331,38 @@ const deleteItem = async (item: notification) => {
     return
   }
 
-  const index = notifications.value.findIndex(i => i?.id === item.id)
-  if (0 <= index) {
-    notifications.value.splice(index, 1)
-  } else {
+  if (!item.id) {
     toast.error('Notification target not found.')
-    await reloadContent()
     return
   }
 
-  const status = await updateData(notifications.value)
-  if (!status) return
-
-  toast.success('Notification target deleted.')
+  await notificationsStore.deleteNotification(item.id)
 }
 
 const toggleEnabled = async (item: notification) => {
-  const index = notifications.value.findIndex(i => i?.id === item.id)
-  if (-1 === index) {
+  if (!item.id) {
     toast.error('Notification target not found.')
     return
   }
 
-  const target = notifications.value[index]
-  if (!target) {
-    toast.error('Notification target not found.')
-    return
-  }
-
-  target.enabled = !target.enabled
-  const status = await updateData(notifications.value)
-  if (status) {
-    toast[target.enabled ? 'success' : 'warning'](`Notification is ${target.enabled ? 'enabled' : 'disabled'}.`)
-  }
+  await notificationsStore.patchNotification(item.id, { enabled: !item.enabled })
 }
 
-const updateItem = async ({ reference, item }: { reference: string | null, item: notification }) => {
+const updateItem = async ({ reference, item }: { reference: number | undefined, item: notification }) => {
   if (reference) {
-    const index = notifications.value.findIndex(i => i?.id === reference)
-    if (0 <= index) {
-      notifications.value[index] = item
-    }
+    await notificationsStore.updateNotification(reference, item)
   } else {
-    notifications.value.push(item)
+    await notificationsStore.createNotification(item)
   }
 
-  try {
-    const status = await updateData(notifications.value)
-    if (!status) return
-
-    toast.success(`Notification target ${reference ? 'updated' : 'added'}.`)
+  if (!lastError.value) {
     resetForm(true)
-  } finally {
-    addInProgress.value = false
   }
 }
 
 const editItem = (item: notification) => {
-  target.value = item
-  targetRef.value = item.id ?? null
+  target.value = JSON.parse(JSON.stringify(item)) as notification
+  targetRef.value = item.id ?? undefined
   toggleForm.value = true
 }
 
@@ -460,31 +378,33 @@ const sendTest = async () => {
     sendingTest.value = true
     const response = await request('/api/notifications/test', { method: 'POST' })
 
-    if (200 !== response.status) {
+    if (!response.ok) {
       const data = await response.json()
-      toast.error(`Failed to send test notification. ${data.error}`)
+      const message = await parse_api_error(data)
+      toast.error(`Failed to send test notification. ${message}`)
       return
     }
 
     toast.success('Test notification sent.')
-  } catch (e: any) {
-    console.error(e)
-    toast.error(`Failed to send test notification. ${e.message}`)
+  } catch (error: any) {
+    console.error(error)
+    const message = error?.message || 'Unknown error'
+    toast.error(`Failed to send test notification. ${message}`)
   } finally {
     sendingTest.value = false
   }
 }
 
-onMounted(async () => socket.isConnected ? await reloadContent(true) : '')
+onMounted(async () => await notificationsStore.loadNotifications(page.value))
 
 const exportItem = async (item: notification) => {
-  const data: notificationImport = {
+  const data: notification & ImportedItem = {
     ...JSON.parse(JSON.stringify(item)),
     _type: 'notification',
     _version: '1.0',
   }
 
-  const keys = ['id', 'raw'] as const
+  const keys = ['id', 'raw']
   keys.forEach(k => {
     if (Object.prototype.hasOwnProperty.call(data, k)) {
       const { [k]: _, ...rest } = data as any
@@ -493,9 +413,7 @@ const exportItem = async (item: notification) => {
   })
 
   if (data.request?.headers?.length) {
-    data.request.headers = data.request.headers.filter(
-      h => 'authorization' !== h.key.toLowerCase(),
-    )
+    data.request.headers = data.request.headers.filter(h => 'authorization' !== h.key.toLowerCase())
   }
 
   copyText(encode(data))

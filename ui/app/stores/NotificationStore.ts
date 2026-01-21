@@ -67,7 +67,6 @@ export const useNotificationStore = defineStore('notifications', () => {
   const markAllRead = () => notifications.value.forEach(n => n.seen = true)
 
   const markRead = (id: string) => {
-    console.log(`Marking notification ${id} as read`)
     const n = notifications.value.find(n => n.id === id)
     if (!n) {
       return

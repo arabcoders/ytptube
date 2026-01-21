@@ -19,6 +19,7 @@ class CEFeature(str, Enum):
     PRESETS = "presets"
     DL_FIELDS = "dl_fields"
     CONDITIONS = "conditions"
+    NOTIFICATIONS = "notifications"
 
     def __str__(self) -> str:
         return self.value

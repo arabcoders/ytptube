@@ -1,8 +1,9 @@
 import logging
 import re
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from enum import Enum
 from functools import wraps
+from typing import Any
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -25,15 +26,15 @@ class Route:
         method (str): The HTTP method (GET, POST, etc.).
         path (str): The path for the route.
         name (str): The name of the route.
-        handler (Awaitable): The function that handles the route.
+        handler (Callable[..., Awaitable]): The function that handles the route.
 
     """
 
-    def __init__(self, method: str, path: str, name: str, handler: Awaitable):
+    def __init__(self, method: str, path: str, name: str, handler: Callable[..., Awaitable[Any]]):
         self.method: str = method.upper()
         self.path: str = path
         self.name: str = name
-        self.handler: Awaitable = handler
+        self.handler: Callable[..., Awaitable[Any]] = handler
 
 
 ROUTES: dict[str, dict[str, Route]] = {}
@@ -55,7 +56,12 @@ def make_route_name(method: str, path: str) -> str:
     return f"{method}:" + ".".join(segments or ["root"])
 
 
-def route(method: RouteType | str | list[str], path: str, name: str | None = None, **kwargs) -> Awaitable:
+def route(
+    method: RouteType | str | list[str],
+    path: str,
+    name: str | None = None,
+    **kwargs,
+) -> Callable[[Callable[..., Awaitable[Any]]], Callable[..., Awaitable[Any]]]:
     """
     Decorator to mark a method as an HTTP route handler.
 
@@ -71,7 +77,7 @@ def route(method: RouteType | str | list[str], path: str, name: str | None = Non
     """
     methods = [method] if isinstance(method, (str, RouteType)) else method
 
-    def decorator(func):
+    def decorator(func: Callable[..., Awaitable[Any]]):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             return await func(*args, **kwargs)
@@ -97,7 +103,13 @@ def route(method: RouteType | str | list[str], path: str, name: str | None = Non
     return decorator
 
 
-def add_route(method: RouteType | str | list[str], path: str, handler: Awaitable, name: str | None = None, **kwargs):
+def add_route(
+    method: RouteType | str | list[str],
+    path: str,
+    handler: Callable[..., Awaitable[Any]],
+    name: str | None = None,
+    **kwargs,
+):
     """
     Decorator to mark a method as an HTTP route handler.
 
@@ -129,7 +141,7 @@ def add_route(method: RouteType | str | list[str], path: str, handler: Awaitable
             )
 
 
-def get_route(route_type: RouteType, name: str) -> dict[str, Route] | None:
+def get_route(route_type: RouteType, name: str) -> Route | None:
     """
     Get the route information by name.
 

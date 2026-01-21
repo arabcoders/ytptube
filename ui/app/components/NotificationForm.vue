@@ -92,7 +92,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
                   <label class="label is-inline" for="method">
                     Request method
@@ -117,7 +117,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
                   <label class="label is-inline" for="type">
                     Request Type
@@ -207,7 +207,7 @@
                 </div>
               </div>
 
-              <div class="column" :class="isApprise ? 'is-12' : 'is-6-tablet is-12-mobile'">
+              <div class="column" :class="isAppriseTarget ? 'is-12' : 'is-6-tablet is-12-mobile'">
                 <div class="field">
                   <label class="label is-inline" for="enabled">
                     <span class="icon"><i class="fa-solid fa-power-off" /></span>
@@ -227,7 +227,7 @@
                 </div>
               </div>
 
-              <div class="column is-6-tablet is-12-mobile" v-if="!isApprise">
+              <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
                   <label class="label is-inline" for="data_key">
                     Data field
@@ -247,7 +247,7 @@
                 </div>
               </div>
 
-              <div class="column is-12" v-if="!isApprise">
+              <div class="column is-12" v-if="!isAppriseTarget">
                 <div class="field">
                   <label class="label is-inline is-unselectable">
                     Optional Headers - <button type="button" class="has-text-link"
@@ -327,22 +327,25 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import type { notification, notificationImport } from '~/types/notification'
+import type { notification } from '~/types/notification'
 import { useConfirm } from '~/composables/useConfirm'
+import { useNotification } from '~/composables/useNotification'
+import type { ImportedItem } from '~/types'
 
 const emitter = defineEmits(['cancel', 'submit'])
 const toast = useNotification()
 const box = useConfirm()
 const config = useConfigStore()
+const { isApprise } = useNotifications()
 
 const props = defineProps({
   reference: {
-    type: String,
+    type: Number,
     required: false,
     default: null,
   },
   allowedEvents: {
-    type: Array as () => string[],
+    type: Array as () => readonly string[],
     required: true,
   },
   item: {
@@ -374,7 +377,7 @@ onMounted(() => {
 const checkInfo = async () => {
   let required: string[]
 
-  if (!isApprise.value) {
+  if (!isAppriseTarget.value) {
     required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key']
   } else {
     required = ['name', 'request.url']
@@ -398,7 +401,7 @@ const checkInfo = async () => {
     }
   }
 
-  if (!isApprise.value) {
+  if (!isAppriseTarget.value) {
     try {
       new URL(form.request.url)
     } catch {
@@ -427,7 +430,7 @@ const importItem = async () => {
   }
 
   try {
-    const item = decode(val) as notificationImport
+    const item = decode(val) as notification & ImportedItem
 
     if ('notification' !== item._type) {
       toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`)
@@ -483,6 +486,6 @@ const importItem = async () => {
   }
 }
 
-const isApprise = computed(() => form.request.url && !form.request.url.startsWith('http'))
+const isAppriseTarget = computed(() => form.request.url && isApprise(form.request.url))
 const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
 </script>

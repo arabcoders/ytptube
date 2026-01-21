@@ -2,7 +2,7 @@
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
       <form autocomplete="off" id="dlFieldForm" @submit.prevent="checkInfo">
-        <div class="card is-flex is-full-height is-flex-direction-column">
+        <div class="card">
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
@@ -21,8 +21,8 @@
             </div>
           </div>
 
-          <div class="card-content is-flex-grow-1">
-            <div class="columns is-multiline is-mobile">
+          <div class="card-content">
+            <div class="columns is-multiline">
               <div class="column is-12" v-if="showImport || !reference">
                 <label class="label is-inline" for="import_string">
                   <span class="icon"><i class="fa-solid fa-file-import" /></span>
@@ -46,6 +46,32 @@
                   <span>You can use this field to populate the data, using shared string.</span>
                 </span>
               </div>
+
+              <div class="column is-6 is-12-mobile">
+                <div class="field">
+                  <label class="label">
+                    <span class="icon"><i class="fas fa-font" /></span>
+                    <span>Field Name</span>
+                  </label>
+                  <input type="text" v-model="form.name" class="input" :disabled="addInProgress" />
+                  <span class="help is-bold">
+                    The name of the field, it will be shown in the UI.
+                  </span>
+                </div>
+              </div>
+              <div class="column is-6 is-12-mobile">
+                <div class="field">
+                  <label class="label">
+                    <span class="icon"><i class="fas fa-info-circle" /></span>
+                    <span>Field Description</span>
+                  </label>
+                  <input type="text" v-model="form.description" class="input" :disabled="addInProgress" />
+                  <span class="help is-bold">
+                    A short description of the field, it will be shown in the UI.
+                  </span>
+                </div>
+              </div>
+
               <div class="column is-6 is-12-mobile">
                 <div class="field">
                   <label class="label">
@@ -62,18 +88,7 @@
                   </span>
                 </div>
               </div>
-              <div class="column is-6 is-12-mobile">
-                <div class="field">
-                  <label class="label">
-                    <span class="icon"><i class="fas fa-font" /></span>
-                    <span>Field Name</span>
-                  </label>
-                  <input type="text" v-model="form.name" class="input" :disabled="addInProgress" />
-                  <span class="help is-bold">
-                    The name of the field, it will be shown in the UI.
-                  </span>
-                </div>
-              </div>
+
               <div class="column is-6 is-12-mobile">
                 <div class="field">
                   <label class="label">
@@ -87,18 +102,7 @@
                   </span>
                 </div>
               </div>
-              <div class="column is-6 is-12-mobile">
-                <div class="field">
-                  <label class="label">
-                    <span class="icon"><i class="fas fa-info-circle" /></span>
-                    <span>Field Description</span>
-                  </label>
-                  <input type="text" v-model="form.description" class="input" :disabled="addInProgress" />
-                  <span class="help is-bold">
-                    A short description of the field, it will be shown in the UI.
-                  </span>
-                </div>
-              </div>
+
 
               <div class="column is-6 is-12-mobile">
                 <div class="field">
