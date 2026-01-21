@@ -75,3 +75,9 @@ def format_validation_errors(exc: ValidationError) -> list[dict[str, Any]]:
         }
         for error in exc.errors()
     ]
+
+
+def gen_random(length: int = 16) -> str:
+    import secrets
+
+    return "".join(secrets.token_urlsafe(length)[:length])

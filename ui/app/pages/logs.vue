@@ -110,14 +110,16 @@ code {
 </template>
 
 <script setup lang="ts">
+import { fetchEventSource } from '@microsoft/fetch-event-source'
+import type { EventSourceMessage } from '@microsoft/fetch-event-source'
 import moment from 'moment'
 import { useStorage } from '@vueuse/core'
 import type { log_line } from '~/types/logs'
+import { parse_api_error, uri } from '~/utils'
 
 let scrollTimeout: NodeJS.Timeout | null = null
 
 const toast = useNotification()
-const socket = useSocketStore()
 const config = useConfigStore()
 const route = useRoute()
 
@@ -126,6 +128,7 @@ const bottomMarker = useTemplateRef<HTMLDivElement>('bottomMarker')
 const textWrap = useStorage<boolean>('logs_wrap', true)
 const bg_enable = useStorage<boolean>('random_bg', true)
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
+const sseController = ref<AbortController | null>(null)
 
 const logs = ref<Array<log_line>>([])
 const offset = ref<number>(0)
@@ -269,8 +272,27 @@ const scrollToBottom = (fast = false) => {
   })
 }
 
-const log_handler = (data: log_line) => {
-  logs.value.push(data)
+const handleStreamMessage = (event: EventSourceMessage) => {
+  if ('log_lines' !== event.event) {
+    return
+  }
+
+  if (!event.data) {
+    return
+  }
+
+  let payload: log_line | null = null
+  try {
+    payload = JSON.parse(event.data) as log_line
+  } catch {
+    payload = null
+  }
+
+  if (!payload) {
+    return
+  }
+
+  logs.value.push(payload)
 
   nextTick(() => {
     if (autoScroll.value && bottomMarker.value) {
@@ -279,28 +301,71 @@ const log_handler = (data: log_line) => {
   })
 }
 
+const startLogStream = async () => {
+  sseController.value?.abort()
+  const controller = new AbortController()
+  sseController.value = controller
+
+  try {
+    await fetchEventSource(uri('/api/logs/stream'), {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/event-stream',
+      },
+      credentials: 'same-origin',
+      signal: controller.signal,
+      onopen: async (response) => {
+        if (response.ok) {
+          return
+        }
+        let message = response.statusText || 'Failed to start log stream.'
+        try {
+          message = await parse_api_error(response.clone().json())
+        } catch {
+          try {
+            const text = await response.text()
+            if (text) {
+              message = text
+            }
+          } catch {
+            message = response.statusText || 'Failed to start log stream.'
+          }
+        }
+        throw new Error(message)
+      },
+      onmessage: handleStreamMessage,
+      onerror: (error) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        console.error('Log stream error:', error)
+      },
+    })
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      console.error('Log stream error:', error)
+    }
+  } finally {
+    if (controller === sseController.value) {
+      sseController.value = null
+    }
+  }
+}
+
 onMounted(async () => {
   await fetchLogs()
-  socket.on('log_lines', log_handler)
-  socket.emit('subscribe', 'log_lines')
+  await startLogStream()
   if (bg_enable.value) {
     document.querySelector('body')?.setAttribute("style", `opacity: 1.0`)
   }
 })
 
 onBeforeUnmount(() => {
-  socket.emit('unsubscribe', 'log_lines')
-  socket.off('log_lines', log_handler)
+  sseController.value?.abort()
   if (bg_enable.value) {
     document.querySelector('body')?.setAttribute("style", `opacity: ${bg_opacity.value}`)
   }
-})
-
-onBeforeUnmount(() => {
-  socket.emit('unsubscribe', 'log_lines')
-  socket.off('log_lines', log_handler)
   if (scrollTimeout) clearTimeout(scrollTimeout)
-
 })
 
 useHead({ title: 'Logs' })

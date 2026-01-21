@@ -112,18 +112,19 @@
 </template>
 
 <script setup lang="ts">
+import { fetchEventSource } from '@microsoft/fetch-event-source'
+import type { EventSourceMessage } from '@microsoft/fetch-event-source'
 import '@xterm/xterm/css/xterm.css'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { useStorage } from '@vueuse/core'
-import { disableOpacity, enableOpacity } from '~/utils'
+import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils'
 import InputAutocomplete from '~/components/InputAutocomplete.vue'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import { useDialog } from '~/composables/useDialog'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 
 const config = useConfigStore()
-const socket = useSocketStore()
 const toast = useNotification()
 const dialog = useDialog()
 
@@ -137,6 +138,7 @@ const isLoading = ref<boolean>(false)
 const storedCommand = useStorage<string>('console_command', '')
 const commandHistory = useStorage<string[]>('console_command_history', [])
 const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false)
+const sseController = ref<AbortController | null>(null)
 const MAX_HISTORY_ITEMS = 50
 
 const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
@@ -228,6 +230,87 @@ const handle_event = () => {
   terminalFit.value?.fit()
 }
 
+const handleStreamMessage = (event: EventSourceMessage) => {
+  if (!terminal.value) {
+    return
+  }
+
+  let payload: { type?: string; line?: string; exitcode?: number } | null = null
+  if (event.data) {
+    try {
+      payload = JSON.parse(event.data) as { type?: string; line?: string; exitcode?: number }
+    } catch {
+      payload = null
+    }
+  }
+
+  if ('output' === event.event) {
+    terminal.value.writeln(payload?.line ?? '')
+    return
+  }
+
+  if ('close' === event.event) {
+    isLoading.value = false
+    sseController.value?.abort()
+  }
+}
+
+const startStream = async (cmd: string) => {
+  sseController.value?.abort()
+  const controller = new AbortController()
+  sseController.value = controller
+  isLoading.value = true
+
+  try {
+    await fetchEventSource(uri('/api/system/terminal'), {
+      method: 'POST',
+      body: JSON.stringify({ command: cmd }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      },
+      credentials: 'same-origin',
+      signal: controller.signal,
+      onopen: async (response) => {
+        if (response.ok) {
+          return
+        }
+        let message = response.statusText || 'Failed to start command stream.'
+        try {
+          message = await parse_api_error(response.clone().json())
+        } catch {
+          try {
+            const text = await response.text()
+            if (text) {
+              message = text
+            }
+          } catch {
+            message = response.statusText || 'Failed to start command stream.'
+          }
+        }
+        throw new Error(message)
+      },
+      onmessage: handleStreamMessage,
+      onerror: (error) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        terminal.value?.writeln(`Error: ${error}`)
+        isLoading.value = false
+      },
+    })
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      terminal.value?.writeln(`Error: ${error}`)
+      isLoading.value = false
+    }
+  } finally {
+    if (controller === sseController.value) {
+      sseController.value = null
+    }
+  }
+}
+
 const ensureTerminal = async () => {
   if (terminal.value) {
     return
@@ -284,8 +367,7 @@ const runCommand = async () => {
     return
   }
 
-  socket.emit('cli_post', cmd)
-  isLoading.value = true
+  await startStream(cmd)
   terminal.value?.writeln(`user@YTPTube ~`)
   terminal.value?.writeln(`$ yt-dlp ${command.value}`)
   storedCommand.value = ''
@@ -342,24 +424,11 @@ const clearHistory = async () => {
 
 const removeFromHistory = (index: number) => commandHistory.value = commandHistory.value.filter((_, i) => i !== index)
 
-const writer = (s: string) => {
-  if (!terminal.value) {
-    return
-  }
-  terminal.value.writeln(JSON.parse(s).data.line)
-}
-
-const loader = () => isLoading.value = false
-
 watch(isMultiLineInput, () => focusInput())
 
 onMounted(async () => {
   document.addEventListener('resize', handle_event);
   focusInput()
-  socket.off('cli_close', loader)
-  socket.off('cli_output', writer)
-  socket.on('cli_close', loader)
-  socket.on('cli_output', writer)
 
   disableOpacity()
 
@@ -372,8 +441,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  socket.off('cli_close', loader)
-  socket.off('cli_output', writer)
+  sseController.value?.abort()
   document.removeEventListener('resize', handle_event)
   enableOpacity()
 });

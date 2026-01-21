@@ -105,7 +105,6 @@ class TestEvents:
 
         assert isinstance(debug_events, list)
         assert Events.ITEM_UPDATED in debug_events
-        assert Events.CLI_OUTPUT in debug_events
 
 
 class TestEvent:
@@ -782,10 +781,6 @@ class TestEventBus:
 
         assert Events.TEST in bus._listeners
         assert len(bus._listeners[Events.TEST]) == 1
-
-        # Name should be a UUID
-        subscriber_name = bus._listeners[Events.TEST][0][0]
-        assert len(subscriber_name) == 36  # UUID string length
 
     @patch("app.library.config.Config")
     @patch("app.library.BackgroundWorker.BackgroundWorker")

@@ -1,10 +1,11 @@
 import asyncio
 import datetime
 import logging
-import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+
+from app.features.core.utils import gen_random
 
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
@@ -50,19 +51,12 @@ class Events:
     PAUSED: str = "paused"
     RESUMED: str = "resumed"
 
-    CLI_POST: str = "cli_post"
-    CLI_CLOSE: str = "cli_close"
-    CLI_OUTPUT: str = "cli_output"
-
     TASKS_ADD: str = "task_add"
     TASK_DISPATCHED: str = "task_dispatched"
     TASK_FINISHED: str = "task_finished"
     TASK_ERROR: str = "task_error"
 
     SCHEDULE_ADD: str = "schedule_add"
-
-    SUBSCRIBED: str = "subscribed"
-    UNSUBSCRIBED: str = "unsubscribed"
 
     def get_all() -> list:
         """
@@ -101,8 +95,6 @@ class Events:
             Events.ITEM_STATUS,
             Events.PAUSED,
             Events.RESUMED,
-            Events.CLI_CLOSE,
-            Events.CLI_OUTPUT,
         ]
 
     def only_debug() -> list:
@@ -113,7 +105,7 @@ class Events:
             list: The list of debug events.
 
         """
-        return [Events.ITEM_UPDATED, Events.CLI_OUTPUT]
+        return [Events.ITEM_UPDATED]
 
 
 @dataclass(kw_only=True)
@@ -122,7 +114,7 @@ class Event:
     Event is a data transfer object that represents an event that was emitted.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
+    id: str = field(default_factory=lambda: str(gen_random(16)), init=False)
     """The id of the event."""
 
     created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.UTC).isoformat()))
@@ -258,7 +250,7 @@ class EventBus(metaclass=Singleton):
                 event = [event]
 
         if not name:
-            name = str(uuid.uuid4())
+            name = gen_random(12)
 
         for e in event:
             if e not in all_events:

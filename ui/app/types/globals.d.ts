@@ -2,6 +2,6 @@ export { }
 
 declare global {
   interface Window {
-    ws?: unknown
+    ws?: WebSocket
   }
 }

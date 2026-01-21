@@ -1,11 +1,19 @@
-import { io, type Socket as IOSocket, type SocketOptions, type ManagerOptions } from "socket.io-client"
 import { ref, readonly } from 'vue'
 import { defineStore } from 'pinia'
 import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
-import type { ConfigUpdatePayload } from "~/types/sockets";
+import type {
+  ConfigUpdatePayload,
+  WebSocketClientEmits,
+  WebSocketEnvelope,
+  WSEP as WSEP
+} from "~/types/sockets";
 
 export type connectionStatus = 'connected' | 'disconnected' | 'connecting';
+
+type SocketHandler = (...args: unknown[]) => void
+type HandlerRegistry = Map<SocketHandler, SocketHandler>
+type KnownEvent = keyof WSEP
 
 export const useSocketStore = defineStore('socket', () => {
   const runtimeConfig = useRuntimeConfig()
@@ -13,30 +21,83 @@ export const useSocketStore = defineStore('socket', () => {
   const stateStore = useStateStore()
   const toast = useNotification()
 
-  const socket = ref<IOSocket | null>(null)
+  const socket = ref<WebSocket | null>(null)
   const isConnected = ref<boolean>(false)
   const connectionStatus = ref<connectionStatus>('disconnected')
   const error = ref<string | null>(null)
   const error_count = ref<number>(0)
   const wasHidden = ref<boolean>(false)
   const reconnectTimeout = ref<NodeJS.Timeout | null>(null)
+  const manualDisconnect = ref<boolean>(false)
+  const reconnectAttempts = ref<number>(0)
 
-  const emit = (event: string, data?: any): any => socket.value?.emit(event, data)
-  const on = (event: string | string[], callback: (...args: any[]) => void, withEvent: boolean = false) => {
-    if (!Array.isArray(event)) {
-      event = [event]
+  const handlers = new Map<string, HandlerRegistry>()
+
+  const emit = <K extends keyof WebSocketClientEmits>(event: K, data: WebSocketClientEmits[K]): void => {
+    if (!socket.value || WebSocket.OPEN !== socket.value.readyState) {
+      return
     }
-    event.forEach(e => socket.value?.on(e, (...args) => true === withEvent ? callback(e, ...args) : callback(...args)))
+    socket.value.send(JSON.stringify({ event, data }))
   }
 
-  const off = (event: string | string[], callback?: (...args: any[]) => void): any => {
-    if (!Array.isArray(event)) {
-      event = [event]
-    }
-    event.forEach(e => socket.value?.off(e, callback));
+  function on<K extends KnownEvent>(event: K, callback: (payload: WSEP[K]) => void): void
+  function on<K extends KnownEvent>(event: K[], callback: (payload: WSEP[K]) => void): void
+  function on<K extends KnownEvent>(
+    event: K | K[],
+    callback: (event: K, payload: WSEP[K]) => void,
+    withEvent: true
+  ): void
+  function on(event: string | string[], callback: SocketHandler, withEvent?: boolean): void
+  function on(event: string | string[], callback: SocketHandler, withEvent: boolean = false): void {
+    const events = Array.isArray(event) ? event : [event]
+    events.forEach((eventName) => {
+      if (!handlers.has(eventName)) {
+        handlers.set(eventName, new Map())
+      }
+
+      const registry = handlers.get(eventName) as HandlerRegistry
+      const handler = true === withEvent
+        ? (payload: unknown) => callback(eventName, payload)
+        : (payload: unknown) => callback(payload)
+
+      registry.set(callback, handler)
+    })
   }
 
-  const getSessionId = (): string | null => socket.value?.id || null
+  function off<K extends KnownEvent>(event: K, callback?: (payload: WSEP[K]) => void): void
+  function off<K extends KnownEvent>(event: K[], callback?: (payload: WSEP[K]) => void): void
+  function off(event: string | string[], callback?: SocketHandler): void
+  function off(event: string | string[], callback?: SocketHandler): void {
+    const events = Array.isArray(event) ? event : [event]
+    events.forEach((eventName) => {
+      const registry = handlers.get(eventName)
+      if (!registry) {
+        return
+      }
+
+      if (!callback) {
+        registry.clear()
+        handlers.delete(eventName)
+        return
+      }
+
+      registry.delete(callback)
+      if (0 === registry.size) {
+        handlers.delete(eventName)
+      }
+    })
+  }
+
+  const getSessionId = (): string | null => null
+
+  const dispatch = (eventName: string, payload: unknown): void => {
+    const registry = handlers.get(eventName)
+    if (!registry) {
+      return
+    }
+
+    registry.forEach((handler) => handler(payload))
+  }
 
   const handleVisibilityChange = () => {
     if (document.hidden) {
@@ -78,219 +139,266 @@ export const useSocketStore = defineStore('socket', () => {
     }
   }
 
+  const scheduleReconnect = () => {
+    if (true === manualDisconnect.value || true === isConnected.value) {
+      return
+    }
+
+    if (reconnectAttempts.value >= 50) {
+      return
+    }
+
+    if (null !== reconnectTimeout.value) {
+      return
+    }
+
+    reconnectTimeout.value = setTimeout(() => {
+      reconnectAttempts.value += 1
+      reconnectTimeout.value = null
+      connect()
+    }, 5000)
+  }
+
   const reconnect = () => {
     if (true === isConnected.value) {
-      return;
+      return
     }
-    connect();
-    connectionStatus.value = 'connecting';
+    connect()
+    connectionStatus.value = 'connecting'
   }
 
   const disconnect = () => {
+    manualDisconnect.value = true
     if (null === socket.value) {
-      return;
+      return
     }
-    socket.value.disconnect();
-    socket.value = null;
-    isConnected.value = false;
-    connectionStatus.value = 'disconnected';
-    cleanupVisibilityListener();
+    socket.value.close()
+    socket.value = null
+    isConnected.value = false
+    connectionStatus.value = 'disconnected'
+    cleanupVisibilityListener()
+  }
+
+  const buildWsUrl = (): string => {
+    const basePath = runtimeConfig.app.baseURL.replace(/\/$/, '')
+    const wsPath = `${basePath}/ws?_=${Date.now()}`
+    const configuredBase = runtimeConfig.public.wss?.trim()
+
+    if (configuredBase) {
+      return new URL(wsPath, configuredBase).toString()
+    }
+
+    const scheme = 'https:' === window.location.protocol ? 'wss' : 'ws'
+    return new URL(wsPath, `${scheme}://${window.location.host}`).toString()
   }
 
   const connect = () => {
-    const opts = {
-      transports: ['websocket', 'polling'],
-      withCredentials: true,
-      reconnection: true,
-      reconnectionAttempts: 50,
-      reconnectionDelay: 5000,
-      tryAllTransports: true,
-      timeout: 10000 * 5,
-    } as Partial<ManagerOptions & SocketOptions>
-
-    let url = runtimeConfig.public.wss
-
-    if ('development' !== runtimeConfig.public?.APP_ENV) {
-      url = window.origin;
-      opts.path = `${runtimeConfig.app.baseURL.replace(/\/$/, '')}/socket.io`;
-    } else {
-      window.ws = socket.value;
+    if (socket.value && WebSocket.OPEN === socket.value.readyState) {
+      return
     }
 
-    connectionStatus.value = 'connecting';
-    socket.value = io(url, opts)
+    if (socket.value && WebSocket.CONNECTING === socket.value.readyState) {
+      return
+    }
 
-    on("connect_error", (e: any) => {
-      isConnected.value = false
-      if (null === e || undefined === e) {
-        error.value = 'Connection error: Unknown error';
-        return;
-      }
-      error.value = `Connection error: ${e.type || 'Unknown'}: ${e.message || 'Unknown error'}`;
-      error_count.value += 1
-    });
+    manualDisconnect.value = false
+    connectionStatus.value = 'connecting'
 
+    socket.value = new WebSocket(buildWsUrl())
 
-    on('connect', () => {
+    if ('development' === runtimeConfig.public?.APP_ENV) {
+      window.ws = socket.value
+    }
+
+    socket.value.addEventListener('open', () => {
       isConnected.value = true
-      connectionStatus.value = 'connected';
-      error.value = null;
+      connectionStatus.value = 'connected'
+      error.value = null
       error_count.value = 0
-    });
+      reconnectAttempts.value = 0
+      dispatch('connect', null)
+    })
 
-    on('disconnect', () => {
+    socket.value.addEventListener('close', () => {
       isConnected.value = false
-      connectionStatus.value = 'disconnected';
-      error.value = 'Disconnected from server.';
-    });
-
-    on('configuration', stream => {
-      const json = JSON.parse(stream)
-      config.setAll({
-        app: json.data.config,
-        presets: json.data.presets,
-        dl_fields: json.data.dl_fields,
-        paused: Boolean(json.data.paused)
-      } as Partial<ConfigState>)
+      connectionStatus.value = 'disconnected'
+      error.value = 'Disconnected from server.'
+      dispatch('disconnect', null)
+      scheduleReconnect()
     })
 
-    on('connected', stream => {
-      const json = JSON.parse(stream);
-      if (!json?.data) {
-        return;
-      }
-
-      if (json.data?.folders) {
-        config.add('folders', json.data.folders)
-      }
-
-      if (typeof json.data?.history_count === 'number') {
-        stateStore.setHistoryCount(json.data.history_count)
-      }
-
-      error.value = null;
+    socket.value.addEventListener('error', () => {
+      isConnected.value = false
+      connectionStatus.value = 'disconnected'
+      error.value = 'Connection error: Unknown error'
+      error_count.value += 1
+      dispatch('connect_error', { message: 'Unknown error' })
+      scheduleReconnect()
     })
 
-    on('active_queue', stream => {
-      const json = JSON.parse(stream);
-      if (!json?.data?.queue) {
-        return;
-      }
-      stateStore.addAll('queue', json.data.queue || {})
-    })
-
-    on('item_added', stream => {
-      const json = JSON.parse(stream);
-      stateStore.add('queue', json.data._id, json.data);
-      toast.success(`Item queued: ${ag(stateStore.get('queue', json.data._id, {} as StoreItem), 'title')}`);
-    });
-
-    on(['log_info', 'log_success', 'log_warning', 'log_error'], (event: string, stream: string) => {
-      const json = JSON.parse(stream);
-      const message = json?.message || json?.data?.message;
-      const data = json.data?.data || json.data || {};
-      switch (event) {
-        case 'log_info':
-          toast.info(message, data);
-          break;
-        case 'log_success':
-          toast.success(message, data);
-          break;
-        case 'log_warning':
-          toast.warning(message, data);
-          break;
-        case 'log_error':
-          toast.error(message, data);
-          break;
-      }
-    }, true);
-
-    on('item_cancelled', (stream: string) => {
-      const item = JSON.parse(stream);
-      const id = item.data._id
-
-      if (true !== stateStore.has('queue', id)) {
+    socket.value.addEventListener('message', (event: MessageEvent<string>) => {
+      let payload: WebSocketEnvelope | null = null
+      try {
+        payload = JSON.parse(event.data)
+      } catch {
         return
       }
 
-      toast.warning(`Download cancelled: ${ag(stateStore.get('queue', id, {} as StoreItem), 'title')}`);
-
-      if (true === stateStore.has('queue', id)) {
-        stateStore.remove('queue', id);
-      }
-    });
-
-    on('item_deleted', (stream: string) => {
-      const item = JSON.parse(stream);
-      const id = item.data._id
-
-      if (true !== stateStore.has('history', id)) {
+      if (!payload?.event || 'string' != typeof payload.event) {
         return
       }
 
-      stateStore.remove('history', id);
-    });
-
-    on('item_updated', (stream: string) => {
-      const json = JSON.parse(stream);
-      const id = json.data._id;
-
-      if (true === stateStore.has('history', id)) {
-        stateStore.update('history', id, json.data);
-        return;
-      }
-
-      if (true === stateStore.has('queue', id)) {
-        stateStore.update('queue', id, json.data);
-      }
-    });
-
-    on('item_moved', (stream: string) => {
-      const json = JSON.parse(stream);
-      const to = json.data.to;
-      const id = json.data.item._id;
-
-      if ('queue' === to) {
-        if (true === stateStore.has('history', id)) {
-          stateStore.remove('history', id);
+      let data = payload.data
+      if ('string' === typeof data) {
+        try {
+          data = JSON.parse(data)
+        } catch {
+          data = payload.data
         }
-        stateStore.add('queue', id, json.data.item);
       }
 
-      if ('history' === to) {
-        if (true === stateStore.has('queue', id)) {
-          stateStore.remove('queue', id);
-        }
-        stateStore.add('history', id, json.data.item);
-      }
-    });
-
-    on(['paused', 'resumed'], (event: string, data: string) => {
-      const json = JSON.parse(data);
-      const pausedState = Boolean(json.data.paused);
-      config.update('paused', pausedState);
-
-      if ('resumed' === event) {
-        toast.success('Download queue resumed.');
-        return;
-      }
-
-      toast.warning('Download queue paused.', { timeout: 10000 });
-    }, true);
-
-    on('config_update', (stream: string) => {
-      const json = JSON.parse(stream) as { data: ConfigUpdatePayload }
-      if (!json?.data) {
-        return
-      }
-      config.patch(json.data.feature, json.data.action, json.data.data)
+      dispatch(payload.event, data)
     })
 
-    setupVisibilityListener();
+    setupVisibilityListener()
   }
 
+  on('configuration', (data: WSEP['configuration']) => {
+    config.setAll({
+      app: data.data.config,
+      presets: data.data.presets,
+      dl_fields: data.data.dl_fields,
+      paused: Boolean(data.data.paused)
+    } as unknown as Partial<ConfigState>)
+  })
+
+  on('connected', (data: WSEP['connected']) => {
+    if (!data?.data) {
+      return
+    }
+
+    if (data.data.folders) {
+      config.add('folders', data.data.folders)
+    }
+
+    if ('number' === typeof data.data.history_count) {
+      stateStore.setHistoryCount(data.data.history_count)
+    }
+
+    error.value = null
+  })
+
+  on('active_queue', (data: WSEP['active_queue']) => {
+    if (!data.data.queue) {
+      return
+    }
+    stateStore.addAll('queue', data.data.queue || {})
+  })
+
+  on('item_added', (data: WSEP['item_added']) => {
+    stateStore.add('queue', data.data._id, data.data)
+    toast.success(`Item queued: ${ag(stateStore.get('queue', data.data._id, {} as StoreItem), 'title')}`)
+  })
+
+  on(['log_info', 'log_success', 'log_warning', 'log_error'], (event, data: WSEP['log_info']) => {
+    const message = 'string' === typeof data?.message
+      ? data.message
+      : String((data?.data as Record<string, unknown>)?.message ?? '')
+    const extra = (data?.data as Record<string, unknown>)?.data || data?.data || {}
+    switch (event) {
+      case 'log_info':
+        toast.info(message, extra)
+        break
+      case 'log_success':
+        toast.success(message, extra)
+        break
+      case 'log_warning':
+        toast.warning(message, extra)
+        break
+      case 'log_error':
+        toast.error(message, extra)
+        break
+    }
+  }, true)
+
+  on('item_cancelled', (data: WSEP['item_cancelled']) => {
+    const id = data.data._id
+
+    if (true !== stateStore.has('queue', id)) {
+      return
+    }
+
+    toast.warning(`Download cancelled: ${ag(stateStore.get('queue', id, {} as StoreItem), 'title')}`)
+
+    if (true === stateStore.has('queue', id)) {
+      stateStore.remove('queue', id)
+    }
+  })
+
+  on('item_deleted', (data: WSEP['item_deleted']) => {
+    const id = data.data._id
+
+    if (true !== stateStore.has('history', id)) {
+      return
+    }
+
+    stateStore.remove('history', id)
+  })
+
+  on('item_updated', (data: WSEP['item_updated']) => {
+    const id = data.data._id
+
+    if (true === stateStore.has('history', id)) {
+      stateStore.update('history', id, data.data)
+      return
+    }
+
+    if (true === stateStore.has('queue', id)) {
+      stateStore.update('queue', id, data.data)
+    }
+  })
+
+  on('item_moved', (data: WSEP['item_moved']) => {
+    const to = data.data.to
+    const id = data.data.item._id
+
+    if ('queue' === to) {
+      if (true === stateStore.has('history', id)) {
+        stateStore.remove('history', id)
+      }
+      stateStore.add('queue', id, data.data.item)
+    }
+
+    if ('history' === to) {
+      if (true === stateStore.has('queue', id)) {
+        stateStore.remove('queue', id)
+      }
+      stateStore.add('history', id, data.data.item)
+    }
+  })
+
+  on(['paused', 'resumed'], (event, data: WSEP['paused']) => {
+    const pausedState = Boolean(data.data.paused)
+    config.update('paused', pausedState)
+
+    if ('resumed' === event) {
+      toast.success('Download queue resumed.')
+      return
+    }
+
+    toast.warning('Download queue paused.', { timeout: 10000 })
+  }, true)
+
+  on('config_update', (data: WSEP['config_update']) => {
+    const configUpdate = data.data as ConfigUpdatePayload
+    if (!configUpdate) {
+      return
+    }
+    config.patch(configUpdate.feature, configUpdate.action, configUpdate.data)
+  })
+
   if (false === isConnected.value) {
-    connect();
+    connect()
   }
 
   return {
@@ -301,5 +409,5 @@ export const useSocketStore = defineStore('socket', () => {
     connectionStatus: readonly(connectionStatus) as Readonly<Ref<connectionStatus>>,
     error: readonly(error) as Readonly<Ref<string | null>>,
     error_count: readonly(error_count) as Readonly<Ref<number>>,
-  };
-});
+  }
+})

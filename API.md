@@ -72,6 +72,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/conditions/{id}](#delete-apiconditionsid)
     - [POST /api/conditions/test](#post-apiconditionstest)
     - [GET /api/logs](#get-apilogs)
+    - [GET /api/logs/stream](#get-apilogsstream)
     - [GET /api/notifications/](#get-apinotifications)
     - [GET /api/notifications/events/](#get-apinotificationsevents)
     - [POST /api/notifications/](#post-apinotifications)
@@ -82,6 +83,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
+    - [POST /api/system/terminal](#post-apisystemterminal)
     - [POST /api/system/pause](#post-apisystempause)
     - [POST /api/system/resume](#post-apisystemresume)
     - [POST /api/system/shutdown](#post-apisystemshutdown)
@@ -95,8 +97,8 @@ This document describes the available endpoints and their usage. All endpoints r
     - [Message Format](#message-format)
     - [Core Events](#core-events)
       - [Connection Events](#connection-events)
-        - [`connect` (Built-in)](#connect-built-in)
-        - [`disconnect` (Built-in)](#disconnect-built-in)
+        - [`connect` (Server → Client)](#connect-server--client)
+        - [`disconnect` (Server → Client)](#disconnect-server--client)
         - [`configuration` (Server → Client)](#configuration-server--client)
         - [`config_update` (Server → Client)](#config_update-server--client)
         - [`connected` (Server → Client)](#connected-server--client)
@@ -106,7 +108,6 @@ This document describes the available endpoints and their usage. All endpoints r
         - [`log_success` (Server → Client)](#log_success-server--client)
         - [`log_warning` (Server → Client)](#log_warning-server--client)
         - [`log_error` (Server → Client)](#log_error-server--client)
-        - [`log_lines` (Server → Client)](#log_lines-server--client)
     - [Download Queue Events](#download-queue-events)
       - [`item_added` (Server → Client)](#item_added-server--client)
       - [`item_updated` (Server → Client)](#item_updated-server--client)
@@ -117,10 +118,6 @@ This document describes the available endpoints and their usage. All endpoints r
       - [`item_status` (Server → Client)](#item_status-server--client)
       - [`paused` (Server → Client)](#paused-server--client)
       - [`resumed` (Server → Client)](#resumed-server--client)
-    - [Terminal/CLI Events](#terminalcli-events)
-      - [`cli_post` (Client → Server)](#cli_post-client--server)
-      - [`cli_output` (Server → Client)](#cli_output-server--client)
-      - [`cli_close` (Server → Client)](#cli_close-server--client)
   - [Error Responses](#error-responses)
 
 ---
@@ -1726,6 +1723,26 @@ Binary image data with appropriate headers
 
 ---
 
+### GET /api/logs/stream
+**Purpose**: Stream live log lines via Server-Sent Events (SSE).  
+
+**Response**:
+- `Content-Type: text/event-stream`
+- Emits `log_lines` events with a log line payload.
+
+**Event Payload**:
+```json
+{
+  "id": "<sha256>",
+  "line": "<log line>",
+  "datetime": "2024-01-01T12:00:00.000000+00:00"
+}
+```
+
+- Returns `404 Not Found` if file logging is not enabled or the log file is missing.
+
+---
+
 ### GET /api/notifications/
 **Purpose**: Retrieve notification targets with pagination.
 
@@ -1904,6 +1921,33 @@ or an error:
 
 ---
 
+### POST /api/system/terminal
+**Purpose**: Stream yt-dlp CLI output via Server-Sent Events (SSE). Requires `YTP_CONSOLE_ENABLED=true`.
+
+**Body**:
+```json
+{
+  "command": "--help"
+}
+```
+
+**Response**:
+- `Content-Type: text/event-stream`
+- Emits `output` events for stdout/stderr and a final `close` event when the process exits.
+
+**Event Payloads**:
+```json
+{ "type": "stdout", "line": "<output line>" }
+```
+```json
+{ "exitcode": 0 }
+```
+
+- `403 Forbidden` if console is disabled.
+- `400 Bad Request` if the request body is invalid.
+
+---
+
 ### POST /api/system/pause
 **Purpose**: Pause all non-active downloads in the queue.
 
@@ -2013,7 +2057,7 @@ or an error:
 
 ## WebSocket API
 
-The WebSocket API provides real-time bidirectional communication between the client and server using Socket.IO protocol. It enables live updates for downloads, queue status, notifications, and terminal access.
+The WebSocket API provides real-time bidirectional communication between the client and server WebSockets. It enables live updates for downloads, queue status, and notifications.
 
 > ![IMPORTANT]
 > The WebSocket API is unstable and many events will be moved to REST endpoints in future releases. 
@@ -2021,20 +2065,9 @@ The WebSocket API provides real-time bidirectional communication between the cli
 
 ### Connection
 
-**URL**: `ws://localhost:8081/socket.io/` (development) or `https://yourdomain.com/socket.io/` (production)
+**URL**: `ws://localhost:8081/ws` (development) or `wss://yourdomain.com/ws` (production)
 
-The client automatically connects to the WebSocket server and receives a `connected` event with initial state. The connection uses automatic reconnection with exponential backoff (default: up to 30 attempts, 5s delay).
-
-**Connection Options**:
-```javascript
-{
-  transports: ['websocket', 'polling'],  // Fallback to long-polling if WebSocket unavailable
-  withCredentials: true,                  // Include cookies for authentication
-  reconnection: true,                     // Enable automatic reconnection
-  reconnectionAttempts: 30,              // Max reconnection attempts
-  reconnectionDelay: 5000                // Initial reconnection delay in ms
-}
-```
+The client automatically connects to the WebSocket server and receives a `connected` event with initial state. The frontend wrapper handles reconnection (default: up to 50 attempts, 5s delay).
 
 ### Authentication
 
@@ -2047,37 +2080,42 @@ If Basic Authentication is configured, include credentials when establishing the
 
 2. **Via Query Parameter**:
    ```
-   ws://localhost:8081/socket.io/?apikey=<base64_urlsafe("<username>:<password>")>
+   ws://localhost:8081/ws?apikey=<base64_urlsafe("<username>:<password>")>
    ```
 
 ### Message Format
 
-All WebSocket messages are JSON-encoded and follow a consistent structure:
+All WebSocket messages are JSON-encoded and follow a consistent envelope:
 
-**Server-to-Client (Event)** - Emitted by server, received by client:
+**Server-to-Client (Event Envelope)**
 ```json
 {
-  "id": "unique-event-id",
-  "created_at": "2024-01-15T10:30:00.000000+00:00",
   "event": "item_added",
-  "title": "Item Queued",
-  "message": "Video added to download queue",
-  "data": {...}
+  "data": {
+    "id": "unique-event-id",
+    "created_at": "2024-01-15T10:30:00.000000+00:00",
+    "event": "item_added",
+    "title": "Item Queued",
+    "message": "Video added to download queue",
+    "data": {"_id": "abc123", "title": "..."}
+  }
 }
 ```
+
+> **Note**: Every message follows the same envelope and `data` is always a JSON object.
 
 ### Core Events
 
 #### Connection Events
 
-##### `connect` (Built-in)
+##### `connect` (Server → Client)
 Fired when WebSocket connection is established. No data payload.
 
 ```typescript
 socket.on('connect', () => console.log('WebSocket connected'));
 ```
 
-##### `disconnect` (Built-in)
+##### `disconnect` (Server → Client)
 Fired when WebSocket connection is closed. No data payload.
 
 ```typescript
@@ -2140,12 +2178,7 @@ Warning notification message.
 ##### `log_error` (Server → Client)
 Error notification message.
 
-##### `log_lines` (Server → Client)
-Continuous application log lines (requires subscription event).
-
-**Data Fields**:
-- `line`: Log line content
-- `timestamp`: Log timestamp
+For continuous log streaming, use `GET /api/logs/stream` via SSE.
 
 ### Download Queue Events
 
@@ -2238,28 +2271,6 @@ Emitted when the download queue is paused.
 
 #### `resumed` (Server → Client)
 Emitted when the download queue is resumed.
-
-### Terminal/CLI Events
-
-The terminal feature requires `YTP_CONSOLE_ENABLED=true`.
-
-#### `cli_post` (Client → Server)
-Execute a command via yt-dlp CLI.
-
-**Data**: Command arguments as string (without `yt-dlp` prefix)
-
-#### `cli_output` (Server → Client)
-Output line from the CLI command execution.
-
-**Data Fields**:
-- `type`: Output type (`stdout` or `stderr`)
-- `line`: Output line content
-
-#### `cli_close` (Server → Client)
-Emitted when CLI command execution completes.
-
-**Data Fields**:
-- `exitcode`: Command exit code (0 = success, non-zero = error)
 
 ---
 

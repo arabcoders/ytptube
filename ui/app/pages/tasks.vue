@@ -472,6 +472,7 @@ import Modal from '~/components/Modal.vue'
 import { useConfirm } from '~/composables/useConfirm'
 import TaskInspect from '~/components/TaskInspect.vue'
 import type { task_item, exported_task, error_response } from '~/types/tasks'
+import type { WSEP } from '~/types/sockets'
 import { sleep } from '~/utils'
 import { useSessionCache } from '~/utils/cache'
 
@@ -959,12 +960,11 @@ const runNow = async (item: task_item, mass: boolean = false) => {
 
 onBeforeUnmount(() => socket.off('item_status', statusHandler))
 
-const statusHandler = async (stream: string) => {
-  const json = JSON.parse(stream)
-  const { status, msg } = json.data
+const statusHandler = async (payload: WSEP['item_status']) => {
+  const { status, msg } = payload.data || {}
 
   if ('error' === status) {
-    toast.error(msg)
+    toast.error(msg ?? 'Unknown error')
     return
   }
 }
