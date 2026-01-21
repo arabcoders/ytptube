@@ -57,9 +57,37 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ea1fc59e8888684bdef4f8d6f1d4a56998ff58e0",
-    "date": "2026-01-20T13:27:04+00:00",
+    "full_sha": "501455029c27633657282862781ba4fbf3b151a8",
+    "date": "2026-01-21T19:07:12+00:00",
     "commits": [
+      {
+        "sha": "50145502",
+        "full_sha": "501455029c27633657282862781ba4fbf3b151a8",
+        "message": "refactor: remove socket.io dependency",
+        "author": "arabcoders",
+        "date": "2026-01-21T19:07:12+00:00"
+      },
+      {
+        "sha": "ce7b59a8",
+        "full_sha": "ce7b59a8be67273af797d9ca297712d4e6e18980",
+        "message": "refactor: update API documentation",
+        "author": "arabcoders",
+        "date": "2026-01-21T15:54:56+00:00"
+      },
+      {
+        "sha": "48feca72",
+        "full_sha": "48feca72d3c92c41a9303013f1458be2871d311e",
+        "message": "fix: dont reject non-unique names during migration.",
+        "author": "arabcoders",
+        "date": "2026-01-21T15:39:47+00:00"
+      },
+      {
+        "sha": "5b7d9ddb",
+        "full_sha": "5b7d9ddbde58fe256e9c3d7506d013853cf3d5ea",
+        "message": "refactor: migrate notifications to the new db model",
+        "author": "arabcoders",
+        "date": "2026-01-21T15:29:16+00:00"
+      },
       {
         "sha": "ea1fc59e",
         "full_sha": "ea1fc59e8888684bdef4f8d6f1d4a56998ff58e0",
