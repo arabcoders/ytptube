@@ -48,3 +48,20 @@ class Migration(abc.ABC):
 
         shutil.move(str(source), str(destination))
         return destination
+
+    def _unique_name(self, name: str, seen_names: dict[str, int]) -> str:
+        base = name
+        count = seen_names.get(base, 0)
+        if count == 0:
+            seen_names[base] = 1
+            return base
+
+        suffix = count + 1
+        new_name = f"{base} ({suffix})"
+        while new_name in seen_names:
+            suffix += 1
+            new_name = f"{base} ({suffix})"
+
+        seen_names[base] = suffix
+        seen_names[new_name] = 1
+        return new_name

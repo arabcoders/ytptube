@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.features.dl_fields.schemas import DLField
@@ -46,8 +46,9 @@ class Migration(FeatureMigration):
             return
 
         inserted = 0
+        seen_names: dict[str, int] = {}
         for index, item in enumerate(items):
-            if not (normalized := self._normalize(item, index)):
+            if not (normalized := self._normalize(item, index, seen_names)):
                 continue
             try:
                 await self._repo.create(normalized)
@@ -58,16 +59,24 @@ class Migration(FeatureMigration):
         LOG.info("Migrated %s dl field(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)
 
-    def _normalize(self, item: Any, index: int) -> dict[str, Any] | None:
+    def _normalize(self, item: Any, index: int, seen_names: dict[str, int]) -> dict[str, Any] | None:
         if not isinstance(item, dict):
             LOG.warning("Skipping dl field at index %s due to invalid type.", index)
             return None
+
+        assert isinstance(item, dict)
 
         name: str | None = item.get("name")
         if not name or not isinstance(name, str):
             LOG.warning("Skipping dl field at index %s due to missing name.", index)
             return None
 
+        normalized_name = name.strip()
+        if not normalized_name:
+            LOG.warning("Skipping dl field at index %s due to empty name.", index)
+            return None
+
+        name = self._unique_name(normalized_name, seen_names)
         description: str = item.get("description") if isinstance(item.get("description"), str) else ""
         field_value: str | None = item.get("field")
         if not field_value or not isinstance(field_value, str):
@@ -77,7 +86,8 @@ class Migration(FeatureMigration):
         kind: str = item.get("kind") if isinstance(item.get("kind"), str) else "text"
         icon: str = item.get("icon") if isinstance(item.get("icon"), str) else ""
         value: str = item.get("value") if isinstance(item.get("value"), str) else ""
-        extras: dict[str, Any] = item.get("extras") if isinstance(item.get("extras"), dict) else {}
+        extras = item.get("extras") if isinstance(item.get("extras"), dict) else {}
+        extras = cast("dict[str, Any]", extras)
 
         order_value: int = 0
         if isinstance(item.get("order"), int) and not isinstance(item.get("order"), bool):

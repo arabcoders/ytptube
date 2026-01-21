@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.features.conditions.models import ConditionModel
 from app.features.core.migration import Migration as FeatureMigration
@@ -46,8 +46,9 @@ class Migration(FeatureMigration):
             return
 
         inserted = 0
+        seen_names: dict[str, int] = {}
         for index, item in enumerate(items):
-            if not (normalized := await self._normalize(item, index)):
+            if not (normalized := await self._normalize(item, index, seen_names)):
                 continue
             try:
                 await self._repo.create(normalized)
@@ -58,17 +59,26 @@ class Migration(FeatureMigration):
         LOG.info("Migrated %s condition(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)
 
-    async def _normalize(self, item: Any, index: int) -> ConditionModel | None:
+    async def _normalize(self, item: Any, index: int, seen_names: dict[str, int]) -> ConditionModel | None:
         if not isinstance(item, dict):
             LOG.warning("Skipping condition at index %s due to invalid type.", index)
             return None
 
+        assert isinstance(item, dict)
         name: str | None = item.get("name")
         if not name or not isinstance(name, str):
             LOG.warning("Skipping condition at index %s due to missing name.", index)
             return None
 
-        extras: dict[str, Any] = item.get("extras") if isinstance(item.get("extras"), dict) else {}
+        normalized_name = name.strip()
+        if not normalized_name:
+            LOG.warning("Skipping condition at index %s due to empty name.", index)
+            return None
+
+        name = self._unique_name(normalized_name, seen_names)
+
+        extras = item.get("extras") if isinstance(item.get("extras"), dict) else {}
+        extras = cast("dict[str, Any]", extras)
         filter_value: str | None = item.get("filter")
         if (not filter_value or not isinstance(filter_value, str)) and len(extras) == 0:
             LOG.warning("Skipping condition '%s' due to missing filter.", name)
@@ -78,12 +88,15 @@ class Migration(FeatureMigration):
         if not isinstance(cli, str):
             cli = ""
 
-        enabled: bool = item.get("enabled") if isinstance(item.get("enabled"), bool) else True
-        priority: int = item.get("priority") if isinstance(item.get("priority"), int) else 0
+        enabled_value = item.get("enabled")
+        enabled: bool = enabled_value if isinstance(enabled_value, bool) else True
+        priority_value = item.get("priority")
+        priority: int = priority_value if isinstance(priority_value, int) else 0
         if isinstance(priority, bool) or 0 > priority:
             priority = 0
 
-        description: str = item.get("description") if isinstance(item.get("description"), str) else ""
+        description_value = item.get("description")
+        description: str = description_value if isinstance(description_value, str) else ""
 
         return ConditionModel(
             id=index,

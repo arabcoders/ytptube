@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.features.notifications.schemas import NotificationEvents
@@ -47,8 +47,9 @@ class Migration(FeatureMigration):
             return
 
         inserted = 0
+        seen_names: dict[str, int] = {}
         for index, item in enumerate(items):
-            normalized = self._normalize(item, index)
+            normalized = self._normalize(item, index, seen_names)
             if not normalized:
                 continue
             try:
@@ -60,30 +61,39 @@ class Migration(FeatureMigration):
         LOG.info("Migrated %s notification target(s) from %s.", inserted, self._source_file)
         await self._move_file(self._source_file)
 
-    def _normalize(self, item: Any, index: int) -> dict[str, Any] | None:
+    def _normalize(self, item: Any, index: int, seen_names: dict[str, int]) -> dict[str, Any] | None:
         if not isinstance(item, dict):
             LOG.warning("Skipping notification at index %s due to invalid type.", index)
             return None
+
+        assert isinstance(item, dict)
 
         name: str | None = item.get("name")
         if not name or not isinstance(name, str):
             LOG.warning("Skipping notification at index %s due to missing name.", index)
             return None
 
+        normalized_name = name.strip()
+        if not normalized_name:
+            LOG.warning("Skipping notification at index %s due to empty name.", index)
+            return None
+
+        name = self._unique_name(normalized_name, seen_names)
         request = item.get("request") if isinstance(item.get("request"), dict) else {}
+        request = cast("dict[str, Any]", request)
         url: str | None = request.get("url")
         if not url or not isinstance(url, str):
             LOG.warning("Skipping notification '%s' due to missing request url.", name)
             return None
 
-        method = request.get("method") if isinstance(request.get("method"), str) else "POST"
-        method = method.upper()
+        raw_method = request.get("method")
+        method = raw_method.upper() if isinstance(raw_method, str) else "POST"
         if method not in {"POST", "PUT"}:
             LOG.warning("Skipping notification '%s' due to invalid method '%s'.", name, method)
             return None
 
-        req_type = request.get("type") if isinstance(request.get("type"), str) else "json"
-        req_type = req_type.lower()
+        raw_type = request.get("type")
+        req_type = raw_type.lower() if isinstance(raw_type, str) else "json"
         if req_type not in {"json", "form"}:
             LOG.warning("Skipping notification '%s' due to invalid type '%s'.", name, req_type)
             return None
@@ -94,7 +104,8 @@ class Migration(FeatureMigration):
 
         headers = self._normalize_headers(request.get("headers"))
 
-        enabled: bool = item.get("enabled") if isinstance(item.get("enabled"), bool) else True
+        enabled_value = item.get("enabled")
+        enabled: bool = enabled_value if isinstance(enabled_value, bool) else True
         events = self._normalize_events(item.get("on"))
         if events is None:
             LOG.warning("Skipping notification '%s' due to invalid events.", name)
