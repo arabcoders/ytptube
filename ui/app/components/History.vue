@@ -583,7 +583,7 @@ watch(showCompleted, async isShown => {
 })
 
 onMounted(async () => {
-  if (showCompleted.value) {
+  if (showCompleted.value && !paginationInfo.value.isLoaded) {
     try {
       await stateStore.loadPaginated('history', 1, config.app.default_pagination, 'DESC', true)
     } catch (error) {

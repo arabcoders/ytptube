@@ -7,8 +7,8 @@
             <template v-if="!isMobile">{{ greetingMessage }}</template>
             <template v-else>What would you like to download?</template>
             <span class="is-pulled-right">
-              <span class="icon has-text-info is-pointer mr-2" v-if="!socketStore.isConnected" v-tooltip="'Reload queue'"
-                @click="async () => await refreshQueue()">
+              <span class="icon has-text-info is-pointer mr-2" v-if="!socketStore.isConnected"
+                v-tooltip="'Reload queue'" @click="async () => await refreshQueue()">
                 <i class="fas fa-sync-alt" :class="{ 'fa-spin': isRefreshing }" />
               </span>
 
@@ -273,7 +273,6 @@ const refreshQueue = async (): Promise<void> => {
   } finally {
     isRefreshing.value = false
   }
-  
 }
 
 const paginationInfo = computed(() => stateStore.getPagination())
@@ -691,10 +690,12 @@ onMounted(async () => {
     window.history.replaceState({}, '', url.toString())
   }
 
-  try {
-    await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
-  } catch (error) {
-    console.error('Failed to load history on mount:', error)
+  if (!paginationInfo.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
+    } catch (error) {
+      console.error('Failed to load history on mount:', error)
+    }
   }
 
   if (window?.location && '/' !== window.location.pathname) {
@@ -702,7 +703,6 @@ onMounted(async () => {
   }
 })
 
-// Reload history when socket reconnects
 watch(() => socketStore.isConnected, async (connected) => {
   if (connected && !paginationInfo.value.isLoaded) {
     try {
@@ -713,7 +713,6 @@ watch(() => socketStore.isConnected, async (connected) => {
   }
 })
 
-// Function to load more history items
 const loadMoreHistory = async (): Promise<void> => {
   if (paginationInfo.value.isLoading || paginationInfo.value.page >= paginationInfo.value.total_pages) {
     return

@@ -1,6 +1,7 @@
 <template>
 
   <template v-if="simpleMode">
+    <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
     <Simple @show_settings="() => show_settings = true" :class="{ 'settings-open': show_settings }" />
   </template>
 
@@ -12,7 +13,6 @@
     <div id="main_container" class="container" :class="{ 'settings-open': show_settings }" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
       <nav class="navbar is-mobile is-dark">
-
         <div class="navbar-brand pl-5">
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'" id="top">
@@ -157,7 +157,15 @@
         </ClientOnly>
       </div>
 
-      <footer class="footer py-5 mt-6 is-unselectable" v-if="config.is_loaded">
+      <div class="mt-6">
+        <div class="columns is-multiline">
+          <div class="column is-12">
+            <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer py-5 is-unselectable" v-if="config.is_loaded">
         <div class="columns is-multiline is-variable is-8">
           <div class="column is-12-mobile is-6-tablet">
             <div class="mb-3">
@@ -422,20 +430,18 @@ onMounted(async () => {
 
   try {
     await config.loadConfig()
-  } catch {
-    // -- IGNORE --
-  }
+  } catch { }
 
   try {
     const opts = await request('/api/yt-dlp/options')
-    if (!opts.ok) {
-      return
+    if (opts.ok) {
+      config.ytdlp_options = await opts.json() as Array<YTDLPOption>
     }
-    const data: Array<YTDLPOption> = await opts.json()
-    config.ytdlp_options = data
   } catch { }
 
-  socket.connect()
+  try {
+    socket.connect()
+  } catch { }
 
   try {
     await handleImage(bg_enable.value)

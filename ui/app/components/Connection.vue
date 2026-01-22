@@ -3,7 +3,7 @@
     <div class="message-body">
       <span class="icon"><i class="fas fa-info-circle" /></span>
       <span>
-        Connection lost, <NuxtLink class="is-bold" @click.prevent="() => $emit('reconnect')">Click here</NuxtLink>
+        Websocket connection lost, <NuxtLink class="is-bold" @click.prevent="() => $emit('reconnect')">Click here</NuxtLink>
         to reconnect.
       </span>
     </div>
