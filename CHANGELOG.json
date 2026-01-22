@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "501455029c27633657282862781ba4fbf3b151a8",
-    "date": "2026-01-21T19:07:12+00:00",
+    "full_sha": "c3eb7091af6f64d44cf59e0ad687faa11395a42e",
+    "date": "2026-01-22T16:36:20+00:00",
     "commits": [
+      {
+        "sha": "c3eb7091",
+        "full_sha": "c3eb7091af6f64d44cf59e0ad687faa11395a42e",
+        "message": "refactor: make the UI work without websocket",
+        "author": "arabcoders",
+        "date": "2026-01-22T16:36:20+00:00"
+      },
       {
         "sha": "50145502",
         "full_sha": "501455029c27633657282862781ba4fbf3b151a8",
