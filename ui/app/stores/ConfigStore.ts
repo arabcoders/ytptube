@@ -77,6 +77,7 @@ export const useConfigStore = defineStore('config', () => {
         delete data.queue;
       }
 
+      setAll(data);
     } catch (e: any) {
       console.error('Failed to load configuration', e);
     }
