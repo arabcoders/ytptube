@@ -257,7 +257,6 @@ type PresetWithUI = Preset & { raw?: boolean, toggle_description?: boolean }
 
 const toast = useNotification()
 const config = useConfigStore()
-const socket = useSocketStore()
 const box = useConfirm()
 
 const display_style = useStorage<string>('preset_display_style', 'cards')
@@ -271,7 +270,6 @@ const preset = ref<Partial<Preset>>({})
 const presetRef = ref<string | null>('')
 const toggleForm = ref(false)
 const isLoading = ref(true)
-const initialLoad = ref(true)
 const addInProgress = ref(false)
 const remove_keys = ['raw', 'toggle_description']
 const expandedItems = ref<Record<string, Set<string>>>({})
@@ -303,12 +301,6 @@ const isExpanded = (itemId: string | undefined, field: string): boolean => {
   return expandedItems.value[itemId]?.has(field) ?? false
 }
 
-watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await reloadContent(true)
-    initialLoad.value = false
-  }
-})
 
 watch(toggleFilter, (val) => {
   if (!val) {
@@ -440,7 +432,7 @@ const editItem = (item: Preset) => {
   toggleForm.value = true
 }
 
-onMounted(async () => (socket.isConnected ? await reloadContent(true) : ''))
+onMounted(async () => await reloadContent(true))
 
 const exportItem = (item: Preset) => {
   const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description']

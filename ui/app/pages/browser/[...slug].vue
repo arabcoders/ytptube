@@ -342,8 +342,8 @@
       </template>
 
       <div class="column is-12" v-if="search && filteredItems.length < 1">
-        <Message class="is-warning" title="No results" icon="fas fa-filter" :useClose="true"
-          @close="() => search = ''" v-if="search">
+        <Message class="is-warning" title="No results" icon="fas fa-filter" :useClose="true" @close="() => search = ''"
+          v-if="search">
           <p class="is-block">
             No results found for '<span class="is-underlined is-bold">{{ search }}</span>'.
           </p>
@@ -351,8 +351,7 @@
       </div>
 
       <div class="column is-12" v-if="!items || items.length < 1">
-        <Message title="Loading content" class="is-info" icon="fas fa-refresh fa-spin"
-          v-if="isLoading">
+        <Message title="Loading content" class="is-info" icon="fas fa-refresh fa-spin" v-if="isLoading">
           Loading file browser contents...
         </Message>
         <Message v-else title="No Content" class="is-warning" icon="fas fa-exclamation-circle">
@@ -395,7 +394,6 @@ import type { FileItem, FileBrowserResponse } from '~/types/filebrowser'
 const route = useRoute()
 const toast = useNotification()
 const config = useConfigStore()
-const socket = useSocketStore()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const dialog = useDialog()
 
@@ -409,7 +407,6 @@ const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
 
 const isLoading = ref<boolean>(false)
-const initialLoad = ref<boolean>(true)
 const items = ref<FileItem[]>([])
 const path = ref<string>((() => {
   const slug = route.params.slug
@@ -485,13 +482,6 @@ const sortedItems = (items: FileItem[]): FileItem[] => {
 
 const model_item = ref<any>()
 const closeModel = (): void => { model_item.value = null }
-
-watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await reloadContent(path.value, true)
-    initialLoad.value = false
-  }
-})
 
 const handleClick = (item: FileItem): void => {
   if (true === ['video', 'audio'].includes(item.content_type)) {
@@ -602,11 +592,8 @@ const event_handler = (e: Event): void => {
 }
 
 onMounted(async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await reloadContent(path.value, true)
-  }
-
   document.addEventListener('popstate', event_handler as EventListener)
+  await reloadContent(path.value, true)
 })
 
 onBeforeUnmount(() => document.removeEventListener('popstate', event_handler as EventListener))

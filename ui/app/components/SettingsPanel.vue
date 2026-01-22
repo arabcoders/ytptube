@@ -158,6 +158,47 @@
         <div class="box">
           <p class="title is-5 mb-4">
             <span class="icon-text">
+              <span class="icon"><i class="fas fa-download" /></span>
+              <span>Queue</span>
+            </span>
+          </p>
+
+          <div class="field">
+            <label class="label">Auto-refresh queue when disconnected</label>
+            <div class="control">
+              <input id="queue_auto_refresh" type="checkbox" class="switch is-success" v-model="queue_auto_refresh">
+              <label for="queue_auto_refresh" class="is-unselectable">
+                {{ queue_auto_refresh ? 'Enabled' : 'Disabled' }}
+              </label>
+            </div>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+              Automatically refresh queue data when WebSocket connection is unavailable.
+            </p>
+          </div>
+
+          <div class="field" v-if="queue_auto_refresh">
+            <label class="label">Auto-refresh interval (seconds)</label>
+            <div class="field has-addons">
+              <div class="control">
+                <a class="button is-static">
+                  <code>{{ queue_auto_refresh_delay / 1000 }}s</code>
+                </a>
+              </div>
+              <div class="control is-expanded">
+                <input class="input" type="range" v-model.number="queue_auto_refresh_delay" min="5000" max="60000" step="5000">
+              </div>
+            </div>
+            <p class="help">
+              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
+              How often to refresh the queue (5-60 seconds). Lower values increase server load.
+            </p>
+          </div>
+        </div>
+
+        <div class="box">
+          <p class="title is-5 mb-4">
+            <span class="icon-text">
               <span class="icon"><i class="fas fa-bell" /></span>
               <span>Notifications</span>
             </span>
@@ -261,6 +302,8 @@ const show_popover = useStorage<boolean>('show_popover', true)
 const thumbnail_ratio = useStorage<'is-16by9' | 'is-3by1'>('thumbnail_ratio', 'is-3by1')
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',')
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
+const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true)
+const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000)
 const isSecureContext = ref<boolean>(false)
 
 const handleKeydown = (e: KeyboardEvent) => {

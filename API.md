@@ -26,6 +26,10 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/{id}](#post-apihistoryid)
     - [GET /api/history/{id}](#get-apihistoryid)
     - [GET /api/history](#get-apihistory)
+    - [GET /api/history/live](#get-apihistorylive)
+    - [POST /api/history/start](#post-apihistorystart)
+    - [POST /api/history/pause](#post-apihistorypause)
+    - [POST /api/history/cancel](#post-apihistorycancel)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
     - [GET /api/archiver](#get-apiarchiver)
@@ -99,7 +103,6 @@ This document describes the available endpoints and their usage. All endpoints r
       - [Connection Events](#connection-events)
         - [`connect` (Server → Client)](#connect-server--client)
         - [`disconnect` (Server → Client)](#disconnect-server--client)
-        - [`configuration` (Server → Client)](#configuration-server--client)
         - [`config_update` (Server → Client)](#config_update-server--client)
         - [`connected` (Server → Client)](#connected-server--client)
         - [`active_queue` (Server → Client)](#active_queue-server--client)
@@ -596,6 +599,124 @@ GET /api/history?type=done&status=!error&page=2&per_page=50
 # Combine with sorting - oldest pending items first
 GET /api/history?type=queue&status=pending&order=ASC
 ```
+
+---
+
+### GET /api/history/live
+**Purpose**: Get live queue data with real-time download progress.
+
+This endpoint returns the current state of active downloads from memory.
+
+**Response**:
+```json
+{
+    "history_count": 0, // total number of completed items in history
+    "queue":{
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "title": "Video Title",
+      "status": "downloading",
+      "progress": 45.6,
+      "speed": "2.5 MiB/s",
+      "eta": "00:05:23",
+      ...
+    },
+    ...
+}
+```
+
+---
+
+### POST /api/history/start
+**Purpose**: Start one or more downloads in the queue.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>", ...]
+}
+```
+
+**Response**:
+```json
+{
+  "<id1>": "started",
+  "<id2>": "started",
+  ...
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if `ids` is missing or not an array:
+  ```json
+  { "error": "ids is required and must be an array." }
+  ```
+
+**Notes**:
+- Items must exist in the queue
+- Sets `auto_start: true` for the specified items
+
+---
+
+### POST /api/history/pause
+**Purpose**: Pause one or more downloads in the queue.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>", ...]
+}
+```
+
+**Response**:
+```json
+{
+  "<id1>": "paused",
+  "<id2>": "paused",
+  ...
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if `ids` is missing or not an array:
+  ```json
+  { "error": "ids is required and must be an array." }
+  ```
+
+**Notes**:
+- Items must exist in the queue
+- Sets `auto_start: false` for the specified items
+
+---
+
+### POST /api/history/cancel
+**Purpose**: Cancel one or more downloads and move them to history.
+
+**Body**:
+```json
+{
+  "ids": ["<id1>", "<id2>", ...]
+}
+```
+
+**Response**:
+```json
+{
+  "<id1>": "ok",
+  "<id2>": "ok",
+  ...
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if `ids` is missing or not an array:
+  ```json
+  { "error": "ids is required and must be an array." }
+  ```
+
+**Notes**:
+- Items must exist in the queue
+- Stops active downloads if they are currently running
 
 ---
 
@@ -2121,15 +2242,6 @@ Fired when WebSocket connection is closed. No data payload.
 ```typescript
 socket.on('disconnect', (reason: string) => console.log('WebSocket disconnected:', reason));
 ```
-
-##### `configuration` (Server → Client)
-Sends the current application configuration.
-
-**Data Fields**:
-- `config`: Global configuration object
-- `presets`: Available download presets
-- `dl_fields`: Available download fields
-- `paused`: Queue pause status (boolean)
 
 ##### `config_update` (Server → Client)
 Emitted when configuration-backed resources change (presets, dl fields, conditions, notifications).

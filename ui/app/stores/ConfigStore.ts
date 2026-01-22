@@ -3,6 +3,7 @@ import type { ConfigState } from '~/types/config';
 import type { DLField } from '~/types/dl_fields';
 import type { Preset } from '~/types/presets';
 import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
+import { request } from '~/utils';
 
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({
@@ -49,7 +50,41 @@ export const useConfigStore = defineStore('config', () => {
     ytdlp_options: [],
     paused: false,
     is_loaded: false,
+    is_loading: false,
   });
+
+  const loadConfig = async () => {
+    if (state.is_loading) {
+      return;
+    }
+    state.is_loaded = false;
+    state.is_loading = true;
+    try {
+      const resp = await request('/api/system/configuration');
+      if (!resp.ok) {
+        return;
+      }
+      const data = await resp.json();
+      const stateStore = useStateStore();
+
+      if ('number' === typeof data.history_count) {
+        stateStore.setHistoryCount(data.history_count);
+        delete data.history_count;
+      }
+
+      if (data.queue) {
+        stateStore.addAll('queue', data.queue);
+        delete data.queue;
+      }
+
+    } catch (e: any) {
+      console.error('Failed to load configuration', e);
+    }
+    finally {
+      state.is_loaded = true;
+      state.is_loading = false;
+    }
+  }
 
   const add = (key: string, value: any) => {
     if (key.includes('.')) {
@@ -134,9 +169,8 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-
   return {
-    ...toRefs(state), add, get, update, getAll, setAll, isLoaded, patch
+    ...toRefs(state), add, get, update, getAll, setAll, isLoaded, patch, loadConfig
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
     add: typeof add
     get: typeof get
@@ -145,5 +179,6 @@ export const useConfigStore = defineStore('config', () => {
     setAll: typeof setAll
     patch: typeof patch
     isLoaded: typeof isLoaded
+    loadConfig: typeof loadConfig
   }
 });

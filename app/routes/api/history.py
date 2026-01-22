@@ -116,6 +116,29 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
     )
 
 
+@route("GET", "api/history/live", "items_live")
+async def items_live(queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Get live queue data
+
+    Args:
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object with live queue items.
+
+    """
+    return web.json_response(
+        data={
+            "queue": (await queue.get("queue"))["queue"],
+            "history_count": await queue.done.get_total_count(),
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
 @route("DELETE", "api/history/", "items_delete")
 async def items_delete(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
     """
@@ -388,6 +411,84 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         response.append(it)
 
     return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/start", "items_start")
+async def items_start(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Start one or more queued downloads.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.start_items(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/pause", "items_pause")
+async def items_pause(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Pause one or more queued downloads.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.pause_items(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/cancel", "items_cancel")
+async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Cancel one or more queued downloads.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.cancel(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("POST", r"api/history/{id}/archive", "history.item.archive.add")

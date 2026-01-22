@@ -297,7 +297,6 @@ import type { APIResponse } from '~/types/responses'
 
 type ConditionItemWithUI = Condition & { raw?: boolean }
 
-const socket = useSocketStore()
 const box = useConfirm()
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const display_style = useStorage<'list' | 'grid'>('conditions_display_style', 'grid')
@@ -311,7 +310,6 @@ const page = ref<number>(route.query.page ? parseInt(route.query.page as string,
 const item = ref<Partial<Condition>>({})
 const itemRef = ref<number | null | undefined>(null)
 const toggleForm = ref(false)
-const initialLoad = ref(true)
 const query = ref<string>('')
 const toggleFilter = ref(false)
 
@@ -350,13 +348,6 @@ const isExpanded = (itemId: number | undefined, field: string): boolean => {
   if (!itemId) return false
   return expandedItems[itemId]?.has(field) ?? false
 }
-
-watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await loadContent(page.value)
-    initialLoad.value = false
-  }
-})
 
 watch(toggleFilter, val => {
   if (!val) {
@@ -414,9 +405,5 @@ const exportItem = (cond: Condition): void => copyText(encode({
   _version: '1.2',
 }))
 
-onMounted(async () => {
-  if (socket.isConnected) {
-    await loadContent(page.value)
-  }
-})
+onMounted(async () => await loadContent(page.value))
 </script>

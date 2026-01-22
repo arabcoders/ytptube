@@ -1,7 +1,6 @@
 <template>
 
   <template v-if="simpleMode">
-    <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
     <Simple @show_settings="() => show_settings = true" :class="{ 'settings-open': show_settings }" />
   </template>
 
@@ -12,7 +11,6 @@
     <Shutdown v-if="app_shutdown" />
     <div id="main_container" class="container" :class="{ 'settings-open': show_settings }" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
-      <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
       <nav class="navbar is-mobile is-dark">
 
         <div class="navbar-brand pl-5">
@@ -139,11 +137,8 @@
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
         <Message v-if="!config.is_loaded" class="is-info mt-5" title="Loading Configuration"
           icon="fas fa-spinner fa-spin">
-          <p>This usually takes less than a second.
-            <span v-if="!socket.isConnected" class="mt-2">
-              If this is taking too long, please check that the backend server is running and that the WebSocket
-              connection is functional.
-            </span>
+          <p>This usually takes less than a second. If this is taking too long,
+            <NuxtLink class="button is-text p-0" @click="config.loadConfig">reload configuration</NuxtLink>.
           </p>
           <template v-if="socket.error">
             <hr>
@@ -162,7 +157,7 @@
         </ClientOnly>
       </div>
 
-      <footer class="footer py-5 mt-6 is-unselectable" v-if="socket.isConnected">
+      <footer class="footer py-5 mt-6 is-unselectable" v-if="config.is_loaded">
         <div class="columns is-multiline is-variable is-8">
           <div class="column is-12-mobile is-6-tablet">
             <div class="mb-3">
@@ -286,7 +281,6 @@ import Dialog from '~/components/Dialog.vue'
 import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
-import Connection from '~/components/Connection.vue'
 
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
@@ -423,8 +417,14 @@ const applyPreferredColorScheme = (scheme: string) => {
 
 onMounted(async () => {
   try {
-    await handleImage(bg_enable.value)
+    applyPreferredColorScheme(selectedTheme.value)
   } catch { }
+
+  try {
+    await config.loadConfig()
+  } catch {
+    // -- IGNORE --
+  }
 
   try {
     const opts = await request('/api/yt-dlp/options')
@@ -435,8 +435,10 @@ onMounted(async () => {
     config.ytdlp_options = data
   } catch { }
 
+  socket.connect()
+
   try {
-    applyPreferredColorScheme(selectedTheme.value)
+    await handleImage(bg_enable.value)
   } catch { }
 })
 
@@ -560,7 +562,7 @@ const { newVersionIsAvailable } = useVersionUpdate()
 const closeSettings = () => show_settings.value = false
 
 const shutdownApp = async () => {
-  const { alertDialog, confirmDialog: confirm_message } = useDialog()
+  const { alertDialog, confirmDialog: cDialog } = useDialog()
 
   if (false === config.app.is_native) {
     await alertDialog({
@@ -570,7 +572,7 @@ const shutdownApp = async () => {
     return
   }
 
-  const { status } = await confirm_message({
+  const { status } = await cDialog({
     title: 'Shutdown Application',
     message: 'Are you sure you want to shutdown the application?',
   })

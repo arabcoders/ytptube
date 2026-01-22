@@ -4,18 +4,22 @@ import logging
 import os
 import shlex
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from aiohttp import web
 from aiohttp.web import Request, Response
 from aiohttp.web_runner import GracefulExit
 
+from app.features.dl_fields.service import DLFields
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
+from app.library.Presets import Presets
 from app.library.router import route
 from app.library.UpdateChecker import UpdateChecker
+from app.library.Utils import list_folders
 
 if TYPE_CHECKING:
     from asyncio import Task
@@ -23,6 +27,39 @@ if TYPE_CHECKING:
     from asyncio.subprocess import Process
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@route("GET", "api/system/configuration", "system.configuration")
+async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) -> Response:
+    """
+    Pause non-active downloads.
+
+    Args:
+        queue (DownloadQueue): The download queue instance.
+        config (Config): The config instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    return web.json_response(
+        data={
+            "app": config.frontend(),
+            "presets": Presets.get_instance().get_all(),
+            "dl_fields": await DLFields.get_instance().get_all_serialized(),
+            "paused": queue.is_paused(),
+            "folders": list_folders(
+                path=Path(config.download_path),
+                base=Path(config.download_path),
+                depth_limit=config.download_path_depth - 1,
+            ),
+            "history_count": await queue.done.get_total_count(),
+            "queue": (await queue.get("queue"))["queue"],
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
 
 
 @route("POST", "api/system/pause", "system.pause")
@@ -187,9 +224,6 @@ async def check_updates(config: Config, encoder: Encoder, update_checker: Update
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
     )
-
-
-LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @route("POST", "api/system/terminal", "system.terminal")

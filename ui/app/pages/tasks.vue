@@ -480,6 +480,7 @@ const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const stateStore = useStateStore()
 const { confirmDialog: cDialog } = useDialog()
 const sessionCache = useSessionCache()
 const display_style = useStorage<string>("tasks_display_style", "cards")
@@ -490,7 +491,6 @@ const task = ref<task_item | Record<string, unknown>>({})
 const taskRef = ref<string>('')
 const toggleForm = ref<boolean>(false)
 const isLoading = ref<boolean>(true)
-const initialLoad = ref<boolean>(true)
 const addInProgress = ref<boolean>(false)
 const selectedElms = ref<Array<string>>([])
 const masterSelectAll = ref(false)
@@ -538,11 +538,10 @@ watch(masterSelectAll, value => {
 })
 
 watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    socket.on('item_status', statusHandler)
-    await reloadContent(true)
-    initialLoad.value = false
+  if (!socket.isConnected) {
+    return
   }
+  socket.on('item_status', statusHandler)
 })
 
 const CACHE_KEY = 'tasks:handler_support'
@@ -858,10 +857,9 @@ const calcPath = (path: string) => {
 }
 
 onMounted(async () => {
-  if (!socket.isConnected) {
-    return;
+  if (socket.isConnected) {
+    socket.on('item_status', statusHandler)
   }
-  socket.on('item_status', statusHandler)
   await reloadContent(true)
 });
 
@@ -946,7 +944,7 @@ const runNow = async (item: task_item, mass: boolean = false) => {
     data.auto_start = item.auto_start
   }
 
-  socket.emit('add_url', data)
+  await stateStore.addDownload(data)
 
   if (true === mass) {
     return

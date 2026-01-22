@@ -184,6 +184,247 @@ export const useStateStore = defineStore('state', () => {
   }
 
   /**
+   * Load queue data from REST API.
+   * Uses the /live endpoint to get real-time in-memory data with live progress.
+   *
+   * @returns Promise that resolves when queue is loaded
+   */
+  const loadQueue = async (): Promise<void> => {
+    try {
+      const response = await request('/api/history/live')
+      const data = await response.json() as {
+        "queue": Record<KeyType, StoreItem>,
+        "history_count": number,
+      }
+
+      state.queue = data.queue || {}
+      setHistoryCount(data.history_count)
+    } catch (error) {
+      console.error('Failed to load queue:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Add a download using WebSocket if connected, fallback to REST API.
+   *
+   * @param data - Download data (url, preset, folder, etc.)
+   * @returns Promise that resolves when download is added
+   */
+  const addDownload = async (data: Record<string, unknown>): Promise<void> => {
+    const socket = useSocketStore()
+    const toast = useNotification()
+
+    if (socket.isConnected) {
+      socket.emit('add_url', data)
+      return
+    }
+
+    try {
+      const response = await request('/api/history/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to add download')
+        throw new Error(error.error || 'Failed to add download')
+      }
+
+      toast.success('Download added successfully')
+      await loadQueue()
+    } catch (error) {
+      console.error('Failed to add download:', error)
+      if (error instanceof Error && !error.message.includes('Failed to add download')) {
+        toast.error('Failed to add download')
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Start one or more downloads using WebSocket if connected, fallback to REST API.
+   *
+   * @param ids - Array of item IDs to start
+   * @returns Promise that resolves when items are started
+   */
+  const startItems = async (ids: string[]): Promise<void> => {
+    const socket = useSocketStore()
+    const toast = useNotification()
+
+    if (socket.isConnected) {
+      ids.forEach(id => socket.emit('item_start', id))
+      return
+    }
+
+    try {
+      const response = await request('/api/history/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to start items')
+        throw new Error(error.error || 'Failed to start items')
+      }
+
+      const result = await response.json()
+
+      for (const id of ids) {
+        if ('started' === result[id]) {
+          const item = get('queue', id)
+          if (item) {
+            update('queue', id, { ...item, auto_start: true })
+          }
+        }
+      }
+
+      toast.success(`Started ${ids.length} item${1 === ids.length ? '' : 's'}`)
+    } catch (error) {
+      console.error('Failed to start items:', error)
+      if (error instanceof Error && !error.message.includes('Failed to start items')) {
+        toast.error('Failed to start items')
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Pause one or more downloads using WebSocket if connected, fallback to REST API.
+   *
+   * @param ids - Array of item IDs to pause
+   * @returns Promise that resolves when items are paused
+   */
+  const pauseItems = async (ids: string[]): Promise<void> => {
+    const socket = useSocketStore()
+    const toast = useNotification()
+
+    if (socket.isConnected) {
+      ids.forEach(id => socket.emit('item_pause', id))
+      return
+    }
+
+    try {
+      const response = await request('/api/history/pause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to pause items')
+        throw new Error(error.error || 'Failed to pause items')
+      }
+
+      const result = await response.json()
+
+      for (const id of ids) {
+        if ('paused' === result[id]) {
+          const item = get('queue', id)
+          if (item) {
+            update('queue', id, { ...item, auto_start: false })
+          }
+        }
+      }
+
+      toast.success(`Paused ${ids.length} item${1 === ids.length ? '' : 's'}`)
+    } catch (error) {
+      console.error('Failed to pause items:', error)
+      if (error instanceof Error && !error.message.includes('Failed to pause items')) {
+        toast.error('Failed to pause items')
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Cancel one or more downloads using WebSocket if connected, fallback to REST API.
+   *
+   * @param ids - Array of item IDs to cancel
+   * @returns Promise that resolves when items are cancelled
+   */
+  const cancelItems = async (ids: string[]): Promise<void> => {
+    const socket = useSocketStore()
+    const toast = useNotification()
+
+    if (socket.isConnected) {
+      ids.forEach(id => socket.emit('item_cancel', id))
+      return
+    }
+
+    const itemsToMove: Record<string, StoreItem> = {}
+    for (const id of ids) {
+      const item = get('queue', id)
+      if (item) {
+        itemsToMove[id] = { ...item }
+      }
+    }
+
+    try {
+      const response = await request('/api/history/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to cancel items')
+        throw new Error(error.error || 'Failed to cancel items')
+      }
+
+      const result = await response.json()
+
+      for (const id of ids) {
+        if ('ok' === result[id] && itemsToMove[id]) {
+          remove('queue', id)
+          const cancelledItem = { ...itemsToMove[id], status: 'cancelled' } as StoreItem
+          add('history', id, cancelledItem)
+        }
+      }
+
+      toast.success(`Cancelled ${ids.length} item${1 === ids.length ? '' : 's'}`)
+    } catch (error) {
+      console.error('Failed to cancel items:', error)
+      if (error instanceof Error && !error.message.includes('Failed to cancel items')) {
+        toast.error('Failed to cancel items')
+      }
+      throw error
+    }
+  }
+
+  /**
+   * Remove items using WebSocket if connected, fallback to REST API.
+   *
+   * @param type - The store type ('queue' or 'history')
+   * @param ids - Array of item IDs to remove
+   * @param removeFile - Whether to remove files from disk (default: false)
+   * @returns Promise that resolves when items are removed
+   */
+  const removeItems = async (type: StateType, ids: string[], removeFile: boolean = false): Promise<void> => {
+    const socket = useSocketStore()
+    const toast = useNotification()
+
+    if (socket.isConnected) {
+      ids.forEach(id => socket.emit('item_delete', { id, remove_file: removeFile }))
+      return
+    }
+
+    try {
+      await deleteItems(type, { ids, removeFile })
+    } catch (error) {
+      console.error('Failed to remove items:', error)
+      toast.error('Failed to remove items')
+      throw error
+    }
+  }
+
+  /**
    * Delete items by specific IDs or status filter.
    *
    * @param type - The store type ('queue' or 'history')
@@ -263,6 +504,12 @@ export const useStateStore = defineStore('state', () => {
     reloadCurrentPage,
     getPagination,
     setHistoryCount,
+    loadQueue,
+    addDownload,
+    startItems,
+    pauseItems,
+    cancelItems,
+    removeItems,
     deleteItems,
   }
 })

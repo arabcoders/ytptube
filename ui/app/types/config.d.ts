@@ -68,6 +68,8 @@ type ConfigState = {
   paused: boolean
   /** Indicates if the configuration has been loaded */
   is_loaded: boolean
+  /** Indicates if the configuration is currently loading */
+  is_loading: boolean
 }
 
 export type { AppConfig, ConfigState }

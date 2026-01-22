@@ -397,10 +397,6 @@ export const useSocketStore = defineStore('socket', () => {
     config.patch(configUpdate.feature, configUpdate.action, configUpdate.data)
   })
 
-  if (false === isConnected.value) {
-    connect()
-  }
-
   return {
     connect, reconnect, disconnect,
     on, off, emit,
