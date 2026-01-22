@@ -57,9 +57,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c3eb7091af6f64d44cf59e0ad687faa11395a42e",
-    "date": "2026-01-22T16:36:20+00:00",
+    "full_sha": "e551ad7848d6bc84c577632d3d8bbf20aa8cf8c8",
+    "date": "2026-01-22T20:00:45+00:00",
     "commits": [
+      {
+        "sha": "e551ad78",
+        "full_sha": "e551ad7848d6bc84c577632d3d8bbf20aa8cf8c8",
+        "message": "refactor: improve connection status and history loading logic",
+        "author": "arabcoders",
+        "date": "2026-01-22T20:00:45+00:00"
+      },
+      {
+        "sha": "66c349d4",
+        "full_sha": "66c349d41fe73fb6418ce4b3479e825445cbb50c",
+        "message": "fix: set the configuration dict",
+        "author": "arabcoders",
+        "date": "2026-01-22T17:04:09+00:00"
+      },
       {
         "sha": "c3eb7091",
         "full_sha": "c3eb7091af6f64d44cf59e0ad687faa11395a42e",
