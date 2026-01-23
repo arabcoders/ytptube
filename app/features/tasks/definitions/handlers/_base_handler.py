@@ -11,7 +11,7 @@ from app.library.Tasks import Task, TaskFailure, TaskResult
 
 class BaseHandler:
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         return False
 
     @staticmethod

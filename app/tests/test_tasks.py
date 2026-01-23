@@ -1053,7 +1053,8 @@ class TestHandleTaskInspect:
         # Mock Services to simulate successful can_handle
         mock_services_instance = Mock()
         mock_services_instance.handle_sync = Mock(return_value=True)
-        mock_services_instance.handle_async = AsyncMock()  # Should NOT be called with static_only=True
+        # handle_async will be called once for can_handle (since it's now async)
+        mock_services_instance.handle_async = AsyncMock(return_value=True)
         mock_services.get_instance.return_value = mock_services_instance
 
         # Create a mock handler
@@ -1077,8 +1078,8 @@ class TestHandleTaskInspect:
         assert result.metadata["matched"] is True
         assert result.metadata["handler"] == "TestHandler"
 
-        # Verify handle_async (extract) was NOT called
-        mock_services_instance.handle_async.assert_not_called()
+        # Verify handle_async was called once for can_handle (now async)
+        assert mock_services_instance.handle_async.call_count == 1, "Should call handle_async once for can_handle"
 
     @pytest.mark.asyncio
     @patch("app.library.Tasks.Config")
@@ -1132,8 +1133,10 @@ class TestHandleTaskInspect:
         assert result.metadata["handler"] == "TestHandler"
         assert result.metadata["supported"] is True
 
-        # Verify handle_async (extract) WAS called
-        mock_services_instance.handle_async.assert_called_once()
+        # Verify handle_async was called twice: once for can_handle, once for extract
+        assert mock_services_instance.handle_async.call_count == 2, (
+            "Should call handle_async twice: can_handle + extract"
+        )
 
     @pytest.mark.asyncio
     @patch("app.library.Tasks.Config")

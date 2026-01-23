@@ -689,7 +689,7 @@ class HandleTask:
 
         self._scheduler.add(
             timer=timer,
-            func=self._dispatcher,
+            func=lambda: asyncio.create_task(self._dispatcher(), name="task-handler-dispatcher"),
             id=f"{__class__.__name__}._dispatcher",
         )
 
@@ -704,7 +704,7 @@ class HandleTask:
         if self._scheduler.has(self._task_name):
             self._scheduler.remove(self._task_name)
 
-    def _dispatcher(self):
+    async def _dispatcher(self):
         s: dict[list[str]] = {"h": [], "d": [], "u": [], "f": []}
 
         handler_groups: dict[str, list[tuple[Task, type]]] = {}
@@ -720,7 +720,7 @@ class HandleTask:
                 continue
 
             try:
-                handler = self._find_handler(task)
+                handler = await self._find_handler(task)
                 if handler is None:
                     s["u"].append(task.name)
                     continue
@@ -779,10 +779,10 @@ class HandleTask:
         if exc := fut.exception():
             LOG.error(f"Exception while handling task '{task.name}': {exc}")
 
-    def _find_handler(self, task: Task) -> type | None:
+    async def _find_handler(self, task: Task) -> type | None:
         for cls in self._handlers:
             try:
-                if Services.get_instance().handle_sync(handler=cls.can_handle, task=task):
+                if await Services.get_instance().handle_async(handler=cls.can_handle, task=task):
                     return cls
             except Exception as e:
                 LOG.exception(e)
@@ -804,7 +804,7 @@ class HandleTask:
 
         """
         if not handler:
-            handler = self._find_handler(task)
+            handler = await self._find_handler(task)
             if handler is None:
                 return None
 
@@ -958,7 +958,7 @@ class HandleTask:
                 )
 
             try:
-                matched = services.handle_sync(handler=handler_cls.can_handle, task=task)
+                matched = await services.handle_async(handler=handler_cls.can_handle, task=task)
             except Exception as exc:  # pragma: no cover - defensive
                 LOG.exception(exc)
                 message = str(exc)
@@ -974,7 +974,7 @@ class HandleTask:
                     metadata={"matched": False, "handler": handler_cls.__name__},
                 )
         else:
-            handler_cls = self._find_handler(task)
+            handler_cls = await self._find_handler(task)
             if handler_cls is None:
                 message = "No handler matched the supplied URL."
                 return TaskFailure(
@@ -1032,7 +1032,7 @@ class HandleTask:
     def _discover(self) -> list[type]:
         import importlib
 
-        import app.library.task_handlers as handlers_pkg
+        import app.features.tasks.definitions.handlers as handlers_pkg
 
         handlers: list[type] = []
 

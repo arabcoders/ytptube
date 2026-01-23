@@ -120,13 +120,13 @@ class ConditionsRepository(metaclass=Singleton):
                 clause: ColumnElement[bool] = ConditionModel.name == identifier
 
             result: Result[tuple[ConditionModel]] = await session.execute(select(ConditionModel).where(clause).limit(1))
-            model: ConditionModel | None = result.scalar_one_or_none()
-
-            if not model:
+            if not (model := result.scalar_one_or_none()):
                 msg: str = f"Condition '{identifier}' not found."
                 raise KeyError(msg)
 
             payload.pop("id", None)
+            payload.pop("created_at", None)
+            payload.pop("updated_at", None)
 
             if "name" in payload and await self.get_by_name(name=payload["name"], exclude_id=model.id) is not None:
                 msg: str = f"Condition with name '{payload['name']}' already exists."
@@ -142,7 +142,6 @@ class ConditionsRepository(metaclass=Singleton):
 
     async def delete(self, identifier: int | str) -> ConditionModel:
         async with self.session() as session:
-            # Query within this session
             if isinstance(identifier, int):
                 clause: ColumnElement[bool] = ConditionModel.id == identifier
             elif isinstance(identifier, str) and identifier.isdigit():
@@ -153,9 +152,7 @@ class ConditionsRepository(metaclass=Singleton):
                 clause: ColumnElement[bool] = ConditionModel.name == identifier
 
             result: Result[tuple[ConditionModel]] = await session.execute(select(ConditionModel).where(clause).limit(1))
-            model = result.scalar_one_or_none()
-
-            if not model:
+            if not (model := result.scalar_one_or_none()):
                 msg: str = f"Condition '{identifier}' not found."
                 raise KeyError(msg)
 

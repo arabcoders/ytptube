@@ -177,7 +177,7 @@ async def conditions_add(request: Request, encoder: Encoder, notify: EventBus) -
     return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("GET", "api/conditions/{id}", name="condition_get")
+@route("GET", r"api/conditions/{id:\d+}", name="condition_get")
 async def conditions_get(request: Request, encoder: Encoder) -> Response:
     """
     Get the conditions
@@ -199,7 +199,7 @@ async def conditions_get(request: Request, encoder: Encoder) -> Response:
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("DELETE", "api/conditions/{id}", name="condition_delete")
+@route("DELETE", r"api/conditions/{id:\d+}", name="condition_delete")
 async def conditions_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Delete Condition.
@@ -226,7 +226,7 @@ async def conditions_delete(request: Request, encoder: Encoder, notify: EventBus
         return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
 
 
-@route("PATCH", "api/conditions/{id}", name="condition_patch")
+@route("PATCH", r"api/conditions/{id:\d+}", name="condition_patch")
 async def conditions_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Patch Condition.
@@ -277,7 +277,7 @@ async def conditions_patch(request: Request, encoder: Encoder, notify: EventBus)
     return web.json_response(data=updated, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("PUT", "api/conditions/{id}", name="condition_update")
+@route("PUT", r"api/conditions/{id:\d+}", name="condition_update")
 async def conditions_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     """
     Update Condition.

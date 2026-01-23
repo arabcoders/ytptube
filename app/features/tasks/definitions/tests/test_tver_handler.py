@@ -1,6 +1,6 @@
 import pytest
 
-from app.library.task_handlers.tver import TverHandler
+from app.features.tasks.definitions.handlers.tver import TverHandler
 from app.library.Tasks import Task, TaskResult
 
 
@@ -151,9 +151,10 @@ def test_tver_handler_parse(url: str, should_match: bool):
         assert result is None
 
 
-def test_tver_handler_can_handle():
+@pytest.mark.asyncio
+async def test_tver_handler_can_handle():
     """Test tver handler can_handle method."""
     task_valid = Task(id="test1", name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
     task_invalid = Task(id="test2", name="Test", url="https://youtube.com/watch?v=123", preset="default")
-    assert TverHandler.can_handle(task_valid) is True
-    assert TverHandler.can_handle(task_invalid) is False
+    assert await TverHandler.can_handle(task_valid) is True
+    assert await TverHandler.can_handle(task_invalid) is False

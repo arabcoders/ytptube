@@ -83,7 +83,7 @@ async def notifications_add(request: Request, encoder: Encoder, notify: EventBus
     return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("GET", "api/notifications/{id}", "notification_get")
+@route("GET", r"api/notifications/{id:\d+}", "notification_get")
 async def notifications_get(request: Request, encoder: Encoder) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -94,7 +94,7 @@ async def notifications_get(request: Request, encoder: Encoder) -> Response:
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("DELETE", "api/notifications/{id}", "notification_delete")
+@route("DELETE", r"api/notifications/{id:\d+}", "notification_delete")
 async def notifications_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -114,7 +114,7 @@ async def notifications_delete(request: Request, encoder: Encoder, notify: Event
         return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
 
 
-@route("PATCH", "api/notifications/{id}", "notification_patch")
+@route("PATCH", r"api/notifications/{id:\d+}", "notification_patch")
 async def notifications_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -180,7 +180,7 @@ async def notifications_patch(request: Request, encoder: Encoder, notify: EventB
     )
 
 
-@route("PUT", "api/notifications/{id}", "notification_update")
+@route("PUT", r"api/notifications/{id:\d+}", "notification_update")
 async def notifications_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)

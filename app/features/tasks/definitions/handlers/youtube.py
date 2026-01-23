@@ -15,7 +15,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class YoutubeHandler(BaseHandler):
-    FEED = "https://www.youtube.com/feeds/videos.xml?{type}={id}"
+    FEED: str = "https://www.youtube.com/feeds/videos.xml?{type}={id}"
 
     CHANNEL_REGEX: re.Pattern[str] = re.compile(
         r"^https?://(?:www\.)?youtube\.com/(?:channel/(?P<id>UC[0-9A-Za-z_-]{22})|)/?$"
@@ -26,7 +26,7 @@ class YoutubeHandler(BaseHandler):
     )
 
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         LOG.debug(f"'{task.name}': Checking if task URL is parsable YouTube URL: {task.url}")
         return YoutubeHandler.parse(task.url) is not None
 

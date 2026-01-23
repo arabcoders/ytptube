@@ -67,7 +67,7 @@ async def dl_fields_add(request: Request, encoder: Encoder, notify: EventBus) ->
     return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("GET", "api/dl_fields/{id}", "dl_fields_get")
+@route("GET", r"api/dl_fields/{id:\d+}", "dl_fields_get")
 async def dl_fields_get(request: Request, encoder: Encoder) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -78,7 +78,7 @@ async def dl_fields_get(request: Request, encoder: Encoder) -> Response:
     return web.json_response(data=_serialize(model), status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
-@route("DELETE", "api/dl_fields/{id}", "dl_fields_delete")
+@route("DELETE", r"api/dl_fields/{id:\d+}", "dl_fields_delete")
 async def dl_fields_delete(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -97,7 +97,7 @@ async def dl_fields_delete(request: Request, encoder: Encoder, notify: EventBus)
         return web.json_response({"error": str(exc)}, status=web.HTTPNotFound.status_code)
 
 
-@route("PATCH", "api/dl_fields/{id}", "dl_fields_patch")
+@route("PATCH", r"api/dl_fields/{id:\d+}", "dl_fields_patch")
 async def dl_fields_patch(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)
@@ -138,7 +138,7 @@ async def dl_fields_patch(request: Request, encoder: Encoder, notify: EventBus) 
     )
 
 
-@route("PUT", "api/dl_fields/{id}", "dl_fields_update")
+@route("PUT", r"api/dl_fields/{id:\d+}", "dl_fields_update")
 async def dl_fields_update(request: Request, encoder: Encoder, notify: EventBus) -> Response:
     if not (identifier := request.match_info.get("id")):
         return web.json_response({"error": "ID required"}, status=web.HTTPBadRequest.status_code)

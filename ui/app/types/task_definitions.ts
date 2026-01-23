@@ -1,6 +1,5 @@
 // --- Task Definition Schema Types ---
-
-export type TaskMatchPattern = | string | { regex?: string; glob?: string }
+import type { Paginated } from '~/types/responses'
 
 export type EngineType = 'httpx' | 'selenium'
 
@@ -29,7 +28,7 @@ export interface RequestConfig {
   headers?: StringMap
   params?: StringMap
   data?: StringMap | string | null
-  json?: object | Array<unknown> | string | number | boolean | null
+  json_data?: object | Array<unknown> | string | number | boolean | null
   timeout?: number
 }
 
@@ -79,31 +78,37 @@ export interface ParseConfig {
   [field: string]: ExtractionRule | Container | undefined
 }
 
-export interface TaskDefinitionDocument {
-  name: string
-  match: Array<TaskMatchPattern>
+export interface TaskDefinitionConfig {
   parse: ParseConfig
-  priority?: number
   engine?: EngineConfig
   request?: RequestConfig
   response?: ResponseConfig
 }
 
-// --- Summaries and Error Types ---
+export interface TaskDefinitionDocument {
+  name: string
+  match_url: string[]
+  priority?: number
+  enabled?: boolean
+  definition: TaskDefinitionConfig
+}
 
 export type TaskDefinitionSummary = {
-  id: string,
-  name: string,
-  priority: number,
-  updated_at: number,
+  id: number
+  name: string
+  priority: number
+  match_url: ReadonlyArray<string>
+  enabled: boolean
+  created_at: string
+  updated_at: string
 }
 
 export type TaskDefinitionDetailed = TaskDefinitionSummary & {
-  definition: TaskDefinitionDocument
+  definition: TaskDefinitionConfig
 }
+
+export type TaskDefinitionList = Paginated<TaskDefinitionSummary>
 
 export type TaskDefinitionErrorResponse = {
   error: string,
 }
-
-

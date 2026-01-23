@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import logging
-import shutil
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -46,7 +45,7 @@ class Migration(abc.ABC):
             timestamp = int(time.time())
             destination: Path = self._migrated_dir / f"{source.stem}_{timestamp}{source.suffix}"
 
-        shutil.move(str(source), str(destination))
+        source.rename(destination)
         return destination
 
     def _unique_name(self, name: str, seen_names: dict[str, int]) -> str:

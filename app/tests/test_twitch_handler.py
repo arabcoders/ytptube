@@ -1,6 +1,6 @@
 import pytest
 
-from app.library.task_handlers.twitch import TwitchHandler
+from app.features.tasks.definitions.handlers.twitch import TwitchHandler
 from app.library.Tasks import Task, TaskResult
 
 

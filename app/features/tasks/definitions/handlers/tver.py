@@ -10,9 +10,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class TverHandler(BaseHandler):
-    SERIES_API = "https://platform-api.tver.jp/service/api/v1/callSeriesEpisodes/{id}"
-    SESSION_API = "https://platform-api.tver.jp/v2/api/platform_users/browser/create"
-    HEADERS = {
+    SERIES_API: str = "https://platform-api.tver.jp/service/api/v1/callSeriesEpisodes/{id}"
+    SESSION_API: str = "https://platform-api.tver.jp/v2/api/platform_users/browser/create"
+    HEADERS: dict[str, str] = {
         "x-tver-platform-type": "web",
         "Origin": "https://tver.jp",
         "Referer": "https://tver.jp/",
@@ -21,7 +21,7 @@ class TverHandler(BaseHandler):
     RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?tver\.jp\/series\/(?P<id>sr[a-z0-9_]+)$")
 
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         LOG.debug(f"Checking if task '{task.name}' is using parsable Tver series URL: {task.url}")
         return TverHandler.parse(task.url) is not None
 

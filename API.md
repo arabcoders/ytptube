@@ -42,11 +42,12 @@ This document describes the available endpoints and their usage. All endpoints r
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
     - [PATCH /api/tasks/{id}](#patch-apitasksid)
-    - [GET /api/task\_definitions/](#get-apitask_definitions)
-    - [GET /api/task\_definitions/{identifier}](#get-apitask_definitionsidentifier)
-    - [POST /api/task\_definitions/](#post-apitask_definitions)
-    - [PUT /api/task\_definitions/{identifier}](#put-apitask_definitionsidentifier)
-    - [DELETE /api/task\_definitions/{identifier}](#delete-apitask_definitionsidentifier)
+    - [GET /api/tasks/definitions/](#get-apitasksdefinitions)
+    - [GET /api/tasks/definitions/{id}](#get-apitasksdefinitionsid)
+    - [POST /api/tasks/definitions/](#post-apitasksdefinitions)
+    - [PUT /api/tasks/definitions/{id}](#put-apitasksdefinitionsid)
+    - [PATCH /api/tasks/definitions/{id}](#patch-apitasksdefinitionsid)
+    - [DELETE /api/tasks/definitions/{id}](#delete-apitasksdefinitionsid)
     - [GET /api/player/playlist/{file:.\*}.m3u8](#get-apiplayerplaylistfilem3u8)
     - [GET /api/player/m3u8/{mode}/{file:.\*}.m3u8](#get-apiplayerm3u8modefilem3u8)
     - [GET /api/player/segments/{segment}/{file:.\*}.ts](#get-apiplayersegmentssegmentfilets)
@@ -70,11 +71,11 @@ This document describes the available endpoints and their usage. All endpoints r
     - [PUT /api/presets](#put-apipresets)
     - [GET /api/conditions/](#get-apiconditions)
     - [POST /api/conditions/](#post-apiconditions)
+    - [POST /api/conditions/test](#post-apiconditionstest)
     - [GET /api/conditions/{id}](#get-apiconditionsid)
     - [PATCH /api/conditions/{id}](#patch-apiconditionsid)
     - [PUT /api/conditions/{id}](#put-apiconditionsid)
     - [DELETE /api/conditions/{id}](#delete-apiconditionsid)
-    - [POST /api/conditions/test](#post-apiconditionstest)
     - [GET /api/logs](#get-apilogs)
     - [GET /api/logs/stream](#get-apilogsstream)
     - [GET /api/notifications/](#get-apinotifications)
@@ -1140,54 +1141,71 @@ Returns the updated task
 
 ---
 
-### GET /api/task_definitions/
-**Purpose**: Retrieve all task definitions.
+### GET /api/tasks/definitions/
+**Purpose**: Retrieve task definitions.
 
 **Query Parameters**:
 - `include=definition` (optional) - Include the full definition object in response.
-
-**Response**:
-```json
-[
-  {
-    "id": "<uuid>",
-    "name": "Task Definition Name",
-    "description": "...",
-    "enabled": true,
-    "definition": { ... }  // only if include=definition
-  },
-  ...
-]
-```
-
----
-
-### GET /api/task_definitions/{identifier}
-**Purpose**: Retrieve a specific task definition by ID or name.
-
-**Path Parameter**:
-- `identifier`: Task definition ID or name.
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page. Default: `config.default_pagination`.
 
 **Response**:
 ```json
 {
-  "id": "<uuid>",
-  "name": "Task Definition Name",
-  "description": "...",
-  "enabled": true,
-  "definition": {
-    "handler": "GenericTaskHandler",
-    "config": { ... }
+  "items": [
+    {
+      "id": 1,
+      "name": "Task Definition Name",
+      "description": "...",
+      "enabled": true,
+      "definition": { ... }  // only if include=definition
+    },
+    ...
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
   }
 }
 ```
 
-- `400 Bad Request` if identifier is missing.
+---
+
+### GET /api/tasks/definitions/{id}
+**Purpose**: Retrieve a specific task definition by ID.
+
+**Path Parameter**:
+- `id`: Task definition ID.
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "Task Definition Name",
+  "description": "...",
+  "enabled": true,
+  "definition": {
+    "parse": {
+      "url": { ... },
+      "items": { ... }
+    },
+    "engine": { ... },
+    "request": { ... },
+    "response": { ... }
+  }
+}
+```
+
+- `400 Bad Request` if ID is missing.
 - `404 Not Found` if the task definition doesn't exist.
 
 ---
 
-### POST /api/task_definitions/
+### POST /api/tasks/definitions/
 **Purpose**: Create a new task definition.
 
 **Body**:
@@ -1197,19 +1215,13 @@ Returns the updated task
   "description": "...",
   "enabled": true,
   "definition": {
-    "handler": "GenericTaskHandler",
-    "config": { ... }
-  }
-}
-```
-
-Or wrap in a definition object:
-```json
-{
-  "definition": {
-    "name": "My Task Definition",
-    "handler": "GenericTaskHandler",
-    ...
+    "parse": {
+      "url": { ... },
+      "items": { ... }
+    },
+    "engine": { ... },
+    "request": { ... },
+    "response": { ... }
   }
 }
 ```
@@ -1217,7 +1229,7 @@ Or wrap in a definition object:
 **Response**:
 ```json
 {
-  "id": "<uuid>",
+  "id": 1,
   "name": "My Task Definition",
   "description": "...",
   "enabled": true,
@@ -1230,11 +1242,11 @@ Or wrap in a definition object:
 
 ---
 
-### PUT /api/task_definitions/{identifier}
-**Purpose**: Update an existing task definition.
+### PUT /api/tasks/definitions/{id}
+**Purpose**: Replace an existing task definition.
 
 **Path Parameter**:
-- `identifier`: Task definition ID or name.
+- `id`: Task definition ID.
 
 **Body**:
 ```json
@@ -1243,8 +1255,10 @@ Or wrap in a definition object:
   "description": "...",
   "enabled": false,
   "definition": {
-    "handler": "GenericTaskHandler",
-    "config": { ... }
+    "parse": { ... },
+    "engine": { ... },
+    "request": { ... },
+    "response": { ... }
   }
 }
 ```
@@ -1252,7 +1266,7 @@ Or wrap in a definition object:
 **Response**:
 ```json
 {
-  "id": "<uuid>",
+  "id": 1,
   "name": "Updated Name",
   "description": "...",
   "enabled": false,
@@ -1261,23 +1275,53 @@ Or wrap in a definition object:
 ```
 
 - `200 OK` if successful.
-- `400 Bad Request` if identifier is missing or validation fails.
+- `400 Bad Request` if ID is missing or validation fails.
+- `404 Not Found` if the task definition doesn't exist.
 
 ---
 
-### DELETE /api/task_definitions/{identifier}
+### PATCH /api/tasks/definitions/{id}
+**Purpose**: Partially update a task definition.
+
+**Path Parameter**:
+- `id`: Task definition ID.
+
+**Body**:
+```json
+{
+  "enabled": false,
+  "description": "Updated description"
+}
+```
+
+**Response**: Updated task definition object.
+
+- `200 OK` if successful.
+- `400 Bad Request` if ID is missing or validation fails.
+- `404 Not Found` if the task definition doesn't exist.
+
+---
+
+### DELETE /api/tasks/definitions/{id}
 **Purpose**: Delete a task definition.
 
 **Path Parameter**:
-- `identifier`: Task definition ID or name.
+- `id`: Task definition ID.
 
 **Response**:
 ```json
-{ "status": "deleted" }
+{
+  "id": 1,
+  "name": "Deleted Definition",
+  "description": "...",
+  "enabled": false,
+  "definition": { ... }
+}
 ```
 
 - `200 OK` if successful.
-- `400 Bad Request` if identifier is missing or task definition doesn't exist.
+- `400 Bad Request` if ID is missing.
+- `404 Not Found` if the task definition doesn't exist.
 
 ---
 
@@ -1616,6 +1660,9 @@ Binary image data with appropriate headers
 ### GET /api/dl_fields/{id}
 **Purpose**: Retrieve a single download field by ID.
 
+**Path Parameter**:
+- `id`: Download field ID.
+
 **Response**:
 ```json
 { "id": 1, "name": "Title", "description": "...", "field": "title", "kind": "text", "order": 0, "value": "", "icon": "fa-solid fa-tag", "extras": {} }
@@ -1625,6 +1672,9 @@ Binary image data with appropriate headers
 
 ### PATCH /api/dl_fields/{id}
 **Purpose**: Partially update a download field.
+
+**Path Parameter**:
+- `id`: Download field ID.
 
 **Body**:
 ```json
@@ -1637,6 +1687,9 @@ Binary image data with appropriate headers
 
 ### PUT /api/dl_fields/{id}
 **Purpose**: Replace a download field.
+
+**Path Parameter**:
+- `id`: Download field ID.
 
 **Body**:
 ```json
@@ -1658,6 +1711,9 @@ Binary image data with appropriate headers
 
 ### DELETE /api/dl_fields/{id}
 **Purpose**: Delete a download field by ID.
+
+**Path Parameter**:
+- `id`: Download field ID.
 
 **Response**:
 ```json
@@ -1759,41 +1815,6 @@ Binary image data with appropriate headers
 
 ---
 
-### GET /api/conditions/{id}
-**Purpose**: Retrieve a condition by ID.
-
-**Response**: Condition object.
-
----
-
-### PATCH /api/conditions/{id}
-**Purpose**: Partially update a condition.
-
-**Body**:
-```json
-{ "enabled": false, "priority": 5 }
-```
-
-**Response**: Updated condition object.
-
----
-
-### PUT /api/conditions/{id}
-**Purpose**: Replace a condition.
-
-**Body**: Full condition object.
-
-**Response**: Updated condition object.
-
----
-
-### DELETE /api/conditions/{id}
-**Purpose**: Delete a condition by ID.
-
-**Response**: Deleted condition object.
-
----
-
 ### POST /api/conditions/test
 **Purpose**: Evaluate a condition expression against info extracted from a URL.
 
@@ -1812,6 +1833,53 @@ Binary image data with appropriate headers
 ```
 
 - `400 Bad Request` for invalid body, missing fields, or extractor failures.
+
+---
+
+### GET /api/conditions/{id}
+**Purpose**: Retrieve a condition by ID.
+
+**Path Parameter**:
+- `id`: Condition ID.
+
+**Response**: Condition object.
+
+---
+
+### PATCH /api/conditions/{id}
+**Purpose**: Partially update a condition.
+
+**Path Parameter**:
+- `id`: Condition ID.
+
+**Body**:
+```json
+{ "enabled": false, "priority": 5 }
+```
+
+**Response**: Updated condition object.
+
+---
+
+### PUT /api/conditions/{id}
+**Purpose**: Replace a condition.
+
+**Path Parameter**:
+- `id`: Condition ID.
+
+**Body**: Full condition object.
+
+**Response**: Updated condition object.
+
+---
+
+### DELETE /api/conditions/{id}
+**Purpose**: Delete a condition by ID.
+
+**Path Parameter**:
+- `id`: Condition ID.
+
+**Response**: Deleted condition object.
 
 ---
 
@@ -1946,12 +2014,18 @@ Binary image data with appropriate headers
 ### GET /api/notifications/{id}
 **Purpose**: Retrieve a notification target by ID.
 
+**Path Parameter**:
+- `id`: Notification target ID.
+
 **Response**: Notification target object.
 
 ---
 
 ### PATCH /api/notifications/{id}
 **Purpose**: Partially update a notification target.
+
+**Path Parameter**:
+- `id`: Notification target ID.
 
 **Body**:
 ```json
@@ -1965,6 +2039,9 @@ Binary image data with appropriate headers
 ### PUT /api/notifications/{id}
 **Purpose**: Replace a notification target.
 
+**Path Parameter**:
+- `id`: Notification target ID.
+
 **Body**: Full notification target object.
 
 **Response**: Updated notification target.
@@ -1973,6 +2050,9 @@ Binary image data with appropriate headers
 
 ### DELETE /api/notifications/{id}
 **Purpose**: Delete a notification target.
+
+**Path Parameter**:
+- `id`: Notification target ID.
 
 **Response**: Deleted notification target.
 
@@ -2186,7 +2266,7 @@ The WebSocket API provides real-time bidirectional communication between the cli
 
 ### Connection
 
-**URL**: `ws://localhost:8081/ws` (development) or `wss://yourdomain.com/ws` (production)
+**URL**: `ws://localhost:8081/ws` (development) or `wss://domain.example/ws` (production)
 
 The client automatically connects to the WebSocket server and receives a `connected` event with initial state. The frontend wrapper handles reconnection (default: up to 50 attempts, 5s delay).
 

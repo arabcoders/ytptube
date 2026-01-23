@@ -5,11 +5,15 @@
   "type": "object",
   "required": [
     "name",
-    "match",
-    "parse"
+    "match_url",
+    "definition"
   ],
   "additionalProperties": false,
   "properties": {
+    "id": {
+      "type": "integer",
+      "description": "Auto-generated unique identifier (read-only)."
+    },
     "name": {
       "type": "string",
       "minLength": 1,
@@ -21,49 +25,39 @@
       "description": "Optional ordering priority. Lower numbers are listed first.",
       "default": 0
     },
-    "match": {
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether this definition is active. Disabled definitions are not matched.",
+      "default": true
+    },
+    "match_url": {
       "type": "array",
       "minItems": 1,
       "items": {
-        "oneOf": [
-          {
-            "type": "string",
-            "minLength": 1,
-            "description": "Glob pattern matched against task URLs."
-          },
-          {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-              "regex": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Regular expression applied to task URLs."
-              },
-              "glob": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Glob pattern applied to task URLs."
-              }
-            },
-            "anyOf": [
-              {
-                "required": [
-                  "regex"
-                ]
-              },
-              {
-                "required": [
-                  "glob"
-                ]
-              }
-            ]
-          }
-        ]
+        "type": "string",
+        "minLength": 1,
+        "description": "URL pattern. Use glob patterns (e.g. 'https://example.com/*') or regex (e.g. '/https://example\\.com/post/[0-9]+/')."
       },
-      "description": "Patterns that determine which tasks use this definition."
+      "description": "Patterns that determine which tasks use this definition. Regex patterns are detected by /pattern/ format."
     },
-    "engine": {
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when definition was created (read-only)."
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when definition was last updated (read-only)."
+    },
+    "definition": {
+      "type": "object",
+      "required": [
+        "parse"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "engine": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -123,9 +117,9 @@
           }
         }
       },
-      "description": "Optional engine configuration (defaults to HTTPX)."
-    },
-    "request": {
+          "description": "Optional engine configuration (defaults to HTTPX)."
+        },
+        "request": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -165,7 +159,7 @@
             }
           ]
         },
-        "json": {
+        "json_data": {
           "description": "JSON payload for POST requests.",
           "type": [
             "object",
@@ -182,81 +176,93 @@
           "description": "Timeout in seconds for the request."
         }
       },
-      "description": "Optional HTTP request overrides."
-    },
-    "response": {
+          "description": "Optional HTTP request overrides."
+        },
+        "response": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "html",
-            "json"
-          ],
-          "default": "html",
-          "description": "Body format returned by the target URL."
-        }
-      }
-    },
-    "parse": {
-      "type": "object",
-      "minProperties": 1,
-      "description": "Field extraction rules and optional container definition.",
-      "additionalProperties": false,
-      "properties": {
-        "items": {
-          "$ref": "#/definitions/container"
-        }
-      },
-      "patternProperties": {
-        "^(?!items$).+$": {
-          "$ref": "#/definitions/extractionRule"
-        }
-      },
-      "allOf": [
-        {
-          "if": {
-            "not": {
-              "required": [
-                "items"
-              ]
+            "type": {
+              "type": "string",
+              "enum": [
+                "html",
+                "json"
+              ],
+              "default": "html",
+              "description": "Body format returned by the target URL."
+            }
+          }
+        },
+        "parse": {
+          "type": "object",
+          "minProperties": 1,
+          "description": "Field extraction rules and optional container definition.",
+          "additionalProperties": false,
+          "properties": {
+            "items": {
+              "$ref": "#/definitions/container"
             }
           },
-          "then": {
-            "required": [
-              "link"
-            ]
-          }
+          "patternProperties": {
+            "^(?!items$).+$": {
+              "$ref": "#/definitions/extractionRule"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "not": {
+                  "required": [
+                    "items"
+                  ]
+                }
+              },
+              "then": {
+                "required": [
+                  "link"
+                ]
+              }
+            }
+          ]
         }
-      ]
+      }
     }
   },
   "allOf": [
     {
       "if": {
         "properties": {
-          "engine": {
+          "definition": {
             "properties": {
-              "type": { "const": "selenium" }
+              "engine": {
+                "properties": {
+                  "type": { "const": "selenium" }
+                },
+                "required": ["type"]
+              }
             },
-            "required": ["type"]
+            "required": ["engine"]
           }
         },
-        "required": ["engine"]
+        "required": ["definition"]
       },
       "then": {
         "properties": {
-          "engine": {
+          "definition": {
             "properties": {
-              "options": {
-                "required": ["url"]
+              "engine": {
+                "properties": {
+                  "options": {
+                    "required": ["url"]
+                  }
+                },
+                "required": ["options"]
               }
             },
-            "required": ["options"]
+            "required": ["engine"]
           }
         },
-        "required": ["engine"]
+        "required": ["definition"]
       }
     }
   ],
@@ -421,66 +427,68 @@
   "examples": [
     {
       "name": "example",
-      "match": [
+      "match_url": [
         "https://example.com/articles/*",
-        {
-          "regex": "https://example.com/post/[0-9]+"
-        }
+        "/https://example\\.com/post/[0-9]+/"
       ],
-      "engine": {
-        "type": "httpx"
-      },
-      "request": {
-        "method": "GET",
-        "headers": {
-          "User-Agent": "MyCustomAgent/1.0"
-        }
-      },
-      "parse": {
-        "link": {
-          "type": "css",
-          "expression": ".article a.link",
-          "attribute": "href"
+      "definition": {
+        "engine": {
+          "type": "httpx"
         },
-        "title": {
-          "type": "css",
-          "expression": ".article .title",
-          "attribute": "text"
+        "request": {
+          "method": "GET",
+          "headers": {
+            "User-Agent": "MyCustomAgent/1.0"
+          }
         },
-        "id": {
-          "type": "regex",
-          "expression": "id=(?P<id>[0-9]+)",
-          "post_filter": {
-            "filter": "(?P<id>[0-9]+)",
-            "value": "id"
+        "parse": {
+          "link": {
+            "type": "css",
+            "expression": ".article a.link",
+            "attribute": "href"
+          },
+          "title": {
+            "type": "css",
+            "expression": ".article .title",
+            "attribute": "text"
+          },
+          "id": {
+            "type": "regex",
+            "expression": "id=(?P<id>[0-9]+)",
+            "post_filter": {
+              "filter": "(?P<id>[0-9]+)",
+              "value": "id"
+            }
           }
         }
       }
     },
     {
       "name": "container-example",
-      "match": [
+      "match_url": [
         "https://example.com/list"
       ],
-      "parse": {
-        "items": {
-          "type": "css",
-          "selector": ".cards .card",
-          "fields": {
-            "link": {
-              "type": "css",
-              "expression": ".card-header a",
-              "attribute": "href"
-            },
-            "title": {
-              "type": "css",
-              "expression": ".card-header a",
-              "attribute": "text"
-            },
-            "poet": {
-              "type": "css",
-              "expression": "footer .card-footer-item:first-child a",
-              "attribute": "text"
+      "definition": {
+        "parse": {
+          "items": {
+            "type": "css",
+            "selector": ".cards .card",
+            "fields": {
+              "link": {
+                "type": "css",
+                "expression": ".card-header a",
+                "attribute": "href"
+              },
+              "title": {
+                "type": "css",
+                "expression": ".card-header a",
+                "attribute": "text"
+              },
+              "poet": {
+                "type": "css",
+                "expression": "footer .card-footer-item:first-child a",
+                "attribute": "text"
+              }
             }
           }
         }

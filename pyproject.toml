@@ -186,7 +186,7 @@ pythonpath = ["."]
 testpaths = ["app/tests", "app/features"]
 addopts = "-v --tb=short"
 filterwarnings = [
-  "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",
+  "ignore:Parsing dates involving a day of month without a year:DeprecationWarning"
 ]
 
 [dependency-groups]

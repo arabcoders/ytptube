@@ -24,7 +24,7 @@ class RssGenericHandler(BaseHandler):
     )
 
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         LOG.debug(f"'{task.name}': Checking if task URL is parsable RSS feed: {task.url}")
         return RssGenericHandler.parse(task.url) is not None
 

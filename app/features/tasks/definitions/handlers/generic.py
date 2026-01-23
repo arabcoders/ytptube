@@ -8,17 +8,18 @@ import hashlib
 import json
 import logging
 import re
-from collections.abc import Iterable, Mapping, MutableMapping
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 
 import jmespath
 from parsel import Selector
-from parsel.selector import SelectorList
 from yt_dlp.utils.networking import random_user_agent
 
+from app.features.tasks.definitions.schemas import (
+    ExtractionRule,
+    TaskDefinition,
+)
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import async_client
@@ -28,538 +29,13 @@ from app.library.Utils import fetch_info, get_archive_id
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import httpx
     from parsel.selector import SelectorList
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CACHE: Cache = Cache()
-
-
-@dataclass(slots=True)
-class MatchRule:
-    """Represents a single URL matcher compiled to regex."""
-
-    source: str
-    """Original source pattern (regex or glob)."""
-
-    regex: re.Pattern[str]
-    """Compiled regex pattern."""
-
-    @classmethod
-    def from_value(cls, value: str | Mapping[str, Any]) -> MatchRule | None:
-        """
-        Create a MatchRule from a string or mapping.
-
-        Args:
-            value (str|Mapping[str, Any]): A string (treated as glob) or a mapping with 'regex' or 'glob' keys.
-
-        Returns:
-            (MatchRule|None): A MatchRule instance if successful, None otherwise.
-
-        """
-        if isinstance(value, Mapping):
-            pattern: str | None = value.get("regex")
-            glob_pattern: str | None = value.get("glob")
-            raw: str | None = None
-
-            if isinstance(pattern, str) and pattern:
-                raw = pattern
-                try:
-                    compiled: re.Pattern[str] = re.compile(pattern)
-                except re.error as exc:
-                    LOG.error(f"Invalid regex pattern '{pattern}': {exc}")
-                    return None
-
-                return cls(source=raw, regex=compiled)
-
-            if isinstance(glob_pattern, str) and glob_pattern:
-                raw = glob_pattern
-                compiled = re.compile(fnmatch.translate(glob_pattern))
-                return cls(source=raw, regex=compiled)
-
-            LOG.error("Matcher mapping must include 'regex' or 'glob' key with a string value.")
-            return None
-
-        if not isinstance(value, str) or not value:
-            LOG.error(f"Matcher value must be a non-empty string, got '{value!r}'.")
-            return None
-
-        # Treat plain string as glob pattern for convenience.
-        compiled = re.compile(fnmatch.translate(value))
-        return cls(source=value, regex=compiled)
-
-    def matches(self, url: str) -> bool:
-        """
-        Check if the given URL matches this rule.
-
-        Args:
-            url (str): The URL to check.
-
-        Returns:
-            (bool): True if the URL matches, False otherwise.
-
-        """
-        return bool(self.regex.match(url))
-
-
-@dataclass(slots=True)
-class PostFilter:
-    """Regex post-filter applied on extracted values."""
-
-    pattern: re.Pattern[str]
-    """Compiled regex pattern."""
-
-    value_key: str | None = None
-    """Optional group name or index to extract from the match."""
-
-    @classmethod
-    def from_mapping(cls, mapping: Mapping[str, Any]) -> PostFilter | None:
-        """
-        Create a PostFilter from a mapping.
-
-        Args:
-            mapping (Mapping[str,Any]): A mapping with 'filter' (regex pattern) and optional 'value' (group name or index) keys.
-
-        Returns:
-            (PostFilter|None): A PostFilter instance if successful, None otherwise.
-
-        """
-        pattern: str | None = mapping.get("filter")
-        if not isinstance(pattern, str) or not pattern:
-            LOG.error("post_filter requires a non-empty 'filter' string.")
-            return None
-
-        try:
-            compiled: re.Pattern[str] = re.compile(pattern)
-        except re.error as exc:
-            LOG.error(f"Invalid post_filter regex '{pattern}': {exc}")
-            return None
-
-        value_key: str | None = mapping.get("value")
-        if value_key is not None and not isinstance(value_key, str):
-            LOG.error("post_filter 'value' must be a string if provided.")
-            return None
-
-        return cls(pattern=compiled, value_key=value_key)
-
-    def apply(self, candidate: str) -> str | None:
-        """
-        Apply the post-filter to the candidate string.
-
-        Args:
-            candidate (str): The string to filter.
-
-        Returns:
-            (str|None): The filtered value if matched, None otherwise.
-
-        """
-        match: re.Match[str] | None = self.pattern.search(candidate)
-        if not match:
-            return None
-
-        if self.value_key:
-            try:
-                return match.group(self.value_key)
-            except IndexError:
-                LOG.warning(
-                    f"post_filter value index '{self.value_key}' not present in pattern {self.pattern.pattern!r}."
-                )
-            except KeyError:
-                LOG.warning(
-                    f"post_filter value key '{self.value_key}' not present in pattern {self.pattern.pattern!r}."
-                )
-            return None
-
-        if match.groupdict():
-            # Prefer first named group when available.
-            key, value = next(iter(match.groupdict().items()))
-            if value is not None:
-                LOG.debug(f"post_filter using named group '{key}'.")
-                return value
-
-        if match.groups():
-            return match.group(1)
-
-        return match.group(0)
-
-
-@dataclass(slots=True)
-class ExtractionRule:
-    """Single field extraction description."""
-
-    type: Literal["css", "xpath", "regex"]
-    """Type of extraction to perform."""
-
-    expression: str
-    """CSS selector, XPath expression or regex pattern."""
-
-    attribute: str | None = None
-    """Optional attribute to extract (e.g. 'href', 'src', 'text', etc.)."""
-
-    post_filter: PostFilter | None = None
-    """Optional post-filter to apply on extracted values."""
-
-
-@dataclass(slots=True)
-class EngineConfig:
-    """Engine selection to fetch the page."""
-
-    type: Literal["httpx", "selenium"] = "httpx"
-    """Engine type to use."""
-
-    options: dict[str, Any] = field(default_factory=dict)
-    """Engine-specific options."""
-
-
-@dataclass(slots=True)
-class RequestConfig:
-    """HTTP request configuration."""
-
-    method: str = "GET"
-    """HTTP method to use."""
-    headers: dict[str, str] = field(default_factory=dict)
-    """HTTP headers to include."""
-    params: dict[str, Any] = field(default_factory=dict)
-    """Query parameters to include."""
-
-    data: Any | None = None
-    """Request body data to include."""
-    json: Any | None = None
-    """Request body JSON data to include."""
-    timeout: float | None = None
-    """Request timeout in seconds."""
-    url: str | None = None
-    """Optional URL to use instead of the task URL."""
-
-    def normalized_method(self) -> str:
-        """
-        Get the HTTP method in uppercase.
-
-        Returns:
-            (str): The HTTP method in uppercase.
-
-        """
-        return self.method.upper() if isinstance(self.method, str) else "GET"
-
-
-@dataclass(slots=True)
-class ResponseConfig:
-    """Defines how to interpret the response body returned by the fetch engine."""
-
-    format: Literal["html", "json"] = "html"
-    """Body format. Defaults to HTML."""
-
-
-@dataclass(slots=True)
-class ContainerDefinition:
-    """Defines a repeating element with nested field extraction."""
-
-    selector_type: Literal["css", "xpath", "jsonpath"]
-    """Type of selector to use for locating container elements."""
-
-    selector: str
-    """Selector expression for locating container elements."""
-
-    fields: dict[str, ExtractionRule]
-    """Field extraction rules relative to the container."""
-
-
-@dataclass(slots=True)
-class TaskDefinition:
-    """Full task definition as loaded from disk."""
-
-    name: str
-    """Human-readable name of the task definition."""
-    source: Path
-    """Path to the source JSON file."""
-    matchers: list[MatchRule]
-    """List of URL matchers."""
-    engine: EngineConfig
-    """Engine configuration."""
-    request: RequestConfig
-    """Request configuration."""
-    parsers: dict[str, ExtractionRule]
-    """Field extraction rules."""
-    container: ContainerDefinition | None = None
-    """Optional container definition for repeating elements."""
-    response: ResponseConfig = field(default_factory=ResponseConfig)
-    """Response configuration."""
-
-    def matches(self, url: str) -> bool:
-        """
-        Check if the given URL matches any of the defined matchers.
-
-        Args:
-            url (str): The URL to check.
-
-        Returns:
-            (bool): True if any matcher matches the URL, False otherwise.
-
-        """
-        return any(rule.matches(url) for rule in self.matchers)
-
-
-def _build_extraction_rule(field: str, raw: Mapping[str, Any], *, source: Path) -> ExtractionRule | None:
-    """
-    Build an ExtractionRule from a raw mapping.
-
-    Args:
-        field (str): The name of the field being defined.
-        raw (Mapping[str, Any]): The raw mapping defining the extraction rule.
-        source (Path): Path to the source JSON file for logging context.
-
-    Returns:
-        (ExtractionRule|None): An ExtractionRule instance if successful, None otherwise.
-
-    """
-    type_value: str | None = raw.get("type")
-    expression: str | None = raw.get("expression")
-
-    if not isinstance(type_value, str):
-        LOG.error(f"[{source.name}] Field '{field}' is missing a valid 'type'.")
-        return None
-
-    if type_value not in {"css", "xpath", "regex", "jsonpath"}:
-        LOG.error(f"[{source.name}] Field '{field}' has unsupported type '{type_value}'.")
-        return None
-
-    if not isinstance(expression, str) or not expression:
-        LOG.error(f"[{source.name}] Field '{field}' requires non-empty 'expression'.")
-        return None
-
-    attribute: str | None = raw.get("attribute")
-    if attribute is not None and not isinstance(attribute, str):
-        LOG.error(f"[{source.name}] Field '{field}' attribute must be a string if provided.")
-        return None
-
-    post_filter: PostFilter | None = None
-    if isinstance(raw.get("post_filter"), Mapping):
-        post_filter = PostFilter.from_mapping(raw["post_filter"])
-
-    return ExtractionRule(type=type_value, expression=expression, attribute=attribute, post_filter=post_filter)
-
-
-def _build_matchers(raw_match: Iterable[Any], *, source: Path) -> list[MatchRule]:
-    """
-    Build a list of MatchRule instances from raw match definitions.
-
-    Args:
-        raw_match (Iterable[Any]): An iterable of raw match definitions (strings or mappings).
-        source (Path): Path to the source JSON file for logging context.
-
-    Returns:
-        (list[MatchRule]): A list of MatchRule instances.
-
-    """
-    matchers: list[MatchRule] = []
-    for value in raw_match:
-        rule: MatchRule | None = MatchRule.from_value(value)
-        if rule:
-            matchers.append(rule)
-
-    if not matchers:
-        LOG.error(f"[{source.name}] No valid match rules found.")
-
-    return matchers
-
-
-def _normalize_mapping(value: Any) -> MutableMapping[str, Any]:
-    """
-    Ensure the value is a mutable mapping.
-
-    Args:
-        value (Any): The value to check.
-
-    Returns:
-        (MutableMapping[str, Any]): The value if it's a mutable mapping.
-
-    """
-    if isinstance(value, MutableMapping):
-        return value
-
-    msg = "Expected a mapping for parse/request/engine sections."
-    raise ValueError(msg)
-
-
-def load_task_definitions(config: Config | None = None) -> list[TaskDefinition]:
-    """
-    Load JSON task definitions from the configured tasks directory.
-
-    Args:
-        config (Config|None): Optional Config instance. If None, the singleton instance is used.
-
-    Returns:
-        (list[TaskDefinition]): A list of loaded TaskDefinition instances.
-
-    """
-    cfg: Config = config or Config.get_instance()
-    tasks_dir: Path = Path(cfg.config_path) / "tasks"
-
-    if not tasks_dir.exists():
-        return []
-
-    definitions: list[TaskDefinition] = []
-
-    for path in sorted(tasks_dir.glob("*.json")):
-        try:
-            content: str = path.read_text(encoding="utf-8")
-        except Exception as exc:
-            LOG.error(f"Failed to read task configuration '{path}': {exc}")
-            continue
-
-        try:
-            raw = json.loads(content)
-        except Exception as exc:
-            LOG.error(f"Failed to parse JSON for '{path}': {exc}")
-            continue
-
-        if not isinstance(raw, Mapping):
-            LOG.error(f"Task definition in '{path}' must be a JSON object.")
-            continue
-
-        name: str | None = raw.get("name")
-        if not isinstance(name, str) or not name.strip():
-            LOG.error(f"Task definition '{path}' missing a valid 'name'.")
-            continue
-
-        match_value: list[str] | None = raw.get("match")
-        if not isinstance(match_value, Iterable) or isinstance(match_value, (str, bytes)):
-            LOG.error(f"[{path.name}] 'match' must be a list of patterns.")
-            continue
-
-        matchers: list[MatchRule] = _build_matchers(match_value, source=path)
-        if not matchers:
-            continue
-
-        engine_raw: Any = raw.get("engine", {})
-        try:
-            engine_map: MutableMapping[str, Any] = _normalize_mapping(engine_raw)
-        except ValueError:
-            LOG.error(f"[{path.name}] 'engine' must be a JSON object when provided.")
-            continue
-
-        engine_type: str | None = engine_map.get("type", "httpx")
-        if engine_type not in ("httpx", "selenium"):
-            LOG.error(f"[{path.name}] Unsupported engine type '{engine_type}'.")
-            continue
-
-        engine_options: Any = engine_map.get("options") if isinstance(engine_map.get("options"), Mapping) else {}
-        engine = EngineConfig(type=engine_type, options=dict(engine_options))
-
-        request_raw: Any = raw.get("request", {})
-        try:
-            request_map: MutableMapping[str, Any] = _normalize_mapping(request_raw)
-        except ValueError:
-            LOG.error(f"[{path.name}] 'request' must be a JSON object when provided.")
-            continue
-
-        request = RequestConfig(
-            method=str(request_map.get("method", "GET")),
-            headers=dict(request_map.get("headers", {})) if isinstance(request_map.get("headers"), Mapping) else {},
-            params=dict(request_map.get("params", {})) if isinstance(request_map.get("params"), Mapping) else {},
-            data=request_map.get("data"),
-            json=request_map.get("json"),
-            timeout=float(request_map.get("timeout")) if request_map.get("timeout") is not None else None,
-            url=str(request_map.get("url")) if isinstance(request_map.get("url"), str) else None,
-        )
-
-        response_raw: Any = raw.get("response", {})
-        response_config = ResponseConfig()
-        if response_raw:
-            if not isinstance(response_raw, Mapping):
-                LOG.error(f"[{path.name}] 'response' must be an object when provided.")
-                continue
-
-            response_type: str = str(response_raw.get("type", "html")).lower()
-            if response_type not in ("html", "json"):
-                LOG.error(f"[{path.name}] Unsupported response type '{response_type}'.")
-                continue
-
-            response_config = ResponseConfig(format=response_type)
-
-        parse_raw: Mapping | None = raw.get("parse")
-        if not isinstance(parse_raw, Mapping):
-            LOG.error(f"[{path.name}] 'parse' must be a JSON object mapping fields to instructions.")
-            continue
-
-        container_definition: ContainerDefinition | None = None
-        parsers: dict[str, ExtractionRule] = {}
-
-        items_block: Mapping | None = parse_raw.get("items")
-        if isinstance(items_block, Mapping):
-            raw_fields: Mapping | None = items_block.get("fields")
-            if not isinstance(raw_fields, Mapping):
-                LOG.error(f"[{path.name}] 'items.fields' must be a mapping of field definitions.")
-                continue
-
-            container_fields: dict[str, ExtractionRule] = {}
-            for _field, rule in raw_fields.items():
-                if not isinstance(_field, str):
-                    LOG.error(f"[{path.name}] Container field names must be strings, got {_field!r}.")
-                    continue
-
-                if not isinstance(rule, Mapping):
-                    LOG.error(f"[{path.name}] Container definition for '{_field}' must be an object.")
-                    continue
-
-                extraction_rule: ExtractionRule | None = _build_extraction_rule(_field, rule, source=path)
-                if extraction_rule:
-                    container_fields[_field] = extraction_rule
-
-            if "link" not in container_fields:
-                LOG.error(f"[{path.name}] Container definition is missing required 'link' field.")
-                continue
-
-            selector_value: str | None = items_block.get("selector") or items_block.get("expression")
-            if not isinstance(selector_value, str) or not selector_value:
-                LOG.error(f"[{path.name}] 'items.selector' must be a non-empty string.")
-                continue
-
-            selector_type = str(items_block.get("type", "css"))
-            if selector_type not in ("css", "xpath", "jsonpath"):
-                LOG.error(f"[{path.name}] Unsupported container selector type '{selector_type}'.")
-                continue
-
-            container_definition = ContainerDefinition(
-                selector_type=selector_type,
-                selector=selector_value,
-                fields=container_fields,
-            )
-
-        for _field, rule in parse_raw.items():
-            if "items" == _field:
-                continue
-
-            if not isinstance(_field, str):
-                LOG.error(f"[{path.name}] Parser field names must be strings, got {_field!r}.")
-                continue
-
-            if not isinstance(rule, Mapping):
-                LOG.error(f"[{path.name}] Parser definition for '{_field}' must be an object.")
-                continue
-
-            extraction_rule = _build_extraction_rule(_field, rule, source=path)
-            if extraction_rule:
-                parsers[_field] = extraction_rule
-
-        if container_definition is None and "link" not in parsers:
-            LOG.error(f"[{path.name}] Missing required 'link' parser definition.")
-            continue
-
-        definition = TaskDefinition(
-            name=name.strip(),
-            source=path,
-            matchers=matchers,
-            engine=engine,
-            request=request,
-            parsers=parsers,
-            container=container_definition,
-            response=response_config,
-        )
-
-        definitions.append(definition)
-
-    return definitions
 
 
 class GenericTaskHandler(BaseHandler):
@@ -572,18 +48,7 @@ class GenericTaskHandler(BaseHandler):
     """Modification times of source files to detect changes."""
 
     @classmethod
-    def _tasks_dir(cls) -> Path:
-        """
-        Get the path to the tasks directory.
-
-        Returns:
-            (Path): Path to the tasks directory.
-
-        """
-        return Path(Config.get_instance().config_path) / "tasks"
-
-    @classmethod
-    def _refresh_definitions(cls, force: bool = False) -> None:
+    async def refresh_definitions(cls, force: bool = False) -> None:
         """
         Refresh the cached task definitions if source files have changed.
 
@@ -591,32 +56,29 @@ class GenericTaskHandler(BaseHandler):
             force (bool): If True, force reload even if no changes detected.
 
         """
-        tasks_dir: Path = cls._tasks_dir()
+        if cls._definitions and not force:
+            return cls._definitions
 
-        if not tasks_dir.exists():
-            if cls._definitions or cls._sources_mtime:
-                cls._definitions = []
-                cls._sources_mtime = {}
-            return
+        try:
+            from app.features.tasks.definitions.repository import TaskDefinitionsRepository
+            from app.features.tasks.definitions.utils import model_to_schema
 
-        current: dict[Path, float] = {}
-        for path in tasks_dir.glob("*.json"):
-            try:
-                current[path] = path.stat().st_mtime
-            except OSError:
-                LOG.warning(f"Unable to stat task definition '{path}'.")
+            repo = TaskDefinitionsRepository.get_instance()
+            models = await repo.list()
 
-        if force or not cls._definitions or current != cls._sources_mtime:
-            cls._definitions = load_task_definitions()
-            cls._sources_mtime = current
+            definitions: list[TaskDefinition] = []
+            for model in models:
+                td = model_to_schema(model)
+                definitions.append(td)
 
-    @classmethod
-    def refresh_definitions(cls, force: bool = False) -> None:
-        """Public helper to refresh cached task definitions."""
-        cls._refresh_definitions(force=force)
+            cls._definitions = definitions
+            return cls._definitions
+        except Exception as exc:
+            LOG.error(f"Failed to load task definitions from database: {exc}")
+            return []
 
     @classmethod
-    def _find_definition(cls, url: str) -> TaskDefinition | None:
+    async def _find_definition(cls, url: str) -> TaskDefinition | None:
         """
         Find a task definition that matches the given URL.
 
@@ -627,19 +89,30 @@ class GenericTaskHandler(BaseHandler):
             (TaskDefinition|None): A matching TaskDefinition if found, None otherwise.
 
         """
-        cls._refresh_definitions()
+        await cls.refresh_definitions()
 
         for definition in cls._definitions:
+            if not definition.enabled:
+                continue
+
             try:
-                if definition.matches(url):
-                    return definition
+                for matcher in definition.match_url:
+                    pattern_str = None
+
+                    if matcher.startswith("/") and matcher.endswith("/") and len(matcher) > 2:
+                        pattern_str: str = matcher[1:-1]
+                    else:
+                        pattern_str = fnmatch.translate(matcher)
+
+                    if pattern_str and re.match(pattern_str, url):
+                        return definition
             except Exception as exc:
                 LOG.error(f"Error while matching definition '{definition.name}': {exc}")
 
         return None
 
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         """
         Determine if this handler can process the given task.
 
@@ -650,7 +123,7 @@ class GenericTaskHandler(BaseHandler):
             (bool): True if the handler can process the task, False otherwise.
 
         """
-        definition: TaskDefinition | None = GenericTaskHandler._find_definition(task.url)
+        definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if definition:
             LOG.debug(f"'{task.name}': Matched generic task definition '{definition.name}'.")
             return True
@@ -659,14 +132,14 @@ class GenericTaskHandler(BaseHandler):
 
     @staticmethod
     async def extract(task: Task, config: Config | None = None) -> TaskResult | TaskFailure:  # noqa: ARG004
-        definition: TaskDefinition | None = GenericTaskHandler._find_definition(task.url)
+        definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")
 
         ytdlp_opts: dict[str, Any] = task.get_ytdlp_opts().get_all()
-        target_url: str = definition.request.url or task.url
+        target_url: str = definition.definition.request.url or task.url
 
-        LOG.debug(f"{task.name!r}: Fetching '{target_url}' using engine '{definition.engine.type}'.")
+        LOG.debug(f"{task.name!r}: Fetching '{target_url}' using engine '{definition.definition.engine.type}'.")
 
         try:
             body_text, json_data = await GenericTaskHandler._fetch_content(
@@ -676,10 +149,10 @@ class GenericTaskHandler(BaseHandler):
             LOG.exception(exc)
             return TaskFailure(message="Failed to fetch target URL.", error=str(exc))
 
-        if "json" == definition.response.format and json_data is None:
+        if "json" == definition.definition.response.type and json_data is None:
             return TaskFailure(message="Expected JSON response but decoding failed.")
 
-        if "json" != definition.response.format and not body_text:
+        if "json" != definition.definition.response.type and not body_text:
             return TaskFailure(message="Received empty response body.")
 
         raw_items: list[dict[str, str]] = GenericTaskHandler._parse_items(
@@ -690,9 +163,9 @@ class GenericTaskHandler(BaseHandler):
 
         def _generic_id(url):
             import os
-            import urllib
+            from urllib import parse
 
-            return urllib.parse.unquote(os.path.splitext(url.rstrip("/").split("/")[-1])[0])
+            return parse.unquote(os.path.splitext(url.rstrip("/").split("/")[-1])[0])
 
         for entry in raw_items:
             if not isinstance(entry, dict):
@@ -701,8 +174,8 @@ class GenericTaskHandler(BaseHandler):
             if not (url := entry.get("link") or entry.get("url")):
                 continue
 
-            idDict: str | None = get_archive_id(url=url)
-            archive_id: str | None = idDict.get("archive_id")
+            id_dict: dict[str, str | None] = get_archive_id(url=url)
+            archive_id: str | None = id_dict.get("archive_id")
             if not archive_id:
                 cache_key: str = hashlib.sha256(f"{task.name}-{url}".encode()).hexdigest()
                 if CACHE.has(cache_key):
@@ -755,7 +228,7 @@ class GenericTaskHandler(BaseHandler):
             items=task_items,
             metadata={
                 "definition": definition.name,
-                "response_format": definition.response.format,
+                "response_format": definition.definition.response.type,
             },
         )
 
@@ -770,14 +243,14 @@ class GenericTaskHandler(BaseHandler):
 
         Args:
             url (str): The URL to fetch.
-            definition (TaskDefinition): The task definition specifying the engine and request details.
+            definition (TaskDefinitionRuntimeSchema): The task definition specifying the engine and request details.
             ytdlp_opts (dict[str, Any]): yt-dlp options that may influence fetching
 
         Returns:
             (str|None): The fetched HTML content if successful, None otherwise.
 
         """
-        if "selenium" == definition.engine.type:
+        if "selenium" == definition.definition.engine.type:
             return await GenericTaskHandler._fetch_with_selenium(url=url, definition=definition)
 
         return await GenericTaskHandler._fetch_with_httpx(url=url, definition=definition, ytdlp_opts=ytdlp_opts)
@@ -793,14 +266,14 @@ class GenericTaskHandler(BaseHandler):
 
         Args:
             url (str): The URL to fetch.
-            definition (TaskDefinition): The task definition specifying the request details.
+            definition (TaskDefinitionRuntimeSchema): The task definition specifying the request details.
             ytdlp_opts (dict[str, Any]): yt-dlp options that may influence fetching
 
         Returns:
             (str|None): The fetched HTML content if successful, None otherwise.
 
         """
-        headers: dict[str, str] = {**definition.request.headers}
+        headers: dict[str, str] = {**definition.definition.request.headers}
         client_options: dict[str, Any] = {
             "headers": {
                 "User-Agent": random_user_agent(),
@@ -825,20 +298,20 @@ class GenericTaskHandler(BaseHandler):
         if proxy := ytdlp_opts.get("proxy"):
             client_options["proxy"] = proxy
 
-        timeout_value: float | Any = definition.request.timeout or ytdlp_opts.get("socket_timeout", 120)
+        timeout_value: float | Any = definition.definition.request.timeout or ytdlp_opts.get("socket_timeout", 120)
 
         async with async_client(**client_options) as client:
             response: httpx.Response = await client.request(
-                method=definition.request.normalized_method(),
+                method=definition.definition.request.method.upper(),
                 url=url,
-                params=definition.request.params or None,
-                data=definition.request.data,
-                json=definition.request.json,
+                params=definition.definition.request.params or None,
+                data=definition.definition.request.data,
+                json=definition.definition.request.json_data,
                 timeout=timeout_value,
             )
             response.raise_for_status()
 
-            if "json" == definition.response.format:
+            if "json" == definition.definition.response.type:
                 try:
                     json_data: dict[str, Any] = response.json()
                 except Exception as exc:
@@ -859,7 +332,7 @@ class GenericTaskHandler(BaseHandler):
 
         Args:
             url (str): The URL to fetch.
-            definition (TaskDefinition): The task definition specifying the engine options.
+            definition (TaskDefinitionRuntimeSchema): The task definition specifying the engine options.
 
         Returns:
             (str|None): The fetched HTML content if successful, None otherwise.
@@ -873,15 +346,20 @@ class GenericTaskHandler(BaseHandler):
             from selenium.webdriver.support.ui import WebDriverWait
         except ImportError as exc:
             LOG.error(f"Selenium engine requested but selenium is not installed: {exc!s}.")
-            return None
+            return (None, None)
 
-        options_map: dict[str, Any] = definition.engine.options
-        command_executor: str | None = options_map.get("url", "http://localhost:4444/wd/hub")
+        options_map: dict[str, Any] = definition.definition.engine.options
+        command_executor_value = options_map.get("url")
+        command_executor: str = (
+            str(command_executor_value)
+            if isinstance(command_executor_value, str) and command_executor_value
+            else "http://localhost:4444/wd/hub"
+        )
         browser: str = str(options_map.get("browser", "chrome")).lower()
 
         if "chrome" != browser:
             LOG.error(f"Unsupported selenium browser '{browser}'. Only 'chrome' is supported.")
-            return None
+            return (None, None)
 
         arguments: list[str] | str = options_map.get("arguments", ["--headless", "--disable-gpu"])
         if isinstance(arguments, str):
@@ -890,8 +368,8 @@ class GenericTaskHandler(BaseHandler):
         wait_for: Mapping | None = (
             options_map.get("wait_for") if isinstance(options_map.get("wait_for"), Mapping) else None
         )
-        wait_timeout = float(options_map.get("wait_timeout", 15))
-        page_load_timeout = float(options_map.get("page_load_timeout", 60))
+        wait_timeout = float(options_map.get("wait_timeout") or 15)
+        page_load_timeout = float(options_map.get("page_load_timeout") or 60)
 
         def load_page() -> str | None:
             chrome_options = ChromeOptions()
@@ -929,7 +407,7 @@ class GenericTaskHandler(BaseHandler):
         Parse the HTML content and extract items based on the definition.
 
         Args:
-            definition (TaskDefinition): The task definition specifying the parsers.
+            definition (TaskDefinitionRuntimeSchema): The task definition specifying the parsers.
             html (str): The HTML content to parse.
             base_url (str): The base URL to resolve relative links.
             json_data (Any|None): The JSON data to parse if applicable.
@@ -938,12 +416,12 @@ class GenericTaskHandler(BaseHandler):
             (list[dict[str, str]]): A list of extracted items as dictionaries.
 
         """
-        if "json" == definition.response.format:
+        if "json" == definition.definition.response.type:
             return GenericTaskHandler._parse_json_items(definition, json_data, base_url)
 
         selector = Selector(text=html)
 
-        if definition.container:
+        if definition.definition.parse.get("items"):
             return GenericTaskHandler._parse_with_container(
                 definition=definition,
                 selector=selector,
@@ -953,7 +431,10 @@ class GenericTaskHandler(BaseHandler):
 
         extracted: dict[str, list[str]] = {}
 
-        for _field, rule in definition.parsers.items():
+        for _field, rule_data in definition.definition.parse.field_items():
+            if not isinstance(rule_data, dict):
+                continue
+            rule = ExtractionRule.model_validate(rule_data)
             values: list[str] = GenericTaskHandler._execute_rule(field=_field, selector=selector, html=html, rule=rule)
             extracted[_field] = values
 
@@ -997,13 +478,16 @@ class GenericTaskHandler(BaseHandler):
             LOG.debug(f"Definition '{definition.name}' expects JSON but no data was parsed.")
             return []
 
-        if definition.container:
+        if definition.definition.parse.get("items"):
             return GenericTaskHandler._parse_json_with_container(definition, json_data, base_url)
 
         items: list[dict[str, str]] = []
         entry: dict[str, str] = {}
 
-        for _field, rule in definition.parsers.items():
+        for _field, rule_data in definition.definition.parse.field_items():
+            if not isinstance(rule_data, dict):
+                continue
+            rule = ExtractionRule.model_validate(rule_data)
             values: list[str] = GenericTaskHandler._execute_json_rule(_field, json_data, rule)
             if values:
                 if "link" == _field:
@@ -1023,18 +507,19 @@ class GenericTaskHandler(BaseHandler):
         html: str,
         base_url: str,
     ) -> list[dict[str, str]]:
-        container: ContainerDefinition | None = definition.container
+        container: dict[str, Any] | None = definition.definition.parse.get("items")
         if not container:
             return []
 
-        if "jsonpath" == container.selector_type:
-            LOG.error(
-                f"Container selector type 'jsonpath' requires response type 'json'. Definition '{definition.name}'."
-            )
+        container_type = container.get("type", "css")
+        container_selector = container.get("selector") or container.get("expression") or ""
+        if not container_selector:
+            LOG.error(f"Container missing selector/expression. Definition '{definition.name}'.")
             return []
+        container_fields = container.get("fields", {})
 
         selection: SelectorList[Selector] = (
-            selector.css(container.selector) if "css" == container.selector_type else selector.xpath(container.selector)
+            selector.css(container_selector) if "css" == container_type else selector.xpath(container_selector)
         )
 
         items: list[dict[str, str]] = []
@@ -1043,7 +528,8 @@ class GenericTaskHandler(BaseHandler):
             node_html: Any | str = node.get() or html
             entry: dict[str, str] = {}
 
-            for _field, rule in container.fields.items():
+            for _field, rule_data in container_fields.items():
+                rule = ExtractionRule.model_validate(rule_data)
                 values: list[str] = GenericTaskHandler._execute_rule(
                     field=_field,
                     selector=node,
@@ -1073,15 +559,19 @@ class GenericTaskHandler(BaseHandler):
         json_data: Any,
         base_url: str,
     ) -> list[dict[str, str]]:
-        container: ContainerDefinition | None = definition.container
+        container: dict[str, Any] | None = definition.definition.parse.get("items")
         if not container:
             return []
 
-        if "jsonpath" != container.selector_type:
+        container_type = container.get("type", "css")
+        container_selector = container.get("selector") or container.get("expression", "")
+        container_fields = container.get("fields", {})
+
+        if "jsonpath" != container_type:
             LOG.error(f"JSON response requires container selector type 'jsonpath'. Definition '{definition.name}'.")
             return []
 
-        nodes: Any = GenericTaskHandler._json_search(json_data, container.selector)
+        nodes: Any = GenericTaskHandler._json_search(json_data, container_selector)
         if nodes is None:
             return []
 
@@ -1093,7 +583,8 @@ class GenericTaskHandler(BaseHandler):
         for node in nodes:
             entry: dict[str, str] = {}
 
-            for _field, rule in container.fields.items():
+            for _field, rule_data in container_fields.items():
+                rule = ExtractionRule.model_validate(rule_data)
                 values: list[str] = GenericTaskHandler._execute_json_rule(_field, node, rule)
                 if not values:
                     continue
@@ -1175,7 +666,7 @@ class GenericTaskHandler(BaseHandler):
             field (str): The name of the field being extracted.
             selector (Selector): The parsel Selector for the HTML content.
             html (str): The raw HTML content.
-            rule (ExtractionRule): The extraction rule to execute.
+            rule (ExtractionRuleSchema): The extraction rule to execute.
 
         Returns:
             (list[str]): A list of extracted values.
@@ -1267,7 +758,7 @@ class GenericTaskHandler(BaseHandler):
 
         if attr and attr not in {"html", "outer_html", "text", "inner_text"}:
             try:
-                attributes: dict[str, str] = sel.attrib
+                attributes: dict[str, str] | None = sel.attrib
             except AttributeError:
                 attributes = None
 
@@ -1281,7 +772,7 @@ class GenericTaskHandler(BaseHandler):
         if attr is None and "link" == field.lower():
             href = None
             try:
-                attributes = sel.attrib
+                attributes: dict[str, str] | None = sel.attrib
             except AttributeError:
                 attributes = None
 
@@ -1307,7 +798,7 @@ class GenericTaskHandler(BaseHandler):
 
         Args:
             value (str|None): The extracted value to filter.
-            rule (ExtractionRule): The extraction rule containing the post-filter.
+            rule (ExtractionRuleSchema): The extraction rule containing the post-filter.
 
         Returns:
             (str|None): The filtered value if applicable, None otherwise.
@@ -1318,6 +809,30 @@ class GenericTaskHandler(BaseHandler):
 
         cleaned: str = value.strip()
         if rule.post_filter:
-            return rule.post_filter.apply(cleaned)
+            # Apply post-filter inline (removed helper method)
+            try:
+                pattern = re.compile(rule.post_filter.filter)
+                match = pattern.search(cleaned)
+                if not match:
+                    return None
+
+                if rule.post_filter.value:
+                    try:
+                        return match.group(rule.post_filter.value)
+                    except (IndexError, KeyError):
+                        return None
+
+                if match.groupdict():
+                    # Prefer first named group when available
+                    for group_value in match.groupdict().values():
+                        if group_value is not None:
+                            return group_value
+
+                if match.groups():
+                    return match.group(1)
+
+                return match.group(0)
+            except re.error:
+                return None
 
         return cleaned or None

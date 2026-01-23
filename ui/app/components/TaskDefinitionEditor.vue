@@ -32,7 +32,7 @@
 
     <div class="card-content">
       <div class="columns is-multiline" v-if="showImport">
-        <div class="column is-12" v-if="availableDefinitions.length">
+        <div class="column is-6-tablet is-12-mobile" v-if="availableDefinitions.length">
           <div class="field">
             <label class="label is-inline">
               <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
@@ -51,13 +51,14 @@
             <p class="help is-bold">
               <span class="icon-text">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Loads an existing definition into the editor. Changes are not saved until you submit.</span>
+                <span>Pre-fill from an existing task definition.</span>
               </span>
             </p>
           </div>
         </div>
 
-        <div class="column is-12">
+        <div class="column"
+          :class="{ 'is-6-tablet is-12-mobile': availableDefinitions.length, 'is-12': !availableDefinitions.length }">
           <div class="field">
             <label class="label is-inline">
               <span class="icon"><i class="fa-solid fa-file-import" /></span>
@@ -78,7 +79,7 @@
             <p class="help is-bold">
               <span class="icon-text">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Pastes a shared task definition string. Importing replaces the current editor contents.</span>
+                <span>Paste shared task definition string here to import it.</span>
               </span>
             </p>
           </div>
@@ -125,6 +126,25 @@
             </div>
           </div>
 
+          <div class="column is-3">
+            <div class="field">
+              <label class="label is-inline">
+                <span class="icon"><i class="fa-solid fa-toggle-on" /></span>
+                Status
+              </label>
+              <div class="control">
+                <label class="checkbox">
+                  <input type="checkbox" v-model="guiState.enabled" :disabled="isBusy">
+                  <span class="ml-2">Enabled</span>
+                </label>
+              </div>
+              <p class="help is-bold">
+                <span class="icon"><i class="fa-solid fa-info" /></span>
+                <span>Disabled definitions won't match tasks.</span>
+              </p>
+            </div>
+          </div>
+
           <div class="column is-12">
             <div class="field">
               <label class="label is-inline">
@@ -137,7 +157,7 @@
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>One glob per line. Regex or object based rules are only supported in advanced mode.</span>
+                <span>One glob/regex url per line</span>
               </p>
             </div>
           </div>
@@ -377,6 +397,7 @@ type GuiField = {
 type GuiState = {
   name: string
   priority: number
+  enabled: boolean
   matchText: string
   engineType: 'httpx' | 'selenium'
   engineUrl: string
@@ -399,7 +420,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'submit', payload: TaskDefinitionDocument): void
   (e: 'cancel'): void
-  (e: 'import-existing', id: string): void
+  (e: 'import-existing', id: number): void
 }>()
 
 const jsonText = ref<string>('')
@@ -409,13 +430,14 @@ const guiSupported = ref<boolean>(true)
 const mode = ref<EditorMode>('gui')
 const showImport = ref<boolean>(false)
 const importString = ref<string>('')
-const selectedExisting = ref<string>('')
+const selectedExisting = ref<number | ''>('')
 
 const availableDefinitions = computed<readonly TaskDefinitionSummary[]>(() => props.availableDefinitions ?? [])
 
 const guiState = reactive<GuiState>({
   name: '',
   priority: 0,
+  enabled: true,
   matchText: '',
   engineType: 'httpx',
   engineUrl: '',
@@ -431,12 +453,13 @@ const submitting = computed<boolean>(() => props.submitting ?? false)
 const isBusy = computed<boolean>(() => loading.value || submitting.value)
 const headerTitle = computed<string>(() => props.title)
 
-const guiLimitations = 'Only simple match globs, a single container selector and per-field extractors are exposed. ' +
+const guiLimitations = 'Only a single container selector and per-field extractors are exposed. ' +
   'More advanced constructs require raw view mode.'
 
 const resetGuiState = (state: GuiState): void => {
   guiState.name = state.name
   guiState.priority = state.priority
+  guiState.enabled = state.enabled
   guiState.matchText = state.matchText
   guiState.engineType = state.engineType
   guiState.engineUrl = state.engineUrl
@@ -467,12 +490,17 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
   }
 
   const entry = document
-  const match = entry.match
+  const match = entry.match_url
   if (!Array.isArray(match) || match.some(item => 'string' !== typeof item)) {
     return null
   }
 
-  const parse = entry.parse
+  const definition = entry.definition
+  if (!definition || Array.isArray(definition) || 'object' !== typeof definition) {
+    return null
+  }
+
+  const parse = definition.parse
   if (!parse || Array.isArray(parse) || 'object' !== typeof parse) {
     return null
   }
@@ -499,7 +527,7 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
     if ('string' !== typeof rule.type || 'string' !== typeof rule.expression) {
       return null
     }
-    if (Object.keys(rule).some(prop => !['type', 'expression', 'attribute'].includes(prop))) {
+    if (Object.keys(rule).some(prop => !['type', 'expression', 'attribute', 'post_filter'].includes(prop))) {
       return null
     }
     guiFields.push({
@@ -510,7 +538,7 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
     })
   }
 
-  const engine = entry.engine as Record<string, unknown> | undefined
+  const engine = definition.engine as Record<string, unknown> | undefined
   const engineType = (engine?.type === 'selenium') ? 'selenium' : 'httpx'
   const engineUrl = 'string' === typeof engine?.options && engineType === 'selenium'
     ? ''
@@ -520,7 +548,7 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
     return null
   }
 
-  const request = entry.request as Record<string, unknown> | undefined
+  const request = definition.request as Record<string, unknown> | undefined
 
   const selectorType = String(itemRecord.type ?? 'css') as GuiState['containerType']
   const selectorSource = (itemRecord.selector ?? itemRecord.expression) as string | undefined
@@ -531,6 +559,7 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
   return {
     name: 'string' === typeof entry.name ? entry.name : '',
     priority: Number(entry.priority ?? 0) || 0,
+    enabled: 'boolean' === typeof entry.enabled ? entry.enabled : true,
     matchText: match.join('\n'),
     engineType,
     engineUrl: engineType === 'selenium' ? String(engineUrl ?? '') : '',
@@ -575,10 +604,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
     throw new Error('Configure at least one extractor field.')
   }
 
-  const doc: Record<string, unknown> = {
-    name: state.name.trim(),
-    priority: Number(state.priority) || 0,
-    match: matches,
+  const definition: Record<string, unknown> = {
     parse: {
       items: {
         type: state.containerType,
@@ -590,7 +616,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
   }
 
   if ('httpx' !== state.engineType || state.engineUrl) {
-    doc.engine = {
+    definition.engine = {
       type: state.engineType,
       ...(state.engineType === 'selenium' && state.engineUrl
         ? { options: { url: state.engineUrl } }
@@ -606,10 +632,31 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
     request.url = state.requestUrl
   }
   if (Object.keys(request).length) {
-    doc.request = request
+    definition.request = request
   }
 
-  return doc as unknown as TaskDefinitionDocument
+  return {
+    name: state.name.trim(),
+    priority: Number(state.priority) || 0,
+    enabled: state.enabled,
+    match_url: matches,
+    definition: definition as unknown as TaskDefinitionDocument['definition'],
+  }
+}
+
+const normalizeRequestConfig = (request: any): any => {
+  if (!request || 'object' !== typeof request) {
+    return request
+  }
+
+  if ('json' in request) {
+    const normalized = { ...request }
+    normalized.json_data = normalized.json
+    delete normalized.json
+    return normalized
+  }
+
+  return request
 }
 
 const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
@@ -618,31 +665,59 @@ const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
   }
 
   const record = payload as Record<string, unknown>
-  const candidate = record.definition
+
   if ('_type' in record && record._type !== undefined && record._type !== 'task_definition') {
     throw new Error('Import string is not a task definition export.')
   }
+
+  const version = record._version as string | undefined
+  if (-1 === ['1.0', '2.0'].indexOf(version ?? '')) {
+    throw new Error(`Unsupported or missing _version field. Expected "1.0" or "2.0", got: ${version ?? 'undefined'}`)
+  }
+
   let base: TaskDefinitionDocument
 
-  if (candidate && !Array.isArray(candidate) && 'object' === typeof candidate) {
-    base = candidate as TaskDefinitionDocument
+  if ('1.0' === version) {
+    // v1.0 format migration
+    const oldDef = record.definition as Record<string, unknown>
+
+    // Normalize match_url from old v1.0 format
+    const oldMatch = Array.isArray(oldDef.match) ? oldDef.match : []
+    const normalizedMatch: string[] = []
+
+    for (const item of oldMatch) {
+      if ('string' === typeof item) {
+        normalizedMatch.push(item)
+      }
+      else if ('object' === typeof item && item !== null) {
+        const obj = item as Record<string, unknown>
+        if ('string' === typeof obj.regex) {
+          normalizedMatch.push(`/${obj.regex}/`)
+        }
+        else if ('string' === typeof obj.glob) {
+          normalizedMatch.push(obj.glob)
+        }
+      }
+    }
+
+    base = {
+      name: 'string' === typeof oldDef.name ? oldDef.name : 'string' === typeof record.name ? record.name : '',
+      priority: Number(oldDef.priority ?? record.priority ?? 0) || 0,
+      enabled: true,
+      match_url: normalizedMatch,
+      definition: {
+        parse: oldDef.parse as any,
+        engine: oldDef.engine as any,
+        request: normalizeRequestConfig(oldDef.request),
+        response: oldDef.response as any,
+      },
+    }
   }
   else {
-    base = payload as TaskDefinitionDocument
+    base = record as unknown as TaskDefinitionDocument
   }
 
-  const clone = JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument
-  const cloneRecord = clone
-
-  if ('name' in record && 'string' === typeof record.name) {
-    cloneRecord.name = record.name
-  }
-
-  if ('priority' in record && record.priority !== undefined) {
-    cloneRecord.priority = Number(record.priority) || 0
-  }
-
-  return clone
+  return JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument
 }
 
 const parseDocument = (): TaskDefinitionDocument | null => {
@@ -675,6 +750,7 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
     resetGuiState({
       name: '',
       priority: 0,
+      enabled: true,
       matchText: '',
       engineType: 'httpx',
       engineUrl: '',
@@ -741,7 +817,7 @@ const importExisting = (): void => {
     return
   }
 
-  emit('import-existing', selectedExisting.value)
+  emit('import-existing', Number(selectedExisting.value))
   selectedExisting.value = ''
 }
 

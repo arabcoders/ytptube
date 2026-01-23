@@ -1,6 +1,6 @@
 import pytest
 
-from app.library.task_handlers.rss import RssGenericHandler
+from app.features.tasks.definitions.handlers.rss import RssGenericHandler
 from app.library.Tasks import Task, TaskResult
 
 
@@ -155,7 +155,7 @@ class TestRssHandlerExtraction:
             preset="default",
         )
 
-        assert RssGenericHandler.can_handle(task) is True
+        assert await RssGenericHandler.can_handle(task) is True
 
         non_feed_task = Task(
             id="test_youtube",
@@ -164,7 +164,7 @@ class TestRssHandlerExtraction:
             preset="default",
         )
 
-        assert RssGenericHandler.can_handle(non_feed_task) is False
+        assert await RssGenericHandler.can_handle(non_feed_task) is False
 
 
 class TestRssHandlerEdgeCases:

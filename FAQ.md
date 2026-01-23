@@ -171,25 +171,25 @@ Then restart the container to apply the changes.
 
 # How can I monitor sites without RSS feeds?
 
-YTPTube includes a **generic task handler** that turns JSON definition files into site-specific scrapers. You can use it
+YTPTube includes a **generic task handler** that turns JSON definitions into site-specific scrapers. You can use it
 to watch pages that do not expose RSS or public APIs and automatically enqueue new links into the download queue.
 
-1. Create definition files under `/config/tasks/*.json` (for Docker this is the mounted `config/tasks/` folder).
-2. Keep your scheduled task in `tasks.json` pointing at the page you want to monitor and make sure it uses a preset that
-   enables a download archive (`--download-archive`).
-3. When the task runs, the handler scans the JSON files, picks the first definition whose `match` rule covers the task
-   URL, fetches the page, extracts items, and queues the unseen ones.
+1. Create definition via the WebUI > tasks > Definitions.
+2. Create task that reference same url click on inspect to see the results. Make sure it uses a preset that enables 
+   a download archive (`--download-archive`).
+3. When the task handler run, the handler scans the definitions, picks the first definition whose `match` rule covers
+   the task URL, fetches the page, extracts items, and queues the unseen ones.
 
 ### Definition schema
 
-Each file must contain a single JSON object with the following keys:
+Each definition must contain a single JSON object with the following keys:
 
 ```json5
 {
   "name": "example",                  // Friendly identifier shown in logs
-  "match": [
-    "https://example.com/articles/*", // Glob strings, or objects with {"regex": "..."} or {"glob": "..."}
-    { "regex": "https://example.com/post/[0-9]+" }
+  "match_url": [
+    "https://example.com/articles/*", // Glob strings
+    "https://example.com/post/[0-9]+" // Regex strings
   ],
   "engine": {                         // Optional, defaults to HTTPX
     "type": "httpx",                  // "httpx" (default) or "selenium"
@@ -207,7 +207,7 @@ Each file must contain a single JSON object with the following keys:
     "headers": { "User-Agent": "MyAgent/1.0" },
     "params": { "page": 1 },
     "data": null,
-    "json": null,
+    "json_data": null,
     "timeout": 30
   },
   "response": {                      // Optional: how to interpret the body
@@ -247,6 +247,7 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 
 ```json5
 {
+  ...
   "response": { "type": "json" },
   "parse": {
     "items": {
@@ -281,9 +282,6 @@ For JSON endpoints, switch the response format and use `jsonpath` selectors:
 - **selenium**: uses a remote Chrome session. Provide the hub URL under `engine.options.url`; only Chrome is supported at
   the moment. Optional keys: `arguments` (list or string), `wait_for` (type `css`/`xpath` + `expression`), `wait_timeout`,
   and `page_load_timeout`.
-
-Definitions are reloaded automatically when files change, so you can tweak them without restarting YTPTube. Check
-`var/config/tasks/01-*.json` for sample files.
 
 > [!NOTE]
 > A machine-readable schema is available at `app/schema/task_definition.json` if you want to validate your JSON with editors or CI tools.

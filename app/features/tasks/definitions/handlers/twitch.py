@@ -15,12 +15,12 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class TwitchHandler(BaseHandler):
-    FEED = "https://twitchrss.appspot.com/vodonly/{handle}"
+    FEED: str = "https://twitchrss.appspot.com/vodonly/{handle}"
 
     RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?twitch\.tv\/(?P<id>[a-z0-9_]{3,25})(?:\/.*)?$")
 
     @staticmethod
-    def can_handle(task: Task) -> bool:
+    async def can_handle(task: Task) -> bool:
         LOG.debug(f"Checking if task '{task.name}' is using parsable Twitch URL: {task.url}")
         return TwitchHandler.parse(task.url) is not None
 

@@ -17,6 +17,7 @@ from aiohttp import web
 from app.features.conditions.service import Conditions
 from app.features.dl_fields.service import DLFields
 from app.features.notifications.service import Notifications
+from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.cache import Cache
 from app.library.config import Config
@@ -28,7 +29,6 @@ from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
-from app.library.TaskDefinitions import TaskDefinitions
 from app.library.Tasks import Tasks
 from app.library.UpdateChecker import UpdateChecker
 
@@ -121,7 +121,7 @@ class Main:
         Notifications.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
-        TaskDefinitions.get_instance().attach(self._app)
+        get_task_definitions_repo().attach(self._app)
         DownloadQueue.get_instance().attach(self._app)
         UpdateChecker.get_instance().attach(self._app)
 

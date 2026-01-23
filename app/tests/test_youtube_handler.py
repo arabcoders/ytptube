@@ -1,6 +1,6 @@
 import pytest
 
-from app.library.task_handlers.youtube import YoutubeHandler
+from app.features.tasks.definitions.handlers.youtube import YoutubeHandler
 from app.library.Tasks import Task, TaskResult
 
 
