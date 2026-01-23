@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "e551ad7848d6bc84c577632d3d8bbf20aa8cf8c8",
-    "date": "2026-01-22T20:00:45+00:00",
+    "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41",
+    "date": "2026-01-23T20:38:59+00:00",
     "commits": [
+      {
+        "sha": "04237903",
+        "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41",
+        "message": "refactor: migrate task definitions to db model",
+        "author": "arabcoders",
+        "date": "2026-01-23T20:38:59+00:00"
+      },
       {
         "sha": "e551ad78",
         "full_sha": "e551ad7848d6bc84c577632d3d8bbf20aa8cf8c8",
