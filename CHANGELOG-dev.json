@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260123-04237903",
-        "date": "2026-01-23T20:38:59+00:00",
+        "tag": "dev-20260124-00c3aeff",
+        "date": "2026-01-24T17:04:30+00:00",
         "commits": [
+            {
+                "sha": "00c3aeff",
+                "message": "Feat: add yt-dlp version checker",
+                "author": "arabcoders",
+                "date": "2026-01-24T17:04:30+00:00",
+                "full_sha": "00c3aefff1314d9fec795cdb826af73c4b5ba3ad"
+            },
             {
                 "sha": "04237903",
                 "message": "refactor: migrate task definitions to db model",
@@ -3868,7 +3875,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41"
+        "full_sha": "00c3aefff1314d9fec795cdb826af73c4b5ba3ad"
     },
     {
         "tag": "dev-20250616-c07465a6",

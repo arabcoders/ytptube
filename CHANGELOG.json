@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41",
-    "date": "2026-01-23T20:38:59+00:00",
+    "full_sha": "00c3aefff1314d9fec795cdb826af73c4b5ba3ad",
+    "date": "2026-01-24T17:04:30+00:00",
     "commits": [
+      {
+        "sha": "00c3aeff",
+        "full_sha": "00c3aefff1314d9fec795cdb826af73c4b5ba3ad",
+        "message": "Feat: add yt-dlp version checker",
+        "author": "arabcoders",
+        "date": "2026-01-24T17:04:30+00:00"
+      },
       {
         "sha": "04237903",
         "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41",
