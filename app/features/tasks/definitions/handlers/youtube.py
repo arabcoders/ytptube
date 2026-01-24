@@ -3,7 +3,7 @@ import re
 from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
 
-from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
@@ -26,12 +26,12 @@ class YoutubeHandler(BaseHandler):
     )
 
     @staticmethod
-    async def can_handle(task: Task) -> bool:
+    async def can_handle(task: HandleTask) -> bool:
         LOG.debug(f"'{task.name}': Checking if task URL is parsable YouTube URL: {task.url}")
         return YoutubeHandler.parse(task.url) is not None
 
     @staticmethod
-    async def _get(task: Task, params: dict, parsed: dict[str, str]) -> tuple[str, list[dict[str, str]], int]:
+    async def _get(task: HandleTask, params: dict, parsed: dict[str, str]) -> tuple[str, list[dict[str, str]], int]:
         """
         Fetch the feed and return raw entries.
 
@@ -89,7 +89,7 @@ class YoutubeHandler(BaseHandler):
         return feed_url, items, real_count
 
     @staticmethod
-    async def extract(task: Task) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask) -> TaskResult | TaskFailure:
         parsed: dict[str, str] | None = YoutubeHandler.parse(task.url)
         if not parsed:
             return TaskFailure(message="Unrecognized YouTube channel or playlist URL.")

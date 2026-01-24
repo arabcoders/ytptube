@@ -133,7 +133,7 @@ class Scheduler(metaclass=Singleton):
 
     def remove(self, id: str | list[str]) -> bool:
         """
-        Remove a job from the schedule.
+        Remove a job from the scheduler.
 
         Args:
             id (str|list[str]): The id of the job to remove.
@@ -156,7 +156,7 @@ class Scheduler(metaclass=Singleton):
                 return False
 
             del self._jobs[id]
-            LOG.debug(f"Removed job '{id}' from the schedule.")
+            LOG.debug(f"Removed job '{id}' from the scheduler.")
             return True
 
         return False

@@ -1,7 +1,8 @@
 import pytest
 
 from app.features.tasks.definitions.handlers.rss import RssGenericHandler
-from app.library.Tasks import Task, TaskResult
+from app.features.tasks.definitions.results import TaskResult
+from app.features.tasks.definitions.results import HandleTask
 
 
 class DummyResponse:
@@ -68,10 +69,10 @@ class TestRssHandlerExtraction:
             return DummyResponse(atom_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_rss",
+        task = HandleTask(
+            id=1,
             name="Test Atom Feed",
             url="https://example.com/feed.atom",
             preset="default",
@@ -112,10 +113,10 @@ class TestRssHandlerExtraction:
             return DummyResponse(rss_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_rss",
+        task = HandleTask(
+            id=1,
             name="Test RSS Feed",
             url="https://example.com/feed.rss",
             preset="default",
@@ -146,19 +147,19 @@ class TestRssHandlerExtraction:
             return DummyResponse(atom_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_rss",
-            name="Test Feed",
+        task = HandleTask(
+            id=1,
+            name="Test rss Feed",
             url="https://example.com/feed.atom",
             preset="default",
         )
 
         assert await RssGenericHandler.can_handle(task) is True
 
-        non_feed_task = Task(
-            id="test_youtube",
+        non_feed_task = HandleTask(
+            id=1,
             name="YouTube Video",
             url="https://www.youtube.com/watch?v=abc123",
             preset="default",
@@ -185,10 +186,10 @@ class TestRssHandlerEdgeCases:
             return DummyResponse(empty_feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_empty",
+        task = HandleTask(
+            id=1,
             name="Empty Feed",
             url="https://example.com/feed.rss",
             preset="default",
@@ -203,17 +204,17 @@ class TestRssHandlerEdgeCases:
     @pytest.mark.asyncio
     async def test_invalid_feed_url(self, monkeypatch):
         """Test handling of invalid feed URL."""
-        from app.library.Tasks import TaskFailure
+        from app.features.tasks.definitions.results import TaskFailure
 
         async def fake_request(**kwargs):  # noqa: ARG001
             msg = "Network error"
             raise Exception(msg)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_invalid",
+        task = HandleTask(
+            id=1,
             name="Invalid Feed",
             url="https://example.com/feed.rss",
             preset="default",
@@ -244,10 +245,10 @@ class TestRssHandlerEdgeCases:
             return DummyResponse(feed)
 
         monkeypatch.setattr(RssGenericHandler, "request", staticmethod(fake_request))
-        monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+        monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-        task = Task(
-            id="test_missing",
+        task = HandleTask(
+            id=1,
             name="Feed with Missing URLs",
             url="https://example.com/feed.rss",
             preset="default",

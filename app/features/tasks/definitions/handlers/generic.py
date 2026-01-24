@@ -16,6 +16,7 @@ import jmespath
 from parsel import Selector
 from yt_dlp.utils.networking import random_user_agent
 
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.definitions.schemas import (
     ExtractionRule,
     TaskDefinition,
@@ -23,7 +24,6 @@ from app.features.tasks.definitions.schemas import (
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import async_client
-from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
 from app.library.Utils import fetch_info, get_archive_id
 
 from ._base_handler import BaseHandler
@@ -112,7 +112,7 @@ class GenericTaskHandler(BaseHandler):
         return None
 
     @staticmethod
-    async def can_handle(task: Task) -> bool:
+    async def can_handle(task: HandleTask) -> bool:
         """
         Determine if this handler can process the given task.
 
@@ -131,7 +131,7 @@ class GenericTaskHandler(BaseHandler):
         return False
 
     @staticmethod
-    async def extract(task: Task, config: Config | None = None) -> TaskResult | TaskFailure:  # noqa: ARG004
+    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:  # noqa: ARG004
         definition: TaskDefinition | None = await GenericTaskHandler._find_definition(task.url)
         if not definition:
             return TaskFailure(message="No generic task definition matched the provided URL.")

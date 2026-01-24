@@ -3,7 +3,7 @@ import re
 from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element
 
-from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
@@ -20,13 +20,13 @@ class TwitchHandler(BaseHandler):
     RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?twitch\.tv\/(?P<id>[a-z0-9_]{3,25})(?:\/.*)?$")
 
     @staticmethod
-    async def can_handle(task: Task) -> bool:
+    async def can_handle(task: HandleTask) -> bool:
         LOG.debug(f"Checking if task '{task.name}' is using parsable Twitch URL: {task.url}")
         return TwitchHandler.parse(task.url) is not None
 
     @staticmethod
     async def _collect_feed(
-        task: Task,
+        task: HandleTask,
         params: dict,
         handle_name: str,
     ) -> tuple[str, list[dict[str, str]], bool]:
@@ -74,7 +74,7 @@ class TwitchHandler(BaseHandler):
         return feed_url, items, has_items
 
     @staticmethod
-    async def extract(task: Task) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask) -> TaskResult | TaskFailure:
         handle_name: str | None = TwitchHandler.parse(task.url)
         if not handle_name:
             return TaskFailure(message="Unrecognized Twitch channel URL.")

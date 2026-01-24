@@ -1,5 +1,5 @@
 import { useStorage } from '@vueuse/core'
-import type { convert_args_response,Paginated } from '~/types/responses'
+import type { convert_args_response, Paginated } from '~/types/responses'
 import type { StoreItem } from '~/types/store'
 
 const AG_SEPARATOR = '.'
@@ -858,9 +858,38 @@ const parse_api_error = async (json: unknown): Promise<string> => {
   const payload = json as {
     error?: string;
     message?: string;
-    detail?: string[];
+    detail?: string | Array<{ loc: string[]; msg: string; type: string }>;
   }
-  return String(payload.error ?? payload.message ?? payload.detail?.[0] ?? 'Unknown error occurred')
+
+  let extra_detail = ''
+
+  if (Array.isArray(payload.detail)) {
+    const errors = payload.detail.map((err: any) => {
+      if ('object' === typeof err && err.loc && err.msg) {
+        const field = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : 'unknown'
+        return `${field}: ${err.msg}`
+      }
+      return String(err)
+    })
+    extra_detail = errors.join(', ')
+  }
+
+  if (payload.error) {
+    return String(payload.error+(extra_detail ? ` - ${extra_detail}` : ''))
+  }
+  if (payload.message) {
+    return String(payload.message+(extra_detail ? ` - ${extra_detail}` : ''))
+  }
+
+  if (extra_detail) {
+    return extra_detail
+  }
+
+  if ('string' === typeof payload.detail) {
+    return payload.detail
+  }
+
+  return 'Unknown error occurred'
 }
 
 export {

@@ -48,7 +48,7 @@ class Services(metaclass=Singleton):
     def get_instance() -> "Services":
         return Services()
 
-    def add(self, name: str, service: Any, declared_type: type | None = None):
+    def add(self, name: str, service: Any, declared_type: type | None = None) -> "Services":
         """
         Add a service by name.
 
@@ -57,12 +57,16 @@ class Services(metaclass=Singleton):
             service: The service instance.
             declared_type: The declared type of the service (optional).
 
+        Returns:
+            Services: The Services instance (for chaining).
+
         """
         if declared_type is None and service is not None:
             declared_type = type(service)
 
         self.remove(name)
         self._services.append(ServiceEntry(name=name, declared_type=declared_type, instance=service))
+        return self
 
     def add_all(self, services: dict[str, Any]):
         for name, svc in services.items():

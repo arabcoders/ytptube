@@ -1,7 +1,7 @@
 import logging
 import re
 
-from app.library.Tasks import Task, TaskFailure, TaskItem, TaskResult
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
@@ -21,7 +21,7 @@ class TverHandler(BaseHandler):
     RX: re.Pattern[str] = re.compile(r"^https?:\/\/(?:www\.|m\.)?tver\.jp\/series\/(?P<id>sr[a-z0-9_]+)$")
 
     @staticmethod
-    async def can_handle(task: Task) -> bool:
+    async def can_handle(task: HandleTask) -> bool:
         LOG.debug(f"Checking if task '{task.name}' is using parsable Tver series URL: {task.url}")
         return TverHandler.parse(task.url) is not None
 
@@ -58,7 +58,7 @@ class TverHandler(BaseHandler):
 
     @staticmethod
     async def _collect_feed(
-        task: Task,
+        task: HandleTask,
         params: dict,
         series_id: str,
     ) -> tuple[str, list[dict[str, str]], bool]:
@@ -142,7 +142,7 @@ class TverHandler(BaseHandler):
         return feed_url, items, has_items
 
     @staticmethod
-    async def extract(task: Task) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask) -> TaskResult | TaskFailure:
         series_id: str | None = TverHandler.parse(task.url)
         if not series_id:
             return TaskFailure(message="Unrecognized Tver series URL.")

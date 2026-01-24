@@ -46,3 +46,24 @@ def schema_to_payload(item: TaskDefinition) -> dict[str, Any]:
         "enabled": item.enabled,
         "definition": item.definition.model_dump(exclude_unset=True, exclude_none=True),
     }
+
+
+def split_inspect_metadata(metadata: dict[str, Any] | None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """
+    Split commonly consumed metadata keys from the rest.
+
+    Args:
+        metadata (dict[str, Any]|None): The metadata to split.
+
+    Returns:
+        tuple[dict[str, Any], dict[str, Any]]: The primary and extra metadata.
+
+    """
+    metadata = dict(metadata or {})
+    primary: dict[str, Any] = {}
+
+    for key in ("matched", "handler", "supported"):
+        if key in metadata:
+            primary[key] = metadata.pop(key)
+
+    return primary, metadata

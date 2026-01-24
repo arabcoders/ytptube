@@ -1,7 +1,8 @@
 import pytest
 
 from app.features.tasks.definitions.handlers.tver import TverHandler
-from app.library.Tasks import Task, TaskResult
+from app.features.tasks.definitions.results import TaskResult
+from app.features.tasks.definitions.results import HandleTask
 
 
 class DummyResponse:
@@ -118,9 +119,9 @@ async def test_tver_handler_extract(monkeypatch):
         raise RuntimeError(msg)
 
     monkeypatch.setattr(TverHandler, "request", staticmethod(fake_request))
-    monkeypatch.setattr(Task, "get_ytdlp_opts", lambda _: DummyOpts({"download_archive": "/tmp/archive"}))
+    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda _: DummyOpts({"download_archive": "/tmp/archive"}))
 
-    task = Task(id="test_tver", name="Test Tver Series", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
+    task = HandleTask(id=1, name="Test Tver Series", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
 
     result = await TverHandler.extract(task)
 
@@ -154,7 +155,7 @@ def test_tver_handler_parse(url: str, should_match: bool):
 @pytest.mark.asyncio
 async def test_tver_handler_can_handle():
     """Test tver handler can_handle method."""
-    task_valid = Task(id="test1", name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
-    task_invalid = Task(id="test2", name="Test", url="https://youtube.com/watch?v=123", preset="default")
+    task_valid = HandleTask(id=1, name="Test", url="https://tver.jp/series/sr8sb9pnhc", preset="default")
+    task_invalid = HandleTask(id=2, name="Test", url="https://youtube.com/watch?v=123", preset="default")
     assert await TverHandler.can_handle(task_valid) is True
     assert await TverHandler.can_handle(task_invalid) is False

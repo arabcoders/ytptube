@@ -4,22 +4,22 @@ from typing import Any
 import httpx
 from yt_dlp.utils.networking import random_user_agent
 
+from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskResult
 from app.library.config import Config
 from app.library.httpx_client import async_client
-from app.library.Tasks import Task, TaskFailure, TaskResult
 
 
 class BaseHandler:
     @staticmethod
-    async def can_handle(task: Task) -> bool:
+    async def can_handle(task: HandleTask) -> bool:
         return False
 
     @staticmethod
-    async def extract(task: Task, config: Config | None = None) -> TaskResult | TaskFailure:
+    async def extract(task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
         raise NotImplementedError
 
     @classmethod
-    async def inspect(cls, task: Task, config: Config | None = None) -> TaskResult | TaskFailure:
+    async def inspect(cls, task: HandleTask, config: Config | None = None) -> TaskResult | TaskFailure:
         return await cls.extract(task=task, config=config)
 
     @staticmethod

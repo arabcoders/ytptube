@@ -1,7 +1,8 @@
 import pytest
 
 from app.features.tasks.definitions.handlers.youtube import YoutubeHandler
-from app.library.Tasks import Task, TaskResult
+from app.features.tasks.definitions.results import TaskResult
+from app.features.tasks.definitions.results import HandleTask
 
 
 class DummyResponse:
@@ -41,10 +42,10 @@ async def test_youtube_handler_inspect(monkeypatch):
         return DummyResponse(feed)
 
     monkeypatch.setattr(YoutubeHandler, "request", staticmethod(fake_request))
-    monkeypatch.setattr(Task, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
+    monkeypatch.setattr(HandleTask, "get_ytdlp_opts", lambda self: DummyOpts({"download_archive": "/tmp/archive"}))  # noqa: ARG005
 
-    task = Task(
-        id="inspect",
+    task = HandleTask(
+        id=1,
         name="Inspect",
         url="https://www.youtube.com/channel/UCabcdefghijklmnopqrstuv",
         preset="default",

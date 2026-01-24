@@ -20,6 +20,7 @@ class CEFeature(str, Enum):
     DL_FIELDS = "dl_fields"
     CONDITIONS = "conditions"
     NOTIFICATIONS = "notifications"
+    TASKS = "tasks"
     TASKS_DEFINITIONS = "tasks_definitions"
 
     def __str__(self) -> str:

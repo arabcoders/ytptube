@@ -4,14 +4,15 @@ from unittest.mock import patch
 import pytest
 
 from app.features.tasks.definitions.handlers.generic import GenericTaskHandler
+from app.features.tasks.definitions.results import TaskFailure, TaskResult
 from app.features.tasks.definitions.schemas import (
+    Definition,
     EngineConfig,
     RequestConfig,
     ResponseConfig,
     TaskDefinition,
-    Definition,
 )
-from app.library.Tasks import Task, TaskFailure, TaskResult
+from app.features.tasks.definitions.results import HandleTask
 
 
 @pytest.fixture(autouse=True)
@@ -341,7 +342,7 @@ async def test_generic_task_handler_inspect(monkeypatch):
         return {"id": "test_video_1", "extractor_key": "Example"}
 
     with patch("app.features.tasks.definitions.handlers.generic.fetch_info", side_effect=fake_fetch_info):
-        task = Task(id="inspect", name="Inspect", url="https://example.com/api")
+        task = HandleTask(id=1, name="Inspect", url="https://example.com/api")
         result: TaskResult | TaskFailure = await GenericTaskHandler.extract(task)
 
         assert isinstance(result, TaskResult), "Result should be TaskResult"
