@@ -238,6 +238,9 @@ class Config(metaclass=Singleton):
     new_version: str = ""
     "The new version available."
 
+    yt_new_version: str = ""
+    "The new yt-dlp version available."
+
     _manual_vars: tuple = (
         "temp_path",
         "config_path",
@@ -255,6 +258,7 @@ class Config(metaclass=Singleton):
         "app_build_date",
         "app_branch",
         "new_version",
+        "yt_new_version",
     )
     "The variables that are immutable."
 
@@ -327,6 +331,7 @@ class Config(metaclass=Singleton):
         "default_pagination",
         "check_for_updates",
         "new_version",
+        "yt_new_version",
     )
     "The variables that are relevant to the frontend."
 

@@ -32,6 +32,7 @@ export const useConfigStore = defineStore('config', () => {
       default_pagination: 50,
       check_for_updates: true,
       new_version: '',
+      yt_new_version: '',
     },
     presets: [
       {

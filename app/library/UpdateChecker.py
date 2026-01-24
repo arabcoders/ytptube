@@ -24,11 +24,17 @@ class UpdateChecker(metaclass=Singleton):
     GITHUB_API_URL: str = "https://api.github.com/repos/arabcoders/ytptube/releases/latest"
     "GitHub API endpoint for latest release"
 
+    YTDLP_API_URL: str = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
+    "GitHub API endpoint for yt-dlp latest release"
+
     CACHE_DURATION: int = 300
     "Cache duration in seconds (5 minutes)"
 
     CACHE_KEY: str = "update_checker:result"
     "Cache key for storing check results"
+
+    YTDLP_CACHE_KEY: str = "update_checker:ytdlp"
+    "Cache key for storing yt-dlp check results"
 
     def __init__(
         self, config: Config | None = None, scheduler: Scheduler | None = None, notify: EventBus | None = None
@@ -42,7 +48,7 @@ class UpdateChecker(metaclass=Singleton):
         self._notify: EventBus = notify or EventBus.get_instance()
         "Instance of EventBus for notifications."
 
-        self._cache: Cache = Cache.get_instance()
+        self._cache: Cache = Cache()
         "Instance of Cache for caching check results."
 
         self._job_id: str | None = None
@@ -52,28 +58,9 @@ class UpdateChecker(metaclass=Singleton):
     def get_instance(
         config: Config | None = None, scheduler: Scheduler | None = None, notify: EventBus | None = None
     ) -> "UpdateChecker":
-        """
-        Get the singleton instance of UpdateChecker.
-
-        Args:
-            config (Config | None): Optional Config instance to use.
-            scheduler (Scheduler | None): Optional Scheduler instance to use.
-            notify (EventBus | None): Optional EventBus instance to use.
-
-        Returns:
-            UpdateChecker: The singleton instance of UpdateChecker.
-
-        """
         return UpdateChecker(config=config, scheduler=scheduler, notify=notify)
 
     def attach(self, _: web.Application) -> None:
-        """
-        Attach the UpdateChecker to the application.
-
-        Args:
-            _ (web.Application): The aiohttp web application instance.
-
-        """
         from .Services import Services
 
         Services.get_instance().add("update_checker", self)
@@ -97,7 +84,7 @@ class UpdateChecker(metaclass=Singleton):
 
         self._schedule_check()
 
-    async def on_shutdown(self, _: web.Application) -> None:
+    async def on_shutdown(self, _: web.Application | None) -> None:
         """
         Handle application shutdown event.
 
@@ -110,88 +97,128 @@ class UpdateChecker(metaclass=Singleton):
 
         self._scheduler.remove(self._job_id)
         self._job_id = None
-        LOG.debug("Stopped update check scheduled task.")
 
     def _schedule_check(self) -> None:
-        """Schedule the update check task to run daily at 3 AM."""
         if not self._config.check_for_updates:
-            LOG.debug("Update checking is disabled, skipping scheduling.")
             return
 
-        # Run daily at 3 AM
         timer: str = "0 3 * * *"
 
         self._job_id = self._scheduler.add(
             timer=timer,
             func=lambda: asyncio.create_task(self.check_for_updates()),
-            id="update_checker",
+            id=f"{__class__.__name__}.{self.check_for_updates.__name__}",
         )
 
-        LOG.info(f"Scheduled update check to run daily at 3 AM (cron: {timer}).")
-
-    async def check_for_updates(self) -> tuple[str, str | None]:
+    async def check_for_updates(self) -> tuple[tuple[str, str | None], tuple[str, str | None]]:
         """
-        Check for updates from GitHub releases.
-        Updates config.new_version if a newer version is available.
-        Stops the scheduled task if an update is found.
+        Check for updates from GitHub releases for both the app and yt-dlp.
+        Updates config.new_version and config.yt_new_version if newer versions are available.
+        Stops the scheduled task if an app update is found.
 
         Returns:
-            tuple[str, str | None]: (status, new_version)
+            tuple[tuple[str, str | None], tuple[str, str | None]]: ((app_status, app_version), (ytdlp_status, ytdlp_version))
                 status: "disabled", "error", "up_to_date", or "update_available"
-                new_version: The new version tag if available, None otherwise
+                version: The new version tag if available, None otherwise
 
         """
         if not self._config.check_for_updates:
-            LOG.debug("Update checking is disabled, skipping check.")
-            return ("disabled", None)
+            return (("disabled", None), ("disabled", None))
 
-        # Check cache
-        cached = await self._cache.aget(self.CACHE_KEY)
-        if cached:
-            ttl = await self._cache.attl(self.CACHE_KEY)
-            LOG.debug(f"Returning cached result (TTL: {ttl:.0f}s)")
-            return cached
+        app_cached = await self._cache.aget(self.CACHE_KEY)
+        ytdlp_cached = await self._cache.aget(self.YTDLP_CACHE_KEY)
 
+        if app_cached and ytdlp_cached:
+            return (app_cached, ytdlp_cached)
+
+        app_result = app_cached if app_cached else await self._check_app_version()
+        ytdlp_result = ytdlp_cached if ytdlp_cached else await self._check_ytdlp_version()
+
+        return (app_result, ytdlp_result)
+
+    async def _check_github_version(
+        self,
+        name: str,
+        api_url: str,
+        current_version: str,
+        cache_key: str,
+        strip_v_prefix: bool = False,
+    ) -> tuple[str, str | None]:
         try:
-            LOG.info("Checking for application updates...")
-
-            current_version: str = APP_VERSION.lstrip("v")
+            LOG.info(f"Checking for {name} updates...")
 
             async with async_client(timeout=10.0) as client:
                 response = await client.get(
-                    self.GITHUB_API_URL,
+                    api_url,
                     headers={"Accept": "application/vnd.github+json"},
                 )
 
                 if 200 != response.status_code:
-                    LOG.warning(f"Failed to check for updates: HTTP {response.status_code}")
+                    LOG.warning(f"Failed to check for {name} updates: HTTP {response.status_code}")
                     return ("error", None)
 
                 data: dict[str, Any] = response.json()
 
-                latest_tag: str = data.get("tag_name", "").lstrip("v")
+                latest_tag: str = data.get("tag_name", "")
                 if not latest_tag:
-                    LOG.warning("No tag_name found in GitHub release data.")
+                    LOG.warning(f"No tag_name found in {name} GitHub release data.")
                     return ("error", None)
 
-                if self._compare_versions(current_version, latest_tag):
-                    LOG.warning(f"Update available: {current_version} → {latest_tag}")
-                    new_version_tag = data.get("tag_name", "")
-                    self._config.new_version = new_version_tag
-                    await self.on_shutdown(None)
-                    result = ("update_available", new_version_tag)
-                    await self._cache.aset(self.CACHE_KEY, result, self.CACHE_DURATION)
+                compare_current: str = current_version.lstrip("v") if strip_v_prefix else current_version
+                compare_latest: str = latest_tag.lstrip("v") if strip_v_prefix else latest_tag
+
+                if self._compare_versions(compare_current, compare_latest):
+                    LOG.warning(f"{name} update available: {current_version} -> {latest_tag}")
+                    result: tuple[str, str] = ("update_available", latest_tag)
+                    await self._cache.aset(cache_key, result, self.CACHE_DURATION)
                     return result
 
-                LOG.info("No updates available.")
-                self._config.new_version = ""
-                result = ("up_to_date", None)
-                await self._cache.aset(self.CACHE_KEY, result, self.CACHE_DURATION)
+                LOG.info(f"No {name} updates available.")
+                result: tuple[str, None] = ("up_to_date", None)
+                await self._cache.aset(cache_key, result, self.CACHE_DURATION)
                 return result
         except Exception as e:
             LOG.exception(e)
-            LOG.error(f"Error checking for updates: {e!s}")
+            LOG.error(f"Error checking for {name} updates: {e!s}")
             return ("error", None)
+
+    async def _check_app_version(self) -> tuple[str, str | None]:
+        status, new_version = await self._check_github_version(
+            name="application",
+            api_url=self.GITHUB_API_URL,
+            current_version=APP_VERSION,
+            cache_key=self.CACHE_KEY,
+            strip_v_prefix=True,
+        )
+
+        if "update_available" == status:
+            self._config.new_version = new_version or ""
+            await self.on_shutdown(None)
+        elif "up_to_date" == status:
+            self._config.new_version = ""
+
+        return (status, new_version)
+
+    async def _check_ytdlp_version(self) -> tuple[str, str | None]:
+        current_version: str = self._config._ytdlp_version()
+        if not current_version or "0.0.0" == current_version:
+            LOG.warning("Could not determine yt-dlp version, skipping yt-dlp update check.")
+            return ("error", None)
+
+        status, new_version = await self._check_github_version(
+            name="yt-dlp",
+            api_url=self.YTDLP_API_URL,
+            current_version=current_version,
+            cache_key=self.YTDLP_CACHE_KEY,
+            strip_v_prefix=False,
+        )
+
+        if "update_available" == status:
+            self._config.yt_new_version = new_version or ""
+        elif "up_to_date" == status:
+            self._config.yt_new_version = ""
+
+        return (status, new_version)
 
     def _compare_versions(self, current: str, latest: str) -> bool:
         """

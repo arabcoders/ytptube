@@ -25,7 +25,7 @@ class TestCheckUpdatesEndpoint:
 
         response = await check_updates(config, encoder, update_checker)
 
-        assert 400 == response.status, "Should return 400 when update checking is disabled"
+        assert 200 == response.status, "Should work even if disabled as it's manual check."
         body = response.body
         assert b"disabled" in body.lower(), "Response should mention update checking is disabled"
 
@@ -39,7 +39,7 @@ class TestCheckUpdatesEndpoint:
         update_checker = UpdateChecker.get_instance()
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
-            mock_check.return_value = ("up_to_date", None)
+            mock_check.return_value = (("up_to_date", None), ("up_to_date", None))
             response = await check_updates(config, encoder, update_checker)
 
             assert 200 == response.status, "Should return 200"
@@ -57,7 +57,7 @@ class TestCheckUpdatesEndpoint:
         update_checker = UpdateChecker.get_instance()
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
-            mock_check.return_value = ("up_to_date", None)
+            mock_check.return_value = (("up_to_date", None), ("up_to_date", None))
             response = await check_updates(config, encoder, update_checker)
 
             assert 200 == response.status, "Should return 200"
@@ -74,7 +74,7 @@ class TestCheckUpdatesEndpoint:
         update_checker = UpdateChecker.get_instance()
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
-            mock_check.return_value = ("update_available", "v1.0.5")
+            mock_check.return_value = (("update_available", "v1.0.5"), ("up_to_date", None))
             response = await check_updates(config, encoder, update_checker)
 
             assert 200 == response.status, "Should return 200"
@@ -92,7 +92,7 @@ class TestCheckUpdatesEndpoint:
         update_checker = UpdateChecker.get_instance()
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
-            mock_check.return_value = ("up_to_date", None)
+            mock_check.return_value = (("up_to_date", None), ("up_to_date", None))
             response = await check_updates(config, encoder, update_checker)
 
             assert 200 == response.status, "Should return 200"
@@ -109,7 +109,7 @@ class TestCheckUpdatesEndpoint:
         update_checker = UpdateChecker.get_instance()
 
         with patch.object(update_checker, "check_for_updates", new_callable=AsyncMock) as mock_check:
-            mock_check.return_value = ("error", None)
+            mock_check.return_value = (("error", None), ("error", None))
             response = await check_updates(config, encoder, update_checker)
 
             assert 200 == response.status, "Should return 200"

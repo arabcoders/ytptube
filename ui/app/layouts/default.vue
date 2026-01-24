@@ -182,31 +182,29 @@
               </span>
             </div>
 
-            <template v-if="config.app?.check_for_updates">
-              <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
-                <span class="icon-text">
-                  <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
-                  <span>Update available:</span>
-                  <NuxtLink :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
-                    target="_blank" class="has-text-weight-semibold ml-1">
-                    {{ config.app.new_version }}
-                  </NuxtLink>
-                </span>
-              </p>
+            <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
+              <span class="icon-text">
+                <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
+                <span>Update available:</span>
+                <NuxtLink :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
+                  target="_blank" class="has-text-weight-semibold ml-1">
+                  {{ config.app.new_version }}
+                </NuxtLink>
+              </span>
+            </p>
 
-              <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
-                <button @click="checkForUpdates" :disabled="checkingUpdates" class="is-text is-small p-0 is-size-7"
-                  :class="{ 'is-loading': checkingUpdates }"
-                  style="opacity: 0.8; height: auto; vertical-align: baseline; border: none; text-decoration: none; background: none;">
-                  <span class="icon-text">
-                    <span class="icon">
-                      <i class="fas" :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'" />
-                    </span>
-                    <span>{{ updateCheckMessage }}</span>
+            <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
+              <button @click="checkForUpdates" :disabled="checkingUpdates" class="is-text is-small p-0 is-size-7"
+                :class="{ 'is-loading': checkingUpdates }"
+                style="opacity: 0.8; height: auto; vertical-align: baseline; border: none; text-decoration: none; background: none;">
+                <span class="icon-text">
+                  <span class="icon">
+                    <i class="fas" :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'" />
                   </span>
-                </button>
-              </p>
-            </template>
+                  <span>{{ updateCheckMessage }}</span>
+                </span>
+              </button>
+            </p>
 
             <p v-if="config.app?.started" class="is-size-7 mb-0" style="opacity: 0.6">
               <span class="icon-text">
@@ -230,6 +228,19 @@
                 </span>
               </NuxtLink>
               <span class="is-size-7 ml-1" style="opacity: 0.6">{{ config?.app?.ytdlp_version || 'unknown' }}</span>
+
+              <p v-if="config.app?.yt_new_version" class="is-size-7 mb-0 mt-2" style="opacity: 0.8">
+                <span class="icon-text">
+                  <span class="has-tooltip" v-tooltip="`Restart container to update yt-dlp`">
+                    <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
+                    <span>Update available:</span>
+                  </span>
+                  <NuxtLink :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
+                    target="_blank" class="has-text-weight-semibold ml-1">
+                    {{ config.app.yt_new_version }}
+                  </NuxtLink>
+                </span>
+              </p>
             </div>
           </div>
 
@@ -289,6 +300,7 @@ import Dialog from '~/components/Dialog.vue'
 import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
+import type { version_check } from '~/types'
 
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
@@ -326,22 +338,30 @@ const checkForUpdates = async () => {
       return
     }
 
-    const data = await response.json()
+    const data = await parse_api_response<version_check>(await response.json())
 
-    switch (data.status) {
-      case 'update_available':
-        updateCheckMessage.value = 'Update found!'
-        config.app.new_version = data.new_version
-        break
-      case 'up_to_date':
-        updateCheckMessage.value = 'Up to date ✓'
-        setTimeout(() => updateCheckMessage.value = msg, 3000)
-        break
-      case 'error':
-        updateCheckMessage.value = 'Check failed'
-        setTimeout(() => updateCheckMessage.value = msg, 3000)
-        break
+    if ('update_available' === data.app.status) {
+      config.app.new_version = data.app.new_version
     }
+    if (data.ytdlp && 'update_available' === data.ytdlp.status) {
+      config.app.yt_new_version = data.ytdlp.new_version
+    }
+
+    // Only show "Update found!" if app has update (button is in app section)
+    if ('update_available' === data.app.status) {
+      updateCheckMessage.value = 'Update found!'
+    } else if ('up_to_date' === data.app.status && 'up_to_date' === data.ytdlp?.status) {
+      updateCheckMessage.value = 'Up to date ✓'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    } else if ('up_to_date' === data.app.status && 'update_available' === data.ytdlp?.status) {
+      // App is up to date, but yt-dlp has update (shows in yt-dlp section)
+      updateCheckMessage.value = 'Up to date ✓'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    } else {
+      updateCheckMessage.value = 'Check failed'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    }
+
   } catch (e) {
     console.error('Update check failed:', e)
     updateCheckMessage.value = 'Check failed'

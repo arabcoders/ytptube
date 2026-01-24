@@ -49,6 +49,8 @@ type AppConfig = {
   check_for_updates: boolean
   /** New version available, empty string if none */
   new_version: string
+  /** New yt-dlp version available, empty string if none */
+  yt_new_version: string
 }
 
 type ConfigState = {

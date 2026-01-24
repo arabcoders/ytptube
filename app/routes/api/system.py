@@ -193,33 +193,38 @@ async def check_updates(config: Config, encoder: Encoder, update_checker: Update
         Response: The response object.
 
     """
-    if not config.check_for_updates:
-        return web.json_response(
-            {"error": "Update checking is disabled in configuration."},
-            status=web.HTTPBadRequest.status_code,
-            dumps=encoder.encode,
-        )
-
-    # If update already found, return cached result
-    if config.new_version:
+    if config.new_version or config.yt_new_version:
         return web.json_response(
             data={
-                "status": "update_available",
-                "current_version": config.app_version,
-                "new_version": config.new_version,
+                "app": {
+                    "status": "update_available" if config.new_version else "up_to_date",
+                    "current_version": config.app_version,
+                    "new_version": config.new_version if config.new_version else None,
+                },
+                "ytdlp": {
+                    "status": "update_available" if config.yt_new_version else "up_to_date",
+                    "current_version": config._ytdlp_version(),
+                    "new_version": config.yt_new_version if config.yt_new_version else None,
+                },
             },
             status=web.HTTPOk.status_code,
             dumps=encoder.encode,
         )
 
-    # Run check and await result
-    status, new_version = await update_checker.check_for_updates()
+    (app_status, app_new_version), (ytdlp_status, ytdlp_new_version) = await update_checker.check_for_updates()
 
     return web.json_response(
         data={
-            "status": status,
-            "current_version": config.app_version,
-            "new_version": new_version,
+            "app": {
+                "status": app_status,
+                "current_version": config.app_version,
+                "new_version": app_new_version,
+            },
+            "ytdlp": {
+                "status": ytdlp_status,
+                "current_version": config._ytdlp_version(),
+                "new_version": ytdlp_new_version,
+            },
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
