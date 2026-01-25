@@ -385,33 +385,66 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     Returns:
         Response: The response object.
 
+    Query Parameters:
+        sync (bool): If true, wait for all items to be processed synchronously. Default: false
+
     """
     data = await request.json()
 
     if isinstance(data, dict):
         data = [data]
 
-    items = []
+    items: list[Item] = []
     for item in data:
         try:
             items.append(Item.format(item))
         except ValueError as e:
             return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
-    status: list[dict] = await asyncio.wait_for(
-        fut=asyncio.gather(*[queue.add(item=item) for item in items]),
-        timeout=None,
+    if "true" == request.query.get("sync", "false").lower():
+        status: list[dict] = await asyncio.wait_for(
+            fut=asyncio.gather(*[queue.add(item=item) for item in items]),
+            timeout=None,
+        )
+
+        response: list[dict[str, Any]] = []
+
+        for i, item in enumerate(items):
+            it = {"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")}
+            if status[i].get("hidden"):
+                it["hidden"] = True
+            response.append(it)
+
+        return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    from app.library.downloads.utils import handle_task_exception
+
+    batch_id: str = f"batch_{asyncio.get_running_loop().time():.0f}"
+
+    for idx, item in enumerate(items):
+        if not item.extras:
+            item.extras = {}
+
+        item.extras["batch_id"] = batch_id
+        item.extras["batch_index"] = idx
+        item.extras["batch_total"] = len(items)
+
+        task = asyncio.create_task(
+            queue.add(item=item),
+            name=f"bulk_add_{batch_id}_{idx}",
+        )
+        task.add_done_callback(lambda t: handle_task_exception(t, LOG))
+
+    return web.json_response(
+        data={
+            "status": "accepted",
+            "message": f"Accepted {len(items)} item(s) for processing",
+            "batch_id": batch_id,
+            "count": len(items),
+        },
+        status=web.HTTPAccepted.status_code,
+        dumps=encoder.encode,
     )
-
-    response: list[dict[str, Any]] = []
-
-    for i, item in enumerate(items):
-        it = {"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")}
-        if status[i].get("hidden"):
-            it["hidden"] = True
-        response.append(it)
-
-    return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("POST", "api/history/start", "items_start")

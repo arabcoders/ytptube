@@ -2,10 +2,9 @@
 
 This document describes the available endpoints and their usage. All endpoints return JSON responses (unless otherwise specified) and may require certain parameters (query, body, or path). Some endpoints serve static or streaming content (e.g., `.ts`, `.m3u8`, `.vtt` files).
 
-> **Note**: If Basic Authentication is configured (via `auth_username` and `auth_password` in your configuration), you must include an `Authorization: Basic <urlsafe-base64-encoded-credentials>` header or use `?apikey=<urlsafe-base64-encoded-credentials>` query parameter (fallback) in every request.
+> **Note**: If Basic Authentication is configured, you must include an `Authorization: Basic <urlsafe-base64-encoded-credentials>` header or use `?apikey=<urlsafe-base64-encoded-credentials>` query parameter (fallback) in every request.
 
 - All responses use standard HTTP status codes to indicate success or error conditions.
-- Endpoints support an `OPTIONS` request for CORS.
 
 ---
 
@@ -36,12 +35,15 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/archiver](#post-apiarchiver)
     - [DELETE /api/archiver](#delete-apiarchiver)
     - [GET /api/tasks](#get-apitasks)
-    - [PUT /api/tasks](#put-apitasks)
+    - [POST /api/tasks](#post-apitasks)
+    - [GET /api/tasks/{id}](#get-apitasksid)
+    - [DELETE /api/tasks/{id}](#delete-apitasksid)
+    - [PATCH /api/tasks/{id}](#patch-apitasksid)
+    - [PUT /api/tasks/{id}](#put-apitasksid)
     - [POST /api/tasks/inspect](#post-apitasksinspect)
     - [POST /api/tasks/{id}/mark](#post-apitasksidmark)
     - [DELETE /api/tasks/{id}/mark](#delete-apitasksidmark)
     - [POST /api/tasks/{id}/metadata](#post-apitasksidmetadata)
-    - [PATCH /api/tasks/{id}](#patch-apitasksid)
     - [GET /api/tasks/definitions/](#get-apitasksdefinitions)
     - [GET /api/tasks/definitions/{id}](#get-apitasksdefinitionsid)
     - [POST /api/tasks/definitions/](#post-apitasksdefinitions)
@@ -62,13 +64,17 @@ This document describes the available endpoints and their usage. All endpoints r
     - [GET /api/download/{filename}](#get-apidownloadfilename)
     - [GET /api/random/background](#get-apirandombackground)
     - [GET /api/presets](#get-apipresets)
+    - [GET /api/presets/{id}](#get-apipresetsid)
+    - [POST /api/presets](#post-apipresets)
+    - [PATCH /api/presets/{id}](#patch-apipresetsid)
+    - [PUT /api/presets/{id}](#put-apipresetsid)
+    - [DELETE /api/presets/{id}](#delete-apipresetsid)
     - [GET /api/dl\_fields/](#get-apidl_fields)
     - [POST /api/dl\_fields/](#post-apidl_fields)
     - [GET /api/dl\_fields/{id}](#get-apidl_fieldsid)
     - [PATCH /api/dl\_fields/{id}](#patch-apidl_fieldsid)
     - [PUT /api/dl\_fields/{id}](#put-apidl_fieldsid)
     - [DELETE /api/dl\_fields/{id}](#delete-apidl_fieldsid)
-    - [PUT /api/presets](#put-apipresets)
     - [GET /api/conditions/](#get-apiconditions)
     - [POST /api/conditions/](#post-apiconditions)
     - [POST /api/conditions/test](#post-apiconditionstest)
@@ -88,6 +94,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/yt-dlp/archive\_id/](#post-apiyt-dlparchive_id)
     - [POST /api/notifications/test](#post-apinotificationstest)
     - [GET /api/yt-dlp/options](#get-apiyt-dlpoptions)
+    - [GET /api/system/configuration](#get-apisystemconfiguration)
     - [POST /api/system/terminal](#post-apisystemterminal)
     - [POST /api/system/pause](#post-apisystempause)
     - [POST /api/system/resume](#post-apisystemresume)
@@ -100,28 +107,31 @@ This document describes the available endpoints and their usage. All endpoints r
     - [Connection](#connection)
     - [Authentication](#authentication-1)
     - [Message Format](#message-format)
-    - [Core Events](#core-events)
+    - [Client Events (Client → Server)](#client-events-client--server)
+      - [`add_url`](#add_url)
+      - [`item_cancel`](#item_cancel)
+      - [`item_delete`](#item_delete)
+      - [`item_start`](#item_start)
+      - [`item_pause`](#item_pause)
+    - [Server Events (Server → Client)](#server-events-server--client)
       - [Connection Events](#connection-events)
-        - [`connect` (Server → Client)](#connect-server--client)
-        - [`disconnect` (Server → Client)](#disconnect-server--client)
-        - [`config_update` (Server → Client)](#config_update-server--client)
-        - [`connected` (Server → Client)](#connected-server--client)
-        - [`active_queue` (Server → Client)](#active_queue-server--client)
+        - [`config_update`](#config_update)
+        - [`connected`](#connected)
+        - [`active_queue`](#active_queue)
       - [Logging Events](#logging-events)
-        - [`log_info` (Server → Client)](#log_info-server--client)
-        - [`log_success` (Server → Client)](#log_success-server--client)
-        - [`log_warning` (Server → Client)](#log_warning-server--client)
-        - [`log_error` (Server → Client)](#log_error-server--client)
-    - [Download Queue Events](#download-queue-events)
-      - [`item_added` (Server → Client)](#item_added-server--client)
-      - [`item_updated` (Server → Client)](#item_updated-server--client)
-      - [`item_completed` (Server → Client)](#item_completed-server--client)
-      - [`item_cancelled` (Server → Client)](#item_cancelled-server--client)
-      - [`item_deleted` (Server → Client)](#item_deleted-server--client)
-      - [`item_moved` (Server → Client)](#item_moved-server--client)
-      - [`item_status` (Server → Client)](#item_status-server--client)
-      - [`paused` (Server → Client)](#paused-server--client)
-      - [`resumed` (Server → Client)](#resumed-server--client)
+        - [`log_info`](#log_info)
+        - [`log_success`](#log_success)
+        - [`log_warning`](#log_warning)
+        - [`log_error`](#log_error)
+      - [Download Queue Events](#download-queue-events)
+        - [`item_added`](#item_added)
+        - [`item_updated`](#item_updated)
+        - [`item_cancelled`](#item_cancelled)
+        - [`item_deleted`](#item_deleted)
+        - [`item_moved`](#item_moved)
+        - [`item_status`](#item_status)
+        - [`paused`](#paused)
+        - [`resumed`](#resumed)
   - [Error Responses](#error-responses)
 
 ---
@@ -837,80 +847,205 @@ Notes:
 ---
 
 ### GET /api/tasks
-**Purpose**: Retrieves the scheduled tasks from the internal `Tasks` manager.  
+**Purpose**: Retrieves the scheduled tasks.  
+
+**Query Parameters**:
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page. Default: `config.default_pagination`.
 
 **Response**:
 ```json
-[
-  {
-    "id": "<uuid>",
-    "name": "...",
-    "url": "...",
-    "folder": "...",
-    "preset": "...",
-    "timer": "<cron-expression>",
-    "template": "...",
-    "cookies": "...",
-    "config": { ... },
-  },
-  ...
-]
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "My Task",
+      "url": "https://youtube.com/...",
+      "timer": "5 */2 * * *",
+      "cookies": "",
+      "config": {},
+      "template": "...",
+      "folder": "...",
+      "preset": "...",
+      "auto_start": true,
+      "handler_enabled": true,
+      "enabled": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  }
+}
 ```
 
 ---
 
-### PUT /api/tasks
-**Purpose**: Overwrites the entire scheduled tasks list (Cron tasks).  
+### POST /api/tasks
+**Purpose**: Create a new scheduled task.
 
-**Body**: An array of task objects. Example:
+**Body**: Task object. Example:
 ```json
-[
-  {
-    "id": "a2ae3f18-4428-4e32-9d4c-0cc45af8bb48",
-    "name": "My Task",
-    "url": "https://youtube.com/...",
-    "timer": "5 */2 * * *",
-    "cookies": "",
-    "config": {},
-    "template": "...",
-    "folder": "...",
-    "auto_start": true,
-    "handler_enabled": true,
-    "enabled": true
-  },
-  {
-    "url": "https://youtube.com/...",
-    "timer": "*/15 * * * *"
-  }
-]
+{
+  "name": "My Task",
+  "url": "https://youtube.com/...",
+  "timer": "5 */2 * * *",
+  "cookies": "",
+  "config": {},
+  "template": "...",
+  "folder": "...",
+  "preset": "...",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": true
+}
 ```
-If `id` or other fields are missing, they may be auto-generated or defaulted (e.g., a random ID, a default cron, etc.).
 
 **Response**:
 ```json
-[
-  {
-    "id": "<uuid>",
-    "name": "...",
-    "url": "...",
-    "timer": "...",
-    "cookies": "...",
-    "config": { ... },
-    "template": "...",
-    "folder": "...",
-    "auto_start": true,
-    "handler_enabled": true,
-    "enabled": true
-  }
-  ...
-]
-```
-or on error
-```json
 {
-  "error": "text"
+  "id": 1,
+  "name": "My Task",
+  "url": "https://youtube.com/...",
+  "timer": "5 */2 * * *",
+  "cookies": "",
+  "config": {},
+  "template": "...",
+  "folder": "...",
+  "preset": "...",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": true
 }
 ```
+
+**Error Responses**:
+- `400 Bad Request` - Invalid request body or validation error
+- `409 Conflict` - Task with the same name already exists
+
+---
+
+### GET /api/tasks/{id}
+**Purpose**: Retrieve a specific task by ID.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "My Task",
+  "url": "https://youtube.com/...",
+  "timer": "5 */2 * * *",
+  "cookies": "",
+  "config": {},
+  "template": "...",
+  "folder": "...",
+  "preset": "...",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": true
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing
+- `404 Not Found` - Task does not exist
+
+---
+
+### DELETE /api/tasks/{id}
+**Purpose**: Delete a scheduled task by ID.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "Deleted Task",
+  "url": "https://youtube.com/...",
+  "timer": "5 */2 * * *",
+  "cookies": "",
+  "config": {},
+  "template": "...",
+  "folder": "...",
+  "preset": "...",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": true
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing
+- `404 Not Found` - Task does not exist
+
+---
+
+### PATCH /api/tasks/{id}
+**Purpose**: Partially update a scheduled task.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Request Body**:
+JSON object with fields to update:
+```json
+{
+  "enabled": false,
+  "timer": "0 */6 * * *"
+}
+```
+
+**Notes**:
+- Only include fields you want to update
+- All fields are optional
+
+**Response**: Returns the updated task object.
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing, invalid JSON, or validation error
+- `404 Not Found` - Task does not exist
+- `409 Conflict` - Task name conflict
+
+---
+
+### PUT /api/tasks/{id}
+**Purpose**: Replace an existing scheduled task.
+
+**Path Parameter**:
+- `id`: Task ID.
+
+**Request Body**: Full task object:
+```json
+{
+  "name": "Updated Task",
+  "url": "https://youtube.com/...",
+  "timer": "0 */6 * * *",
+  "cookies": "",
+  "config": {},
+  "template": "...",
+  "folder": "...",
+  "preset": "...",
+  "auto_start": true,
+  "handler_enabled": true,
+  "enabled": true
+}
+```
+
+**Response**: Returns the updated task object.
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing, invalid JSON, or validation error
+- `404 Not Found` - Task does not exist
+- `409 Conflict` - Task name conflict
 
 ---
 
@@ -1078,66 +1213,6 @@ or
 - `200 OK` - Metadata generated successfully
 - `400 Bad Request` - Missing task ID, invalid folder path, or failed to fetch metadata
 - `404 Not Found` - Task does not exist
-
----
-
-### PATCH /api/tasks/{id}
-**Purpose**: Update specific fields of a scheduled task.
-
-**Path Parameter**:
-- `id`: Task ID.
-
-**Request Body**:
-JSON object with fields to update:
-```json
-{
-  "enabled": false,
-  "handler_enabled": true,
-  "timer": "0 */6 * * *",
-  "preset": "audio",
-  "folder": "downloads/music",
-  "template": "%(title)s.%(ext)s",
-  "cli": "--extract-audio",
-  "auto_start": true
-}
-```
-
-**Notes**:
-- Only include fields you want to update
-- All fields are optional
-
-**Response**:
-Returns the updated task
-```json
-{
-  "id": "task_id",
-  "name": "Task Name",
-  "url": "https://example.com/playlist",
-  "preset": "audio",
-  "folder": "downloads/music",
-  "template": "%(title)s.%(ext)s",
-  "cli": "--extract-audio",
-  "timer": "0 */6 * * *",
-  "auto_start": true,
-  "handler_enabled": true,
-  "enabled": false
-}
-```
-
-**Error Responses**:
-```json
-{ "error": "Task 'task_id' does not exist." }
-{ "error": "Invalid JSON in request body.", "message": "..." }
-{ "error": "Request body must be a JSON object." }
-{ "error": "No valid fields to update." }
-{ "error": "Validation failed: Invalid timer format." }
-```
-
-**Status Codes**:
-- `200 OK` - Task updated successfully
-- `400 Bad Request` - Missing task ID, invalid JSON, no valid fields, or validation error
-- `404 Not Found` - Task does not exist
-- `500 Internal Server Error` - Failed to update task
 
 ---
 
@@ -1582,28 +1657,172 @@ Binary image data with appropriate headers
 ---
 
 ### GET /api/presets
-**Purpose**: Retrieve all available download presets.  
+**Purpose**: Retrieve available presets.
 
 **Query Parameters**:
-- `filter=<field1,field2>` (optional) - Comma-separated list of fields to include in response.
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page. Default: `config.default_pagination`.
 
 **Response**:
-```json5
-[
-  {
-    "id": "<uuid>",
-    "name": "preset_name",
-    "description": "...",
-    "folder": "my_channel/foo",
-    "template": "%(title)s.%(ext)s",
-    "cookies": "...",
-    "cli": "--write-subs --embed-subs",
-    "default": true|false, // optional, indicates if this is the default preset.
-    ...
-  },
-  ...
-]
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "preset_name",
+      "description": "...",
+      "folder": "my_channel/foo",
+      "template": "%(title)s.%(ext)s",
+      "cookies": "...",
+      "cli": "--write-subs --embed-subs",
+      "default": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 1,
+    "total_pages": 1,
+    "has_next": false,
+    "has_prev": false
+  }
+}
 ```
+
+**Notes**:
+- `default: true` indicates this is a system default preset (cannot be modified or deleted)
+
+---
+
+### GET /api/presets/{id}
+**Purpose**: Retrieve a specific preset by ID.
+
+**Path Parameter**:
+- `id`: Preset ID.
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "preset_name",
+  "description": "...",
+  "folder": "my_channel/foo",
+  "template": "%(title)s.%(ext)s",
+  "cookies": "...",
+  "cli": "--write-subs --embed-subs",
+  "default": false
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing
+- `404 Not Found` - Preset not found
+
+---
+
+### POST /api/presets
+**Purpose**: Create a new download preset.
+
+**Body**:
+```json
+{
+  "name": "My Preset",
+  "description": "...",
+  "folder": "my_channel/foo",
+  "template": "%(title)s.%(ext)s",
+  "cookies": "...",
+  "cli": "--write-subs --embed-subs"
+}
+```
+
+**Response**:
+```json
+{
+  "id": 1,
+  "name": "My Preset",
+  "description": "...",
+  "folder": "my_channel/foo",
+  "template": "%(title)s.%(ext)s",
+  "cookies": "...",
+  "cli": "--write-subs --embed-subs",
+  "default": false
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` - Invalid request body or validation error
+
+---
+
+### PATCH /api/presets/{id}
+**Purpose**: Partially update a preset.
+
+**Path Parameter**:
+- `id`: Preset ID.
+
+**Body**:
+```json
+{
+  "description": "Updated description",
+  "cli": "--write-subs --embed-subs --format best"
+}
+```
+
+**Notes**:
+- Only include fields you want to update
+- All fields are optional
+- Default presets cannot be modified
+
+**Response**: Returns the updated preset object.
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing, invalid JSON, validation error, or attempting to modify default preset
+- `404 Not Found` - Preset not found
+- `409 Conflict` - Preset name conflict
+
+---
+
+### PUT /api/presets/{id}
+**Purpose**: Replace an existing preset.
+
+**Path Parameter**:
+- `id`: Preset ID.
+
+**Body**: Full preset object:
+```json
+{
+  "name": "Updated Preset",
+  "description": "...",
+  "folder": "my_channel/foo",
+  "template": "%(title)s.%(ext)s",
+  "cookies": "...",
+  "cli": "--write-subs --embed-subs"
+}
+```
+
+**Notes**:
+- Default presets cannot be modified
+
+**Response**: Returns the updated preset object.
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing, invalid JSON, validation error, or attempting to modify default preset
+- `404 Not Found` - Preset not found
+- `409 Conflict` - Preset name conflict
+
+---
+
+### DELETE /api/presets/{id}
+**Purpose**: Delete a preset by ID.
+
+**Path Parameter**:
+- `id`: Preset ID.
+
+**Response**: Returns the deleted preset object.
+
+**Error Responses**:
+- `400 Bad Request` - ID is missing or attempting to delete default preset
+- `404 Not Found` - Preset not found
 
 ---
 
@@ -1717,40 +1936,17 @@ Binary image data with appropriate headers
 
 **Response**:
 ```json
-{ "id": 1, "name": "Title", "description": "...", "field": "title", "kind": "text", "order": 0, "value": "", "icon": "fa-solid fa-tag", "extras": {} }
-```
-
----
-
-### PUT /api/presets
-**Purpose**: Save/update download presets.  
-
-**Body**: An array of preset objects:
-```json
-[
-  {
-    "name": "My Preset", // required, unique name for the preset
-    "id": "<uuid>",  // optional, will be generated if not provided
-    "description": "...", // optional, description of the preset
-    "folder": "my_channel/foo", // optional, relative to download_path
-    "template": "%(title)s.%(ext)s", // optional, filename template
-    "cookies": "...", // optional, Netscape HTTP Cookie format
-    "cli": "--write-subs --embed-subs", // optional, additional command options for yt-dlp
-  },
-  ...
-]
-```
-
-**Response**:
-```json
-[
-  {
-    "id": "<uuid>",
-    "name": "My Preset",
-    "description": "...",
-  },
-  ...
-]
+{ 
+  "id": 1, 
+  "name": "Title", 
+  "description": "...", 
+  "field": "title", 
+  "kind": "text",   
+  "order": 0, 
+  "value": "", 
+  "icon": "fa-solid fa-tag", 
+  "extras": {} 
+}
 ```
 
 ---
@@ -2107,18 +2303,60 @@ or an error:
 ### GET /api/yt-dlp/options
 **Purpose**: Get the current yt-dlp CLI options as a JSON object.
 
+**Response**: JSON object with yt-dlp options and metadata.
+
+---
+
+### GET /api/system/configuration
+**Purpose**: Retrieve comprehensive system configuration including app settings, presets, download fields, queue status, and folder structure.
+
 **Response**:
 ```json
-[
-  {
-    "description": "Description of the option",
-    "flags":[ "--option", "-o" ],
-    "group": "Option Group",
-    "ignored": false, // true if this option is ignored by ytptube.
+{
+  "app": {
+    "version": "...",
+    "download_path": "/path/to/downloads",
+    "base_path": "/",
+    ...
   },
-  ...
-]
+  "presets": [
+    {
+      "id": 1,
+      "name": "default",
+      "description": "...",
+      ...
+    }
+  ],
+  "dl_fields": [
+    {
+      "id": 1,
+      "name": "Title",
+      "field": "title",
+      "kind": "text",
+      ...
+    }
+  ],
+  "paused": false,
+  "folders": [
+    {"name": "folder1", "path": "folder1"},
+    {"name": "folder2", "path": "folder2"}
+  ],
+  "history_count": 150,
+  "queue": [
+    {
+      "id": "abc123",
+      "url": "https://example.com/video",
+      "status": "pending",
+      ...
+    }
+  ]
+}
 ```
+
+**Notes**:
+- This endpoint combines multiple data sources into a single response for efficient initialization
+- The `folders` array includes available download folders up to the configured depth limit
+- The `queue` array contains active download items
 
 ---
 
@@ -2258,211 +2496,495 @@ or an error:
 
 ## WebSocket API
 
-The WebSocket API provides real-time bidirectional communication between the client and server WebSockets. It enables live updates for downloads, queue status, and notifications.
-
-> ![IMPORTANT]
-> The WebSocket API is unstable and many events will be moved to REST endpoints in future releases. 
-> Please do not rely on the WebSocket API for the time being.
-
 ### Connection
 
-**URL**: `ws://localhost:8081/ws` (development) or `wss://domain.example/ws` (production)
+**Endpoint**: `/ws` (or `{base_path}/ws` if base_path is configured)
 
-The client automatically connects to the WebSocket server and receives a `connected` event with initial state. The frontend wrapper handles reconnection (default: up to 50 attempts, 5s delay).
+The WebSocket API provides real-time bidirectional communication between the client and server for download queue management and status updates.
+
+**Connection Details**:
+- Protocol: WebSocket (ws:// or wss://)
+- Heartbeat: 10-second interval
+- Auto-reconnect: Client should implement reconnection logic
+
+**Example Connection**:
+```javascript
+const ws = new WebSocket('ws://localhost:8080/ws');
+ws.onopen = () => console.log('Connected');
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  console.log('Event:', message.event, 'Data:', message.data);
+};
+```
+
+---
 
 ### Authentication
 
-If Basic Authentication is configured, include credentials when establishing the WebSocket connection:
+WebSocket connections use the same authentication as HTTP endpoints. If `YTP_AUTH_USERNAME` and `YTP_AUTH_PASSWORD` are set, authentication can be provided via:
 
-1. **Via HTTP Headers** (automatic in browsers):
+1. **Query Parameter** (recommended for WebSocket):
+   ```
+   ws://localhost:8080/ws?apikey=<base64_urlsafe_credentials>
+   ```
+
+2. **HTTP Basic Auth header** (during WebSocket handshake):
    ```
    Authorization: Basic base64("<username>:<password>")
    ```
 
-2. **Via Query Parameter**:
-   ```
-   ws://localhost:8081/ws?apikey=<base64_urlsafe("<username>:<password>")>
-   ```
+---
 
 ### Message Format
 
-All WebSocket messages are JSON-encoded and follow a consistent envelope:
+All WebSocket messages use JSON format with `event` and `data` fields:
 
-**Server-to-Client (Event Envelope)**
+**Client → Server**:
 ```json
 {
-  "event": "item_added",
+  "event": "event_name",
+  "data": { /* payload */ }
+}
+```
+
+**Server → Client**:
+```json
+{
+  "event": "event_name",
+  "data": { /* Event object */ }
+}
+```
+
+---
+
+### Client Events (Client → Server)
+
+These events can be sent by the client to control downloads and queue operations.
+
+#### `add_url`
+
+Add a new URL to the download queue.
+
+**Request**:
+```json
+{
+  "event": "add_url",
   "data": {
-    "id": "unique-event-id",
-    "created_at": "2024-01-15T10:30:00.000000+00:00",
-    "event": "item_added",
-    "title": "Item Queued",
-    "message": "Video added to download queue",
-    "data": {"_id": "abc123", "title": "..."}
+    "url": "https://youtube.com/watch?v=...",
+    "preset": "default",
+    "folder": "my_channel/foo",
+    "template": "%(title)s.%(ext)s",
+    "cookies": "...",
+    "cli": "--write-subs --embed-subs",
+    "auto_start": true
   }
 }
 ```
 
-> **Note**: Every message follows the same envelope and `data` is always a JSON object.
+**Required Fields**:
+- `url` - The video URL to download
 
-### Core Events
+**Optional Fields**:
+- `preset` - Preset name to use
+- `folder` - Output folder relative to download_path
+- `template` - Filename template
+- `cookies` - Authentication cookies (Netscape format)
+- `cli` - Additional yt-dlp CLI arguments
+- `auto_start` - Whether to auto-start the download (default: true)
 
-#### Connection Events
+**Response Events**:
+- `item_status` - Item added successfully
+- `log_error` - Error adding URL
 
-##### `connect` (Server → Client)
-Fired when WebSocket connection is established. No data payload.
+---
 
-```typescript
-socket.on('connect', () => console.log('WebSocket connected'));
-```
+#### `item_cancel`
 
-##### `disconnect` (Server → Client)
-Fired when WebSocket connection is closed. No data payload.
+Cancel an active or pending download.
 
-```typescript
-socket.on('disconnect', (reason: string) => console.log('WebSocket disconnected:', reason));
-```
-
-##### `config_update` (Server → Client)
-Emitted when configuration-backed resources change (presets, dl fields, conditions, notifications).
-
-**Data Fields**:
-- `feature`: One of `presets`, `dl_fields`, `conditions`, `notifications`
-- `action`: `create`, `update`, `delete`, `replace`
-- `data`: Updated payload (object or list of objects)
-
-**Example**:
+**Request**:
 ```json
 {
-  "feature": "notifications",
-  "action": "update",
-  "data": { "id": 1, "name": "My Webhook", "enabled": true }
+  "event": "item_cancel",
+  "data": "item_id"
 }
 ```
 
-##### `connected` (Server → Client)
-When a client connects, this events sends the folder and current queue.
+**Required**: Item ID (string)
 
-**Data Fields**:
-- `queue`: Current download queue (array of items)
-- `folders`: Directory structure for downloads
-- `history_count`: Count of completed download items
+**Response Events**:
+- `item_cancelled` - Item cancelled successfully
+- `log_error` - Error cancelling item
 
-##### `active_queue` (Server → Client)
-Provides the current active queue snapshot.
+---
 
-**Data Fields**:
-- `queue`: Current download queue (array of items)
+#### `item_delete`
+
+Delete a download item and optionally remove its files.
+
+**Request**:
+```json
+{
+  "event": "item_delete",
+  "data": {
+    "id": "item_id",
+    "remove_file": true
+  }
+}
+```
+
+**Required Fields**:
+- `id` - The item ID to delete
+
+**Optional Fields**:
+- `remove_file` - Whether to delete downloaded files (default: false)
+
+**Response Events**:
+- `item_deleted` - Item deleted successfully
+- `log_error` - Error deleting item
+
+---
+
+#### `item_start`
+
+Start one or more paused download items.
+
+**Request** (single item):
+```json
+{
+  "event": "item_start",
+  "data": "item_id"
+}
+```
+
+**Request** (multiple items):
+```json
+{
+  "event": "item_start",
+  "data": ["item_id1", "item_id2", "item_id3"]
+}
+```
+
+**Required**: Item ID(s) - string or array of strings
+
+**Response Events**:
+- `item_updated` - Items started successfully
+- `log_error` - Error starting items
+
+---
+
+#### `item_pause`
+
+Pause one or more active download items.
+
+**Request** (single item):
+```json
+{
+  "event": "item_pause",
+  "data": "item_id"
+}
+```
+
+**Request** (multiple items):
+```json
+{
+  "event": "item_pause",
+  "data": ["item_id1", "item_id2", "item_id3"]
+}
+```
+
+**Required**: Item ID(s) - string or array of strings
+
+**Response Events**:
+- `item_updated` - Items paused successfully
+- `log_error` - Error pausing items
+
+---
+
+### Server Events (Server → Client)
+
+These events are emitted by the server and sent to connected WebSocket clients.
+
+#### Connection Events
+
+##### `config_update`
+
+Emitted when system configuration changes (presets, tasks, conditions, etc.).
+
+**Event**:
+```json
+{
+  "event": "config_update",
+  "data": {
+    "feature": "presets|tasks|conditions|notifications|dl_fields",
+    "action": "create|update|delete",
+    "data": { /* Updated object */ }
+  }
+}
+```
+
+---
+
+##### `connected`
+
+Emitted when a client successfully connects to the WebSocket.
+
+**Event**:
+```json
+{
+  "event": "connected",
+  "data": {
+    "sid": "session_id",
+    "timestamp": 1234567890.123
+  }
+}
+```
+
+---
+
+##### `active_queue`
+
+Emitted periodically with the current active queue status.
+
+**Event**:
+```json
+{
+  "event": "active_queue",
+  "data": {
+    "queue": [
+      {
+        "id": "abc123",
+        "status": "downloading",
+        "progress": 45.6,
+        ...
+      }
+    ]
+  }
+}
+```
+
+---
 
 #### Logging Events
 
-All logging events follow the same structure with JSON-encoded message:
+##### `log_info`
 
-##### `log_info` (Server → Client)
-General informational message.
+Informational log message.
 
-##### `log_success` (Server → Client)
-Success notification message.
-
-##### `log_warning` (Server → Client)
-Warning notification message.
-
-##### `log_error` (Server → Client)
-Error notification message.
-
-For continuous log streaming, use `GET /api/logs/stream` via SSE.
-
-### Download Queue Events
-
-#### `item_added` (Server → Client)
-Emitted when a new item is successfully added to the queue. The response payload is the complete item object.
-
-```typescript
-socket.on('item_added', (stream: string) => {
-  const json = JSON.parse(stream);
-  const item = json.data;
-  console.log(`Added: ${item.title} [${item.url}]`);
-});
+**Event**:
+```json
+{
+  "event": "log_info",
+  "data": {
+    "title": "Info Title",
+    "message": "Informational message",
+    "timestamp": 1234567890.123
+  }
+}
 ```
 
-#### `item_updated` (Server → Client)
-Emitted when an item's status or progress changes **(high-frequency event)**.
+---
 
-**Data Fields**: Same as `item_added`
+##### `log_success`
 
-```typescript
-socket.on('item_updated', (stream: string) => {
-  const json = JSON.parse(stream);
-  const item = json.data;
-  console.log(`Progress: ${item.title} - ${item.progress}%`);
-});
+Success log message.
+
+**Event**:
+```json
+{
+  "event": "log_success",
+  "data": {
+    "title": "Success Title",
+    "message": "Operation completed successfully",
+    "timestamp": 1234567890.123
+  }
+}
 ```
 
-#### `item_completed` (Server → Client)
-Emitted when a download completes. Item moves from queue to history.
+---
 
-**Data Fields**: Complete item object with final status
+##### `log_warning`
 
-```typescript
-socket.on('item_completed', (stream: string) => {
-  const json = JSON.parse(stream);
-  const item = json.data;
-  console.log(`✓ Completed: ${item.title}`);
-  console.log(`Saved to: ${item.output_path}`);
-});
+Warning log message.
+
+**Event**:
+```json
+{
+  "event": "log_warning",
+  "data": {
+    "title": "Warning Title",
+    "message": "Warning message",
+    "timestamp": 1234567890.123
+  }
+}
 ```
 
-#### `item_cancelled` (Server → Client)
-Emitted when a download is cancelled by user.
+---
 
-**Data Fields**: Item object with status `cancelled`
+##### `log_error`
 
-```typescript
-socket.on('item_cancelled', (stream: string) => {
-  const json = JSON.parse(stream);
-  const item = json.data;
-  console.log(`✗ Cancelled: ${item.title}`);
-});
+Error log message.
+
+**Event**:
+```json
+{
+  "event": "log_error",
+  "data": {
+    "title": "Error Title",
+    "message": "Error details",
+    "timestamp": 1234567890.123
+  }
+}
 ```
 
-#### `item_deleted` (Server → Client)
-Emitted when an item is deleted from history.
+---
 
-**Data Fields**: Item object
+#### Download Queue Events
 
-```typescript
-socket.on('item_deleted', (stream: string) => {
-  const json = JSON.parse(stream);
-  console.log(`Deleted from history: ${json.data._id}`);
-});
+##### `item_added`
+
+Emitted when a new item is added to the download queue.
+
+**Event**:
+```json
+{
+  "event": "item_added",
+  "data": {
+    "id": "abc123",
+    "url": "https://example.com/video",
+    "title": "Video Title",
+    "status": "pending",
+    "preset": "default",
+    ...
+  }
+}
 ```
 
-#### `item_moved` (Server → Client)
-Emitted when an item moves between queue and history.
+---
 
-**Data Fields**:
-- `to`: Destination location (`queue` or `history`)
-- `item`: Complete item object
+##### `item_updated`
 
-```typescript
-socket.on('item_moved', (stream: string) => {
-  const json = JSON.parse(stream);
-  console.log(`Item moved to: ${json.data.to}`);
-});
+Emitted when a download item's status or progress updates (high-frequency event).
+
+**Event**:
+```json
+{
+  "event": "item_updated",
+  "data": {
+    "id": "abc123",
+    "status": "downloading",
+    "progress": 45.6,
+    "speed": "2.5 MiB/s",
+    "eta": "00:05:23",
+    ...
+  }
+}
 ```
 
-#### `item_status` (Server → Client)
-Emitted after add-url attempts via WebSocket to report enqueue status.
+---
 
-**Data Fields**:
-- `status`: Status payload from queue add operation
-- `preset`: Preset name used for the request
+##### `item_cancelled`
 
-#### `paused` (Server → Client)
+Emitted when a download is cancelled.
+
+**Event**:
+```json
+{
+  "event": "item_cancelled",
+  "data": {
+    "id": "abc123",
+    "status": "cancelled",
+    ...
+  }
+}
+```
+
+---
+
+##### `item_deleted`
+
+Emitted when a download item is deleted from the queue or history.
+
+**Event**:
+```json
+{
+  "event": "item_deleted",
+  "data": {
+    "id": "abc123"
+  }
+}
+```
+
+---
+
+##### `item_moved`
+
+Emitted when a download item is moved between queue and history.
+
+**Event**:
+```json
+{
+  "event": "item_moved",
+  "data": {
+    "id": "abc123",
+    "from": "queue",
+    "to": "done"
+  }
+}
+```
+
+---
+
+##### `item_status`
+
+Emitted with status updates for specific operations.
+
+**Event**:
+```json
+{
+  "event": "item_status",
+  "data": {
+    "id": "abc123",
+    "status": "queued",
+    "message": "Item added to queue",
+    ...
+  }
+}
+```
+
+---
+
+##### `paused`
+
 Emitted when the download queue is paused.
 
-#### `resumed` (Server → Client)
+**Event**:
+```json
+{
+  "event": "paused",
+  "data": {
+    "paused": true,
+    "at": 1234567890.123
+  }
+}
+```
+
+---
+
+##### `resumed`
+
 Emitted when the download queue is resumed.
+
+**Event**:
+```json
+{
+  "event": "resumed",
+  "data": {
+    "paused": false,
+    "at": 1234567890.123
+  }
+}
+```
 
 ---
 

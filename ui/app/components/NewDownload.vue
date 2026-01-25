@@ -309,7 +309,6 @@ const form = useStorage<item_request>('local_config_v1', {
   extras: {},
 }) as Ref<item_request>
 
-
 const is_valid_dl_field = (dl_field: string): boolean => {
   if (dlFieldsExtra.includes(dl_field)) {
     return true
@@ -471,19 +470,25 @@ const addDownload = async () => {
 
     let had_errors = false
 
-    data.forEach((item: Record<string, any>) => {
-      if (false !== item.status) {
-        return
-      }
+    if (200 === response.status) {
+      data.forEach((item: Record<string, any>) => {
+        if (false !== item.status) {
+          return
+        }
 
-      had_errors = true
+        had_errors = true
 
-      if (item?.hidden) {
-        return
-      }
+        if (item?.hidden) {
+          return
+        }
 
-      toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
-    })
+        toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+      })
+    }
+
+    if (202 === response.status) {
+      toast.success(data.message,{ timeout: 2000 })
+    }
 
     if (false === had_errors) {
       form.value.url = ''
