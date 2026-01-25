@@ -407,6 +407,10 @@ const sTrim = (str: string, delim: string): string => iTrim(str, delim, 'start')
  */
 const ucFirst = (str: string): string => (!str) ? str : str.charAt(0).toUpperCase() + str.slice(1)
 
+const normalizePresetName = (name: string): string => name.trim().toLowerCase().replace(/\s+/g, '_')
+
+const prettyName = (name: string): string => name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
 /**
  * Get the name of a separator based on its value
  *
@@ -893,7 +897,7 @@ const parse_api_error = async (json: unknown): Promise<string> => {
 }
 
 export {
-  separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
+  separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst, normalizePresetName, prettyName,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,

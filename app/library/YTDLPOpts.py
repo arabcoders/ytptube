@@ -3,8 +3,9 @@ import shlex
 from pathlib import Path
 from typing import Any
 
+from app.features.presets.schemas import Preset
+
 from .config import Config
-from .Presets import Preset, Presets
 from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, create_cookies_file, merge_dict
 
 LOG: logging.Logger = logging.getLogger("YTDLPOpts")
@@ -129,8 +130,15 @@ class YTDLPCli:
             raise ValueError(msg)
 
         self.item = item
-        self.preset: Preset = item.get_preset()
+        preset_name = item.preset if item.preset else self._config.default_preset
+        self.preset: Preset | None = YTDLPCli._get_presets().get(preset_name)
         self._config: Config = config or Config.get_instance()
+
+    @staticmethod
+    def _get_presets():
+        from app.features.presets.service import Presets
+
+        return Presets.get_instance()
 
     def build(self) -> tuple[str, dict]:
         """
@@ -306,7 +314,7 @@ class YTDLPOpts:
             YTDLPOpts: The instance of the class
 
         """
-        preset: Preset | None = Presets.get_instance().get(name)
+        preset: Preset | None = YTDLPCli._get_presets().get(name)
         if not preset:
             return self
 

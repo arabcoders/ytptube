@@ -15,13 +15,14 @@ from app.features.notifications.schemas import (
     NotificationRequestHeader,
     NotificationRequestType,
 )
+from app.features.presets.schemas import Preset
+from app.features.presets.service import Presets
 from app.library.BackgroundWorker import BackgroundWorker
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import Event, EventBus, Events
 from app.library.httpx_client import async_client
 from app.library.ItemDTO import Item, ItemDTO
-from app.library.Presets import Preset, Presets
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:

@@ -17,6 +17,7 @@ from aiohttp import web
 from app.features.conditions.service import Conditions
 from app.features.dl_fields.service import DLFields
 from app.features.notifications.service import Notifications
+from app.features.presets.deps import get_presets_repo
 from app.features.tasks.definitions.deps import get_task_definitions_repo
 from app.features.tasks.service import Tasks
 from app.library.BackgroundWorker import BackgroundWorker
@@ -26,7 +27,6 @@ from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
 from app.library.HttpSocket import HttpSocket
-from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
@@ -116,7 +116,7 @@ class Main:
         self._socket.attach(self._app)
         self._http.attach(self._app)
 
-        Presets.get_instance().attach(self._app)
+        get_presets_repo().attach(self._app)
         Tasks.get_instance().attach(self._app)
         Notifications.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)

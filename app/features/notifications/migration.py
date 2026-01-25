@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, cast
 
 from app.features.core.migration import Migration as FeatureMigration
 from app.features.notifications.schemas import NotificationEvents
+from app.features.presets.service import Presets
 from app.library.config import Config
-from app.library.Presets import Presets
 
 if TYPE_CHECKING:
     from app.features.notifications.repository import NotificationsRepository

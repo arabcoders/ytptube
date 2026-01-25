@@ -36,12 +36,12 @@
                           <option value="" disabled>Select a preset</option>
                           <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                             <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
-                              {{ item.name }}
+                              {{ prettyName(item.name) }}
                             </option>
                           </optgroup>
                           <optgroup label="Default presets">
                             <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
-                              {{ item.name }}
+                              {{ prettyName(item.name) }}
                             </option>
                           </optgroup>
                         </select>
@@ -97,7 +97,7 @@
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The name to refers to this preset of settings.</span>
+                    <span>Names are stored in lowercase with underscores (no spaces).</span>
                   </span>
                 </div>
               </div>
@@ -253,16 +253,18 @@
 import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import TextDropzone from '~/components/TextDropzone.vue'
+import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
-import type { Preset, PresetImport } from '~/types/presets'
+import type { Preset } from '~/types/presets'
+import { normalizePresetName, prettyName } from '~/utils'
 
 const emitter = defineEmits<{
   (event: 'cancel'): void
-  (event: 'submit', payload: { reference: string | null, preset: Preset }): void
+  (event: 'submit', payload: { reference: number | null, preset: Preset }): void
 }>()
 
 const props = defineProps<{
-  reference?: string | null
+  reference?: number | null
   preset: Partial<Preset>
   addInProgress?: boolean
   presets?: Preset[]
@@ -298,6 +300,13 @@ const checkInfo = async (): Promise<void> => {
     }
   }
 
+  const normalizedName = normalizePresetName(String(form.name))
+  if (!normalizedName) {
+    toast.error('The name field is required.')
+    return
+  }
+  form.name = normalizedName
+
   if (form.folder) {
     form.folder = form.folder.trim()
     await nextTick()
@@ -313,13 +322,13 @@ const checkInfo = async (): Promise<void> => {
 
   const copy: Preset = JSON.parse(JSON.stringify(form))
   let usedName = false
-  const name = String(form.name).trim().toLowerCase()
+  const name = normalizedName
 
   props.presets?.forEach(p => {
     if (p.id === props.reference) {
       return
     }
-    if (String(p.name).toLowerCase() === name) {
+    if (p.name === name) {
       usedName = true
     }
   })
@@ -366,7 +375,7 @@ const importItem = async (): Promise<void> => {
   }
 
   try {
-    const item = decode(val) as PresetImport
+    const item = decode(val) as Preset & ImportedItem
 
     if (!item?._type || 'preset' !== item._type) {
       toast.error(`Invalid import string. Expected type 'preset', got '${item._type ?? 'unknown'}'.`)

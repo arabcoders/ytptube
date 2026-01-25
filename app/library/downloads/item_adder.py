@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 import yt_dlp.utils
 
 from app.features.conditions.service import Conditions
+from app.features.presets.service import Presets
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
-from app.library.Presets import Presets
 from app.library.Utils import (
     archive_add,
     archive_read,
@@ -27,8 +27,8 @@ from .playlist_processor import process_playlist
 from .video_processor import add_video
 
 if TYPE_CHECKING:
+    from app.features.presets.schemas import Preset
     from app.library.ItemDTO import Item
-    from app.library.Presets import Preset
 
     from .queue_manager import DownloadQueue
 

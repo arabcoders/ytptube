@@ -7,11 +7,11 @@ from typing import Any
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.presets.service import Presets
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
-from app.library.Presets import Presets
 from app.library.router import route
 from app.library.Utils import (
     REMOVE_KEYS,

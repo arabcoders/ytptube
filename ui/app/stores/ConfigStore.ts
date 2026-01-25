@@ -133,9 +133,30 @@ export const useConfigStore = defineStore('config', () => {
     }
 
     if ('presets' === feature) {
-      if ('replace' === action) {
-        state.presets = data as Array<Preset>
+      const item = data as Preset
+      const current = get(feature, []) as Array<Preset>
+
+      if ('create' === action) {
+        current.push(item)
+        return
       }
+
+      if ('delete' === action) {
+        const index = current.findIndex(i => i.id === item.id)
+        if (-1 !== index) {
+          current.splice(index, 1)
+        }
+        return
+      }
+
+      if ('update' === action) {
+        const target = current.find(i => i.id === item.id)
+        if (target) {
+          Object.assign(target, item)
+        }
+        return
+      }
+
       return
     }
 

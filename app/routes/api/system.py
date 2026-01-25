@@ -12,11 +12,11 @@ from aiohttp.web import Request, Response
 from aiohttp.web_runner import GracefulExit
 
 from app.features.dl_fields.service import DLFields
+from app.features.presets.service import Presets
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.Presets import Presets
 from app.library.router import route
 from app.library.UpdateChecker import UpdateChecker
 from app.library.Utils import list_folders

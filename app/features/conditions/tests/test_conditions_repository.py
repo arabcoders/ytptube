@@ -11,15 +11,11 @@ from app.library.sqlite_store import SqliteStore
 
 
 @pytest_asyncio.fixture
-async def repo(tmp_path):
-    """Provide a fresh repository instance with initialized database for each test."""
-    # Reset singletons
+async def repo():
     ConditionsRepository._reset_singleton()
     SqliteStore._reset_singleton()
 
-    # Initialize database with temp path
-    test_db_path = tmp_path / "test.db"
-    store = SqliteStore(db_path=str(test_db_path))
+    store = SqliteStore(db_path=":memory:")
     await store.get_connection()
 
     # Create repository

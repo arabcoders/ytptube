@@ -273,6 +273,7 @@ class Config(metaclass=Singleton):
         "download_info_expires",
         "auto_clear_history_days",
         "default_pagination",
+        "extract_info_concurrency",
         "flaresolverr_max_timeout",
         "flaresolverr_client_timeout",
         "flaresolverr_cache_ttl",

@@ -38,7 +38,7 @@
               <div class="field has-addons">
                 <div class="control" @click="show_description = !show_description">
                   <label class="button is-static">
-                    <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
                   </label>
                 </div>
                 <div class="control is-expanded">
@@ -48,12 +48,12 @@
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                         <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
-                          {{ cPreset.name }}
+                          {{ prettyName(cPreset.name) }}
                         </option>
                       </optgroup>
                       <optgroup label="Default presets">
                         <option v-for="dPreset in filter_presets(true)" :key="dPreset.name" :value="dPreset.name">
-                          {{ dPreset.name }}
+                          {{ prettyName(dPreset.name) }}
                         </option>
                       </optgroup>
                     </select>
@@ -269,6 +269,7 @@ import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import TextDropzone from '~/components/TextDropzone.vue'
 import type { item_request } from '~/types/item'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
+import { prettyName } from '~/utils'
 import { navigateTo } from '#app'
 import { useDialog } from '~/composables/useDialog'
 
@@ -803,4 +804,5 @@ watch(isMultiLineInput, async newValue => {
   const inputElement = document.getElementById('url') as HTMLInputElement
   inputElement?.focus()
 })
+
 </script>

@@ -5,13 +5,14 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.presets.schemas import Preset
+from app.features.presets.service import Presets
 from app.library.config import Config
 from app.library.DataStore import StoreType
 from app.library.downloads import Download, DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
-from app.library.Presets import Preset, Presets
 from app.library.router import route
 
 if TYPE_CHECKING:
