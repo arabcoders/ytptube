@@ -1,64 +1,8 @@
 [
   {
-    "tag": "Unreleased (be6b68ef)",
-    "full_sha": "be6b68efdd5264ee6b09be5a861a6d8ab7912d15",
-    "date": "2026-01-14T20:16:23+00:00",
-    "commits": [
-      {
-        "sha": "45e27003",
-        "full_sha": "45e27003c145d99a28454b458ea9ad50af6c2460",
-        "message": "fix: do not show action buttons while loading tasks",
-        "author": "arabcoders",
-        "date": "2026-01-14T17:05:06+00:00"
-      },
-      {
-        "sha": "072a45ef",
-        "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
-        "message": "refactor: missed loading check.",
-        "author": "arabcoders",
-        "date": "2026-01-14T17:02:48+00:00"
-      },
-      {
-        "sha": "ad54d800",
-        "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",
-        "message": "Refactor: better final filename status tracking",
-        "author": "arabcoders",
-        "date": "2026-01-14T16:50:35+00:00"
-      },
-      {
-        "sha": "e0a47e2f",
-        "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
-        "message": "Refactor: facelift the WebUI",
-        "author": "arabcoders",
-        "date": "2026-01-14T15:56:07+00:00"
-      },
-      {
-        "sha": "48e653b7",
-        "full_sha": "48e653b70af63c469ac966151304d5625f1b0933",
-        "message": "refactor: limit concurrent extract info  calls to prevent loop blocking",
-        "author": "arabcoders",
-        "date": "2026-01-14T13:11:21+00:00"
-      },
-      {
-        "sha": "55a298e0",
-        "full_sha": "55a298e0ff84e31797b8b5dd3f9301ad871cf8e3",
-        "message": "Refactor: download module into testable chunks",
-        "author": "arabcoders",
-        "date": "2026-01-13T17:05:01+00:00"
-      },
-      {
-        "sha": "d37cc612",
-        "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf",
-        "message": "refactor: move popover to separate button",
-        "author": "arabcoders",
-        "date": "2026-01-12T14:14:29+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "fe6fe42a653d53f11edba712ddefbe58b274791b",
-    "date": "2026-01-25T18:34:26+00:00",
+    "tag": "Unreleased (412ad956)",
+    "full_sha": "412ad9565ded23b309d3dcf297b34e6a7ed4166e",
+    "date": "2026-01-25T18:42:20+00:00",
     "commits": [
       {
         "sha": "fe6fe42a",
@@ -227,6 +171,55 @@
         "message": "fix: popover on mobile going over edge",
         "author": "arabcoders",
         "date": "2026-01-16T16:20:27+00:00"
+      },
+      {
+        "sha": "45e27003",
+        "full_sha": "45e27003c145d99a28454b458ea9ad50af6c2460",
+        "message": "fix: do not show action buttons while loading tasks",
+        "author": "arabcoders",
+        "date": "2026-01-14T17:05:06+00:00"
+      },
+      {
+        "sha": "072a45ef",
+        "full_sha": "072a45efbae621bc58664feac36ea008957cbfd5",
+        "message": "refactor: missed loading check.",
+        "author": "arabcoders",
+        "date": "2026-01-14T17:02:48+00:00"
+      },
+      {
+        "sha": "ad54d800",
+        "full_sha": "ad54d80077e538a9e4c2729711cf76179866edb1",
+        "message": "Refactor: better final filename status tracking",
+        "author": "arabcoders",
+        "date": "2026-01-14T16:50:35+00:00"
+      },
+      {
+        "sha": "e0a47e2f",
+        "full_sha": "e0a47e2fe355efd2156de417bac855bd456c80bb",
+        "message": "Refactor: facelift the WebUI",
+        "author": "arabcoders",
+        "date": "2026-01-14T15:56:07+00:00"
+      },
+      {
+        "sha": "48e653b7",
+        "full_sha": "48e653b70af63c469ac966151304d5625f1b0933",
+        "message": "refactor: limit concurrent extract info  calls to prevent loop blocking",
+        "author": "arabcoders",
+        "date": "2026-01-14T13:11:21+00:00"
+      },
+      {
+        "sha": "55a298e0",
+        "full_sha": "55a298e0ff84e31797b8b5dd3f9301ad871cf8e3",
+        "message": "Refactor: download module into testable chunks",
+        "author": "arabcoders",
+        "date": "2026-01-13T17:05:01+00:00"
+      },
+      {
+        "sha": "d37cc612",
+        "full_sha": "d37cc6120a08d74a2b52e17ce28c70a860d470cf",
+        "message": "refactor: move popover to separate button",
+        "author": "arabcoders",
+        "date": "2026-01-12T14:14:29+00:00"
       }
     ]
   },

@@ -1,8 +1,176 @@
 [
     {
-        "tag": "master-20260114-be6b68ef",
-        "date": "2026-01-14T20:16:23+00:00",
+        "tag": "master-20260125-412ad956",
+        "date": "2026-01-25T18:42:20+00:00",
         "commits": [
+            {
+                "sha": "fe6fe42a",
+                "message": "refactor: switch api/history to be fully async.",
+                "author": "arabcoders",
+                "date": "2026-01-25T18:34:26+00:00",
+                "full_sha": "fe6fe42a653d53f11edba712ddefbe58b274791b"
+            },
+            {
+                "sha": "7d6dc7ae",
+                "message": "refactor: move presets to db model",
+                "author": "arabcoders",
+                "date": "2026-01-25T16:17:54+00:00",
+                "full_sha": "7d6dc7ae7690df8ee89435ce6759aebc135cef57"
+            },
+            {
+                "sha": "fd4e7559",
+                "message": "refactor: migrate tasks to db model",
+                "author": "arabcoders",
+                "date": "2026-01-24T20:09:20+00:00",
+                "full_sha": "fd4e755938ba65a6628581333f1be862752a18cd"
+            },
+            {
+                "sha": "00c3aeff",
+                "message": "Feat: add yt-dlp version checker",
+                "author": "arabcoders",
+                "date": "2026-01-24T17:04:30+00:00",
+                "full_sha": "00c3aefff1314d9fec795cdb826af73c4b5ba3ad"
+            },
+            {
+                "sha": "04237903",
+                "message": "refactor: migrate task definitions to db model",
+                "author": "arabcoders",
+                "date": "2026-01-23T20:38:59+00:00",
+                "full_sha": "042379035a8060971b3f162e4a3894de6a5c5b41"
+            },
+            {
+                "sha": "e551ad78",
+                "message": "refactor: improve connection status and history loading logic",
+                "author": "arabcoders",
+                "date": "2026-01-22T20:00:45+00:00",
+                "full_sha": "e551ad7848d6bc84c577632d3d8bbf20aa8cf8c8"
+            },
+            {
+                "sha": "66c349d4",
+                "message": "fix: set the configuration dict",
+                "author": "arabcoders",
+                "date": "2026-01-22T17:04:09+00:00",
+                "full_sha": "66c349d41fe73fb6418ce4b3479e825445cbb50c"
+            },
+            {
+                "sha": "c3eb7091",
+                "message": "refactor: make the UI work without websocket",
+                "author": "arabcoders",
+                "date": "2026-01-22T16:36:20+00:00",
+                "full_sha": "c3eb7091af6f64d44cf59e0ad687faa11395a42e"
+            },
+            {
+                "sha": "50145502",
+                "message": "refactor: remove socket.io dependency",
+                "author": "arabcoders",
+                "date": "2026-01-21T19:07:12+00:00",
+                "full_sha": "501455029c27633657282862781ba4fbf3b151a8"
+            },
+            {
+                "sha": "ce7b59a8",
+                "message": "refactor: update API documentation",
+                "author": "arabcoders",
+                "date": "2026-01-21T15:54:56+00:00",
+                "full_sha": "ce7b59a8be67273af797d9ca297712d4e6e18980"
+            },
+            {
+                "sha": "48feca72",
+                "message": "fix: dont reject non-unique names during migration.",
+                "author": "arabcoders",
+                "date": "2026-01-21T15:39:47+00:00",
+                "full_sha": "48feca72d3c92c41a9303013f1458be2871d311e"
+            },
+            {
+                "sha": "5b7d9ddb",
+                "message": "refactor: migrate notifications to the new db model",
+                "author": "arabcoders",
+                "date": "2026-01-21T15:29:16+00:00",
+                "full_sha": "5b7d9ddbde58fe256e9c3d7506d013853cf3d5ea"
+            },
+            {
+                "sha": "ea1fc59e",
+                "message": "refactor: standardize config_update event for UI",
+                "author": "arabcoders",
+                "date": "2026-01-20T13:27:04+00:00",
+                "full_sha": "ea1fc59e8888684bdef4f8d6f1d4a56998ff58e0"
+            },
+            {
+                "sha": "8a10627d",
+                "message": "refactor: migrated dl_fields to db model.",
+                "author": "arabcoders",
+                "date": "2026-01-19T15:31:16+00:00",
+                "full_sha": "8a10627d6a03f2854cdb5ca9b988ec0bc351fef9"
+            },
+            {
+                "sha": "c33827c6",
+                "message": "fix: minor typing fix",
+                "author": "arabcoders",
+                "date": "2026-01-19T14:15:10+00:00",
+                "full_sha": "c33827c6f7ac4d696bed26a9fadfd5ea1e0ddea5"
+            },
+            {
+                "sha": "57d582e2",
+                "message": "Fix: remove debug statement",
+                "author": "arabcoders",
+                "date": "2026-01-18T20:13:40+00:00",
+                "full_sha": "57d582e2657b92f6a9ab745d27f79abf2d2ed395"
+            },
+            {
+                "sha": "6da58254",
+                "message": "refactor: update validation logic to require cli or extras in Condition model",
+                "author": "arabcoders",
+                "date": "2026-01-18T19:57:39+00:00",
+                "full_sha": "6da58254bc96e6b321f2896f88671984388debdc"
+            },
+            {
+                "sha": "a0934393",
+                "message": "refactor: conditions feature to db model",
+                "author": "arabcoders",
+                "date": "2026-01-18T19:17:07+00:00",
+                "full_sha": "a09343938da58a3c64cb5cfa3fb559c8b2a83060"
+            },
+            {
+                "sha": "f98acbaa",
+                "message": "refactor: clean up sqlalchemy connection maker",
+                "author": "arabcoders",
+                "date": "2026-01-18T16:18:00+00:00",
+                "full_sha": "f98acbaa428dfff755594146adbb0dc654803f6c"
+            },
+            {
+                "sha": "a85ca93d",
+                "message": "refactor: use sqlalchemy as base for sqlite",
+                "author": "arabcoders",
+                "date": "2026-01-17T20:32:39+00:00",
+                "full_sha": "a85ca93d5aa23a3ea0f0278b76af7a6de9313896"
+            },
+            {
+                "sha": "d663cfd7",
+                "message": "chore: update external packages.",
+                "author": "arabcoders",
+                "date": "2026-01-16T17:50:38+00:00",
+                "full_sha": "d663cfd77a47138765d8a5327fa8b9b12c55ec37"
+            },
+            {
+                "sha": "79594319",
+                "message": "Refactor: replace direct extract_info calls to async fetch_info",
+                "author": "arabcoders",
+                "date": "2026-01-16T17:45:10+00:00",
+                "full_sha": "795943196e4f162a1ee07f2f2149def6ffe7d5dd"
+            },
+            {
+                "sha": "ea572ec4",
+                "message": "feat: implement cache cleanup",
+                "author": "arabcoders",
+                "date": "2026-01-16T17:42:51+00:00",
+                "full_sha": "ea572ec4c51c780ad1bacde940cd320416744d07"
+            },
+            {
+                "sha": "d87995c4",
+                "message": "fix: popover on mobile going over edge",
+                "author": "arabcoders",
+                "date": "2026-01-16T16:20:27+00:00",
+                "full_sha": "d87995c4b05161bea85eabf44ad9ea4e081a5471"
+            },
             {
                 "sha": "45e27003",
                 "message": "fix: do not show action buttons while loading tasks",
@@ -3728,7 +3896,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "be6b68efdd5264ee6b09be5a861a6d8ab7912d15"
+        "full_sha": "412ad9565ded23b309d3dcf297b34e6a7ed4166e"
     },
     {
         "tag": "master-20250616-c07465a6",
