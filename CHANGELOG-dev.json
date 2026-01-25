@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260124-fd4e7559",
-        "date": "2026-01-24T20:09:20+00:00",
+        "tag": "dev-20260125-7d6dc7ae",
+        "date": "2026-01-25T16:17:54+00:00",
         "commits": [
+            {
+                "sha": "7d6dc7ae",
+                "message": "refactor: move presets to db model",
+                "author": "arabcoders",
+                "date": "2026-01-25T16:17:54+00:00",
+                "full_sha": "7d6dc7ae7690df8ee89435ce6759aebc135cef57"
+            },
             {
                 "sha": "fd4e7559",
                 "message": "refactor: migrate tasks to db model",
@@ -3882,7 +3889,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fd4e755938ba65a6628581333f1be862752a18cd"
+        "full_sha": "7d6dc7ae7690df8ee89435ce6759aebc135cef57"
     },
     {
         "tag": "dev-20250616-c07465a6",
