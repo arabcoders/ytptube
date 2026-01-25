@@ -57,9 +57,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7d6dc7ae7690df8ee89435ce6759aebc135cef57",
-    "date": "2026-01-25T16:17:54+00:00",
+    "full_sha": "fe6fe42a653d53f11edba712ddefbe58b274791b",
+    "date": "2026-01-25T18:34:26+00:00",
     "commits": [
+      {
+        "sha": "fe6fe42a",
+        "full_sha": "fe6fe42a653d53f11edba712ddefbe58b274791b",
+        "message": "refactor: switch api/history to be fully async.",
+        "author": "arabcoders",
+        "date": "2026-01-25T18:34:26+00:00"
+      },
       {
         "sha": "7d6dc7ae",
         "full_sha": "7d6dc7ae7690df8ee89435ce6759aebc135cef57",
