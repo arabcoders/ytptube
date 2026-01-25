@@ -1,9 +1,17 @@
 import hashlib
+import logging
 import threading
 import time
 from typing import Any
 
+from aiohttp import web
+
+from app.library.Services import Services
+
+from .Scheduler import Scheduler
 from .Singleton import ThreadSafe
+
+LOG = logging.getLogger("cache")
 
 
 class Cache(metaclass=ThreadSafe):
@@ -13,6 +21,25 @@ class Cache(metaclass=ThreadSafe):
         """
         self._cache: dict[str, tuple[Any, float | None]] = {}
         self._lock = threading.Lock()
+
+    @staticmethod
+    def get_instance() -> "Cache":
+        """
+        Get the singleton instance of Cache.
+
+        Returns:
+            Cache: The singleton instance of Cache.
+
+        """
+        return Cache()
+
+    def attach(self, _: web.Application) -> None:
+        Services.get_instance().add("cache", self)
+        Scheduler.get_instance().add(
+            timer="* * * * *",
+            func=self.cleanup,
+            id=f"{__class__.__name__}.{__class__.cleanup.__name__}",
+        )
 
     def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """
@@ -132,3 +159,20 @@ class Cache(metaclass=ThreadSafe):
         Asynchronously generate a SHA-256 hash for the given input string.
         """
         return self.hash(key=key)
+
+    async def cleanup(self) -> None:
+        """
+        Remove all expired entries from the cache.
+        Called periodically by the scheduler.
+        """
+        with self._lock:
+            now = time.time()
+            expired_keys: list[str] = [
+                key for key, (_, expire_at) in self._cache.items() if expire_at is not None and now >= expire_at
+            ]
+
+            for key in expired_keys:
+                del self._cache[key]
+
+            if expired_keys:
+                LOG.debug(f"Cleaned up {len(expired_keys)} expired cache entries.")

@@ -50,7 +50,7 @@ const originalFetch = globalThis.fetch
 const originalClipboard = globalThis.navigator?.clipboard
 const originalCrypto = globalThis.crypto
 
-let utils: Awaited<typeof import('../../app/utils/index')>
+let utils: Awaited<typeof import('~/utils/index')>
 let fetchSpy: MockInstance | undefined
 
 const resetStorage = () => {
@@ -141,7 +141,7 @@ globalThis.atob = globalThis.atob ?? ((b64: string) => Buffer.from(b64, 'base64'
 
 beforeAll(async () => {
   // Import utils after all mocks are set up
-  utils = await import('../../app/utils/index')
+  utils = await import('~/utils/index')
 })
 
 beforeEach(() => {

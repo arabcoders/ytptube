@@ -20,7 +20,7 @@ from app.library.Utils import (
 from app.library.YTDLPOpts import YTDLPOpts
 
 if TYPE_CHECKING:
-    from app.library.Presets import Preset
+    from app.features.presets.schemas import Preset
 
 LOG: logging.Logger = logging.getLogger("ItemDTO")
 
@@ -184,7 +184,7 @@ class Item:
 
         preset: str | None = item.get("preset")
         if preset and isinstance(preset, str) and preset != Item._default_preset():
-            from .Presets import Presets
+            from app.features.presets.service import Presets
 
             if not Presets.get_instance().has(preset):
                 msg: str = f"Preset '{preset}' does not exist."
@@ -224,15 +224,15 @@ class Item:
 
         return Item(**data)
 
-    def get_preset(self) -> "Preset":
+    def get_preset(self) -> "Preset | None":
         """
         Get the preset for the item.
 
         Returns:
-            Preset: The preset for the item. If not found, None.
+            Preset | None: The preset for the item. If not found, None.
 
         """
-        from .Presets import Presets
+        from app.features.presets.service import Presets
 
         return Presets.get_instance().get(self.preset if self.preset else self._default_preset())
 
@@ -558,7 +558,7 @@ class ItemDTO:
             Preset | None: The preset for the item. If not found, None.
 
         """
-        from .Presets import Presets
+        from app.features.presets.service import Presets
 
         return Presets.get_instance().get(self.preset if self.preset else "default")
 

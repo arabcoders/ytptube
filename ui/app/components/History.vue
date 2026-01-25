@@ -163,7 +163,7 @@
                 <div class="field is-grouped is-grouped-centered">
                   <div class="control" v-if="item.status != 'finished' || !item.filename">
                     <button class="button is-warning is-fullwidth is-small" v-tooltip="'Retry download'"
-                      @click="() => retryItem(item, true)">
+                      @click="async () => await retryItem(item, true)">
                       <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     </button>
                   </div>
@@ -207,7 +207,7 @@
                       </NuxtLink>
 
                       <hr class="dropdown-divider" />
-                      <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                      <NuxtLink class="dropdown-item" @click="async () => await retryItem(item, true)">
                         <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                         <span>Add to download form</span>
                       </NuxtLink>
@@ -335,7 +335,7 @@
           </div>
           <div class="columns is-mobile is-multiline">
             <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
-              <a class="button is-warning is-fullwidth" @click="() => retryItem(item, false)">
+              <a class="button is-warning is-fullwidth" @click="async () => retryItem(item, false)">
                 <span class="icon-text is-block">
                   <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                   <span>Retry</span>
@@ -391,7 +391,7 @@
                 </NuxtLink>
 
                 <hr class="dropdown-divider" />
-                <NuxtLink class="dropdown-item" @click="retryItem(item, true)">
+                <NuxtLink class="dropdown-item" @click="async () => await retryItem(item, true)">
                   <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                   <span>Add to download form</span>
                 </NuxtLink>
@@ -452,8 +452,7 @@
           <li><code>source_name:task_name</code> - items added by the specified task.</li>
         </ul>
       </Message>
-      <Message v-else-if="socket.isConnected" class="is-primary" title="No items" icon="fas fa-exclamation-triangle"
-        :new-style="true">
+      <Message v-else class="is-primary" title="No items" icon="fas fa-exclamation-triangle" :new-style="true">
         <p>Download history is empty.</p>
       </Message>
     </div>
@@ -584,7 +583,7 @@ watch(showCompleted, async isShown => {
 })
 
 onMounted(async () => {
-  if (showCompleted.value && !paginationInfo.value.isLoaded && socket.isConnected) {
+  if (showCompleted.value && !paginationInfo.value.isLoaded) {
     try {
       await stateStore.loadPaginated('history', 1, config.app.default_pagination, 'DESC', true)
     } catch (error) {
@@ -701,10 +700,7 @@ const deleteSelectedItems = async () => {
     return
   }
 
-  await stateStore.deleteItems('history', {
-    ids: [...selectedElms.value],
-    removeFile: config.app.remove_files
-  })
+  await stateStore.removeItems('history', [...selectedElms.value], config.app.remove_files)
   selectedElms.value = []
 }
 
@@ -803,7 +799,7 @@ const retryIncomplete = async () => {
     if ('finished' === item.status) {
       continue
     }
-    retryItem(item)
+    await retryItem(item)
   }
 }
 
@@ -831,7 +827,7 @@ const archiveItem = async (item: StoreItem, opts = {}) => {
   if (!(opts as any)?.remove_history) {
     return
   }
-  socket.emit('item_delete', { id: item._id, remove_file: false })
+  await stateStore.removeItems('history', [item._id], false)
 }
 
 const removeItem = async (item: StoreItem) => {
@@ -853,7 +849,7 @@ const removeItem = async (item: StoreItem) => {
   }
 }
 
-const retryItem = (item: StoreItem, re_add: boolean = false, remove_file: boolean = false) => {
+const retryItem = async (item: StoreItem, re_add: boolean = false, remove_file: boolean = false) => {
   const item_req: Partial<StoreItem> = {
     url: item.url,
     preset: item.preset,
@@ -865,7 +861,7 @@ const retryItem = (item: StoreItem, re_add: boolean = false, remove_file: boolea
     auto_start: item.auto_start,
   }
 
-  socket.emit('item_delete', { id: item._id, remove_file: remove_file })
+  await stateStore.removeItems('history', [item._id], remove_file)
 
   if (selectedElms.value.includes(item._id || '')) {
     selectedElms.value = selectedElms.value.filter(i => i !== item._id)
@@ -876,7 +872,7 @@ const retryItem = (item: StoreItem, re_add: boolean = false, remove_file: boolea
     emitter('add_new', item_req)
     return
   }
-  socket.emit('add_url', item_req)
+  await stateStore.addDownload(item_req)
 }
 
 const pImg = (e: Event) => {
@@ -990,12 +986,12 @@ const removeFromArchive = async (item: StoreItem, opts?: { re_add?: boolean, rem
   }
 
   if (opts?.re_add) {
-    retryItem(item, true, file_delete)
+    await retryItem(item, true, file_delete)
     return
   }
 
   if (opts?.remove_history) {
-    socket.emit('item_delete', { id: item._id, remove_file: file_delete })
+    await stateStore.removeItems('history', [item._id], file_delete)
   }
 }
 

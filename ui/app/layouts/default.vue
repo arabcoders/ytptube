@@ -12,9 +12,7 @@
     <Shutdown v-if="app_shutdown" />
     <div id="main_container" class="container" :class="{ 'settings-open': show_settings }" v-else>
       <NewVersion v-if="newVersionIsAvailable" />
-      <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
       <nav class="navbar is-mobile is-dark">
-
         <div class="navbar-brand pl-5">
           <NuxtLink class="navbar-item is-text-overflow" to="/" @click.prevent="(e: MouseEvent) => changeRoute(e)"
             v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'" id="top">
@@ -81,7 +79,7 @@
 
           </div>
           <div class="navbar-end">
-            <div class="navbar-item has-dropdown" v-if="config.app?.file_logging || config.app?.console_enabled">
+            <div class="navbar-item has-dropdown">
               <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
                 <span class="icon"><i class="fas fa-tools" /></span>
                 <span>Other</span>
@@ -98,6 +96,11 @@
                   v-if="config.app.console_enabled">
                   <span class="icon"><i class="fa-solid fa-terminal" /></span>
                   <span>Console</span>
+                </NuxtLink>
+
+                <NuxtLink class="navbar-item" to="/dl_fields" @click.prevent="(e: MouseEvent) => changeRoute(e)">
+                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
+                  <span>Custom fields</span>
                 </NuxtLink>
               </div>
             </div>
@@ -134,11 +137,8 @@
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
         <Message v-if="!config.is_loaded" class="is-info mt-5" title="Loading Configuration"
           icon="fas fa-spinner fa-spin">
-          <p>This usually takes less than a second.
-            <span v-if="!socket.isConnected" class="mt-2">
-              If this is taking too long, please check that the backend server is running and that the WebSocket
-              connection is functional.
-            </span>
+          <p>This usually takes less than a second. If this is taking too long,
+            <NuxtLink class="button is-text p-0" @click="config.loadConfig">reload configuration</NuxtLink>.
           </p>
           <template v-if="socket.error">
             <hr>
@@ -157,7 +157,15 @@
         </ClientOnly>
       </div>
 
-      <footer class="footer py-5 mt-6 is-unselectable" v-if="socket.isConnected">
+      <div class="mt-6">
+        <div class="columns is-multiline">
+          <div class="column is-12">
+            <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
+          </div>
+        </div>
+      </div>
+
+      <footer class="footer py-5 is-unselectable" v-if="config.is_loaded">
         <div class="columns is-multiline is-variable is-8">
           <div class="column is-12-mobile is-6-tablet">
             <div class="mb-3">
@@ -174,31 +182,29 @@
               </span>
             </div>
 
-            <template v-if="config.app?.check_for_updates">
-              <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
-                <span class="icon-text">
-                  <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
-                  <span>Update available:</span>
-                  <NuxtLink :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
-                    target="_blank" class="has-text-weight-semibold ml-1">
-                    {{ config.app.new_version }}
-                  </NuxtLink>
-                </span>
-              </p>
+            <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
+              <span class="icon-text">
+                <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
+                <span>Update available:</span>
+                <NuxtLink :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
+                  target="_blank" class="has-text-weight-semibold ml-1">
+                  {{ config.app.new_version }}
+                </NuxtLink>
+              </span>
+            </p>
 
-              <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
-                <button @click="checkForUpdates" :disabled="checkingUpdates" class="is-text is-small p-0 is-size-7"
-                  :class="{ 'is-loading': checkingUpdates }"
-                  style="opacity: 0.8; height: auto; vertical-align: baseline; border: none; text-decoration: none; background: none;">
-                  <span class="icon-text">
-                    <span class="icon">
-                      <i class="fas" :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'" />
-                    </span>
-                    <span>{{ updateCheckMessage }}</span>
+            <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
+              <button @click="checkForUpdates" :disabled="checkingUpdates" class="is-text is-small p-0 is-size-7"
+                :class="{ 'is-loading': checkingUpdates }"
+                style="opacity: 0.8; height: auto; vertical-align: baseline; border: none; text-decoration: none; background: none;">
+                <span class="icon-text">
+                  <span class="icon">
+                    <i class="fas" :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'" />
                   </span>
-                </button>
-              </p>
-            </template>
+                  <span>{{ updateCheckMessage }}</span>
+                </span>
+              </button>
+            </p>
 
             <p v-if="config.app?.started" class="is-size-7 mb-0" style="opacity: 0.6">
               <span class="icon-text">
@@ -222,6 +228,19 @@
                 </span>
               </NuxtLink>
               <span class="is-size-7 ml-1" style="opacity: 0.6">{{ config?.app?.ytdlp_version || 'unknown' }}</span>
+
+              <p v-if="config.app?.yt_new_version" class="is-size-7 mb-0 mt-2" style="opacity: 0.8">
+                <span class="icon-text">
+                  <span class="has-tooltip" v-tooltip="`Restart container to update yt-dlp`">
+                    <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
+                    <span>Update available:</span>
+                  </span>
+                  <NuxtLink :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
+                    target="_blank" class="has-text-weight-semibold ml-1">
+                    {{ config.app.yt_new_version }}
+                  </NuxtLink>
+                </span>
+              </p>
             </div>
           </div>
 
@@ -281,7 +300,7 @@ import Dialog from '~/components/Dialog.vue'
 import Simple from '~/components/Simple.vue'
 import Shutdown from '~/components/shutdown.vue'
 import Markdown from '~/components/Markdown.vue'
-import Connection from '~/components/Connection.vue'
+import type { version_check } from '~/types'
 
 const selectedTheme = useStorage('theme', 'auto')
 const socket = useSocketStore()
@@ -319,22 +338,30 @@ const checkForUpdates = async () => {
       return
     }
 
-    const data = await response.json()
+    const data = await parse_api_response<version_check>(await response.json())
 
-    switch (data.status) {
-      case 'update_available':
-        updateCheckMessage.value = 'Update found!'
-        config.app.new_version = data.new_version
-        break
-      case 'up_to_date':
-        updateCheckMessage.value = 'Up to date ✓'
-        setTimeout(() => updateCheckMessage.value = msg, 3000)
-        break
-      case 'error':
-        updateCheckMessage.value = 'Check failed'
-        setTimeout(() => updateCheckMessage.value = msg, 3000)
-        break
+    if ('update_available' === data.app.status) {
+      config.app.new_version = data.app.new_version
     }
+    if (data.ytdlp && 'update_available' === data.ytdlp.status) {
+      config.app.yt_new_version = data.ytdlp.new_version
+    }
+
+    // Only show "Update found!" if app has update (button is in app section)
+    if ('update_available' === data.app.status) {
+      updateCheckMessage.value = 'Update found!'
+    } else if ('up_to_date' === data.app.status && 'up_to_date' === data.ytdlp?.status) {
+      updateCheckMessage.value = 'Up to date ✓'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    } else if ('up_to_date' === data.app.status && 'update_available' === data.ytdlp?.status) {
+      // App is up to date, but yt-dlp has update (shows in yt-dlp section)
+      updateCheckMessage.value = 'Up to date ✓'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    } else {
+      updateCheckMessage.value = 'Check failed'
+      setTimeout(() => updateCheckMessage.value = msg, 3000)
+    }
+
   } catch (e) {
     console.error('Update check failed:', e)
     updateCheckMessage.value = 'Check failed'
@@ -418,20 +445,26 @@ const applyPreferredColorScheme = (scheme: string) => {
 
 onMounted(async () => {
   try {
-    await handleImage(bg_enable.value)
+    applyPreferredColorScheme(selectedTheme.value)
+  } catch { }
+
+  try {
+    await config.loadConfig()
   } catch { }
 
   try {
     const opts = await request('/api/yt-dlp/options')
-    if (!opts.ok) {
-      return
+    if (opts.ok) {
+      config.ytdlp_options = await opts.json() as Array<YTDLPOption>
     }
-    const data: Array<YTDLPOption> = await opts.json()
-    config.ytdlp_options = data
   } catch { }
 
   try {
-    applyPreferredColorScheme(selectedTheme.value)
+    socket.connect()
+  } catch { }
+
+  try {
+    await handleImage(bg_enable.value)
   } catch { }
 })
 
@@ -555,7 +588,7 @@ const { newVersionIsAvailable } = useVersionUpdate()
 const closeSettings = () => show_settings.value = false
 
 const shutdownApp = async () => {
-  const { alertDialog, confirmDialog: confirm_message } = useDialog()
+  const { alertDialog, confirmDialog: cDialog } = useDialog()
 
   if (false === config.app.is_native) {
     await alertDialog({
@@ -565,7 +598,7 @@ const shutdownApp = async () => {
     return
   }
 
-  const { status } = await confirm_message({
+  const { status } = await cDialog({
     title: 'Shutdown Application',
     message: 'Are you sure you want to shutdown the application?',
   })

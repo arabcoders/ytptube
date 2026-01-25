@@ -2,7 +2,7 @@
   <main class="columns mt-2 is-multiline">
     <div class="column is-12">
       <form autocomplete="off" id="addForm" @submit.prevent="checkInfo()">
-        <div class="card is-flex is-full-height is-flex-direction-column">
+        <div class="card">
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
@@ -21,7 +21,7 @@
             </div>
           </div>
 
-          <div class="card-content is-flex-grow-1">
+          <div class="card-content">
 
             <div class="columns is-multiline is-mobile">
 
@@ -335,17 +335,18 @@ import 'assets/css/bulma-switch.css'
 import { useStorage } from '@vueuse/core'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete';
-import type { ConditionItem, ImportedConditionItem } from '~/types/conditions'
+import type { Condition } from '~/types/conditions'
 import { useConfirm } from '~/composables/useConfirm'
+import type { ImportedItem } from '~/types';
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', payload: { reference: string | null | undefined, item: ConditionItem }): void
+  (e: 'submit', payload: { reference: number | null | undefined, item: Condition }): void
 }>()
 
 const props = defineProps<{
-  reference?: string | null
-  item: ConditionItem
+  reference?: number | null
+  item: Condition
   addInProgress?: boolean
 }>()
 
@@ -354,7 +355,7 @@ const showImport = useStorage('showImport', false)
 const box = useConfirm()
 const config = useConfigStore()
 
-const form = reactive<ConditionItem>(JSON.parse(JSON.stringify(props.item)))
+const form = reactive<Condition>(JSON.parse(JSON.stringify(props.item)))
 const import_string = ref('')
 const newExtraKey = ref('')
 const newExtraValue = ref('')
@@ -394,7 +395,7 @@ watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
 watch(() => form.filter, () => test_data.value.changed = true)
 
 const checkInfo = async (): Promise<void> => {
-  const required: (keyof ConditionItem)[] = ['name', 'filter']
+  const required: (keyof Condition)[] = ['name', 'filter']
 
   for (const key of required) {
     if (!form[key]) {
@@ -416,7 +417,7 @@ const checkInfo = async (): Promise<void> => {
     form.cli = form.cli.trim()
   }
 
-  const copy: ConditionItem = JSON.parse(JSON.stringify(form))
+  const copy: Condition = JSON.parse(JSON.stringify(form))
 
   for (const key in copy) {
     if (typeof (copy as any)[key] !== 'string') {
@@ -483,9 +484,9 @@ const importItem = async (): Promise<void> => {
   }
 
   try {
-    const item = decode(val) as ImportedConditionItem
+    const item = decode(val) as Condition & ImportedItem
 
-    if (!item?._type || item._type !== 'condition') {
+    if (!item._type || item._type !== 'condition') {
       toast.error(`Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`)
       return
     }

@@ -1,18 +1,29 @@
 import { ref, readonly } from 'vue'
 
 import { useNotification } from '~/composables/useNotification'
-import { request } from '~/utils'
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
-  TaskDefinitionErrorResponse,
   TaskDefinitionSummary,
 } from '~/types/task_definitions'
+import type { Pagination } from '~/types/responses'
 
 /**
  * Reactive list of all task definition summaries, sorted by priority and name.
  */
 const definitions = ref<Array<TaskDefinitionSummary>>([])
+/**
+ * Pagination state for task definitions list.
+ */
+const pagination = ref<Pagination>({
+  page: 1,
+  per_page: 50,
+  total: 0,
+  total_pages: 0,
+  has_next: false,
+  has_prev: false,
+})
 /**
  * Indicates if a request is in progress.
  */
@@ -48,21 +59,6 @@ const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitio
 }
 
 /**
- * Safely reads JSON from a Response, returns null on error.
- * @param response Fetch Response object
- * @returns Parsed JSON or null
- */
-const readJson = async (response: Response): Promise<unknown> => {
-  try {
-    const clone = response.clone()
-    return await clone.json()
-  }
-  catch {
-    return null
-  }
-}
-
-/**
  * Throws an error if the response is not OK, using API error message if available.
  * @param response Fetch Response object
  * @throws Error with message from API or status code
@@ -72,16 +68,8 @@ const ensureSuccess = async (response: Response): Promise<void> => {
     return
   }
 
-  const payload = await readJson(response)
-
-  let message = `Request failed with status ${response.status}`
-  if (payload && typeof payload === 'object' && 'error' in payload) {
-    const errorPayload = payload as TaskDefinitionErrorResponse
-    if (typeof errorPayload.error === 'string' && errorPayload.error.length > 0) {
-      message = errorPayload.error
-    }
-  }
-
+  const payload = await response.clone().json().catch(() => null)
+  const message = await parse_api_error(payload)
   throw new Error(message)
 }
 
@@ -100,48 +88,47 @@ const handleError = (error: unknown): void => {
  * @param summary TaskDefinitionSummary to update/add
  */
 const updateSummaries = (summary: TaskDefinitionSummary): void => {
+  const isNew = !definitions.value.some(item => item.id === summary.id)
   definitions.value = sortSummaries([
     ...definitions.value.filter(item => item.id !== summary.id),
     summary,
   ])
+  if (isNew) {
+    pagination.value.total++
+  }
 }
 
 /**
  * Removes a summary from the definitions list by ID.
  * @param id Task definition ID
  */
-const removeSummary = (id: string) => definitions.value = definitions.value.filter(item => item.id !== id)
+const removeSummary = (id: number) => {
+  const initialLength = definitions.value.length
+  definitions.value = definitions.value.filter(item => item.id !== id)
+  if (definitions.value.length < initialLength) {
+    pagination.value.total = Math.max(0, pagination.value.total - 1)
+  }
+}
 
 /**
  * Loads all task definition summaries from the API.
  * Updates definitions and lastError.
  */
-const loadDefinitions = async (): Promise<void> => {
+const loadDefinitions = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
   isLoading.value = true
   try {
-    const response = await request('/api/task_definitions/')
+    let url = `/api/tasks/definitions/?page=${page}`
+    if (perPage !== undefined) {
+      url += `&per_page=${perPage}`
+    }
+    const response = await request(url)
     await ensureSuccess(response)
 
-    const payload = await response.json() as unknown
-    if (!Array.isArray(payload)) {
-      throw new Error('Unexpected response while loading task definitions.')
-    }
+    const json = await response.json()
+    const { items, pagination: paginationData } = await parse_list_response<TaskDefinitionSummary>(json)
 
-    const summaries: Array<TaskDefinitionSummary> = payload.map(item => {
-      if (!item || 'object' !== typeof item) {
-        throw new Error('Encountered malformed task definition entry.')
-      }
-
-      const entry = item as Record<string, unknown>
-      return {
-        id: String(entry.id ?? ''),
-        name: String(entry.name ?? ''),
-        priority: Number(entry.priority ?? 0),
-        updated_at: Number(entry.updated_at ?? 0),
-      }
-    })
-
-    definitions.value = sortSummaries(summaries)
+    definitions.value = sortSummaries(items)
+    pagination.value = paginationData
     lastError.value = null
   }
   catch (error) {
@@ -158,29 +145,13 @@ const loadDefinitions = async (): Promise<void> => {
  * @param id Task definition ID
  * @returns TaskDefinitionDetailed or null on error
  */
-const getDefinition = async (id: string): Promise<TaskDefinitionDetailed | null> => {
+const getDefinition = async (id: number): Promise<TaskDefinitionDetailed | null> => {
   try {
-    const response = await request(`/api/task_definitions/${id}`)
+    const response = await request(`/api/tasks/definitions/${id}`)
     await ensureSuccess(response)
 
-    const payload = await response.json() as unknown
-    if (!payload || 'object' !== typeof payload) {
-      throw new Error('Unexpected response while retrieving task definition.')
-    }
-
-    const entry = payload as Record<string, unknown>
-    if (!('definition' in entry) || 'object' !== typeof entry.definition) {
-      throw new Error('Task definition response is missing definition payload.')
-    }
-
-    const detailed: TaskDefinitionDetailed = {
-      id: String(entry.id ?? ''),
-      name: String(entry.name ?? ''),
-      priority: Number(entry.priority ?? 0),
-      updated_at: Number(entry.updated_at ?? 0),
-      definition: entry.definition as TaskDefinitionDocument,
-    }
-
+    const payload = await response.json()
+    const detailed = await parse_api_response<TaskDefinitionDetailed>(payload)
     lastError.value = null
     return detailed
   }
@@ -198,19 +169,22 @@ const getDefinition = async (id: string): Promise<TaskDefinitionDetailed | null>
  */
 const createDefinition = async (definition: TaskDefinitionDocument): Promise<TaskDefinitionDetailed | null> => {
   try {
-    const response = await request('/api/task_definitions/', {
+    const response = await request('/api/tasks/definitions/', {
       method: 'POST',
-      body: JSON.stringify({ definition }),
+      body: JSON.stringify(definition),
     })
 
     await ensureSuccess(response)
 
-    const payload = await response.json() as TaskDefinitionDetailed
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
 
     updateSummaries({
       id: payload.id,
       name: payload.name,
       priority: payload.priority,
+      match_url: payload.match_url,
+      enabled: payload.enabled,
+      created_at: payload.created_at,
       updated_at: payload.updated_at,
     })
 
@@ -231,21 +205,24 @@ const createDefinition = async (definition: TaskDefinitionDocument): Promise<Tas
  * @param definition Updated TaskDefinitionDocument
  * @returns Updated TaskDefinitionDetailed or null on error
  */
-const updateDefinition = async (id: string, definition: TaskDefinitionDocument): Promise<TaskDefinitionDetailed | null> => {
+const updateDefinition = async (id: number, definition: TaskDefinitionDocument): Promise<TaskDefinitionDetailed | null> => {
   try {
-    const response = await request(`/api/task_definitions/${id}`, {
+    const response = await request(`/api/tasks/definitions/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ definition }),
+      body: JSON.stringify(definition),
     })
 
     await ensureSuccess(response)
 
-    const payload = await response.json() as TaskDefinitionDetailed
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
 
     updateSummaries({
       id: payload.id,
       name: payload.name,
       priority: payload.priority,
+      match_url: payload.match_url,
+      enabled: payload.enabled,
+      created_at: payload.created_at,
       updated_at: payload.updated_at,
     })
 
@@ -265,9 +242,9 @@ const updateDefinition = async (id: string, definition: TaskDefinitionDocument):
  * @param id Task definition ID
  * @returns true if deleted, false on error
  */
-const deleteDefinition = async (id: string): Promise<boolean> => {
+const deleteDefinition = async (id: number): Promise<boolean> => {
   try {
-    const response = await request(`/api/task_definitions/${id}`, { method: 'DELETE' })
+    const response = await request(`/api/tasks/definitions/${id}`, { method: 'DELETE' })
     await ensureSuccess(response)
 
     removeSummary(id)
@@ -279,6 +256,44 @@ const deleteDefinition = async (id: string): Promise<boolean> => {
     handleError(error)
     if (throwInstead.value) throw error
     return false
+  }
+}
+
+/**
+ * Toggles the enabled status of a task definition.
+ * @param id Task definition ID
+ * @param enabled New enabled status
+ * @returns Updated TaskDefinitionDetailed or null on error
+ */
+const toggleEnabled = async (id: number, enabled: boolean): Promise<TaskDefinitionDetailed | null> => {
+  try {
+    const response = await request(`/api/tasks/definitions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled }),
+    })
+
+    await ensureSuccess(response)
+
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
+
+    updateSummaries({
+      id: payload.id,
+      name: payload.name,
+      priority: payload.priority,
+      match_url: payload.match_url,
+      enabled: payload.enabled,
+      created_at: payload.created_at,
+      updated_at: payload.updated_at,
+    })
+
+    notify.success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`)
+    lastError.value = null
+    return payload
+  }
+  catch (error) {
+    handleError(error)
+    if (throwInstead.value) throw error
+    return null
   }
 }
 
@@ -295,6 +310,7 @@ const clearError = () => lastError.value = null
  */
 export const useTaskDefinitions = () => ({
   definitions: readonly(definitions),
+  pagination: readonly(pagination),
   isLoading: readonly(isLoading),
   lastError: readonly(lastError),
   loadDefinitions,
@@ -302,6 +318,7 @@ export const useTaskDefinitions = () => ({
   createDefinition,
   updateDefinition,
   deleteDefinition,
+  toggleEnabled,
   clearError,
   throwInstead,
 })

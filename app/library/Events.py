@@ -1,15 +1,16 @@
 import asyncio
 import datetime
 import logging
-import uuid
-from collections.abc import Awaitable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+
+from app.features.core.utils import gen_random
 
 from .BackgroundWorker import BackgroundWorker
 from .Singleton import Singleton
 
-LOG: logging.Logger = logging.getLogger("library.events")
+LOG: logging.Logger = logging.getLogger("events")
 
 
 class Events:
@@ -25,6 +26,7 @@ class Events:
     CONNECTED: str = "connected"
 
     CONFIGURATION: str = "configuration"
+    CONFIG_UPDATE: str = "config_update"
     ACTIVE_QUEUE: str = "active_queue"
 
     LOG_INFO: str = "log_info"
@@ -49,28 +51,12 @@ class Events:
     PAUSED: str = "paused"
     RESUMED: str = "resumed"
 
-    CLI_POST: str = "cli_post"
-    CLI_CLOSE: str = "cli_close"
-    CLI_OUTPUT: str = "cli_output"
-
     TASKS_ADD: str = "task_add"
     TASK_DISPATCHED: str = "task_dispatched"
     TASK_FINISHED: str = "task_finished"
     TASK_ERROR: str = "task_error"
 
-    PRESETS_ADD: str = "presets_add"
-    PRESETS_UPDATE: str = "presets_update"
-
-    DLFIELDS_ADD: str = "dlfields_add"
-    DLFIELDS_UPDATE: str = "dlfields_update"
-
     SCHEDULE_ADD: str = "schedule_add"
-
-    CONDITIONS_ADD: str = "conditions_add"
-    CONDITIONS_UPDATE: str = "conditions_update"
-
-    SUBSCRIBED: str = "subscribed"
-    UNSUBSCRIBED: str = "unsubscribed"
 
     def get_all() -> list:
         """
@@ -94,6 +80,7 @@ class Events:
         """
         return [
             Events.CONFIGURATION,
+            Events.CONFIG_UPDATE,
             Events.CONNECTED,
             Events.ACTIVE_QUEUE,
             Events.LOG_INFO,
@@ -108,10 +95,6 @@ class Events:
             Events.ITEM_STATUS,
             Events.PAUSED,
             Events.RESUMED,
-            Events.CLI_CLOSE,
-            Events.CLI_OUTPUT,
-            Events.PRESETS_UPDATE,
-            Events.DLFIELDS_UPDATE,
         ]
 
     def only_debug() -> list:
@@ -122,7 +105,7 @@ class Events:
             list: The list of debug events.
 
         """
-        return [Events.ITEM_UPDATED, Events.CLI_OUTPUT]
+        return [Events.ITEM_UPDATED]
 
 
 @dataclass(kw_only=True)
@@ -131,7 +114,7 @@ class Event:
     Event is a data transfer object that represents an event that was emitted.
     """
 
-    id: str = field(default_factory=lambda: str(uuid.uuid4()), init=False)
+    id: str = field(default_factory=lambda: str(gen_random(16)), init=False)
     """The id of the event."""
 
     created_at: str = field(default_factory=lambda: str(datetime.datetime.now(tz=datetime.UTC).isoformat()))
@@ -198,10 +181,10 @@ class Event:
 
 
 class EventListener:
-    def __init__(self, name: str, callback: callable):
+    def __init__(self, name: str, callback: Callable[..., Any]):
         self.name: str = name
         "The name of the listener."
-        self.call_back: callable = callback
+        self.call_back: Callable[..., Any] = callback
         "The callback function to call when the event is emitted."
         self.is_coroutine: bool = asyncio.iscoroutinefunction(callback)
         "Whether the callback is a coroutine function or not."
@@ -219,13 +202,13 @@ class EventBus(metaclass=Singleton):
     """
 
     def __init__(self):
-        self._listeners: dict[str, list[str, EventListener]] = {}
+        self._listeners: dict[str, list[tuple[str, EventListener]]] = {}
         "The listeners for the events."
 
         self.debug: bool = False
         "Whether to log debug messages or not."
 
-        self._offload: BackgroundWorker = None
+        self._offload: BackgroundWorker | None = None
         "The background worker to offload tasks to."
 
     @staticmethod
@@ -239,7 +222,7 @@ class EventBus(metaclass=Singleton):
         """
         return EventBus()
 
-    def subscribe(self, event: str | list | tuple, callback: Awaitable, name: str | None = None) -> "EventBus":
+    def subscribe(self, event: str | list | tuple, callback: Callable[..., Any], name: str | None = None) -> "EventBus":
         """
         Subscribe to an event.
 
@@ -267,7 +250,7 @@ class EventBus(metaclass=Singleton):
                 event = [event]
 
         if not name:
-            name = str(uuid.uuid4())
+            name = gen_random(12)
 
         for e in event:
             if e not in all_events:
@@ -275,9 +258,10 @@ class EventBus(metaclass=Singleton):
                 continue
 
             if e not in self._listeners:
-                self._listeners[e] = {}
+                self._listeners[e] = []
 
-            self._listeners[e][name] = EventListener(name, callback)
+            self._listeners[e] = [(n, listener) for n, listener in self._listeners[e] if n != name]
+            self._listeners[e].append((name, EventListener(name, callback)))
 
         LOG.debug(f"'{name}' subscribed to '{event}'.")
 
@@ -300,9 +284,11 @@ class EventBus(metaclass=Singleton):
 
         events = []
         for e in event:
-            if e in self._listeners and name in self._listeners[e]:
-                events.append(e)
-                del self._listeners[e][name]
+            if e in self._listeners:
+                original_len: int = len(self._listeners[e])
+                self._listeners[e] = [(n, listener) for n, listener in self._listeners[e] if n != name]
+                if len(self._listeners[e]) < original_len:
+                    events.append(e)
 
         if len(events) > 0:
             LOG.debug(f"'{name}' unsubscribed from '{events}'.")
@@ -337,22 +323,25 @@ class EventBus(metaclass=Singleton):
         try:
             loop = asyncio.get_running_loop()
 
-            for handler in self._listeners[event].values():
-                try:
-                    if handler.is_coroutine:
-                        coro = handler.call_back(ev, handler.name, **kwargs)
-                        if asyncio.iscoroutine(coro):
-                            loop.create_task(coro)
+            async def execute_handlers():
+                for _, handler in self._listeners[event]:
+                    try:
+                        if handler.is_coroutine:
+                            coro = handler.call_back(ev, handler.name, **kwargs)
+                            if asyncio.iscoroutine(coro):
+                                await coro
+                            else:
+                                LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
                         else:
-                            LOG.warning(f"Expected coroutine from async handler '{handler.name}', got {type(coro)}")
-                    else:
-                        loop.create_task(self._call(handler, ev, kwargs), name=f"sync-handler-{handler.name}-{ev.id}")
-                except Exception as e:
-                    LOG.exception(e)
-                    LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+                            await self._call(handler, ev, kwargs)
+                    except Exception as e:
+                        LOG.exception(e)
+                        LOG.error(f"Failed to emit event '{ev.event}' to '{handler.name}'. Error message '{e!s}'.")
+
+            loop.create_task(execute_handlers())
         except RuntimeError:
             LOG.debug(f"No event loop detected - using BackgroundWorker for {len(self._listeners[event])} handlers")
-            for handler in self._listeners[event].values():
+            for _, handler in self._listeners[event]:
                 try:
                     if not self._offload:
                         self._offload = BackgroundWorker.get_instance()

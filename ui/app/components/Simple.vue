@@ -7,6 +7,11 @@
             <template v-if="!isMobile">{{ greetingMessage }}</template>
             <template v-else>What would you like to download?</template>
             <span class="is-pulled-right">
+              <span class="icon has-text-info is-pointer mr-2" v-if="!socketStore.isConnected"
+                v-tooltip="'Reload queue'" @click="async () => await refreshQueue()">
+                <i class="fas fa-sync-alt" :class="{ 'fa-spin': isRefreshing }" />
+              </span>
+
               <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
                 v-tooltip="'WebUI Settings'">
                 <i class="fas fa-cogs" /></span>
@@ -77,6 +82,7 @@
 
     <Transition name="queue-fade">
       <section v-if="hasAnyItems" key="queue" class="queue-section">
+
         <TransitionGroup name="queue-card" tag="div" class="columns is-multiline queue-card-columns">
           <div v-for="entry in displayItems" :key="entry.item._id" class="column is-12-mobile is-6-tablet">
             <article class="queue-card card" :class="{ 'is-history': 'history' === entry.source }">
@@ -166,7 +172,7 @@
                     <span>Download</span>
                   </a>
                   <button v-if="entry.item.status != 'finished' || !entry.item.filename" class="button is-info is-light"
-                    type="button" @click="requeueItem(entry.item)">
+                    type="button" @click="async () => await requeueItem(entry.item)">
                     <span class="icon"><i class="fas fa-rotate-right" /></span>
                     <span>Requeue</span>
                   </button>
@@ -252,6 +258,22 @@ const formUrl = ref<string>('')
 const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
 const addInProgress = ref<boolean>(false)
 const showExtras = ref<boolean>(false)
+const isRefreshing = ref<boolean>(false)
+
+const refreshQueue = async (): Promise<void> => {
+  if (isRefreshing.value) {
+    return
+  }
+  isRefreshing.value = true
+  try {
+    await stateStore.loadQueue()
+  } catch (error) {
+    console.error('Failed to refresh queue:', error)
+    toast.error('Failed to refresh queue')
+  } finally {
+    isRefreshing.value = false
+  }
+}
 
 const paginationInfo = computed(() => stateStore.getPagination())
 const queueItems = computed<StoreItem[]>(() => Object.values(queue.value ?? {}).slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)))
@@ -575,16 +597,16 @@ const getProgressWidth = (item: StoreItem): string => {
 const canStart = (item: StoreItem): boolean => !item.status && false === item.auto_start
 const canPause = (item: StoreItem): boolean => !item.status && true === item.auto_start
 
-const startQueueItem = (item: StoreItem): void => {
-  socketStore.emit('item_start', item._id)
+const startQueueItem = async (item: StoreItem): Promise<void> => {
+  await stateStore.startItems([item._id])
 }
 
-const pauseQueueItem = (item: StoreItem): void => {
-  socketStore.emit('item_pause', item._id)
+const pauseQueueItem = async (item: StoreItem): Promise<void> => {
+  await stateStore.pauseItems([item._id])
 }
 
-const cancelDownload = (item: StoreItem): void => {
-  socketStore.emit('item_cancel', item._id)
+const cancelDownload = async (item: StoreItem): Promise<void> => {
+  await stateStore.cancelItems([item._id])
 }
 
 const getDownloadLink = (item: StoreItem): string => {
@@ -602,7 +624,7 @@ const getDownloadName = (item: StoreItem): string => {
   return segments[segments.length - 1] || 'download'
 }
 
-const requeueItem = (item: StoreItem): void => {
+const requeueItem = async (item: StoreItem): Promise<void> => {
   if (!item.url) {
     toast.error('Unable to requeue item; missing URL.')
     return
@@ -622,12 +644,12 @@ const requeueItem = (item: StoreItem): void => {
     payload.extras = JSON.parse(JSON.stringify(item.extras))
   }
 
-  socketStore.emit('item_delete', { id: item._id, remove_file: false })
-  socketStore.emit('add_url', payload)
+  await stateStore.removeItems('history', [item._id], false)
+  await stateStore.addDownload(payload)
 }
 
-const deleteHistoryItem = (item: StoreItem): void => {
-  socketStore.emit('item_delete', { id: item._id, remove_file: app.value.remove_files })
+const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
+  await stateStore.removeItems('history', [item._id], app.value.remove_files)
   toast.info('Removed from history queue.')
 }
 
@@ -668,7 +690,7 @@ onMounted(async () => {
     window.history.replaceState({}, '', url.toString())
   }
 
-  if (socketStore.isConnected && !paginationInfo.value.isLoaded) {
+  if (!paginationInfo.value.isLoaded) {
     try {
       await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
     } catch (error) {
@@ -681,7 +703,6 @@ onMounted(async () => {
   }
 })
 
-// Reload history when socket reconnects
 watch(() => socketStore.isConnected, async (connected) => {
   if (connected && !paginationInfo.value.isLoaded) {
     try {
@@ -692,7 +713,6 @@ watch(() => socketStore.isConnected, async (connected) => {
   }
 })
 
-// Function to load more history items
 const loadMoreHistory = async (): Promise<void> => {
   if (paginationInfo.value.isLoading || paginationInfo.value.page >= paginationInfo.value.total_pages) {
     return
@@ -774,6 +794,12 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
   flex-direction: column;
   gap: 2rem;
   transform-origin: top center;
+}
+
+.queue-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .queue-card-columns {

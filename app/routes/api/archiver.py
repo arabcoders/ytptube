@@ -4,8 +4,8 @@ from collections.abc import Iterable
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.presets.service import Presets
 from app.library.Archiver import Archiver
-from app.library.Presets import Presets
 from app.library.router import route
 from app.library.YTDLPOpts import YTDLPOpts
 

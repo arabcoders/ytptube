@@ -49,6 +49,8 @@ type AppConfig = {
   check_for_updates: boolean
   /** New version available, empty string if none */
   new_version: string
+  /** New yt-dlp version available, empty string if none */
+  yt_new_version: string
 }
 
 type ConfigState = {
@@ -68,6 +70,8 @@ type ConfigState = {
   paused: boolean
   /** Indicates if the configuration has been loaded */
   is_loaded: boolean
+  /** Indicates if the configuration is currently loading */
+  is_loading: boolean
 }
 
 export type { AppConfig, ConfigState }

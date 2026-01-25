@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from app.library.Presets import Preset
+from app.features.presets.schemas import Preset
 from app.library.YTDLPOpts import YTDLPOpts
 
 
@@ -116,7 +116,7 @@ class TestYTDLPOpts:
         """Test applying a valid preset."""
         with (
             patch("app.library.YTDLPOpts.Config") as mock_config,
-            patch("app.library.YTDLPOpts.Presets") as mock_presets,
+            patch("app.features.presets.service.Presets") as mock_presets,
             patch("app.library.YTDLPOpts.arg_converter") as mock_converter,
         ):
             # Mock config
@@ -155,7 +155,7 @@ class TestYTDLPOpts:
 
     def test_preset_with_nonexistent_preset(self):
         """Test applying a nonexistent preset returns self."""
-        with patch("app.library.YTDLPOpts.Config"), patch("app.library.YTDLPOpts.Presets") as mock_presets:
+        with patch("app.library.YTDLPOpts.Config"), patch("app.features.presets.service.Presets") as mock_presets:
             mock_presets_instance = Mock()
             mock_presets_instance.get.return_value = None
             mock_presets.get_instance.return_value = mock_presets_instance
@@ -171,7 +171,7 @@ class TestYTDLPOpts:
         """Test that preset with cookies creates cookie file."""
         with (
             patch("app.library.YTDLPOpts.Config") as mock_config,
-            patch("app.library.YTDLPOpts.Presets") as mock_presets,
+            patch("app.features.presets.service.Presets") as mock_presets,
         ):
             # Mock config
             mock_config_instance = Mock()
@@ -209,7 +209,7 @@ class TestYTDLPOpts:
         """Test that preset with invalid CLI raises ValueError."""
         with (
             patch("app.library.YTDLPOpts.Config"),
-            patch("app.library.YTDLPOpts.Presets") as mock_presets,
+            patch("app.features.presets.service.Presets") as mock_presets,
             patch("app.library.YTDLPOpts.arg_converter") as mock_converter,
         ):
             mock_preset = Mock(spec=Preset)
@@ -401,7 +401,7 @@ class TestYTDLPOpts:
         with (
             patch("app.library.YTDLPOpts.Config"),
             patch("app.library.YTDLPOpts.arg_converter"),
-            patch("app.library.YTDLPOpts.Presets") as mock_presets,
+            patch("app.features.presets.service.Presets") as mock_presets,
         ):
             mock_presets_instance = Mock()
             mock_presets_instance.get.return_value = None
@@ -441,7 +441,7 @@ class TestYTDLPOpts:
         """Test error handling when cookie loading fails."""
         with (
             patch("app.library.YTDLPOpts.Config") as mock_config,
-            patch("app.library.YTDLPOpts.Presets") as mock_presets,
+            patch("app.features.presets.service.Presets") as mock_presets,
             patch("app.library.YTDLPOpts.LOG") as mock_log,
         ):
             # Mock config
@@ -741,7 +741,7 @@ class TestARGSMerger:
 class TestYTDLPCli:
     """Test the YTDLPCli class."""
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_constructor_with_valid_item(self, mock_config, mock_presets):
         """Test YTDLPCli constructor with valid Item."""
@@ -770,7 +770,7 @@ class TestYTDLPCli:
         with pytest.raises(ValueError, match="Expected Item instance"):
             YTDLPCli(item="not an item")  # type: ignore
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_user_fields_only(self, mock_config, mock_presets):
         """Test build with only user-provided fields."""
@@ -805,12 +805,12 @@ class TestYTDLPCli:
         assert info["merged"]["save_path"] == "/downloads/myfolder"
         assert "--format best" in command
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_preset_fields_fallback(self, mock_config, mock_presets):
         """Test build falls back to preset fields when user doesn't provide them."""
         from app.library.ItemDTO import Item
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
         from app.library.YTDLPOpts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -839,12 +839,12 @@ class TestYTDLPCli:
         assert info["merged"]["save_path"] == "/downloads/preset_folder"
         assert "--format 720p" in command
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_user_fields_override_preset(self, mock_config, mock_presets):
         """Test that user fields override preset fields."""
         from app.library.ItemDTO import Item
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
         from app.library.YTDLPOpts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -878,7 +878,7 @@ class TestYTDLPCli:
         assert info["merged"]["save_path"] == "/downloads/user_folder"
         assert "--format best" in command, "User CLI should appear after preset CLI in command"
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_default_fallback(self, mock_config, mock_presets):
         """Test build falls back to defaults when neither user nor preset provide fields."""
@@ -903,7 +903,7 @@ class TestYTDLPCli:
         assert info["merged"]["template"] == "%(title)s.%(ext)s"
         assert info["merged"]["save_path"] == "/default/downloads"
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.create_cookies_file")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_cookies_from_user(self, mock_config, mock_create_cookies, mock_presets):
@@ -933,12 +933,12 @@ class TestYTDLPCli:
         assert "/tmp/cookies.txt" in command
         assert info["merged"]["cookie_file"] == "/tmp/cookies.txt"
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_cookies_from_preset(self, mock_config, mock_presets):
         """Test build with cookies from preset when user doesn't provide."""
         from app.library.ItemDTO import Item
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
         from app.library.YTDLPOpts import YTDLPCli
 
         mock_config_instance = Mock()
@@ -969,7 +969,7 @@ class TestYTDLPCli:
         assert "--cookies" in command
         assert "/preset/cookies.txt" in command
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_with_absolute_folder_path(self, mock_config, mock_presets):
         """Test build with absolute folder path from user."""
@@ -996,7 +996,7 @@ class TestYTDLPCli:
         )
         assert "--paths" in command
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_includes_url_in_command(self, mock_config, mock_presets):
         """Test that build includes the URL in the final command."""
@@ -1018,12 +1018,12 @@ class TestYTDLPCli:
 
         assert "https://youtube.com/watch?v=test123" in command
 
-    @patch("app.library.Presets.Presets")
+    @patch("app.features.presets.service.Presets")
     @patch("app.library.YTDLPOpts.Config")
     def test_build_cli_args_priority_order(self, mock_config, mock_presets):
         """Test that CLI args are added in correct priority order (preset first, user last)."""
         from app.library.ItemDTO import Item
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
         from app.library.YTDLPOpts import YTDLPCli
 
         mock_config_instance = Mock()

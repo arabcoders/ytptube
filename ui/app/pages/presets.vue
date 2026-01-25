@@ -6,7 +6,7 @@
           <span class="icon-text">
             <template v-if="toggleForm">
               <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': presetRef, 'fa-plus': !presetRef }" /></span>
-              <span>{{ presetRef ? `Edit - ${preset.name}` : 'Add' }}</span>
+              <span>{{ presetRef ? `Edit - ${prettyName(preset.name || '')}` : 'Add' }}</span>
             </template>
             <template v-else>
               <span class="icon"><i class="fa-solid fa-sliders" /></span>
@@ -89,7 +89,7 @@
                   <tr v-for="item in filteredPresets" :key="item.id">
                     <td class="is-text-overflow is-vcentered">
                       <div class="is-text-overflow is-bold">
-                        {{ item.name }}
+                        {{ prettyName(item.name) }}
                       </div>
                       <div class="is-unselectable">
                         <span class="icon-text" :class="{ 'has-text-primary': item.cookies }">
@@ -141,7 +141,7 @@
               <header class="card-header">
                 <div class="card-header-title is-block is-clickable"
                   :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }" @click="toggleExpand(item.id, 'title')"
-                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'" v-text="item.name" />
+                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'" v-text="prettyName(item.name)" />
                 <div class="card-header-icon">
                   <div class="field is-grouped">
                     <div class="control" v-if="item.priority > 0">
@@ -252,12 +252,13 @@
 import { useStorage } from '@vueuse/core'
 import type { Preset } from '~/types/presets'
 import { useConfirm } from '~/composables/useConfirm'
+import { usePresets } from '~/composables/usePresets'
+import { prettyName } from '~/utils'
 
 type PresetWithUI = Preset & { raw?: boolean, toggle_description?: boolean }
 
-const toast = useNotification()
+const presetsStore = usePresets()
 const config = useConfigStore()
-const socket = useSocketStore()
 const box = useConfirm()
 
 const display_style = useStorage<string>('preset_display_style', 'cards')
@@ -266,13 +267,12 @@ const isMobile = useMediaQuery({ maxWidth: 1024 })
 const query = ref<string>('')
 const toggleFilter = ref(false)
 
-const presets = ref<PresetWithUI[]>([])
+const presets = presetsStore.presets as Ref<PresetWithUI[]>
 const preset = ref<Partial<Preset>>({})
-const presetRef = ref<string | null>('')
+const presetRef = ref<number | null>(null)
 const toggleForm = ref(false)
-const isLoading = ref(true)
-const initialLoad = ref(true)
-const addInProgress = ref(false)
+const isLoading = presetsStore.isLoading
+const addInProgress = presetsStore.addInProgress
 const remove_keys = ['raw', 'toggle_description']
 const expandedItems = ref<Record<string, Set<string>>>({})
 
@@ -284,31 +284,27 @@ const filteredPresets = computed<PresetWithUI[]>(() => {
   return presetsNoDefault.value.filter((item: PresetWithUI) => deepIncludes(item, q, new WeakSet()));
 });
 
-const toggleExpand = (itemId: string | undefined, field: string) => {
-  if (!itemId) return
+const toggleExpand = (itemId: number | string | undefined, field: string) => {
+  if (itemId === undefined || itemId === null) return
+  const key = String(itemId)
 
-  if (!expandedItems.value[itemId]) {
-    expandedItems.value[itemId] = new Set()
+  if (!expandedItems.value[key]) {
+    expandedItems.value[key] = new Set()
   }
 
-  if (expandedItems.value[itemId].has(field)) {
-    expandedItems.value[itemId].delete(field)
+  if (expandedItems.value[key].has(field)) {
+    expandedItems.value[key].delete(field)
   } else {
-    expandedItems.value[itemId].add(field)
+    expandedItems.value[key].add(field)
   }
 }
 
-const isExpanded = (itemId: string | undefined, field: string): boolean => {
-  if (!itemId) return false
-  return expandedItems.value[itemId]?.has(field) ?? false
+const isExpanded = (itemId: number | string | undefined, field: string): boolean => {
+  if (itemId === undefined || itemId === null) return false
+  const key = String(itemId)
+  return expandedItems.value[key]?.has(field) ?? false
 }
 
-watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    await reloadContent(true)
-    initialLoad.value = false
-  }
-})
 
 watch(toggleFilter, (val) => {
   if (!val) {
@@ -316,66 +312,15 @@ watch(toggleFilter, (val) => {
   }
 })
 
-const reloadContent = async (fromMounted = false) => {
-  try {
-    isLoading.value = true
-    const response = await request('/api/presets')
-
-    if (fromMounted && !response.ok) {
-      return
-    }
-
-    const data = await response.json()
-    if (0 === data.length) {
-      return
-    }
-
-    presets.value = data
-  } catch (e: any) {
-    if (fromMounted) {
-      return
-    }
-    console.error(e)
-    toast.error('Failed to fetch page content.')
-  } finally {
-    isLoading.value = false
-  }
+const reloadContent = async () => {
+  await presetsStore.loadPresets(1, 1000)
 }
 
 const resetForm = (closeForm = false) => {
   preset.value = {}
   presetRef.value = null
-  addInProgress.value = false
   if (closeForm) {
     toggleForm.value = false
-  }
-}
-
-const updatePresets = async (items: Preset[]): Promise<boolean | undefined> => {
-  let data: any
-  try {
-    addInProgress.value = true
-
-    const response = await request('/api/presets', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(items.filter((t) => !t.default)),
-    })
-
-    data = await response.json()
-
-    if (200 !== response.status) {
-      toast.error(`Failed to update presets. ${data.error}`)
-      return false
-    }
-
-    presets.value = data
-    resetForm(true)
-    return true
-  } catch (e: any) {
-    toast.error(`Failed to update presets. ${data?.error}. ${e.message}`)
-  } finally {
-    addInProgress.value = false
   }
 }
 
@@ -384,46 +329,30 @@ const deleteItem = async (item: Preset) => {
     return
   }
 
-  const index = presets.value.findIndex((t) => t?.id === item.id)
-  if (-1 === index) {
-    toast.error('Preset not found.')
-    return
+  if (item.id) {
+    await presetsStore.deletePreset(item.id)
   }
-
-  presets.value.splice(index, 1)
-
-  const status = await updatePresets(presets.value)
-  if (!status) {
-    return
-  }
-
-  toast.success('Preset deleted.')
 }
 
 const updateItem = async ({
   reference,
   preset: item,
 }: {
-  reference: string | null
+  reference: number | null
   preset: Preset
 }) => {
   item = cleanObject(item, remove_keys) as Preset
   if (reference) {
-    const index = presets.value.findIndex((t) => t?.id === reference)
-    if (-1 !== index) {
-      presets.value[index] = item
+    const updated = await presetsStore.updatePreset(reference, item)
+    if (updated) {
+      resetForm(true)
     }
   } else {
-    presets.value.push(item)
+    const created = await presetsStore.createPreset(item)
+    if (created) {
+      resetForm(true)
+    }
   }
-
-  const status = await updatePresets(presets.value)
-  if (!status) {
-    return
-  }
-
-  toast.success(`Preset ${reference ? 'updated' : 'added'}.`)
-  resetForm(true)
 }
 
 const filterItem = (item: Preset) => {
@@ -440,7 +369,7 @@ const editItem = (item: Preset) => {
   toggleForm.value = true
 }
 
-onMounted(async () => (socket.isConnected ? await reloadContent(true) : ''))
+onMounted(async () => await reloadContent())
 
 const exportItem = (item: Preset) => {
   const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description']

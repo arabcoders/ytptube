@@ -12,7 +12,7 @@ type notificationRequest = {
 };
 
 type notification = {
-  id?: string;
+  id?: number;
   name: string;
   request: notificationRequest;
   on: Array<string>;
@@ -20,9 +20,18 @@ type notification = {
   enabled: boolean;
 };
 
-type notificationImport = notification & {
-  _type: 'notification';
-  _version: string;
+type notificationPagination = {
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
 };
 
-export type { notificationRequestHeaderItem, notification, notificationRequest, notificationImport };
+export type {
+  notificationRequestHeaderItem,
+  notification,
+  notificationRequest,
+  notificationPagination,
+};

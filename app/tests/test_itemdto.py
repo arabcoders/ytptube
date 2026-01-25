@@ -8,7 +8,7 @@ from app.library.ItemDTO import Item, ItemDTO
 
 
 class TestItemFormatAndBasics:
-    @patch("app.library.Presets.Presets.get_instance")
+    @patch("app.features.presets.service.Presets.get_instance")
     def test_format_validates_and_normalizes(self, mock_presets_get):
         # Preset exists and is not default => allowed
         mock_presets_get.return_value.has.return_value = True
@@ -42,7 +42,7 @@ class TestItemFormatAndBasics:
         assert item.requeued is True
         assert item.cli == "--embed-metadata"
 
-    @patch("app.library.Presets.Presets.get_instance")
+    @patch("app.features.presets.service.Presets.get_instance")
     def test_format_raises_for_missing_url_and_invalid_preset(self, mock_presets_get):
         # Missing url
         with pytest.raises(ValueError, match="url param is required"):
@@ -282,14 +282,14 @@ class TestItemDTO:
 
     def test_get_preset_returns_preset_instance(self):
         """Test ItemDTO.get_preset returns the Preset instance."""
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
 
-        mock_preset = Preset(id="test-id", name="test-preset", cli="--test")
+        mock_preset = Preset(id=1, name="test-preset", cli="--format best")
 
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="test-preset")
 
-        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+        with patch("app.features.presets.service.Presets.get_instance") as mock_presets:
             mock_presets.return_value.get.return_value = mock_preset
 
             result = dto.get_preset()
@@ -300,14 +300,14 @@ class TestItemDTO:
 
     def test_get_preset_uses_default_when_no_preset_set(self):
         """Test ItemDTO.get_preset uses 'default' when preset is empty."""
-        from app.library.Presets import Preset
+        from app.features.presets.schemas import Preset
 
-        mock_preset = Preset(id="default-id", name="default", cli="--default")
+        mock_preset = Preset(id=2, name="default", cli="--format best")
 
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="")
 
-        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+        with patch("app.features.presets.service.Presets.get_instance") as mock_presets:
             mock_presets.return_value.get.return_value = mock_preset
 
             result = dto.get_preset()
@@ -320,7 +320,7 @@ class TestItemDTO:
         with patch.object(ItemDTO, "__post_init__", lambda _: None):
             dto = ItemDTO(id="vid", title="t", url="u", folder="f", preset="nonexistent")
 
-        with patch("app.library.Presets.Presets.get_instance") as mock_presets:
+        with patch("app.features.presets.service.Presets.get_instance") as mock_presets:
             mock_presets.return_value.get.return_value = None
 
             result = dto.get_preset()

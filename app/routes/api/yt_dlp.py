@@ -1,5 +1,3 @@
-import asyncio
-import functools
 import json
 import logging
 import time
@@ -9,17 +7,17 @@ from typing import Any
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.presets.service import Presets
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
-from app.library.Presets import Presets
 from app.library.router import route
 from app.library.Utils import (
     REMOVE_KEYS,
     archive_read,
     arg_converter,
-    extract_info,
+    fetch_info,
     get_archive_id,
     validate_url,
 )
@@ -165,20 +163,13 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             },
         }
 
-        data: dict | None = await asyncio.wait_for(
-            fut=asyncio.get_running_loop().run_in_executor(
-                None,
-                functools.partial(
-                    extract_info,
-                    config=ytdlp_opts,
-                    url=url,
-                    debug=False,
-                    no_archive=True,
-                    follow_redirect=True,
-                    sanitize_info=True,
-                ),
-            ),
-            timeout=120,
+        data: dict | None = await fetch_info(
+            config=ytdlp_opts,
+            url=url,
+            debug=False,
+            no_archive=True,
+            follow_redirect=True,
+            sanitize_info=True,
         )
 
         if not data or not isinstance(data, dict):

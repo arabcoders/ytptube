@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.library.Services import Services
+from app.library.Services import ServiceEntry, Services
 
 
 class TestServices:
@@ -92,9 +92,9 @@ class TestServices:
         services.add("test", "value")
 
         all_services = services.get_all()
-        all_services["injected"] = "malicious"
+        all_services.append(ServiceEntry(name="injected", declared_type=str, instance="malicious"))
 
-        assert "injected" not in services.get_all(), "Modifying returned dict should not affect internal state"
+        assert services.get("injected") is None, "Modifying returned dict should not affect internal state"
 
     def test_handle_sync_with_matching_args(self):
         """Test synchronous handler with matching arguments."""
@@ -138,8 +138,9 @@ class TestServices:
             # Should still log error about missing arguments
             mock_logger.error.assert_called_once()
             error_call = mock_logger.error.call_args[0][0]
-            assert "Missing arguments" in error_call
-            assert "missing_service_param" in error_call
+            assert "Missing arguments for handler" in error_call, (
+                f"Expected 'Missing arguments for handler' in log, got: {error_call}"
+            )
 
     def test_handle_sync_no_args_handler(self):
         """Test synchronous handler that takes no arguments."""
@@ -197,8 +198,9 @@ class TestServices:
             # Should still log error about missing arguments
             mock_logger.error.assert_called_once()
             error_call = mock_logger.error.call_args[0][0]
-            assert "Missing arguments" in error_call
-            assert "missing_service_param" in error_call
+            assert "Missing arguments for handler" in error_call, (
+                f"Expected 'Missing arguments for handler' in log, got: {error_call}"
+            )
 
     @pytest.mark.asyncio
     async def test_handle_async_no_args_handler(self):

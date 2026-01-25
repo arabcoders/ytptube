@@ -39,7 +39,7 @@
 import type { ModelRef } from 'vue';
 import type { DLFieldType } from '~/types/dl_fields';
 defineProps<{
-  id: string,
+  id: number|string,
   label: string,
   field?: string,
   type: DLFieldType,

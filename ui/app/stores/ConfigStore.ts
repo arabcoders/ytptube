@@ -1,5 +1,9 @@
 import { useStorage } from '@vueuse/core'
 import type { ConfigState } from '~/types/config';
+import type { DLField } from '~/types/dl_fields';
+import type { Preset } from '~/types/presets';
+import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
+import { request } from '~/utils';
 
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({
@@ -28,6 +32,7 @@ export const useConfigStore = defineStore('config', () => {
       default_pagination: 50,
       check_for_updates: true,
       new_version: '',
+      yt_new_version: '',
     },
     presets: [
       {
@@ -46,7 +51,42 @@ export const useConfigStore = defineStore('config', () => {
     ytdlp_options: [],
     paused: false,
     is_loaded: false,
+    is_loading: false,
   });
+
+  const loadConfig = async () => {
+    if (state.is_loading) {
+      return;
+    }
+    state.is_loaded = false;
+    state.is_loading = true;
+    try {
+      const resp = await request('/api/system/configuration');
+      if (!resp.ok) {
+        return;
+      }
+      const data = await resp.json();
+      const stateStore = useStateStore();
+
+      if ('number' === typeof data.history_count) {
+        stateStore.setHistoryCount(data.history_count);
+        delete data.history_count;
+      }
+
+      if (data.queue) {
+        stateStore.addAll('queue', data.queue);
+        delete data.queue;
+      }
+
+      setAll(data);
+    } catch (e: any) {
+      console.error('Failed to load configuration', e);
+    }
+    finally {
+      state.is_loaded = true;
+      state.is_loading = false;
+    }
+  }
 
   const add = (key: string, value: any) => {
     if (key.includes('.')) {
@@ -65,6 +105,7 @@ export const useConfigStore = defineStore('config', () => {
     }
     return (state as any)[key] ?? defaultValue
   }
+  const isLoaded = () => state.is_loaded
 
   const update = add
 
@@ -84,16 +125,83 @@ export const useConfigStore = defineStore('config', () => {
     state.is_loaded = true
   }
 
-  const isLoaded = () => state.is_loaded
+  const patch = (feature: ConfigFeature, action: ConfigUpdateAction, data: unknown): void => {
+    const supportedFeatures: ConfigFeature[] = ['dl_fields', 'presets']
+
+    if (!supportedFeatures.includes(feature)) {
+      return
+    }
+
+    if ('presets' === feature) {
+      const item = data as Preset
+      const current = get(feature, []) as Array<Preset>
+
+      if ('create' === action) {
+        current.push(item)
+        return
+      }
+
+      if ('delete' === action) {
+        const index = current.findIndex(i => i.id === item.id)
+        if (-1 !== index) {
+          current.splice(index, 1)
+        }
+        return
+      }
+
+      if ('update' === action) {
+        const target = current.find(i => i.id === item.id)
+        if (target) {
+          Object.assign(target, item)
+        }
+        return
+      }
+
+      return
+    }
+
+    if ('dl_fields' === feature) {
+      const item = data as DLField
+      const current = get(feature, []) as Array<DLField>
+
+      if ('create' === action) {
+        current.push(item)
+        return
+      }
+
+      if ('delete' === action) {
+        const index = current.findIndex(i => i.id === item.id)
+        if (-1 !== index) {
+          current.splice(index, 1)
+        }
+        return
+      }
+
+      if ('update' === action) {
+        const target = current.find(i => i.id === item.id)
+        if (target) {
+          Object.assign(target, item)
+        }
+        return
+      }
+      if ('replace' === action) {
+        state.dl_fields = data as Array<DLField>
+        return
+      }
+      return
+    }
+  }
 
   return {
-    ...toRefs(state), add, get, update, getAll, setAll, isLoaded,
+    ...toRefs(state), add, get, update, getAll, setAll, isLoaded, patch, loadConfig
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
     add: typeof add
     get: typeof get
     update: typeof update
     getAll: typeof getAll
     setAll: typeof setAll
+    patch: typeof patch
     isLoaded: typeof isLoaded
+    loadConfig: typeof loadConfig
   }
 });

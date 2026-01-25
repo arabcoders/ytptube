@@ -1,4 +1,20 @@
 <template>
+  <div class="columns is-multiline is-mobile has-text-centered is-justify-content-flex-end" v-if="!socket.isConnected">
+    <div class="column is-narrow">
+      <div class="field is-grouped">
+        <p class="control">
+          <button type="button" class="button is-info" @click="refreshQueue" :class="{ 'is-loading': isRefreshing }"
+            v-tooltip.bottom="'Refresh queue data'">
+            <span class="icon">
+              <i class="fa-solid fa-refresh" />
+            </span>
+            <span>Refresh</span>
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
   <div class="columns is-multiline is-mobile has-text-centered is-justify-content-flex-end"
     v-if="filteredItems.length > 0">
     <div class="column is-narrow">
@@ -369,8 +385,70 @@ const show_popover = useStorage<boolean>('show_popover', true)
 const selectedElms = ref<string[]>([])
 const masterSelectAll = ref(false)
 const embed_url = ref('')
+const isRefreshing = ref(false)
+const autoRefreshInterval = ref<NodeJS.Timeout | null>(null)
+const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true)
+const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000)
 
 const showThumbnails = computed(() => !!props.thumbnails && !hideThumbnail.value)
+
+const refreshQueue = async () => {
+  isRefreshing.value = true
+  try {
+    await stateStore.loadQueue()
+  } catch {
+    toast.error('Failed to refresh queue')
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+const startAutoRefresh = () => {
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+  }
+
+  if (!autoRefreshEnabled.value || socket.isConnected) {
+    return
+  }
+
+  autoRefreshInterval.value = setInterval(async () => {
+    if (!socket.isConnected && autoRefreshEnabled.value) {
+      await refreshQueue()
+    }
+  }, autoRefreshDelay.value)
+}
+
+const stopAutoRefresh = () => {
+  if (autoRefreshInterval.value) {
+    clearInterval(autoRefreshInterval.value)
+    autoRefreshInterval.value = null
+  }
+}
+
+watch(() => socket.isConnected, (connected) => {
+  if (connected) {
+    stopAutoRefresh()
+  } else if (autoRefreshEnabled.value) {
+    startAutoRefresh()
+  }
+})
+
+watch(autoRefreshEnabled, (enabled) => {
+  if (enabled && !socket.isConnected) {
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
+})
+
+onMounted(() => {
+  if (!socket.isConnected && autoRefreshEnabled.value) {
+    startAutoRefresh()
+  }
+})
+
+onBeforeUnmount(() => stopAutoRefresh())
 
 watch(masterSelectAll, (value) => {
   if (value) {
@@ -570,11 +648,11 @@ const cancelItems = (item: string | string[]) => {
   if (0 > items.length) {
     return
   }
-  items.forEach(id => socket.emit('item_cancel', id))
+  stateStore.cancelItems(items)
 }
 
-const startItem = (item: StoreItem) => socket.emit('item_start', item._id)
-const pauseItem = (item: StoreItem) => socket.emit('item_pause', item._id)
+const startItem = async (item: StoreItem) => await stateStore.startItems([item._id])
+const pauseItem = async (item: StoreItem) => await stateStore.pauseItems([item._id])
 
 const startItems = async () => {
   if (1 > selectedElms.value.length) {
@@ -595,7 +673,7 @@ const startItems = async () => {
   if (true !== (await box.confirm(`Start '${filtered.length}' selected items?`))) {
     return false
   }
-  filtered.forEach(id => socket.emit('item_start', id))
+  await stateStore.startItems(filtered)
 }
 
 const pauseSelected = async () => {
@@ -617,7 +695,7 @@ const pauseSelected = async () => {
   if (true !== (await box.confirm(`Pause '${filtered.length}' selected items?`))) {
     return false
   }
-  filtered.forEach(id => socket.emit('item_pause', id))
+  await stateStore.pauseItems(filtered)
 }
 
 const pImg = (e: Event) => {

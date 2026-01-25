@@ -5,13 +5,14 @@ from typing import TYPE_CHECKING, Any
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.presets.schemas import Preset
+from app.features.presets.service import Presets
 from app.library.config import Config
 from app.library.DataStore import StoreType
 from app.library.downloads import Download, DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item
-from app.library.Presets import Preset, Presets
 from app.library.router import route
 
 if TYPE_CHECKING:
@@ -110,6 +111,29 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
                 "has_prev": current_page > 1,
             },
             "items": [download.info for _, download in items],
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("GET", "api/history/live", "items_live")
+async def items_live(queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Get live queue data
+
+    Args:
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object with live queue items.
+
+    """
+    return web.json_response(
+        data={
+            "queue": (await queue.get("queue"))["queue"],
+            "history_count": await queue.done.get_total_count(),
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,
@@ -361,33 +385,144 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     Returns:
         Response: The response object.
 
+    Query Parameters:
+        sync (bool): If true, wait for all items to be processed synchronously. Default: false
+
     """
     data = await request.json()
 
     if isinstance(data, dict):
         data = [data]
 
-    items = []
+    items: list[Item] = []
     for item in data:
         try:
             items.append(Item.format(item))
         except ValueError as e:
             return web.json_response(data={"error": str(e), "data": item}, status=web.HTTPBadRequest.status_code)
 
-    status: list[dict] = await asyncio.wait_for(
-        fut=asyncio.gather(*[queue.add(item=item) for item in items]),
-        timeout=None,
+    if "true" == request.query.get("sync", "false").lower():
+        status: list[dict] = await asyncio.wait_for(
+            fut=asyncio.gather(*[queue.add(item=item) for item in items]),
+            timeout=None,
+        )
+
+        response: list[dict[str, Any]] = []
+
+        for i, item in enumerate(items):
+            it = {"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")}
+            if status[i].get("hidden"):
+                it["hidden"] = True
+            response.append(it)
+
+        return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    from app.library.downloads.utils import handle_task_exception
+
+    batch_id: str = f"batch_{asyncio.get_running_loop().time():.0f}"
+
+    for idx, item in enumerate(items):
+        if not item.extras:
+            item.extras = {}
+
+        item.extras["batch_id"] = batch_id
+        item.extras["batch_index"] = idx
+        item.extras["batch_total"] = len(items)
+
+        task = asyncio.create_task(
+            queue.add(item=item),
+            name=f"bulk_add_{batch_id}_{idx}",
+        )
+        task.add_done_callback(lambda t: handle_task_exception(t, LOG))
+
+    return web.json_response(
+        data={
+            "status": "accepted",
+            "message": f"Accepted {len(items)} item(s) for processing",
+            "batch_id": batch_id,
+            "count": len(items),
+        },
+        status=web.HTTPAccepted.status_code,
+        dumps=encoder.encode,
     )
 
-    response: list[dict[str, Any]] = []
 
-    for i, item in enumerate(items):
-        it = {"item": item, "status": "ok" == status[i].get("status"), "msg": status[i].get("msg")}
-        if status[i].get("hidden"):
-            it["hidden"] = True
-        response.append(it)
+@route("POST", "api/history/start", "items_start")
+async def items_start(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Start one or more queued downloads.
 
-    return web.json_response(data=response, status=web.HTTPOk.status_code, dumps=encoder.encode)
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.start_items(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/pause", "items_pause")
+async def items_pause(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Pause one or more queued downloads.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.pause_items(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+
+@route("POST", "api/history/cancel", "items_cancel")
+async def items_cancel(request: Request, queue: DownloadQueue, encoder: Encoder) -> Response:
+    """
+    Cancel one or more queued downloads.
+
+    Args:
+        request (Request): The request object.
+        queue (DownloadQueue): The download queue instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    data = await request.json()
+    if not (ids := data.get("ids", [])):
+        return web.json_response(data={"error": "ids array is required."}, status=web.HTTPBadRequest.status_code)
+
+    if not isinstance(ids, list):
+        return web.json_response(data={"error": "ids must be an array."}, status=web.HTTPBadRequest.status_code)
+
+    status: dict[str, str] = await queue.cancel(ids)
+
+    return web.json_response(data=status, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("POST", r"api/history/{id}/archive", "history.item.archive.add")

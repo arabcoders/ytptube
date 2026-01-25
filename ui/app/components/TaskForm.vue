@@ -364,18 +364,18 @@ import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
-import type { exported_task, task_item } from '~/types/tasks'
+import type { ExportedTask, Task } from '~/types/tasks'
 import { useConfirm } from '~/composables/useConfirm'
 
 const props = defineProps<{
-  reference?: string | null | undefined
-  task: task_item
+  reference?: number | null | undefined
+  task: Task
   addInProgress?: boolean
 }>()
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', payload: { reference: string | null | undefined, task: task_item, archive_all?: boolean }): void
+  (e: 'submit', payload: { reference: number | null | undefined, task: Task, archive_all?: boolean }): void
 }>()
 
 const toast = useNotification()
@@ -391,7 +391,7 @@ const archiveAllAfterAdd = ref<boolean>(false)
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i
-const form = reactive<task_item>({ ...props.task })
+const form = reactive<Task>({ ...props.task })
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
@@ -468,7 +468,7 @@ const importItem = async (): Promise<void> => {
   }
 
   try {
-    const item = decode(val) as exported_task
+    const item = decode(val) as ExportedTask
 
     if ('task' !== item._type) {
       toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`)

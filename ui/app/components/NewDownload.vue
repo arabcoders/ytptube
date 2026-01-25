@@ -38,7 +38,7 @@
               <div class="field has-addons">
                 <div class="control" @click="show_description = !show_description">
                   <label class="button is-static">
-                    <span class="icon"><i class="fa-solid fa-sliders" /></span>
+                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
                   </label>
                 </div>
                 <div class="control is-expanded">
@@ -48,12 +48,12 @@
                       v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
                       <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
                         <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
-                          {{ cPreset.name }}
+                          {{ prettyName(cPreset.name) }}
                         </option>
                       </optgroup>
                       <optgroup label="Default presets">
                         <option v-for="dPreset in filter_presets(true)" :key="dPreset.name" :value="dPreset.name">
-                          {{ dPreset.name }}
+                          {{ prettyName(dPreset.name) }}
                         </option>
                       </optgroup>
                     </select>
@@ -176,7 +176,7 @@
             </template>
             <div class="column is-12 is-hidden-tablet">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
-                <NuxtLink class="dropdown-item" @click="() => showFields = true">
+                <NuxtLink class="dropdown-item" to="/dl_fields">
                   <span class="icon has-text-purple"><i class="fa-solid fa-plus" /></span>
                   <span>Custom Fields</span>
                 </NuxtLink>
@@ -208,7 +208,7 @@
             <div class="column is-12">
               <div class="field is-grouped is-justify-self-end is-hidden-mobile">
                 <div class="control">
-                  <button type="button" class="button is-purple" @click="() => showFields = true"
+                  <button type="button" class="button is-purple" @click="() => navigateTo('/dl_fields')"
                     v-tooltip="'Manage custom fields'">
                     <span class="icon"><i class="fa-solid fa-plus" /></span>
                   </button>
@@ -253,7 +253,7 @@
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
 
-    <DLFields v-if="showFields" @cancel="() => showFields = false" />
+
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
       <YTDLPOptions />
     </Modal>
@@ -269,6 +269,7 @@ import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import TextDropzone from '~/components/TextDropzone.vue'
 import type { item_request } from '~/types/item'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
+import { prettyName } from '~/utils'
 import { navigateTo } from '#app'
 import { useDialog } from '~/composables/useDialog'
 
@@ -289,7 +290,6 @@ const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const storedCommand = useStorage<string>('console_command', '')
 
 const addInProgress = ref<boolean>(false)
-const showFields = ref<boolean>(false)
 const showOptions = ref<boolean>(false)
 const showTestResults = ref<boolean>(false)
 const testResultsData = ref<any>(null)
@@ -308,7 +308,6 @@ const form = useStorage<item_request>('local_config_v1', {
   folder: '',
   extras: {},
 }) as Ref<item_request>
-
 
 const is_valid_dl_field = (dl_field: string): boolean => {
   if (dlFieldsExtra.includes(dl_field)) {
@@ -471,19 +470,25 @@ const addDownload = async () => {
 
     let had_errors = false
 
-    data.forEach((item: Record<string, any>) => {
-      if (false !== item.status) {
-        return
-      }
+    if (200 === response.status) {
+      data.forEach((item: Record<string, any>) => {
+        if (false !== item.status) {
+          return
+        }
 
-      had_errors = true
+        had_errors = true
 
-      if (item?.hidden) {
-        return
-      }
+        if (item?.hidden) {
+          return
+        }
 
-      toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
-    })
+        toast.error(`Error: ${item.msg || 'Failed to add download.'}`)
+      })
+    }
+
+    if (202 === response.status) {
+      toast.success(data.message,{ timeout: 2000 })
+    }
 
     if (false === had_errors) {
       form.value.url = ''
@@ -804,4 +809,5 @@ watch(isMultiLineInput, async newValue => {
   const inputElement = document.getElementById('url') as HTMLInputElement
   inputElement?.focus()
 })
+
 </script>

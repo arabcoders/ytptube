@@ -14,7 +14,7 @@
     <Teleport to="body">
       <div v-if="isOpen" class="dropdown is-active dropdown-portal" ref="menu" :style="menuStyle">
         <div class="dropdown-menu" role="menu">
-          <div class="dropdown-content" @click="handle_slot_click">
+          <div class="dropdown-content is-unselectable" @click="handle_slot_click">
             <template v-if="hideLabel">
               <div class="dropdown-label">
                 <span class="icon-text">

@@ -1,5 +1,5 @@
 import { useStorage } from '@vueuse/core'
-import type { convert_args_response } from '~/types/responses'
+import type { convert_args_response, Paginated } from '~/types/responses'
 import type { StoreItem } from '~/types/store'
 
 const AG_SEPARATOR = '.'
@@ -406,6 +406,10 @@ const sTrim = (str: string, delim: string): string => iTrim(str, delim, 'start')
  * @returns The string with the first character capitalized.
  */
 const ucFirst = (str: string): string => (!str) ? str : str.charAt(0).toUpperCase() + str.slice(1)
+
+const normalizePresetName = (name: string): string => name.trim().toLowerCase().replace(/\s+/g, '_')
+
+const prettyName = (name: string): string => name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
 /**
  * Get the name of a separator based on its value
@@ -815,10 +819,88 @@ const getImage = (basePath: string, item: StoreItem, fallback: boolean = true): 
   return fallback ? uri('/images/placeholder.png') : ''
 }
 
+const parse_list_response = async <T>(json: unknown): Promise<Paginated<T>> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+
+  if (!json || 'object' !== typeof json) {
+    return { items: [], pagination: { page: 1, per_page: 20, total: 0, total_pages: 0, has_next: false, has_prev: false } }
+  }
+
+  const payload = json as Paginated<T>
+  const items = Array.isArray(payload.items) ? payload.items : []
+
+  const pagination = {
+    page: Number(payload.pagination?.page ?? 1),
+    per_page: Number(payload.pagination?.per_page ?? 20),
+    total: Number(payload.pagination?.total ?? 0),
+    total_pages: Number(payload.pagination?.total_pages ?? 0),
+    has_next: Boolean(payload.pagination?.has_next ?? false),
+    has_prev: Boolean(payload.pagination?.has_prev ?? false),
+  }
+
+  return { items: items as T[], pagination }
+}
+
+const parse_api_response = async <T>(json: unknown): Promise<T> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+  return json as T
+}
+
+const parse_api_error = async (json: unknown): Promise<string> => {
+  if ('function' === typeof (json as any).then) {
+    json = await (json as Promise<unknown>)
+  }
+
+  if (!json || 'object' !== typeof json) {
+    return 'Unknown error occurred'
+  }
+
+  const payload = json as {
+    error?: string;
+    message?: string;
+    detail?: string | Array<{ loc: string[]; msg: string; type: string }>;
+  }
+
+  let extra_detail = ''
+
+  if (Array.isArray(payload.detail)) {
+    const errors = payload.detail.map((err: any) => {
+      if ('object' === typeof err && err.loc && err.msg) {
+        const field = Array.isArray(err.loc) ? err.loc[err.loc.length - 1] : 'unknown'
+        return `${field}: ${err.msg}`
+      }
+      return String(err)
+    })
+    extra_detail = errors.join(', ')
+  }
+
+  if (payload.error) {
+    return String(payload.error+(extra_detail ? ` - ${extra_detail}` : ''))
+  }
+  if (payload.message) {
+    return String(payload.message+(extra_detail ? ` - ${extra_detail}` : ''))
+  }
+
+  if (extra_detail) {
+    return extra_detail
+  }
+
+  if ('string' === typeof payload.detail) {
+    return payload.detail
+  }
+
+  return 'Unknown error occurred'
+}
+
 export {
-  separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst,
+  separators, convertCliOptions, getSeparatorsName, iTrim, eTrim, sTrim, ucFirst, normalizePresetName, prettyName,
   getValue, ag, ag_set, awaitElement, r, copyText, dEvent, makePagination, encodePath,
   request, removeANSIColors, dec2hex, makeId, basename, dirname, getQueryParams,
   makeDownload, formatBytes, has_data, toggleClass, cleanObject, uri, formatTime,
-  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes, getPath, getImage
+  sleep, awaiter, encode, decode, disableOpacity, enableOpacity, stripPath, shortPath, deepIncludes, getPath, getImage,
+  parse_list_response, parse_api_response, parse_api_error
 }

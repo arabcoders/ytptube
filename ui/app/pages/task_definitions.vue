@@ -75,14 +75,23 @@
             </thead>
             <tbody>
               <tr v-for="definition in definitions" :key="definition.id">
-                <td class="is-vcentered is-text-overflow">
-                  {{ definition.name || '(Unnamed definition)' }}
+                <td class="is-vcentered">
+                  <div class="is-text-overflow">{{ definition.name || '(Unnamed definition)' }}</div>
+                  <div class="is-size-7">
+                    <span class="icon-text is-clickable" @click="toggle(definition)"
+                      v-tooltip="'Click to ' + (definition.enabled ? 'disable' : 'enable') + ' definition'">
+                      <span class="icon">
+                        <i class="fa-solid fa-power-off"
+                          :class="{ 'has-text-success': definition.enabled, 'has-text-danger': !definition.enabled }" />
+                      </span>
+                      <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
+                    </span>
+                  </div>
                 </td>
                 <td class="is-vcentered has-text-centered">{{ definition.priority }}</td>
                 <td class="is-vcentered has-text-centered">
-                  <span class="has-tooltip"
-                    :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
-                    v-tooltip="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                  <span class="has-tooltip" :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                    v-tooltip="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-rtime="definition.updated_at" />
                 </td>
                 <td class="is-vcentered is-items-center">
@@ -122,9 +131,19 @@
               {{ definition.name || '(Unnamed definition)' }}
             </div>
             <div class="card-header-icon">
-              <button class="has-text-info" v-tooltip="'Export'" @click="exportDefinition(definition)">
-                <span class="icon"><i class="fa-solid fa-file-export" /></span>
-              </button>
+              <div class="field has-addons">
+                <div class="control" @click="toggle(definition)">
+                  <span class="icon" :class="definition.enabled ? 'has-text-success' : 'has-text-danger'"
+                    v-tooltip="`Definition is ${definition.enabled ? 'enabled' : 'disabled'}. Click to toggle.`">
+                    <i class="fa-solid fa-power-off" />
+                  </span>
+                </div>
+                <div class="control">
+                  <button class="has-text-info" v-tooltip="'Export'" @click="exportDefinition(definition)">
+                    <span class="icon"><i class="fa-solid fa-file-export" /></span>
+                  </button>
+                </div>
+              </div>
             </div>
           </header>
           <div class="card-content">
@@ -139,8 +158,8 @@
                 <span class="icon-text">
                   <span class="icon"><i class="fa-solid fa-clock" /></span>
                   <span>Updated: <span class="has-tooltip"
-                      :date-datetime="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
-                      v-tooltip="moment.unix(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                      :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                      v-tooltip="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                       v-rtime="definition.updated_at" />
                   </span>
                 </span>
@@ -219,14 +238,17 @@ import type {
 const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   name: 'New Definition',
   priority: 0,
-  match: ['https://example.com/*'],
-  parse: {
-    items: {
-      type: 'css',
-      selector: 'body',
-      fields: {
-        link: { type: 'css', expression: 'a', attribute: 'href' },
-        title: { type: 'css', expression: 'a', attribute: 'text' },
+  enabled: true,
+  match_url: ['https://example.com/*'],
+  definition: {
+    parse: {
+      items: {
+        type: 'css',
+        selector: 'body',
+        fields: {
+          link: { type: 'css', expression: 'a', attribute: 'href' },
+          title: { type: 'css', expression: 'a', attribute: 'text' },
+        },
       },
     },
   },
@@ -242,6 +264,7 @@ const getDefinition = taskDefs.getDefinition
 const createDefinition = taskDefs.createDefinition
 const updateDefinition = taskDefs.updateDefinition
 const deleteDefinition = taskDefs.deleteDefinition
+const toggleEnabled = taskDefs.toggleEnabled
 
 const definitions = computed(() => definitionsRef.value)
 
@@ -253,7 +276,7 @@ const editorMode = ref<'create' | 'edit'>('create')
 const editorLoading = ref<boolean>(false)
 const editorSubmitting = ref<boolean>(false)
 const workingDefinition = ref<TaskDefinitionDocument | null>(null)
-const workingId = ref<string | null>(null)
+const workingId = ref<number | null>(null)
 const inspect = ref<boolean>(false)
 const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid')
 
@@ -299,39 +322,37 @@ const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
     return
   }
 
-  const document = cloneDocument(detailed.definition)
-  const docRecord = document
-  if ('priority' in docRecord) {
-    docRecord.priority = Number(docRecord.priority)
-  }
-  else {
-    docRecord.priority = detailed.priority
+  const document: TaskDefinitionDocument = {
+    name: detailed.name,
+    priority: detailed.priority,
+    enabled: detailed.enabled,
+    match_url: [...detailed.match_url],
+    definition: JSON.parse(JSON.stringify(detailed.definition)),
   }
 
   workingDefinition.value = document
   editorLoading.value = false
 }
 
-const importExistingDefinition = async (id: string): Promise<void> => {
+const importExistingDefinition = async (id: number): Promise<void> => {
   const detailed = await getDefinition(id)
   if (!detailed) {
     toast.error('Failed to load task definition for import.')
     return
   }
 
-  const document = cloneDocument(detailed.definition)
-  const docRecord = document
-  if ('priority' in docRecord) {
-    docRecord.priority = Number(docRecord.priority)
-  }
-  else {
-    docRecord.priority = detailed.priority
+  const document: TaskDefinitionDocument = {
+    name: detailed.name,
+    priority: detailed.priority,
+    enabled: detailed.enabled,
+    match_url: [...detailed.match_url],
+    definition: JSON.parse(JSON.stringify(detailed.definition)),
   }
 
+  editorMode.value = 'create'
+  workingId.value = null
   workingDefinition.value = document
-  if ('create' === editorMode.value) {
-    workingId.value = null
-  }
+  isEditorOpen.value = true
   editorLoading.value = false
 }
 
@@ -374,7 +395,7 @@ const submitDefinition = async (definition: TaskDefinitionDocument): Promise<voi
 const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   const result = await confirmDialog({
     title: 'Delete Task Definition',
-    message: `Are you sure you want to delete “${summary.name || summary.id}”?`,
+    message: `Are you sure you want to delete "${summary.name || summary.id}"?`,
     confirmColor: 'is-danger',
   })
 
@@ -385,21 +406,25 @@ const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   await deleteDefinition(summary.id)
 }
 
+const toggle = async (summary: TaskDefinitionSummary): Promise<void> => {
+  await toggleEnabled(summary.id, !summary.enabled)
+}
+
 const exportDefinition = async (summary: TaskDefinitionSummary): Promise<void> => {
   const detailed = await getDefinition(summary.id)
   if (!detailed) {
     return
   }
 
-  const payload = {
+  return copyText(encode({
     _type: 'task_definition',
-    _version: '1.0',
+    _version: '2.0',
     name: detailed.name,
     priority: detailed.priority,
+    enabled: detailed.enabled,
+    match_url: detailed.match_url,
     definition: detailed.definition,
-  }
-
-  return copyText(encode(payload))
+  }))
 }
 
 onMounted(async () => {

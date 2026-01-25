@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from sqlalchemy import text
 
 from app.library.ItemDTO import ItemDTO
 from app.library.operations import Operation
@@ -11,8 +12,8 @@ async def make_store() -> SqliteStore:
     """Create an isolated in-memory SqliteStore instance with schema."""
     SqliteStore._reset_singleton()
     store = SqliteStore.get_instance(db_path=":memory:")
-    await store._ensure_conn()
-    assert store._conn is not None
+    await store.get_connection()
+    assert store._engine is not None, "Engine should be initialized after _ensure_conn"
     return store
 
 
@@ -24,6 +25,53 @@ def make_item(idx: int, *, status: str = "finished") -> ItemDTO:
         folder="/downloads",
         status=status,
     )
+
+
+@pytest.mark.asyncio
+async def test_sessionmaker_returns_valid_sessionmaker() -> None:
+    """Test that sessionmaker() returns a working async_sessionmaker."""
+    SqliteStore._reset_singleton()
+    store = SqliteStore.get_instance(db_path=":memory:")
+
+    # Ensure connection is initialized
+    await store.get_connection()
+
+    # Get sessionmaker
+    sessionmaker = store.sessionmaker()
+    assert sessionmaker is not None, "Sessionmaker should not be None after connection initialization"
+
+    # Verify we can create a session
+    async with sessionmaker() as session:
+        assert session is not None, "Session should be created successfully"
+
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_sessionmaker_raises_before_init() -> None:
+    """Test that sessionmaker() raises error before connection initialization."""
+    SqliteStore._reset_singleton()
+    store = SqliteStore.get_instance(db_path=":memory:")
+
+    with pytest.raises(RuntimeError, match="Database connection not initialized"):
+        store.sessionmaker()
+
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_sqlalchemy_engine_disposed_on_close() -> None:
+    """Test that SQLAlchemy engine is properly disposed on close."""
+    SqliteStore._reset_singleton()
+    store = SqliteStore.get_instance(db_path=":memory:")
+
+    await store.get_connection()
+    assert store._engine is not None, "Engine should be created"
+    assert store._sessionmaker is not None, "Sessionmaker should be created"
+
+    await store.close()
+    assert store._engine is None, "Engine should be None after close"
+    assert store._sessionmaker is None, "Sessionmaker should be None after close"
 
 
 @pytest.mark.asyncio
@@ -87,8 +135,10 @@ async def test_paginate_order_and_bounds():
         created_at = (base + timedelta(minutes=i)).strftime("%Y-%m-%d %H:%M:%S")
         _list.append(itm)
         await store._conn.execute(
-            'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
-            (itm._id, "history", itm.url, encoded, created_at),
+            text(
+                'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (:id, :type, :url, :data, :created_at)'
+            ),
+            {"id": itm._id, "type": "history", "url": itm.url, "data": encoded, "created_at": created_at},
         )
     await store._conn.commit()
 
@@ -224,6 +274,7 @@ async def test_on_shutdown_closes_connection():
 
     await store.on_shutdown(None)
     assert store._conn is None
+    # Note: on_shutdown already closes the connection, so no need to call close() again
 
 
 @pytest.mark.asyncio

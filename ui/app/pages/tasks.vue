@@ -67,8 +67,8 @@
 
     <div class="columns is-multiline" v-if="toggleForm">
       <div class="column is-12">
-        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="task as task_item"
-          @cancel="resetForm(true);" @submit="updateItem" />
+        <TaskForm :addInProgress="addInProgress" :reference="taskRef" :task="(task as Task)" @cancel="resetForm(true);"
+          @submit="updateItem" />
       </div>
     </div>
 
@@ -401,12 +401,6 @@
       </template>
     </div>
 
-    <div class="columns is-multiline">
-      <div class="column is-12">
-
-      </div>
-    </div>
-
     <div class="columns is-multiline" v-if="!toggleForm && (isLoading || !filteredTasks || filteredTasks.length < 1)">
       <div class="column is-12">
         <Message class="is-info" title="Loading" icon="fas fa-spinner fa-spin" v-if="isLoading">
@@ -470,33 +464,38 @@ import { useStorage } from '@vueuse/core'
 import { CronExpressionParser } from 'cron-parser'
 import Modal from '~/components/Modal.vue'
 import { useConfirm } from '~/composables/useConfirm'
+import { useTasks } from '~/composables/useTasks'
 import TaskInspect from '~/components/TaskInspect.vue'
-import type { task_item, exported_task, error_response } from '~/types/tasks'
+import type { Task, ExportedTask } from '~/types/tasks'
+import type { WSEP } from '~/types/sockets'
 import { sleep } from '~/utils'
 import { useSessionCache } from '~/utils/cache'
+
+type TaskWithUI = Task & { in_progress?: boolean }
 
 const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
+const stateStore = useStateStore()
 const { confirmDialog: cDialog } = useDialog()
 const sessionCache = useSessionCache()
 const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-const tasks = ref<Array<task_item>>([])
-const task = ref<task_item | Record<string, unknown>>({})
-const taskRef = ref<string>('')
+// Use the tasks composable
+const tasksComposable = useTasks()
+const { tasks, isLoading, addInProgress } = tasksComposable
+
+const task = ref<TaskWithUI | Record<string, unknown>>({})
+const taskRef = ref<number | null>(null)
 const toggleForm = ref<boolean>(false)
-const isLoading = ref<boolean>(true)
-const initialLoad = ref<boolean>(true)
-const addInProgress = ref<boolean>(false)
-const selectedElms = ref<Array<string>>([])
+const selectedElms = ref<Array<number>>([])
 const masterSelectAll = ref(false)
 const massRun = ref<boolean>(false)
 const massDelete = ref<boolean>(false)
 const table_container = ref(false)
-const inspectTask = ref<task_item | null>(null)
+const inspectTask = ref<TaskWithUI | null>(null)
 
 const reset_dialog = () => ({
   visible: false,
@@ -508,8 +507,6 @@ const reset_dialog = () => ({
 });
 
 const dialog_confirm = ref(reset_dialog())
-
-const remove_keys = ['in_progress']
 
 const query = ref()
 const toggleFilter = ref(false)
@@ -525,32 +522,35 @@ watch(query, () => {
   selectedElms.value = []
 })
 
+
 watch(masterSelectAll, value => {
   if (!value) {
     selectedElms.value = []
     return
   }
   for (const key in filteredTasks.value) {
-    const element = filteredTasks.value[key] as task_item
-    selectedElms.value.push(element.id)
+    const element = filteredTasks.value[key] as Task
+    if (element.id) {
+      selectedElms.value.push(element.id)
+    }
   }
 })
 
 watch(() => socket.isConnected, async () => {
-  if (socket.isConnected && initialLoad.value) {
-    socket.on('item_status', statusHandler)
-    await reloadContent(true)
-    initialLoad.value = false
+  if (!socket.isConnected) {
+    return
   }
+  socket.on('item_status', statusHandler)
 })
+
 
 const CACHE_KEY = 'tasks:handler_support'
 const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {})
 watch(taskHandlerSupport, (newValue) => sessionCache.set(CACHE_KEY, newValue), { deep: true })
 
-const getCacheKey = (task: task_item): string => `${task.id}:${task.url}`
+const getCacheKey = (task: Task): string => `${task.id}:${task.url}`
 
-const cleanStaleCache = (currentTasks: Array<task_item>) => {
+const cleanStaleCache = (currentTasks: ReadonlyArray<Task>) => {
   const validKeys = new Set(currentTasks.map(task => getCacheKey(task)))
   const cacheKeys = Object.keys(taskHandlerSupport.value)
 
@@ -561,7 +561,7 @@ const cleanStaleCache = (currentTasks: Array<task_item>) => {
   }
 }
 
-const recheckHandlerSupport = async (updatedTasks: Array<task_item>) => {
+const recheckHandlerSupport = async (updatedTasks: ReadonlyArray<Task>) => {
   for (const task of updatedTasks) {
     if (!task.timer && false !== task.handler_enabled) {
       await checkHandlerSupport(task)
@@ -569,7 +569,7 @@ const recheckHandlerSupport = async (updatedTasks: Array<task_item>) => {
   }
 }
 
-const checkHandlerSupport = async (task: task_item): Promise<boolean> => {
+const checkHandlerSupport = async (task: Task): Promise<boolean> => {
   const cacheKey = getCacheKey(task)
 
   if (undefined !== taskHandlerSupport.value[cacheKey]) {
@@ -577,13 +577,11 @@ const checkHandlerSupport = async (task: task_item): Promise<boolean> => {
   }
 
   try {
-    const response = await request('/api/tasks/inspect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: task.url, static_only: true })
+    const result = await tasksComposable.inspectTaskHandler({
+      url: task.url,
+      static_only: true
     })
-    const data = await response.json()
-    const supported = true === data?.matched
+    const supported = result?.matched === true
     taskHandlerSupport.value[cacheKey] = supported
     return supported
   } catch {
@@ -592,7 +590,7 @@ const checkHandlerSupport = async (task: task_item): Promise<boolean> => {
   }
 }
 
-const willTaskBeProcessed = (task: task_item): boolean => {
+const willTaskBeProcessed = (task: Task): boolean => {
   if (false === task.enabled) {
     return false
   }
@@ -604,40 +602,28 @@ const willTaskBeProcessed = (task: task_item): boolean => {
   return hasTimer || hasHandler
 }
 
-const filteredTasks = computed<task_item[]>(() => {
+const filteredTasks = computed(() => {
   const q = query.value?.toLowerCase();
   if (!q) return tasks.value;
 
   return tasks.value.filter(task => deepIncludes(task, q, new WeakSet()));
-});
+}) as ComputedRef<Array<TaskWithUI>>;
 
 const reloadContent = async (fromMounted: boolean = false) => {
   try {
-    isLoading.value = true
-    const response = await request('/api/tasks')
+    await tasksComposable.loadTasks()
 
-    if (fromMounted && !response.ok) {
-      return
+    if (tasks.value.length > 0) {
+      cleanStaleCache(tasks.value)
+      await recheckHandlerSupport(tasks.value)
     }
-
-    const data = await response.json()
-    if (data.length < 1) {
-      return
-    }
-
-    tasks.value = data
-    cleanStaleCache(data)
-    await recheckHandlerSupport(data)
   } catch (e) {
-    if (fromMounted) {
-      return
+    if (!fromMounted) {
+      console.error(e)
     }
-    console.error(e)
-    toast.error('Failed to fetch tasks.')
-  } finally {
-    isLoading.value = false
   }
 }
+
 
 const resetForm = (closeForm: boolean = false) => {
   task.value = {
@@ -652,41 +638,9 @@ const resetForm = (closeForm: boolean = false) => {
     handler_enabled: true,
     enabled: true
   }
-  taskRef.value = ''
-  addInProgress.value = false
+  taskRef.value = null
   if (closeForm) {
     toggleForm.value = false
-  }
-}
-
-const updateTasks = async (items: Array<task_item>) => {
-  try {
-    addInProgress.value = true
-
-    const response = await request('/api/tasks', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(items.map(item => cleanObject(toRaw(item), remove_keys))),
-    })
-
-    const data: Array<task_item> | error_response = await response.json()
-
-    if ("error" in data) {
-      toast.error(`Failed to update tasks. ${data.error}`);
-      return false
-    }
-
-    tasks.value = data
-    cleanStaleCache(data)
-    await recheckHandlerSupport(data)
-    resetForm(true)
-    return true
-  } catch (e: any) {
-    toast.error(`Failed to update tasks. ${e.message}`);
-  } finally {
-    addInProgress.value = false
   }
 }
 
@@ -710,139 +664,113 @@ const deleteSelected = async () => {
   massDelete.value = true
   dialog_confirm.value = reset_dialog()
 
-  const itemsToDelete = tasks.value.filter(t => selectedElms.value.includes(t.id))
+  const itemsToDelete = tasks.value.filter(t => t.id && selectedElms.value.includes(t.id))
   if (itemsToDelete.length < 1) {
     toast.error('No tasks found to delete.')
+    massDelete.value = false
     return
   }
 
+  // Delete tasks sequentially
   for (const item of itemsToDelete) {
-    const index = tasks.value.findIndex(t => t?.id === item.id)
-    if (index > -1) {
-      tasks.value.splice(index, 1)
+    if (item.id) {
+      await tasksComposable.deleteTask(item.id)
     }
   }
 
-  await nextTick()
-  const status = await updateTasks(tasks.value)
   selectedElms.value = []
 
-  if (!status) {
-    return
-  }
-
-  toast.success('Tasks deleted.')
   setTimeout(async () => {
     await nextTick()
     massDelete.value = false
   }, 500)
 }
 
-const deleteItem = async (item: task_item) => {
+const deleteItem = async (item: Task) => {
   if (true !== (await box.confirm(`Delete '${item.name}' task?`))) {
     return
   }
 
-  const index = tasks.value.findIndex((t) => t?.id === item.id)
-  if (index > -1) {
-    tasks.value.splice(index, 1)
-  } else {
-    toast.error('Task not found')
+  if (!item.id) {
+    toast.error('Task ID is missing')
     return
   }
 
-  const status = await updateTasks(tasks.value)
-
-  if (!status) {
-    return
-  }
-
-  toast.success('Task deleted.')
+  await tasksComposable.deleteTask(item.id)
 }
 
-const toggleEnabled = async (item: task_item) => {
+const toggleEnabled = async (item: Task) => {
+  if (!item.id) {
+    toast.error('Task ID is missing')
+    return
+  }
+
   const newStatus = !item.enabled
-  const actionText = newStatus ? 'enable' : 'disable'
 
-  try {
-    const response = await request(`/api/tasks/${item.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled: newStatus })
-    })
-    const data = await response.json()
+  const updated = await tasksComposable.patchTask(item.id, { enabled: newStatus })
 
-    if (data?.error) {
-      toast.error(data.error)
-      return
+  if (updated) {
+    // Update local reference
+    item.enabled = updated.enabled
+
+    // Update handler support cache if needed
+    if (updated.enabled) {
+      await checkHandlerSupport(updated)
     }
-
-    item.enabled = data.enabled
-    const func = data.enabled ? 'success' : 'warning'
-    toast[func](`Task '${item.name}' ${data.enabled ? 'enabled' : 'disabled'}.`)
-  } catch (e: any) {
-    toast.error(`Failed to ${actionText} task. ${e.message || 'Unknown error.'}`)
   }
 }
 
-const toggleHandlerEnabled = async (item: task_item) => {
-  const newStatus = !item.handler_enabled
-  const actionText = newStatus ? 'enable' : 'disable'
-
-  try {
-    const response = await request(`/api/tasks/${item.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ handler_enabled: newStatus })
-    })
-    const data = await response.json()
-
-    if (data?.error) {
-      toast.error(data.error)
-      return
-    }
-
-    item.handler_enabled = data.handler_enabled
-    const func = data.handler_enabled ? 'success' : 'warning'
-    toast[func](`Task handler for '${item.name}' ${data.handler_enabled ? 'enabled' : 'disabled'}.`)
-  } catch (e: any) {
-    toast.error(`Failed to ${actionText} task handler. ${e.message || 'Unknown error.'}`)
-  }
-}
-
-const updateItem = async ({ reference, task, archive_all }: { reference?: string | null | undefined, task: task_item, archive_all?: boolean }) => {
-  if (reference) {
-    // -- find the task index.
-    const index = tasks.value.findIndex((t) => t?.id === reference)
-    if (index > -1) {
-      tasks.value[index] = task
-    }
-  } else {
-    tasks.value.push(task)
-  }
-
-  const status = await updateTasks(tasks.value)
-  if (!status) {
+const toggleHandlerEnabled = async (item: Task) => {
+  if (!item.id) {
+    toast.error('Task ID is missing')
     return
   }
 
-  toast.success('Task updated.')
+  const newStatus = !item.handler_enabled
 
-  if (!reference && true === archive_all) {
-    const newTask = tasks.value[tasks.value.length - 1]
-    if (newTask) {
-      await sleep(1)
-      await nextTick()
-      await archiveAll(newTask, true)
+  const updated = await tasksComposable.patchTask(item.id, { handler_enabled: newStatus })
+
+  if (updated) {
+    // Update local reference
+    item.handler_enabled = updated.handler_enabled
+
+    // Update handler support cache if needed
+    if (updated.handler_enabled) {
+      await checkHandlerSupport(updated)
     }
+  }
+}
+
+const updateItem = async ({ reference, task, archive_all }: { reference?: number | null | undefined, task: Task, archive_all?: boolean }) => {
+  let createdOrUpdated: Task | null = null
+
+  if (reference) {
+    // Update existing task
+    createdOrUpdated = await tasksComposable.updateTask(reference, task)
+  } else {
+    // Create new task
+    createdOrUpdated = await tasksComposable.createTask(task)
+  }
+
+  if (!createdOrUpdated) {
+    return
+  }
+
+  // Check handler support for the new/updated task
+  await checkHandlerSupport(createdOrUpdated)
+
+  if (!reference && true === archive_all && createdOrUpdated.id) {
+    await sleep(1)
+    await nextTick()
+    await archiveAll(createdOrUpdated, true)
   }
 
   resetForm(true)
 }
 
-const editItem = (item: task_item) => {
-  task.value = item
-  taskRef.value = item.id
+const editItem = (item: Task) => {
+  task.value = { ...item }
+  taskRef.value = item.id ?? null
   toggleForm.value = true
 }
 
@@ -857,10 +785,9 @@ const calcPath = (path: string) => {
 }
 
 onMounted(async () => {
-  if (!socket.isConnected) {
-    return;
+  if (socket.isConnected) {
+    socket.on('item_status', statusHandler)
   }
-  socket.on('item_status', statusHandler)
   await reloadContent(true)
 });
 
@@ -915,7 +842,7 @@ const runSelected = async () => {
   }, 500)
 }
 
-const runNow = async (item: task_item, mass: boolean = false) => {
+const runNow = async (item: TaskWithUI, mass: boolean = false) => {
   if (!mass && true !== (await box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`))) {
     return
   }
@@ -924,10 +851,10 @@ const runNow = async (item: task_item, mass: boolean = false) => {
     item.in_progress = true
   }
 
-  const data = {
+  const data: Record<string, unknown> = {
     url: item.url,
     preset: item.preset,
-  } as task_item
+  }
 
   if (item.folder) {
     data.folder = item.folder
@@ -945,7 +872,7 @@ const runNow = async (item: task_item, mass: boolean = false) => {
     data.auto_start = item.auto_start
   }
 
-  socket.emit('add_url', data)
+  await stateStore.addDownload(data)
 
   if (true === mass) {
     return
@@ -959,17 +886,16 @@ const runNow = async (item: task_item, mass: boolean = false) => {
 
 onBeforeUnmount(() => socket.off('item_status', statusHandler))
 
-const statusHandler = async (stream: string) => {
-  const json = JSON.parse(stream)
-  const { status, msg } = json.data
+const statusHandler = async (payload: WSEP['item_status']) => {
+  const { status, msg } = payload.data || {}
 
   if ('error' === status) {
-    toast.error(msg)
+    toast.error(msg ?? 'Unknown error')
     return
   }
 }
 
-const exportItem = async (item: task_item) => {
+const exportItem = async (item: Task) => {
   const info = JSON.parse(JSON.stringify(item))
 
   const data = {
@@ -981,7 +907,7 @@ const exportItem = async (item: task_item) => {
     auto_start: info?.auto_start ?? true,
     handler_enabled: info?.handler_enabled ?? true,
     enabled: info?.enabled ?? true,
-  } as exported_task
+  } as ExportedTask
 
   if (info.template) {
     data.template = info.template
@@ -1005,9 +931,13 @@ const get_tags = (name: string): Array<string> => {
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
 
-const archiveAll = async (item: task_item, by_pass: boolean = false) => {
-  try {
+const archiveAll = async (item: TaskWithUI, by_pass: boolean = false) => {
+  if (!item.id) {
+    toast.error('Task ID is missing')
+    return
+  }
 
+  try {
     if (true !== by_pass) {
       const { status } = await cDialog({
         message: `Mark all '${item.name}' items as downloaded in download archive?`
@@ -1019,16 +949,7 @@ const archiveAll = async (item: task_item, by_pass: boolean = false) => {
     }
 
     item.in_progress = true
-
-    const response = await request(`/api/tasks/${item.id}/mark`, { method: 'POST' })
-    const data = await response.json()
-
-    if (data?.error) {
-      toast.error(data.error)
-      return
-    }
-
-    toast.success(data.message)
+    await tasksComposable.markTaskItems(item.id)
   } catch (e: any) {
     toast.error(`Failed to archive items. ${e.message || 'Unknown error.'}`)
     return
@@ -1037,7 +958,12 @@ const archiveAll = async (item: task_item, by_pass: boolean = false) => {
   }
 }
 
-const unarchiveAll = async (item: task_item) => {
+const unarchiveAll = async (item: TaskWithUI) => {
+  if (!item.id) {
+    toast.error('Task ID is missing')
+    return
+  }
+
   try {
     const { status } = await cDialog({
       message: `Remove all '${item.name}' items from download archive?`
@@ -1048,16 +974,7 @@ const unarchiveAll = async (item: task_item) => {
     }
 
     item.in_progress = true
-
-    const response = await request(`/api/tasks/${item.id}/mark`, { method: 'DELETE' })
-    const data = await response.json()
-
-    if (data?.error) {
-      toast.error(data.error)
-      return
-    }
-
-    toast.success(data.message)
+    await tasksComposable.unmarkTaskItems(item.id)
   } catch (e: any) {
     toast.error(`Failed to remove items from archive. ${e.message || 'Unknown error.'}`)
     return
@@ -1066,7 +983,12 @@ const unarchiveAll = async (item: task_item) => {
   }
 }
 
-const generateMeta = async (item: task_item) => {
+const generateMeta = async (item: TaskWithUI) => {
+  if (!item.id) {
+    toast.error('Task ID is missing')
+    return
+  }
+
   try {
     const { status } = await cDialog({
       rawHTML: `
@@ -1095,15 +1017,7 @@ const generateMeta = async (item: task_item) => {
     }
 
     item.in_progress = true
-    const response = await request(`/api/tasks/${item.id}/metadata`, { method: 'POST' })
-    const data = await response.json()
-
-    if (data?.error) {
-      toast.error(data.error)
-      return
-    }
-
-    toast.success('Metadata generation completed.')
+    await tasksComposable.generateTaskMetadata(item.id)
   } catch (e: any) {
     toast.error(`Failed to generate metadata. ${e.message || 'Unknown error.'}`)
     return

@@ -2,7 +2,7 @@ type DLFieldType = "string" | "text" | "bool";
 
 type DLField = {
   /** The id of the field */
-  id?: string;
+  id?: number;
 
   /** The name of the preset */
   name: string;

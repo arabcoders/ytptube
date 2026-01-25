@@ -1,5 +1,7 @@
+import asyncio
 import base64
 import copy
+import functools
 import glob
 import ipaddress
 import json
@@ -85,6 +87,9 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 "Regex to find tags in templates."
 DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
 "Regex to match ISO 8601 datetime strings."
+
+EXTRACTORS_SEMAPHORE: asyncio.Semaphore | None = None
+"Global semaphore for limiting concurrent extractor operations."
 
 
 class StreamingError(Exception):
@@ -414,6 +419,58 @@ def extract_info(
         data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
 
     return YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
+
+
+async def fetch_info(
+    config: dict,
+    url: str,
+    debug: bool = False,
+    no_archive: bool = False,
+    follow_redirect: bool = False,
+    sanitize_info: bool = False,
+    **kwargs,
+) -> dict:
+    """
+    Extracts video information from the given URL.
+
+    Args:
+        config (dict): Configuration options.
+        url (str): URL to extract information from.
+        debug (bool): Enable debug logging.
+        no_archive (bool): Disable download archive.
+        follow_redirect (bool): Follow URL redirects.
+        sanitize_info (bool): Sanitize the extracted information
+        **kwargs: Additional arguments.
+
+    Returns:
+        dict: Video information.
+
+    """
+    from .config import Config
+
+    global EXTRACTORS_SEMAPHORE  # noqa: PLW0603
+
+    conf = Config.get_instance()
+    if EXTRACTORS_SEMAPHORE is None:
+        EXTRACTORS_SEMAPHORE = asyncio.Semaphore(conf.extract_info_concurrency)
+
+    async with EXTRACTORS_SEMAPHORE:
+        return await asyncio.wait_for(
+            fut=asyncio.get_running_loop().run_in_executor(
+                None,
+                functools.partial(
+                    extract_info,
+                    config=config,
+                    url=url,
+                    debug=debug,
+                    no_archive=no_archive,
+                    follow_redirect=follow_redirect,
+                    sanitize_info=sanitize_info,
+                    **kwargs,
+                ),
+            ),
+            timeout=conf.extract_info_timeout,
+        )
 
 
 def _is_safe_key(key: any) -> bool:
@@ -1590,6 +1647,9 @@ def load_modules(root_path: Path, directory: Path):
     import pkgutil
 
     package_name: str = str(directory.relative_to(root_path).as_posix()).replace("/", ".")
+    # Ensure package name starts with 'app.' for proper module resolution
+    if not package_name.startswith("app."):
+        package_name = f"app.{package_name}"
 
     for _, name, _ in pkgutil.iter_modules([directory]):
         full_name: str = f"{package_name}.{name}"

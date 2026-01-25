@@ -10,11 +10,25 @@ from app.library.ItemDTO import ItemDTO
 from app.library.sqlite_store import SqliteStore
 
 
+async def reset_sqlite_store() -> None:
+    """Close and reset SqliteStore singleton for testing."""
+    if SqliteStore in SqliteStore._instances:
+        instance = SqliteStore._instances[SqliteStore]
+        # Only close if there's an active connection to avoid event loop issues
+        if instance._conn is not None:
+            try:
+                await instance.close()
+            except RuntimeError:
+                # Event loop issues - just reset without closing
+                pass
+    SqliteStore._reset_singleton()
+
+
 async def make_db(data: int = 100) -> SqliteStore:
     """Create a temporary database with test data."""
-    SqliteStore._reset_singleton()
+    await reset_sqlite_store()
     ins = SqliteStore.get_instance(db_path=":memory:")
-    await ins._ensure_conn()
+    await ins.get_connection()
 
     base_time = datetime.now(UTC)
     for i in range(data):
@@ -30,7 +44,7 @@ async def make_db(data: int = 100) -> SqliteStore:
             "status": "finished",
         }
 
-        await ins._conn.execute(
+        await ins.execute_raw(
             'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
             (
                 f"test-id-{i}",
@@ -40,8 +54,6 @@ async def make_db(data: int = 100) -> SqliteStore:
                 created_at,
             ),
         )
-    if data > 0:
-        await ins._conn.commit()
 
     return ins
 
@@ -226,7 +238,7 @@ class TestDataStorePagination:
 
         db = await make_db(data=100)
         try:
-            await db._conn.execute(
+            await db.execute_raw(
                 'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
                 (
                     "pending-id",
@@ -236,7 +248,7 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
-            await db._conn.execute(
+            await db.execute_raw(
                 'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
                 (
                     "downloading-id",
@@ -246,7 +258,6 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
-            await db._conn.commit()
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
 
             # Filter for finished items only
@@ -287,7 +298,7 @@ class TestDataStorePagination:
         }
         db = await make_db(data=0)
         try:
-            await db._conn.execute(
+            await db.execute_raw(
                 'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
                 (
                     "pending-id-2",
@@ -297,7 +308,7 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
-            await db._conn.execute(
+            await db.execute_raw(
                 'INSERT INTO "history" ("id", "type", "url", "data", "created_at") VALUES (?, ?, ?, ?, ?)',
                 (
                     "error-id",
@@ -307,7 +318,6 @@ class TestDataStorePagination:
                     datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
                 ),
             )
-            await db._conn.commit()
 
             datastore = DataStore(type=StoreType.HISTORY, connection=db)
 

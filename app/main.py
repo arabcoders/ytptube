@@ -14,21 +14,22 @@ from pathlib import Path
 import magic
 from aiohttp import web
 
+from app.features.conditions.service import Conditions
+from app.features.dl_fields.service import DLFields
+from app.features.notifications.service import Notifications
+from app.features.presets.deps import get_presets_repo
+from app.features.tasks.definitions.deps import get_task_definitions_repo
+from app.features.tasks.service import Tasks
 from app.library.BackgroundWorker import BackgroundWorker
-from app.library.conditions import Conditions
+from app.library.cache import Cache
 from app.library.config import Config
-from app.library.dl_fields import DLFields
 from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
 from app.library.HttpSocket import HttpSocket
-from app.library.Notifications import Notification
-from app.library.Presets import Presets
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
-from app.library.TaskDefinitions import TaskDefinitions
-from app.library.Tasks import Tasks
 from app.library.UpdateChecker import UpdateChecker
 
 LOG = logging.getLogger("app")
@@ -110,16 +111,17 @@ class Main:
         SqliteStore.get_instance(db_path=self._config.db_file).attach(self._app)
         BackgroundWorker.get_instance().attach(self._app)
         Scheduler.get_instance().attach(self._app)
+        Cache.get_instance().attach(self._app)
 
         self._socket.attach(self._app)
         self._http.attach(self._app)
 
-        Presets.get_instance().attach(self._app)
+        get_presets_repo().attach(self._app)
         Tasks.get_instance().attach(self._app)
-        Notification.get_instance().attach(self._app)
+        Notifications.get_instance().attach(self._app)
         Conditions.get_instance().attach(self._app)
         DLFields.get_instance().attach(self._app)
-        TaskDefinitions.get_instance().attach(self._app)
+        get_task_definitions_repo().attach(self._app)
         DownloadQueue.get_instance().attach(self._app)
         UpdateChecker.get_instance().attach(self._app)
 

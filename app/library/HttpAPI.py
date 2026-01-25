@@ -28,7 +28,7 @@ class HttpAPI:
         self.config: Config = Config.get_instance()
         self._notify: EventBus = EventBus.get_instance()
         self.rootPath: Path = root_path
-        self.cache = Cache()
+        self.cache: Cache = Cache.get_instance()
         self.app: web.Application | None = None
 
         services: Services = Services.get_instance()

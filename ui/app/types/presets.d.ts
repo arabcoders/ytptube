@@ -1,6 +1,6 @@
 type Preset = {
   /** Unique identifier for the preset */
-  id?: string
+  id?: number
   /** Preset name, e.g. "default" */
   name: string
   /** Optional description for the preset */
@@ -19,9 +19,17 @@ type Preset = {
   priority: number
 }
 
-type PresetImport = Preset & {
-  _type: 'preset'
-  _version: string
+/**
+ * Request payload for creating/updating preset
+ */
+type PresetRequest = {
+  name: string
+  description?: string
+  folder?: string
+  template?: string
+  cookies?: string
+  cli?: string
+  priority?: number
 }
 
-export type { Preset, PresetImport }
+export type { Preset, PresetRequest }
