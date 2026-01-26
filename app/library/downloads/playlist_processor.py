@@ -1,12 +1,9 @@
 """Playlist processing."""
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any
 
 from app.library.Utils import merge_dict, ytdlp_reject
-
-from .utils import handle_task_exception
 
 if TYPE_CHECKING:
     from app.library.ItemDTO import Item
@@ -59,87 +56,54 @@ async def process_playlist(
         "n_entries": len(entries),
     }
 
-    async def playlist_processor(i: int, etr: dict):
-        acquired = False
-        try:
-            item_name: str = (
-                f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
-            )
-            LOG.debug(f"Waiting to acquire lock for {item_name}")
-            await queue.processors.acquire()
-            acquired = True
-            LOG.debug(f"Acquired lock for {item_name}")
+    async def process_item(i: int, etr: dict) -> dict[str, str]:
+        """Process a single playlist item."""
+        item_name: str = (
+            f"'{entry.get('title')}: {i}/{playlist_keys['n_entries']}' - '{etr.get('id')}: {etr.get('title')}'"
+        )
+        LOG.info(f"Processing '{item_name}'.")
 
-            LOG.info(f"Processing '{item_name}'.")
+        _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
+        if not _status:
+            return {"status": "error", "msg": _msg}
 
-            _status, _msg = ytdlp_reject(entry=etr, yt_params=yt_params)
-            if not _status:
-                return {"status": "error", "msg": _msg}
+        extras: dict[str, Any] = {
+            **playlist_keys,
+            "playlist_index": i,
+            "playlist_index_number": i,
+            "playlist_autonumber": i,
+        }
 
-            extras: dict[str, Any] = {
-                **playlist_keys,
-                "playlist_index": i,
-                "playlist_index_number": i,
-                "playlist_autonumber": i,
-            }
+        for property in ("id", "title", "uploader", "uploader_id"):
+            if property in entry:
+                extras[f"playlist_{property}"] = entry.get(property)
 
-            for property in ("id", "title", "uploader", "uploader_id"):
-                if property in entry:
-                    extras[f"playlist_{property}"] = entry.get(property)
+        extractor_key = entry.get("ie_key") or entry.get("extractor_key") or entry.get("extractor") or ""
+        if "thumbnail" not in etr and "youtube" in str(extractor_key).lower():
+            extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**etr)
 
-            extractor_key = entry.get("ie_key") or entry.get("extractor_key") or entry.get("extractor") or ""
-            if "thumbnail" not in etr and "youtube" in str(extractor_key).lower():
-                extras["thumbnail"] = "https://img.youtube.com/vi/{id}/maxresdefault.jpg".format(**etr)
+        newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
 
-            newItem: Item = item.new_with(url=etr.get("url") or etr.get("webpage_url"), extras=extras)
+        if ("video" == etr.get("_type") and etr.get("url")) or (
+            "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0
+        ):
+            dct = merge_dict(merge_dict({"_type": "video"}, etr), entry)
+            dct.pop("entries", None)
+            return await queue.add(item=newItem, entry=dct, already=already)
 
-            if ("video" == etr.get("_type") and etr.get("url")) or (
-                "formats" in etr and isinstance(etr["formats"], list) and len(etr["formats"]) > 0
-            ):
-                dct = merge_dict(merge_dict({"_type": "video"}, etr), entry)
-                dct.pop("entries", None)
-                return await queue.add(item=newItem, entry=dct, already=already, playlist=True)
-
-            return await queue.add(item=newItem, already=already, playlist=True)
-        finally:
-            if acquired:
-                queue.processors.release()
+        return await queue.add(item=newItem, already=already)
 
     max_downloads: int = -1
     ytdlp_opts: dict[str, Any] = item.get_ytdlp_opts().get_all()
     if ytdlp_opts.get("max_downloads") and isinstance(ytdlp_opts.get("max_downloads"), int):
         max_downloads: int = ytdlp_opts.get("max_downloads")
 
-    batch_size: int = max(50, int(queue.config.playlist_items_concurrency) * 10)
-
-    async def run_batch(batch: list[tuple[int, dict]]) -> list[dict]:
-        tasks: list[asyncio.Task] = []
-        for i, etr in batch:
-            task = asyncio.create_task(
-                playlist_processor(i, etr),
-                name=f"playlist_processor_{etr.get('id')}_{i}",
-            )
-            task.add_done_callback(lambda t: handle_task_exception(t, LOG))
-            tasks.append(task)
-
-        batch_results: list[dict] = await asyncio.gather(*tasks)
-        await asyncio.sleep(0)
-        return batch_results
-
-    results: list[dict] = []
-    batch: list[tuple[int, dict]] = []
-
+    results: list[dict[str, str]] = []
     for i, etr in enumerate(entries, start=1):
         if max_downloads > 0 and i > max_downloads:
             break
 
-        batch.append((i, etr))
-        if len(batch) >= batch_size:
-            results.extend(await run_batch(batch))
-            batch.clear()
-
-    if batch:
-        results.extend(await run_batch(batch))
+        results.append(await process_item(i, etr))
 
     log_msg: str = f"Playlist '{playlist_name}' processing completed with '{len(results)}' entries."
     if max_downloads > 0 and len(entries) > max_downloads:

@@ -339,7 +339,7 @@ async def test_generic_task_handler_inspect(monkeypatch):
 
     # Mock fetch_info to return valid info with required fields for archive ID generation
     async def fake_fetch_info(config, url, **kwargs):  # noqa: ARG001
-        return {"id": "test_video_1", "extractor_key": "Example"}
+        return ({"id": "test_video_1", "extractor_key": "Example"}, [])
 
     with patch("app.features.tasks.definitions.handlers.generic.fetch_info", side_effect=fake_fetch_info):
         task = HandleTask(id=1, name="Inspect", url="https://example.com/api")

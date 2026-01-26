@@ -22,8 +22,9 @@ from app.features.tasks.definitions.schemas import (
 )
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.downloads.extractor import fetch_info
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
-from app.library.Utils import fetch_info, get_archive_id
+from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 
@@ -181,7 +182,7 @@ class GenericTaskHandler(BaseHandler):
                         f"[{definition.name}]: '{task.name}': Unable to generate static archive id for '{url}' in feed. Doing real request to fetch yt-dlp archive id."
                     )
 
-                    info = await fetch_info(
+                    (info, _) = await fetch_info(
                         config=task.get_ytdlp_opts().get_all(),
                         url=url,
                         no_archive=True,

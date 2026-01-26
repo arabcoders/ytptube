@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import glob
 import logging
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 
 from app.library.config import Config
+from app.library.downloads.extractor import shutdown_extractor
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
 from app.library.Scheduler import Scheduler
@@ -41,10 +41,6 @@ class DownloadQueue(metaclass=Singleton):
         "DataStore for the completed downloads."
         self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
         "DataStore for the download queue."
-        self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
-        "Semaphore to limit the number of concurrent processors."
-        self.add_sem = asyncio.Semaphore(self.config.add_items_concurrency)
-        "Semaphore to limit the number of concurrent add item operations."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
 
@@ -52,7 +48,7 @@ class DownloadQueue(metaclass=Singleton):
     def get_instance(config: Config | None = None) -> "DownloadQueue":
         return DownloadQueue(config=config)
 
-    def attach(self, _: web.Application) -> None:
+    def attach(self, app: web.Application) -> None:
         Services.get_instance().add("queue", self)
 
         async def event_handler(_, __):
@@ -79,7 +75,7 @@ class DownloadQueue(metaclass=Singleton):
                 id=delete_old_history.__name__,
             )
 
-        # app.on_shutdown.append(self.on_shutdown)
+        app.on_shutdown.append(self.on_shutdown)
 
     async def test(self) -> bool:
         await self.done.test()
@@ -221,11 +217,10 @@ class DownloadQueue(metaclass=Singleton):
         return self.pool.is_paused()
 
     async def on_shutdown(self, _: web.Application):
-        await self.pool.shutdown()
+        # await self.pool.shutdown()
+        await shutdown_extractor()
 
-    async def add(
-        self, item: Item, already: set | None = None, entry: dict | None = None, playlist: bool = False
-    ) -> dict[str, str]:
+    async def add(self, item: Item, already: set | None = None, entry: dict | None = None) -> dict[str, str]:
         """
         Add an item to the download queue.
 
@@ -233,13 +228,12 @@ class DownloadQueue(metaclass=Singleton):
             item: Item to be added to the queue
             already: Set of already downloaded items
             entry: Entry associated with the item (if already extracted)
-            playlist: Whether the item is part of a playlist
 
         Returns:
             dict[str, str]: Status dict with "status" and optional "msg" keys
 
         """
-        return await add_impl(queue=self, item=item, already=already, entry=entry, playlist=playlist)
+        return await add_impl(queue=self, item=item, already=already, entry=entry)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """

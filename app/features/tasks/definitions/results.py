@@ -101,7 +101,7 @@ class HandleTask(TaskSchema):
 
         params_dict = params.get_all()
 
-        ie_info: dict | None = await fetch_info(
+        (ie_info, _) = await fetch_info(
             params_dict,
             self.url,
             no_archive=True,
@@ -133,7 +133,7 @@ class HandleTask(TaskSchema):
 
         archive_file: Path = Path(archive_file)
 
-        ie_info: dict | None = await fetch_info(params, self.url, no_archive=True, follow_redirect=True)
+        (ie_info, _) = await fetch_info(params, self.url, no_archive=True, follow_redirect=True)
         if not ie_info or not isinstance(ie_info, dict):
             return (False, "Failed to extract information from URL.")
 

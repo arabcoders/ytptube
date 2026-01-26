@@ -16,13 +16,13 @@ from app.library.Utils import (
     archive_read,
     arg_converter,
     create_cookies_file,
-    fetch_info,
     get_extras,
     merge_dict,
     ytdlp_reject,
 )
 
 from .core import Download
+from .extractor import fetch_info
 from .playlist_processor import process_playlist
 from .video_processor import add_video
 
@@ -76,11 +76,7 @@ async def add_item(
 
 
 async def add(
-    queue: "DownloadQueue",
-    item: "Item",
-    already: set | None = None,
-    entry: dict | None = None,
-    playlist: bool = False,
+    queue: "DownloadQueue", item: "Item", already: set | None = None, entry: dict | None = None
 ) -> dict[str, str]:
     """
     Add an item to the download queue.
@@ -90,23 +86,11 @@ async def add(
         item: Item to be added to the queue
         already: Set of already downloaded items
         entry: Entry associated with the item (if already extracted)
-        playlist: Whether the item is part of a playlist
 
     Returns:
         dict[str, str]: Status dict with "status" and optional "msg" keys
 
     """
-    if playlist:
-        # If not done like this, it would lead to deadlocks when adding playlist items.
-        return await _add_impl(queue=queue, item=item, already=already, entry=entry)
-
-    async with queue.add_sem:
-        return await _add_impl(queue=queue, item=item, already=already, entry=entry)
-
-
-async def _add_impl(
-    queue: "DownloadQueue", item: "Item", already: set | None = None, entry: dict | None = None
-) -> dict[str, str]:
     _preset: Preset | None = Presets.get_instance().get(item.preset)
 
     if item.has_cli():
@@ -137,16 +121,7 @@ async def _add_impl(
     already.add(item.url)
 
     try:
-        logs: list = []
-
-        yt_conf: dict = {
-            "callback": {
-                "func": lambda _, msg: logs.append(msg),
-                "level": logging.WARNING,
-                "name": "callback-logger",
-            },
-            **item.get_ytdlp_opts().get_all(),
-        }
+        yt_conf: dict = item.get_ytdlp_opts().get_all()
 
         if yt_conf.get("external_downloader"):
             LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
@@ -209,12 +184,13 @@ async def _add_impl(
 
         if not entry:
             LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
-            entry: dict | None = await fetch_info(
+            (entry, logs) = await fetch_info(
                 config=yt_conf,
                 url=item.url,
                 debug=bool(queue.config.ytdlp_debug),
                 no_archive=False,
                 follow_redirect=True,
+                capture_logs=logging.WARNING,
             )
 
         if not entry:
