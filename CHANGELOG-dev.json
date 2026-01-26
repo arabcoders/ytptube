@@ -1,8 +1,29 @@
 [
     {
-        "tag": "dev-20260125-fe6fe42a",
-        "date": "2026-01-25T18:34:26+00:00",
+        "tag": "dev-20260126-fe0a1c5b",
+        "date": "2026-01-26T20:32:06+00:00",
         "commits": [
+            {
+                "sha": "fe0a1c5b",
+                "message": "fix: offload info extraction to ProcessPoolExecutor",
+                "author": "arabcoders",
+                "date": "2026-01-26T20:32:06+00:00",
+                "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5"
+            },
+            {
+                "sha": "98f25027",
+                "message": "refactor: use shared http clients",
+                "author": "arabcoders",
+                "date": "2026-01-26T14:42:24+00:00",
+                "full_sha": "98f25027bb5814c09b7e39c8465eb39da98cea7f"
+            },
+            {
+                "sha": "41bca681",
+                "message": "refactor: limit item add",
+                "author": "arabcoders",
+                "date": "2026-01-26T13:36:14+00:00",
+                "full_sha": "41bca681e5e3d1a49e8a5ccac5c6df5408dd2708"
+            },
             {
                 "sha": "fe6fe42a",
                 "message": "refactor: switch api/history to be fully async.",
@@ -3896,7 +3917,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fe6fe42a653d53f11edba712ddefbe58b274791b"
+        "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -224,6 +224,34 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5",
+    "date": "2026-01-26T20:32:06+00:00",
+    "commits": [
+      {
+        "sha": "fe0a1c5b",
+        "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5",
+        "message": "fix: offload info extraction to ProcessPoolExecutor",
+        "author": "arabcoders",
+        "date": "2026-01-26T20:32:06+00:00"
+      },
+      {
+        "sha": "98f25027",
+        "full_sha": "98f25027bb5814c09b7e39c8465eb39da98cea7f",
+        "message": "refactor: use shared http clients",
+        "author": "arabcoders",
+        "date": "2026-01-26T14:42:24+00:00"
+      },
+      {
+        "sha": "41bca681",
+        "full_sha": "41bca681e5e3d1a49e8a5ccac5c6df5408dd2708",
+        "message": "refactor: limit item add",
+        "author": "arabcoders",
+        "date": "2026-01-26T13:36:14+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.1.0",
     "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662",
     "date": "2026-01-11T18:36:42+00:00",
