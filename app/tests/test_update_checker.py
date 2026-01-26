@@ -153,7 +153,7 @@ class TestUpdateChecker:
         assert "" == config.yt_new_version, "Should not update yt_new_version when disabled"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_for_updates_finds_newer_version(self, mock_client):
         """Test that check_for_updates detects when a newer version is available."""
         from app.library.config import Config
@@ -173,9 +173,9 @@ class TestUpdateChecker:
         mock_ytdlp_response.json.return_value = {"tag_name": "9999.12.31"}
 
         mock_get = AsyncMock(side_effect=[mock_app_response, mock_ytdlp_response])
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = mock_get
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = mock_get
+        mock_client.return_value = mock_http
 
         with patch("app.library.UpdateChecker.APP_VERSION", "v1.0.0"):
             checker = UpdateChecker.get_instance(config=config)
@@ -190,7 +190,7 @@ class TestUpdateChecker:
         assert checker._job_id is None, "Should stop scheduled task after finding app update"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_for_updates_no_update_available(self, mock_client):
         """Test that check_for_updates correctly handles when no update is available."""
         from app.library.config import Config
@@ -210,9 +210,9 @@ class TestUpdateChecker:
         mock_ytdlp_response.json.return_value = {"tag_name": "2020.01.01"}
 
         mock_get = AsyncMock(side_effect=[mock_app_response, mock_ytdlp_response])
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = mock_get
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = mock_get
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
         checker._job_id = "test-job"
@@ -228,7 +228,7 @@ class TestUpdateChecker:
         assert "test-job" == checker._job_id, "Should keep scheduled task running"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_for_updates_handles_http_error(self, mock_client):
         """Test that check_for_updates handles HTTP errors gracefully."""
         from app.library.config import Config
@@ -242,9 +242,9 @@ class TestUpdateChecker:
         mock_response = MagicMock()
         mock_response.status_code = 404
 
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
 
@@ -258,7 +258,7 @@ class TestUpdateChecker:
         assert "" == config.yt_new_version, "Should not set yt_new_version on HTTP error"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_for_updates_handles_exception(self, mock_client):
         """Test that check_for_updates handles exceptions gracefully."""
         from app.library.config import Config
@@ -269,9 +269,9 @@ class TestUpdateChecker:
         config.new_version = ""
         config.yt_new_version = ""
 
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = AsyncMock(side_effect=Exception("Network error"))
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = AsyncMock(side_effect=Exception("Network error"))
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
 
@@ -337,10 +337,10 @@ class TestUpdateChecker:
         mock_ytdlp_response.json.return_value = {"tag_name": "2026.01.01"}
 
         mock_get = AsyncMock(side_effect=[mock_app_response, mock_ytdlp_response])
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = mock_get
+        mock_http = MagicMock()
+        mock_http.get = mock_get
 
-        with patch("app.library.UpdateChecker.async_client", return_value=mock_context):
+        with patch("app.library.UpdateChecker.get_async_client", return_value=mock_http):
             with patch("app.library.UpdateChecker.APP_VERSION", "v1.0.0"):
                 checker = UpdateChecker.get_instance(config=config)
                 await checker.check_for_updates()
@@ -383,7 +383,7 @@ class TestUpdateChecker:
             loop.close()
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_ytdlp_version_finds_newer_version(self, mock_client):
         """Test that yt-dlp check detects when a newer version is available."""
         from app.library.config import Config
@@ -397,9 +397,9 @@ class TestUpdateChecker:
         mock_response.status_code = 200
         mock_response.json.return_value = {"tag_name": "9999.12.31"}
 
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
         status, new_version = await checker._check_ytdlp_version()
@@ -409,7 +409,7 @@ class TestUpdateChecker:
         assert "9999.12.31" == config.yt_new_version, "Should store new yt-dlp version tag"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_ytdlp_version_no_update_available(self, mock_client):
         """Test that yt-dlp check correctly handles when no update is available."""
         from app.library.config import Config
@@ -423,9 +423,9 @@ class TestUpdateChecker:
         mock_response.status_code = 200
         mock_response.json.return_value = {"tag_name": "2020.01.01"}
 
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
         status, new_version = await checker._check_ytdlp_version()
@@ -435,7 +435,7 @@ class TestUpdateChecker:
         assert "" == config.yt_new_version, "Should clear yt_new_version when no update available"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_ytdlp_version_handles_http_error(self, mock_client):
         """Test that yt-dlp check handles HTTP errors gracefully."""
         from app.library.config import Config
@@ -448,9 +448,9 @@ class TestUpdateChecker:
         mock_response = MagicMock()
         mock_response.status_code = 500
 
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = AsyncMock(return_value=mock_response)
+        mock_client.return_value = mock_http
 
         checker = UpdateChecker.get_instance(config=config)
         status, new_version = await checker._check_ytdlp_version()
@@ -460,7 +460,7 @@ class TestUpdateChecker:
         assert "" == config.yt_new_version, "Should not set yt_new_version on HTTP error"
 
     @pytest.mark.asyncio
-    @patch("app.library.UpdateChecker.async_client")
+    @patch("app.library.UpdateChecker.get_async_client")
     async def test_check_for_updates_caches_separately(self, mock_client):
         """Test that app and yt-dlp checks are cached separately."""
         from app.library.config import Config
@@ -480,9 +480,9 @@ class TestUpdateChecker:
         mock_ytdlp_response.json.return_value = {"tag_name": "2026.01.01"}
 
         mock_get = AsyncMock(side_effect=[mock_app_response, mock_ytdlp_response])
-        mock_context = AsyncMock()
-        mock_context.__aenter__.return_value.get = mock_get
-        mock_client.return_value = mock_context
+        mock_http = MagicMock()
+        mock_http.get = mock_get
+        mock_client.return_value = mock_http
 
         with patch("app.library.UpdateChecker.APP_VERSION", "v1.0.0"):
             checker = UpdateChecker.get_instance(config=config)

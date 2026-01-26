@@ -27,6 +27,7 @@ from app.library.downloads import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.HttpAPI import HttpAPI
 from app.library.HttpSocket import HttpSocket
+from app.library.httpx_client import close_shared_clients
 from app.library.Scheduler import Scheduler
 from app.library.Services import Services
 from app.library.sqlite_store import SqliteStore
@@ -124,6 +125,7 @@ class Main:
         get_task_definitions_repo().attach(self._app)
         DownloadQueue.get_instance().attach(self._app)
         UpdateChecker.get_instance().attach(self._app)
+        self._app.on_shutdown.append(close_shared_clients)
 
         EventBus.get_instance().emit(
             Events.LOADED,

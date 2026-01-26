@@ -327,7 +327,8 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
         The response object.
 
     """
-    task_id = request.match_info.get("id")
+    if not (task_id := request.match_info.get("id")):
+        return web.json_response(data={"error": "No task id."}, status=web.HTTPBadRequest.status_code)
 
     try:
         if not (model := await repo.get(int(task_id))):
@@ -335,7 +336,6 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                 data={"error": f"Task '{task_id}' does not exist."}, status=web.HTTPNotFound.status_code
             )
 
-        # Convert to extended Task with handler methods
         task = ExtendedTask.model_validate(model)
 
         (save_path, _) = get_file(config.download_path, task.folder)
@@ -348,6 +348,11 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
         metadata, status, message = await task.fetch_metadata()
         if not status:
             return web.json_response(data={"error": message}, status=web.HTTPBadRequest.status_code)
+        if not isinstance(metadata, dict):
+            return web.json_response(
+                data={"error": "Failed to get metadata."},
+                status=web.HTTPBadRequest.status_code,
+            )
 
         if not task.folder:
             try:
@@ -395,7 +400,7 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
 
         from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
 
-        title: str = sanitize_filename(info.get("title"))
+        title: str = sanitize_filename(str(info.get("title") or ""))
         info_file: Path = save_path / f"{title} [{info.get('id')}].info.json"
         info_file.write_text(encoder.encode(metadata), encoding="utf-8")
         info["json_file"] = str(info_file.relative_to(config.download_path))
@@ -406,9 +411,7 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
         xml_content = "<tvshow>\n"
         xml_content += f"  <title>{NFOMakerPP._escape_text(info.get('title'))}</title>\n"
         if info.get("description"):
-            xml_content += (
-                f"  <plot>{NFOMakerPP._escape_text(NFOMakerPP._clean_description(info.get('description')))}</plot>\n"
-            )
+            xml_content += f"  <plot>{NFOMakerPP._escape_text(NFOMakerPP._clean_description(str(info.get('description') or '')))}</plot>\n"
         if info.get("id"):
             xml_content += f"  <id>{NFOMakerPP._escape_text(info.get('id'))}</id>\n"
         if info.get("id_type") and info.get("id"):
@@ -425,52 +428,53 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
         xml_file.write_text(xml_content, encoding="utf-8")
 
         try:
-            from yt_dlp.utils.networking import random_user_agent
-
-            from app.library.httpx_client import async_client
+            from app.library.httpx_client import (
+                Globals,
+                build_request_headers,
+                get_async_client,
+                resolve_curl_transport,
+            )
 
             ytdlp_args: dict = task.get_ytdlp_opts().get_all()
-            opts: dict[str, Any] = {
-                "headers": {
-                    "User-Agent": request.headers.get("User-Agent", ytdlp_args.get("user_agent", random_user_agent())),
-                },
-            }
-            if proxy := ytdlp_args.get("proxy"):
-                opts["proxy"] = proxy
+            use_curl = resolve_curl_transport()
+            request_headers = build_request_headers(
+                user_agent=request.headers.get("User-Agent", ytdlp_args.get("user_agent", Globals.get_random_agent())),
+                use_curl=use_curl,
+            )
 
-            try:
-                from httpx_curl_cffi import AsyncCurlTransport
-
-                opts["transport"] = AsyncCurlTransport(
-                    impersonate="chrome",
-                    default_headers=True,
-                )
-                opts.pop("headers", None)
-            except Exception:
-                pass
-
-            async with async_client(**opts) as client:
-                for key in info.get("thumbnails", {}):
-                    try:
-                        url = info["thumbnails"][key]
-                        LOG.info(f"Fetching thumbnail '{key}' from '{url}'")
-                        if not url:
-                            continue
-
-                        try:
-                            validate_url(url, allow_internal=config.allow_internal_urls)
-                        except ValueError:
-                            LOG.warning(f"Invalid thumbnail url '{url}'")
-                            continue
-
-                        resp = await client.request(method="GET", url=url, follow_redirects=True)
-
-                        img_file = save_path / f"{key}.jpg"
-                        img_file.write_bytes(resp.content)
-                        info["thumbnails"][key] = str(img_file.relative_to(config.download_path))
-                    except Exception as e:
-                        LOG.warning(f"Failed to fetch thumbnail '{key}' from '{url}'. '{e!s}'")
+            client = get_async_client(proxy=ytdlp_args.get("proxy"), use_curl=use_curl)
+            thumbnails = info.get("thumbnails", {})
+            if not isinstance(thumbnails, dict):
+                thumbnails = {}
+                info["thumbnails"] = thumbnails
+            for key in thumbnails:
+                url: str | None = None
+                try:
+                    url = thumbnails.get(key)
+                    LOG.info(f"Fetching thumbnail '{key}' from '{url}'")
+                    if not url:
                         continue
+
+                    try:
+                        validate_url(url, allow_internal=config.allow_internal_urls)
+                    except ValueError:
+                        LOG.warning(f"Invalid thumbnail url '{url}'")
+                        continue
+
+                    resp = await client.request(
+                        method="GET",
+                        url=url,
+                        follow_redirects=True,
+                        headers=request_headers,
+                    )
+
+                    img_file = save_path / f"{key}.jpg"
+                    img_file.write_bytes(resp.content)
+                    thumbnails[key] = str(img_file.relative_to(config.download_path))
+                except Exception as e:
+                    url_log = url or "unknown"
+                    LOG.warning(f"Failed to fetch thumbnail '{key}' from '{url_log}'. '{e!s}'")
+                    continue
         except Exception as e:
             LOG.warning(f"Failed to fetch thumbnails. '{e!s}'")
 

@@ -1,12 +1,12 @@
 # flake8: noqa: ARG004
-from typing import Any
-
-import httpx
-from yt_dlp.utils.networking import random_user_agent
+from typing import TYPE_CHECKING, Any
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskResult
 from app.library.config import Config
-from app.library.httpx_client import async_client
+from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class BaseHandler:
@@ -33,7 +33,7 @@ class BaseHandler:
     @staticmethod
     async def request(
         url: str, headers: dict | None = None, ytdlp_opts: dict | None = None, **kwargs
-    ) -> httpx.Response:
+    ) -> "httpx.Response":
         """
         Make an HTTP request.
 
@@ -50,31 +50,21 @@ class BaseHandler:
         headers = {} if not isinstance(headers, dict) else headers
         ytdlp_opts = {} if not isinstance(ytdlp_opts, dict) else ytdlp_opts
 
-        opts: dict[str, Any] = {
-            "headers": {
-                "User-Agent": random_user_agent(),
-            },
-        }
+        use_curl = resolve_curl_transport()
+        request_headers = build_request_headers(
+            base_headers=headers,
+            user_agent=Globals.get_random_agent(),
+            use_curl=use_curl,
+        )
 
-        try:
-            from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
-
-            opts["transport"] = AsyncCurlTransport(
-                impersonate="chrome",
-                default_headers=True,
-                curl_options={CurlOpt.FRESH_CONNECT: True},
-            )
-            opts["headers"].pop("User-Agent", None)
-        except Exception:
-            pass
-
-        for k, v in headers.items():
-            opts["headers"][k] = v
-
-        if proxy := ytdlp_opts.get("proxy", None):
-            opts["proxy"] = proxy
-
-        async with async_client(**opts) as client:
-            method = kwargs.pop("method", "GET").upper()
-            timeout = ytdlp_opts.get("timeout", ytdlp_opts.get("socket_timeout", 120))
-            return await client.request(method=method, url=url, timeout=timeout, **kwargs)
+        proxy = ytdlp_opts.get("proxy", None)
+        client = get_async_client(proxy=proxy, use_curl=use_curl)
+        method = kwargs.pop("method", "GET").upper()
+        timeout = ytdlp_opts.get("timeout", ytdlp_opts.get("socket_timeout", 120))
+        return await client.request(
+            method=method,
+            url=url,
+            headers=request_headers,
+            timeout=timeout,
+            **kwargs,
+        )
