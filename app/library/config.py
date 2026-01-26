@@ -207,6 +207,9 @@ class Config(metaclass=Singleton):
     live_premiere_buffer: int = 5
     """The buffer time in minutes to add to video duration to wait before starting premiere download."""
 
+    add_items_concurrency: int = 4
+    """The number of concurrent add items to be processed at same time."""
+
     playlist_items_concurrency: int = 4
     """The number of concurrent playlist items to be processed at same time."""
 
@@ -274,6 +277,7 @@ class Config(metaclass=Singleton):
         "auto_clear_history_days",
         "default_pagination",
         "extract_info_concurrency",
+        "add_items_concurrency",
         "flaresolverr_max_timeout",
         "flaresolverr_client_timeout",
         "flaresolverr_cache_ttl",

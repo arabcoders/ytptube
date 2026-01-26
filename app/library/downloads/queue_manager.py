@@ -43,6 +43,8 @@ class DownloadQueue(metaclass=Singleton):
         "DataStore for the download queue."
         self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
         "Semaphore to limit the number of concurrent processors."
+        self.add_sem = asyncio.Semaphore(self.config.add_items_concurrency)
+        "Semaphore to limit the number of concurrent add item operations."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
 
@@ -221,7 +223,9 @@ class DownloadQueue(metaclass=Singleton):
     async def on_shutdown(self, _: web.Application):
         await self.pool.shutdown()
 
-    async def add(self, item: Item, already: set | None = None, entry: dict | None = None) -> dict[str, str]:
+    async def add(
+        self, item: Item, already: set | None = None, entry: dict | None = None, playlist: bool = False
+    ) -> dict[str, str]:
         """
         Add an item to the download queue.
 
@@ -229,12 +233,13 @@ class DownloadQueue(metaclass=Singleton):
             item: Item to be added to the queue
             already: Set of already downloaded items
             entry: Entry associated with the item (if already extracted)
+            playlist: Whether the item is part of a playlist
 
         Returns:
             dict[str, str]: Status dict with "status" and optional "msg" keys
 
         """
-        return await add_impl(queue=self, item=item, already=already, entry=entry)
+        return await add_impl(queue=self, item=item, already=already, entry=entry, playlist=playlist)
 
     async def cancel(self, ids: list[str]) -> dict[str, str]:
         """

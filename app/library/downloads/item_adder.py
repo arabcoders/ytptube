@@ -76,7 +76,11 @@ async def add_item(
 
 
 async def add(
-    queue: "DownloadQueue", item: "Item", already: set | None = None, entry: dict | None = None
+    queue: "DownloadQueue",
+    item: "Item",
+    already: set | None = None,
+    entry: dict | None = None,
+    playlist: bool = False,
 ) -> dict[str, str]:
     """
     Add an item to the download queue.
@@ -86,11 +90,23 @@ async def add(
         item: Item to be added to the queue
         already: Set of already downloaded items
         entry: Entry associated with the item (if already extracted)
+        playlist: Whether the item is part of a playlist
 
     Returns:
         dict[str, str]: Status dict with "status" and optional "msg" keys
 
     """
+    if playlist:
+        # If not done like this, it would lead to deadlocks when adding playlist items.
+        return await _add_impl(queue=queue, item=item, already=already, entry=entry)
+
+    async with queue.add_sem:
+        return await _add_impl(queue=queue, item=item, already=already, entry=entry)
+
+
+async def _add_impl(
+    queue: "DownloadQueue", item: "Item", already: set | None = None, entry: dict | None = None
+) -> dict[str, str]:
     _preset: Preset | None = Presets.get_instance().get(item.preset)
 
     if item.has_cli():

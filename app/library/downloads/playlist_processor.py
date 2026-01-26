@@ -98,9 +98,9 @@ async def process_playlist(
             ):
                 dct = merge_dict(merge_dict({"_type": "video"}, etr), entry)
                 dct.pop("entries", None)
-                return await queue.add(item=newItem, entry=dct, already=already)
+                return await queue.add(item=newItem, entry=dct, already=already, playlist=True)
 
-            return await queue.add(item=newItem, already=already)
+            return await queue.add(item=newItem, already=already, playlist=True)
         finally:
             if acquired:
                 queue.processors.release()

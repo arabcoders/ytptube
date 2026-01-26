@@ -439,12 +439,11 @@ async def task_metadata(request: Request, repo: TasksRepository, config: Config,
                 opts["proxy"] = proxy
 
             try:
-                from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
+                from httpx_curl_cffi import AsyncCurlTransport
 
                 opts["transport"] = AsyncCurlTransport(
                     impersonate="chrome",
                     default_headers=True,
-                    curl_options={CurlOpt.FRESH_CONNECT: True},
                 )
                 opts.pop("headers", None)
             except Exception:
