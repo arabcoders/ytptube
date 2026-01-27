@@ -225,9 +225,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "da9f08297866279cc0c70f31c5e9d104430501ac",
-    "date": "2026-01-27T07:17:22+00:00",
+    "full_sha": "dae141a6c22e11d225172c5edce1ce21c862b2d2",
+    "date": "2026-01-27T07:41:17+00:00",
     "commits": [
+      {
+        "sha": "dae141a6",
+        "full_sha": "dae141a6c22e11d225172c5edce1ce21c862b2d2",
+        "message": "revert: changes to playlist processor",
+        "author": "arabcoders",
+        "date": "2026-01-27T07:41:17+00:00"
+      },
       {
         "sha": "da9f0829",
         "full_sha": "da9f08297866279cc0c70f31c5e9d104430501ac",
