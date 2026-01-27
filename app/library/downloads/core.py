@@ -167,7 +167,7 @@ class Download:
                     follow_redirect=True,
                     capture_logs=logging.WARNING,
                 )
-                self.logs = [log["msg"] for log in logs]
+                self.logs = logs
 
                 if info:
                     self.info_dict = info

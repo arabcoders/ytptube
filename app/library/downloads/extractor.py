@@ -257,10 +257,10 @@ def extract_info_sync(
         level=logging.DEBUG if debug else logging.WARNING,
     )
 
-    captured_logs: list[dict[str, Any]] = kwargs.get("captured_logs", [])
+    captured_logs: list[str] = kwargs.get("captured_logs", [])
     if capture_logs is not None:
         log_wrapper.add_target(
-            target=lambda level, msg: captured_logs.append({"level": level, "msg": msg}),
+            target=lambda _, msg: captured_logs.append(msg),
             level=capture_logs,
             name="log-capture",
         )
