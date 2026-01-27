@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260126-fe0a1c5b",
-        "date": "2026-01-26T20:32:06+00:00",
+        "tag": "dev-20260127-da9f0829",
+        "date": "2026-01-27T07:17:22+00:00",
         "commits": [
+            {
+                "sha": "da9f0829",
+                "message": "fix: unintended return type change.",
+                "author": "arabcoders",
+                "date": "2026-01-27T07:17:22+00:00",
+                "full_sha": "da9f08297866279cc0c70f31c5e9d104430501ac"
+            },
             {
                 "sha": "fe0a1c5b",
                 "message": "fix: offload info extraction to ProcessPoolExecutor",
@@ -3917,7 +3924,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5"
+        "full_sha": "da9f08297866279cc0c70f31c5e9d104430501ac"
     },
     {
         "tag": "dev-20250616-c07465a6",
