@@ -6,14 +6,15 @@ from xml.etree.ElementTree import Element
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.library.cache import Cache
-from app.library.Utils import fetch_info, get_archive_id
+from app.library.downloads.extractor import fetch_info
+from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("handlers.rss")
 CACHE: Cache = Cache()
 
 
@@ -179,7 +180,7 @@ class RssGenericHandler(BaseHandler):
                         "Doing real request to fetch yt-dlp archive ID."
                     )
 
-                    info = await fetch_info(
+                    (info, _) = await fetch_info(
                         config=params,
                         url=url,
                         no_archive=True,

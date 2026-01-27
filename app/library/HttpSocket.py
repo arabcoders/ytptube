@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import json
 import logging
@@ -186,10 +187,20 @@ class HttpSocket:
 
             await handle_connect(sid)
 
+            async def handle_message_safe(sid: str, message: str) -> None:
+                """Wrapper to handle message with error logging"""
+                try:
+                    await handle_message(sid, message)
+                except Exception as e:
+                    LOG.exception(e)
+                    LOG.error(f"Error handling WebSocket message from client '{sid}': {e}")
+
             try:
+                i: int = 0
                 async for msg in ws:
                     if msg.type == web.WSMsgType.TEXT:
-                        await handle_message(sid, msg.data)
+                        i = i + 1
+                        asyncio.create_task(handle_message_safe(sid, msg.data), name=f"ws_msg_{sid}_{i}")
                     elif msg.type == web.WSMsgType.ERROR:
                         LOG.error(f"WebSocket connection closed with exception {ws.exception()}")
             finally:

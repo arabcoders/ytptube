@@ -8,7 +8,7 @@ from aiohttp import web
 from .cache import Cache
 from .config import Config
 from .Events import EventBus, Events
-from .httpx_client import async_client
+from .httpx_client import get_async_client
 from .Scheduler import Scheduler
 from .Singleton import Singleton
 from .version import APP_VERSION
@@ -147,36 +147,37 @@ class UpdateChecker(metaclass=Singleton):
         try:
             LOG.info(f"Checking for {name} updates...")
 
-            async with async_client(timeout=10.0) as client:
-                response = await client.get(
-                    api_url,
-                    headers={"Accept": "application/vnd.github+json"},
-                )
+            client = get_async_client(use_curl=False)
+            response = await client.get(
+                api_url,
+                headers={"Accept": "application/vnd.github+json"},
+                timeout=10.0,
+            )
 
-                if 200 != response.status_code:
-                    LOG.warning(f"Failed to check for {name} updates: HTTP {response.status_code}")
-                    return ("error", None)
+            if 200 != response.status_code:
+                LOG.warning(f"Failed to check for {name} updates: HTTP {response.status_code}")
+                return ("error", None)
 
-                data: dict[str, Any] = response.json()
+            data: dict[str, Any] = response.json()
 
-                latest_tag: str = data.get("tag_name", "")
-                if not latest_tag:
-                    LOG.warning(f"No tag_name found in {name} GitHub release data.")
-                    return ("error", None)
+            latest_tag: str = data.get("tag_name", "")
+            if not latest_tag:
+                LOG.warning(f"No tag_name found in {name} GitHub release data.")
+                return ("error", None)
 
-                compare_current: str = current_version.lstrip("v") if strip_v_prefix else current_version
-                compare_latest: str = latest_tag.lstrip("v") if strip_v_prefix else latest_tag
+            compare_current: str = current_version.lstrip("v") if strip_v_prefix else current_version
+            compare_latest: str = latest_tag.lstrip("v") if strip_v_prefix else latest_tag
 
-                if self._compare_versions(compare_current, compare_latest):
-                    LOG.warning(f"{name} update available: {current_version} -> {latest_tag}")
-                    result: tuple[str, str] = ("update_available", latest_tag)
-                    await self._cache.aset(cache_key, result, self.CACHE_DURATION)
-                    return result
-
-                LOG.info(f"No {name} updates available.")
-                result: tuple[str, None] = ("up_to_date", None)
+            if self._compare_versions(compare_current, compare_latest):
+                LOG.warning(f"{name} update available: {current_version} -> {latest_tag}")
+                result = ("update_available", latest_tag)
                 await self._cache.aset(cache_key, result, self.CACHE_DURATION)
                 return result
+
+            LOG.info(f"No {name} updates available.")
+            result = ("up_to_date", None)
+            await self._cache.aset(cache_key, result, self.CACHE_DURATION)
+            return result
         except Exception as e:
             LOG.exception(e)
             LOG.error(f"Error checking for {name} updates: {e!s}")

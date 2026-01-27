@@ -15,9 +15,10 @@ import yt_dlp.utils
 
 from app.library.config import Config
 from app.library.Events import EventBus, Events
-from app.library.Utils import create_cookies_file, extract_info, extract_ytdlp_logs
+from app.library.Utils import create_cookies_file, extract_ytdlp_logs
 from app.library.ytdlp import YTDLP
 
+from .extractor import extract_info_sync
 from .hooks import HookHandlers, NestedLogger
 from .process_manager import ProcessManager
 from .status_tracker import StatusTracker
@@ -156,21 +157,17 @@ class Download:
 
             if not self.info_dict or not isinstance(self.info_dict, dict):
                 self.logger.info(f"Extracting info for '{self.info.url}'.")
-                self.logs = []
                 ie_params: dict = params.copy()
-                ie_params["callback"] = {
-                    "func": lambda _, msg: self.logs.append(msg),
-                    "level": logging.WARNING,
-                    "name": "callback-logger",
-                }
 
-                info: dict = extract_info(
+                (info, logs) = extract_info_sync(
                     config=ie_params,
                     url=self.info.url,
                     debug=self.debug,
                     no_archive=not params.get("download_archive", False),
                     follow_redirect=True,
+                    capture_logs=logging.WARNING,
                 )
+                self.logs = logs
 
                 if info:
                     self.info_dict = info

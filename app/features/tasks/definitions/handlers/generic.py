@@ -14,7 +14,6 @@ from urllib.parse import urljoin
 
 import jmespath
 from parsel import Selector
-from yt_dlp.utils.networking import random_user_agent
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.definitions.schemas import (
@@ -23,8 +22,9 @@ from app.features.tasks.definitions.schemas import (
 )
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.httpx_client import async_client
-from app.library.Utils import fetch_info, get_archive_id
+from app.library.downloads.extractor import fetch_info
+from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
+from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     import httpx
     from parsel.selector import SelectorList
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("handlers.generic")
 CACHE: Cache = Cache()
 
 
@@ -48,7 +48,7 @@ class GenericTaskHandler(BaseHandler):
     """Modification times of source files to detect changes."""
 
     @classmethod
-    async def refresh_definitions(cls, force: bool = False) -> None:
+    async def refresh_definitions(cls, force: bool = False) -> list[TaskDefinition]:
         """
         Refresh the cached task definitions if source files have changed.
 
@@ -66,12 +66,7 @@ class GenericTaskHandler(BaseHandler):
             repo = TaskDefinitionsRepository.get_instance()
             models = await repo.list()
 
-            definitions: list[TaskDefinition] = []
-            for model in models:
-                td = model_to_schema(model)
-                definitions.append(td)
-
-            cls._definitions = definitions
+            cls._definitions = [model_to_schema(model) for model in models]
             return cls._definitions
         except Exception as exc:
             LOG.error(f"Failed to load task definitions from database: {exc}")
@@ -97,10 +92,10 @@ class GenericTaskHandler(BaseHandler):
 
             try:
                 for matcher in definition.match_url:
-                    pattern_str = None
+                    pattern_str: str | None = None
 
                     if matcher.startswith("/") and matcher.endswith("/") and len(matcher) > 2:
-                        pattern_str: str = matcher[1:-1]
+                        pattern_str = matcher[1:-1]
                     else:
                         pattern_str = fnmatch.translate(matcher)
 
@@ -187,7 +182,7 @@ class GenericTaskHandler(BaseHandler):
                         f"[{definition.name}]: '{task.name}': Unable to generate static archive id for '{url}' in feed. Doing real request to fetch yt-dlp archive id."
                     )
 
-                    info = await fetch_info(
+                    (info, _) = await fetch_info(
                         config=task.get_ytdlp_opts().get_all(),
                         url=url,
                         no_archive=True,
@@ -274,53 +269,37 @@ class GenericTaskHandler(BaseHandler):
 
         """
         headers: dict[str, str] = {**definition.definition.request.headers}
-        client_options: dict[str, Any] = {
-            "headers": {
-                "User-Agent": random_user_agent(),
-            }
-        }
-
-        try:
-            from httpx_curl_cffi import AsyncCurlTransport, CurlOpt
-
-            client_options["transport"] = AsyncCurlTransport(
-                impersonate="chrome",
-                default_headers=True,
-                curl_options={CurlOpt.FRESH_CONNECT: True},
-            )
-            client_options["headers"].pop("User-Agent", None)
-        except Exception:
-            pass
-
-        if headers:
-            client_options["headers"].update(headers)
-
-        if proxy := ytdlp_opts.get("proxy"):
-            client_options["proxy"] = proxy
+        use_curl = resolve_curl_transport()
+        request_headers = build_request_headers(
+            base_headers=headers,
+            user_agent=Globals.get_random_agent(),
+            use_curl=use_curl,
+        )
 
         timeout_value: float | Any = definition.definition.request.timeout or ytdlp_opts.get("socket_timeout", 120)
 
-        async with async_client(**client_options) as client:
-            response: httpx.Response = await client.request(
-                method=definition.definition.request.method.upper(),
-                url=url,
-                params=definition.definition.request.params or None,
-                data=definition.definition.request.data,
-                json=definition.definition.request.json_data,
-                timeout=timeout_value,
-            )
-            response.raise_for_status()
+        client = get_async_client(proxy=ytdlp_opts.get("proxy"), use_curl=use_curl)
+        response: httpx.Response = await client.request(
+            method=definition.definition.request.method.upper(),
+            url=url,
+            params=definition.definition.request.params or None,
+            data=definition.definition.request.data,
+            json=definition.definition.request.json_data,
+            timeout=timeout_value,
+            headers=request_headers,
+        )
+        response.raise_for_status()
 
-            if "json" == definition.definition.response.type:
-                try:
-                    json_data: dict[str, Any] = response.json()
-                except Exception as exc:
-                    LOG.error(f"Failed to decode JSON response from '{url}': {exc}")
-                    return response.text, None
+        if "json" == definition.definition.response.type:
+            try:
+                json_data: dict[str, Any] = response.json()
+            except Exception as exc:
+                LOG.error(f"Failed to decode JSON response from '{url}': {exc}")
+                return response.text, None
 
-                return response.text, json_data
+            return response.text, json_data
 
-            return response.text, None
+        return response.text, None
 
     @staticmethod
     async def _fetch_with_selenium(

@@ -16,13 +16,13 @@ from app.library.Utils import (
     archive_read,
     arg_converter,
     create_cookies_file,
-    fetch_info,
     get_extras,
     merge_dict,
     ytdlp_reject,
 )
 
 from .core import Download
+from .extractor import fetch_info
 from .playlist_processor import process_playlist
 from .video_processor import add_video
 
@@ -121,16 +121,7 @@ async def add(
     already.add(item.url)
 
     try:
-        logs: list = []
-
-        yt_conf: dict = {
-            "callback": {
-                "func": lambda _, msg: logs.append(msg),
-                "level": logging.WARNING,
-                "name": "callback-logger",
-            },
-            **item.get_ytdlp_opts().get_all(),
-        }
+        yt_conf: dict = item.get_ytdlp_opts().get_all()
 
         if yt_conf.get("external_downloader"):
             LOG.warning(f"Using external downloader '{yt_conf.get('external_downloader')}' for '{item.url}'.")
@@ -193,12 +184,13 @@ async def add(
 
         if not entry:
             LOG.info(f"Extracting '{item.url}'{' with cookies' if yt_conf.get('cookiefile') else ''}.")
-            entry: dict | None = await fetch_info(
+            (entry, logs) = await fetch_info(
                 config=yt_conf,
                 url=item.url,
                 debug=bool(queue.config.ytdlp_debug),
                 no_archive=False,
                 follow_redirect=True,
+                capture_logs=logging.WARNING,
             )
 
         if not entry:

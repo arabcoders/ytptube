@@ -1,7 +1,5 @@
-import asyncio
 import base64
 import copy
-import functools
 import glob
 import ipaddress
 import json
@@ -22,8 +20,6 @@ from typing import Any
 from Crypto.Cipher import AES
 from yt_dlp.utils import age_restricted
 
-from .LogWrapper import LogWrapper
-from .mini_filter import match_str
 from .ytdlp import YTDLP, make_archive_id
 
 LOG: logging.Logger = logging.getLogger("Utils")
@@ -87,9 +83,6 @@ TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 "Regex to find tags in templates."
 DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
 "Regex to match ISO 8601 datetime strings."
-
-EXTRACTORS_SEMAPHORE: asyncio.Semaphore | None = None
-"Global semaphore for limiting concurrent extractor operations."
 
 
 class StreamingError(Exception):
@@ -324,156 +317,7 @@ def calc_download_path(base_path: str | Path, folder: str | None = None, create_
     return str(download_path)
 
 
-def extract_info(
-    config: dict,
-    url: str,
-    debug: bool = False,
-    no_archive: bool = False,
-    follow_redirect: bool = False,
-    sanitize_info: bool = False,
-    **kwargs,
-) -> dict:
-    """
-    Extracts video information from the given URL.
-
-    Args:
-        config (dict): Configuration options.
-        url (str): URL to extract information from.
-        debug (bool): Enable debug logging.
-        no_archive (bool): Disable download archive.
-        follow_redirect (bool): Follow URL redirects.
-        sanitize_info (bool): Sanitize the extracted information
-        **kwargs: Additional arguments.
-
-    Returns:
-        dict: Video information.
-
-    """
-    params: dict = {
-        **config,
-        "simulate": True,
-        "color": "no_color",
-        "extract_flat": True,
-        "skip_download": True,
-        "ignoreerrors": True,
-        "ignore_no_formats_error": True,
-    }
-
-    if debug:
-        params["verbose"] = True
-    else:
-        params["quiet"] = True
-
-    log_wrapper = LogWrapper()
-    idDict: dict[str, str | None] = get_archive_id(url=url)
-    archive_id: str | None = f".{idDict['id']}" if idDict.get("id") else None
-
-    log_wrapper.add_target(
-        target=logging.getLogger(f"yt-dlp{archive_id if archive_id else '.extract_info'}"),
-        level=logging.DEBUG if debug else logging.WARNING,
-    )
-
-    if "callback" in params:
-        if isinstance(params["callback"], dict):
-            log_wrapper.add_target(
-                target=params["callback"]["func"],
-                level=params["callback"]["level"] or logging.ERROR,
-                name=params["callback"]["name"] or "callback",
-            )
-        else:
-            log_wrapper.add_target(target=params["callback"], level=logging.ERROR, name="callback")
-
-        params.pop("callback", None)
-
-    if log_wrapper.has_targets():
-        if "logger" in params:
-            log_wrapper.add_target(target=params["logger"], level=logging.DEBUG)
-
-        params["logger"] = log_wrapper
-
-    if kwargs.get("no_log", False):
-        params["logger"] = LogWrapper()
-        params["quiet"] = True
-        params["no_warnings"] = True
-
-    if no_archive and "download_archive" in params:
-        del params["download_archive"]
-
-    data: dict[str, Any] | None = YTDLP(params=params).extract_info(url, download=False)
-
-    if data and follow_redirect and "_type" in data and "url" == data["_type"]:
-        return extract_info(
-            config,
-            data["url"],
-            debug=debug,
-            no_archive=no_archive,
-            follow_redirect=follow_redirect,
-            sanitize_info=sanitize_info,
-        )
-
-    if not data:
-        return data
-
-    data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
-    if not data["is_premiere"]:
-        data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
-
-    return YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
-
-
-async def fetch_info(
-    config: dict,
-    url: str,
-    debug: bool = False,
-    no_archive: bool = False,
-    follow_redirect: bool = False,
-    sanitize_info: bool = False,
-    **kwargs,
-) -> dict:
-    """
-    Extracts video information from the given URL.
-
-    Args:
-        config (dict): Configuration options.
-        url (str): URL to extract information from.
-        debug (bool): Enable debug logging.
-        no_archive (bool): Disable download archive.
-        follow_redirect (bool): Follow URL redirects.
-        sanitize_info (bool): Sanitize the extracted information
-        **kwargs: Additional arguments.
-
-    Returns:
-        dict: Video information.
-
-    """
-    from .config import Config
-
-    global EXTRACTORS_SEMAPHORE  # noqa: PLW0603
-
-    conf = Config.get_instance()
-    if EXTRACTORS_SEMAPHORE is None:
-        EXTRACTORS_SEMAPHORE = asyncio.Semaphore(conf.extract_info_concurrency)
-
-    async with EXTRACTORS_SEMAPHORE:
-        return await asyncio.wait_for(
-            fut=asyncio.get_running_loop().run_in_executor(
-                None,
-                functools.partial(
-                    extract_info,
-                    config=config,
-                    url=url,
-                    debug=debug,
-                    no_archive=no_archive,
-                    follow_redirect=follow_redirect,
-                    sanitize_info=sanitize_info,
-                    **kwargs,
-                ),
-            ),
-            timeout=conf.extract_info_timeout,
-        )
-
-
-def _is_safe_key(key: any) -> bool:
+def _is_safe_key(key: Any) -> bool:
     """
     Check if a dictionary key is safe for merging.
 

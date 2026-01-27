@@ -25,7 +25,6 @@ from app.library.Utils import (
     delete_dir,
     dt_delta,
     encrypt_data,
-    extract_info,
     extract_ytdlp_logs,
     get,
     get_archive_id,
@@ -54,6 +53,7 @@ from app.library.Utils import (
     validate_uuid,
     ytdlp_reject,
 )
+from app.library.downloads.extractor import extract_info_sync
 
 
 class TestStreamingError:
@@ -1353,7 +1353,7 @@ class TestArchiveFunctions:
 class TestExtractInfo:
     """Test the extract_info function."""
 
-    @patch("app.library.Utils.YTDLP")
+    @patch("app.library.downloads.extractor.YTDLP")
     def test_extract_info_basic(self, mock_ytdlp_class):
         """Test basic extract_info functionality."""
         mock_ytdlp = MagicMock()
@@ -1363,11 +1363,12 @@ class TestExtractInfo:
         config = {"quiet": True}
         url = "https://example.com/video"
 
-        result = extract_info(config, url)
-        assert isinstance(result, dict)
+        (result, logs) = extract_info_sync(config, url)
+        assert isinstance(result, dict), "Result should be a dictionary"
+        assert isinstance(logs, list), "Logs should be a list"
         mock_ytdlp.extract_info.assert_called_once()
 
-    @patch("app.library.Utils.YTDLP")
+    @patch("app.library.downloads.extractor.YTDLP")
     def test_extract_info_with_debug(self, mock_ytdlp_class):
         """Test extract_info with debug enabled."""
         mock_ytdlp = MagicMock()
@@ -1377,8 +1378,9 @@ class TestExtractInfo:
         config = {}
         url = "https://example.com/video"
 
-        result = extract_info(config, url, debug=True)
-        assert isinstance(result, dict)
+        (result, logs) = extract_info_sync(config, url, debug=True)
+        assert isinstance(result, dict), "Result should be a dictionary"
+        assert isinstance(logs, list), "Logs should be a list"
 
 
 class TestCheckId:

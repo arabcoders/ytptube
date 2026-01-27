@@ -10,6 +10,7 @@ from aiohttp.web import Request, Response
 from app.features.presets.service import Presets
 from app.library.cache import Cache
 from app.library.config import Config
+from app.library.downloads.extractor import fetch_info
 from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
 from app.library.router import route
@@ -17,7 +18,6 @@ from app.library.Utils import (
     REMOVE_KEYS,
     archive_read,
     arg_converter,
-    fetch_info,
     get_archive_id,
     validate_url,
 )
@@ -152,24 +152,16 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
             }
             return web.json_response(body=json.dumps(data, indent=4, default=str), status=web.HTTPOk.status_code)
 
-        logs: list = []
+        ytdlp_opts: dict = opts.get_all()
 
-        ytdlp_opts: dict = {
-            **opts.get_all(),
-            "callback": {
-                "func": lambda _, msg: logs.append(msg),
-                "level": logging.WARNING,
-                "name": "callback-logger",
-            },
-        }
-
-        data: dict | None = await fetch_info(
+        (data, logs) = await fetch_info(
             config=ytdlp_opts,
             url=url,
             debug=False,
             no_archive=True,
             follow_redirect=True,
             sanitize_info=True,
+            capture_logs=logging.WARNING,
         )
 
         if not data or not isinstance(data, dict):

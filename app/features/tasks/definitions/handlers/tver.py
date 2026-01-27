@@ -6,7 +6,7 @@ from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("handlers.tver")
 
 
 class TverHandler(BaseHandler):

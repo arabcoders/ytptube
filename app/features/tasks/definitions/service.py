@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from app.library.config import Config
     from app.library.Scheduler import Scheduler
 
-LOG: logging.Logger = logging.getLogger("tasks.definitions.service")
+LOG: logging.Logger = logging.getLogger("definitions.service")
 
 
 class TaskHandle:
