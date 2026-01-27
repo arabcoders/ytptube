@@ -14,7 +14,7 @@ from app.library.Singleton import Singleton
 if TYPE_CHECKING:
     from aiohttp import web
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("tasks.service")
 
 
 class Tasks(metaclass=Singleton):

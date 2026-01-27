@@ -207,9 +207,6 @@ class Config(metaclass=Singleton):
     live_premiere_buffer: int = 5
     """The buffer time in minutes to add to video duration to wait before starting premiere download."""
 
-    playlist_items_concurrency: int = 4
-    """The number of concurrent playlist items to be processed at same time."""
-
     auto_clear_history_days: int = 0
     """Number of days after which completed download history is automatically cleared. 0 to disable."""
 
@@ -268,7 +265,6 @@ class Config(metaclass=Singleton):
         "max_workers_per_extractor",
         "extract_info_timeout",
         "debugpy_port",
-        "playlist_items_concurrency",
         "download_path_depth",
         "download_info_expires",
         "auto_clear_history_days",

@@ -14,7 +14,7 @@ from ._base_handler import BaseHandler
 if TYPE_CHECKING:
     from xml.etree.ElementTree import Element
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("handlers.rss")
 CACHE: Cache = Cache()
 
 

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     import httpx
     from parsel.selector import SelectorList
 
-LOG: logging.Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger("handlers.generic")
 CACHE: Cache = Cache()
 
 

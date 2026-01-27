@@ -1,4 +1,3 @@
-import asyncio
 import functools
 import glob
 import logging
@@ -42,8 +41,6 @@ class DownloadQueue(metaclass=Singleton):
         "DataStore for the completed downloads."
         self.queue = DataStore(type=StoreType.QUEUE, connection=SqliteStore.get_instance())
         "DataStore for the download queue."
-        self.processors = asyncio.Semaphore(self.config.playlist_items_concurrency)
-        "Semaphore to limit the number of concurrent processors."
         self.pool = PoolManager(queue=self, config=self.config)
         "Pool manager for coordinating download execution."
 
