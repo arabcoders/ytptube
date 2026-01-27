@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20260125-412ad956",
-        "date": "2026-01-25T18:42:20+00:00",
+        "tag": "master-20260127-8659f74a",
+        "date": "2026-01-27T08:53:15+00:00",
         "commits": [
+            {
+                "sha": "240a920b",
+                "message": "fix; proper fix for dispatching many websocket events",
+                "author": "arabcoders",
+                "date": "2026-01-27T08:46:00+00:00",
+                "full_sha": "240a920b6cd60026ec7f6b853c182e1d86816347"
+            },
+            {
+                "sha": "dae141a6",
+                "message": "revert: changes to playlist processor",
+                "author": "arabcoders",
+                "date": "2026-01-27T07:41:17+00:00",
+                "full_sha": "dae141a6c22e11d225172c5edce1ce21c862b2d2"
+            },
+            {
+                "sha": "da9f0829",
+                "message": "fix: unintended return type change.",
+                "author": "arabcoders",
+                "date": "2026-01-27T07:17:22+00:00",
+                "full_sha": "da9f08297866279cc0c70f31c5e9d104430501ac"
+            },
+            {
+                "sha": "fe0a1c5b",
+                "message": "fix: offload info extraction to ProcessPoolExecutor",
+                "author": "arabcoders",
+                "date": "2026-01-26T20:32:06+00:00",
+                "full_sha": "fe0a1c5b704b8ada89db3c649198b23128cf27a5"
+            },
+            {
+                "sha": "98f25027",
+                "message": "refactor: use shared http clients",
+                "author": "arabcoders",
+                "date": "2026-01-26T14:42:24+00:00",
+                "full_sha": "98f25027bb5814c09b7e39c8465eb39da98cea7f"
+            },
+            {
+                "sha": "41bca681",
+                "message": "refactor: limit item add",
+                "author": "arabcoders",
+                "date": "2026-01-26T13:36:14+00:00",
+                "full_sha": "41bca681e5e3d1a49e8a5ccac5c6df5408dd2708"
+            },
             {
                 "sha": "fe6fe42a",
                 "message": "refactor: switch api/history to be fully async.",
@@ -3896,7 +3938,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "412ad9565ded23b309d3dcf297b34e6a7ed4166e"
+        "full_sha": "8659f74a3bf0330d5bb3cbb89621b042494b921b"
     },
     {
         "tag": "master-20250616-c07465a6",
