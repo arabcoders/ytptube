@@ -7,17 +7,17 @@ from email.utils import formatdate
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from app.features.ytdlp.utils import get_archive_id
+from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.encoder import Encoder
 from app.library.Utils import (
     archive_add,
     archive_delete,
     archive_read,
     clean_item,
-    get_archive_id,
     get_file,
     get_file_sidecar,
 )
-from app.library.YTDLPOpts import YTDLPOpts
 
 if TYPE_CHECKING:
     from app.features.presets.schemas import Preset
@@ -213,9 +213,9 @@ class Item:
 
         cli: str | None = item.get("cli")
         if cli and len(cli) > 2:
-            from .Utils import arg_converter
-
             try:
+                from app.features.ytdlp.utils import arg_converter
+
                 arg_converter(args=cli, level=True)
                 data["cli"] = cli
             except Exception as e:

@@ -8,20 +8,18 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.presets.service import Presets
+from app.features.ytdlp.extractor import fetch_info
+from app.features.ytdlp.utils import arg_converter, get_archive_id
+from app.features.ytdlp.ytdlp_opts import YTDLPCli, YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.downloads.extractor import fetch_info
 from app.library.encoder import Encoder
 from app.library.ItemDTO import Item
 from app.library.router import route
 from app.library.Utils import (
-    REMOVE_KEYS,
     archive_read,
-    arg_converter,
-    get_archive_id,
     validate_url,
 )
-from app.library.YTDLPOpts import YTDLPCli, YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -58,7 +56,9 @@ async def convert(request: Request) -> Response:
         if "format" in data:
             response["format"] = data["format"]
 
-        bad_options = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+        from app.features.ytdlp.utils import _DATA
+
+        bad_options = {k: v for d in _DATA.REMOVE_KEYS for k, v in d.items()}
         removed_options = []
 
         for key in data:
@@ -230,7 +230,7 @@ async def get_options() -> Response:
         Response: The response object with the yt-dlp CLI options.
 
     """
-    from app.library.ytdlp import ytdlp_options
+    from app.features.ytdlp.ytdlp import ytdlp_options
 
     return web.json_response(body=json.dumps(ytdlp_options(), indent=4, default=str), status=web.HTTPOk.status_code)
 
@@ -244,8 +244,6 @@ async def get_archive_ids(request: Request, config: Config) -> Response:
         Response: The response object with the yt-dlp CLI options.
 
     """
-    from app.library.Utils import get_archive_id
-
     data = (await request.json()) if request.body_exists else None
     if not data or not isinstance(data, list):
         return web.json_response(

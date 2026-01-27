@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from app.features.tasks.schemas import Task as TaskSchema
-from app.library.YTDLPOpts import YTDLPOpts
+from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 
 from .utils import split_inspect_metadata
 
@@ -19,7 +19,7 @@ class HandleTask(TaskSchema):
             YTDLPOpts: The yt-dlp options.
 
         """
-        from app.library.YTDLPOpts import YTDLPOpts
+        from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 
         params: YTDLPOpts = YTDLPOpts.get_instance()
 
@@ -90,7 +90,7 @@ class HandleTask(TaskSchema):
             indicating if the operation was successful, and a message.
 
         """
-        from app.library.ytdlp import fetch_info
+        from app.features.ytdlp.ytdlp import fetch_info
 
         if not self.url:
             return ({}, False, "No URL found in task parameters.")
@@ -122,7 +122,7 @@ class HandleTask(TaskSchema):
             tuple[bool, str] | dict[str, Any]: Either an error tuple or a dict with 'file' and 'items' keys.
 
         """
-        from app.library.ytdlp import fetch_info
+        from app.features.ytdlp.ytdlp import fetch_info
 
         if not self.url:
             return (False, "No URL found in task parameters.")

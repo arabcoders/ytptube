@@ -3,7 +3,8 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from app.library.Utils import merge_dict, ytdlp_reject
+from app.features.ytdlp.utils import ytdlp_reject
+from app.library.Utils import merge_dict
 
 if TYPE_CHECKING:
     from app.library.ItemDTO import Item

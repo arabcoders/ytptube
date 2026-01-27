@@ -6,8 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.features.core.schemas import Pagination
 from app.features.core.utils import parse_int
-from app.library.mini_filter import match_str
-from app.library.Utils import arg_converter
+from app.features.ytdlp.mini_filter import match_str
 
 
 class Condition(BaseModel):
@@ -38,6 +37,8 @@ class Condition(BaseModel):
         if not value:
             return ""
         try:
+            from app.features.ytdlp.utils import arg_converter
+
             arg_converter(args=value)
         except ModuleNotFoundError:
             return value

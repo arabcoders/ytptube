@@ -112,12 +112,12 @@ def ytdlp_options() -> list[dict[str, Any]]:
     """
     from yt_dlp.options import create_parser
 
-    from app.library.Utils import REMOVE_KEYS
+    from app.features.ytdlp.utils import _DATA
 
     parser = create_parser()
 
     ignored_flags: set[str] = {
-        f.strip() for group in REMOVE_KEYS for v in group.values() for f in v.split(",") if f.strip()
+        f.strip() for group in _DATA.REMOVE_KEYS for v in group.values() for f in v.split(",") if f.strip()
     }
 
     def collect(opts, group: str) -> list[dict[str, Any]]:

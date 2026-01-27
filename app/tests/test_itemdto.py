@@ -26,7 +26,7 @@ class TestItemFormatAndBasics:
         }
         with (
             patch("app.library.ItemDTO.Item._default_preset", return_value="default"),
-            patch("app.library.Utils.arg_converter") as mock_arg_conv,
+            patch("app.features.ytdlp.utils.arg_converter") as mock_arg_conv,
         ):
             mock_arg_conv.return_value = None
             item = Item.format(data)
@@ -56,7 +56,7 @@ class TestItemFormatAndBasics:
         ):
             Item.format({"url": "https://example.com", "preset": "bad"})
 
-    @patch("app.library.Utils.arg_converter")
+    @patch("app.features.ytdlp.utils.arg_converter")
     def test_format_cli_parse_error(self, mock_arg_conv):
         mock_arg_conv.side_effect = RuntimeError("bad cli")
         with pytest.raises(ValueError, match="Failed to parse command options"):

@@ -98,9 +98,9 @@ class Task(BaseModel):
         if not value:
             return ""
 
-        from app.library.Utils import arg_converter
-
         try:
+            from app.features.ytdlp.utils import arg_converter
+
             arg_converter(args=value)
         except Exception as e:
             msg = f"Invalid command options for yt-dlp: {e!s}"

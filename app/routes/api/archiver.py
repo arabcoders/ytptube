@@ -5,9 +5,9 @@ from aiohttp import web
 from aiohttp.web import Request, Response
 
 from app.features.presets.service import Presets
+from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.Archiver import Archiver
 from app.library.router import route
-from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

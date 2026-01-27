@@ -9,7 +9,6 @@ from app.features.core.migration import Migration as FeatureMigration
 from app.features.presets.schemas import Preset
 from app.features.presets.utils import preset_name
 from app.library.config import Config
-from app.library.Utils import arg_converter
 
 if TYPE_CHECKING:
     from app.features.presets.repository import PresetsRepository
@@ -87,6 +86,8 @@ class Migration(FeatureMigration):
 
         if cli:
             try:
+                from app.features.ytdlp.utils import arg_converter
+
                 arg_converter(args=cli, level=True)
             except Exception as exc:
                 LOG.warning("Skipping preset '%s' due to invalid CLI: %s", name, exc)

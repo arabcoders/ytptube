@@ -12,12 +12,13 @@ from app.features.tasks.definitions.results import TaskFailure, TaskResult
 from app.features.tasks.definitions.service import TaskHandle
 from app.features.tasks.repository import TasksRepository
 from app.features.tasks.schemas import Task, TaskList, TaskPatch
+from app.features.ytdlp.utils import parse_outtmpl
 from app.library.ag_utils import ag
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
 from app.library.router import route
-from app.library.Utils import get_channel_images, get_file, parse_outtmpl, validate_url
+from app.library.Utils import get_channel_images, get_file, validate_url
 
 if TYPE_CHECKING:
     from pathlib import Path
