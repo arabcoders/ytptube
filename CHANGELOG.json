@@ -267,9 +267,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
-    "date": "2026-01-27T16:36:13+00:00",
+    "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
+    "date": "2026-01-27T17:04:54+00:00",
     "commits": [
+      {
+        "sha": "b1a05b1d",
+        "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
+        "message": "refactor: move archiver to be under yt_dlp submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T17:04:54+00:00"
+      },
       {
         "sha": "2c5edc64",
         "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
