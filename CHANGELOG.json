@@ -266,6 +266,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
+    "date": "2026-01-27T16:36:13+00:00",
+    "commits": [
+      {
+        "sha": "2c5edc64",
+        "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
+        "message": "refactor: isolate yt_dlp related code into submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T16:36:13+00:00"
+      },
+      {
+        "sha": "3383d5d5",
+        "full_sha": "3383d5d5dc285bfa062bf89d7697c5e1074b1622",
+        "message": "refactor: move streaming logic to a feature submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T14:42:12+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.1.0",
     "full_sha": "3b496782722e4befe05aaf98ec26dee5d4d72662",
     "date": "2026-01-11T18:36:42+00:00",

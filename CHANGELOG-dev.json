@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260127-240a920b",
-        "date": "2026-01-27T08:46:00+00:00",
+        "tag": "dev-20260127-2c5edc64",
+        "date": "2026-01-27T16:36:13+00:00",
         "commits": [
+            {
+                "sha": "2c5edc64",
+                "message": "refactor: isolate yt_dlp related code into submodule",
+                "author": "arabcoders",
+                "date": "2026-01-27T16:36:13+00:00",
+                "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794"
+            },
+            {
+                "sha": "3383d5d5",
+                "message": "refactor: move streaming logic to a feature submodule",
+                "author": "arabcoders",
+                "date": "2026-01-27T14:42:12+00:00",
+                "full_sha": "3383d5d5dc285bfa062bf89d7697c5e1074b1622"
+            },
             {
                 "sha": "240a920b",
                 "message": "fix; proper fix for dispatching many websocket events",
@@ -3938,7 +3952,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "240a920b6cd60026ec7f6b853c182e1d86816347"
+        "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794"
     },
     {
         "tag": "dev-20250616-c07465a6",
