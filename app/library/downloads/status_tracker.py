@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from app.library.Events import EventBus, Events
-from app.library.ffprobe import ffprobe
 
 from .types import StatusDict, Terminator
 from .utils import safe_relative_path
@@ -123,6 +122,8 @@ class StatusTracker:
                     self.info.file_size = 0
 
                 try:
+                    from app.features.streaming.library.ffprobe import ffprobe
+
                     ff = await ffprobe(final_name)
                     self.info.extras["is_video"] = ff.has_video()
                     self.info.extras["is_audio"] = ff.has_audio()

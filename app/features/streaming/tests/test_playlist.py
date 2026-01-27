@@ -4,8 +4,8 @@ from urllib.parse import quote
 
 import pytest
 
-from app.library.Playlist import Playlist
-from app.library.Utils import StreamingError
+from app.features.streaming.library.playlist import Playlist
+from app.features.streaming.types import StreamingError
 
 
 @pytest.mark.asyncio
@@ -21,14 +21,14 @@ async def test_make_playlist_no_subtitles(tmp_path: Path, monkeypatch: pytest.Mo
     async def fake_ffprobe(_file: Path):
         return SimpleNamespace(metadata={"duration": "60"})
 
-    monkeypatch.setattr("app.library.Playlist.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.playlist.ffprobe", fake_ffprobe)
     # No sidecar subtitles
-    monkeypatch.setattr("app.library.Playlist.get_file_sidecar", lambda _f: {"subtitle": []})
+    monkeypatch.setattr("app.features.streaming.library.playlist.get_file_sidecar", lambda _f: {"subtitle": []})
 
     # Patch module-level quote to be robust for Path objects
     from urllib.parse import quote as _std_quote
 
-    monkeypatch.setattr("app.library.Playlist.quote", lambda v: _std_quote(str(v)))
+    monkeypatch.setattr("app.features.streaming.library.playlist.quote", lambda v: _std_quote(str(v)))
 
     pl = Playlist(download_path=base, url="http://localhost/")
     out = await pl.make(media)
@@ -54,7 +54,7 @@ async def test_make_playlist_with_subtitles(tmp_path: Path, monkeypatch: pytest.
     async def fake_ffprobe(_file: Path):
         return SimpleNamespace(metadata={"duration": "12.5"})
 
-    monkeypatch.setattr("app.library.Playlist.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.playlist.ffprobe", fake_ffprobe)
 
     # Build two subtitle sidecars with names and langs; ensure quoting/relative name used
     sub1 = media.with_suffix(".en.srt")
@@ -65,11 +65,11 @@ async def test_make_playlist_with_subtitles(tmp_path: Path, monkeypatch: pytest.
             {"lang": "fr", "file": sub2, "name": "French"},
         ]
     }
-    monkeypatch.setattr("app.library.Playlist.get_file_sidecar", lambda _f: sidecar)
+    monkeypatch.setattr("app.features.streaming.library.playlist.get_file_sidecar", lambda _f: sidecar)
 
     from urllib.parse import quote as _std_quote
 
-    monkeypatch.setattr("app.library.Playlist.quote", lambda v: _std_quote(str(v)))
+    monkeypatch.setattr("app.features.streaming.library.playlist.quote", lambda v: _std_quote(str(v)))
 
     pl = Playlist(download_path=base, url="https://server/")
     out = await pl.make(media)
@@ -109,8 +109,8 @@ async def test_make_playlist_raises_without_duration(tmp_path: Path, monkeypatch
     async def fake_ffprobe(_file: Path):
         return SimpleNamespace(metadata={})
 
-    monkeypatch.setattr("app.library.Playlist.ffprobe", fake_ffprobe)
-    monkeypatch.setattr("app.library.Playlist.get_file_sidecar", lambda _f: {"subtitle": []})
+    monkeypatch.setattr("app.features.streaming.library.playlist.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.playlist.get_file_sidecar", lambda _f: {"subtitle": []})
 
     pl = Playlist(download_path=base, url="http://localhost/")
 

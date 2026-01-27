@@ -85,7 +85,7 @@ def ffmpeg_encoders() -> set[str]:
         set[str]: A set of available ffmpeg encoder names.
 
     """
-    from .config import SUPPORTED_CODECS
+    from app.library.config import SUPPORTED_CODECS
 
     try:
         result: subprocess.CompletedProcess[str] = subprocess.run(
@@ -122,7 +122,7 @@ def select_encoder(configured: str) -> str:
         str: The selected concrete encoder name.
 
     """
-    from .config import SUPPORTED_CODECS
+    from app.library.config import SUPPORTED_CODECS
 
     configured = (configured or "").strip()
 

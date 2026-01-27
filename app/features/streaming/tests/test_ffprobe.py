@@ -23,7 +23,7 @@ class TestFFProbe:
     @pytest.mark.asyncio
     async def test_ffprobe_with_existing_file(self):
         """Test ffprobe with an existing file."""
-        from app.library.ffprobe import FFProbeResult, ffprobe
+        from app.features.streaming.library.ffprobe import FFProbeResult, ffprobe
 
         # Mock subprocess to avoid actual ffprobe execution
         with patch("asyncio.create_subprocess_exec") as mock_subprocess:
@@ -43,7 +43,7 @@ class TestFFProbe:
     @pytest.mark.asyncio
     async def test_ffprobe_with_nonexistent_file(self):
         """Test ffprobe with a non-existent file."""
-        from app.library.ffprobe import ffprobe
+        from app.features.streaming.library.ffprobe import ffprobe
 
         nonexistent_file = Path(self.temp_dir) / "does_not_exist.mp4"
 
@@ -53,7 +53,7 @@ class TestFFProbe:
     @pytest.mark.asyncio
     async def test_ffprobe_caching_behavior(self):
         """Test that ffprobe results are cached with enhanced async timed_lru_cache."""
-        from app.library.ffprobe import ffprobe
+        from app.features.streaming.library.ffprobe import ffprobe
 
         assert hasattr(ffprobe, "cache_clear"), (
             "Test that the function has been decorated with caching - ffprobe should have cache_clear method from timed_lru_cache"
@@ -103,7 +103,7 @@ class TestFFProbe:
     @pytest.mark.asyncio
     async def test_ffprobe_with_path_object(self):
         """Test ffprobe with Path object input."""
-        from app.library.ffprobe import ffprobe
+        from app.features.streaming.library.ffprobe import ffprobe
 
         # Mock subprocess to avoid actual ffprobe execution
         with patch("asyncio.create_subprocess_exec") as mock_subprocess:
@@ -122,7 +122,7 @@ class TestFFProbe:
 
     def test_ffprobe_result_properties(self):
         """Test FFProbeResult object properties."""
-        from app.library.ffprobe import FFProbeResult, FFStream
+        from app.features.streaming.library.ffprobe import FFStream, FFProbeResult
 
         result = FFProbeResult()
 
@@ -149,7 +149,7 @@ class TestFFProbe:
 
     def test_stream_object_methods(self):
         """Test Stream object methods."""
-        from app.library.ffprobe import FFStream
+        from app.features.streaming.library.ffprobe import FFStream
 
         # Test video stream
         video_stream = FFStream(

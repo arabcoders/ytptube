@@ -13,7 +13,6 @@ import pytest
 
 from app.library.Utils import (
     FileLogFormatter,
-    StreamingError,
     archive_add,
     archive_delete,
     archive_read,
@@ -54,21 +53,6 @@ from app.library.Utils import (
     ytdlp_reject,
 )
 from app.library.downloads.extractor import extract_info_sync
-
-
-class TestStreamingError:
-    """Test the StreamingError exception class."""
-
-    def test_streaming_error_creation(self):
-        """Test that StreamingError can be created with a message."""
-        error_msg = "Test error message"
-        error = StreamingError(error_msg)
-        assert str(error) == error_msg
-
-    def test_streaming_error_inheritance(self):
-        """Test that StreamingError inherits from Exception."""
-        error = StreamingError("test")
-        assert isinstance(error, Exception)
 
 
 class TestTimedLruCache:

@@ -85,10 +85,6 @@ DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}
 "Regex to match ISO 8601 datetime strings."
 
 
-class StreamingError(Exception):
-    """Raised when an error occurs during streaming."""
-
-
 class FileLogFormatter(logging.Formatter):
     def formatTime(self, record, datefmt=None):  # noqa: ARG002, N802
         return datetime.fromtimestamp(record.created).astimezone().isoformat(timespec="milliseconds")
@@ -851,10 +847,8 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
         str: MIME type compatible with HTML5 <video> tag.
 
     """
-    # Extract format name from ffprobe
     format_name = metadata.get("format_name", "")
 
-    # Define mappings for HTML5-compatible video types
     format_to_mime: dict[str, str] = {
         "matroska": "video/x-matroska",  # Default for MKV
         "webm": "video/webm",  # MKV can also be WebM
@@ -862,7 +856,6 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
         "mpegts": "video/mp2t",
     }
 
-    # Check format_name against known formats
     if format_name:
         selected = None
         for fmt in format_name.split(","):
@@ -873,7 +866,6 @@ def get_mime_type(metadata: dict, file_path: Path) -> str:
         if selected:
             return selected
 
-    # Fallback: Use Python's mimetypes module
     import mimetypes
 
     mime_type, _ = mimetypes.guess_type(str(file_path))

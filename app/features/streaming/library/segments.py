@@ -10,21 +10,21 @@ from typing import TYPE_CHECKING, ClassVar
 
 from aiohttp import web
 
-from .config import SUPPORTED_CODECS, Config
-from .ffprobe import ffprobe
-from .SegmentEncoders import (
+from app.features.streaming.library.ffprobe import ffprobe
+from app.features.streaming.library.segment_encoders import (
     detect_qsv_capabilities,
     encoder_fallback_chain,
     get_builder_for_codec,
     has_dri_devices,
     select_encoder,
 )
+from app.library.config import SUPPORTED_CODECS, Config
 
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
 
     from .ffprobe import FFProbeResult
-    from .SegmentEncoders import EncoderBuilder
+    from .segment_encoders import EncoderBuilder
 
 LOG: logging.Logger = logging.getLogger("player.segments")
 

@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.library.Segments import Segments
+from app.features.streaming.library.segments import Segments
 
 
 class DummyFF:
@@ -32,7 +32,7 @@ async def test_build_ffmpeg_args_video_and_audio(tmp_path: Path, monkeypatch: py
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
 
     seg = Segments(download_path=str(tmp_path), index=2, duration=5.5, vconvert=False, aconvert=False)
 
@@ -84,7 +84,7 @@ async def test_build_ffmpeg_args_audio_only(tmp_path: Path, monkeypatch: pytest.
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=False, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
 
     seg = Segments(download_path=str(tmp_path), index=0, duration=9.0, vconvert=False, aconvert=False)
 
@@ -175,13 +175,16 @@ async def test_build_ffmpeg_args_no_dri_falls_back_to_software(tmp_path: Path, m
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
     # Simulate no /dev/dri present but GPU encoders otherwise available
-    monkeypatch.setattr("app.library.SegmentEncoders.has_dri_devices", lambda: False)
-    monkeypatch.setattr("app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_nvenc", "h264_qsv", "h264_amf"})
+    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: False)
+    monkeypatch.setattr(
+        "app.features.streaming.library.segment_encoders.ffmpeg_encoders",
+        lambda: {"h264_nvenc", "h264_qsv", "h264_amf"},
+    )
 
     # reset encoder cache to ensure clean selection in this test
-    from app.library.Segments import Segments as _Seg
+    from app.features.streaming.library.segments import Segments as _Seg
 
     _Seg._cached_vcodec = None
     _Seg._cache_initialized = False
@@ -218,10 +221,10 @@ async def test_stream_gpu_failure_falls_back_to_software(
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
     # Allow GPU usage and advertise an NVENC encoder so first pick is GPU
-    monkeypatch.setattr("app.library.SegmentEncoders.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_nvenc"})
+    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.features.streaming.library.segment_encoders.ffmpeg_encoders", lambda: {"h264_nvenc"})
 
     # First process fails (no data, rc=1), second succeeds and outputs bytes
     proc_fail = _FakeProcFail(err=b"nvenc failure: encoder not available")
@@ -239,7 +242,7 @@ async def test_stream_gpu_failure_falls_back_to_software(
     monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
 
     # reset encoder cache to ensure we try GPU first
-    from app.library.Segments import Segments as _Seg
+    from app.features.streaming.library.segments import Segments as _Seg
 
     _Seg._cached_vcodec = None
     _Seg._cache_initialized = False
@@ -270,12 +273,12 @@ async def test_stream_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatc
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
     # Only QSV advertised so initial build sets QSV
     # Patch both where it's defined AND where it's imported/used
-    monkeypatch.setattr("app.library.SegmentEncoders.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.library.Segments.has_dri_devices", lambda: True)
-    monkeypatch.setattr("app.library.SegmentEncoders.ffmpeg_encoders", lambda: {"h264_qsv"})
+    monkeypatch.setattr("app.features.streaming.library.segment_encoders.has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.features.streaming.library.segments.has_dri_devices", lambda: True)
+    monkeypatch.setattr("app.features.streaming.library.segment_encoders.ffmpeg_encoders", lambda: {"h264_qsv"})
 
     # Fail first, succeed second
     proc_fail = _FakeProcFail(err=b"qsv failure")
@@ -290,7 +293,7 @@ async def test_stream_gpu_fallback_switches_codec(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr("asyncio.create_subprocess_exec", fake_create_subprocess_exec)
 
     # reset cache
-    from app.library.Segments import Segments as _Seg
+    from app.features.streaming.library.segments import Segments as _Seg
 
     _Seg._cached_vcodec = None
     _Seg._cache_initialized = False
@@ -338,7 +341,7 @@ async def test_stream_normal_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Pat
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
 
     # Process that yields two chunks and then EOF
     proc = _FakeProc([b"abc", b"def", b""])
@@ -361,7 +364,7 @@ async def test_stream_client_reset(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
 
     proc = _FakeProc([b"abc", b"def"])  # will attempt to write and fail
 
@@ -384,7 +387,7 @@ async def test_stream_cancelled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
     async def fake_ffprobe(_file: Path):
         return DummyFF(v=True, a=True)
 
-    monkeypatch.setattr("app.library.Segments.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.segments.ffprobe", fake_ffprobe)
 
     proc = _FakeProc([b"abc"])  # only one chunk
 

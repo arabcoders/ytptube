@@ -4,8 +4,8 @@ from urllib.parse import quote
 
 import pytest
 
-from app.library.M3u8 import M3u8
-from app.library.Utils import StreamingError
+from app.features.streaming.library.m3u8 import M3u8
+from app.features.streaming.types import StreamingError
 
 
 class _Stream:
@@ -38,7 +38,7 @@ async def test_make_stream_basic_ok_codecs(tmp_path: Path, monkeypatch: pytest.M
             ],
         )
 
-    monkeypatch.setattr("app.library.M3u8.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.m3u8.ffprobe", fake_ffprobe)
 
     m3 = M3u8(download_path=base, url="http://host/")
     out = await m3.make_stream(media)
@@ -79,7 +79,7 @@ async def test_make_stream_transcode_flags_and_remainder(tmp_path: Path, monkeyp
             ],
         )
 
-    monkeypatch.setattr("app.library.M3u8.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.m3u8.ffprobe", fake_ffprobe)
 
     m3 = M3u8(download_path=base, url="https://s/")
     out = await m3.make_stream(media)
@@ -116,7 +116,7 @@ async def test_make_stream_raises_without_duration(tmp_path: Path, monkeypatch: 
     async def fake_ffprobe(_file: Path):
         return SimpleNamespace(metadata={})
 
-    monkeypatch.setattr("app.library.M3u8.ffprobe", fake_ffprobe)
+    monkeypatch.setattr("app.features.streaming.library.m3u8.ffprobe", fake_ffprobe)
 
     m3 = M3u8(download_path=base, url="http://s/")
     with pytest.raises(StreamingError, match="Unable to get"):

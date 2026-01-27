@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.library.Subtitle import Subtitle, ms_to_timestamp
+from app.features.streaming.library.subtitle import Subtitle, ms_to_timestamp
 
 
 class TestMsToTimestamp:
@@ -59,7 +59,7 @@ async def test_make_no_events_raises(tmp_path: Path) -> None:
     srt = tmp_path / "sub.srt"
     srt.write_text("dummy")
 
-    with patch("app.library.Subtitle.pysubs2.load") as mock_load:
+    with patch("app.features.streaming.library.subtitle.pysubs2.load") as mock_load:
         mock_load.return_value = _DummySubs(events=[])
         sub = Subtitle()
         with pytest.raises(Exception, match="No subtitle events were found"):
@@ -74,7 +74,7 @@ async def test_make_single_event_returns_vtt(tmp_path: Path) -> None:
     single = SimpleNamespace(end=1000)
     d = _DummySubs(events=[single])
 
-    with patch("app.library.Subtitle.pysubs2.load", return_value=d):
+    with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
@@ -90,7 +90,7 @@ async def test_make_two_events_pop_first_when_ends_equal(tmp_path: Path) -> None
     e2 = SimpleNamespace(end=5000)
     d = _DummySubs(events=[e1, e2])
 
-    with patch("app.library.Subtitle.pysubs2.load", return_value=d):
+    with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
@@ -106,7 +106,7 @@ async def test_make_two_events_no_pop_when_different(tmp_path: Path) -> None:
     e2 = SimpleNamespace(end=6000)
     d = _DummySubs(events=[e1, e2])
 
-    with patch("app.library.Subtitle.pysubs2.load", return_value=d):
+    with patch("app.features.streaming.library.subtitle.pysubs2.load", return_value=d):
         sub = Subtitle()
         out = await sub.make(srt)
         assert out == "OUT"
