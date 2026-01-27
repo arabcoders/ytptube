@@ -225,9 +225,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "dae141a6c22e11d225172c5edce1ce21c862b2d2",
-    "date": "2026-01-27T07:41:17+00:00",
+    "full_sha": "240a920b6cd60026ec7f6b853c182e1d86816347",
+    "date": "2026-01-27T08:46:00+00:00",
     "commits": [
+      {
+        "sha": "240a920b",
+        "full_sha": "240a920b6cd60026ec7f6b853c182e1d86816347",
+        "message": "fix; proper fix for dispatching many websocket events",
+        "author": "arabcoders",
+        "date": "2026-01-27T08:46:00+00:00"
+      },
       {
         "sha": "dae141a6",
         "full_sha": "dae141a6c22e11d225172c5edce1ce21c862b2d2",
