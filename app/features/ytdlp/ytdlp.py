@@ -24,7 +24,7 @@ class _ArchiveProxy:
             return False
 
         try:
-            from app.library.Archiver import Archiver
+            from app.features.ytdlp.archiver import Archiver
 
             status: bool = item in Archiver.get_instance().read(self._file, [item])
             return status
@@ -36,7 +36,7 @@ class _ArchiveProxy:
             return False
 
         try:
-            from app.library.Archiver import Archiver
+            from app.features.ytdlp.archiver import Archiver
 
             status: bool = Archiver.get_instance().add(self._file, [item])
             return status

@@ -13,9 +13,6 @@ import pytest
 from app.features.ytdlp.utils import arg_converter
 from app.library.Utils import (
     FileLogFormatter,
-    archive_add,
-    archive_delete,
-    archive_read,
     calc_download_path,
     check_id,
     clean_item,
@@ -1262,46 +1259,6 @@ class TestGetFileSidecar:
 
             result = get_file_sidecar(video_file)
             assert isinstance(result, dict)  # Returns dict, not list
-
-
-class TestArchiveFunctions:
-    """Test archive-related functions."""
-
-    def setup_method(self):
-        """Set up test archive file."""
-        self.temp_dir = tempfile.mkdtemp()
-        self.archive_file = Path(self.temp_dir) / "archive.txt"
-
-    def teardown_method(self):
-        """Clean up after tests."""
-        import shutil
-
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
-
-    def test_archive_add_and_read(self):
-        """Test adding and reading archive entries."""
-        ids = ["id1", "id2", "id3"]
-
-        # Add entries - just test it returns a boolean
-        result = archive_add(self.archive_file, ids)
-        assert isinstance(result, bool)
-
-        # Read entries - just test it returns a list
-        read_ids = archive_read(self.archive_file)
-        assert isinstance(read_ids, list)
-
-    def test_archive_delete(self):
-        """Test deleting archive entries."""
-        # Delete some entries - just test it returns a boolean
-        delete_ids = ["id2"]
-        result = archive_delete(self.archive_file, delete_ids)
-        assert isinstance(result, bool)
-
-    def test_archive_read_nonexistent(self):
-        """Test reading from non-existent archive."""
-        nonexistent = Path(self.temp_dir) / "nonexistent.txt"
-        result = archive_read(nonexistent)
-        assert result == []
 
 
 class TestCheckId:

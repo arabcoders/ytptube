@@ -11,11 +11,11 @@ from typing import TYPE_CHECKING, Any
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
 from app.features.tasks.models import TaskModel
+from app.features.ytdlp.utils import archive_read
 from app.library.downloads.queue_manager import DownloadQueue
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
 from app.library.Services import Services
-from app.library.Utils import archive_read
 
 if TYPE_CHECKING:
     from app.features.tasks.repository import TasksRepository

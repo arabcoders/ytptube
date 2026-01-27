@@ -18,7 +18,7 @@ class TestArchiveProxy:
         assert ("" in p2) is False
         assert p2.add("") is False
 
-    @patch("app.library.Archiver.Archiver.get_instance")
+    @patch("app.features.ytdlp.archiver.Archiver.get_instance")
     def test_contains_and_add_delegate_to_archiver(self, mock_get_instance) -> None:
         arch = MagicMock()
         mock_get_instance.return_value = arch

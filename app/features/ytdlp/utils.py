@@ -6,6 +6,7 @@ import shlex
 from collections.abc import Callable
 from dataclasses import dataclass
 from email.utils import formatdate
+from pathlib import Path
 from typing import Any
 
 from app.features.ytdlp.ytdlp import YTDLP
@@ -506,3 +507,55 @@ def get_archive_id(url: str) -> dict[str, str | None]:
             LOG.error(f"Error getting archive ID: {e}")
 
     return idDict
+
+
+def archive_add(file: str | Path, ids: list[str], skip_check: bool = False) -> bool:
+    """
+    Add IDs to an archive file (delegates to the global Archiver).
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to add.
+        skip_check (bool): If True, skip checking for existing IDs.
+
+    Returns:
+        bool: True if any new IDs were appended, False otherwise.
+
+    """
+    from app.features.ytdlp.archiver import Archiver
+
+    return Archiver.get_instance().add(file, ids, skip_check)
+
+
+def archive_read(file: str | Path, ids: list[str] | None = None) -> list[str]:
+    """
+    Read IDs from an archive file with optional filtering (delegates to Archiver).
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]|None): Optional list of IDs to query; None/empty returns all.
+
+    Returns:
+        list[str]: IDs present in the archive, optionally filtered.
+
+    """
+    from app.features.ytdlp.archiver import Archiver
+
+    return Archiver.get_instance().read(file, ids)
+
+
+def archive_delete(file: str | Path, ids: list[str]) -> bool:
+    """
+    Delete IDs from an archive file (delegates to Archiver).
+
+    Args:
+        file (str|Path): The archive file path.
+        ids (list[str]): List of IDs to remove.
+
+    Returns:
+        bool: True on success (including no-op), False on error.
+
+    """
+    from app.features.ytdlp.archiver import Archiver
+
+    return Archiver.get_instance().delete(file, ids)

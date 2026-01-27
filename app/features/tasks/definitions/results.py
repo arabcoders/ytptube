@@ -42,7 +42,7 @@ class HandleTask(TaskSchema):
             tuple[bool, str]: A tuple indicating success and a message.
 
         """
-        from app.library.Utils import archive_add
+        from app.features.ytdlp.utils import archive_add
 
         ret: tuple[bool, str] | dict[str, Any] = await self._mark_logic()
         if isinstance(ret, tuple):
@@ -64,7 +64,7 @@ class HandleTask(TaskSchema):
             tuple[bool, str]: A tuple indicating success and a message.
 
         """
-        from app.library.Utils import archive_delete
+        from app.features.ytdlp.utils import archive_delete
 
         ret: tuple[bool, str] | dict[str, Any] = await self._mark_logic()
         if isinstance(ret, tuple):
