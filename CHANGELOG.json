@@ -267,9 +267,23 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
-    "date": "2026-01-27T17:04:54+00:00",
+    "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
+    "date": "2026-01-28T14:09:08+00:00",
     "commits": [
+      {
+        "sha": "dd0633c2",
+        "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
+        "message": "refactor: improve error messaging during failure to load config",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:09:08+00:00"
+      },
+      {
+        "sha": "f88422e9",
+        "full_sha": "f88422e92b46b0f1da931c1e3b1f76199ebea42d",
+        "message": "Refactor: move log related inside the logs module",
+        "author": "arabcoders",
+        "date": "2026-01-28T13:22:44+00:00"
+      },
       {
         "sha": "b1a05b1d",
         "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
