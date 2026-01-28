@@ -20,11 +20,7 @@ export type WSEP = {
   connect: null
   disconnect: null
   connect_error: { message?: string }
-  connected: EventPayload<{
-    folders?: string[]
-    history_count?: number
-    queue?: Record<string, StoreItem>
-  }>
+  connected: EventPayload<{ sid: string }>
   item_added: EventPayload<StoreItem>
   item_updated: EventPayload<StoreItem>
   item_cancelled: EventPayload<StoreItem>

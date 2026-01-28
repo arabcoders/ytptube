@@ -264,20 +264,9 @@ export const useSocketStore = defineStore('socket', () => {
 
   on('connect', () => config.loadConfig(false))
 
-  on('connected', (data: WSEP['connected']) => {
-    if (!data?.data) {
-      return
-    }
-
-    if (data.data.folders) {
-      config.add('folders', data.data.folders)
-    }
-
-    if ('number' === typeof data.data.history_count) {
-      stateStore.setHistoryCount(data.data.history_count)
-    }
-
+  on('connected', () => {
     error.value = null
+    config.loadConfig(false)
   })
 
   on('item_added', (data: WSEP['item_added']) => {
