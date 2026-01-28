@@ -1,4 +1,3 @@
-import type { AppConfig, ConfigState } from "./config"
 import type { StoreItem } from "./store"
 
 export type Event = {
@@ -21,18 +20,9 @@ export type WSEP = {
   connect: null
   disconnect: null
   connect_error: { message?: string }
-  configuration: EventPayload<{
-    config: AppConfig
-    presets: ConfigState['presets']
-    dl_fields: ConfigState['dl_fields']
-    paused: boolean
-  }>
   connected: EventPayload<{
     folders?: string[]
     history_count?: number
-    queue?: Record<string, StoreItem>
-  }>
-  active_queue: EventPayload<{
     queue?: Record<string, StoreItem>
   }>
   item_added: EventPayload<StoreItem>

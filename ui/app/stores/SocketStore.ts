@@ -1,6 +1,5 @@
 import { ref, readonly } from 'vue'
 import { defineStore } from 'pinia'
-import type { ConfigState } from "~/types/config";
 import type { StoreItem } from "~/types/store";
 import type {
   ConfigUpdatePayload,
@@ -263,14 +262,7 @@ export const useSocketStore = defineStore('socket', () => {
     setupVisibilityListener()
   }
 
-  on('configuration', (data: WSEP['configuration']) => {
-    config.setAll({
-      app: data.data.config,
-      presets: data.data.presets,
-      dl_fields: data.data.dl_fields,
-      paused: Boolean(data.data.paused)
-    } as unknown as Partial<ConfigState>)
-  })
+  on('connect', () => config.loadConfig(false))
 
   on('connected', (data: WSEP['connected']) => {
     if (!data?.data) {
@@ -286,13 +278,6 @@ export const useSocketStore = defineStore('socket', () => {
     }
 
     error.value = null
-  })
-
-  on('active_queue', (data: WSEP['active_queue']) => {
-    if (!data.data.queue) {
-      return
-    }
-    stateStore.addAll('queue', data.data.queue || {})
   })
 
   on('item_added', (data: WSEP['item_added']) => {
