@@ -95,7 +95,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
                 continue
 
             try:
-                download.info.sidecar = download.get_file_sidecar()
+                download.info.sidecar = download.info.get_file_sidecar()
             except Exception:
                 download.info.sidecar = {}
 
