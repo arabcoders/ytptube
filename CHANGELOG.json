@@ -1,9 +1,58 @@
 [
   {
-    "tag": "Unreleased (8659f74a)",
-    "full_sha": "8659f74a3bf0330d5bb3cbb89621b042494b921b",
-    "date": "2026-01-27T08:53:15+00:00",
+    "tag": "Unreleased (d17aa6c2)",
+    "full_sha": "d17aa6c29e80d496225f866ef684073d92a3421e",
+    "date": "2026-01-28T15:07:57+00:00",
     "commits": [
+      {
+        "sha": "651aa148",
+        "full_sha": "651aa1488240ba9a0be65077e578d6314704dae7",
+        "message": "refactor: reload config on websocket connection.",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:49:26+00:00"
+      },
+      {
+        "sha": "d8ccbe00",
+        "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
+        "message": "fix: sidecar loading for history items",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:22:32+00:00"
+      },
+      {
+        "sha": "dd0633c2",
+        "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
+        "message": "refactor: improve error messaging during failure to load config",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:09:08+00:00"
+      },
+      {
+        "sha": "f88422e9",
+        "full_sha": "f88422e92b46b0f1da931c1e3b1f76199ebea42d",
+        "message": "Refactor: move log related inside the logs module",
+        "author": "arabcoders",
+        "date": "2026-01-28T13:22:44+00:00"
+      },
+      {
+        "sha": "b1a05b1d",
+        "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
+        "message": "refactor: move archiver to be under yt_dlp submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T17:04:54+00:00"
+      },
+      {
+        "sha": "2c5edc64",
+        "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
+        "message": "refactor: isolate yt_dlp related code into submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T16:36:13+00:00"
+      },
+      {
+        "sha": "3383d5d5",
+        "full_sha": "3383d5d5dc285bfa062bf89d7697c5e1074b1622",
+        "message": "refactor: move streaming logic to a feature submodule",
+        "author": "arabcoders",
+        "date": "2026-01-27T14:42:12+00:00"
+      },
       {
         "sha": "240a920b",
         "full_sha": "240a920b6cd60026ec7f6b853c182e1d86816347",
@@ -262,62 +311,6 @@
         "message": "refactor: move popover to separate button",
         "author": "arabcoders",
         "date": "2026-01-12T14:14:29+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "651aa1488240ba9a0be65077e578d6314704dae7",
-    "date": "2026-01-28T14:49:26+00:00",
-    "commits": [
-      {
-        "sha": "651aa148",
-        "full_sha": "651aa1488240ba9a0be65077e578d6314704dae7",
-        "message": "refactor: reload config on websocket connection.",
-        "author": "arabcoders",
-        "date": "2026-01-28T14:49:26+00:00"
-      },
-      {
-        "sha": "d8ccbe00",
-        "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
-        "message": "fix: sidecar loading for history items",
-        "author": "arabcoders",
-        "date": "2026-01-28T14:22:32+00:00"
-      },
-      {
-        "sha": "dd0633c2",
-        "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
-        "message": "refactor: improve error messaging during failure to load config",
-        "author": "arabcoders",
-        "date": "2026-01-28T14:09:08+00:00"
-      },
-      {
-        "sha": "f88422e9",
-        "full_sha": "f88422e92b46b0f1da931c1e3b1f76199ebea42d",
-        "message": "Refactor: move log related inside the logs module",
-        "author": "arabcoders",
-        "date": "2026-01-28T13:22:44+00:00"
-      },
-      {
-        "sha": "b1a05b1d",
-        "full_sha": "b1a05b1d793dd359e7dbcab20b31b4911dba90e7",
-        "message": "refactor: move archiver to be under yt_dlp submodule",
-        "author": "arabcoders",
-        "date": "2026-01-27T17:04:54+00:00"
-      },
-      {
-        "sha": "2c5edc64",
-        "full_sha": "2c5edc64f484a53ef17e93f5fa91a7ff4d0ae794",
-        "message": "refactor: isolate yt_dlp related code into submodule",
-        "author": "arabcoders",
-        "date": "2026-01-27T16:36:13+00:00"
-      },
-      {
-        "sha": "3383d5d5",
-        "full_sha": "3383d5d5dc285bfa062bf89d7697c5e1074b1622",
-        "message": "refactor: move streaming logic to a feature submodule",
-        "author": "arabcoders",
-        "date": "2026-01-27T14:42:12+00:00"
       }
     ]
   },
