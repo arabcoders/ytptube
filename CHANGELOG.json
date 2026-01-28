@@ -267,9 +267,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
-    "date": "2026-01-28T14:22:32+00:00",
+    "full_sha": "651aa1488240ba9a0be65077e578d6314704dae7",
+    "date": "2026-01-28T14:49:26+00:00",
     "commits": [
+      {
+        "sha": "651aa148",
+        "full_sha": "651aa1488240ba9a0be65077e578d6314704dae7",
+        "message": "refactor: reload config on websocket connection.",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:49:26+00:00"
+      },
       {
         "sha": "d8ccbe00",
         "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
