@@ -34,15 +34,14 @@ from app.library.Utils import (
     merge_dict,
     move_file,
     parse_tags,
-    read_logfile,
     rename_file,
     str_to_dt,
     strip_newline,
-    tail_log,
     timed_lru_cache,
     validate_url,
     validate_uuid,
 )
+from app.routes.api.logs import _read_logfile, _tail_log
 
 
 class TestTimedLruCache:
@@ -1517,7 +1516,7 @@ class TestReadLogfile:
         """Test reading non-existent log file."""
 
         async def test():
-            result = await read_logfile(self.log_file)
+            result = await _read_logfile(self.log_file)
             assert isinstance(result, dict)
             assert "logs" in result
 
@@ -1528,7 +1527,7 @@ class TestReadLogfile:
         self.log_file.write_text("line 1\nline 2\nline 3\n")
 
         async def test():
-            result = await read_logfile(self.log_file, limit=2)
+            result = await _read_logfile(self.log_file, limit=2)
             assert isinstance(result, dict)
             assert "logs" in result
 
@@ -1559,7 +1558,7 @@ class TestTailLog:
 
         async def test():
             try:
-                await tail_log(self.log_file, emitter, sleep_time=0.1)
+                await _tail_log(self.log_file, emitter, sleep_time=0.1)
             except Exception:
                 pass  # Expected for non-existent file
 

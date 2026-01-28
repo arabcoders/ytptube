@@ -33,8 +33,6 @@ FILES_TYPE: list = [
 
 TAG_REGEX: re.Pattern[str] = re.compile(r"%{([^:}]+)(?::([^}]*))?}c")
 "Regex to find tags in templates."
-DT_PATTERN: re.Pattern[str] = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:[+-]\d{2}:\d{2}))\s?")
-"Regex to match ISO 8601 datetime strings."
 
 
 class FileLogFormatter(logging.Formatter):
@@ -967,116 +965,6 @@ def strip_newline(string: str) -> str:
     res: str = re.sub(r"(\r\n|\r|\n)", " ", string)
 
     return res.strip() if res else ""
-
-
-async def read_logfile(file: Path, offset: int = 0, limit: int = 50) -> dict:
-    """
-    Read a log file and return a set of log lines along with pagination metadata.
-
-    Args:
-        file (Path): The log file path.
-        offset (int): Number of lines to skip from the end (newer entries).
-        limit (int): Number of lines to return.
-
-    Returns:
-        dict: A dictionary containing:
-            - logs: List of log entries.
-            - next_offset: Offset for the next page or None.
-            - end_is_reached: True if there are no older logs.
-
-    """
-    from hashlib import sha256
-
-    from anyio import open_file
-
-    if not file.exists():
-        return {"logs": [], "next_offset": None, "end_is_reached": True}
-
-    result = []
-    try:
-        async with await open_file(file, "rb") as f:
-            await f.seek(0, os.SEEK_END)
-            file_size: int = await f.tell()
-
-            block_size = 1024
-            block_end: int = file_size
-            buffer: bytes = b""
-            lines: list = []
-
-            required_count: int = offset + limit + 1
-
-            while len(lines) < required_count and block_end > 0:
-                block_start: int = max(0, block_end - block_size)
-                await f.seek(block_start)
-                chunk: bytes = await f.read(block_end - block_start)
-                buffer: bytes = chunk + buffer  # prepend the chunk
-                lines = buffer.splitlines()
-                block_end = block_start
-
-            if len(lines) > offset + limit:
-                next_offset: int = offset + limit
-                end_is_reached = False
-            else:
-                next_offset = None
-                end_is_reached = True
-
-            for line in lines[-(offset + limit) : -offset] if offset else lines[-limit:]:
-                line_bytes: bytes | str = line if isinstance(line, bytes) else line.encode()
-                msg: str = line.decode(errors="replace")
-                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
-                result.append(
-                    {
-                        "id": sha256(line_bytes).hexdigest(),
-                        "line": msg[dt_match.end() :] if dt_match else msg,
-                        "datetime": dt_match.group(1) if dt_match else None,
-                    }
-                )
-
-            return {"logs": result, "next_offset": next_offset, "end_is_reached": end_is_reached}
-    except Exception:
-        return {"logs": [], "next_offset": None, "end_is_reached": True}
-
-
-async def tail_log(file: Path, emitter: callable, sleep_time: float = 0.5):
-    """
-    Continuously read a log file and emit new lines.
-
-    Args:
-        file (str): The log file path.
-        emitter (callable): A callable to emit new lines.
-        sleep_time (float): The time to sleep between reads.
-
-    """
-    from asyncio import sleep as asyncio_sleep
-    from hashlib import sha256
-
-    from anyio import open_file
-
-    if not file.exists():
-        return
-
-    try:
-        async with await open_file(file, "rb") as f:
-            await f.seek(0, os.SEEK_END)
-            while True:
-                line: bytes = await f.readline()
-                if not line:
-                    await asyncio_sleep(sleep_time)
-                    continue
-
-                msg: str = line.decode(errors="replace")
-                dt_match: re.Match[str] | None = DT_PATTERN.match(msg)
-
-                await emitter(
-                    {
-                        "id": sha256(line if isinstance(line, bytes) else line.encode()).hexdigest(),
-                        "line": msg[dt_match.end() :] if dt_match else msg,
-                        "datetime": dt_match.group(1) if dt_match else None,
-                    }
-                )
-    except Exception as e:
-        LOG.error(f"Error while tailing log file '{file!s}': {e!s}")
-        return
 
 
 def load_cookies(file: str | Path) -> tuple[bool, MozillaCookieJar]:
