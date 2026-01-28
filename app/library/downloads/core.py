@@ -13,12 +13,13 @@ from typing import TYPE_CHECKING, Any
 
 import yt_dlp.utils
 
+from app.features.ytdlp.utils import extract_ytdlp_logs
+from app.features.ytdlp.ytdlp import YTDLP
 from app.library.config import Config
 from app.library.Events import EventBus, Events
-from app.library.Utils import create_cookies_file, extract_ytdlp_logs
-from app.library.ytdlp import YTDLP
+from app.library.Utils import create_cookies_file
 
-from .extractor import extract_info_sync
+from ...features.ytdlp.extractor import extract_info_sync
 from .hooks import HookHandlers, NestedLogger
 from .process_manager import ProcessManager
 from .status_tracker import StatusTracker

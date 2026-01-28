@@ -1,7 +1,7 @@
 import unittest
 from typing import Any
 
-from app.library.mini_filter import MiniFilter
+from app.features.ytdlp.mini_filter import MiniFilter
 
 
 class TestMiniFilter(unittest.TestCase):

@@ -20,11 +20,11 @@ from app.features.tasks.definitions.schemas import (
     ExtractionRule,
     TaskDefinition,
 )
+from app.features.ytdlp.extractor import fetch_info
+from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
 from app.library.config import Config
-from app.library.downloads.extractor import fetch_info
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
-from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 

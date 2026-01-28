@@ -95,7 +95,7 @@ async def items_list(request: Request, queue: DownloadQueue, encoder: Encoder, c
                 continue
 
             try:
-                download.info.sidecar = download.get_file_sidecar()
+                download.info.sidecar = download.info.get_file_sidecar()
             except Exception:
                 download.info.sidecar = {}
 
@@ -264,7 +264,7 @@ async def item_view(request: Request, queue: DownloadQueue, encoder: Encoder) ->
     }
 
     if "finished" == item.info.status and (filename := item.info.get_file()):
-        from app.library.ffprobe import ffprobe
+        from app.features.streaming.library.ffprobe import ffprobe
 
         try:
             info["ffprobe"] = await ffprobe(filename)

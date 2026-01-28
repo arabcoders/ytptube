@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from xml.etree.ElementTree import Element
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
-from app.library.Utils import get_archive_id
+from app.features.ytdlp.utils import get_archive_id
 
 from ._base_handler import BaseHandler
 

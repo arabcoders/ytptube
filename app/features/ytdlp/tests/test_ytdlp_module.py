@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, Mock, patch
 
-from app.library.Utils import REMOVE_KEYS
-from app.library.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
+from app.features.ytdlp.utils import _DATA
+from app.features.ytdlp.ytdlp import YTDLP, _ArchiveProxy, ytdlp_options
 
 
 class TestArchiveProxy:
@@ -18,7 +18,7 @@ class TestArchiveProxy:
         assert ("" in p2) is False
         assert p2.add("") is False
 
-    @patch("app.library.Archiver.Archiver.get_instance")
+    @patch("app.features.ytdlp.archiver.Archiver.get_instance")
     def test_contains_and_add_delegate_to_archiver(self, mock_get_instance) -> None:
         arch = MagicMock()
         mock_get_instance.return_value = arch
@@ -61,7 +61,7 @@ class TestYtDlpOptions:
     def test_ignored_flags_match_remove_keys(self) -> None:
         # Collect the flags that should be ignored from REMOVE_KEYS
         ignored_flags: set[str] = {
-            f.strip() for group in REMOVE_KEYS for v in group.values() for f in v.split(",") if f.strip()
+            f.strip() for group in _DATA.REMOVE_KEYS for v in group.values() for f in v.split(",") if f.strip()
         }
 
         opts = ytdlp_options()
@@ -84,12 +84,12 @@ class TestYTDLP:
 
     def _create_ytdlp(self, params=None):
         """Helper to create a YTDLP instance with mocked parent __init__."""
-        with patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
+        with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params=params)
             ytdlp.params = params or {}
             return ytdlp
 
-    @patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__")
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_patches_download_archive_param(self, mock_super_init) -> None:
         """Test that __init__ removes download_archive before calling super, then restores it."""
         mock_super_init.return_value = None
@@ -116,7 +116,7 @@ class TestYTDLP:
         assert isinstance(ytdlp.archive, _ArchiveProxy)
         assert ytdlp.archive._file == "/tmp/archive.txt"
 
-    @patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__")
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_handles_no_download_archive(self, mock_super_init) -> None:
         """Test __init__ works correctly when download_archive is not in params."""
         mock_super_init.return_value = None
@@ -134,7 +134,7 @@ class TestYTDLP:
         assert isinstance(ytdlp.archive, _ArchiveProxy), "Verify archive proxy is falsey"
         assert not ytdlp.archive
 
-    @patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__")
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__")
     def test_init_handles_none_params(self, mock_super_init) -> None:
         """Test __init__ handles None params gracefully."""
         mock_super_init.return_value = None
@@ -145,10 +145,10 @@ class TestYTDLP:
         assert isinstance(ytdlp.archive, _ArchiveProxy)
         assert not ytdlp.archive
 
-    @patch("app.library.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
     def test_delete_downloaded_files_skips_when_interrupted(self, mock_super_delete) -> None:
         """Test _delete_downloaded_files skips cleanup when _interrupted is True."""
-        with patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
+        with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params={})
             ytdlp.to_screen = Mock()
 
@@ -164,12 +164,12 @@ class TestYTDLP:
             # Should return None
             assert result is None
 
-    @patch("app.library.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
+    @patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL._delete_downloaded_files")
     def test_delete_downloaded_files_calls_super_when_not_interrupted(self, mock_super_delete) -> None:
         """Test _delete_downloaded_files calls super when not interrupted."""
         mock_super_delete.return_value = "cleanup_result"
 
-        with patch("app.library.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
+        with patch("app.features.ytdlp.ytdlp.yt_dlp.YoutubeDL.__init__", return_value=None):
             ytdlp = YTDLP(params={})
             ytdlp._interrupted = False
 

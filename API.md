@@ -117,7 +117,6 @@ This document describes the available endpoints and their usage. All endpoints r
       - [Connection Events](#connection-events)
         - [`config_update`](#config_update)
         - [`connected`](#connected)
-        - [`active_queue`](#active_queue)
       - [Logging Events](#logging-events)
         - [`log_info`](#log_info)
         - [`log_success`](#log_success)
@@ -2736,29 +2735,6 @@ Emitted when a client successfully connects to the WebSocket.
   "data": {
     "sid": "session_id",
     "timestamp": 1234567890.123
-  }
-}
-```
-
----
-
-##### `active_queue`
-
-Emitted periodically with the current active queue status.
-
-**Event**:
-```json
-{
-  "event": "active_queue",
-  "data": {
-    "queue": [
-      {
-        "id": "abc123",
-        "status": "downloading",
-        "progress": 45.6,
-        ...
-      }
-    ]
   }
 }
 ```

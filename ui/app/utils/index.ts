@@ -228,25 +228,39 @@ const encodePath = (item: string): string => {
  * @param options - Optional fetch options, automatically extended with common headers and credentials.
  * @returns The fetch Response promise.
  */
-const request = (url: string, options: RequestInit = {}): Promise<Response> => {
-  options.method = options.method || 'GET'
-  options.headers = options.headers || {}; (options as any).withCredentials = true
+const request = (url: string, options: RequestInit & { timeout?: number } = {}): Promise<Response> => {
+  const { timeout, ...fetchOptions } = options
 
-  if (undefined === (options.headers as Record<string, any>)['Content-Type']) {
+  fetchOptions.method = fetchOptions.method || 'GET'
+  fetchOptions.headers = fetchOptions.headers || {};
+  (fetchOptions as any).withCredentials = true
+
+  if (undefined === (fetchOptions.headers as Record<string, any>)['Content-Type']) {
     if (!(options?.body instanceof FormData)) {
-      ; (options.headers as Record<string, any>)['Content-Type'] = 'application/json'
+      ; (fetchOptions.headers as Record<string, any>)['Content-Type'] = 'application/json'
     }
   }
 
-  if (undefined === (options.headers as Record<string, any>)['Accept']) {
-    ; (options.headers as Record<string, any>)['Accept'] = 'application/json'
+  if (undefined === (fetchOptions.headers as Record<string, any>)['Accept']) {
+    ; (fetchOptions.headers as Record<string, any>)['Accept'] = 'application/json'
   }
 
   if (url.startsWith('/')) {
-    options.credentials = 'same-origin'
+    fetchOptions.credentials = 'same-origin'
   }
 
-  return fetch(url.startsWith('/') ? uri(url) : url, options)
+  let controller: AbortController | undefined
+  let timer: ReturnType<typeof setTimeout> | undefined
+
+  if (typeof timeout === 'number' && timeout > 0) {
+    controller = new AbortController()
+    fetchOptions.signal = controller.signal
+    timer = setTimeout(() => controller!.abort(`Request timed out.`), timeout*1000)
+  }
+
+  return fetch(url.startsWith('/') ? uri(url) : url, fetchOptions).finally(() => {
+    if (timer) { clearTimeout(timer) }
+  })
 }
 
 /**
@@ -879,10 +893,10 @@ const parse_api_error = async (json: unknown): Promise<string> => {
   }
 
   if (payload.error) {
-    return String(payload.error+(extra_detail ? ` - ${extra_detail}` : ''))
+    return String(payload.error + (extra_detail ? ` - ${extra_detail}` : ''))
   }
   if (payload.message) {
-    return String(payload.message+(extra_detail ? ` - ${extra_detail}` : ''))
+    return String(payload.message + (extra_detail ? ` - ${extra_detail}` : ''))
   }
 
   if (extra_detail) {

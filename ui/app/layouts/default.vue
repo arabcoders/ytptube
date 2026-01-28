@@ -135,10 +135,20 @@
       <div>
         <NuxtLoadingIndicator />
         <NuxtPage v-if="config.is_loaded" :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
-        <Message v-if="!config.is_loaded" class="is-info mt-5" title="Loading Configuration"
-          icon="fas fa-spinner fa-spin">
-          <p>This usually takes less than a second. If this is taking too long,
-            <NuxtLink class="button is-text p-0" @click="config.loadConfig">reload configuration</NuxtLink>.
+        <Message v-if="!config.is_loaded" class="mt-5"
+          :class="{ 'is-info': config.is_loading, 'is-danger': !config.is_loading }"
+          :title="config.is_loading ? 'Loading configuration...' : 'Failed to load configuration'"
+          :icon="config.is_loading ? 'fas fa-spinner fa-spin' : 'fas fa-triangle-exclamation'">
+          <p v-if="config.is_loading">
+            This usually takes less than a few seconds. If this is taking too long,
+            <NuxtLink class="button is-text p-0" @click="reloadPage">click here</NuxtLink> to reload the
+            page.
+          </p>
+          <p v-if="!config.is_loading">
+            Failed to load the application configuration. This likely indicates a problem with the backend. Try to
+            <NuxtLink class="button is-text p-0" @click="() => config.loadConfig(true)">reload
+              configuration</NuxtLink> or <NuxtLink class="button is-text p-0" @click="reloadPage">reload the page
+            </NuxtLink>.
           </p>
           <template v-if="socket.error">
             <hr>

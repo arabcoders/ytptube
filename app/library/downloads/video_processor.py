@@ -6,11 +6,11 @@ from datetime import UTC, datetime, timedelta
 from email.utils import formatdate
 from typing import TYPE_CHECKING
 
+from app.features.ytdlp.utils import extract_ytdlp_logs, get_extras
+from app.library.downloads import Download
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
-from app.library.Utils import calc_download_path, extract_ytdlp_logs, get_extras, merge_dict, str_to_dt
-
-from .core import Download
+from app.library.Utils import calc_download_path, merge_dict, str_to_dt
 
 if TYPE_CHECKING:
     from app.library.ItemDTO import Item

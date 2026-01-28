@@ -5,6 +5,9 @@ import type { Preset } from '~/types/presets';
 import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
 import { request } from '~/utils';
 
+let last_reload = 0;
+const CONFIG_TTL = 10;
+
 export const useConfigStore = defineStore('config', () => {
   const state = reactive<ConfigState>({
     showForm: useStorage('showForm', true),
@@ -54,14 +57,23 @@ export const useConfigStore = defineStore('config', () => {
     is_loading: false,
   });
 
-  const loadConfig = async () => {
+  const loadConfig = async (force: boolean = false) => {
     if (state.is_loading) {
       return;
     }
+    const now = Date.now()
+
+    if (state.is_loaded && !force && last_reload > 0) {
+      const age = (now - last_reload) / 1000
+      if (age < CONFIG_TTL) {
+        return
+      }
+    }
+
     state.is_loaded = false;
     state.is_loading = true;
     try {
-      const resp = await request('/api/system/configuration');
+      const resp = await request('/api/system/configuration', { timeout: 10 });
       if (!resp.ok) {
         return;
       }
@@ -79,11 +91,12 @@ export const useConfigStore = defineStore('config', () => {
       }
 
       setAll(data);
+      state.is_loaded = true;
+      last_reload = now;
     } catch (e: any) {
-      console.error('Failed to load configuration', e);
+      console.error(`Failed to load configuration: ${e}`);
     }
     finally {
-      state.is_loaded = true;
       state.is_loading = false;
     }
   }

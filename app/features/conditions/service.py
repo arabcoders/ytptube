@@ -4,8 +4,8 @@ from aiohttp import web
 
 from app.features.conditions.models import ConditionModel
 from app.features.conditions.repository import ConditionsRepository
+from app.features.ytdlp.mini_filter import match_str
 from app.library.Events import EventBus, Events
-from app.library.mini_filter import match_str
 from app.library.Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("feature.conditions")

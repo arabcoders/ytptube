@@ -87,8 +87,8 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         preset: str = params.get("preset", config.default_preset)
         key: str = cache.hash(url + str(preset))
         if not cache.has(key):
-            from app.library.downloads.extractor import fetch_info
-            from app.library.YTDLPOpts import YTDLPOpts
+            from app.features.ytdlp.extractor import fetch_info
+            from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 
             (data, _) = await fetch_info(
                 config=YTDLPOpts.get_instance().preset(name=preset).get_all(),
@@ -115,7 +115,7 @@ async def conditions_test(request: Request, encoder: Encoder, cache: Cache, conf
         )
 
     try:
-        from app.library.mini_filter import match_str
+        from app.features.ytdlp.mini_filter import match_str
 
         status: bool = match_str(cond, data)
     except Exception as e:

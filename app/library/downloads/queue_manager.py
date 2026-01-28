@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 
 from app.library.config import Config
-from app.library.downloads.extractor import shutdown_extractor
 from app.library.Events import EventBus, Events
 from app.library.ItemDTO import Item, ItemDTO
 from app.library.Scheduler import Scheduler
@@ -48,7 +47,7 @@ class DownloadQueue(metaclass=Singleton):
     def get_instance(config: Config | None = None) -> "DownloadQueue":
         return DownloadQueue(config=config)
 
-    def attach(self, app: web.Application) -> None:
+    def attach(self, _: web.Application) -> None:
         Services.get_instance().add("queue", self)
 
         async def event_handler(_, __):
@@ -75,7 +74,7 @@ class DownloadQueue(metaclass=Singleton):
                 id=delete_old_history.__name__,
             )
 
-        app.on_shutdown.append(self.on_shutdown)
+        # app.on_shutdown.append(self.on_shutdown)
 
     async def test(self) -> bool:
         await self.done.test()
@@ -217,8 +216,7 @@ class DownloadQueue(metaclass=Singleton):
         return self.pool.is_paused()
 
     async def on_shutdown(self, _: web.Application):
-        # await self.pool.shutdown()
-        await shutdown_extractor()
+        await self.pool.shutdown()
 
     async def add(self, item: Item, already: set | None = None, entry: dict | None = None) -> dict[str, str]:
         """

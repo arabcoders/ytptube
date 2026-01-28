@@ -9,20 +9,13 @@ import yt_dlp.utils
 
 from app.features.conditions.service import Conditions
 from app.features.presets.service import Presets
+from app.features.ytdlp.extractor import fetch_info
+from app.features.ytdlp.utils import archive_add, archive_read, arg_converter, get_extras, ytdlp_reject
 from app.library.Events import Events
 from app.library.ItemDTO import ItemDTO
-from app.library.Utils import (
-    archive_add,
-    archive_read,
-    arg_converter,
-    create_cookies_file,
-    get_extras,
-    merge_dict,
-    ytdlp_reject,
-)
+from app.library.Utils import create_cookies_file, merge_dict
 
 from .core import Download
-from .extractor import fetch_info
 from .playlist_processor import process_playlist
 from .video_processor import add_video
 

@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Any
 
 from app.features.presets.schemas import Preset
+from app.features.ytdlp.utils import arg_converter
+from app.library.config import Config
+from app.library.Utils import calc_download_path, create_cookies_file, merge_dict
 
-from .config import Config
-from .Utils import REMOVE_KEYS, arg_converter, calc_download_path, create_cookies_file, merge_dict
-
-LOG: logging.Logger = logging.getLogger("YTDLPOpts")
+LOG: logging.Logger = logging.getLogger("ytdlp.ytdlp_opts")
 
 
 class ARGSMerger:
@@ -123,7 +123,7 @@ class YTDLPCli:
             config (Config|None): The Config instance (optional)
 
         """
-        from .ItemDTO import Item
+        from app.library.ItemDTO import Item
 
         if not isinstance(item, Item):
             msg = f"Expected Item instance, got {type(item).__name__}"
@@ -293,7 +293,9 @@ class YTDLPOpts:
         """
         bad_options: dict = {}
         if from_user:
-            bad_options: dict[str, str] = {k: v for d in REMOVE_KEYS for k, v in d.items()}
+            from app.features.ytdlp.utils import _DATA
+
+            bad_options: dict[str, str] = {k: v for d in _DATA.REMOVE_KEYS for k, v in d.items()}
 
         for key, value in config.items():
             if from_user and key in bad_options:

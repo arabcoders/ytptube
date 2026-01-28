@@ -6,7 +6,7 @@ import pysubs2
 from pysubs2.formats.substation import SubstationFormat
 from pysubs2.time import ms_to_times
 
-from .Utils import ALLOWED_SUBS_EXTENSIONS
+from app.library.Utils import ALLOWED_SUBS_EXTENSIONS
 
 LOG: logging.Logger = logging.getLogger("player.subtitle")
 

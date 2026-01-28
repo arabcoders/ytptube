@@ -13,13 +13,10 @@ from pathlib import Path
 
 import anyio
 
+from app.features.streaming.types import FFProbeError
 from app.library.Utils import timed_lru_cache
 
-LOG: logging.Logger = logging.getLogger(__name__)
-
-
-class FFProbeError(Exception):
-    pass
+LOG: logging.Logger = logging.getLogger("streaming.ffprobe")
 
 
 class FFStream:

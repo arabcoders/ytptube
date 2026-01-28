@@ -5,11 +5,11 @@ from datetime import UTC, datetime
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.ytdlp.ytdlp_opts import YTDLPOpts
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.httpx_client import Globals, build_request_headers, get_async_client, resolve_curl_transport
 from app.library.router import add_route, route
-from app.library.YTDLPOpts import YTDLPOpts
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

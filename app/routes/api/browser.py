@@ -7,12 +7,12 @@ from urllib.parse import unquote_plus
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.streaming.library.ffprobe import ffprobe
 from app.library.cache import Cache
 from app.library.config import Config
 from app.library.downloads import DownloadQueue
 from app.library.encoder import Encoder
 from app.library.Events import EventBus, Events
-from app.library.ffprobe import ffprobe
 from app.library.router import route
 from app.library.Utils import delete_dir, get_file, get_file_sidecar, get_files, get_mime_type, move_file, rename_file
 

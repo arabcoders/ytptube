@@ -6,10 +6,12 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from app.library.LogWrapper import LogWrapper
-from app.library.mini_filter import match_str
+from aiohttp import web
+
+from app.features.ytdlp.utils import _DATA, LogWrapper, get_archive_id
+from app.features.ytdlp.ytdlp import YTDLP
+from app.library.Services import Services
 from app.library.Singleton import Singleton
-from app.library.ytdlp import YTDLP
 
 LOG: logging.Logger = logging.getLogger("downloads.extractor")
 
@@ -60,6 +62,11 @@ class ExtractorPool(metaclass=Singleton):
 
         """
         return cls()
+
+    def attach(self, app: web.Application) -> None:
+        """Attach the extractor pool to the application (no-op for now)."""
+        app.on_shutdown.append(self.shutdown)
+        Services.get_instance().add(__class__.__name__, self)
 
     def _ensure_initialized(self, config: ExtractorConfig) -> None:
         """
@@ -190,22 +197,6 @@ def _sanitize_config(config: dict[str, Any]) -> dict[str, Any]:
     return sanitized
 
 
-def _get_archive_id_dict(url: str) -> dict[str, str | None]:
-    """
-    Get archive ID for logging purposes.
-
-    Args:
-        url: URL to get archive ID for
-
-    Returns:
-        Dictionary with id, ie_key, and archive_id
-
-    """
-    from app.library.Utils import get_archive_id
-
-    return get_archive_id(url=url)
-
-
 def extract_info_sync(
     config: dict[str, Any],
     url: str,
@@ -233,23 +224,14 @@ def extract_info_sync(
         tuple[dict | None, list[dict]]: Extracted information and captured logs.
 
     """
-    params: dict[str, Any] = {
-        **config,
-        "simulate": True,
-        "color": "no_color",
-        "extract_flat": True,
-        "skip_download": True,
-        "ignoreerrors": True,
-        "ignore_no_formats_error": True,
-    }
+    params: dict[str, Any] = {**config, **_DATA.YTDLP_PARAMS, "simulate": True}
 
     if debug:
         params["verbose"] = True
-    else:
-        params["quiet"] = True
+        params.pop("quiet", None)
 
     log_wrapper = LogWrapper()
-    id_dict: dict[str, str | None] = _get_archive_id_dict(url=url)
+    id_dict: dict[str, str | None] = get_archive_id(url=url)
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
 
     log_wrapper.add_target(
@@ -297,9 +279,14 @@ def extract_info_sync(
     if not data:
         return (data, captured_logs)
 
-    data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
-    if not data["is_premiere"]:
-        data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
+    try:
+        from app.features.ytdlp.mini_filter import match_str
+
+        data["is_premiere"] = match_str("media_type=video & duration & is_live", data)
+        if not data["is_premiere"]:
+            data["is_premiere"] = "video" == data.get("media_type") and "is_upcoming" == data.get("live_status")
+    except ImportError:
+        pass
 
     result = YTDLP.sanitize_info(data, remove_private_keys=True) if sanitize_info else data
 
@@ -399,7 +386,3 @@ async def fetch_info(
             )
     finally:
         semaphore.release()
-
-
-async def shutdown_extractor() -> None:
-    await ExtractorPool.get_instance().shutdown()

@@ -79,5 +79,20 @@ def format_validation_errors(exc: ValidationError) -> list[dict[str, Any]]:
 
 def gen_random(length: int = 16) -> str:
     import secrets
+    import string
 
-    return "".join(secrets.token_urlsafe(length)[:length])
+    if length < 1:
+        msg = "length must be >= 1"
+        raise ValueError(msg)
+
+    middle_alphabet = string.ascii_letters + string.digits + "-_"
+    edge_alphabet = string.ascii_letters + string.digits
+
+    if 1 == length:
+        return secrets.choice(edge_alphabet)
+
+    return (
+        secrets.choice(edge_alphabet)
+        + "".join(secrets.choice(middle_alphabet) for _ in range(length - 2))
+        + secrets.choice(edge_alphabet)
+    )

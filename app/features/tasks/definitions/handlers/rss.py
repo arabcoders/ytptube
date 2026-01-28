@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any
 from xml.etree.ElementTree import Element
 
 from app.features.tasks.definitions.results import HandleTask, TaskFailure, TaskItem, TaskResult
+from app.features.ytdlp.extractor import fetch_info
+from app.features.ytdlp.utils import get_archive_id
 from app.library.cache import Cache
-from app.library.downloads.extractor import fetch_info
-from app.library.Utils import get_archive_id
 
 from ._base_handler import BaseHandler
 

@@ -9,7 +9,7 @@ from app.features.core.schemas import Pagination
 from app.features.core.utils import parse_int
 from app.features.presets.utils import preset_name
 from app.library.config import Config
-from app.library.Utils import arg_converter, create_cookies_file
+from app.library.Utils import create_cookies_file
 
 
 class Preset(BaseModel):
@@ -58,6 +58,8 @@ class Preset(BaseModel):
             return ""
 
         try:
+            from app.features.ytdlp.utils import arg_converter
+
             arg_converter(args=value, level=True)
         except Exception as e:
             msg = f"Invalid command options for yt-dlp: {e!s}"
