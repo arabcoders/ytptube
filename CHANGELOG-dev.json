@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260128-dd0633c2",
-        "date": "2026-01-28T14:09:08+00:00",
+        "tag": "dev-20260128-d8ccbe00",
+        "date": "2026-01-28T14:22:32+00:00",
         "commits": [
+            {
+                "sha": "d8ccbe00",
+                "message": "fix: sidecar loading for history items",
+                "author": "arabcoders",
+                "date": "2026-01-28T14:22:32+00:00",
+                "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e"
+            },
             {
                 "sha": "dd0633c2",
                 "message": "refactor: improve error messaging during failure to load config",
@@ -3973,7 +3980,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6"
+        "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e"
     },
     {
         "tag": "dev-20250616-c07465a6",

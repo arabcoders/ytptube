@@ -267,9 +267,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
-    "date": "2026-01-28T14:09:08+00:00",
+    "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
+    "date": "2026-01-28T14:22:32+00:00",
     "commits": [
+      {
+        "sha": "d8ccbe00",
+        "full_sha": "d8ccbe00fa52237f19a1a029ffd9a231be1da99e",
+        "message": "fix: sidecar loading for history items",
+        "author": "arabcoders",
+        "date": "2026-01-28T14:22:32+00:00"
+      },
       {
         "sha": "dd0633c2",
         "full_sha": "dd0633c2aa6e674cde470a51818c06091a1921f6",
