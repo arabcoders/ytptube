@@ -499,10 +499,11 @@ import { useStorage, useIntersectionObserver } from '@vueuse/core'
 import type { StoreItem } from '~/types/store'
 import { useConfirm } from '~/composables/useConfirm'
 import { deepIncludes, getPath, getImage } from '~/utils'
+import type { item_request } from '~/types/item'
 
 const emitter = defineEmits<{
   (e: 'getInfo', url: string, preset: string, cli: string): void
-  (e: 'add_new', item: Partial<StoreItem>): void
+  (e: 'add_new', item: item_request): void
   (e: 'getItemInfo', id: string): void
   (e: 'clear_search'): void
 }>()
@@ -850,7 +851,7 @@ const removeItem = async (item: StoreItem) => {
 }
 
 const retryItem = async (item: StoreItem, re_add: boolean = false, remove_file: boolean = false) => {
-  const item_req: Partial<StoreItem> = {
+  const item_req: item_request = {
     url: item.url,
     preset: item.preset,
     folder: item.folder,

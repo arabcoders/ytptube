@@ -90,13 +90,13 @@
 
       <div class="column is-2-tablet is-5-mobile">
         <Dropdown label="Actions" icons="fa-solid fa-list">
-          <a class="dropdown-item has-text-purple" @click="(selectedElms.length > 0 && !massRun) ? runConfirm() : null"
+          <a class="dropdown-item has-text-purple" @click="(selectedElms.length > 0 && !massRun) ? runSelected() : null"
             :style="{ opacity: (selectedElms.length < 1 || massRun) ? 0.5 : 1, cursor: (selectedElms.length < 1 || massRun) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-up-right-from-square" /></span>
             <span>Run Selected</span>
           </a>
           <a class="dropdown-item has-text-danger"
-            @click="(selectedElms.length > 0 && !massDelete) ? deleteConfirm() : null"
+            @click="(selectedElms.length > 0 && !massDelete) ? deleteSelected() : null"
             :style="{ opacity: (selectedElms.length < 1 || massDelete) ? 0.5 : 1, cursor: (selectedElms.length < 1 || massDelete) ? 'not-allowed' : 'pointer' }">
             <span class="icon"><i class="fa-solid fa-trash-can" /></span>
             <span>Remove Selected</span>
@@ -448,10 +448,6 @@
       </div>
     </div>
 
-    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
-      :message="dialog_confirm.message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
-      :html_message="dialog_confirm.html_message" @cancel="dialog_confirm = reset_dialog()" />
-
     <Modal v-if="inspectTask" @close="() => inspectTask = null" :contentClass="`modal-content-max`">
       <TaskInspect :url="inspectTask.url" :preset="inspectTask.preset" />
     </Modal>
@@ -470,6 +466,7 @@ import type { Task, ExportedTask } from '~/types/tasks'
 import type { WSEP } from '~/types/sockets'
 import { sleep } from '~/utils'
 import { useSessionCache } from '~/utils/cache'
+import type { item_request } from '~/types/item'
 
 type TaskWithUI = Task & { in_progress?: boolean }
 
@@ -478,16 +475,15 @@ const toast = useNotification()
 const config = useConfigStore()
 const socket = useSocketStore()
 const stateStore = useStateStore()
-const { confirmDialog: cDialog } = useDialog()
+const { confirmDialog } = useDialog()
 const sessionCache = useSessionCache()
 const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
-// Use the tasks composable
 const tasksComposable = useTasks()
 const { tasks, isLoading, addInProgress } = tasksComposable
 
-const task = ref<TaskWithUI | Record<string, unknown>>({})
+const task = ref<Partial<TaskWithUI>>({})
 const taskRef = ref<number | null>(null)
 const toggleForm = ref<boolean>(false)
 const selectedElms = ref<Array<number>>([])
@@ -496,20 +492,10 @@ const massRun = ref<boolean>(false)
 const massDelete = ref<boolean>(false)
 const table_container = ref(false)
 const inspectTask = ref<TaskWithUI | null>(null)
-
-const reset_dialog = () => ({
-  visible: false,
-  title: 'Confirm Action',
-  confirm: (_opts: any) => { },
-  message: '',
-  html_message: '',
-  options: [],
-});
-
-const dialog_confirm = ref(reset_dialog())
-
 const query = ref()
 const toggleFilter = ref(false)
+const CACHE_KEY = 'tasks:handler_support'
+const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {})
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
@@ -522,18 +508,19 @@ watch(query, () => {
   selectedElms.value = []
 })
 
-
 watch(masterSelectAll, value => {
   if (!value) {
     selectedElms.value = []
     return
   }
+
   for (const key in filteredTasks.value) {
     const element = filteredTasks.value[key] as Task
     if (element.id) {
       selectedElms.value.push(element.id)
     }
   }
+
 })
 
 watch(() => socket.isConnected, async () => {
@@ -543,10 +530,7 @@ watch(() => socket.isConnected, async () => {
   socket.on('item_status', statusHandler)
 })
 
-
-const CACHE_KEY = 'tasks:handler_support'
-const taskHandlerSupport = ref<Record<string, boolean>>(sessionCache.get(CACHE_KEY) || {})
-watch(taskHandlerSupport, (newValue) => sessionCache.set(CACHE_KEY, newValue), { deep: true })
+watch(taskHandlerSupport, newValue => sessionCache.set(CACHE_KEY, newValue), { deep: true })
 
 const getCacheKey = (task: Task): string => `${task.id}:${task.url}`
 
@@ -581,7 +565,7 @@ const checkHandlerSupport = async (task: Task): Promise<boolean> => {
       url: task.url,
       static_only: true
     })
-    const supported = result?.matched === true
+    const supported = true === result?.matched
     taskHandlerSupport.value[cacheKey] = supported
     return supported
   } catch {
@@ -624,7 +608,6 @@ const reloadContent = async (fromMounted: boolean = false) => {
   }
 }
 
-
 const resetForm = (closeForm: boolean = false) => {
   task.value = {
     name: '',
@@ -644,38 +627,39 @@ const resetForm = (closeForm: boolean = false) => {
   }
 }
 
-const deleteConfirm = () => {
-  if (selectedElms.value.length < 1) {
-    toast.error('No tasks selected.')
-    return
-  }
-  dialog_confirm.value.visible = true
-  dialog_confirm.value.title = 'Delete Selected Tasks'
-  dialog_confirm.value.message = `Delete ${selectedElms.value.length} task/s?`
-  dialog_confirm.value.confirm = async () => await deleteSelected()
-}
-
 const deleteSelected = async () => {
   if (selectedElms.value.length < 1) {
     toast.error('No tasks selected.')
     return
   }
 
-  massDelete.value = true
-  dialog_confirm.value = reset_dialog()
+  const { status } = await confirmDialog({
+    title: 'Delete Selected Tasks',
+    rawHTML: `Delete <strong class="has-text-danger">${selectedElms.value.length}</strong> task/s?<ul>` + selectedElms.value.map(id => {
+      const item = tasks.value.find(t => t.id === id)
+      return item ? `<li>${item.id}: ${item.name}</li>` : ''
+    }).join('') + `</ul>`,
+    confirmText: 'Delete',
+    confirmColor: 'is-danger'
+  })
+
+  if (true !== status) {
+    return
+  }
 
   const itemsToDelete = tasks.value.filter(t => t.id && selectedElms.value.includes(t.id))
   if (itemsToDelete.length < 1) {
     toast.error('No tasks found to delete.')
-    massDelete.value = false
     return
   }
 
-  // Delete tasks sequentially
+  massDelete.value = true
+
   for (const item of itemsToDelete) {
-    if (item.id) {
-      await tasksComposable.deleteTask(item.id)
+    if (!item.id) {
+      continue
     }
+    await tasksComposable.deleteTask(item.id)
   }
 
   selectedElms.value = []
@@ -687,15 +671,9 @@ const deleteSelected = async () => {
 }
 
 const deleteItem = async (item: Task) => {
-  if (true !== (await box.confirm(`Delete '${item.name}' task?`))) {
+  if (!item.id || true !== (await box.confirm(`Delete '${item.name}' task?`))) {
     return
   }
-
-  if (!item.id) {
-    toast.error('Task ID is missing')
-    return
-  }
-
   await tasksComposable.deleteTask(item.id)
 }
 
@@ -705,15 +683,9 @@ const toggleEnabled = async (item: Task) => {
     return
   }
 
-  const newStatus = !item.enabled
-
-  const updated = await tasksComposable.patchTask(item.id, { enabled: newStatus })
-
+  const updated = await tasksComposable.patchTask(item.id, { enabled: !item.enabled })
   if (updated) {
-    // Update local reference
     item.enabled = updated.enabled
-
-    // Update handler support cache if needed
     if (updated.enabled) {
       await checkHandlerSupport(updated)
     }
@@ -726,15 +698,9 @@ const toggleHandlerEnabled = async (item: Task) => {
     return
   }
 
-  const newStatus = !item.handler_enabled
-
-  const updated = await tasksComposable.patchTask(item.id, { handler_enabled: newStatus })
-
+  const updated = await tasksComposable.patchTask(item.id, { handler_enabled: !item.handler_enabled })
   if (updated) {
-    // Update local reference
     item.handler_enabled = updated.handler_enabled
-
-    // Update handler support cache if needed
     if (updated.handler_enabled) {
       await checkHandlerSupport(updated)
     }
@@ -745,10 +711,8 @@ const updateItem = async ({ reference, task, archive_all }: { reference?: number
   let createdOrUpdated: Task | null = null
 
   if (reference) {
-    // Update existing task
     createdOrUpdated = await tasksComposable.updateTask(reference, task)
   } else {
-    // Create new task
     createdOrUpdated = await tasksComposable.createTask(task)
   }
 
@@ -756,7 +720,6 @@ const updateItem = async ({ reference, task, archive_all }: { reference?: number
     return
   }
 
-  // Check handler support for the new/updated task
   await checkHandlerSupport(createdOrUpdated)
 
   if (!reference && true === archive_all && createdOrUpdated.id) {
@@ -799,29 +762,22 @@ const tryParse = (expression: string) => {
   }
 }
 
-const runConfirm = () => {
-  if (selectedElms.value.length < 1) {
-    toast.error('No tasks selected.')
-    return
-  }
-  dialog_confirm.value.visible = true
-  dialog_confirm.value.title = 'Run Selected Tasks'
-
-  dialog_confirm.value.html_message = `Run the following tasks?<ul>` + selectedElms.value.map(id => {
-    const item = tasks.value.find(t => t.id === id)
-    return item ? `<li>${item.name}</li>` : ''
-  }).join('') + `</ul>`
-
-  dialog_confirm.value.confirm = async () => await runSelected()
-}
-
 const runSelected = async () => {
   if (selectedElms.value.length < 1) {
     toast.error('No tasks selected.')
     return
   }
 
-  dialog_confirm.value = reset_dialog()
+  const { status } = await confirmDialog({
+    rawHTML: `Run the following tasks?<ul>` + selectedElms.value.map(id => {
+      const item = tasks.value.find(t => t.id === id)
+      return item ? `<li>${item.name}</li>` : ''
+    }).join('') + `</ul>`
+  })
+
+  if (true !== status) {
+    return
+  }
 
   massRun.value = true
 
@@ -851,9 +807,14 @@ const runNow = async (item: TaskWithUI, mass: boolean = false) => {
     item.in_progress = true
   }
 
-  const data: Record<string, unknown> = {
+  const data: item_request = {
     url: item.url,
     preset: item.preset,
+    extras: {
+      source_name: item.name,
+      source_id: item.id,
+      source_handler: "Web",
+    }
   }
 
   if (item.folder) {
@@ -868,7 +829,7 @@ const runNow = async (item: TaskWithUI, mass: boolean = false) => {
     data.cli = item.cli
   }
 
-  if (item?.auto_start !== undefined) {
+  if (undefined !== item?.auto_start) {
     data.auto_start = item.auto_start
   }
 
@@ -939,7 +900,7 @@ const archiveAll = async (item: TaskWithUI, by_pass: boolean = false) => {
 
   try {
     if (true !== by_pass) {
-      const { status } = await cDialog({
+      const { status } = await confirmDialog({
         message: `Mark all '${item.name}' items as downloaded in download archive?`
       })
 
@@ -965,7 +926,7 @@ const unarchiveAll = async (item: TaskWithUI) => {
   }
 
   try {
-    const { status } = await cDialog({
+    const { status } = await confirmDialog({
       message: `Remove all '${item.name}' items from download archive?`
     })
 
@@ -990,7 +951,7 @@ const generateMeta = async (item: TaskWithUI) => {
   }
 
   try {
-    const { status } = await cDialog({
+    const { status } = await confirmDialog({
       rawHTML: `
       <p>
         Generate '${item.name}' metadata? you will be notified when it is done.

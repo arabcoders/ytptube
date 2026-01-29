@@ -201,7 +201,7 @@ class Config(metaclass=Singleton):
     is_native: bool = False
     "Is the application running in natively."
 
-    prevent_live_premiere: bool = False
+    prevent_live_premiere: bool = True
     """Prevent downloading of the initial premiere live broadcast."""
 
     live_premiere_buffer: int = 5

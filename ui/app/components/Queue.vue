@@ -289,7 +289,7 @@
                 <span>Pause</span>
               </button>
             </div>
-            <div class="column is-half-mobile">
+            <div class="column">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
                 <template v-if="isEmbedable(item.url)">
                   <NuxtLink class="dropdown-item has-text-danger" @click="embed_url = getEmbedable(item.url) as string">

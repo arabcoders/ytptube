@@ -93,7 +93,7 @@
 
       <div v-show="'history' === activeTab">
         <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-          @add_new="(item: Partial<StoreItem>) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
+          @add_new="(item: item_request) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
           @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
       </div>
     </div>
