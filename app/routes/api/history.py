@@ -425,14 +425,12 @@ async def items_add(request: Request, queue: DownloadQueue, encoder: Encoder) ->
         if not item.extras:
             item.extras = {}
 
-        item.extras["batch_id"] = batch_id
-        item.extras["batch_index"] = idx
-        item.extras["batch_total"] = len(items)
+        if len(items) > 1:
+            item.extras["batch_id"] = batch_id
+            item.extras["batch_index"] = idx
+            item.extras["batch_total"] = len(items)
 
-        task = asyncio.create_task(
-            queue.add(item=item),
-            name=f"bulk_add_{batch_id}_{idx}",
-        )
+        task = asyncio.create_task(queue.add(item=item), name=f"bulk_add_{batch_id}_{idx}")
         task.add_done_callback(lambda t: handle_task_exception(t, LOG))
 
     return web.json_response(
