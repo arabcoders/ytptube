@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "b5c3bfddc8b8df8747792517dd6fc8a6f3a55f6f",
+    "date": "2026-01-29T13:51:43+00:00",
+    "commits": [
+      {
+        "sha": "b5c3bfdd",
+        "full_sha": "b5c3bfddc8b8df8747792517dd6fc8a6f3a55f6f",
+        "message": "fix: only add batch extras when there are more than one item being processed.",
+        "author": "arabcoders",
+        "date": "2026-01-29T13:51:43+00:00"
+      },
+      {
+        "sha": "ed6cdf1f",
+        "full_sha": "ed6cdf1f92fff6e551b7b58ef4d2bbe50dfbc070",
+        "message": "refactor: minor UX fixes.",
+        "author": "arabcoders",
+        "date": "2026-01-29T13:48:18+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.0",
     "full_sha": "d17aa6c29e80d496225f866ef684073d92a3421e",
     "date": "2026-01-28T15:07:57+00:00",
