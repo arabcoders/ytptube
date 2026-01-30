@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "dfcbd2d23d2184308a56d603d401c422b811368f",
-    "date": "2026-01-30T13:31:20+00:00",
+    "full_sha": "f7c74c0a63f85076f13261085fa670df843be614",
+    "date": "2026-01-30T13:55:58+00:00",
     "commits": [
+      {
+        "sha": "f7c74c0a",
+        "full_sha": "f7c74c0a63f85076f13261085fa670df843be614",
+        "message": "fix: upgrader use yt-dlp[default] as package name",
+        "author": "arabcoders",
+        "date": "2026-01-30T13:55:58+00:00"
+      },
       {
         "sha": "dfcbd2d2",
         "full_sha": "dfcbd2d23d2184308a56d603d401c422b811368f",
