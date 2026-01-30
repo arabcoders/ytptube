@@ -75,7 +75,7 @@ class SqliteStore(metaclass=ThreadSafe):
         self._flush_interval: float = flush_interval
         self._max_pending: int = max_pending
 
-    async def __aenter__(self) -> "SqliteStore":
+    async def __aenter__(self):
         await self.get_connection()
         return self
 

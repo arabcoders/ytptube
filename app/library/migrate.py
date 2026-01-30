@@ -133,7 +133,7 @@ class Database:
         else:
             self.conn: AsyncConnection = db_url
 
-    async def __aenter__(self) -> "Database":
+    async def __aenter__(self):
         if self._owns_connection and self.conn is None:
             # Create connection from string URL
             from sqlalchemy.ext.asyncio import create_async_engine
