@@ -227,7 +227,7 @@ class Item:
         """
         from app.features.presets.service import Presets
 
-        return Presets.get_instance().get(self.preset if self.preset else self._default_preset())
+        return Presets.get_instance().get(self.preset or self._default_preset())
 
     def get_archive_id(self) -> str | None:
         """
@@ -553,7 +553,7 @@ class ItemDTO:
         """
         from app.features.presets.service import Presets
 
-        return Presets.get_instance().get(self.preset if self.preset else "default")
+        return Presets.get_instance().get(self.preset or "default")
 
     def archive_status(self, force: bool = False) -> None:
         """

@@ -162,7 +162,13 @@ ignore = [
   "PT011",
   "RUF001",
   "S311",
-  "TC001"
+  "TC001",
+  "ASYNC240",
+  # will be fixed in the future
+  "UP042",
+  "FURB171",
+  "FURB110",
+  "PLW0108",
 ]
 
 fixable = ["ALL"]
@@ -186,7 +192,7 @@ pythonpath = ["."]
 testpaths = ["app/tests", "app/features"]
 addopts = "-v --tb=short"
 filterwarnings = [
-  "ignore:Parsing dates involving a day of month without a year:DeprecationWarning"
+  "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",
 ]
 
 [dependency-groups]

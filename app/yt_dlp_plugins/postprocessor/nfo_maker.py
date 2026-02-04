@@ -157,7 +157,7 @@ class NFOMakerPP(PostProcessor):
             try:
                 first_date: str = next((str(nfo_data[k]) for k in self._DATE_FIELDS if nfo_data.get(k)), "")
                 if first_date:
-                    nfo_data["year"] = first_date.split("-")[0]
+                    nfo_data["year"] = first_date.split("-", maxsplit=1)[0]
             except Exception as e:
                 self.report_warning(f"Error extracting year from date: {e}")
 

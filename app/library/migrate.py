@@ -284,7 +284,7 @@ def create_migration(name: str, directory: str | None = None) -> str:
     Create a migration with the given name. If no directory is specified,
     the current working directory will be used.
     """
-    directory = directory if directory else "."
+    directory = directory or "."
     if not os.path.exists(directory) or not os.path.isdir(directory):
         msg: str = f"{directory} is not a directory."
         raise Error(msg)

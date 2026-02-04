@@ -199,12 +199,12 @@ async def check_updates(config: Config, encoder: Encoder, update_checker: Update
                 "app": {
                     "status": "update_available" if config.new_version else "up_to_date",
                     "current_version": config.app_version,
-                    "new_version": config.new_version if config.new_version else None,
+                    "new_version": config.new_version or None,
                 },
                 "ytdlp": {
                     "status": "update_available" if config.yt_new_version else "up_to_date",
                     "current_version": config._ytdlp_version(),
-                    "new_version": config.yt_new_version if config.yt_new_version else None,
+                    "new_version": config.yt_new_version or None,
                 },
             },
             status=web.HTTPOk.status_code,

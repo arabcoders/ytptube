@@ -21,12 +21,12 @@
   "dependencies": {
     "@microsoft/fetch-event-source": "^2.0.1",
     "@pinia/nuxt": "^0.11.3",
-    "@vueuse/core": "^14.1.0",
-    "@vueuse/nuxt": "^14.1.0",
+    "@vueuse/core": "^14.2.0",
+    "@vueuse/nuxt": "^14.2.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "cron-parser": "^5.5.0",
-    "cronstrue": "^3.9.0",
+    "cronstrue": "^3.11.0",
     "floating-vue": "^5.2.2",
     "hls.js": "^1.6.15",
     "marked": "^17.0.1",
@@ -37,7 +37,7 @@
     "nuxt": "^4.3.0",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
-    "vue-router": "^4.6.4",
+    "vue-router": "^5.0.1",
     "vue-toastification": "2.0.0-rc.5"
   },
   "pnpm": {
