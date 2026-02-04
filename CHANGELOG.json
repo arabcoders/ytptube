@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "14622ae3179ecb77e7cac72bdd7d381b0081c265",
-    "date": "2026-02-01T12:53:30+00:00",
+    "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173",
+    "date": "2026-02-04T22:28:06+00:00",
     "commits": [
+      {
+        "sha": "435882e1",
+        "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173",
+        "message": "chore: packages update and some formatting",
+        "author": "arabcoders",
+        "date": "2026-02-04T22:28:06+00:00"
+      },
       {
         "sha": "14622ae3",
         "full_sha": "14622ae3179ecb77e7cac72bdd7d381b0081c265",
