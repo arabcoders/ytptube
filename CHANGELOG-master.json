@@ -1,8 +1,64 @@
 [
     {
-        "tag": "master-20260128-d17aa6c2",
-        "date": "2026-01-28T15:07:57+00:00",
+        "tag": "master-20260205-0473c86f",
+        "date": "2026-02-05T15:08:35+00:00",
         "commits": [
+            {
+                "sha": "c67c9912",
+                "message": "fix: show alert instead of notification for missing video file.",
+                "author": "arabcoders",
+                "date": "2026-02-05T13:18:32+00:00",
+                "full_sha": "c67c9912cc07fc8a7b99bc728d5368fc3d41d26d"
+            },
+            {
+                "sha": "435882e1",
+                "message": "chore: packages update and some formatting",
+                "author": "arabcoders",
+                "date": "2026-02-04T22:28:06+00:00",
+                "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173"
+            },
+            {
+                "sha": "14622ae3",
+                "message": "chore: update packages",
+                "author": "arabcoders",
+                "date": "2026-02-01T12:53:30+00:00",
+                "full_sha": "14622ae3179ecb77e7cac72bdd7d381b0081c265"
+            },
+            {
+                "sha": "abf4c5cf",
+                "message": "fix: remove useless log statement.",
+                "author": "arabcoders",
+                "date": "2026-01-30T18:13:48+00:00",
+                "full_sha": "abf4c5cffd081c88ac1d7d7c9af04e75323e193f"
+            },
+            {
+                "sha": "f7c74c0a",
+                "message": "fix: upgrader use yt-dlp[default] as package name",
+                "author": "arabcoders",
+                "date": "2026-01-30T13:55:58+00:00",
+                "full_sha": "f7c74c0a63f85076f13261085fa670df843be614"
+            },
+            {
+                "sha": "dfcbd2d2",
+                "message": "chore: update external packages",
+                "author": "arabcoders",
+                "date": "2026-01-30T13:31:20+00:00",
+                "full_sha": "dfcbd2d23d2184308a56d603d401c422b811368f"
+            },
+            {
+                "sha": "b5c3bfdd",
+                "message": "fix: only add batch extras when there are more than one item being processed.",
+                "author": "arabcoders",
+                "date": "2026-01-29T13:51:43+00:00",
+                "full_sha": "b5c3bfddc8b8df8747792517dd6fc8a6f3a55f6f"
+            },
+            {
+                "sha": "ed6cdf1f",
+                "message": "refactor: minor UX fixes.",
+                "author": "arabcoders",
+                "date": "2026-01-29T13:48:18+00:00",
+                "full_sha": "ed6cdf1f92fff6e551b7b58ef4d2bbe50dfbc070"
+            },
             {
                 "sha": "651aa148",
                 "message": "refactor: reload config on websocket connection.",
@@ -3987,7 +4043,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "d17aa6c29e80d496225f866ef684073d92a3421e"
+        "full_sha": "0473c86fd668779445ecf75c3ede6daabd9037a0"
     },
     {
         "tag": "master-20250616-c07465a6",
