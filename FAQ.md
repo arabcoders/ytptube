@@ -317,22 +317,13 @@ Then simply create a new preset, and in the `Command options for yt-dlp` field s
 
 ```bash
 --extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416" 
---extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
 ```
 
-you and also enable the fallback by using the follow extractor args
-
-```bash
---extractor-args "youtubepot-bgutilhttp:base_url=http://bgutil_provider:4416;disable_innertube=1"
---extractor-args "youtube:player-client=default,tv,mweb;formats=incomplete"
-```
-
-Use this alternative extractor args in case the extractor fails to get the pot tokens from the bgutil provider server. 
 For more information please visit [bgutil-ytdlp-pot-provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) project.
 
 # Troubleshooting and submitting issues
 
-Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a thin wrapper for 
+Before asking a question or submitting an issue for YTPTube, please remember that YTPTube is only a wrapper for 
 [yt-dlp](https://github.com/yt-dlp/yt-dlp). Any issues you might be experiencing with authentication to video websites, 
 postprocessing, permissions, other `yt-dlp options` configurations which seem not to work, or anything else that 
 concerns the workings of the underlying yt-dlp library, need not be opened on the YTPTube project.
@@ -343,7 +334,8 @@ and once that is working, importing the options that worked for you into a new `
 ## Via HTTP
 
 If you have enabled the web terminal via `YTP_CONSOLE_ENABLED` environment variable, simply go to `Other > Terminal` use
- the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else.
+ the yt-dlp command, the interface is jailed to the `yt-dlp` binary you can't access anything else. Or from download form 
+ by clicking `advanced options` button than the yellow terminal icon `Run directly in console`.
 
 ## Via CLI 
 
@@ -503,7 +495,7 @@ as we only test for GPU encoding once on first video stream.
 
 # Allowing internal URLs requests
 
-By default, YTPTube prevents requests to internal resources, for security reasons. However, if you want to allow requests to internal URLs, you can set the `YTP_ALLOW_INTERNAL_URLS` environment variable to `true`. This will allow requests to internal URLs. 
+By default, YTPTube prevents requests to internal resources. However, if you want to allow requests to internal URLs, you can set the `YTP_ALLOW_INTERNAL_URLS` environment variable to `true`. This will allow requests to internal URLs. 
 
 We do not recommend enabling this option unless you know what you are doing, as it can expose your internal network to 
 potential security risks. This should only be used if it's truly needed.
@@ -557,7 +549,6 @@ services:
 After making the changes, restart your container. This should resolve the "No space left on device" 
 error during download.
 
-
 # How to prevent loading screen during YouTube premieres?
 
 Depending on how you look at it, YTPTube live download implementation is rather great and fast. However, during YouTube 
@@ -566,7 +557,6 @@ playing. By default we wait for 5min + the duration of the video before starting
 the loading screen. However, you can override the behavior by setting the following environment variable:
 
 ```env
-YTP_PREVENT_LIVE_PREMIERE=true
 YTP_LIVE_PREMIERE_BUFFER=10
 ```
 

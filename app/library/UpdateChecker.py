@@ -131,8 +131,8 @@ class UpdateChecker(metaclass=Singleton):
         if app_cached and ytdlp_cached:
             return (app_cached, ytdlp_cached)
 
-        app_result = app_cached if app_cached else await self._check_app_version()
-        ytdlp_result = ytdlp_cached if ytdlp_cached else await self._check_ytdlp_version()
+        app_result = app_cached or await self._check_app_version()
+        ytdlp_result = ytdlp_cached or await self._check_ytdlp_version()
 
         return (app_result, ytdlp_result)
 

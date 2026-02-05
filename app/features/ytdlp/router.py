@@ -394,7 +394,7 @@ async def get_info(request: Request, cache: Cache, config: Config) -> Response:
         data["is_archived"] = False
 
         archive_file: str | None = ytdlp_opts.get("download_archive")
-        data["archive_file"] = archive_file if archive_file else None
+        data["archive_file"] = archive_file or None
 
         if archive_file and (archive_id := get_archive_id(url=url).get("archive_id")):
             data["archive_id"] = archive_id

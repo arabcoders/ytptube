@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { item_request } from '~/types/item'
 import type { StoreItem } from '~/types/store'
 import { request } from '~/utils'
 
@@ -211,7 +212,7 @@ export const useStateStore = defineStore('state', () => {
    * @param data - Download data (url, preset, folder, etc.)
    * @returns Promise that resolves when download is added
    */
-  const addDownload = async (data: Record<string, unknown>): Promise<void> => {
+  const addDownload = async (data: item_request): Promise<void> => {
     const socket = useSocketStore()
     const toast = useNotification()
 

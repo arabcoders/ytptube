@@ -83,7 +83,7 @@ def route(
             return await func(*args, **kwargs)
 
         for m in methods:
-            route_name = name if name else make_route_name(m, path)
+            route_name = name or make_route_name(m, path)
             route_type: str = RouteType.SOCKET if RouteType.SOCKET == m else RouteType.HTTP
 
             if route_type not in ROUTES:
@@ -124,7 +124,7 @@ def add_route(
     methods = [method] if isinstance(method, (str, RouteType)) else method
 
     for m in methods:
-        route_name = name if name else make_route_name(m, path)
+        route_name = name or make_route_name(m, path)
         route_type: str = RouteType.SOCKET if RouteType.SOCKET == m else RouteType.HTTP
 
         if route_type not in ROUTES:

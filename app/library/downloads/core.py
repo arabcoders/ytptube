@@ -62,10 +62,10 @@ class Download:
         self.max_workers = int(config.max_workers)
         self.is_live: bool = bool(info.is_live) or info.live_in is not None
         self.info_dict: dict | None = info_dict
-        self.logger: logging.Logger = logging.getLogger(f"Download.{info.id if info.id else info._id}")
+        self.logger: logging.Logger = logging.getLogger(f"Download.{info.id or info._id}")
         self.started_time = 0
         self.queue_time: datetime = datetime.now(tz=UTC)
-        self.logs: list[str] = logs if logs else []
+        self.logs: list[str] = logs or []
 
         self._process_manager = ProcessManager(
             download_id=self.id,
@@ -131,10 +131,7 @@ class Download:
 
             if self.info.cookies:
                 try:
-                    cookie_file = (
-                        Path(self._temp_manager.temp_path if self._temp_manager.temp_path else self.temp_dir)
-                        / f"cookie_{self.info._id}.txt"
-                    )
+                    cookie_file = Path(self._temp_manager.temp_path or self.temp_dir) / f"cookie_{self.info._id}.txt"
                     self.logger.debug(
                         f"Creating cookie file for '{self.info.id}: {self.info.title}' - '{cookie_file}'."
                     )
@@ -372,7 +369,7 @@ class Download:
             self.logger.debug(f"Download task '{self.info.title}: {self.info.id}' started for '{elapsed}' seconds.")
             return False
 
-        status: str = self.info.status if self.info.status else "unknown"
+        status: str = self.info.status or "unknown"
         is_stale = is_download_stale(self.started_time, status, self.running(), self.info.auto_start, min_elapsed=300)
 
         if is_stale:

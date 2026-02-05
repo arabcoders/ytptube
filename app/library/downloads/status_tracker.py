@@ -185,8 +185,7 @@ class StatusTracker:
                 if next_status is None or isinstance(next_status, Terminator):
                     continue
                 await self.process_status_update(next_status)
-            except Exception as e:
-                self.logger.warning(f"Error processing status update during drain: {e}")
+            except Exception:  # noqa: S112
                 continue
 
     def cancel_update_task(self) -> None:

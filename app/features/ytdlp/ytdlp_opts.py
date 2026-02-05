@@ -130,7 +130,7 @@ class YTDLPCli:
             raise ValueError(msg)
 
         self.item = item
-        preset_name = item.preset if item.preset else self._config.default_preset
+        preset_name = item.preset or self._config.default_preset
         self.preset: Preset | None = YTDLPCli._get_presets().get(preset_name)
         self._config: Config = config or Config.get_instance()
 

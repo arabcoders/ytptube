@@ -213,7 +213,7 @@ async def segments_stream(request: Request, config: Config, app: web.Application
     await Segments(
         download_path=config.download_path,
         index=int(segment),
-        duration=float(f"{float(sd if sd else M3u8.duration):.6f}"),
+        duration=float(f"{float(sd or M3u8.duration):.6f}"),
         vconvert=vc == 1,
         aconvert=ac == 1,
     ).stream(realFile, resp)

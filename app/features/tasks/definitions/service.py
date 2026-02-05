@@ -397,7 +397,7 @@ class TaskHandle:
 
             return TaskFailure(
                 message=extraction.message,
-                error=extraction.error if extraction.error else extraction.message,
+                error=extraction.error or extraction.message,
                 metadata=combined_failure_metadata,
             )
 

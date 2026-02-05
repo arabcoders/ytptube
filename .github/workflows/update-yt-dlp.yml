@@ -42,7 +42,7 @@ jobs:
           VER=$(uv pip list --outdated | awk '$1 == "yt-dlp" {print $3}')
           if [ -n "$VER" ]; then
             echo "YTLDLP_VER=${VER}" >> "$GITHUB_OUTPUT"
-            uv pip install --upgrade yt-dlp
+            uv pip install --upgrade yt-dlp[default]
             uv sync --upgrade
             UPDATED=true
           else

@@ -235,7 +235,7 @@ def extract_info_sync(
     archive_id: str | None = f".{id_dict['id']}" if id_dict.get("id") else None
 
     log_wrapper.add_target(
-        target=logging.getLogger(f"yt-dlp{archive_id if archive_id else '.extract_info'}"),
+        target=logging.getLogger(f"yt-dlp{archive_id or '.extract_info'}"),
         level=logging.DEBUG if debug else logging.WARNING,
     )
 

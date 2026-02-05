@@ -133,7 +133,7 @@ class Database:
         else:
             self.conn: AsyncConnection = db_url
 
-    async def __aenter__(self) -> "Database":
+    async def __aenter__(self):
         if self._owns_connection and self.conn is None:
             # Create connection from string URL
             from sqlalchemy.ext.asyncio import create_async_engine
@@ -284,7 +284,7 @@ def create_migration(name: str, directory: str | None = None) -> str:
     Create a migration with the given name. If no directory is specified,
     the current working directory will be used.
     """
-    directory = directory if directory else "."
+    directory = directory or "."
     if not os.path.exists(directory) or not os.path.isdir(directory):
         msg: str = f"{directory} is not a directory."
         raise Error(msg)

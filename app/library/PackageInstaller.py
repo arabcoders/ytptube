@@ -113,15 +113,16 @@ class PackageInstaller:
         if "yt_dlp" == pkg:
             pkg = "yt-dlp"
 
+        pkg_name: str = "yt-dlp[default]" if pkg == "yt-dlp" else pkg
         if version:
-            if "nightly" == version and pkg == "yt-dlp":
-                cmd.extend(["--pre", "yt-dlp[default]"])
-            elif "master" == version and pkg == "yt-dlp":
+            if "nightly" == version and "yt-dlp" == pkg:
+                cmd.extend(["--pre", pkg_name])
+            elif "master" == version and "yt-dlp" == pkg:
                 cmd.append("git+https://github.com/yt-dlp/yt-dlp.git@master")
             else:
-                cmd.append(version if str(version).startswith("git+") else f"{pkg}=={version}")
+                cmd.append(version if str(version).startswith("git+") else f"{pkg_name}=={version}")
         else:
-            cmd.extend(["--disable-pip-version-check", pkg])
+            cmd.extend(["--disable-pip-version-check", pkg_name])
 
         try:
             proc: subprocess.CompletedProcess[bytes] = subprocess.run(

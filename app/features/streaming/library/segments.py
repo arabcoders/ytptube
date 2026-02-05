@@ -94,7 +94,7 @@ class Segments:
         }
 
         caps: dict[str, dict[str, bool]] = detect_qsv_capabilities()
-        base_codec: str = s_codec.split("_")[0]
+        base_codec: str = s_codec.split("_", maxsplit=1)[0]
         codec_caps: dict[str, bool] = caps.get(base_codec, {"full": False, "lp": False})
         ctx["qsv"] = codec_caps
 
