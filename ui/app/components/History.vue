@@ -474,7 +474,7 @@
     <div class="modal-background" @click="closeVideo"></div>
     <div class="modal-content is-unbounded-model">
       <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="video_item"
-        class="is-fullwidth" @closeModel="closeVideo" />
+        class="is-fullwidth" @closeModel="closeVideo" @error="async (error: string) => await box.alert(error)" />
     </div>
     <button class="modal-close is-large" aria-label="close" @click="closeVideo"></button>
   </div>

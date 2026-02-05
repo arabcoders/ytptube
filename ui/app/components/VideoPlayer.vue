@@ -260,11 +260,12 @@ import type { StoreItem } from '~/types/store'
 import type { file_info, video_source_element, video_track_element } from '~/types/video'
 
 const config = useConfigStore()
-const toast = useNotification()
 
-const props = defineProps({ item: { type: Object as () => StoreItem, default: () => ({}) } })
-
-const emitter = defineEmits(['closeModel'])
+const props = defineProps<{ item: StoreItem }>()
+const emitter = defineEmits<{
+  (e: 'closeModel'): void,
+  (e: 'error', message: string): void,
+}>()
 
 const video = useTemplateRef<HTMLVideoElement>('video')
 const tracks = ref<Array<video_track_element>>([])
@@ -486,7 +487,7 @@ onMounted(async () => {
   const response: file_info = await req.json()
 
   if (!req.ok) {
-    toast.error(`Failed to fetch video info. ${response?.error}`)
+    emitter('error', response?.error || 'Failed to fetch video info. Unknown error')
     emitter('closeModel')
     return
   }
@@ -746,7 +747,7 @@ const forceSwitchToHls = () => {
   }
 
   if (!hasVideoStream.value) {
-    toast.error('Cannot switch to HLS: stream has no video track.')
+    useNotification().error('Cannot switch to HLS: stream has no video track.')
     return
   }
 

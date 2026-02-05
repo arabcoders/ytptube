@@ -201,4 +201,5 @@ dev = [
   "pytest>=8.4.2",
   "pytest-asyncio>=1.1.0",
   "ruff>=0.13.0",
+  "pip>=26.0.0",
 ]
