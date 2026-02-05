@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173",
-    "date": "2026-02-04T22:28:06+00:00",
+    "full_sha": "c67c9912cc07fc8a7b99bc728d5368fc3d41d26d",
+    "date": "2026-02-05T13:18:32+00:00",
     "commits": [
+      {
+        "sha": "c67c9912",
+        "full_sha": "c67c9912cc07fc8a7b99bc728d5368fc3d41d26d",
+        "message": "fix: show alert instead of notification for missing video file.",
+        "author": "arabcoders",
+        "date": "2026-02-05T13:18:32+00:00"
+      },
       {
         "sha": "435882e1",
         "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173",

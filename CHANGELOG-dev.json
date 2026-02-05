@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260205-435882e1",
-        "date": "2026-02-04T22:28:06+00:00",
+        "tag": "dev-20260205-c67c9912",
+        "date": "2026-02-05T13:18:32+00:00",
         "commits": [
+            {
+                "sha": "c67c9912",
+                "message": "fix: show alert instead of notification for missing video file.",
+                "author": "arabcoders",
+                "date": "2026-02-05T13:18:32+00:00",
+                "full_sha": "c67c9912cc07fc8a7b99bc728d5368fc3d41d26d"
+            },
             {
                 "sha": "435882e1",
                 "message": "chore: packages update and some formatting",
@@ -4036,7 +4043,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "435882e16b7fdb5fcc7df9e0c74cd7841ab8c173"
+        "full_sha": "c67c9912cc07fc8a7b99bc728d5368fc3d41d26d"
     },
     {
         "tag": "dev-20250616-c07465a6",
