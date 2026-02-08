@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20260205-0473c86f",
-        "date": "2026-02-05T15:08:35+00:00",
+        "tag": "master-20260208-1cc61728",
+        "date": "2026-02-08T08:11:05+00:00",
         "commits": [
+            {
+                "sha": "5844290d",
+                "message": "fix: sometimes downloads fails due to pickling issue",
+                "author": "arabcoders",
+                "date": "2026-02-08T00:45:56+00:00",
+                "full_sha": "5844290d7403de97922e9c083d43f616f6d2c778"
+            },
             {
                 "sha": "c67c9912",
                 "message": "fix: show alert instead of notification for missing video file.",
@@ -4043,7 +4050,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "0473c86fd668779445ecf75c3ede6daabd9037a0"
+        "full_sha": "1cc6172862ae3bb95b649637879807bf3149f922"
     },
     {
         "tag": "master-20250616-c07465a6",
