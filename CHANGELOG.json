@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "5844290d7403de97922e9c083d43f616f6d2c778",
+    "date": "2026-02-08T00:45:56+00:00",
+    "commits": [
+      {
+        "sha": "5844290d",
+        "full_sha": "5844290d7403de97922e9c083d43f616f6d2c778",
+        "message": "fix: sometimes downloads fails due to pickling issue",
+        "author": "arabcoders",
+        "date": "2026-02-08T00:45:56+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.1",
     "full_sha": "0473c86fd668779445ecf75c3ede6daabd9037a0",
     "date": "2026-02-05T15:08:35+00:00",
