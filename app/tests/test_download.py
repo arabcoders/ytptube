@@ -1,12 +1,14 @@
 import logging
 import os
 import signal
+from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from app.library.Events import EventBus, Events
 from app.library.downloads import Download, NestedLogger, Terminator
 from app.library.downloads.hooks import HookHandlers
 from app.library.downloads.process_manager import ProcessManager
@@ -95,7 +97,7 @@ class TestDownloadHooks:
     def test_progress_hook_filters_fields(self) -> None:
         d = Download(make_item())
         q = DummyQueue()
-        hooks = HookHandlers(d.id, q, d.logger, d.debug)
+        hooks = HookHandlers(d.id, cast(Any, q), d.logger, d.debug)
 
         payload = {
             "tmpfilename": "t",
@@ -131,7 +133,7 @@ class TestDownloadHooks:
     def test_post_hooks_pushes_filename(self) -> None:
         d = Download(make_item())
         q = DummyQueue()
-        hooks = HookHandlers(d.id, q, d.logger, d.debug)
+        hooks = HookHandlers(d.id, cast(Any, q), d.logger, d.debug)
         hooks.post_hook("name.ext")
         assert 1 == len(q.items), "Should have 1 item when filename is provided"
         assert q.items[0]["final_name"] == "name.ext", "Filename should match"
@@ -267,6 +269,181 @@ class TestDownloadStale:
             # Verify process was actually started
             mock_create.assert_called_once()
             mock_start.assert_called_once()
+
+
+class TestDownloadFlow:
+    @pytest.mark.asyncio
+    async def test_download_flow_inline_process(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+            @staticmethod
+            def get_manager():
+                class DummyManager:
+                    def Queue(self):
+                        return DummyQueue()
+
+                return DummyManager()
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        class EB:
+            @staticmethod
+            def get_instance():
+                return EB
+
+            @staticmethod
+            def emit(*_args, **_kwargs):
+                return None
+
+        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+
+        item = ItemDTO(
+            id="id1",
+            title="T",
+            url="http://u",
+            folder="f",
+            download_dir=str(tmp_path),
+            temp_dir=str(tmp_path),
+        )
+        download = Download(info=item)
+
+        def fake_download():
+            queue = download.status_queue
+            assert queue is not None
+            queue = cast(Any, queue)
+            queue.put(
+                {
+                    "id": download.id,
+                    "status": "downloading",
+                    "downloaded_bytes": 10,
+                    "total_bytes": 10,
+                }
+            )
+            download._status_tracker = StatusTracker(
+                info=download.info,
+                download_id=download.id,
+                download_dir=str(tmp_path),
+                temp_path=None,
+                status_queue=queue,
+                logger=download.logger,
+                debug=False,
+            )
+            queue.put(
+                {
+                    "id": download.id,
+                    "status": "finished",
+                    "final_name": str(tmp_path / "video.mp4"),
+                }
+            )
+            queue.put(Terminator())
+
+        download._download = fake_download
+
+        class InlineProcess:
+            def __init__(self, target):
+                self._target = target
+                self.pid = 12345
+                self.ident = 12345
+
+            def start(self):
+                self._target()
+
+            def join(self):
+                return 0
+
+            def is_alive(self):
+                return False
+
+            def terminate(self):
+                return None
+
+            def kill(self):
+                return None
+
+            def close(self):
+                return None
+
+        def create_process(target):
+            inline_proc = InlineProcess(target)
+            download._process_manager.proc = cast(Any, inline_proc)
+            return download._process_manager.proc
+
+        def start_process():
+            assert download._process_manager.proc is not None
+            download._process_manager.proc.start()
+
+        monkeypatch.setattr(download._process_manager, "create_process", create_process)
+        monkeypatch.setattr(download._process_manager, "start", start_process)
+
+        await download.start()
+
+        assert download.info.status == "finished", "Download should finish via inline process"
+        assert download.info.filename == "video.mp4", "Final filename should be set from status update"
+
+
+class TestDownloadSpawnPickling:
+    def setup_method(self):
+        EventBus._reset_singleton()
+
+    def test_spawn_pickling_ignores_local_event_listener(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        bus = EventBus.get_instance()
+
+        def local_event_handler(_event, _name, **_kwargs):
+            return None
+
+        bus.subscribe(Events.LOG_INFO, local_event_handler, "local-event-handler")
+
+        item = ItemDTO(
+            id="id1",
+            title="T",
+            url="http://u",
+            folder="f",
+            download_dir=str(tmp_path),
+            temp_dir=str(tmp_path),
+        )
+        download = Download(info=item)
+        download.status_queue = cast(Any, DummyQueue())
+        assert download.status_queue is not None
+        download._status_tracker = StatusTracker(
+            info=item,
+            download_id=download.id,
+            download_dir=str(tmp_path),
+            temp_path=None,
+            status_queue=cast(Any, download.status_queue),
+            logger=download.logger,
+            debug=False,
+        )
+
+        state = download.__getstate__()
+        assert state.get("_status_tracker") is None, "StatusTracker should be excluded from pickled state"
+
+        ForkingPickler.dumps(download._download)
 
 
 class TestTempManager:
