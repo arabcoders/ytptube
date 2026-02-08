@@ -393,7 +393,7 @@ class Download:
         """
         state: dict[str, Any] = self.__dict__.copy()
 
-        excluded_keys: tuple[str, ...] = ("_notify",)
+        excluded_keys: tuple[str, ...] = ("_notify", "_status_tracker")
         for key in excluded_keys:
             if key in state:
                 state[key] = None
