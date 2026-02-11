@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20260208-1cc61728",
-        "date": "2026-02-08T08:11:05+00:00",
+        "tag": "master-20260211-ee0942b3",
+        "date": "2026-02-11T15:58:15+00:00",
         "commits": [
+            {
+                "sha": "cebc7287",
+                "message": "fix: update import path for fetch_info in HandleTask class. Closes #561",
+                "author": "arabcoders",
+                "date": "2026-02-11T15:44:32+00:00",
+                "full_sha": "cebc72875bebaa45eba9769e3354e537575fa56b"
+            },
             {
                 "sha": "5844290d",
                 "message": "fix: sometimes downloads fails due to pickling issue",
@@ -4050,7 +4057,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1cc6172862ae3bb95b649637879807bf3149f922"
+        "full_sha": "ee0942b37adf4db11ccc8a83042fd82b1beeff3d"
     },
     {
         "tag": "master-20250616-c07465a6",
