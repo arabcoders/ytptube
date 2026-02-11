@@ -395,9 +395,7 @@ class TestDownloadSpawnPickling:
     def setup_method(self):
         EventBus._reset_singleton()
 
-    def test_spawn_pickling_ignores_local_event_listener(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
+    def test_spawn_pickling_ignores_local_event_listener(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         class Cfg:
             debug = False
             ytdlp_debug = False

@@ -90,7 +90,7 @@ class HandleTask(TaskSchema):
             indicating if the operation was successful, and a message.
 
         """
-        from app.features.ytdlp.ytdlp import fetch_info
+        from app.features.ytdlp.extractor import fetch_info
 
         if not self.url:
             return ({}, False, "No URL found in task parameters.")
@@ -122,7 +122,7 @@ class HandleTask(TaskSchema):
             tuple[bool, str] | dict[str, Any]: Either an error tuple or a dict with 'file' and 'items' keys.
 
         """
-        from app.features.ytdlp.ytdlp import fetch_info
+        from app.features.ytdlp.extractor import fetch_info
 
         if not self.url:
             return (False, "No URL found in task parameters.")
