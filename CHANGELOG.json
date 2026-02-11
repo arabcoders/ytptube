@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "cebc72875bebaa45eba9769e3354e537575fa56b",
+    "date": "2026-02-11T15:44:32+00:00",
+    "commits": [
+      {
+        "sha": "cebc7287",
+        "full_sha": "cebc72875bebaa45eba9769e3354e537575fa56b",
+        "message": "fix: update import path for fetch_info in HandleTask class. Closes #561",
+        "author": "arabcoders",
+        "date": "2026-02-11T15:44:32+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.2",
     "full_sha": "1cc6172862ae3bb95b649637879807bf3149f922",
     "date": "2026-02-08T08:11:05+00:00",
