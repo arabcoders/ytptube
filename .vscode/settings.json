@@ -264,5 +264,7 @@
       "url": "./app/schema/tasks.json"
     }
   ],
-  "python.testing.cwd": "app/tests"
+  "python.testing.pytestArgs": [
+    "app"
+  ]
 }
