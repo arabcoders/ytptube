@@ -161,13 +161,13 @@
               </td>
               <td class="is-vcentered is-items-center">
                 <div class="field is-grouped is-grouped-centered">
-                  <div class="control" v-if="item.status != 'finished' || !item.filename">
+                  <div class="control" v-if="!item.filename">
                     <button class="button is-warning is-fullwidth is-small" v-tooltip="'Retry download'"
                       @click="async () => await retryItem(item, true)">
                       <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                     </button>
                   </div>
-                  <div class="control" v-if="item.filename && item.status === 'finished'">
+                  <div class="control" v-if="item.filename">
                     <a class="button is-link is-fullwidth is-small" :href="makeDownload(config, item)"
                       v-tooltip="'Download video'" :download="item.filename?.split('/').reverse()[0]">
                       <span class="icon"><i class="fa-solid fa-download" /></span>
@@ -181,11 +181,18 @@
                   </div>
                   <div class="control is-expanded" v-if="item.url">
                     <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
-                      <template v-if="'finished' === item.status && item.filename">
+                      <template v-if="item.filename">
                         <NuxtLink @click="playVideo(item)" class="dropdown-item">
                           <span class="icon"><i class="fa-solid fa-play" /></span>
                           <span>Play video</span>
                         </NuxtLink>
+                        <template v-if="'error' === item.status">
+                          <hr class="dropdown-divider" />
+                          <NuxtLink class="dropdown-item has-text-warning" @click="async () => await retryItem(item, true)">
+                            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                            <span>Retry download</span>
+                          </NuxtLink>
+                        </template>
                         <hr class="dropdown-divider" />
                       </template>
                       <template v-else-if="isEmbedable(item.url)">
@@ -289,7 +296,7 @@
         </header>
         <div v-if="showThumbnails" class="card-image">
           <figure :class="['image', thumbnail_ratio]">
-            <span v-if="'finished' === item.status && item.filename" @click="playVideo(item)" class="play-overlay">
+            <span v-if="item.filename" @click="playVideo(item)" class="play-overlay">
               <div class="play-icon"></div>
               <img @load="pImg" @error="onImgError" :src="getImage(config.app.download_path, item)"
                 v-if="getImage(config.app.download_path, item)" />
@@ -334,7 +341,7 @@
             </div>
           </div>
           <div class="columns is-mobile is-multiline">
-            <div class="column is-half-mobile" v-if="item.status != 'finished' || !item.filename">
+            <div class="column is-half-mobile" v-if="!item.filename">
               <a class="button is-warning is-fullwidth" @click="async () => retryItem(item, false)">
                 <span class="icon-text is-block">
                   <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
@@ -343,7 +350,7 @@
               </a>
             </div>
 
-            <div class="column is-half-mobile" v-if="item.filename && item.status === 'finished'">
+            <div class="column is-half-mobile" v-if="item.filename">
               <a class="button is-link is-fullwidth" :href="makeDownload(config, item)"
                 :download="item.filename?.split('/').reverse()[0]">
                 <span class="icon-text is-block">
@@ -364,11 +371,18 @@
 
             <div class="column">
               <Dropdown icons="fa-solid fa-cogs" label="Actions">
-                <template v-if="'finished' === item.status && item.filename">
+                <template v-if="item.filename">
                   <NuxtLink @click="playVideo(item)" class="dropdown-item">
                     <span class="icon"><i class="fa-solid fa-play" /></span>
                     <span>Play video</span>
                   </NuxtLink>
+                  <template v-if="'error' === item.status">
+                    <hr class="dropdown-divider" />
+                    <NuxtLink class="dropdown-item has-text-warning" @click="async () => await retryItem(item, true)">
+                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
+                      <span>Retry download</span>
+                    </NuxtLink>
+                  </template>
                   <hr class="dropdown-divider" />
                 </template>
 
@@ -679,7 +693,7 @@ const hasDownloaded = computed(() => {
   }
   for (const key in stateStore.history) {
     const element = stateStore.history[key] as StoreItem
-    if (element.status === 'finished' && element.filename) {
+    if (element.filename) {
       return true
     }
   }
@@ -736,6 +750,9 @@ const setIcon = (item: StoreItem) => {
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
   if ('error' === item.status) {
+    if (item.filename) {
+      return 'fa-solid fa-file-circle-xmark'
+    }
     return 'fa-solid fa-circle-xmark'
   }
   if ('cancelled' === item.status) {
@@ -917,7 +934,7 @@ const downloadSelected = async () => {
       continue
     }
     const item = stateStore.get('history', item_id, {} as StoreItem) as StoreItem
-    if ('finished' !== item.status || !item.filename) {
+    if (!item.filename) {
       continue
     }
     files_list.push(item.folder ? item.folder + '/' + item.filename : item.filename)
