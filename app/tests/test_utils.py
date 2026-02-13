@@ -1488,13 +1488,13 @@ class TestGetFiles:
 
     def test_get_files_root(self):
         """Test getting files from root directory."""
-        result = get_files(self.base_path)
+        result, total = get_files(self.base_path)
         assert isinstance(result, list)
         assert len(result) > 0
 
     def test_get_files_subdir(self):
         """Test getting files from subdirectory."""
-        result = get_files(self.base_path, "subdir")
+        result, total = get_files(self.base_path, "subdir")
         assert isinstance(result, list)
 
 

@@ -1,3 +1,12 @@
+type Pagination = {
+  page: number
+  per_page: number
+  total: number
+  total_pages: number
+  has_next: boolean
+  has_prev: boolean
+}
+
 type FileItem = {
   type: 'file' | 'dir' | 'link'
   content_type: 'image' | 'video' | 'text' | 'subtitle' | 'metadata' | 'dir' | string
@@ -15,6 +24,7 @@ type FileItem = {
 type FileBrowserResponse = {
   path: string
   contents: FileItem[]
+  pagination: Pagination
 }
 
-export type { FileItem, FileBrowserResponse }
+export type { FileItem, FileBrowserResponse, Pagination }

@@ -814,16 +814,29 @@ def get(
     return data
 
 
-def get_files(base_path: Path | str, dir: str | None = None):
+def get_files(
+    base_path: Path | str,
+    dir: str | None = None,
+    page: int = 1,
+    per_page: int = 0,
+    sort_by: str = "name",
+    sort_order: str = "asc",
+    search: str | None = None,
+) -> tuple[list, int]:
     """
-    Get directory contents.
+    Get directory contents with optional pagination, sorting, and search.
 
     Args:
         base_path (Path|str): Base download path.
         dir (str): Directory to check.
+        page (int): Page number (1-indexed). Ignored if per_page is 0.
+        per_page (int): Items per page. If 0, returns all items.
+        sort_by (str): Sort field: name, size, date, type.
+        sort_order (str): Sort direction: asc, desc.
+        search (str|None): Filter by filename (case-insensitive).
 
     Returns:
-        list: List of files and directories.
+        tuple[list, int]: List of file/directory dicts and total count (before pagination).
 
     Raises:
         OSError: If the directory is invalid or not a directory.
@@ -909,7 +922,26 @@ def get_files(base_path: Path | str, dir: str | None = None):
             }
         )
 
-    return contents
+    total: int = len(contents)
+
+    if search:
+        search_lower: str = search.lower()
+        contents = [c for c in contents if search_lower in c["name"].lower()]
+
+    if sort_by == "name":
+        contents.sort(key=lambda x: x["name"].lower(), reverse=(sort_order.lower() == "desc"))
+    elif sort_by == "size":
+        contents.sort(key=lambda x: x["size"], reverse=(sort_order.lower() == "desc"))
+    elif sort_by == "date":
+        contents.sort(key=lambda x: x["mtime"], reverse=(sort_order.lower() == "desc"))
+    elif sort_by == "type":
+        contents.sort(key=lambda x: x["content_type"], reverse=(sort_order.lower() == "desc"))
+
+    if per_page > 0:
+        offset: int = (page - 1) * per_page
+        contents = contents[offset : offset + per_page]
+
+    return contents, total
 
 
 def clean_item(item: dict, keys: list | tuple) -> tuple[dict, bool]:

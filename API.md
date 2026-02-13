@@ -1576,6 +1576,13 @@ Binary image data with the appropriate `Content-Type`.
 **Path Parameter**:
 - `path` = Relative path within the download directory (URL-encoded).
 
+**Query Parameters**:
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page. Default: `config.default_pagination`, Max: `1000`.
+- `sort_by` (optional): Sort field. Options: `name`, `size`, `date`, `type`. Default: `name`.
+- `sort_order` (optional): Sort direction. Options: `asc`, `desc`. Default: `asc`.
+- `search` (optional): Filter by filename (case-insensitive).
+
 **Response**:
 ```json
 {
@@ -1587,12 +1594,12 @@ Binary image data with the appropriate `Content-Type`.
       "name": "filename.mp4",
       "path": "/filename.mp4",
       "size": 123456789,
-      "mimetype": "mime/type",
+      "mime": "mime/type",
       "mtime": "2023-01-01T12:00:00Z",
       "ctime": "2023-01-01T12:00:00Z",
       "is_dir": true|false,
       "is_file": true|false,
-      ...
+      "is_symlink": true|false
     },
     {
       "type": "dir",
@@ -1601,11 +1608,36 @@ Binary image data with the appropriate `Content-Type`.
       "path": "/Season 2025",
       ...
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 123,
+    "total_pages": 3,
+    "has_next": true,
+    "has_prev": false
+  }
 }
 ```
+
+**Examples**:
+```bash
+# Get first page of root directory
+GET /api/file/browser/
+
+# Get second page of videos folder, sorted by size descending
+GET /api/file/browser/videos?page=2&sort_by=size&sort_order=desc
+
+# Search for mp4 files
+GET /api/file/browser/videos?search=mp4
+
+# Sort by date, newest first
+GET /api/file/browser/videos?sort_by=date&sort_order=desc
+```
+
 - Returns `403 Forbidden` if file browser is disabled.
 - Returns `404 Not Found` if the path doesn't exist.
+- Returns `400 Bad Request` if the path is not a directory.
 
 ---
 
