@@ -637,3 +637,96 @@ async def item_archive_delete(request: Request, queue: DownloadQueue, notify: Ev
         data={"message": f"item '{item.info.title}' removed from archive."},
         status=web.HTTPOk.status_code,
     )
+
+
+@route("POST", r"api/history/{id}/nfo", "history.item.nfo.generate")
+async def item_nfo_generate(request: Request, queue: DownloadQueue) -> Response:
+    """
+    Generate NFO file for an existing download.
+
+    Args:
+        request: The request object
+        queue: DownloadQueue instance
+
+    Request Body:
+        type: 'tv' or 'movie' (default: 'tv')
+        overwrite: bool (default: false)
+
+    Returns:
+        Response with NFO file path on success
+
+    """
+    from app.features.ytdlp.extractor import fetch_info
+    from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
+
+    if not (id := request.match_info.get("id")):
+        return web.json_response(data={"error": "id is required."}, status=web.HTTPBadRequest.status_code)
+
+    try:
+        item: Download | None = await queue.done.get_by_id(id)
+        if not item:
+            return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+    except KeyError:
+        return web.json_response(data={"error": f"item '{id}' not found."}, status=web.HTTPNotFound.status_code)
+
+    if not item.info.filename:
+        return web.json_response(
+            data={"error": "item has no downloaded file."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    filepath = item.info.get_file()
+    if not filepath or not filepath.exists():
+        return web.json_response(
+            data={"error": f"file '{item.info.filename}' not found."},
+            status=web.HTTPNotFound.status_code,
+        )
+
+    post = {}
+    if request.body_exists:
+        try:
+            post = await request.json() or {}
+        except Exception:
+            post = {}
+
+    mode: str = str(post.get("type", "tv")).lower()
+    if mode not in ("tv", "movie"):
+        return web.json_response(
+            data={"error": "type must be 'tv' or 'movie'."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    try:
+        (info_dict, _logs) = await fetch_info(
+            config=item.info.get_ytdlp_opts().get_all(),
+            url=item.info.url,
+            no_archive=True,
+            follow_redirect=True,
+        )
+
+        if not info_dict:
+            return web.json_response(
+                data={"error": "failed to extract metadata from URL."},
+                status=web.HTTPInternalServerError.status_code,
+            )
+
+        result = NFOMakerPP.generate_nfo(
+            info_dict=info_dict,
+            filepath=filepath,
+            mode=mode,
+            overwrite=bool(post.get("overwrite", False)),
+            logger=LOG,
+        )
+
+        return web.json_response(
+            data={"message": result["message"], "nfo_file": result.get("nfo_file")}
+            if result["success"]
+            else {"error": result["message"]},
+            status=web.HTTPOk.status_code if result["success"] else web.HTTPBadRequest.status_code,
+        )
+    except Exception as e:
+        LOG.exception(f"Failed to generate NFO for item '{id}': {e}")
+        return web.json_response(
+            data={"error": f"failed to generate NFO: {e!s}"},
+            status=web.HTTPInternalServerError.status_code,
+        )

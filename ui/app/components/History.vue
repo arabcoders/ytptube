@@ -188,11 +188,17 @@
                         </NuxtLink>
                         <template v-if="'error' === item.status">
                           <hr class="dropdown-divider" />
-                          <NuxtLink class="dropdown-item has-text-warning" @click="async () => await retryItem(item, true)">
+                          <NuxtLink class="dropdown-item has-text-warning"
+                            @click="async () => await retryItem(item, true)">
                             <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
                             <span>Retry download</span>
                           </NuxtLink>
                         </template>
+                        <hr class="dropdown-divider" />
+                        <NuxtLink class="dropdown-item has-text-info" @click="generateNfo(item)">
+                          <span class="icon"><i class="fa-solid fa-file-code" /></span>
+                          <span>Generate NFO</span>
+                        </NuxtLink>
                         <hr class="dropdown-divider" />
                       </template>
                       <template v-else-if="isEmbedable(item.url)">
@@ -383,6 +389,11 @@
                       <span>Retry download</span>
                     </NuxtLink>
                   </template>
+                  <hr class="dropdown-divider" />
+                  <NuxtLink class="dropdown-item has-text-info" @click="generateNfo(item)">
+                    <span class="icon"><i class="fa-solid fa-file-code" /></span>
+                    <span>Generate NFO</span>
+                  </NuxtLink>
                   <hr class="dropdown-divider" />
                 </template>
 
@@ -750,9 +761,6 @@ const setIcon = (item: StoreItem) => {
     return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check'
   }
   if ('error' === item.status) {
-    if (item.filename) {
-      return 'fa-solid fa-file-circle-xmark'
-    }
     return 'fa-solid fa-circle-xmark'
   }
   if ('cancelled' === item.status) {
@@ -780,6 +788,11 @@ const setIconColor = (item: StoreItem) => {
   if ('cancelled' === item.status || "skip" === item.status) {
     return 'has-text-warning'
   }
+
+  if ('error' === item.status && item.filename) {
+    return 'has-text-warning'
+  }
+
   return 'has-text-danger'
 }
 
@@ -791,6 +804,9 @@ const setStatus = (item: StoreItem) => {
     return item.is_live ? 'Streamed' : 'Completed'
   }
   if ('error' === item.status) {
+    if (item.filename) {
+      return 'Partial Error'
+    }
     return 'Error'
   }
   if ('cancelled' === item.status) {
@@ -1018,5 +1034,23 @@ const is_queued = (item: StoreItem) => {
     return ''
   }
   return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'fa-spin fa-spin-10' : ''
+}
+
+const generateNfo = async (item: StoreItem) => {
+  try {
+    toast.info('Generating please wait...', { timeout: 2000 })
+    const response = await request(`/api/history/${item._id}/nfo`, {
+      method: 'POST',
+      body: JSON.stringify({ type: 'tv', overwrite: true }),
+    })
+    const data = await response.json()
+    if (!response.ok) {
+      toast.error(data.error || 'Failed to generate NFO')
+      return
+    }
+    toast.success(data.message || 'NFO file generated')
+  } catch (e: any) {
+    toast.error(`Error: ${e.message}`)
+  }
 }
 </script>

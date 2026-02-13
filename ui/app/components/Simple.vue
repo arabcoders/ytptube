@@ -101,11 +101,9 @@
                       <span v-if="getDurationLabel(entry.item)" class="queue-thumb__badge">
                         {{ getDurationLabel(entry.item) }}
                       </span>
-                      <span
-                        v-if="entry.item.filename && entry.item.status === 'finished' || isEmbedable(entry.item.url)"
-                        class="queue-thumb__overlay">
+                      <span v-if="entry.item.filename || isEmbedable(entry.item.url)" class="queue-thumb__overlay">
                         <span class="icon circle-border"
-                          :class="{ 'has-text-danger': isEmbedable(entry.item.url) && (!entry.item.filename || entry.item.status !== 'finished') }">
+                          :class="{ 'has-text-danger': isEmbedable(entry.item.url) && !entry.item.filename }">
                           <i class="fas fa-play" />
                         </span>
                       </span>
@@ -171,8 +169,8 @@
                     <span class="icon"><i class="fas fa-download" /></span>
                     <span>Download</span>
                   </a>
-                  <button v-if="entry.item.status != 'finished' || !entry.item.filename" class="button is-info is-light"
-                    type="button" @click="async () => await requeueItem(entry.item)">
+                  <button v-if="!entry.item.filename" class="button is-info is-light" type="button"
+                    @click="async () => await requeueItem(entry.item)">
                     <span class="icon"><i class="fas fa-rotate-right" /></span>
                     <span>Requeue</span>
                   </button>
@@ -202,7 +200,7 @@
       <div class="modal-background" @click="closePlayer"></div>
       <div class="modal-content is-unbounded-model">
         <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="videoItem"
-          class="is-fullwidth" @closeModel="closePlayer" />
+          class="is-fullwidth" @closeModel="closePlayer" @error="async (error: string) => await box.alert(error)" />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
     </div>
@@ -214,6 +212,10 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
     </div>
+
+    <ClientOnly>
+      <Dialog />
+    </ClientOnly>
   </div>
 </template>
 
@@ -246,6 +248,7 @@ const toast = useNotification()
 const dlFields = useStorage<Record<string, any>>('dl_fields', {})
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
+const box = useConfirm()
 
 const { app, paused, presets } = storeToRefs(configStore)
 const { queue, history } = storeToRefs(stateStore)
@@ -422,7 +425,7 @@ const resolveThumbnail = (entry: DisplayEntry): string => {
 }
 
 const openPlayer = (item: StoreItem): void => {
-  if (item.filename && item.status === 'finished') {
+  if (item.filename) {
     videoItem.value = item
     return
   }
@@ -508,6 +511,9 @@ const getStatusLabel = (item: StoreItem): string => {
   if (null === item.status) {
     return 'Queued'
   }
+  if ('error' === item.status && item.filename) {
+    return 'Partial Error'
+  }
   return statusOverrides[item.status] ?? ucFirst(item.status.replace(/_/g, ' '))
 }
 
@@ -525,6 +531,9 @@ const statusColorMap: Record<string, string> = {
 const getStatusClass = (item: StoreItem): string => {
   if (null === item.status) {
     return 'has-text-grey'
+  }
+  if ('error' === item.status && item.filename) {
+    return 'has-text-warning'
   }
   return statusColorMap[item.status] ?? 'has-text-info'
 }

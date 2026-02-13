@@ -31,6 +31,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/cancel](#post-apihistorycancel)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
+    - [POST /api/history/{id}/nfo](#post-apihistoryidnfo)
     - [GET /api/archiver](#get-apiarchiver)
     - [POST /api/archiver](#post-apiarchiver)
     - [DELETE /api/archiver](#delete-apiarchiver)
@@ -767,6 +768,58 @@ or an error:
 
 - `404 Not Found` if the item or archive file does not exist.
 - `409 Conflict` if the item is already archived.
+
+---
+
+### POST /api/history/{id}/nfo
+**Purpose**: Generate an NFO metadata file for a completed download.
+
+**Path Parameter**:
+- `id`: Item ID from the history.
+
+**Body** (optional):
+```json
+{
+  "type": "tv",
+  "overwrite": false
+}
+```
+
+**Body Parameters**:
+- `type` (string, optional): NFO format type. Either `"tv"` or `"movie"`. Default: `"tv"`.
+- `overwrite` (boolean, optional): Overwrite existing NFO file. Default: `false`.
+
+**Response** (success):
+```json
+{
+  "message": "NFO file created",
+  "nfo_file": "/path/to/file.nfo"
+}
+```
+
+**Response** (NFO already exists):
+```json
+{
+  "error": "NFO file already exists."
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if:
+  - Item has no downloaded file
+  - `type` is not `"tv"` or `"movie"`
+  - Failed to collect NFO data (e.g., invalid/no date)
+- `404 Not Found` if the item or media file doesn't exist
+- `409 Conflict` if NFO file already exists and `overwrite` is `false`
+- `500 Internal Server Error` if failed to extract metadata from URL
+
+**Notes**:
+- Fetches fresh metadata from the source URL using yt-dlp
+- Creates NFO file in the same directory as the media file with `.nfo` extension
+- Requires a valid upload/release date in the metadata to create NFO
+- The NFO format follows Kodi/Jellyfin/Emby compatible structure
+- TV mode generates `<episodedetails>` XML
+- Movie mode generates `<movie>` XML
 
 ---
 
