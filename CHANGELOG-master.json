@@ -1,8 +1,36 @@
 [
     {
-        "tag": "master-20260211-ee0942b3",
-        "date": "2026-02-11T15:58:15+00:00",
+        "tag": "master-20260213-c36295d7",
+        "date": "2026-02-13T19:07:05+00:00",
         "commits": [
+            {
+                "sha": "90e07ce7",
+                "message": "feat: improve the file browser with pagination.",
+                "author": "arabcoders",
+                "date": "2026-02-13T18:46:01+00:00",
+                "full_sha": "90e07ce71b455bc3c4e5ba9ecc0c64285aa25f99"
+            },
+            {
+                "sha": "19d5d60d",
+                "message": "feat: add NFO generation endpoint and UI integration for downloads",
+                "author": "arabcoders",
+                "date": "2026-02-13T17:38:33+00:00",
+                "full_sha": "19d5d60de180f68f3274b75438d690f6b42598a0"
+            },
+            {
+                "sha": "a3fc7f6a",
+                "message": "fix: remove unnecessary terminator call and improve exception handling in status tracker",
+                "author": "arabcoders",
+                "date": "2026-02-13T15:16:18+00:00",
+                "full_sha": "a3fc7f6abbce640b45ef479d986817c74969b72d"
+            },
+            {
+                "sha": "ecf566df",
+                "message": "fix: update pytest arguments for testing configuration in vscode",
+                "author": "arabcoders",
+                "date": "2026-02-11T15:54:17+00:00",
+                "full_sha": "ecf566df84078ba03963858383fba0c409566f44"
+            },
             {
                 "sha": "cebc7287",
                 "message": "fix: update import path for fetch_info in HandleTask class. Closes #561",
@@ -4057,7 +4085,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ee0942b37adf4db11ccc8a83042fd82b1beeff3d"
+        "full_sha": "c36295d76fd788036b6fb6bf15fdf73fd0418731"
     },
     {
         "tag": "master-20250616-c07465a6",
