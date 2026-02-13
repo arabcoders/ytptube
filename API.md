@@ -31,6 +31,7 @@ This document describes the available endpoints and their usage. All endpoints r
     - [POST /api/history/cancel](#post-apihistorycancel)
     - [DELETE /api/history/{id}/archive](#delete-apihistoryidarchive)
     - [POST /api/history/{id}/archive](#post-apihistoryidarchive)
+    - [POST /api/history/{id}/nfo](#post-apihistoryidnfo)
     - [GET /api/archiver](#get-apiarchiver)
     - [POST /api/archiver](#post-apiarchiver)
     - [DELETE /api/archiver](#delete-apiarchiver)
@@ -767,6 +768,58 @@ or an error:
 
 - `404 Not Found` if the item or archive file does not exist.
 - `409 Conflict` if the item is already archived.
+
+---
+
+### POST /api/history/{id}/nfo
+**Purpose**: Generate an NFO metadata file for a completed download.
+
+**Path Parameter**:
+- `id`: Item ID from the history.
+
+**Body** (optional):
+```json
+{
+  "type": "tv",
+  "overwrite": false
+}
+```
+
+**Body Parameters**:
+- `type` (string, optional): NFO format type. Either `"tv"` or `"movie"`. Default: `"tv"`.
+- `overwrite` (boolean, optional): Overwrite existing NFO file. Default: `false`.
+
+**Response** (success):
+```json
+{
+  "message": "NFO file created",
+  "nfo_file": "/path/to/file.nfo"
+}
+```
+
+**Response** (NFO already exists):
+```json
+{
+  "error": "NFO file already exists."
+}
+```
+
+**Error Responses**:
+- `400 Bad Request` if:
+  - Item has no downloaded file
+  - `type` is not `"tv"` or `"movie"`
+  - Failed to collect NFO data (e.g., invalid/no date)
+- `404 Not Found` if the item or media file doesn't exist
+- `409 Conflict` if NFO file already exists and `overwrite` is `false`
+- `500 Internal Server Error` if failed to extract metadata from URL
+
+**Notes**:
+- Fetches fresh metadata from the source URL using yt-dlp
+- Creates NFO file in the same directory as the media file with `.nfo` extension
+- Requires a valid upload/release date in the metadata to create NFO
+- The NFO format follows Kodi/Jellyfin/Emby compatible structure
+- TV mode generates `<episodedetails>` XML
+- Movie mode generates `<movie>` XML
 
 ---
 
@@ -1523,6 +1576,13 @@ Binary image data with the appropriate `Content-Type`.
 **Path Parameter**:
 - `path` = Relative path within the download directory (URL-encoded).
 
+**Query Parameters**:
+- `page` (optional): Page number (1-indexed). Default: `1`.
+- `per_page` (optional): Items per page. Default: `config.default_pagination`, Max: `1000`.
+- `sort_by` (optional): Sort field. Options: `name`, `size`, `date`, `type`. Default: `name`.
+- `sort_order` (optional): Sort direction. Options: `asc`, `desc`. Default: `asc`.
+- `search` (optional): Filter by filename (case-insensitive).
+
 **Response**:
 ```json
 {
@@ -1534,12 +1594,12 @@ Binary image data with the appropriate `Content-Type`.
       "name": "filename.mp4",
       "path": "/filename.mp4",
       "size": 123456789,
-      "mimetype": "mime/type",
+      "mime": "mime/type",
       "mtime": "2023-01-01T12:00:00Z",
       "ctime": "2023-01-01T12:00:00Z",
       "is_dir": true|false,
       "is_file": true|false,
-      ...
+      "is_symlink": true|false
     },
     {
       "type": "dir",
@@ -1548,11 +1608,36 @@ Binary image data with the appropriate `Content-Type`.
       "path": "/Season 2025",
       ...
     }
-  ]
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total": 123,
+    "total_pages": 3,
+    "has_next": true,
+    "has_prev": false
+  }
 }
 ```
+
+**Examples**:
+```bash
+# Get first page of root directory
+GET /api/file/browser/
+
+# Get second page of videos folder, sorted by size descending
+GET /api/file/browser/videos?page=2&sort_by=size&sort_order=desc
+
+# Search for mp4 files
+GET /api/file/browser/videos?search=mp4
+
+# Sort by date, newest first
+GET /api/file/browser/videos?sort_by=date&sort_order=desc
+```
+
 - Returns `403 Forbidden` if file browser is disabled.
 - Returns `404 Not Found` if the path doesn't exist.
+- Returns `400 Bad Request` if the path is not a directory.
 
 ---
 

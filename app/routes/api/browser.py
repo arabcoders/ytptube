@@ -7,6 +7,7 @@ from urllib.parse import unquote_plus
 from aiohttp import web
 from aiohttp.web import Request, Response
 
+from app.features.core.utils import build_pagination, normalize_pagination
 from app.features.streaming.library.ffprobe import ffprobe
 from app.library.cache import Cache
 from app.library.config import Config
@@ -134,16 +135,15 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
     req_path: str = request.match_info.get("path")
     req_path: str = "/" if not req_path else unquote_plus(req_path)
 
-    # Normalize requested path to always be inside download root.
     raw_req: str = (req_path or "").strip()
     root_dir: Path = Path(config.download_path).resolve()
     if raw_req in ("", "/"):
         test: Path = root_dir
-        rel_for_listing = "/"
+        rel_for_listing: str = "/"
     else:
         # Strip leading slash so joinpath doesn't ignore the base path.
         test = root_dir.joinpath(raw_req.lstrip("/")).resolve(strict=False)
-        rel_for_listing = raw_req.lstrip("/")
+        rel_for_listing: str = raw_req.lstrip("/")
 
     try:
         test.relative_to(root_dir)
@@ -163,10 +163,34 @@ async def file_browser(request: Request, config: Config, encoder: Encoder) -> Re
         )
 
     try:
+        page, per_page = normalize_pagination(request)
+        sort_by: str = request.query.get("sort_by", "name")
+        sort_order: str = request.query.get("sort_order", "asc")
+        search: str | None = request.query.get("search")
+
+        if sort_by not in ("name", "size", "date", "type"):
+            sort_by = "name"
+
+        if sort_order not in ("asc", "desc"):
+            sort_order = "asc"
+
+        contents, total = get_files(
+            base_path=root_dir,
+            dir=rel_for_listing,
+            page=page,
+            per_page=per_page,
+            sort_by=sort_by,
+            sort_order=sort_order,
+            search=search,
+        )
+
+        total_pages: int = (total + per_page - 1) // per_page if total > 0 else 1
+
         return web.json_response(
             data={
                 "path": rel_for_listing,
-                "contents": get_files(base_path=root_dir, dir=rel_for_listing),
+                "contents": contents,
+                "pagination": build_pagination(total, page, per_page, total_pages),
             },
             status=web.HTTPOk.status_code,
             dumps=encoder.encode,

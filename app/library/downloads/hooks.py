@@ -46,6 +46,18 @@ class HookHandlers:
         )
 
     def postprocessor_hook(self, data: dict[str, Any]) -> None:
+        info_dict = data.get("info_dict", {})
+        filepath = info_dict.get("filepath")
+
+        status: dict[str, Any] = {
+            "id": self.id,
+            "action": "postprocessing",
+            **{k: v for k, v in data.items() if k in YTDLP_PROGRESS_FIELDS},
+            "status": "postprocessing",
+        }
+        if filepath:
+            status["filepath"] = filepath
+
         if self.debug:
             try:
                 d_safe = create_debug_safe_dict(data)
@@ -54,14 +66,7 @@ class HookHandlers:
             except Exception as e:
                 self.logger.debug(f"PP Hook: Error creating debug info: {e}")
 
-        self.status_queue.put(
-            {
-                "id": self.id,
-                "action": "postprocessing",
-                **{k: v for k, v in data.items() if k in YTDLP_PROGRESS_FIELDS},
-                "status": "postprocessing",
-            }
-        )
+        self.status_queue.put(status)
 
     def post_hook(self, filename: str) -> None:
         self.status_queue.put({"id": self.id, "status": "finished", "final_name": filename})

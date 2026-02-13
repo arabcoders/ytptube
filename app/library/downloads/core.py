@@ -301,7 +301,6 @@ class Download:
                 self.info.status = "cancelled"
             return ret
 
-        self._status_tracker.put_terminator()
         await self._status_tracker.drain_queue()
 
         return ret

@@ -124,57 +124,105 @@ class NFOMakerPP(PostProcessor):
             self.report_warning("No info provided to NFO Maker.")
             return [], {}
 
-        if self.mode not in self._MODE:
-            self.report_warning(f"Invalid mode '{self.mode}'.")
-            return [], info
-
-        # prefer explicit final path if present, else fall back to filename
         base_path = info.get("filename")
         if not base_path:
             self.report_warning("No 'filename' provided, skipping NFO creation.")
             return [], info
 
-        base_path = Path(base_path)
+        result = NFOMakerPP.generate_nfo(
+            info_dict=info,
+            filepath=base_path,
+            mode=self.mode,
+            overwrite=False,
+            prefix=self.prefix,
+            logger=getattr(self, "_downloader", None) or None,
+        )
 
-        nfo_file = base_path.with_suffix(".nfo")
-        if nfo_file.exists():
-            self.report_warning(f"NFO file '{nfo_file!s}' already exists, skipping creation.")
+        if not result.get("success"):
+            self.report_warning(result.get("message", "NFO generation failed"))
             return [], info
 
         try:
-            nfo_data = self._collect_nfo_data(info)
-        except Exception as e:
-            if self._downloader:
-                self._downloader.report_error(f"NFO data collection failed: {e}")
-            return [], info
-
-        if 1 > len(nfo_data):
-            self.report_warning("No metadata found to write to NFO file.")
-            return [], info
-
-        # derive year from any date if missing
-        if ("year" not in nfo_data) and any(k in nfo_data for k in self._DATE_FIELDS):
-            try:
-                first_date: str = next((str(nfo_data[k]) for k in self._DATE_FIELDS if nfo_data.get(k)), "")
-                if first_date:
-                    nfo_data["year"] = first_date.split("-", maxsplit=1)[0]
-            except Exception as e:
-                self.report_warning(f"Error extracting year from date: {e}")
-
-        status: bool = self._write_episode_info(nfo_file, base_path, nfo_data)
-        if status and nfo_file.exists() and base_path.exists:
-            try:
-                mtime: float = base_path.stat().st_mtime
-                self.try_utime(str(nfo_file), mtime, mtime)
-            except Exception as e:
-                self.report_warning(f"Failed to sync NFO mtime: {e}")
+            nfo_path = Path(base_path).with_suffix(".nfo")
+            if nfo_path.exists() and Path(base_path).exists():
+                try:
+                    mtime: float = Path(base_path).stat().st_mtime
+                    self.try_utime(str(nfo_path), mtime, mtime)
+                except Exception as e:
+                    self.report_warning(f"Failed to sync NFO mtime: {e}")
+        except Exception:
+            pass
 
         return [], info
 
-    def _collect_nfo_data(self, info: dict) -> dict[str, Any]:
+    @staticmethod
+    def generate_nfo(
+        *,
+        info_dict: dict,
+        filepath: str | Path,
+        mode: str = "tv",
+        overwrite: bool = False,
+        prefix: bool = True,
+        logger: Any | None = None,
+    ) -> dict[str, Any]:
+        """
+        Public helper to generate an NFO outside the PostProcessor cycle.
+
+        Returns:
+            dict: {"success": bool, "message": str, "nfo_file": Optional[str]}
+
+        """
+        try:
+            if not info_dict:
+                return {"success": False, "message": "no metadata provided"}
+
+            mode = str(mode).lower()
+            if mode not in NFOMakerPP._MODE:
+                return {"success": False, "message": f"invalid mode '{mode}'"}
+
+            base_path = Path(filepath)
+            nfo_file = base_path.with_suffix(".nfo")
+            if nfo_file.exists() and not overwrite:
+                return {"success": False, "message": "NFO file already exists"}
+
+            nfo_data = NFOMakerPP._collect_nfo_data(info_dict, mode, None)
+            if 1 > len(nfo_data):
+                return {"success": False, "message": "no metadata found to write to NFO file"}
+
+            # derive year from any date if missing
+            if ("year" not in nfo_data) and any(k in nfo_data for k in NFOMakerPP._DATE_FIELDS):
+                try:
+                    first_date: str = next((str(nfo_data[k]) for k in NFOMakerPP._DATE_FIELDS if nfo_data.get(k)), "")
+                    if first_date:
+                        nfo_data["year"] = first_date.split("-", maxsplit=1)[0]
+                except Exception:
+                    pass
+
+            ok = NFOMakerPP._write_file(logger, nfo_file, base_path, nfo_data, prefix, mode)
+            if ok and nfo_file.exists():
+                return {"success": True, "message": "NFO file created", "nfo_file": str(nfo_file)}
+
+            return {"success": False, "message": "failed to write NFO"}
+
+        except Exception as e:
+            if logger and hasattr(logger, "exception"):
+                logger.exception(f"generate_nfo failed: {e}")
+            return {"success": False, "message": f"generate_nfo failed: {e!s}"}
+
+    @staticmethod
+    def _collect_nfo_data(info: dict, mode: str, downloader: Any | None = None) -> dict[str, Any]:
+        """
+        Collect replacement data for templates without depending on an instance.
+
+        Arguments:
+            info: extracted info dict
+            mode: 'tv' or 'movie'
+            downloader: optional downloader/logger to report errors
+
+        """
         data: dict[str, Any] = {}
 
-        for nfo_name, spec in self._MODE[self.mode].get("mapping", {}).items():
+        for nfo_name, spec in NFOMakerPP._MODE[mode].get("mapping", {}).items():
             try:
                 values = spec if isinstance(spec, tuple) else (spec,)
                 resolved_key = None
@@ -190,7 +238,7 @@ class NFOMakerPP(PostProcessor):
                         if raw is None:
                             continue
                         resolved_key = field
-                        resolved_val = self._coerce_value(raw, fmt)
+                        resolved_val = NFOMakerPP._coerce_value(raw, fmt)
                         if resolved_val not in (None, ""):
                             break
                         continue
@@ -206,8 +254,8 @@ class NFOMakerPP(PostProcessor):
                     continue
 
                 # normalize dates if source key is a known date
-                if resolved_key in self._DATE_FIELDS:
-                    resolved_val = self._normalize_date(resolved_val)
+                if resolved_key in NFOMakerPP._DATE_FIELDS:
+                    resolved_val = NFOMakerPP._normalize_date(resolved_val)
 
                 # collapse multiline descriptions
                 if "description" == resolved_key and isinstance(resolved_val, str):
@@ -217,44 +265,73 @@ class NFOMakerPP(PostProcessor):
                     data[nfo_name] = resolved_val
 
             except Exception as e:
-                if self._downloader:
-                    self._downloader.report_error(f"Error processing {nfo_name} -> {spec}: {e}")
+                if downloader:
+                    try:
+                        downloader.report_error(f"Error processing {nfo_name} -> {spec}: {e}")
+                    except Exception:
+                        pass
 
         return data
 
-    def _write_episode_info(self, nfo_file: Path, real_file: Path, data: dict) -> bool:
+    @staticmethod
+    def _write_file(reporter: Any | None, nfo_file: Path, real_file: Path, data: dict, prefix: bool, mode: str) -> bool:
+        """
+        Write episode/movie NFO using independent parameters.
+
+        reporter: object with optional methods `to_screen(msg)` and `report_warning(msg)`; if a logger is given uses .info/.warning
+        prefix: whether to prefix episode numbers
+        mode: 'tv' or 'movie'
+
+        """
         aired = str(
             data.get("aired") or data.get("premiered") or data.get("release_date") or data.get("upload_date") or ""
         )
 
-        aired = self._normalize_date(aired) if aired else ""
+        aired = NFOMakerPP._normalize_date(aired) if aired else ""
         if not aired or 3 > len(aired.split("-")):
-            self.report_warning("Invalid aired/premiered date, skipping NFO creation.")
+            if reporter and hasattr(reporter, "report_warning"):
+                reporter.report_warning("Invalid aired/premiered date, skipping NFO creation.")
+            elif reporter and hasattr(reporter, "warning"):
+                reporter.warning("Invalid aired/premiered date, skipping NFO creation.")
             return False
 
         year, month, day = aired.split("-")
         if not (year and month and day):
-            self.report_warning("Invalid aired date parts, skipping NFO creation.")
+            if reporter and hasattr(reporter, "report_warning"):
+                reporter.report_warning("Invalid aired date parts, skipping NFO creation.")
+            elif reporter and hasattr(reporter, "warning"):
+                reporter.warning("Invalid aired date parts, skipping NFO creation.")
             return False
 
-        self.to_screen(f"Creating {self.mode} NFO file at {nfo_file!s}")
+        if reporter and hasattr(reporter, "to_screen"):
+            reporter.to_screen(f"Creating {mode} NFO file at {nfo_file!s}")
+        elif reporter and hasattr(reporter, "info"):
+            reporter.info(f"Creating {mode} NFO file at {nfo_file!s}")
+
         nfo_file.parent.mkdir(parents=True, exist_ok=True)
         nfo_file.touch(exist_ok=True)
 
         dt = datetime(int(year), int(month), int(day), tzinfo=UTC)
         data = dict(data)  # do not mutate original
-        data["unique_id"] = self._build_unique_id(dt, real_file)
+        data["unique_id"] = NFOMakerPP._build_unique_id(dt, real_file)
 
-        self._write(nfo_file=nfo_file, text=self._MODE[self.mode].get("template", ""), repl=data)
+        NFOMakerPP._write(
+            reporter,
+            nfo_file=nfo_file,
+            text=NFOMakerPP._MODE[mode].get("template", ""),
+            repl=data,
+            prefix=prefix,
+            mode=mode,
+        )
         return True
 
     @staticmethod
     def _build_unique_id(dt: datetime, file: Path) -> str:
         # 1MMDD + 4-digit stable hash from lowercase stem
-        h = hashlib.sha256(file.stem.lower().encode("utf-8")).hexdigest()
+        h: str = hashlib.sha256(file.stem.lower().encode("utf-8")).hexdigest()
         ascii_stream = "".join(str(ord(c)) for c in h)
-        suffix = ascii_stream[:4] if 4 <= len(ascii_stream) else ascii_stream.ljust(4, "9")
-        return f"1{dt.strftime('%m')}{dt.strftime('%d')}{suffix}"
+        suffix: str = ascii_stream[:4] if 4 <= len(ascii_stream) else ascii_stream.ljust(4, "9")
+        return f"1{dt.strftime('%m%d')}{suffix}"
 
     @staticmethod
     def _normalize_date(val: Any) -> str:
@@ -311,27 +388,26 @@ class NFOMakerPP(PostProcessor):
 
         return raw
 
-    def _write(self, nfo_file: Path, text: str, repl: dict[str, Any]) -> None:
+    @staticmethod
+    def _write(reporter: Any | None, nfo_file: Path, text: str, repl: dict[str, Any], prefix: bool, mode: str) -> None:
         """
-        Write the NFO file, replacing placeholders in the template.
+        Write rendered template to disk; independent of PostProcessor instance.
 
-        Args:
-            nfo_file (Path): Path to the NFO file.
-            text (str): Template text with placeholders.
-            repl (dict[str, Any]): Replacement dictionary.
+        reporter: optional object with `to_screen`/`report_warning` or a logger with `info`/`warning`.
+        prefix: whether to prefix episodes
+        mode: 'tv' or 'movie'
 
         """
         safe_repl: dict[str, Any] = {}
         for k, v in repl.items():
             safe_repl[k] = NFOMakerPP._escape_text(v)
 
-        # replace placeholders
         rendered = text
         for key, value in safe_repl.items():
             if value is None:
                 continue
 
-            if self.prefix and key in ("episode",):
+            if prefix and key in ("episode",):
                 try:
                     value: str = f"1{value}"
                 except Exception:
@@ -339,17 +415,22 @@ class NFOMakerPP(PostProcessor):
 
             rendered = rendered.replace(f"{{{key}}}", str(value))
 
-        # remove any unresolved placeholder lines
-        mapping = self._MODE[self.mode].get("mapping", {})
+        mapping = NFOMakerPP._MODE[mode].get("mapping", {})
         unresolved_keys: Iterable[str] = set({*mapping, *safe_repl.keys()})
         pattern: re.Pattern[str] = re.compile(rf".*{{(?:{'|'.join(map(re.escape, unresolved_keys))})}}.*")
         rendered: str = "\n".join(line for line in rendered.splitlines() if not pattern.fullmatch(line))
 
         try:
             nfo_file.write_text(rendered, encoding="utf-8")
-            self.to_screen(f"NFO file written successfully at {nfo_file!s}")
+            if reporter and hasattr(reporter, "to_screen"):
+                reporter.to_screen(f"NFO file written successfully at {nfo_file!s}")
+            elif reporter and hasattr(reporter, "info"):
+                reporter.info(f"NFO file written successfully at {nfo_file!s}")
         except Exception as e:
-            self.report_warning(f"Error writing NFO file: {e}")
+            if reporter and hasattr(reporter, "report_warning"):
+                reporter.report_warning(f"Error writing NFO file: {e}")
+            elif reporter and hasattr(reporter, "warning"):
+                reporter.warning(f"Error writing NFO file: {e}")
 
     @staticmethod
     def _escape_text(text: Any) -> Any:

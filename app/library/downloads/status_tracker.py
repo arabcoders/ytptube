@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import queue
 import time
 from email.utils import formatdate
 from pathlib import Path
@@ -52,7 +53,44 @@ class StatusTracker:
         self._notify: EventBus = EventBus.get_instance()
         self.tmpfilename: str | None = None
         self.final_update = False
+        self._terminator_sent: bool = False
+        self._candidate_filepath: Path | None = None
         self.update_task: asyncio.Task | None = None
+
+    async def _finalize_file(self, filepath: Path) -> None:
+        """
+        Set filename, file_size, and run ffprobe on completed file.
+
+        Args:
+            filepath: Path to the finalized download file
+
+        """
+        self.info.datetime = str(formatdate(time.time()))
+        self.info.filename = safe_relative_path(filepath, Path(self.download_dir), self.temp_path)
+        self.final_update = True
+        self.logger.debug(f"Final file name: '{filepath}'.")
+
+        if filepath.is_file() and filepath.exists():
+            try:
+                self.info.file_size = filepath.stat().st_size
+            except FileNotFoundError:
+                self.info.file_size = 0
+
+            try:
+                from app.features.streaming.library.ffprobe import ffprobe
+
+                ff = await ffprobe(filepath)
+                self.info.extras["is_video"] = ff.has_video()
+                self.info.extras["is_audio"] = ff.has_audio()
+                if ff.has_video() or ff.has_audio():
+                    self.info.extras["duration"] = int(
+                        float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
+                    )
+            except Exception as e:
+                self.info.extras["is_video"] = True
+                self.info.extras["is_audio"] = True
+                self.logger.exception(e)
+                self.logger.error(f"Failed to run ffprobe. {e}")
 
     async def process_status_update(self, status: StatusDict) -> None:
         """
@@ -85,16 +123,22 @@ class StatusTracker:
         self.info.msg = status.get("msg")
         self.info.postprocessor = status.get("postprocessor", None)
 
-        if "error" == self.info.status and "error" in status:
+        if filepath := status.get("filepath"):
+            self._candidate_filepath = Path(filepath)
+
+        if self.info.status == "error" and "error" in status:
             self.info.error = status.get("error")
+            if self._candidate_filepath and self._candidate_filepath.exists():
+                self.logger.debug(f"Cleaning up partial file: {self._candidate_filepath}")
+                await self._finalize_file(self._candidate_filepath)
+
             self._notify.emit(
                 Events.LOG_ERROR,
                 data=self.info,
                 title="Download Error",
                 message=f"'{self.info.title}' failed to download. {self.info.error}",
             )
-
-        if "downloaded_bytes" in status and status.get("downloaded_bytes", 0) > 0:
+        elif "downloaded_bytes" in status and status.get("downloaded_bytes", 0) > 0:
             self.info.downloaded_bytes = status.get("downloaded_bytes")
             total: float | None = status.get("total_bytes") or status.get("total_bytes_estimate")
             if total:
@@ -108,34 +152,9 @@ class StatusTracker:
         self.info.eta = status.get("eta")
 
         if final_name := status.get("final_name", None):
-            final_name = Path(final_name)
-            self.info.datetime = str(formatdate(time.time()))
+            self._candidate_filepath = None
+            await self._finalize_file(Path(final_name))
             self.info.status = "finished"
-            self.final_update = True
-            self.info.filename = safe_relative_path(final_name, Path(self.download_dir), self.temp_path)
-            self.logger.debug(f"Final file name: '{final_name}'.")
-
-            if final_name.is_file() and final_name.exists():
-                try:
-                    self.info.file_size = final_name.stat().st_size
-                except FileNotFoundError:
-                    self.info.file_size = 0
-
-                try:
-                    from app.features.streaming.library.ffprobe import ffprobe
-
-                    ff = await ffprobe(final_name)
-                    self.info.extras["is_video"] = ff.has_video()
-                    self.info.extras["is_audio"] = ff.has_audio()
-                    if ff.has_video() or ff.has_audio():
-                        self.info.extras["duration"] = int(
-                            float(ff.metadata.get("duration", self.info.extras.get("duration", 0.0)))
-                        )
-                except Exception as e:
-                    self.info.extras["is_video"] = True
-                    self.info.extras["is_audio"] = True
-                    self.logger.exception(e)
-                    self.logger.error(f"Failed to run ffprobe. {e}")
 
         self._notify.emit(Events.ITEM_UPDATED, data=self.info)
 
@@ -152,7 +171,7 @@ class StatusTracker:
                 if status is None or isinstance(status, Terminator):
                     return
                 await self.process_status_update(status)
-            except (asyncio.CancelledError, OSError, FileNotFoundError):
+            except (asyncio.CancelledError, OSError, FileNotFoundError, EOFError, BrokenPipeError, ConnectionError):
                 return
 
     async def drain_queue(self, max_iterations: int = 50) -> None:
@@ -165,7 +184,6 @@ class StatusTracker:
             max_iterations: Maximum number of items to drain
 
         """
-        self.logger.debug("Draining status queue.")
         try:
             drain_count: int = max_iterations + (
                 self.status_queue.qsize() if hasattr(self.status_queue, "qsize") else 5
@@ -174,18 +192,16 @@ class StatusTracker:
             drain_count = max_iterations + 5
 
         for i in range(drain_count):
+            if self.final_update:
+                self.logger.info(f"({max_iterations}/{i}) Draining stopped. Final update received.")
+                break
+
             try:
-                if self.debug:
-                    self.logger.debug(f"({max_iterations}/{i}) Draining the status queue...")
-                if self.final_update:
-                    if self.debug:
-                        self.logger.debug(f"({max_iterations}/{i}) Draining stopped. Final update received.")
-                    break
                 next_status = self.status_queue.get(timeout=0.1)
                 if next_status is None or isinstance(next_status, Terminator):
                     continue
                 await self.process_status_update(next_status)
-            except Exception:  # noqa: S112
+            except (queue.Empty, BrokenPipeError, ConnectionRefusedError, EOFError, OSError):
                 continue
 
     def cancel_update_task(self) -> None:
@@ -198,5 +214,11 @@ class StatusTracker:
 
     def put_terminator(self) -> None:
         """Put a terminator sentinel in the status queue."""
-        if self.status_queue:
+        if not self.status_queue or self._terminator_sent:
+            return
+        try:
             self.status_queue.put(Terminator())
+            self._terminator_sent = True
+        except (BrokenPipeError, ConnectionRefusedError, ConnectionResetError, EOFError, OSError):
+            if self.debug:
+                self.logger.debug("Status queue closed, could not send terminator.")

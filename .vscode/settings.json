@@ -124,6 +124,7 @@
     "Microformat",
     "microformats",
     "mkvtoolsnix",
+    "MMDD",
     "movflags",
     "mpegts",
     "msvideo",
@@ -264,5 +265,7 @@
       "url": "./app/schema/tasks.json"
     }
   ],
-  "python.testing.cwd": "app/tests"
+  "python.testing.pytestArgs": [
+    "app"
+  ]
 }

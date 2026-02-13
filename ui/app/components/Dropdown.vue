@@ -182,8 +182,10 @@ onBeforeUnmount(() => {
   /* Override Bulma's display: none */
   position: static;
   /* Don't use absolute positioning inside fixed container */
-  max-height: 300px;
+  max-height: 350px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: max-content;
   padding-top: 4px;
 }
 
