@@ -85,6 +85,7 @@ async def add(
 
     """
     _preset: Preset | None = Presets.get_instance().get(item.preset)
+    logs = []
 
     if item.has_cli():
         try:

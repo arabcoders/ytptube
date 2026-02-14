@@ -121,7 +121,7 @@
               </td>
               <td>
                 <div class="progress-bar is-unselectable">
-                  <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                  <div class="progress-percentage" v-html="updateProgress(item)" />
                   <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
                 </div>
               </td>
@@ -247,7 +247,7 @@
           <div class="columns is-multiline is-mobile">
             <div class="column is-12">
               <div class="progress-bar is-unselectable">
-                <div class="progress-percentage">{{ updateProgress(item) }}</div>
+                <div class="progress-percentage" v-html="updateProgress(item)" />
                 <div class="progress" :style="{ width: percentPipe(item.percent as number) + '%' }"></div>
               </div>
             </div>
@@ -600,7 +600,7 @@ const updateProgress = (item: StoreItem): string => {
 
   if ('postprocessing' === item.status) {
     if (item.postprocessor) {
-      return `PP Running: ${item.postprocessor}`
+      return `<i class="fa fa-cog fa-spin"></i> PP: ${item.postprocessor}`
     }
     return 'Post-processors are running.'
   }

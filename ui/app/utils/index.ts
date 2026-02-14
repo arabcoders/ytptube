@@ -213,11 +213,7 @@ const encodePath = (item: string): string => {
     processed = encodeURIComponent(processed)
 
     const placeholderRegex = new RegExp(`${_PREFIX.replace(/_/g, '_')}(\\d+)${_SUFFIX.replace(/_/g, '_')}`, 'g')
-    processed = processed.replace(placeholderRegex, (_match, index: string) => {
-      return placeholders[parseInt(index)] || ''
-    })
-
-    return processed
+    return processed.replace(placeholderRegex, (_match, index: string) => placeholders[parseInt(index)] || '')
   }).join('/')
 }
 
@@ -255,7 +251,7 @@ const request = (url: string, options: RequestInit & { timeout?: number } = {}):
   if (typeof timeout === 'number' && timeout > 0) {
     controller = new AbortController()
     fetchOptions.signal = controller.signal
-    timer = setTimeout(() => controller!.abort(`Request timed out.`), timeout*1000)
+    timer = setTimeout(() => controller!.abort(`Request timed out.`), timeout * 1000)
   }
 
   return fetch(url.startsWith('/') ? uri(url) : url, fetchOptions).finally(() => {
