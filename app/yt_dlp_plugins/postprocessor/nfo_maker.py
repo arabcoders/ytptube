@@ -120,6 +120,10 @@ class NFOMakerPP(PostProcessor):
         return "NFOMaker"
 
     def run(self, info: dict | None = None) -> tuple[list, dict]:
+        if "fail" == self.mode:
+            msg = "Intentionally failing due to mode=fail."
+            raise Exception(msg)
+
         if not info:
             self.report_warning("No info provided to NFO Maker.")
             return [], {}

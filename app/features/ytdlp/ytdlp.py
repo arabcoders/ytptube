@@ -1,4 +1,4 @@
-# flake8: noqa: F401
+# flake8: noqa: F401, RUF100, W291, I001
 import sys
 from typing import Any
 
@@ -49,6 +49,7 @@ class _ArchiveProxy:
 
 class YTDLP(yt_dlp.YoutubeDL):
     _interrupted = False
+    _registered = False
 
     def __init__(self, params=None, auto_init=True):
         # Avoid yt-dlp preloading the archive file by stripping the param first
@@ -73,6 +74,15 @@ class YTDLP(yt_dlp.YoutubeDL):
                 pass
 
         self.archive = _ArchiveProxy(orig_file)
+        if not YTDLP._registered:
+            try:
+                from app.yt_dlp_plugins.postprocessor.nfo_maker import NFOMakerPP
+                from yt_dlp.postprocessor import postprocessors
+
+                postprocessors.value.update({"NFOMakerPP": NFOMakerPP})
+                YTDLP._registered = True
+            except Exception:
+                pass
 
     def _delete_downloaded_files(self, *args, **kwargs) -> None:
         if self._interrupted:

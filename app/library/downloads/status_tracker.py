@@ -66,9 +66,17 @@ class StatusTracker:
 
         """
         self.info.datetime = str(formatdate(time.time()))
-        self.info.filename = safe_relative_path(filepath, Path(self.download_dir), self.temp_path)
+        self.info.filename = safe_relative_path(filepath, Path(self.download_dir))
         self.final_update = True
         self.logger.debug(f"Final file name: '{filepath}'.")
+        try:
+            filepath.relative_to(self.download_dir)
+        except ValueError:
+            self.logger.warning(
+                f"Final file '{filepath}' is outside of the intended download directory '{self.download_dir}'."
+            )
+            self.info.filename = None
+            return
 
         if filepath.is_file() and filepath.exists():
             try:
