@@ -75,22 +75,31 @@ const sources: EmbedSource[] = [
     url: "https://drive.google.com/file/d/{id}/preview",
     regex: /https?:\/\/(?:www\.)?drive\.google\.com\/file\/d\/(?<id>[^/?#&]+)/,
   },
+  {
+    name: "fbc_sites",
+    url: "{domain}/e/{id}",
+    regex: /(?<domain>(.+?))\/(?:api\/tokens|f)\/(?<id>fbc_[A-Za-z0-9_-]{22})\/?/,
+  },
 ]
 
 const isEmbedable = (url: string): boolean => sources.some(source => source.regex.test(url))
 
 const getEmbedable = (url: string): string | null => {
-  const source = sources.find(source => source.regex.test(url))
-  if (!source) {
-    return null
+  for (const source of sources) {
+    const match = source.regex.exec(url)
+    if (!match?.groups) {
+      continue
+    }
+
+    const replacements: Record<string, string> = {
+      ...match.groups,
+      origin: window.location.origin,
+    }
+
+    return source.url.replace(/\{(\w+)\}/g, (_, key) => replacements[key] ?? `{${key}}`)
   }
 
-  const match = source.regex.exec(url)
-  if (!match || !match.groups?.id) {
-    return null
-  }
-
-  return source.url.replace(/\{origin\}/g, window.location.origin).replace(/\{id\}/g, match.groups.id)
+  return null
 }
 
 export { isEmbedable, getEmbedable }
