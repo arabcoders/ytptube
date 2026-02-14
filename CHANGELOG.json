@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "a0fef50248e9bab12b1955626cc594d9bddd5884",
-    "date": "2026-02-14T15:49:52+00:00",
+    "full_sha": "84077349c74e0476fb60b0e44bd52ee30252c1cb",
+    "date": "2026-02-14T17:05:08+00:00",
     "commits": [
+      {
+        "sha": "84077349",
+        "full_sha": "84077349c74e0476fb60b0e44bd52ee30252c1cb",
+        "message": "feat:  improve status tracking in downloads",
+        "author": "arabcoders",
+        "date": "2026-02-14T17:05:08+00:00"
+      },
       {
         "sha": "a0fef502",
         "full_sha": "a0fef50248e9bab12b1955626cc594d9bddd5884",
