@@ -164,8 +164,43 @@
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>Command options for yt-dlp</span>
                   </label>
-                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                    :disabled="addInProgress" />
+                  <div class="columns is-multiline is-mobile">
+                    <template v-for="(item, index) in cliOptions" :key="index">
+                      <div class="column is-5">
+                        <div class="field">
+                          <div class="control has-icons-left">
+                            <InputAutocomplete v-model="item.key" :options="ytDlpOpt" :disabled="addInProgress"
+                              placeholder="--option" :multiple="false" :openOnFocus="true" />
+                            <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="column is-6">
+                        <div class="field">
+                          <div class="control has-icons-left">
+                            <input type="text" class="input" v-model="item.value" :disabled="addInProgress"
+                              placeholder="value">
+                            <span class="icon is-small is-left"><i class="fa-solid fa-v" /></span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="column is-1">
+                        <div class="control">
+                          <button type="button" class="button is-danger" @click="removeCliOption(index)"
+                            :disabled="addInProgress">
+                            <span class="icon"><i class="fa-solid fa-trash" /></span>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                    <div class="column is-12">
+                      <button type="button" class="button is-link" @click="addCliOption"
+                        :disabled="addInProgress">
+                        <span class="icon"><i class="fa-solid fa-plus" /></span>
+                        <span>Add Option</span>
+                      </button>
+                    </div>
+                  </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
@@ -251,8 +286,8 @@
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core'
-import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import TextDropzone from '~/components/TextDropzone.vue'
+import InputAutocomplete from '~/components/InputAutocomplete.vue'
 import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets'
@@ -279,6 +314,92 @@ const selected_preset = ref<string>('')
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null)
+
+interface CliOption {
+  key: string
+  value: string
+}
+
+const cliOptions = ref<CliOption[]>([])
+
+const parseCliString = (cli: string): CliOption[] => {
+  if (!cli || !cli.trim()) {
+    return []
+  }
+
+  const options: CliOption[] = []
+  const tokens = cli.trim().split(/\s+/)
+
+  let i = 0
+  while (i < tokens.length) {
+    const token = tokens[i]
+    if (!token) {
+      i++
+      continue
+    }
+
+    if (token.startsWith('--')) {
+      const equalsIndex = token.indexOf('=')
+      if (equalsIndex !== -1) {
+        const key = token.slice(2)
+        const value = token.slice(equalsIndex + 1)
+        options.push({ key, value })
+      } else {
+        const nextToken = tokens[i + 1]
+        if (nextToken && !nextToken.startsWith('-')) {
+          options.push({ key: token.slice(2), value: nextToken })
+          i++
+        } else {
+          options.push({ key: token.slice(2), value: '' })
+        }
+      }
+    } else if (token.startsWith('-')) {
+      options.push({ key: token.slice(1), value: '' })
+    }
+    i++
+  }
+
+  return options
+}
+
+const cliToString = (options: CliOption[]): string => {
+  return options
+    .filter(opt => opt.key.trim())
+    .map(opt => {
+      let key = opt.key.trim()
+      if (!key.startsWith('-')) {
+        key = '--' + key
+      }
+      const value = opt.value.trim()
+
+      if (!value) {
+        return key
+      }
+      if (value.includes(' ') || value.includes('"')) {
+        return `${key} "${value.replace(/"/g, '\\"')}"`
+      }
+      return `${key} ${value}`
+    })
+    .join(' ')
+}
+
+const addCliOption = () => {
+  cliOptions.value.push({ key: '', value: '' })
+}
+
+const removeCliOption = (index: number) => {
+  cliOptions.value.splice(index, 1)
+}
+
+const initCliOptions = () => {
+  cliOptions.value = parseCliString(form.cli || '')
+}
+
+initCliOptions()
+
+watch(() => props.preset, () => {
+  initCliOptions()
+}, { immediate: false })
 
 if (form.priority === undefined) {
   form.priority = 0
@@ -311,6 +432,8 @@ const checkInfo = async (): Promise<void> => {
     form.folder = form.folder.trim()
     await nextTick()
   }
+
+  form.cli = cliToString(cliOptions.value)
 
   if (form.cli && '' !== form.cli) {
     const options = await convertOptions(form.cli)
@@ -388,6 +511,7 @@ const importItem = async (): Promise<void> => {
 
     if (item.cli) {
       form.cli = item.cli
+      initCliOptions()
     }
 
     if (item.template) {
@@ -433,6 +557,8 @@ const import_existing_preset = async (): Promise<void> => {
   form.cookies = preset.cookies || ''
   form.description = preset.description || ''
   form.priority = preset.priority ?? 0
+
+  initCliOptions()
 
   await nextTick()
   selected_preset.value = ''
