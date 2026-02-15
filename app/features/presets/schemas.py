@@ -57,6 +57,33 @@ class Preset(BaseModel):
         if not value:
             return ""
 
+        import shlex
+
+        try:
+            tokens = shlex.split(value, posix=True)
+            processed_tokens = []
+            prev_was_option = False
+            for token in tokens:
+                if token.startswith("-"):
+                    processed_tokens.append(token)
+                    prev_was_option = True
+                elif "=" in token:
+                    key, val = token.split("=", 1)
+                    if not key.startswith("-"):
+                        key = "--" + key
+                    processed_tokens.append(f"{key}={val}")
+                    prev_was_option = False
+                elif prev_was_option:
+                    processed_tokens.append(token)
+                    prev_was_option = False
+                else:
+                    processed_tokens.append("--" + token)
+                    prev_was_option = False
+
+            value = " ".join(processed_tokens)
+        except ValueError:
+            pass
+
         try:
             from app.features.ytdlp.utils import arg_converter
 
