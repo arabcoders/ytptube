@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260214-84077349",
-        "date": "2026-02-14T17:05:08+00:00",
+        "tag": "dev-20260217-f166c418",
+        "date": "2026-02-17T17:03:27+00:00",
         "commits": [
+            {
+                "sha": "f166c418",
+                "message": "feat: improve task creation to support multiple URLs.",
+                "author": "arabcoders",
+                "date": "2026-02-17T17:03:27+00:00",
+                "full_sha": "f166c418f8ab11f4b6d72ba47c9f57eb83f36c44"
+            },
+            {
+                "sha": "5e40e2f6",
+                "message": "chore: update external packages",
+                "author": "arabcoders",
+                "date": "2026-02-17T15:50:36+00:00",
+                "full_sha": "5e40e2f610b7bcefcaeed95a63eaa119adf98f4c"
+            },
             {
                 "sha": "84077349",
                 "message": "feat:  improve status tracking in downloads",
@@ -4099,7 +4113,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "84077349c74e0476fb60b0e44bd52ee30252c1cb"
+        "full_sha": "f166c418f8ab11f4b6d72ba47c9f57eb83f36c44"
     },
     {
         "tag": "dev-20250616-c07465a6",
