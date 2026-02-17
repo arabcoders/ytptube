@@ -268,7 +268,7 @@
                 <NuxtLink target="_blank" :href="item.url">
                   {{ remove_tags(item.name) }}
                 </NuxtLink>
-                <span class="icon" v-if="item.in_progress">
+                <span class="icon" v-if="isTaskInProgress(item.id!)">
                   <i class="fa-solid fa-spinner fa-spin has-text-info" />
                 </span>
                 <span class="tag is-danger is-small ml-1" v-if="!item.enabled">Disabled</span>
@@ -468,8 +468,6 @@ import { sleep } from '~/utils'
 import { useSessionCache } from '~/utils/cache'
 import type { item_request } from '~/types/item'
 
-type TaskWithUI = Task & { in_progress?: boolean }
-
 const box = useConfirm()
 const toast = useNotification()
 const config = useConfigStore()
@@ -481,9 +479,9 @@ const display_style = useStorage<string>("tasks_display_style", "cards")
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 
 const tasksComposable = useTasks()
-const { tasks, isLoading, addInProgress } = tasksComposable
+const { tasks, isLoading, addInProgress, isTaskInProgress, setTaskInProgress, clearTaskInProgress } = tasksComposable
 
-const task = ref<Partial<TaskWithUI>>({})
+const task = ref<Partial<Task>>({})
 const taskRef = ref<number | null>(null)
 const toggleForm = ref<boolean>(false)
 const selectedElms = ref<Array<number>>([])
@@ -491,7 +489,7 @@ const masterSelectAll = ref(false)
 const massRun = ref<boolean>(false)
 const massDelete = ref<boolean>(false)
 const table_container = ref(false)
-const inspectTask = ref<TaskWithUI | null>(null)
+const inspectTask = ref<Task | null>(null)
 const query = ref()
 const toggleFilter = ref(false)
 const CACHE_KEY = 'tasks:handler_support'
@@ -591,7 +589,7 @@ const filteredTasks = computed(() => {
   if (!q) return tasks.value;
 
   return tasks.value.filter(task => deepIncludes(task, q, new WeakSet()));
-}) as ComputedRef<Array<TaskWithUI>>;
+}) as ComputedRef<Array<Task>>;
 
 const reloadContent = async (fromMounted: boolean = false) => {
   try {
@@ -707,11 +705,11 @@ const toggleHandlerEnabled = async (item: Task) => {
   }
 }
 
-const updateItem = async ({ reference, task, archive_all }: { reference?: number | null | undefined, task: Task, archive_all?: boolean }) => {
-  let createdOrUpdated: Task | null = null
+const updateItem = async ({ reference, task, archive_all }: { reference?: number | null | undefined, task: Task | Task[], archive_all?: boolean }) => {
+  let createdOrUpdated: Task | Task[] | null = null
 
   if (reference) {
-    createdOrUpdated = await tasksComposable.updateTask(reference, task)
+    createdOrUpdated = await tasksComposable.updateTask(reference, task as Task)
   } else {
     createdOrUpdated = await tasksComposable.createTask(task)
   }
@@ -720,15 +718,23 @@ const updateItem = async ({ reference, task, archive_all }: { reference?: number
     return
   }
 
-  await checkHandlerSupport(createdOrUpdated)
-
-  if (!reference && true === archive_all && createdOrUpdated.id) {
-    await sleep(1)
-    await nextTick()
-    await archiveAll(createdOrUpdated, true)
-  }
+  const tasksList = Array.isArray(createdOrUpdated) ? createdOrUpdated : [createdOrUpdated]
 
   resetForm(true)
+
+  if (!reference && true === archive_all) {
+    await nextTick()
+    await sleep(1)
+    toast.info(`Archiving existing items for '${tasksList.length}' tasks. This will take a while...`)
+    for (const t of tasksList) {
+      if (t.id) await archiveAll(t, true)
+    }
+  }
+
+  for (const t of tasksList) {
+    await checkHandlerSupport(t)
+  }
+
 }
 
 const editItem = (item: Task) => {
@@ -798,13 +804,15 @@ const runSelected = async () => {
   }, 500)
 }
 
-const runNow = async (item: TaskWithUI, mass: boolean = false) => {
+const runNow = async (item: Task, mass: boolean = false) => {
+  if (!item.id) return
+
   if (!mass && true !== (await box.confirm(`Run '${item.name}' now? it will also run at the scheduled time.`))) {
     return
   }
 
   if (false === mass) {
-    item.in_progress = true
+    setTaskInProgress(item.id)
   }
 
   const data: item_request = {
@@ -841,7 +849,7 @@ const runNow = async (item: TaskWithUI, mass: boolean = false) => {
 
   setTimeout(async () => {
     await nextTick()
-    item.in_progress = false
+    if (item.id) clearTaskInProgress(item.id)
   }, 500)
 }
 
@@ -892,7 +900,7 @@ const get_tags = (name: string): Array<string> => {
 
 const remove_tags = (name: string): string => name.replace(/\[(.*?)\]/g, '').trim();
 
-const archiveAll = async (item: TaskWithUI, by_pass: boolean = false) => {
+const archiveAll = async (item: Task, by_pass: boolean = false) => {
   if (!item.id) {
     toast.error('Task ID is missing')
     return
@@ -909,17 +917,17 @@ const archiveAll = async (item: TaskWithUI, by_pass: boolean = false) => {
       }
     }
 
-    item.in_progress = true
+    setTaskInProgress(item.id)
     await tasksComposable.markTaskItems(item.id)
   } catch (e: any) {
     toast.error(`Failed to archive items. ${e.message || 'Unknown error.'}`)
     return
   } finally {
-    item.in_progress = false
+    clearTaskInProgress(item.id)
   }
 }
 
-const unarchiveAll = async (item: TaskWithUI) => {
+const unarchiveAll = async (item: Task) => {
   if (!item.id) {
     toast.error('Task ID is missing')
     return
@@ -934,17 +942,17 @@ const unarchiveAll = async (item: TaskWithUI) => {
       return;
     }
 
-    item.in_progress = true
+    setTaskInProgress(item.id)
     await tasksComposable.unmarkTaskItems(item.id)
   } catch (e: any) {
     toast.error(`Failed to remove items from archive. ${e.message || 'Unknown error.'}`)
     return
   } finally {
-    item.in_progress = false
+    if (item.id) clearTaskInProgress(item.id)
   }
 }
 
-const generateMeta = async (item: TaskWithUI) => {
+const generateMeta = async (item: Task) => {
   if (!item.id) {
     toast.error('Task ID is missing')
     return
@@ -977,13 +985,13 @@ const generateMeta = async (item: TaskWithUI) => {
       return;
     }
 
-    item.in_progress = true
+    setTaskInProgress(item.id)
     await tasksComposable.generateTaskMetadata(item.id)
   } catch (e: any) {
     toast.error(`Failed to generate metadata. ${e.message || 'Unknown error.'}`)
     return
   } finally {
-    item.in_progress = false
+    if (item.id) clearTaskInProgress(item.id)
   }
 }
 </script>

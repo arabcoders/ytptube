@@ -938,41 +938,66 @@ Notes:
 ---
 
 ### POST /api/tasks
-**Purpose**: Create a new scheduled task.
+**Purpose**: Create one or more scheduled tasks.
 
-**Body**: Task object. Example:
+**Body**: Single task object or array of task objects.
+
+**Single task:**
 ```json
 {
   "name": "My Task",
   "url": "https://youtube.com/...",
   "timer": "5 */2 * * *",
-  "cookies": "",
-  "config": {},
-  "template": "...",
-  "folder": "...",
-  "preset": "...",
+  "preset": "default",
+  "folder": "",
+  "template": "",
+  "cli": "",
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
 }
 ```
 
-**Response**:
+**Multiple tasks:**
+```json
+[
+  {"name": "First Task", "url": "https://...", "timer": "0 12 * * *", "preset": "default"},
+  {"url": "https://...", "folder": "custom/folder"},
+  {"url": "https://...", "preset": "different-preset", "template": "%(title)s.%(ext)s"}
+]
+```
+
+**Multi-URL Behavior:**
+When providing an array, the first task must include all required fields. Subsequent tasks can omit all fields except `url`, which is required for each task. Which will be backfilled using the first task values. Except for two fields that are backfilled with special logic:
+
+- `name`: Inferred from URL metadata, fallback: `task-{index}` if metadata is unavailable.
+- `timer`: 
+  - If no timer is provided in first task, timer will be disabled for all tasks.
+  - If timer is provided in first task, be extended by adding 5min interval for each subsequent task (e.g., `5 */2 * * *`, `10 */2 * * *`, `15 */2 * * *`, etc.) to prevent simultaneous execution this extends to hours.
+
+**Response (single task):**
 ```json
 {
   "id": 1,
   "name": "My Task",
   "url": "https://youtube.com/...",
   "timer": "5 */2 * * *",
-  "cookies": "",
-  "config": {},
-  "template": "...",
-  "folder": "...",
-  "preset": "...",
+  "preset": "default",
+  "folder": "",
+  "template": "",
+  "cli": "",
   "auto_start": true,
   "handler_enabled": true,
   "enabled": true
 }
+```
+
+**Response (multiple tasks):**
+```json
+[
+  {"id": 1, "name": "First Task", "url": "https://...", ...},
+  ...
+]
 ```
 
 **Error Responses**:

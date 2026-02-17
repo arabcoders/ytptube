@@ -26,6 +26,122 @@ if TYPE_CHECKING:
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
+TIMER_SLOTS_PER_HOUR: int = 12
+
+
+def _offset_timer(timer: str, index: int) -> str:
+    """
+    Add deterministic offset to CRON timer based on index.
+
+    Uses 5-minute increments with 12 slots per hour (0-55 minutes).
+    After 12 items, expands to hours.
+
+    Formula:
+        hours_offset = index // 12
+        minutes_offset = (index % 12) * 5
+
+    Examples:
+        index 0: +0min, index 5: +25min, index 11: +55min
+        index 12: +1hr 0min, index 24: +2hr 0min
+
+    Args:
+        timer: CRON expression string (5 fields)
+        index: Task index for offset calculation
+
+    Returns:
+        Modified CRON expression with offset applied, or original on error
+
+    """
+    if not timer or index <= 0:
+        return timer
+
+    try:
+        parts = timer.strip().split()
+        if len(parts) != 5:
+            return timer
+
+        minute, hour, dom, month, dow = parts
+
+        hours_offset = index // TIMER_SLOTS_PER_HOUR
+        minutes_offset = (index % TIMER_SLOTS_PER_HOUR) * 5
+
+        original_minute = int(minute) if minute.isdigit() else 0
+
+        if minute.isdigit():
+            new_minute = (original_minute + minutes_offset) % 60
+            minute = str(new_minute)
+        elif "/" in minute:
+            base, step = minute.split("/", 1)
+            if base.isdigit():
+                new_base = (int(base) + minutes_offset) % 60
+                minute = f"{new_base}/{step}"
+        elif minute == "*":
+            minute = str(minutes_offset)
+
+        carry_hour = (original_minute + minutes_offset) // 60
+
+        if hour.isdigit():
+            new_hour = (int(hour) + hours_offset + carry_hour) % 24
+            hour = str(new_hour)
+        elif "/" in hour:
+            base, step = hour.split("/", 1)
+            if base.isdigit():
+                new_base = (int(base) + hours_offset + carry_hour) % 24
+                hour = f"{new_base}/{step}"
+        elif hour == "*" and (hours_offset > 0 or carry_hour > 0):
+            hour = str((hours_offset + carry_hour) % 24)
+
+        return f"{minute} {hour} {dom} {month} {dow}"
+    except Exception as e:
+        LOG.warning(f"Failed to offset timer '{timer}': {e}")
+        return timer
+
+
+async def _get_info(url: str, preset: str) -> tuple[str | None, str | None]:
+    """
+    Fetch metadata from URL and extract title for task name.
+
+    Also converts YouTube @handle URLs to channel IDs when possible.
+
+    Args:
+        url: URL to fetch metadata from
+        preset: Preset name to use for extraction options
+
+    Returns:
+        Tuple of (title or None, converted_url or None)
+
+    """
+    try:
+        from app.features.ytdlp.extractor import fetch_info
+        from app.features.ytdlp.ytdlp_opts import YTDLPOpts
+
+        params = YTDLPOpts.get_instance().add_cli("-I0", from_user=False)
+        if preset:
+            params.preset(name=preset)
+
+        (metadata, _) = await fetch_info(config=params.get_all(), url=url)
+
+        if not metadata or not isinstance(metadata, dict):
+            return (None, None)
+
+        title = ag(metadata, ["title", "fulltitle"])
+        name = str(title)[:255] if title else None
+
+        converted_url: str | None = None
+        channel_id = metadata.get("channel_id")
+        if channel_id and "/@" in url:
+            import re
+
+            converted_url = re.sub(r"/@[^/]+", f"/channel/{channel_id}", url)
+
+        return (name, converted_url)
+    except TimeoutError:
+        LOG.debug(f"Timeout while inferring name from '{url}'")
+        return (None, None)
+    except Exception as e:
+        LOG.debug(f"Failed to infer name from '{url}': {e}")
+        return (None, None)
+
 
 def _model(model: Any) -> Task:
     return Task.model_validate(model)
@@ -53,35 +169,107 @@ async def tasks_list(request: Request, repo: TasksRepository, encoder: Encoder) 
 async def tasks_add(request: Request, repo: TasksRepository, encoder: Encoder, notify: EventBus) -> Response:
     data = await request.json()
 
-    if not isinstance(data, dict):
+    if isinstance(data, dict):
+        data = [data]
+
+    if not isinstance(data, list) or len(data) == 0:
         return web.json_response(
-            {"error": "Invalid request body expecting dict."},
+            {"error": "Invalid request body. Expecting dict or list of dicts."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    first_item = data[0]
+    if not isinstance(first_item, dict) or not first_item.get("url"):
+        return web.json_response(
+            {"error": "First item requires 'url' field."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if not first_item.get("name"):
+        return web.json_response(
+            {"error": "First item requires 'name' field."},
             status=web.HTTPBadRequest.status_code,
         )
 
     try:
-        item: Task = Task.model_validate(data)
+        first_task: Task = Task.model_validate(first_item)
     except ValidationError as exc:
         return web.json_response(
-            data={"error": "Failed to validate task.", "detail": format_validation_errors(exc)},
+            data={"error": "Failed to validate first task.", "detail": format_validation_errors(exc)},
             status=web.HTTPBadRequest.status_code,
         )
 
-    if await repo.get_by_name(item.name):
+    if await repo.get_by_name(first_task.name):
         return web.json_response(
-            data={"error": f"Task with name '{item.name}' already exists."},
+            data={"error": f"Task with name '{first_task.name}' already exists."},
             status=web.HTTPConflict.status_code,
         )
 
-    try:
-        created = await repo.create(item.model_dump())
-        saved = _serialize(created)
-    except ValueError as exc:
-        return web.json_response({"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+    created_tasks: list[dict[str, Any]] = []
+    base_settings = first_task.model_dump(exclude={"id", "name", "url", "created_at", "updated_at"})
 
-    notify.emit(Events.CONFIG_UPDATE, data=ConfigEvent(feature=CEFeature.TASKS, action=CEAction.CREATE, data=saved))
+    for idx, item in enumerate(data):
+        if not isinstance(item, dict):
+            LOG.warning(f"Skipping item {idx}: not a dict")
+            continue
 
-    return web.json_response(data=saved, status=web.HTTPOk.status_code, dumps=encoder.encode)
+        url = str(item.get("url", "")).strip()
+        if not url:
+            LOG.debug(f"Skipping item {idx}: empty URL")
+            continue
+
+        inferred_name, converted_url = await _get_info(url, item.get("preset", first_task.preset))
+        name = item.get("name", first_task.name if 0 == idx else (inferred_name or f"task-{idx}"))
+
+        final_name = str(name)
+        counter = 1
+        while await repo.get_by_name(final_name):
+            final_name = f"{name}-{counter}"
+            counter += 1
+
+        item_settings = base_settings.copy()
+        for key in ["timer", "preset", "folder", "template", "cli", "auto_start", "handler_enabled", "enabled"]:
+            if key in item and item[key] is not None:
+                item_settings[key] = item[key]
+
+        task_dict: dict[str, Any] = {
+            "name": final_name,
+            "url": converted_url or url,
+            **item_settings,
+        }
+
+        if not task_dict.get("timer") and first_task.timer and idx > 0:
+            task_dict["timer"] = _offset_timer(first_task.timer, idx)
+
+        try:
+            validated = Task.model_validate(task_dict)
+            task_data = validated.model_dump()
+        except ValidationError as exc:
+            LOG.warning(f"Skipping task {idx}: validation failed - {exc}")
+            continue
+
+        try:
+            created = await repo.create(task_data)
+            saved = _serialize(created)
+            created_tasks.append(saved)
+            notify.emit(
+                Events.CONFIG_UPDATE,
+                data=ConfigEvent(feature=CEFeature.TASKS, action=CEAction.CREATE, data=saved),
+            )
+        except ValueError as exc:
+            LOG.warning(f"Failed to create task {idx}: {exc}")
+            continue
+
+    if len(created_tasks) == 0:
+        return web.json_response(
+            {"error": "Failed to create any tasks."},
+            status=web.HTTPBadRequest.status_code,
+        )
+
+    if len(created_tasks) == 1:
+        return web.json_response(data=created_tasks[0], status=web.HTTPOk.status_code, dumps=encoder.encode)
+
+    return web.json_response(data=created_tasks, status=web.HTTPOk.status_code, dumps=encoder.encode)
 
 
 @route("GET", r"api/tasks/{id:\d+}", "tasks_get")

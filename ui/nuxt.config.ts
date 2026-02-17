@@ -1,4 +1,4 @@
-import path from "path";
+import { defineNuxtConfig } from 'nuxt/config'
 
 let extraNitro = {}
 try {
@@ -63,17 +63,15 @@ export default defineNuxtConfig({
       linkActiveClass: "is-selected",
     }
   },
-
   modules: [
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
     'development' === process.env.NODE_ENV ? '@nuxt/eslint' : '',
   ].filter(Boolean),
-
   nitro: {
     output: {
-      publicDir: path.join(__dirname, 'production' === process.env.NODE_ENV ? 'exported' : 'dist')
+      publicDir: 'production' === process.env.NODE_ENV ? __dirname + '/exported' : __dirname + '/dist',
     },
     ...extraNitro,
   },
