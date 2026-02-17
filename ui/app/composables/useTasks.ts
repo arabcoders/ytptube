@@ -1,5 +1,4 @@
 import { ref, readonly } from 'vue'
-
 import { useNotification } from '~/composables/useNotification'
 import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
 import type {
@@ -34,6 +33,10 @@ const isLoading = ref<boolean>(false)
  * Indicates if an add/update operation is in progress.
  */
 const addInProgress = ref<boolean>(false)
+/**
+ * Set of task IDs that are currently in progress.
+ */
+const inProgressIds = ref<Set<number>>(new Set())
 /**
  * Stores the last error message, if any.
  */
@@ -181,14 +184,14 @@ const getTask = async (id: number): Promise<Task | null> => {
 
 /**
  * Creates a new task via API.
- * @param task Task to create
+ * @param task Task to create (single task or array for batch)
  * @param callback Optional callback with APIResponse result
- * @returns Created task or null on error
+ * @returns Created task(s) or null on error
  */
 const createTask = async (
-  task: Omit<Task, 'id' | 'created_at' | 'updated_at'>,
-  callback?: (response: APIResponse<Task>) => void,
-): Promise<Task | null> => {
+  task: Omit<Task, 'id' | 'created_at' | 'updated_at'> | Omit<Task, 'id' | 'created_at' | 'updated_at'>[],
+  callback?: (response: APIResponse<Task | Task[]>) => void,
+): Promise<Task | Task[] | null> => {
   addInProgress.value = true
   try {
     const response = await request('/api/tasks/', {
@@ -198,7 +201,19 @@ const createTask = async (
     await ensureSuccess(response)
 
     const json = await response.json()
-    const created = await parse_api_response<Task>(json)
+    const created = await parse_api_response<Task | Array<Task>>(json)
+
+    if (Array.isArray(created)) {
+      notify.success(`${created.length} tasks created.`)
+      created.forEach(t => updateTasksList(t))
+      lastError.value = null
+
+      if (callback) {
+        callback({ success: true, error: null, detail: null, data: created })
+      }
+
+      return created
+    }
 
     updateTasksList(created)
     notify.success('Task created.')
@@ -242,7 +257,7 @@ const updateTask = async (
   try {
     // Explicitly remove id, created_at, updated_at fields if present
     const { id: _, created_at: __, updated_at: ___, ...taskData } = task as Task
-    
+
     const response = await request(`/api/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
@@ -466,6 +481,29 @@ const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | 
 const clearError = () => lastError.value = null
 
 /**
+ * Checks if a task is currently in progress.
+ * @param id Task ID
+ * @returns true if the task is in progress
+ */
+const isTaskInProgress = (id: number): boolean => inProgressIds.value.has(id)
+
+/**
+ * Sets a task as in progress.
+ * @param id Task ID
+ */
+const setTaskInProgress = (id: number): void => {
+  inProgressIds.value.add(id)
+}
+
+/**
+ * Clears the in progress state for a task.
+ * @param id Task ID
+ */
+const clearTaskInProgress = (id: number): void => {
+  inProgressIds.value.delete(id)
+}
+
+/**
  * Resets all state to initial values (for testing only).
  */
 const __resetForTesting = () => {
@@ -482,6 +520,7 @@ const __resetForTesting = () => {
   addInProgress.value = false
   lastError.value = null
   throwInstead.value = false
+  inProgressIds.value = new Set()
 }
 
 /**
@@ -496,6 +535,10 @@ export const useTasks = () => ({
   isLoading: readonly(isLoading),
   addInProgress: readonly(addInProgress),
   lastError: readonly(lastError),
+  inProgressIds: readonly(inProgressIds),
+  isTaskInProgress,
+  setTaskInProgress,
+  clearTaskInProgress,
   loadTasks,
   getTask,
   createTask,

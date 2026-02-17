@@ -1,15 +1,24 @@
 <template>
   <main class="columns mt-2 is-multiline">
-    <div class="column is-12" v-if="form?.url && is_yt_handle(form.url)">
+    <div class="column is-12" v-if="!isMultiLineInput && form?.url && is_yt_handle(form.url)">
       <Message title="Information" class="is-info" icon="fas fa-info-circle">
         You are using a YouTube link with <code>@handle</code> instead of <code>channel_id</code>. To activate RSS
         feed support for URL click on the <b>Convert URL</b> link.
       </Message>
     </div>
-    <div class="column is-12" v-if="form?.url && is_generic_rss(form.url)">
+    <div class="column is-12" v-if="form?.url && is_generic_rss(form.url) && !isMultiLineInput">
       <Message title="Information" class="is-warning" icon="fas fa-info-circle">
         You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found
         in this feed.
+      </Message>
+    </div>
+    <div class="column is-12" v-if="isMultiLineInput">
+      <Message title="Multiple URLs" class="is-info" icon="fas fa-info-circle">
+        <ul>
+          <li>First URL uses the <b>Name</b> provided above with full settings.</li>
+          <li>Other URLs infer names from metadata and inherit settings from the first URL.</li>
+          <li v-if="form.timer">Timers are offset by 5-minute increments for each URL.</li>
+        </ul>
       </Message>
     </div>
     <div class="column is-12">
@@ -83,21 +92,30 @@
                 <div class="field">
                   <label class="label is-inline" for="url">
                     <span class="icon"><i class="fa-solid fa-link" /></span>
-                    URL
-                    <template v-if="is_yt_handle(form.url)">
+                    <span>URL</span>
+                    <span class="tag is-info is-light is-small ml-2" v-if="urlCount > 1">{{ urlCount }} URLs</span>
+                    <template v-if="!isMultiLineInput && is_yt_handle(form.url)">
                       - <NuxtLink @click="async () => form.url = await convert_url(form.url)">Convert URL</NuxtLink>
                     </template>
                   </label>
                   <div class="control has-icons-left">
-                    <input type="url" class="input" id="url" v-model="form.url"
+                    <textarea v-if="isMultiLineInput" ref="urlTextarea" class="input" id="url"
+                      :disabled="addInProgress || convertInProgress" v-model="form.url" @keydown="handleKeyDown"
+                      @input="adjustTextareaHeight"
+                      style="resize: none; overflow-y: auto; min-height: 38px; max-height: 300px;"
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg" />
+                    <input v-else type="url" class="input" id="url" v-model="form.url"
                       :disabled="addInProgress || convertInProgress"
-                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg">
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg" @keydown="handleKeyDown"
+                      @paste="handlePaste">
                     <span class="icon is-small is-left"><i class="fa-solid fa-link"
                         :class="{ 'fa-spin': convertInProgress }" /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">The channel or playlist URL.</span>
+                    <span class="is-bold">
+                      The channel or playlist URL. Use Shift+Enter for multiple URLs.
+                    </span>
                   </span>
                 </div>
               </div>
@@ -366,6 +384,7 @@ import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
 import type { AutoCompleteOptions } from '~/types/autocomplete'
 import type { ExportedTask, Task } from '~/types/tasks'
 import { useConfirm } from '~/composables/useConfirm'
+import { shortPath } from "~/utils"
 
 const props = defineProps<{
   reference?: number | null | undefined
@@ -375,7 +394,7 @@ const props = defineProps<{
 
 const emitter = defineEmits<{
   (e: 'cancel'): void
-  (e: 'submit', payload: { reference: number | null | undefined, task: Task, archive_all?: boolean }): void
+  (e: 'submit', payload: { reference: number | null | undefined, task: Task | Task[], archive_all?: boolean }): void
 }>()
 
 const toast = useNotification()
@@ -388,10 +407,85 @@ const import_string = ref<string>('')
 const showOptions = ref<boolean>(false)
 const ytDlpOpt = ref<AutoCompleteOptions>([])
 const archiveAllAfterAdd = ref<boolean>(false)
+const urlTextarea = ref<HTMLTextAreaElement | null>(null)
 
 const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
 const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i
 const form = reactive<Task>({ ...props.task })
+
+const isMultiLineInput = computed(() => !!form.url && form.url.includes('\n'))
+const urlCount = computed(() => splitUrls(form.url || '').length)
+
+const splitUrls = (urlString: string): string[] => {
+  return urlString
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+}
+
+const adjustTextareaHeight = async (): Promise<void> => {
+  await nextTick()
+  if (urlTextarea.value) {
+    urlTextarea.value.style.height = 'auto'
+    const newHeight = Math.min(urlTextarea.value.scrollHeight, 300)
+    urlTextarea.value.style.height = `${newHeight}px`
+  }
+}
+
+const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement
+  const isTextarea = target.tagName === 'TEXTAREA'
+
+  if (event.key !== 'Enter') return
+
+  if (event.ctrlKey && isTextarea) {
+    event.preventDefault()
+    checkInfo()
+    return
+  }
+
+  if (event.shiftKey && !isTextarea) {
+    event.preventDefault()
+    const cursorPos = target.selectionStart || form.url.length
+    form.url = form.url.substring(0, cursorPos) + '\n' + form.url.substring(target.selectionEnd || cursorPos)
+
+    await nextTick()
+    if (urlTextarea.value) {
+      await adjustTextareaHeight()
+      urlTextarea.value.setSelectionRange(cursorPos + 1, cursorPos + 1)
+      urlTextarea.value.focus()
+    }
+  }
+}
+
+const handlePaste = async (event: ClipboardEvent): Promise<void> => {
+  const pastedText = event.clipboardData?.getData('text') || ''
+  if (!pastedText.includes('\n')) return
+
+  event.preventDefault()
+
+  const target = event.target as HTMLInputElement
+  const currentValue = form.url || ''
+  const start = target.selectionStart || currentValue.length
+  const end = target.selectionEnd || currentValue.length
+  form.url = currentValue.substring(0, start) + pastedText + currentValue.substring(end)
+
+  await nextTick()
+  if (urlTextarea.value) {
+    await adjustTextareaHeight()
+    const newPos = start + pastedText.length
+    urlTextarea.value.setSelectionRange(newPos, newPos)
+    urlTextarea.value.focus()
+  }
+}
+
+watch(isMultiLineInput, async (newValue) => {
+  await nextTick()
+  if (newValue) {
+    await adjustTextareaHeight()
+    urlTextarea.value?.focus()
+  }
+})
 
 watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
   .filter(opt => !opt.ignored)
@@ -421,12 +515,16 @@ onMounted(() => {
 })
 
 const checkInfo = async (): Promise<void> => {
-  const required = ['name', 'url'] as const
-  for (const key of required) {
-    if (!form[key]) {
-      toast.error(`The ${key} field is required.`)
-      return
-    }
+  const urls = splitUrls(form.url || '')
+
+  if (urls.length === 0) {
+    toast.error('At least one URL is required.')
+    return
+  }
+
+  if (!form.name) {
+    toast.error('The name field is required.')
+    return
   }
 
   if (form.folder) {
@@ -445,7 +543,7 @@ const checkInfo = async (): Promise<void> => {
   }
 
   try {
-    new URL(form.url)
+    new URL(urls[0] || '')
   } catch {
     toast.error('Invalid URL')
     return
@@ -457,7 +555,30 @@ const checkInfo = async (): Promise<void> => {
     form.cli = form.cli.trim()
   }
 
-  emitter('submit', { reference: toRaw(props.reference), task: toRaw(form), archive_all: archiveAllAfterAdd.value })
+  if (urls.length === 1) {
+    emitter('submit', { reference: toRaw(props.reference), task: toRaw(form), archive_all: archiveAllAfterAdd.value })
+    return
+  }
+
+  const tasks: Task[] = urls.map((url, idx) => {
+    if (idx === 0) {
+      return {
+        name: form.name,
+        url: url,
+        folder: form.folder,
+        preset: form.preset,
+        timer: form.timer,
+        template: form.template,
+        cli: form.cli,
+        auto_start: form.auto_start,
+        handler_enabled: form.handler_enabled,
+        enabled: form.enabled,
+      } as Task
+    }
+    return { url } as Task
+  })
+
+  emitter('submit', { reference: toRaw(props.reference), task: tasks, archive_all: archiveAllAfterAdd.value })
 }
 
 const importItem = async (): Promise<void> => {

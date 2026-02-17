@@ -220,10 +220,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, toRef, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useStorage, useIntersectionObserver } from '@vueuse/core'
 import type { item_request } from '~/types/item'
+import type { Preset } from '~/types/presets'
 import type { ItemStatus, StoreItem } from '~/types/store'
 import { useNotification } from '~/composables/useNotification'
 import { useConfigStore } from '~/stores/ConfigStore'
@@ -250,7 +251,9 @@ const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
 const isMobile = useMediaQuery({ maxWidth: 1024 })
 const box = useConfirm()
 
-const { app, paused, presets } = storeToRefs(configStore)
+const app = toRef(configStore, 'app')
+const paused = toRef(configStore, 'paused')
+const presets = toRef(configStore, 'presets')
 const { queue, history } = storeToRefs(stateStore)
 
 const embedUrl = ref<string>('')
@@ -662,7 +665,7 @@ const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
   toast.info('Removed from history queue.')
 }
 
-const filter_presets = (flag: boolean = true) => presets.value.filter(item => item.default === flag)
+const filter_presets = (flag: boolean = true) => presets.value.filter((item: Preset) => item.default === flag)
 
 const showMessage = (item: StoreItem) => {
   if (!item?.msg || item.msg === item?.error) {
