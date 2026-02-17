@@ -1,29 +1,8 @@
 [
   {
-    "tag": "Unreleased (0c7ebb66)",
-    "full_sha": "0c7ebb66ed63763ff1b99bf0b894daa44ee1bd0c",
-    "date": "2026-02-14T17:32:56+00:00",
-    "commits": [
-      {
-        "sha": "84077349",
-        "full_sha": "84077349c74e0476fb60b0e44bd52ee30252c1cb",
-        "message": "feat:  improve status tracking in downloads",
-        "author": "arabcoders",
-        "date": "2026-02-14T17:05:08+00:00"
-      },
-      {
-        "sha": "a0fef502",
-        "full_sha": "a0fef50248e9bab12b1955626cc594d9bddd5884",
-        "message": "fix: some times adding a link fails with UnboundLocalError",
-        "author": "arabcoders",
-        "date": "2026-02-14T15:49:52+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "f166c418f8ab11f4b6d72ba47c9f57eb83f36c44",
-    "date": "2026-02-17T17:03:27+00:00",
+    "tag": "Unreleased (d9c9a859)",
+    "full_sha": "d9c9a859391ed0e657e9bb571ccd08dfd4945606",
+    "date": "2026-02-17T18:02:09+00:00",
     "commits": [
       {
         "sha": "f166c418",
@@ -38,6 +17,20 @@
         "message": "chore: update external packages",
         "author": "arabcoders",
         "date": "2026-02-17T15:50:36+00:00"
+      },
+      {
+        "sha": "84077349",
+        "full_sha": "84077349c74e0476fb60b0e44bd52ee30252c1cb",
+        "message": "feat:  improve status tracking in downloads",
+        "author": "arabcoders",
+        "date": "2026-02-14T17:05:08+00:00"
+      },
+      {
+        "sha": "a0fef502",
+        "full_sha": "a0fef50248e9bab12b1955626cc594d9bddd5884",
+        "message": "fix: some times adding a link fails with UnboundLocalError",
+        "author": "arabcoders",
+        "date": "2026-02-14T15:49:52+00:00"
       }
     ]
   },
