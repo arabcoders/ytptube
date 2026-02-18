@@ -91,7 +91,7 @@ Change the the variable `url` and `preset` variables to match your YTPTube insta
 
 ## iOS Shortcuts
 
-You can download [Add To YTPTube](https://www.icloud.com/shortcuts/18b8f70666a04a06aed09424f97ce951) shortcut and use it to send links to your YTPTube instance.
+You can download [Add To YTPTube](https://www.icloud.com/shortcuts/6df61c97d97b4e539c9100999ba39dd4) shortcut and use it to send links to your YTPTube instance.
 You have to edit the shortcut and replace the following:
 
 - `https://ytp.example.org` with your YTPTube instance.
@@ -103,7 +103,7 @@ and use that preset to download directly from your iOS device.
 
 ### Advanced iOS Shortcut
 
-This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/6e3db0bd532843e3aec70e6ce211be08) is more advanced, as it's parses
+This shortcut [YTPTube To Media](https://www.icloud.com/shortcuts/4dc579382f254635ad5785424055f173) is more advanced, as it's parses
 the `yt-dlp` output and attempt to download the media directly to your iOS device. It doesn't always work, but it's a good
 starting point for those who want to download media directly to their iOS device. We provide no support for this use case
 other than the shortcut itself. this shortcut missing support for parsing the http_headers, it's only parse the cookies.
