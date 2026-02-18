@@ -35,6 +35,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b",
+    "date": "2026-02-18T19:49:27+00:00",
+    "commits": [
+      {
+        "sha": "09de6833",
+        "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b",
+        "message": "fix: update iOS shortcut links",
+        "author": "arabcoders",
+        "date": "2026-02-18T19:49:27+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.4",
     "full_sha": "c36295d76fd788036b6fb6bf15fdf73fd0418731",
     "date": "2026-02-13T19:07:05+00:00",

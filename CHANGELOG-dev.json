@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260217-f166c418",
-        "date": "2026-02-17T17:03:27+00:00",
+        "tag": "dev-20260218-09de6833",
+        "date": "2026-02-18T19:49:27+00:00",
         "commits": [
+            {
+                "sha": "09de6833",
+                "message": "fix: update iOS shortcut links",
+                "author": "arabcoders",
+                "date": "2026-02-18T19:49:27+00:00",
+                "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b"
+            },
             {
                 "sha": "f166c418",
                 "message": "feat: improve task creation to support multiple URLs.",
@@ -4113,7 +4120,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f166c418f8ab11f4b6d72ba47c9f57eb83f36c44"
+        "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b"
     },
     {
         "tag": "dev-20250616-c07465a6",
