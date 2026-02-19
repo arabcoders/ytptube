@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b",
-    "date": "2026-02-18T19:49:27+00:00",
+    "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39",
+    "date": "2026-02-19T17:03:00+00:00",
     "commits": [
+      {
+        "sha": "f2e9dc97",
+        "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39",
+        "message": "fix: update docker setup to include temporary and download directories",
+        "author": "arabcoders",
+        "date": "2026-02-19T17:03:00+00:00"
+      },
       {
         "sha": "09de6833",
         "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b",

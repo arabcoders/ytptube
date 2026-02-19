@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260218-09de6833",
-        "date": "2026-02-18T19:49:27+00:00",
+        "tag": "dev-20260219-f2e9dc97",
+        "date": "2026-02-19T17:03:00+00:00",
         "commits": [
+            {
+                "sha": "f2e9dc97",
+                "message": "fix: update docker setup to include temporary and download directories",
+                "author": "arabcoders",
+                "date": "2026-02-19T17:03:00+00:00",
+                "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39"
+            },
             {
                 "sha": "09de6833",
                 "message": "fix: update iOS shortcut links",
@@ -4120,7 +4127,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "09de68330048ba18283ff153636d2b62238a8c0b"
+        "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39"
     },
     {
         "tag": "dev-20250616-c07465a6",
