@@ -45,7 +45,8 @@ Please read the [FAQ](FAQ.md) for more information.
 ## Run using docker command
 
 ```bash
-mkdir -p ./{config,downloads} && docker run -d --rm --user "${UID}:${UID}" --name ytptube \
+mkdir -p ./{config,downloads/files,downloads/tmp} && docker run -itd --rm --user "${UID}:${UID}" --name ytptube \
+-e YTP_TEMP_PATH=/downloads/tmp -e YTP_DOWNLOAD_PATH=/downloads/files \
 -p 8081:8081 -v ./config:/config:rw -v ./downloads:/downloads:rw \
 ghcr.io/arabcoders/ytptube:latest
 ```
@@ -63,25 +64,25 @@ The following is an example of a `compose.yaml` file that can be used to run YTP
 ```yaml
 services:
   ytptube:
-    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id, for example: "1000:1000"
+    user: "${UID:-1000}:${UID:-1000}" # change this to your user id and group id.
     image: ghcr.io/arabcoders/ytptube:latest
     container_name: ytptube
     restart: unless-stopped
+    environment:
+      - YTP_TEMP_PATH=/downloads/tmp
+      - YTP_DOWNLOAD_PATH=/downloads/files
     ports:
       - "8081:8081"
     volumes:
       - ./config:/config:rw
       - ./downloads:/downloads:rw
-    tmpfs:
-      - /tmp
 ```
 
 > [!IMPORTANT]
-> Make sure to change the `user` line to match your user id and group id
-> If you have low RAM, remove the `tmpfs` and mount a disk-based directory to `/tmp` instead. See [FAQ](FAQ.md#getting-no-space-left-on-device-error) for more information.
+> Make sure to change the `user` line to match your user id and group id.
 
 ```bash
-mkdir -p ./{config,downloads} && docker compose -f compose.yaml up -d
+mkdir -p ./{config,downloads/files,downloads/tmp} && docker compose -f compose.yaml up -d
 ```
 
 Then you can access the WebUI at `http://localhost:8081`.
