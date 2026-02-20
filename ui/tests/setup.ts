@@ -17,6 +17,7 @@ globalThis.requestAnimationFrame = window.requestAnimationFrame
 globalThis.cancelAnimationFrame = window.cancelAnimationFrame
 globalThis.localStorage = window.localStorage
 globalThis.sessionStorage = window.sessionStorage
+globalThis.Storage = window.Storage
 
 if (!globalThis.crypto) {
   globalThis.crypto = window.crypto

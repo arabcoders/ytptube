@@ -41,7 +41,6 @@ const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification();
 
 /**
  * Sorts task definition summaries by priority (ascending), then name (A-Z).
@@ -83,7 +82,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 const handleError = (error: unknown): void => {
   const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
   lastError.value = message;
-  notify.error(message);
+  useNotification().error(message);
 };
 
 /**
@@ -194,7 +193,7 @@ const createDefinition = async (
       updated_at: payload.updated_at,
     });
 
-    notify.success('Task definition created.');
+    useNotification().success('Task definition created.');
     lastError.value = null;
     return payload;
   } catch (error) {
@@ -234,7 +233,7 @@ const updateDefinition = async (
       updated_at: payload.updated_at,
     });
 
-    notify.success('Task definition updated.');
+    useNotification().success('Task definition updated.');
     lastError.value = null;
     return payload;
   } catch (error) {
@@ -255,7 +254,7 @@ const deleteDefinition = async (id: number): Promise<boolean> => {
     await ensureSuccess(response);
 
     removeSummary(id);
-    notify.success('Task definition deleted.');
+    useNotification().success('Task definition deleted.');
     lastError.value = null;
     return true;
   } catch (error) {
@@ -295,7 +294,7 @@ const toggleEnabled = async (
       updated_at: payload.updated_at,
     });
 
-    notify.success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`);
+    useNotification().success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`);
     lastError.value = null;
     return payload;
   } catch (error) {

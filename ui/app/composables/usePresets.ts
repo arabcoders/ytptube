@@ -39,7 +39,6 @@ const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification();
 
 /**
  * Sorts presets by priority (descending), then name (A-Z).
@@ -92,7 +91,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 const handleError = (error: unknown): void => {
   const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
   lastError.value = message;
-  notify.error(message);
+  useNotification().error(message);
 };
 
 /**
@@ -199,7 +198,7 @@ const createPreset = async (
     const created = await parse_api_response<Preset>(json);
 
     updatePresets(created);
-    notify.success('Preset created.');
+    useNotification().success('Preset created.');
     lastError.value = null;
 
     if (callback) {
@@ -254,7 +253,7 @@ const updatePreset = async (
     const updated = await parse_api_response<Preset>(json);
 
     updatePresets(updated);
-    notify.success(`Preset '${updated.name}' updated.`);
+    useNotification().success(`Preset '${updated.name}' updated.`);
     lastError.value = null;
 
     if (callback) {
@@ -309,7 +308,7 @@ const patchPreset = async (
     const updated = await parse_api_response<Preset>(json);
 
     updatePresets(updated);
-    notify.success(`Preset '${updated.name}' updated.`);
+    useNotification().success(`Preset '${updated.name}' updated.`);
     lastError.value = null;
 
     if (callback) {
@@ -347,7 +346,7 @@ const deletePreset = async (
     await ensureSuccess(response);
 
     removePreset(id);
-    notify.success('Preset deleted.');
+    useNotification().success('Preset deleted.');
     lastError.value = null;
 
     if (callback) {

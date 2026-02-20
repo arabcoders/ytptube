@@ -49,7 +49,6 @@ const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification();
 
 /**
  * Sorts conditions by priority (descending - higher number first), then name (A-Z).
@@ -102,7 +101,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 const handleError = (error: unknown): void => {
   const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
   lastError.value = message;
-  notify.error(message);
+  useNotification().error(message);
 };
 
 /**
@@ -212,7 +211,7 @@ const createCondition = async (
     const created = await parse_api_response<Condition>(json);
 
     updateConditions(created);
-    notify.success('Condition created.');
+    useNotification().success('Condition created.');
     lastError.value = null;
 
     if (callback) {
@@ -263,7 +262,7 @@ const updateCondition = async (
     const updated = await parse_api_response<Condition>(json);
 
     updateConditions(updated);
-    notify.success(`Condition '${updated.name}' updated.`);
+    useNotification().success(`Condition '${updated.name}' updated.`);
     lastError.value = null;
 
     if (callback) {
@@ -314,7 +313,7 @@ const patchCondition = async (
     const updated = await parse_api_response<Condition>(json);
 
     updateConditions(updated);
-    notify.success(`Condition '${updated.name}' updated.`);
+    useNotification().success(`Condition '${updated.name}' updated.`);
     lastError.value = null;
 
     if (callback) {
@@ -352,7 +351,7 @@ const deleteCondition = async (
     await ensureSuccess(response);
 
     removeCondition(id);
-    notify.success('Condition deleted.');
+    useNotification().success('Condition deleted.');
     lastError.value = null;
 
     if (callback) {
