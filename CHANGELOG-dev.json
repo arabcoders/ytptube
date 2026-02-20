@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260220-633fc7d4",
-        "date": "2026-02-20T20:14:23+00:00",
+        "tag": "dev-20260220-764b8373",
+        "date": "2026-02-20T20:27:54+00:00",
         "commits": [
+            {
+                "sha": "764b8373",
+                "message": "refactor: replace notify with useNotification for error/success handling in composables",
+                "author": "arabcoders",
+                "date": "2026-02-20T20:27:54+00:00",
+                "full_sha": "764b837312a748ee8c43c4c9af06dd8ae380d884"
+            },
             {
                 "sha": "633fc7d4",
                 "message": "fix: add jsdom as dev dependancy",
@@ -4148,7 +4155,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "633fc7d4d24b9e48e626a58e7c7275aa21954bd0"
+        "full_sha": "764b837312a748ee8c43c4c9af06dd8ae380d884"
     },
     {
         "tag": "dev-20250616-c07465a6",

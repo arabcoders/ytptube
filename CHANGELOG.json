@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "633fc7d4d24b9e48e626a58e7c7275aa21954bd0",
-    "date": "2026-02-20T20:14:23+00:00",
+    "full_sha": "764b837312a748ee8c43c4c9af06dd8ae380d884",
+    "date": "2026-02-20T20:27:54+00:00",
     "commits": [
+      {
+        "sha": "764b8373",
+        "full_sha": "764b837312a748ee8c43c4c9af06dd8ae380d884",
+        "message": "refactor: replace notify with useNotification for error/success handling in composables",
+        "author": "arabcoders",
+        "date": "2026-02-20T20:27:54+00:00"
+      },
       {
         "sha": "633fc7d4",
         "full_sha": "633fc7d4d24b9e48e626a58e7c7275aa21954bd0",
