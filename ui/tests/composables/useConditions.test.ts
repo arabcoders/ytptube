@@ -8,10 +8,6 @@ globalThis.useNotificationStore = () => ({
   markRead: () => {},
 }) as any
 
-const documentStub: any = globalThis.document ?? {}
-documentStub.hasFocus = () => true
-;(globalThis as any).document = documentStub
-
 mock.module('~/composables/useNotification', () => ({
   useNotification: () => ({ success: successMock, error: errorMock }),
   default: () => ({ success: successMock, error: errorMock }),

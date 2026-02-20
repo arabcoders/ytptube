@@ -1,2 +1,5 @@
 [install]
 minimumReleaseAge = 259200
+
+[test]
+preload = ["./tests/setup.ts"]
