@@ -6,19 +6,40 @@
       </template>
       <template v-else>
         <span v-if="icon" class="icon"><i :class="icon" /></span>
-        <span v-tooltip="field ? `yt-dlp option: ${field}` : null" :class="{ 'has-tooltip': field }">{{ label }}</span>
+        <span
+          v-tooltip="field ? `yt-dlp option: ${field}` : null"
+          :class="{ 'has-tooltip': field }"
+          >{{ label }}</span
+        >
       </template>
     </label>
     <div class="control is-expanded" v-if="'string' === type">
-      <input :id="`dlf-${id}`" :type="type" class="input" v-model="model" :placeholder="placeholder"
-        :disabled="disabled" />
+      <input
+        :id="`dlf-${id}`"
+        :type="type"
+        class="input"
+        v-model="model"
+        :placeholder="placeholder"
+        :disabled="disabled"
+      />
     </div>
     <div class="control is-expanded" v-if="'text' === type">
-      <textarea class="textarea is-pre" :id="`dlf-${id}`" v-model="model" :placeholder="placeholder"
-        :disabled="disabled"></textarea>
+      <textarea
+        class="textarea is-pre"
+        :id="`dlf-${id}`"
+        v-model="model"
+        :placeholder="placeholder"
+        :disabled="disabled"
+      ></textarea>
     </div>
     <div class="control is-expanded" v-if="'bool' === type">
-      <input type="checkbox" :id="`dlf-${id}`" v-model="model" class="switch is-success" :disabled="disabled" />
+      <input
+        type="checkbox"
+        :id="`dlf-${id}`"
+        v-model="model"
+        class="switch is-success"
+        :disabled="disabled"
+      />
       <label :for="`dlf-${id}`" class="label is-unselectable">
         {{ model ? 'Yes' : 'No' }}
       </label>
@@ -39,14 +60,14 @@
 import type { ModelRef } from 'vue';
 import type { DLFieldType } from '~/types/dl_fields';
 defineProps<{
-  id: number|string,
-  label: string,
-  field?: string,
-  type: DLFieldType,
-  description?: string
-  icon?: string
-  placeholder?: string
-  disabled?: boolean
-}>()
-const model = defineModel() as ModelRef<string>
+  id: number | string;
+  label: string;
+  field?: string;
+  type: DLFieldType;
+  description?: string;
+  icon?: string;
+  placeholder?: string;
+  disabled?: boolean;
+}>();
+const model = defineModel() as ModelRef<string>;
 </script>

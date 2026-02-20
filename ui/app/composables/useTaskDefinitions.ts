@@ -1,18 +1,18 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly } from 'vue';
 
-import { useNotification } from '~/composables/useNotification'
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
+import { useNotification } from '~/composables/useNotification';
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
   TaskDefinitionSummary,
-} from '~/types/task_definitions'
-import type { Pagination } from '~/types/responses'
+} from '~/types/task_definitions';
+import type { Pagination } from '~/types/responses';
 
 /**
  * Reactive list of all task definition summaries, sorted by priority and name.
  */
-const definitions = ref<Array<TaskDefinitionSummary>>([])
+const definitions = ref<Array<TaskDefinitionSummary>>([]);
 /**
  * Pagination state for task definitions list.
  */
@@ -23,25 +23,25 @@ const pagination = ref<Pagination>({
   total_pages: 0,
   has_next: false,
   has_prev: false,
-})
+});
 /**
  * Indicates if a request is in progress.
  */
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(false);
 /**
  * Stores the last error message, if any.
  */
-const lastError = ref<string | null>(null)
+const lastError = ref<string | null>(null);
 
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
-const throwInstead = ref(false)
+const throwInstead = ref(false);
 
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification()
+const notify = useNotification();
 
 /**
  * Sorts task definition summaries by priority (ascending), then name (A-Z).
@@ -51,12 +51,12 @@ const notify = useNotification()
 const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitionSummary> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name);
     }
 
-    return a.priority - b.priority
-  })
-}
+    return a.priority - b.priority;
+  });
+};
 
 /**
  * Throws an error if the response is not OK, using API error message if available.
@@ -65,80 +65,85 @@ const sortSummaries = (items: Array<TaskDefinitionSummary>): Array<TaskDefinitio
  */
 const ensureSuccess = async (response: Response): Promise<void> => {
   if (response.ok) {
-    return
+    return;
   }
 
-  const payload = await response.clone().json().catch(() => null)
-  const message = await parse_api_error(payload)
-  throw new Error(message)
-}
+  const payload = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const message = await parse_api_error(payload);
+  throw new Error(message);
+};
 
 /**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
-  lastError.value = message
-  notify.error(message)
-}
+  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  lastError.value = message;
+  notify.error(message);
+};
 
 /**
  * Updates or adds a summary in the definitions list, keeping sort order.
  * @param summary TaskDefinitionSummary to update/add
  */
 const updateSummaries = (summary: TaskDefinitionSummary): void => {
-  const isNew = !definitions.value.some(item => item.id === summary.id)
+  const isNew = !definitions.value.some((item) => item.id === summary.id);
   definitions.value = sortSummaries([
-    ...definitions.value.filter(item => item.id !== summary.id),
+    ...definitions.value.filter((item) => item.id !== summary.id),
     summary,
-  ])
+  ]);
   if (isNew) {
-    pagination.value.total++
+    pagination.value.total++;
   }
-}
+};
 
 /**
  * Removes a summary from the definitions list by ID.
  * @param id Task definition ID
  */
 const removeSummary = (id: number) => {
-  const initialLength = definitions.value.length
-  definitions.value = definitions.value.filter(item => item.id !== id)
+  const initialLength = definitions.value.length;
+  definitions.value = definitions.value.filter((item) => item.id !== id);
   if (definitions.value.length < initialLength) {
-    pagination.value.total = Math.max(0, pagination.value.total - 1)
+    pagination.value.total = Math.max(0, pagination.value.total - 1);
   }
-}
+};
 
 /**
  * Loads all task definition summaries from the API.
  * Updates definitions and lastError.
  */
-const loadDefinitions = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
-  isLoading.value = true
+const loadDefinitions = async (
+  page: number = 1,
+  perPage: number | undefined = undefined,
+): Promise<void> => {
+  isLoading.value = true;
   try {
-    let url = `/api/tasks/definitions/?page=${page}`
+    let url = `/api/tasks/definitions/?page=${page}`;
     if (perPage !== undefined) {
-      url += `&per_page=${perPage}`
+      url += `&per_page=${perPage}`;
     }
-    const response = await request(url)
-    await ensureSuccess(response)
+    const response = await request(url);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const { items, pagination: paginationData } = await parse_list_response<TaskDefinitionSummary>(json)
+    const json = await response.json();
+    const { items, pagination: paginationData } =
+      await parse_list_response<TaskDefinitionSummary>(json);
 
-    definitions.value = sortSummaries(items)
-    pagination.value = paginationData
-    lastError.value = null
+    definitions.value = sortSummaries(items);
+    pagination.value = paginationData;
+    lastError.value = null;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+  } finally {
+    isLoading.value = false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+};
 
 /**
  * Fetches a detailed task definition by ID from the API.
@@ -147,36 +152,37 @@ const loadDefinitions = async (page: number = 1, perPage: number | undefined = u
  */
 const getDefinition = async (id: number): Promise<TaskDefinitionDetailed | null> => {
   try {
-    const response = await request(`/api/tasks/definitions/${id}`)
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/definitions/${id}`);
+    await ensureSuccess(response);
 
-    const payload = await response.json()
-    const detailed = await parse_api_response<TaskDefinitionDetailed>(payload)
-    lastError.value = null
-    return detailed
+    const payload = await response.json();
+    const detailed = await parse_api_response<TaskDefinitionDetailed>(payload);
+    lastError.value = null;
+    return detailed;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Creates a new task definition via API.
  * @param definition TaskDefinitionDocument to create
  * @returns Created TaskDefinitionDetailed or null on error
  */
-const createDefinition = async (definition: TaskDefinitionDocument): Promise<TaskDefinitionDetailed | null> => {
+const createDefinition = async (
+  definition: TaskDefinitionDocument,
+): Promise<TaskDefinitionDetailed | null> => {
   try {
     const response = await request('/api/tasks/definitions/', {
       method: 'POST',
       body: JSON.stringify(definition),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
     updateSummaries({
       id: payload.id,
@@ -186,18 +192,17 @@ const createDefinition = async (definition: TaskDefinitionDocument): Promise<Tas
       enabled: payload.enabled,
       created_at: payload.created_at,
       updated_at: payload.updated_at,
-    })
+    });
 
-    notify.success('Task definition created.')
-    lastError.value = null
-    return payload
+    notify.success('Task definition created.');
+    lastError.value = null;
+    return payload;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Updates an existing task definition via API.
@@ -205,16 +210,19 @@ const createDefinition = async (definition: TaskDefinitionDocument): Promise<Tas
  * @param definition Updated TaskDefinitionDocument
  * @returns Updated TaskDefinitionDetailed or null on error
  */
-const updateDefinition = async (id: number, definition: TaskDefinitionDocument): Promise<TaskDefinitionDetailed | null> => {
+const updateDefinition = async (
+  id: number,
+  definition: TaskDefinitionDocument,
+): Promise<TaskDefinitionDetailed | null> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`, {
       method: 'PUT',
       body: JSON.stringify(definition),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
     updateSummaries({
       id: payload.id,
@@ -224,18 +232,17 @@ const updateDefinition = async (id: number, definition: TaskDefinitionDocument):
       enabled: payload.enabled,
       created_at: payload.created_at,
       updated_at: payload.updated_at,
-    })
+    });
 
-    notify.success('Task definition updated.')
-    lastError.value = null
-    return payload
+    notify.success('Task definition updated.');
+    lastError.value = null;
+    return payload;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Deletes a task definition by ID via API.
@@ -244,20 +251,19 @@ const updateDefinition = async (id: number, definition: TaskDefinitionDocument):
  */
 const deleteDefinition = async (id: number): Promise<boolean> => {
   try {
-    const response = await request(`/api/tasks/definitions/${id}`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/definitions/${id}`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    removeSummary(id)
-    notify.success('Task definition deleted.')
-    lastError.value = null
-    return true
+    removeSummary(id);
+    notify.success('Task definition deleted.');
+    lastError.value = null;
+    return true;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return false
-  }
-}
+};
 
 /**
  * Toggles the enabled status of a task definition.
@@ -265,16 +271,19 @@ const deleteDefinition = async (id: number): Promise<boolean> => {
  * @param enabled New enabled status
  * @returns Updated TaskDefinitionDetailed or null on error
  */
-const toggleEnabled = async (id: number, enabled: boolean): Promise<TaskDefinitionDetailed | null> => {
+const toggleEnabled = async (
+  id: number,
+  enabled: boolean,
+): Promise<TaskDefinitionDetailed | null> => {
   try {
     const response = await request(`/api/tasks/definitions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ enabled }),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json())
+    const payload = await parse_api_response<TaskDefinitionDetailed>(response.json());
 
     updateSummaries({
       id: payload.id,
@@ -284,23 +293,22 @@ const toggleEnabled = async (id: number, enabled: boolean): Promise<TaskDefiniti
       enabled: payload.enabled,
       created_at: payload.created_at,
       updated_at: payload.updated_at,
-    })
+    });
 
-    notify.success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`)
-    lastError.value = null
-    return payload
+    notify.success(`Task definition ${enabled ? 'enabled' : 'disabled'}.`);
+    lastError.value = null;
+    return payload;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Clears the last error message.
  */
-const clearError = () => lastError.value = null
+const clearError = () => (lastError.value = null);
 
 /**
  * useTaskDefinitions composable
@@ -321,6 +329,6 @@ export const useTaskDefinitions = () => ({
   toggleEnabled,
   clearError,
   throwInstead,
-})
+});
 
-export default useTaskDefinitions
+export default useTaskDefinitions;

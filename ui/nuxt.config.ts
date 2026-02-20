@@ -67,8 +67,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vueuse/nuxt',
     'floating-vue/nuxt',
-    'development' === process.env.NODE_ENV ? '@nuxt/eslint' : '',
-  ].filter(Boolean),
+    '@nuxt/eslint',
+  ],
   nitro: {
     output: {
       publicDir: 'production' === process.env.NODE_ENV ? __dirname + '/exported' : __dirname + '/dist',

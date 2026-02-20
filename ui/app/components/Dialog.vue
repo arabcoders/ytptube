@@ -2,7 +2,7 @@
 /* container fades */
 .dialog-enter-active,
 .dialog-leave-active {
-  transition: opacity .18s ease;
+  transition: opacity 0.18s ease;
 }
 
 .dialog-enter-from,
@@ -13,24 +13,31 @@
 /* animate the card itself */
 .dialog-enter-active .modal-card,
 .dialog-leave-active .modal-card {
-  transition: transform .18s ease, opacity .18s ease;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
 }
 
 .dialog-enter-from .modal-card {
   transform: translateY(-8px);
-  opacity: .98;
+  opacity: 0.98;
 }
 
 .dialog-leave-to .modal-card {
   transform: translateY(-8px);
-  opacity: .98;
+  opacity: 0.98;
 }
 </style>
 
 <template>
   <Teleport to="body">
     <transition name="dialog" @after-enter="focusInput">
-      <div id="app-dialog-host" v-if="state.current" class="modal is-active" @keydown.esc="onCancel">
+      <div
+        id="app-dialog-host"
+        v-if="state.current"
+        class="modal is-active"
+        @keydown.esc="onCancel"
+      >
         <div class="modal-background" @click="onCancel" />
         <div class="modal-card" @keydown.enter.stop.prevent="onEnter">
           <header class="modal-card-head p-4">
@@ -46,8 +53,14 @@
             <!-- prompt input -->
             <div v-if="'prompt' === state.current?.type" class="field">
               <div class="control">
-                <input ref="inputEl" class="input" type="text" v-model="localInput"
-                  :placeholder="(state.current?.opts as any)?.placeholder ?? ''" @keyup.stop />
+                <input
+                  ref="inputEl"
+                  class="input"
+                  type="text"
+                  v-model="localInput"
+                  :placeholder="(state.current?.opts as any)?.placeholder ?? ''"
+                  @keyup.stop
+                />
               </div>
               <p v-if="state.errorMsg" class="help is-danger is-bold is-unselectable">
                 <span class="icon-text">
@@ -56,8 +69,14 @@
                 </span>
               </p>
             </div>
-            <div v-else-if="'confirm' === state.current?.type && (state.current?.opts as ConfirmOptions)?.rawHTML"
-              class="content" v-html="(state.current?.opts as ConfirmOptions)?.rawHTML" />
+            <div
+              v-else-if="
+                'confirm' === state.current?.type &&
+                (state.current?.opts as ConfirmOptions)?.rawHTML
+              "
+              class="content"
+              v-html="(state.current?.opts as ConfirmOptions)?.rawHTML"
+            />
           </section>
 
           <footer class="modal-card-foot p-4 is-justify-content-flex-end">
@@ -70,12 +89,18 @@
               </button>
             </template>
 
-            <template v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type">
+            <template
+              v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type"
+            >
               <div class="field is-grouped">
                 <div class="control">
-                  <button id="primaryButton" class="button" @click="onEnter"
+                  <button
+                    id="primaryButton"
+                    class="button"
+                    @click="onEnter"
                     :class="state.current?.opts.confirmColor ?? 'is-primary'"
-                    :disabled="localInput === (state.current?.opts as PromptOptions)?.initial">
+                    :disabled="localInput === (state.current?.opts as PromptOptions)?.initial"
+                  >
                     <span class="icon-text">
                       <span class="icon"><i class="fas fa-check" /></span>
                       <span>{{ (state.current?.opts as any)?.confirmText ?? 'OK' }}</span>
@@ -100,58 +125,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue'
-import { useDialog, type ConfirmOptions, type PromptOptions } from '~/composables/useDialog'
+import { ref, watch, nextTick, computed } from 'vue';
+import { useDialog, type ConfirmOptions, type PromptOptions } from '~/composables/useDialog';
 
-const { state, confirm, cancel } = useDialog()
+const { state, confirm, cancel } = useDialog();
 
-const localInput = ref('')
+const localInput = ref('');
 
-watch(() => state.current, (cur) => {
-  if (state.current) {
-    disableOpacity()
-  }
-  else {
-    enableOpacity()
-  }
+watch(
+  () => state.current,
+  (cur) => {
+    if (state.current) {
+      disableOpacity();
+    } else {
+      enableOpacity();
+    }
 
-  localInput.value = 'prompt' === cur?.type ? (cur.opts as any).initial ?? '' : ''
-}, { immediate: true })
+    localInput.value = 'prompt' === cur?.type ? ((cur.opts as any).initial ?? '') : '';
+  },
+  { immediate: true },
+);
 
-const inputEl = ref<HTMLInputElement>()
+const inputEl = ref<HTMLInputElement>();
 const focusPrimary = () => {
-  const root = document.getElementById('app-dialog-host')
+  const root = document.getElementById('app-dialog-host');
   if (!root) {
-    return
+    return;
   }
-  const btn = root.querySelector<HTMLButtonElement>('#primaryButton')
-  btn?.focus()
-}
+  const btn = root.querySelector<HTMLButtonElement>('#primaryButton');
+  btn?.focus();
+};
 const focusInput = async () => {
-  await nextTick()
+  await nextTick();
   if ('prompt' === state.current?.type) {
-    requestAnimationFrame(() => inputEl.value?.focus({ preventScroll: true }))
-    return
+    requestAnimationFrame(() => inputEl.value?.focus({ preventScroll: true }));
+    return;
   }
-  requestAnimationFrame(focusPrimary)
-}
+  requestAnimationFrame(focusPrimary);
+};
 
-const onCancel = () => cancel()
-const onEnter = () => confirm(localInput.value)
+const onCancel = () => cancel();
+const onEnter = () => confirm(localInput.value);
 
 const defaultTitle = computed(() => {
   if (!state.current) {
-    return ''
+    return '';
   }
   switch (state.current.type) {
     case 'alert':
-      return 'Alert'
+      return 'Alert';
     case 'confirm':
-      return 'Confirm'
+      return 'Confirm';
     case 'prompt':
-      return 'Input required'
+      return 'Input required';
     default:
-      return 'Dialog'
+      return 'Dialog';
   }
-})
+});
 </script>

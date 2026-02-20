@@ -52,7 +52,7 @@
       </span>
       <span class="icon ml-2" v-if="store.severityIcon"><i :class="store.severityIcon" /></span>
     </a>
-    <div class="navbar-dropdown is-right" style="width: 400px;">
+    <div class="navbar-dropdown is-right" style="width: 400px">
       <template v-if="store.notifications.length > 0">
         <div class="px-3 py-2 is-flex is-justify-content-space-between is-align-items-center">
           <span class="has-text-grey"></span>
@@ -73,20 +73,31 @@
             </div>
           </div>
         </div>
-        <hr class="navbar-divider">
+        <hr class="navbar-divider" />
       </template>
       <div class="notification-list">
-        <div v-for="n in store.notifications" :key="n.id" class="pr-1 pl-1 navbar-item is-flex is-align-items-start"
-          :class="['notification-item', 'notification-' + n.level]">
+        <div
+          v-for="n in store.notifications"
+          :key="n.id"
+          class="pr-1 pl-1 navbar-item is-flex is-align-items-start"
+          :class="['notification-item', 'notification-' + n.level]"
+        >
           <div class="is-flex-grow-1">
-            <p class="is-size-7 mb-1 notification-message" :class="{ expanded: expandedId === n.id }"
-              @click="toggleExpand(n.id)">
+            <p
+              class="is-size-7 mb-1 notification-message"
+              :class="{ expanded: expandedId === n.id }"
+              @click="toggleExpand(n.id)"
+            >
               {{ n.message }}
             </p>
             <p class="is-size-7 has-text-grey">
-              <span :date-datetime="n.created" v-tooltip="moment(n.created).format('YYYY-M-DD H:mm Z')"
-                v-rtime="n.created" />
-              - <NuxtLink @click="copy_text(n.id, n.message)">
+              <span
+                :date-datetime="n.created"
+                v-tooltip="moment(n.created).format('YYYY-M-DD H:mm Z')"
+                v-rtime="n.created"
+              />
+              -
+              <NuxtLink @click="copy_text(n.id, n.message)">
                 <span v-if="copiedId === n.id" class="has-text-success">Copied!</span>
                 <span v-else>Copy</span>
               </NuxtLink>
@@ -118,20 +129,20 @@
 </template>
 
 <script setup lang="ts">
-import moment from 'moment'
+import moment from 'moment';
 
-const store = useNotificationStore()
+const store = useNotificationStore();
 
-const copiedId = ref<string | null>(null)
-const expandedId = ref<string | null>(null)
+const copiedId = ref<string | null>(null);
+const expandedId = ref<string | null>(null);
 
-const toggleExpand = (id: string) => expandedId.value = expandedId.value === id ? null : id
+const toggleExpand = (id: string) => (expandedId.value = expandedId.value === id ? null : id);
 
 const copy_text = (id: string, text: string): void => {
-  copiedId.value = id
-  copyText(text, false, false)
+  copiedId.value = id;
+  copyText(text, false, false);
   setTimeout(() => {
-    if (copiedId.value === id) copiedId.value = null
-  }, 2000)
-}
+    if (copiedId.value === id) copiedId.value = null;
+  }, 2000);
+};
 </script>

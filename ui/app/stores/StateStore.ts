@@ -1,24 +1,24 @@
-import { defineStore } from 'pinia'
-import type { item_request } from '~/types/item'
-import type { StoreItem } from '~/types/store'
-import { request } from '~/utils'
+import { defineStore } from 'pinia';
+import type { item_request } from '~/types/item';
+import type { StoreItem } from '~/types/store';
+import { request } from '~/utils';
 
-type StateType = 'queue' | 'history'
-type KeyType = string
+type StateType = 'queue' | 'history';
+type KeyType = string;
 
 interface State {
-  queue: Record<KeyType, StoreItem>
-  history: Record<KeyType, StoreItem>
+  queue: Record<KeyType, StoreItem>;
+  history: Record<KeyType, StoreItem>;
   pagination: {
-    page: number
-    per_page: number
-    total: number
-    total_pages: number
-    has_next: boolean
-    has_prev: boolean
-    isLoaded: boolean
-    isLoading: boolean
-  }
+    page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+    isLoaded: boolean;
+    isLoading: boolean;
+  };
 }
 
 export const useStateStore = defineStore('state', () => {
@@ -35,110 +35,121 @@ export const useStateStore = defineStore('state', () => {
       isLoaded: false,
       isLoading: false,
     },
-  })
+  });
 
   const add = (type: StateType, key: KeyType, value: StoreItem): void => {
     if ('history' === type && state.pagination.total > 0) {
-      state.pagination.total += 1
+      state.pagination.total += 1;
     }
-    state[type][key] = value
-  }
+    state[type][key] = value;
+  };
 
   const update = (type: StateType, key: KeyType, value: StoreItem): void => {
-    state[type][key] = value
-  }
+    state[type][key] = value;
+  };
 
   const remove = (type: StateType, key: KeyType): void => {
     if (!state[type][key]) {
-      return
+      return;
     }
 
     if ('history' === type && state.pagination.total > 0) {
-      state.pagination.total -= 1
+      state.pagination.total -= 1;
     }
 
-    const { [key]: _, ...rest } = state[type]
-    state[type] = rest
-  }
+    const { [key]: _, ...rest } = state[type];
+    state[type] = rest;
+  };
 
-  const get = (type: StateType, key: KeyType, defaultValue: StoreItem | null = null): StoreItem | null => {
-    return state[type][key] || defaultValue
-  }
+  const get = (
+    type: StateType,
+    key: KeyType,
+    defaultValue: StoreItem | null = null,
+  ): StoreItem | null => {
+    return state[type][key] || defaultValue;
+  };
 
   const has = (type: StateType, key: KeyType): boolean => {
-    return !!state[type][key]
-  }
+    return !!state[type][key];
+  };
 
   const clearAll = (type: StateType): void => {
-    state[type] = {}
+    state[type] = {};
     if ('queue' === type) {
-      return
+      return;
     }
 
-    state.pagination.total = 0
-    state.pagination.page = 1
-    state.pagination.total_pages = 0
-    state.pagination.has_next = false
-    state.pagination.has_prev = false
-  }
+    state.pagination.total = 0;
+    state.pagination.page = 1;
+    state.pagination.total_pages = 0;
+    state.pagination.has_next = false;
+    state.pagination.has_prev = false;
+  };
 
   const addAll = (type: StateType, data: Record<KeyType, StoreItem>): void => {
-    state[type] = data
-  }
+    state[type] = data;
+  };
 
   const move = (fromType: StateType, toType: StateType, key: KeyType): void => {
     if (true === has(fromType, key)) {
-      remove(fromType, key)
+      remove(fromType, key);
     }
 
-    add(toType, key, get(fromType, key, {} as StoreItem) as StoreItem)
-  }
+    add(toType, key, get(fromType, key, {} as StoreItem) as StoreItem);
+  };
 
   const count = (type: StateType): number => {
     if ('history' === type && state.pagination.total > 0) {
-      return state.pagination.total
+      return state.pagination.total;
     }
-    return Object.keys(state[type]).length
-  }
+    return Object.keys(state[type]).length;
+  };
 
-  const loadPaginated = async (type: StateType, page: number = 1, per_page: number = 50, order: 'ASC' | 'DESC' = 'DESC', append: boolean = false, status?: string): Promise<void> => {
+  const loadPaginated = async (
+    type: StateType,
+    page: number = 1,
+    per_page: number = 50,
+    order: 'ASC' | 'DESC' = 'DESC',
+    append: boolean = false,
+    status?: string,
+  ): Promise<void> => {
     if ('history' !== type) {
       throw new Error('Pagination is only supported for history type');
     }
 
-    state.pagination.isLoading = true
+    state.pagination.isLoading = true;
 
     try {
       const params: Record<string, string> = {
         type: 'done',
         page: page.toString(),
         per_page: per_page.toString(),
-        order
-      }
+        order,
+      };
 
       if (status) {
-        params.status = status
+        params.status = status;
       }
 
-      const search = new URLSearchParams(params)
+      const search = new URLSearchParams(params);
 
-      const response = await request(`/api/history?${search}`)
-      const data = await response.json()
+      const response = await request(`/api/history?${search}`);
+      const data = await response.json();
 
       if (data.pagination) {
-        state.pagination = { ...data.pagination, isLoaded: true, isLoading: false, }
-        const items: Record<KeyType, StoreItem> = {}
+        state.pagination = { ...data.pagination, isLoaded: true, isLoading: false };
+        const items: Record<KeyType, StoreItem> = {};
         for (const item of data.items || []) {
-          items[item._id] = item
+          items[item._id] = item;
         }
 
-        state[type] = append ? { ...state[type], ...items } : items
+        state[type] = append ? { ...state[type], ...items } : items;
       }
     } catch (error) {
-      console.error(`Failed to load ${type} page ${page}:`, error)
-      state.pagination.isLoading = false
+      console.error(`Failed to load ${type} page ${page}:`, error);
+      state.pagination.isLoading = false;
     }
-  }
+  };
 
   const loadNextPage = async (type: StateType, append: boolean = false): Promise<void> => {
     if ('history' !== type) {
@@ -146,11 +157,11 @@ export const useStateStore = defineStore('state', () => {
     }
 
     if (!state.pagination.has_next || state.pagination.isLoading) {
-      return
+      return;
     }
 
-    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page, 'DESC', append)
-  }
+    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page, 'DESC', append);
+  };
 
   const loadPreviousPage = async (type: StateType): Promise<void> => {
     if ('history' !== type) {
@@ -158,31 +169,31 @@ export const useStateStore = defineStore('state', () => {
     }
 
     if (!state.pagination.has_prev || state.pagination.isLoading) {
-      return
+      return;
     }
 
-    await loadPaginated(type, state.pagination.page - 1, state.pagination.per_page)
-  }
+    await loadPaginated(type, state.pagination.page - 1, state.pagination.per_page);
+  };
 
   const reloadCurrentPage = async (type: StateType): Promise<void> => {
     if ('history' !== type) {
       throw new Error('Pagination is only supported for history type');
     }
     if (!state.pagination.isLoaded) {
-      return
+      return;
     }
 
-    await loadPaginated(type, state.pagination.page, state.pagination.per_page)
-  }
+    await loadPaginated(type, state.pagination.page, state.pagination.per_page);
+  };
 
-  const getPagination = () => state.pagination
+  const getPagination = () => state.pagination;
 
   const setHistoryCount = (count: number) => {
-    state.pagination.total = count
+    state.pagination.total = count;
     if (count > 0 && !state.pagination.isLoaded) {
-      state.pagination.isLoaded = false
+      state.pagination.isLoaded = false;
     }
-  }
+  };
 
   /**
    * Load queue data from REST API.
@@ -192,19 +203,19 @@ export const useStateStore = defineStore('state', () => {
    */
   const loadQueue = async (): Promise<void> => {
     try {
-      const response = await request('/api/history/live')
-      const data = await response.json() as {
-        "queue": Record<KeyType, StoreItem>,
-        "history_count": number,
-      }
+      const response = await request('/api/history/live');
+      const data = (await response.json()) as {
+        queue: Record<KeyType, StoreItem>;
+        history_count: number;
+      };
 
-      state.queue = data.queue || {}
-      setHistoryCount(data.history_count)
+      state.queue = data.queue || {};
+      setHistoryCount(data.history_count);
     } catch (error) {
-      console.error('Failed to load queue:', error)
-      throw error
+      console.error('Failed to load queue:', error);
+      throw error;
     }
-  }
+  };
 
   /**
    * Add a download using WebSocket if connected, fallback to REST API.
@@ -213,37 +224,37 @@ export const useStateStore = defineStore('state', () => {
    * @returns Promise that resolves when download is added
    */
   const addDownload = async (data: item_request): Promise<void> => {
-    const socket = useSocketStore()
-    const toast = useNotification()
+    const socket = useSocketStore();
+    const toast = useNotification();
 
     if (socket.isConnected) {
-      socket.emit('add_url', data)
-      return
+      socket.emit('add_url', data);
+      return;
     }
 
     try {
       const response = await request('/api/history/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      })
+        body: JSON.stringify(data),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to add download')
-        throw new Error(error.error || 'Failed to add download')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to add download');
+        throw new Error(error.error || 'Failed to add download');
       }
 
-      toast.success('Download added successfully')
-      await loadQueue()
+      toast.success('Download added successfully');
+      await loadQueue();
     } catch (error) {
-      console.error('Failed to add download:', error)
+      console.error('Failed to add download:', error);
       if (error instanceof Error && !error.message.includes('Failed to add download')) {
-        toast.error('Failed to add download')
+        toast.error('Failed to add download');
       }
-      throw error
+      throw error;
     }
-  }
+  };
 
   /**
    * Start one or more downloads using WebSocket if connected, fallback to REST API.
@@ -252,47 +263,47 @@ export const useStateStore = defineStore('state', () => {
    * @returns Promise that resolves when items are started
    */
   const startItems = async (ids: string[]): Promise<void> => {
-    const socket = useSocketStore()
-    const toast = useNotification()
+    const socket = useSocketStore();
+    const toast = useNotification();
 
     if (socket.isConnected) {
-      ids.forEach(id => socket.emit('item_start', id))
-      return
+      ids.forEach((id) => socket.emit('item_start', id));
+      return;
     }
 
     try {
       const response = await request('/api/history/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      })
+        body: JSON.stringify({ ids }),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to start items')
-        throw new Error(error.error || 'Failed to start items')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to start items');
+        throw new Error(error.error || 'Failed to start items');
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       for (const id of ids) {
         if ('started' === result[id]) {
-          const item = get('queue', id)
+          const item = get('queue', id);
           if (item) {
-            update('queue', id, { ...item, auto_start: true })
+            update('queue', id, { ...item, auto_start: true });
           }
         }
       }
 
-      toast.success(`Started ${ids.length} item${1 === ids.length ? '' : 's'}`)
+      toast.success(`Started ${ids.length} item${1 === ids.length ? '' : 's'}`);
     } catch (error) {
-      console.error('Failed to start items:', error)
+      console.error('Failed to start items:', error);
       if (error instanceof Error && !error.message.includes('Failed to start items')) {
-        toast.error('Failed to start items')
+        toast.error('Failed to start items');
       }
-      throw error
+      throw error;
     }
-  }
+  };
 
   /**
    * Pause one or more downloads using WebSocket if connected, fallback to REST API.
@@ -301,47 +312,47 @@ export const useStateStore = defineStore('state', () => {
    * @returns Promise that resolves when items are paused
    */
   const pauseItems = async (ids: string[]): Promise<void> => {
-    const socket = useSocketStore()
-    const toast = useNotification()
+    const socket = useSocketStore();
+    const toast = useNotification();
 
     if (socket.isConnected) {
-      ids.forEach(id => socket.emit('item_pause', id))
-      return
+      ids.forEach((id) => socket.emit('item_pause', id));
+      return;
     }
 
     try {
       const response = await request('/api/history/pause', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      })
+        body: JSON.stringify({ ids }),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to pause items')
-        throw new Error(error.error || 'Failed to pause items')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to pause items');
+        throw new Error(error.error || 'Failed to pause items');
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       for (const id of ids) {
         if ('paused' === result[id]) {
-          const item = get('queue', id)
+          const item = get('queue', id);
           if (item) {
-            update('queue', id, { ...item, auto_start: false })
+            update('queue', id, { ...item, auto_start: false });
           }
         }
       }
 
-      toast.success(`Paused ${ids.length} item${1 === ids.length ? '' : 's'}`)
+      toast.success(`Paused ${ids.length} item${1 === ids.length ? '' : 's'}`);
     } catch (error) {
-      console.error('Failed to pause items:', error)
+      console.error('Failed to pause items:', error);
       if (error instanceof Error && !error.message.includes('Failed to pause items')) {
-        toast.error('Failed to pause items')
+        toast.error('Failed to pause items');
       }
-      throw error
+      throw error;
     }
-  }
+  };
 
   /**
    * Cancel one or more downloads using WebSocket if connected, fallback to REST API.
@@ -350,19 +361,19 @@ export const useStateStore = defineStore('state', () => {
    * @returns Promise that resolves when items are cancelled
    */
   const cancelItems = async (ids: string[]): Promise<void> => {
-    const socket = useSocketStore()
-    const toast = useNotification()
+    const socket = useSocketStore();
+    const toast = useNotification();
 
     if (socket.isConnected) {
-      ids.forEach(id => socket.emit('item_cancel', id))
-      return
+      ids.forEach((id) => socket.emit('item_cancel', id));
+      return;
     }
 
-    const itemsToMove: Record<string, StoreItem> = {}
+    const itemsToMove: Record<string, StoreItem> = {};
     for (const id of ids) {
-      const item = get('queue', id)
+      const item = get('queue', id);
       if (item) {
-        itemsToMove[id] = { ...item }
+        itemsToMove[id] = { ...item };
       }
     }
 
@@ -370,34 +381,34 @@ export const useStateStore = defineStore('state', () => {
       const response = await request('/api/history/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids })
-      })
+        body: JSON.stringify({ ids }),
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to cancel items')
-        throw new Error(error.error || 'Failed to cancel items')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to cancel items');
+        throw new Error(error.error || 'Failed to cancel items');
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       for (const id of ids) {
         if ('ok' === result[id] && itemsToMove[id]) {
-          remove('queue', id)
-          const cancelledItem = { ...itemsToMove[id], status: 'cancelled' } as StoreItem
-          add('history', id, cancelledItem)
+          remove('queue', id);
+          const cancelledItem = { ...itemsToMove[id], status: 'cancelled' } as StoreItem;
+          add('history', id, cancelledItem);
         }
       }
 
-      toast.success(`Cancelled ${ids.length} item${1 === ids.length ? '' : 's'}`)
+      toast.success(`Cancelled ${ids.length} item${1 === ids.length ? '' : 's'}`);
     } catch (error) {
-      console.error('Failed to cancel items:', error)
+      console.error('Failed to cancel items:', error);
       if (error instanceof Error && !error.message.includes('Failed to cancel items')) {
-        toast.error('Failed to cancel items')
+        toast.error('Failed to cancel items');
       }
-      throw error
+      throw error;
     }
-  }
+  };
 
   /**
    * Remove items using WebSocket if connected, fallback to REST API.
@@ -407,23 +418,27 @@ export const useStateStore = defineStore('state', () => {
    * @param removeFile - Whether to remove files from disk (default: false)
    * @returns Promise that resolves when items are removed
    */
-  const removeItems = async (type: StateType, ids: string[], removeFile: boolean = false): Promise<void> => {
-    const socket = useSocketStore()
-    const toast = useNotification()
+  const removeItems = async (
+    type: StateType,
+    ids: string[],
+    removeFile: boolean = false,
+  ): Promise<void> => {
+    const socket = useSocketStore();
+    const toast = useNotification();
 
     if (socket.isConnected) {
-      ids.forEach(id => socket.emit('item_delete', { id, remove_file: removeFile }))
-      return
+      ids.forEach((id) => socket.emit('item_delete', { id, remove_file: removeFile }));
+      return;
     }
 
     try {
-      await deleteItems(type, { ids, removeFile })
+      await deleteItems(type, { ids, removeFile });
     } catch (error) {
-      console.error('Failed to remove items:', error)
-      toast.error('Failed to remove items')
-      throw error
+      console.error('Failed to remove items:', error);
+      toast.error('Failed to remove items');
+      throw error;
     }
-  }
+  };
 
   /**
    * Delete items by specific IDs or status filter.
@@ -438,55 +453,55 @@ export const useStateStore = defineStore('state', () => {
    */
   const deleteItems = async (
     type: StateType,
-    options: { ids?: string[]; status?: string; removeFile?: boolean } = {}
+    options: { ids?: string[]; status?: string; removeFile?: boolean } = {},
   ): Promise<number> => {
-    const { ids, status, removeFile = true } = options
+    const { ids, status, removeFile = true } = options;
 
     if (!ids && !status) {
-      throw new Error('Either ids or status filter must be provided')
+      throw new Error('Either ids or status filter must be provided');
     }
 
     try {
       const body: Record<string, unknown> = {
         type: type === 'queue' ? 'queue' : 'done',
-        remove_file: removeFile
-      }
+        remove_file: removeFile,
+      };
 
       if (ids) {
-        body.ids = ids
+        body.ids = ids;
       }
 
       if (status) {
-        body.status = status
+        body.status = status;
       }
 
       const response = await request('/api/history', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      })
+        body: JSON.stringify(body),
+      });
 
-      const result = await response.json() as {
-        items: Record<string, string>,
-        deleted: number,
-        error?: string,
-        message?: string,
-      }
+      const result = (await response.json()) as {
+        items: Record<string, string>;
+        deleted: number;
+        error?: string;
+        message?: string;
+      };
 
       if (result.error || result.message || !response.ok) {
-        throw new Error(result.error || result.message || 'Failed to delete items.')
+        throw new Error(result.error || result.message || 'Failed to delete items.');
       }
 
       for (const id of Object.keys(result.items)) {
-        remove(type, id)
+        remove(type, id);
       }
 
-      return result.deleted
+      return result.deleted;
     } catch (error) {
-      console.error(`Failed to delete items:`, error)
-      throw error
+      console.error(`Failed to delete items:`, error);
+      throw error;
     }
-  }
+  };
 
   return {
     ...toRefs(state),
@@ -512,5 +527,5 @@ export const useStateStore = defineStore('state', () => {
     cancelItems,
     removeItems,
     deleteItems,
-  }
-})
+  };
+});

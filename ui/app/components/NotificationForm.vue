@@ -3,21 +3,26 @@
     <div class="column is-12">
       <form autocomplete="off" id="taskForm" @submit.prevent="checkInfo()">
         <div class="card">
-
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
-                <span class="icon"><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'" /></span>
+                <span class="icon"
+                  ><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'"
+                /></span>
                 <span>{{ reference ? 'Edit' : 'Add' }}</span>
               </span>
             </div>
 
             <div class="card-header-icon" v-if="reference">
               <button type="button" @click="showImport = !showImport">
-                <span class="icon"><i class="fa-solid" :class="{
-                  'fa-arrow-down': !showImport,
-                  'fa-arrow-up': showImport,
-                }" /></span>
+                <span class="icon"
+                  ><i
+                    class="fa-solid"
+                    :class="{
+                      'fa-arrow-down': !showImport,
+                      'fa-arrow-up': showImport,
+                    }"
+                /></span>
                 <span>
                   <span v-if="showImport">Hide</span>
                   <span v-else>Show</span>
@@ -29,20 +34,28 @@
 
           <div class="card-content">
             <div class="columns is-multiline is-mobile">
-
               <div class="column is-12" v-if="showImport || !reference">
-                <label class="label is-inline" for="import_string">
-                  Import string
-                </label>
+                <label class="label is-inline" for="import_string"> Import string </label>
 
                 <div class="field has-addons">
                   <div class="control has-icons-left is-expanded">
-                    <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
+                    <input
+                      type="text"
+                      class="input"
+                      id="import_string"
+                      v-model="import_string"
+                      autocomplete="off"
+                    />
                     <span class="icon is-small is-left"><i class="fa-solid fa-t" /></span>
                   </div>
 
                   <div class="control">
-                    <button class="button is-primary" :disabled="!import_string" type="button" @click="importItem">
+                    <button
+                      class="button is-primary"
+                      :disabled="!import_string"
+                      type="button"
+                      @click="importItem"
+                    >
                       <span class="icon"><i class="fa-solid fa-add" /></span>
                       <span>Import</span>
                     </button>
@@ -56,37 +69,52 @@
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="name">
-                    Target name
-                  </label>
+                  <label class="label is-inline" for="name"> Target name </label>
                   <div class="control has-icons-left">
-                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress" required>
+                    <input
+                      type="text"
+                      class="input"
+                      id="name"
+                      v-model="form.name"
+                      :disabled="addInProgress"
+                      required
+                    />
                     <span class="icon is-small is-left"><i class="fa-solid fa-user" /></span>
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>The notification target name, this is used to identify the target in the logs and
-                      notifications.</span>
+                    <span
+                      >The notification target name, this is used to identify the target in the logs
+                      and notifications.</span
+                    >
                   </span>
                 </div>
               </div>
 
               <div class="column is-6-tablet is-12-mobile">
                 <div class="field">
-                  <label class="label is-inline" for="url">
-                    Target URL
-                  </label>
+                  <label class="label is-inline" for="url"> Target URL </label>
                   <div class="control has-icons-left">
-                    <input type="url" class="input" id="url" v-model="form.request.url" :disabled="addInProgress"
-                      required>
+                    <input
+                      type="url"
+                      class="input"
+                      id="url"
+                      v-model="form.request.url"
+                      :disabled="addInProgress"
+                      required
+                    />
                     <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The URL to send the notification to. It can be regular http/https endpoint. or <NuxtLink
-                        target="blank" href="https://github.com/caronc/apprise?tab=readme-ov-file#readme">Apprise
-                      </NuxtLink> URL.
+                      The URL to send the notification to. It can be regular http/https endpoint. or
+                      <NuxtLink
+                        target="blank"
+                        href="https://github.com/caronc/apprise?tab=readme-ov-file#readme"
+                        >Apprise
+                      </NuxtLink>
+                      URL.
                     </span>
                   </span>
                 </div>
@@ -94,13 +122,20 @@
 
               <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
-                  <label class="label is-inline" for="method">
-                    Request method
-                  </label>
+                  <label class="label is-inline" for="method"> Request method </label>
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
-                      <select id="method" class="is-fullwidth" v-model="form.request.method" :disabled="addInProgress">
-                        <option v-for="rMethod, index in requestMethods" :key="`${index}-${rMethod}`" :value="rMethod">
+                      <select
+                        id="method"
+                        class="is-fullwidth"
+                        v-model="form.request.method"
+                        :disabled="addInProgress"
+                      >
+                        <option
+                          v-for="(rMethod, index) in requestMethods"
+                          :key="`${index}-${rMethod}`"
+                          :value="rMethod"
+                        >
                           {{ rMethod }}
                         </option>
                       </select>
@@ -110,8 +145,8 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The request method to use when sending the notification. This can be any of the standard HTTP
-                      methods.
+                      The request method to use when sending the notification. This can be any of
+                      the standard HTTP methods.
                     </span>
                   </span>
                 </div>
@@ -119,13 +154,20 @@
 
               <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
-                  <label class="label is-inline" for="type">
-                    Request Type
-                  </label>
+                  <label class="label is-inline" for="type"> Request Type </label>
                   <div class="control has-icons-left">
                     <div class="select is-fullwidth">
-                      <select id="type" class="is-fullwidth" v-model="form.request.type" :disabled="addInProgress">
-                        <option v-for="rType, index in requestType" :key="`${index}-${rType}`" :value="rType">
+                      <select
+                        id="type"
+                        class="is-fullwidth"
+                        v-model="form.request.type"
+                        :disabled="addInProgress"
+                      >
+                        <option
+                          v-for="(rType, index) in requestType"
+                          :key="`${index}-${rType}`"
+                          :value="rType"
+                        >
                           {{ ucFirst(rType) }}
                         </option>
                       </select>
@@ -135,8 +177,8 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The request type to use when sending the notification. This can be <code>JSON</code> or
-                      <code>FORM</code> request.
+                      The request type to use when sending the notification. This can be
+                      <code>JSON</code> or <code>FORM</code> request.
                     </span>
                   </span>
                 </div>
@@ -152,8 +194,18 @@
                   </label>
                   <div class="control has-icons-left">
                     <div class="select is-multiple is-fullwidth">
-                      <select id="on" class="is-fullwidth" v-model="form.on" :disabled="addInProgress" multiple>
-                        <option v-for="aEvent, index in allowedEvents" :key="`${index}-${aEvent}`" :value="aEvent">
+                      <select
+                        id="on"
+                        class="is-fullwidth"
+                        v-model="form.on"
+                        :disabled="addInProgress"
+                        multiple
+                      >
+                        <option
+                          v-for="(aEvent, index) in allowedEvents"
+                          :key="`${index}-${aEvent}`"
+                          :value="aEvent"
+                        >
                           {{ aEvent }}
                         </option>
                       </select>
@@ -163,9 +215,9 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      Subscribe to the events you want to listen for. When the event is triggered, the notification will
-                      be sent to the target URL. If no events are selected, the notification will be sent for all
-                      events.
+                      Subscribe to the events you want to listen for. When the event is triggered,
+                      the notification will be sent to the target URL. If no events are selected,
+                      the notification will be sent for all events.
                     </span>
                   </span>
                 </div>
@@ -181,14 +233,31 @@
                   </label>
                   <div class="control has-icons-left">
                     <div class="select is-multiple is-fullwidth">
-                      <select id="on" class="is-fullwidth" v-model="form.presets" :disabled="addInProgress" multiple>
-                        <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
-                          <option v-for="cPreset in filter_presets(false)" :key="cPreset.id" :value="cPreset.name">
+                      <select
+                        id="on"
+                        class="is-fullwidth"
+                        v-model="form.presets"
+                        :disabled="addInProgress"
+                        multiple
+                      >
+                        <optgroup
+                          label="Custom presets"
+                          v-if="config?.presets.filter((p) => !p?.default).length > 0"
+                        >
+                          <option
+                            v-for="cPreset in filter_presets(false)"
+                            :key="cPreset.id"
+                            :value="cPreset.name"
+                          >
                             {{ cPreset.name }}
                           </option>
                         </optgroup>
                         <optgroup label="Default presets">
-                          <option v-for="dPreset in filter_presets(true)" :key="dPreset.id" :value="dPreset.name">
+                          <option
+                            v-for="dPreset in filter_presets(true)"
+                            :key="dPreset.id"
+                            :value="dPreset.name"
+                          >
                             {{ dPreset.name }}
                           </option>
                         </optgroup>
@@ -199,9 +268,9 @@
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      Select the presets you want to listen for. If you select presets, only events that reference those
-                      presets will trigger the notification. If no presets are selected, the notification will be sent
-                      for all presets.
+                      Select the presets you want to listen for. If you select presets, only events
+                      that reference those presets will trigger the notification. If no presets are
+                      selected, the notification will be sent for all presets.
                     </span>
                   </span>
                 </div>
@@ -214,8 +283,13 @@
                     Enabled
                   </label>
                   <div class="control is-unselectable">
-                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
-                      class="switch is-success" />
+                    <input
+                      id="enabled"
+                      type="checkbox"
+                      v-model="form.enabled"
+                      :disabled="addInProgress"
+                      class="switch is-success"
+                    />
                     <label for="enabled" class="is-unselectable">
                       {{ form.enabled ? 'Yes' : 'No' }}
                     </label>
@@ -229,19 +303,23 @@
 
               <div class="column is-6-tablet is-12-mobile" v-if="!isAppriseTarget">
                 <div class="field">
-                  <label class="label is-inline" for="data_key">
-                    Data field
-                  </label>
+                  <label class="label is-inline" for="data_key"> Data field </label>
                   <div class="control has-icons-left">
-                    <input type="text" class="input" id="data_key" v-model="form.request.data_key"
-                      :disabled="addInProgress" required>
+                    <input
+                      type="text"
+                      class="input"
+                      id="data_key"
+                      v-model="form.request.data_key"
+                      :disabled="addInProgress"
+                      required
+                    />
                     <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      The field name to use when sending the notification. This is used to identify the data in the
-                      request. The default is <code>data</code>.
+                      The field name to use when sending the notification. This is used to identify
+                      the data in the request. The default is <code>data</code>.
                     </span>
                   </span>
                 </div>
@@ -250,17 +328,27 @@
               <div class="column is-12" v-if="!isAppriseTarget">
                 <div class="field">
                   <label class="label is-inline is-unselectable">
-                    Optional Headers - <button type="button" class="has-text-link"
-                      @click="form.request.headers.push({ key: '', value: '' });">Add Header
+                    Optional Headers -
+                    <button
+                      type="button"
+                      class="has-text-link"
+                      @click="form.request.headers.push({ key: '', value: '' })"
+                    >
+                      Add Header
                     </button>
                   </label>
                   <div class="columns is-multiline is-mobile">
-                    <template v-for="_, key in form.request.headers" :key="key">
+                    <template v-for="(_, key) in form.request.headers" :key="key">
                       <div class="column is-5" v-if="form.request.headers[key]">
                         <div class="field">
                           <div class="control has-icons-left">
-                            <input type="text" class="input" v-model="form.request.headers[key].key"
-                              :disabled="addInProgress" required>
+                            <input
+                              type="text"
+                              class="input"
+                              v-model="form.request.headers[key].key"
+                              :disabled="addInProgress"
+                              required
+                            />
                             <span class="icon is-small is-left"><i class="fa-solid fa-key" /></span>
                           </div>
                         </div>
@@ -272,8 +360,13 @@
                       <div class="column is-6" v-if="form.request.headers[key]">
                         <div class="field">
                           <div class="control has-icons-left">
-                            <input type="text" class="input" v-model="form.request.headers[key].value"
-                              :disabled="addInProgress" required>
+                            <input
+                              type="text"
+                              class="input"
+                              v-model="form.request.headers[key].value"
+                              :disabled="addInProgress"
+                              required
+                            />
                             <span class="icon is-small is-left"><i class="fa-solid fa-v" /></span>
                           </div>
                         </div>
@@ -284,8 +377,12 @@
                       </div>
                       <div class="column is-1">
                         <div class="control">
-                          <button type="button" class="button is-danger" @click="form.request.headers.splice(key, 1)"
-                            :disabled="addInProgress">
+                          <button
+                            type="button"
+                            class="button is-danger"
+                            @click="form.request.headers.splice(key, 1)"
+                            :disabled="addInProgress"
+                          >
                             <span class="icon"><i class="fa-solid fa-trash" /></span>
                           </button>
                         </div>
@@ -304,15 +401,24 @@
 
             <div class="card-footer">
               <p class="card-footer-item">
-                <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                  :class="{ 'is-loading': addInProgress }" form="taskForm">
+                <button
+                  class="button is-fullwidth is-primary"
+                  :disabled="addInProgress"
+                  type="submit"
+                  :class="{ 'is-loading': addInProgress }"
+                  form="taskForm"
+                >
                   <span class="icon"><i class="fa-solid fa-save" /></span>
                   <span>Save</span>
                 </button>
               </p>
               <p class="card-footer-item">
-                <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
-                  type="button">
+                <button
+                  class="button is-fullwidth is-danger"
+                  @click="emitter('cancel')"
+                  :disabled="addInProgress"
+                  type="button"
+                >
                   <span class="icon"><i class="fa-solid fa-times" /></span>
                   <span>Cancel</span>
                 </button>
@@ -326,17 +432,17 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
-import type { notification } from '~/types/notification'
-import { useConfirm } from '~/composables/useConfirm'
-import { useNotification } from '~/composables/useNotification'
-import type { ImportedItem } from '~/types'
+import { useStorage } from '@vueuse/core';
+import type { notification } from '~/types/notification';
+import { useConfirm } from '~/composables/useConfirm';
+import { useNotification } from '~/composables/useNotification';
+import type { ImportedItem } from '~/types';
 
-const emitter = defineEmits(['cancel', 'submit'])
-const toast = useNotification()
-const box = useConfirm()
-const config = useConfigStore()
-const { isApprise } = useNotifications()
+const emitter = defineEmits(['cancel', 'submit']);
+const toast = useNotification();
+const box = useConfirm();
+const config = useConfigStore();
+const { isApprise } = useNotifications();
 
 const props = defineProps({
   reference: {
@@ -357,135 +463,136 @@ const props = defineProps({
     required: false,
     default: false,
   },
-})
+});
 
-const form = reactive<notification>({ ...props.item })
-const requestMethods = ['POST', 'PUT']
-const requestType = ['json', 'form']
-const showImport = useStorage('showImport', false)
-const import_string = ref('')
+const form = reactive<notification>({ ...props.item });
+const requestMethods = ['POST', 'PUT'];
+const requestType = ['json', 'form'];
+const showImport = useStorage('showImport', false);
+const import_string = ref('');
 
 onMounted(() => {
   if (!form.request.data_key) {
-    form.request.data_key = 'data'
+    form.request.data_key = 'data';
   }
   if (form.enabled === undefined) {
-    form.enabled = true
+    form.enabled = true;
   }
-})
+});
 
 const checkInfo = async () => {
-  let required: string[]
+  let required: string[];
 
   if (!isAppriseTarget.value) {
-    required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key']
+    required = ['name', 'request.url', 'request.method', 'request.type', 'request.data_key'];
   } else {
-    required = ['name', 'request.url']
+    required = ['name', 'request.url'];
   }
 
   for (const key of required) {
     if (key.includes('.')) {
-      const [parent, child] = key.split('.') as [keyof typeof form, string]
-      const parentObj = form[parent] as Record<string, any> | undefined
+      const [parent, child] = key.split('.') as [keyof typeof form, string];
+      const parentObj = form[parent] as Record<string, any> | undefined;
 
       if (!parentObj || !parentObj[child]) {
-        toast.error(`The field ${parent}.${child} is required.`)
-        return
+        toast.error(`The field ${parent}.${child} is required.`);
+        return;
       }
     } else {
-      const value = (form as Record<string, any>)[key]
+      const value = (form as Record<string, any>)[key];
       if (!value) {
-        toast.error(`The field ${key} is required.`)
-        return
+        toast.error(`The field ${key} is required.`);
+        return;
       }
     }
   }
 
   if (!isAppriseTarget.value) {
     try {
-      new URL(form.request.url)
+      new URL(form.request.url);
     } catch {
-      toast.error('Invalid URL')
-      return
+      toast.error('Invalid URL');
+      return;
     }
   }
 
-  const headers = []
+  const headers = [];
   for (const header of form.request.headers) {
     if (!header.key || !header.value) {
-      continue
+      continue;
     }
-    headers.push({ key: String(header.key).trim(), value: String(header.value).trim() })
+    headers.push({ key: String(header.key).trim(), value: String(header.value).trim() });
   }
-  form.request.headers = headers
+  form.request.headers = headers;
 
-  emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) })
-}
+  emitter('submit', { reference: toRaw(props.reference), item: toRaw(form) });
+};
 
 const importItem = async () => {
-  const val = import_string.value.trim()
+  const val = import_string.value.trim();
   if (!val) {
-    toast.error('The import string is required.')
-    return
+    toast.error('The import string is required.');
+    return;
   }
 
   try {
-    const item = decode(val) as notification & ImportedItem
+    const item = decode(val) as notification & ImportedItem;
 
     if ('notification' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`)
-      import_string.value = ''
-      return
+      toast.error(`Invalid import string. Expected type 'notification', got '${item._type}'.`);
+      import_string.value = '';
+      return;
     }
 
     if (form.name || form.request?.url) {
       if (false === (await box.confirm('Overwrite the current form fields?'))) {
-        return
+        return;
       }
     }
 
     if (item.name) {
-      form.name = item.name
+      form.name = item.name;
     }
 
     if (!form.request) {
-      form.request = {} as any
+      form.request = {} as any;
     }
 
     if (item.request) {
-      form.request = item.request
+      form.request = item.request;
     }
 
     if (item.request?.data_key) {
-      form.request.data_key = item.request.data_key
+      form.request.data_key = item.request.data_key;
     }
 
     if (item.on) {
-      form.on = item.on
+      form.on = item.on;
     }
 
     if (item.presets) {
-      item.presets.forEach(p => {
-        if (!config.presets.find(cp => cp.name === p)) {
-          return
+      item.presets.forEach((p) => {
+        if (!config.presets.find((cp) => cp.name === p)) {
+          return;
         }
         if (!form.presets.includes(p)) {
-          form.presets.push(p)
+          form.presets.push(p);
         }
-      })
+      });
     }
 
     if (item.enabled !== undefined) {
-      form.enabled = item.enabled
+      form.enabled = item.enabled;
     }
 
-    import_string.value = ''
+    import_string.value = '';
   } catch (e: any) {
-    console.error(e)
-    toast.error(`Failed to import task. ${e.message}`)
+    console.error(e);
+    toast.error(`Failed to import task. ${e.message}`);
   }
-}
+};
 
-const isAppriseTarget = computed(() => form.request.url && isApprise(form.request.url))
-const filter_presets = (flag: boolean = true) => config.presets.filter(item => item.default === flag)
+const isAppriseTarget = computed(() => form.request.url && isApprise(form.request.url));
+const filter_presets = (flag: boolean = true) =>
+  config.presets.filter((item) => item.default === flag);
 </script>

@@ -2,14 +2,14 @@
   <main class="columns mt-2 is-multiline">
     <div class="column is-12" v-if="!isMultiLineInput && form?.url && is_yt_handle(form.url)">
       <Message title="Information" class="is-info" icon="fas fa-info-circle">
-        You are using a YouTube link with <code>@handle</code> instead of <code>channel_id</code>. To activate RSS
-        feed support for URL click on the <b>Convert URL</b> link.
+        You are using a YouTube link with <code>@handle</code> instead of <code>channel_id</code>.
+        To activate RSS feed support for URL click on the <b>Convert URL</b> link.
       </Message>
     </div>
     <div class="column is-12" v-if="form?.url && is_generic_rss(form.url) && !isMultiLineInput">
       <Message title="Information" class="is-warning" icon="fas fa-info-circle">
-        You are using a generic RSS/Atom feed URL. The task handler will automatically download new items found
-        in this feed.
+        You are using a generic RSS/Atom feed URL. The task handler will automatically download new
+        items found in this feed.
       </Message>
     </div>
     <div class="column is-12" v-if="isMultiLineInput">
@@ -24,21 +24,26 @@
     <div class="column is-12">
       <form autocomplete="off" id="taskForm" @submit.prevent="checkInfo()">
         <div class="card">
-
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
-                <span class="icon"><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'" /></span>
+                <span class="icon"
+                  ><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'"
+                /></span>
                 <span>{{ reference ? 'Edit' : 'Add' }}</span>
               </span>
             </div>
 
             <div class="card-header-icon" v-if="reference">
               <button type="button" @click="showImport = !showImport">
-                <span class="icon"><i class="fa-solid" :class="{
-                  'fa-arrow-down': !showImport,
-                  'fa-arrow-up': showImport,
-                }" /></span>
+                <span class="icon"
+                  ><i
+                    class="fa-solid"
+                    :class="{
+                      'fa-arrow-down': !showImport,
+                      'fa-arrow-up': showImport,
+                    }"
+                /></span>
                 <span>{{ showImport ? 'Hide' : 'Show' }} import</span>
               </button>
             </div>
@@ -46,7 +51,6 @@
 
           <div class="card-content">
             <div class="columns is-multiline is-mobile">
-
               <div class="column is-12" v-if="showImport || !reference">
                 <label class="label is-inline" for="import_string">
                   <span class="icon"><i class="fa-solid fa-file-import" /></span>
@@ -55,11 +59,22 @@
 
                 <div class="field has-addons">
                   <div class="control is-expanded">
-                    <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
+                    <input
+                      type="text"
+                      class="input"
+                      id="import_string"
+                      v-model="import_string"
+                      autocomplete="off"
+                    />
                   </div>
 
                   <div class="control">
-                    <button class="button is-primary" :disabled="!import_string" type="button" @click="importItem">
+                    <button
+                      class="button is-primary"
+                      :disabled="!import_string"
+                      type="button"
+                      @click="importItem"
+                    >
                       <span class="icon"><i class="fa-solid fa-add" /></span>
                       <span>Import</span>
                     </button>
@@ -78,7 +93,13 @@
                     Name
                   </label>
                   <div class="control has-icons-left">
-                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress">
+                    <input
+                      type="text"
+                      class="input"
+                      id="name"
+                      v-model="form.name"
+                      :disabled="addInProgress"
+                    />
                     <span class="icon is-small is-left"><i class="fa-solid fa-user" /></span>
                   </div>
                   <span class="help">
@@ -93,23 +114,43 @@
                   <label class="label is-inline" for="url">
                     <span class="icon"><i class="fa-solid fa-link" /></span>
                     <span>URL</span>
-                    <span class="tag is-info is-light is-small ml-2" v-if="urlCount > 1">{{ urlCount }} URLs</span>
+                    <span class="tag is-info is-light is-small ml-2" v-if="urlCount > 1"
+                      >{{ urlCount }} URLs</span
+                    >
                     <template v-if="!isMultiLineInput && is_yt_handle(form.url)">
-                      - <NuxtLink @click="async () => form.url = await convert_url(form.url)">Convert URL</NuxtLink>
+                      -
+                      <NuxtLink @click="async () => (form.url = await convert_url(form.url))"
+                        >Convert URL</NuxtLink
+                      >
                     </template>
                   </label>
                   <div class="control has-icons-left">
-                    <textarea v-if="isMultiLineInput" ref="urlTextarea" class="input" id="url"
-                      :disabled="addInProgress || convertInProgress" v-model="form.url" @keydown="handleKeyDown"
-                      @input="adjustTextareaHeight"
-                      style="resize: none; overflow-y: auto; min-height: 38px; max-height: 300px;"
-                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg" />
-                    <input v-else type="url" class="input" id="url" v-model="form.url"
+                    <textarea
+                      v-if="isMultiLineInput"
+                      ref="urlTextarea"
+                      class="input"
+                      id="url"
                       :disabled="addInProgress || convertInProgress"
-                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg" @keydown="handleKeyDown"
-                      @paste="handlePaste">
-                    <span class="icon is-small is-left"><i class="fa-solid fa-link"
-                        :class="{ 'fa-spin': convertInProgress }" /></span>
+                      v-model="form.url"
+                      @keydown="handleKeyDown"
+                      @input="adjustTextareaHeight"
+                      style="resize: none; overflow-y: auto; min-height: 38px; max-height: 300px"
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg"
+                    />
+                    <input
+                      v-else
+                      type="url"
+                      class="input"
+                      id="url"
+                      v-model="form.url"
+                      :disabled="addInProgress || convertInProgress"
+                      placeholder="https://www.youtube.com/channel/UCUi3_cffYenmMTuWEsLHzqg"
+                      @keydown="handleKeyDown"
+                      @paste="handlePaste"
+                    />
+                    <span class="icon is-small is-left"
+                      ><i class="fa-solid fa-link" :class="{ 'fa-spin': convertInProgress }"
+                    /></span>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -127,8 +168,13 @@
                     Enabled
                   </label>
                   <div class="control is-unselectable">
-                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
-                      class="switch is-success" />
+                    <input
+                      id="enabled"
+                      type="checkbox"
+                      v-model="form.enabled"
+                      :disabled="addInProgress"
+                      class="switch is-success"
+                    />
                     <label for="enabled" class="is-unselectable">
                       {{ form.enabled ? 'Yes' : 'No' }}
                     </label>
@@ -147,15 +193,22 @@
                     Auto Start
                   </label>
                   <div class="control is-unselectable">
-                    <input id="auto_start" type="checkbox" v-model="form.auto_start" :disabled="addInProgress"
-                      class="switch is-success" />
+                    <input
+                      id="auto_start"
+                      type="checkbox"
+                      v-model="form.auto_start"
+                      :disabled="addInProgress"
+                      class="switch is-success"
+                    />
                     <label for="auto_start" class="is-unselectable">
                       {{ form.auto_start ? 'Yes' : 'No' }}
                     </label>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Whether to automatically queue and start the download task.</span>
+                    <span class="is-bold"
+                      >Whether to automatically queue and start the download task.</span
+                    >
                   </span>
                 </div>
               </div>
@@ -168,16 +221,35 @@
                   </label>
                   <div class="control">
                     <div class="select is-fullwidth">
-                      <select id="preset" class="is-fullwidth" v-model="form.preset"
+                      <select
+                        id="preset"
+                        class="is-fullwidth"
+                        v-model="form.preset"
                         :disabled="addInProgress || hasFormatInConfig"
-                        v-tooltip.bottom="hasFormatInConfig ? 'Presets are disabled. Format key is present in the command options for yt-dlp.' : ''">
+                        v-tooltip.bottom="
+                          hasFormatInConfig
+                            ? 'Presets are disabled. Format key is present in the command options for yt-dlp.'
+                            : ''
+                        "
+                      >
                         <optgroup label="Default presets">
-                          <option v-for="item in filter_presets(true)" :key="item.name" :value="item.name">
+                          <option
+                            v-for="item in filter_presets(true)"
+                            :key="item.name"
+                            :value="item.name"
+                          >
                             {{ item.name }}
                           </option>
                         </optgroup>
-                        <optgroup label="Custom presets" v-if="config?.presets.filter(p => !p?.default).length > 0">
-                          <option v-for="item in filter_presets(false)" :key="item.name" :value="item.name">
+                        <optgroup
+                          label="Custom presets"
+                          v-if="config?.presets.filter((p) => !p?.default).length > 0"
+                        >
+                          <option
+                            v-for="item in filter_presets(false)"
+                            :key="item.name"
+                            :value="item.name"
+                          >
                             {{ item.name }}
                           </option>
                         </optgroup>
@@ -186,10 +258,15 @@
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Select the preset to use for this URL. <span class="text-has-danger">If the
-                        <code>-f, --format</code> <span class="has-text-danger">
-                          argument is present in the command line options, the preset and all
-                          it's options will be ignored.</span></span>
+                    <span class="is-bold"
+                      >Select the preset to use for this URL.
+                      <span class="text-has-danger"
+                        >If the <code>-f, --format</code>
+                        <span class="has-text-danger">
+                          argument is present in the command line options, the preset and all it's
+                          options will be ignored.</span
+                        ></span
+                      >
                     </span>
                   </span>
                 </div>
@@ -202,15 +279,21 @@
                     CRON expression timer.
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="timer" v-model="form.timer" :disabled="addInProgress"
-                      placeholder="0 12 * * 5">
+                    <input
+                      type="text"
+                      class="input"
+                      id="timer"
+                      v-model="form.timer"
+                      :disabled="addInProgress"
+                      placeholder="0 12 * * 5"
+                    />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">
-                      The CRON timer expression to use for this task. If not set, the task runner will be disabled. For
-                      more information on CRON expressions, see <NuxtLink to="https://crontab.guru/" target="_blank">
-                        crontab.guru</NuxtLink>.
+                      The CRON timer expression to use for this task. If not set, the task runner
+                      will be disabled. For more information on CRON expressions, see
+                      <NuxtLink to="https://crontab.guru/" target="_blank"> crontab.guru</NuxtLink>.
                     </span>
                   </span>
                 </div>
@@ -228,14 +311,22 @@
                     </span>
                   </div>
                   <div class="control is-expanded">
-                    <input type="text" class="input" id="folder" :placeholder="getDefault('folder', '/')"
-                      v-model="form.folder" :disabled="addInProgress" list="folders">
+                    <input
+                      type="text"
+                      class="input"
+                      id="folder"
+                      :placeholder="getDefault('folder', '/')"
+                      v-model="form.folder"
+                      :disabled="addInProgress"
+                      list="folders"
+                    />
                   </div>
                 </div>
                 <span class="help">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
                   <span class="is-bold">
-                    Path relative to the download path, leave empty to use preset or default download path.
+                    Path relative to the download path, leave empty to use preset or default
+                    download path.
                   </span>
                 </span>
               </div>
@@ -247,14 +338,22 @@
                     Output template
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="output_template" :disabled="addInProgress"
-                      :placeholder="getDefault('template', config.app.output_template || '%(title)s.%(ext)s')"
-                      v-model="form.template">
+                    <input
+                      type="text"
+                      class="input"
+                      id="output_template"
+                      :disabled="addInProgress"
+                      :placeholder="
+                        getDefault('template', config.app.output_template || '%(title)s.%(ext)s')
+                      "
+                      v-model="form.template"
+                    />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">
-                      The template to use for the output file name. Leave empty to use preset or default template.
+                      The template to use for the output file name. Leave empty to use preset or
+                      default template.
                     </span>
                   </span>
                 </div>
@@ -267,16 +366,23 @@
                     Enable Handler
                   </label>
                   <div class="control is-unselectable">
-                    <input id="handler_enabled" type="checkbox" v-model="form.handler_enabled" :disabled="addInProgress"
-                      class="switch is-success" />
+                    <input
+                      id="handler_enabled"
+                      type="checkbox"
+                      v-model="form.handler_enabled"
+                      :disabled="addInProgress"
+                      class="switch is-success"
+                    />
                     <label for="handler_enabled" class="is-unselectable">
                       {{ form.handler_enabled ? 'Yes' : 'No' }}
                     </label>
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Some URLs have special handlers to monitor for new content. Like YouTube
-                      channels/playlists. <span class="has-text-danger">Handlers run regardless of task timer.</span>
+                    <span class="is-bold"
+                      >Some URLs have special handlers to monitor for new content. Like YouTube
+                      channels/playlists.
+                      <span class="has-text-danger">Handlers run regardless of task timer.</span>
                     </span>
                   </span>
                 </div>
@@ -289,8 +395,13 @@
                     Mark all existing items as downloaded
                   </label>
                   <div class="control is-unselectable">
-                    <input id="archive_all_after_add" type="checkbox" v-model="archiveAllAfterAdd"
-                      :disabled="addInProgress" class="switch is-danger" />
+                    <input
+                      id="archive_all_after_add"
+                      type="checkbox"
+                      v-model="archiveAllAfterAdd"
+                      :disabled="addInProgress"
+                      class="switch is-danger"
+                    />
                     <label for="archive_all_after_add" class="is-unselectable">
                       {{ archiveAllAfterAdd ? 'Yes' : 'No' }}
                     </label>
@@ -298,7 +409,8 @@
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span class="is-bold">
-                      If enabled, all existing items in the feed will be marked as downloaded after adding the task.
+                      If enabled, all existing items in the feed will be marked as downloaded after
+                      adding the task.
                     </span>
                   </span>
                 </div>
@@ -310,15 +422,23 @@
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>Command options for yt-dlp</span>
                   </label>
-                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                    :placeholder="getDefault('cli', '')" :disabled="addInProgress" />
+                  <TextareaAutocomplete
+                    id="cli_options"
+                    v-model="form.cli"
+                    :options="ytDlpOpt"
+                    :placeholder="getDefault('cli', '')"
+                    :disabled="addInProgress"
+                  />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all options are
-                      supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
-                        are ignored</NuxtLink>. Use with caution.
+                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all
+                      options are supported
+                      <NuxtLink
+                        target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26"
+                        >some are ignored</NuxtLink
+                      >. Use with caution.
                     </span>
                   </span>
                 </div>
@@ -328,15 +448,24 @@
 
           <div class="card-footer">
             <p class="card-footer-item">
-              <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                :class="{ 'is-loading': addInProgress }" form="taskForm">
+              <button
+                class="button is-fullwidth is-primary"
+                :disabled="addInProgress"
+                type="submit"
+                :class="{ 'is-loading': addInProgress }"
+                form="taskForm"
+              >
                 <span class="icon"><i class="fa-solid fa-save" /></span>
                 <span>Save</span>
               </button>
             </p>
             <p class="card-footer-item">
-              <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
-                type="button">
+              <button
+                class="button is-fullwidth is-danger"
+                @click="emitter('cancel')"
+                :disabled="addInProgress"
+                type="button"
+              >
                 <span class="icon"><i class="fa-solid fa-times" /></span>
                 <span>Cancel</span>
               </button>
@@ -350,24 +479,32 @@
       <Message class="is-info">
         <span>
           <ul>
-            <li><strong>Tasks:</strong> requires <code>--download-archive</code> in
-              <code>Command options for yt-dlp</code> can be set via presets or manually. Default presets already
-              include this option.
+            <li>
+              <strong>Tasks:</strong> requires <code>--download-archive</code> in
+              <code>Command options for yt-dlp</code> can be set via presets or manually. Default
+              presets already include this option.
             </li>
-            <li><strong>YouTube RSS:</strong> Use <code>channel_id</code> or <code>playlist_id</code> URLs. Other link
-              types (custom names, handles, user profiles) are not supported.
+            <li>
+              <strong>YouTube RSS:</strong> Use <code>channel_id</code> or
+              <code>playlist_id</code> URLs. Other link types (custom names, handles, user profiles)
+              are not supported.
             </li>
-            <li><strong>Generic RSS/Atom:</strong> URL must end with <code>.rss</code> or <code>.atom</code>. If not
-              possible, append <code>&handler=rss</code> to existing query parameters, or add <code>#handler=rss</code>
+            <li>
+              <strong>Generic RSS/Atom:</strong> URL must end with <code>.rss</code> or
+              <code>.atom</code>. If not possible, append <code>&handler=rss</code> to existing
+              query parameters, or add <code>#handler=rss</code>
               as a fragment.
             </li>
-            <li><strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls scheduled downloads to
-              yt-dlp. Disable <code>Enable Handler</code> to disable RSS monitoring.
+            <li>
+              <strong>RSS Monitoring Basics:</strong> Runs hourly independently. Timer controls
+              scheduled downloads to yt-dlp. Disable <code>Enable Handler</code> to disable RSS
+              monitoring.
             </li>
           </ul>
         </span>
       </Message>
-    </div> <datalist id="folders" v-if="config?.folders">
+    </div>
+    <datalist id="folders" v-if="config?.folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
     <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
@@ -377,187 +514,202 @@
 </template>
 
 <script lang="ts" setup>
-import 'assets/css/bulma-switch.css'
-import { useStorage } from '@vueuse/core'
-import { CronExpressionParser } from 'cron-parser'
-import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
-import type { AutoCompleteOptions } from '~/types/autocomplete'
-import type { ExportedTask, Task } from '~/types/tasks'
-import { useConfirm } from '~/composables/useConfirm'
-import { shortPath } from "~/utils"
+import 'assets/css/bulma-switch.css';
+import { useStorage } from '@vueuse/core';
+import { CronExpressionParser } from 'cron-parser';
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
+import type { AutoCompleteOptions } from '~/types/autocomplete';
+import type { ExportedTask, Task } from '~/types/tasks';
+import { useConfirm } from '~/composables/useConfirm';
+import { shortPath } from '~/utils';
 
 const props = defineProps<{
-  reference?: number | null | undefined
-  task: Task
-  addInProgress?: boolean
-}>()
+  reference?: number | null | undefined;
+  task: Task;
+  addInProgress?: boolean;
+}>();
 
 const emitter = defineEmits<{
-  (e: 'cancel'): void
-  (e: 'submit', payload: { reference: number | null | undefined, task: Task | Task[], archive_all?: boolean }): void
-}>()
+  (e: 'cancel'): void;
+  (
+    e: 'submit',
+    payload: { reference: number | null | undefined; task: Task | Task[]; archive_all?: boolean },
+  ): void;
+}>();
 
-const toast = useNotification()
-const config = useConfigStore()
-const box = useConfirm()
-const showImport = useStorage('showImport', false)
+const toast = useNotification();
+const config = useConfigStore();
+const box = useConfirm();
+const showImport = useStorage('showImport', false);
 
-const convertInProgress = ref<boolean>(false)
-const import_string = ref<string>('')
-const showOptions = ref<boolean>(false)
-const ytDlpOpt = ref<AutoCompleteOptions>([])
-const archiveAllAfterAdd = ref<boolean>(false)
-const urlTextarea = ref<HTMLTextAreaElement | null>(null)
+const convertInProgress = ref<boolean>(false);
+const import_string = ref<string>('');
+const showOptions = ref<boolean>(false);
+const ytDlpOpt = ref<AutoCompleteOptions>([]);
+const archiveAllAfterAdd = ref<boolean>(false);
+const urlTextarea = ref<HTMLTextAreaElement | null>(null);
 
-const CHANNEL_REGEX = /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/
-const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i
-const form = reactive<Task>({ ...props.task })
+const CHANNEL_REGEX =
+  /^https?:\/\/(?:www\.)?youtube\.com\/(?:(?:channel\/(?<channelId>UC[0-9A-Za-z_-]{22}))|(?:c\/(?<customName>[A-Za-z0-9_-]+))|(?:user\/(?<userName>[A-Za-z0-9_-]+))|(?:@(?<handle>[A-Za-z0-9_-]+)))(?<suffix>\/.*)?\/?$/;
+const GENERIC_RSS_REGEX = /\.(rss|atom)(\?.*)?$|handler=rss/i;
+const form = reactive<Task>({ ...props.task });
 
-const isMultiLineInput = computed(() => !!form.url && form.url.includes('\n'))
-const urlCount = computed(() => splitUrls(form.url || '').length)
+const isMultiLineInput = computed(() => !!form.url && form.url.includes('\n'));
+const urlCount = computed(() => splitUrls(form.url || '').length);
 
 const splitUrls = (urlString: string): string[] => {
   return urlString
     .split('\n')
-    .map(line => line.trim())
-    .filter(line => line.length > 0)
-}
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+};
 
 const adjustTextareaHeight = async (): Promise<void> => {
-  await nextTick()
+  await nextTick();
   if (urlTextarea.value) {
-    urlTextarea.value.style.height = 'auto'
-    const newHeight = Math.min(urlTextarea.value.scrollHeight, 300)
-    urlTextarea.value.style.height = `${newHeight}px`
+    urlTextarea.value.style.height = 'auto';
+    const newHeight = Math.min(urlTextarea.value.scrollHeight, 300);
+    urlTextarea.value.style.height = `${newHeight}px`;
   }
-}
+};
 
 const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
-  const target = event.target as HTMLInputElement | HTMLTextAreaElement
-  const isTextarea = target.tagName === 'TEXTAREA'
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const isTextarea = target.tagName === 'TEXTAREA';
 
-  if (event.key !== 'Enter') return
+  if (event.key !== 'Enter') return;
 
   if (event.ctrlKey && isTextarea) {
-    event.preventDefault()
-    checkInfo()
-    return
+    event.preventDefault();
+    checkInfo();
+    return;
   }
 
   if (event.shiftKey && !isTextarea) {
-    event.preventDefault()
-    const cursorPos = target.selectionStart || form.url.length
-    form.url = form.url.substring(0, cursorPos) + '\n' + form.url.substring(target.selectionEnd || cursorPos)
+    event.preventDefault();
+    const cursorPos = target.selectionStart || form.url.length;
+    form.url =
+      form.url.substring(0, cursorPos) +
+      '\n' +
+      form.url.substring(target.selectionEnd || cursorPos);
 
-    await nextTick()
+    await nextTick();
     if (urlTextarea.value) {
-      await adjustTextareaHeight()
-      urlTextarea.value.setSelectionRange(cursorPos + 1, cursorPos + 1)
-      urlTextarea.value.focus()
+      await adjustTextareaHeight();
+      urlTextarea.value.setSelectionRange(cursorPos + 1, cursorPos + 1);
+      urlTextarea.value.focus();
     }
   }
-}
+};
 
 const handlePaste = async (event: ClipboardEvent): Promise<void> => {
-  const pastedText = event.clipboardData?.getData('text') || ''
-  if (!pastedText.includes('\n')) return
+  const pastedText = event.clipboardData?.getData('text') || '';
+  if (!pastedText.includes('\n')) return;
 
-  event.preventDefault()
+  event.preventDefault();
 
-  const target = event.target as HTMLInputElement
-  const currentValue = form.url || ''
-  const start = target.selectionStart || currentValue.length
-  const end = target.selectionEnd || currentValue.length
-  form.url = currentValue.substring(0, start) + pastedText + currentValue.substring(end)
+  const target = event.target as HTMLInputElement;
+  const currentValue = form.url || '';
+  const start = target.selectionStart || currentValue.length;
+  const end = target.selectionEnd || currentValue.length;
+  form.url = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
 
-  await nextTick()
+  await nextTick();
   if (urlTextarea.value) {
-    await adjustTextareaHeight()
-    const newPos = start + pastedText.length
-    urlTextarea.value.setSelectionRange(newPos, newPos)
-    urlTextarea.value.focus()
+    await adjustTextareaHeight();
+    const newPos = start + pastedText.length;
+    urlTextarea.value.setSelectionRange(newPos, newPos);
+    urlTextarea.value.focus();
   }
-}
+};
 
 watch(isMultiLineInput, async (newValue) => {
-  await nextTick()
+  await nextTick();
   if (newValue) {
-    await adjustTextareaHeight()
-    urlTextarea.value?.focus()
+    await adjustTextareaHeight();
+    urlTextarea.value?.focus();
   }
-})
+});
 
-watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
-  .filter(opt => !opt.ignored)
-  .flatMap(opt => opt.flags
-    .filter(flag => flag.startsWith('--'))
-    .map(flag => ({ value: flag, description: opt.description || '' }))),
-  { immediate: true }
-)
+watch(
+  () => config.ytdlp_options,
+  (newOptions) =>
+    (ytDlpOpt.value = newOptions
+      .filter((opt) => !opt.ignored)
+      .flatMap((opt) =>
+        opt.flags
+          .filter((flag) => flag.startsWith('--'))
+          .map((flag) => ({ value: flag, description: opt.description || '' })),
+      )),
+  { immediate: true },
+);
 
 onMounted(() => {
   if (!props.task?.preset || '' === props.task.preset) {
-    form.preset = toRaw(config.app.default_preset)
+    form.preset = toRaw(config.app.default_preset);
   }
 
   if (typeof form.auto_start === 'undefined' || null === form.auto_start) {
-    form.auto_start = true
+    form.auto_start = true;
   }
 
   if (typeof form.handler_enabled === 'undefined' || null === form.handler_enabled) {
-    form.handler_enabled = true
+    form.handler_enabled = true;
   }
 
   if (typeof form.enabled === 'undefined' || null === form.enabled) {
-    form.enabled = true
+    form.enabled = true;
   }
-
-})
+});
 
 const checkInfo = async (): Promise<void> => {
-  const urls = splitUrls(form.url || '')
+  const urls = splitUrls(form.url || '');
 
   if (urls.length === 0) {
-    toast.error('At least one URL is required.')
-    return
+    toast.error('At least one URL is required.');
+    return;
   }
 
   if (!form.name) {
-    toast.error('The name field is required.')
-    return
+    toast.error('The name field is required.');
+    return;
   }
 
   if (form.folder) {
-    form.folder = form.folder.trim()
-    await nextTick()
+    form.folder = form.folder.trim();
+    await nextTick();
   }
 
   if (form.timer) {
     try {
-      CronExpressionParser.parse(form.timer)
+      CronExpressionParser.parse(form.timer);
     } catch (e: any) {
-      console.error(e)
-      toast.error(`Invalid CRON expression. ${e.message}`)
-      return
+      console.error(e);
+      toast.error(`Invalid CRON expression. ${e.message}`);
+      return;
     }
   }
 
   try {
-    new URL(urls[0] || '')
+    new URL(urls[0] || '');
   } catch {
-    toast.error('Invalid URL')
-    return
+    toast.error('Invalid URL');
+    return;
   }
 
   if (form.cli && '' !== form.cli) {
-    const options = await convertOptions(form.cli)
-    if (null === options) return
-    form.cli = form.cli.trim()
+    const options = await convertOptions(form.cli);
+    if (null === options) return;
+    form.cli = form.cli.trim();
   }
 
   if (urls.length === 1) {
-    emitter('submit', { reference: toRaw(props.reference), task: toRaw(form), archive_all: archiveAllAfterAdd.value })
-    return
+    emitter('submit', {
+      reference: toRaw(props.reference),
+      task: toRaw(form),
+      archive_all: archiveAllAfterAdd.value,
+    });
+    return;
   }
 
   const tasks: Task[] = urls.map((url, idx) => {
@@ -573,166 +725,171 @@ const checkInfo = async (): Promise<void> => {
         auto_start: form.auto_start,
         handler_enabled: form.handler_enabled,
         enabled: form.enabled,
-      } as Task
+      } as Task;
     }
-    return { url } as Task
-  })
+    return { url } as Task;
+  });
 
-  emitter('submit', { reference: toRaw(props.reference), task: tasks, archive_all: archiveAllAfterAdd.value })
-}
+  emitter('submit', {
+    reference: toRaw(props.reference),
+    task: tasks,
+    archive_all: archiveAllAfterAdd.value,
+  });
+};
 
 const importItem = async (): Promise<void> => {
-  const val = import_string.value.trim()
+  const val = import_string.value.trim();
   if (!val) {
-    toast.error('The import string is required.')
-    return
+    toast.error('The import string is required.');
+    return;
   }
 
   try {
-    const item = decode(val) as ExportedTask
+    const item = decode(val) as ExportedTask;
 
     if ('task' !== item._type) {
-      toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`)
-      import_string.value = ''
-      return
+      toast.error(`Invalid import string. Expected type 'task', got '${item._type}'.`);
+      import_string.value = '';
+      return;
     }
 
     if (form.url || form.timer) {
       if (false === (await box.confirm('Overwrite the current form fields?'))) {
-        return
+        return;
       }
     }
 
-    form.name = item.name ?? form.name
-    form.url = item.url ?? form.url
-    form.template = item.template ?? form.template
-    form.timer = item.timer ?? form.timer
-    form.folder = item.folder ?? form.folder
-    form.cli = item.cli ?? form.cli
-    form.auto_start = item.auto_start ?? true
-    form.handler_enabled = item.handler_enabled ?? true
-    form.enabled = item.enabled ?? true
+    form.name = item.name ?? form.name;
+    form.url = item.url ?? form.url;
+    form.template = item.template ?? form.template;
+    form.timer = item.timer ?? form.timer;
+    form.folder = item.folder ?? form.folder;
+    form.cli = item.cli ?? form.cli;
+    form.auto_start = item.auto_start ?? true;
+    form.handler_enabled = item.handler_enabled ?? true;
+    form.enabled = item.enabled ?? true;
 
     if (item.preset) {
-      const preset = config.presets.find(p => p.name === item.preset)
+      const preset = config.presets.find((p) => p.name === item.preset);
       if (!preset) {
-        toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`)
-        form.preset = 'default'
+        toast.warning(`Preset '${item.preset}' not found. Preset will be set to default.`);
+        form.preset = 'default';
       } else {
-        form.preset = item.preset
+        form.preset = item.preset;
       }
     }
 
-    import_string.value = ''
+    import_string.value = '';
   } catch (e: any) {
-    console.error(e)
-    toast.error(`Failed to import string. ${e.message}`)
+    console.error(e);
+    toast.error(`Failed to import string. ${e.message}`);
   }
-}
+};
 
 const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
   try {
-    const response = await convertCliOptions(args)
+    const response = await convertCliOptions(args);
 
     if (response.output_template) {
-      form.template = response.output_template
+      form.template = response.output_template;
     }
 
     if (response.download_path) {
-      form.folder = response.download_path
+      form.folder = response.download_path;
     }
 
-    return response.opts as Record<string, any>
+    return response.opts as Record<string, any>;
   } catch (e: any) {
-    toast.error(e.message)
+    toast.error(e.message);
   }
 
-  return null
-}
+  return null;
+};
 
-const hasFormatInConfig = computed<boolean>(() => !!form.cli && /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli))
+const hasFormatInConfig = computed<boolean>(
+  () => !!form.cli && /(?<!\S)(-f|--format)(=|\s)(\S+)/.test(form.cli),
+);
 
-const filter_presets = (flag = true) => config.presets.filter(item => item.default === flag)
+const filter_presets = (flag = true) => config.presets.filter((item) => item.default === flag);
 
 const is_yt_handle = (url: string): boolean => {
   if (!url || '' === url) {
-    return false
+    return false;
   }
-  const m = url.match(CHANNEL_REGEX)
+  const m = url.match(CHANNEL_REGEX);
   if (m?.groups) {
-    return !m.groups.channelId
+    return !m.groups.channelId;
   }
-  return false
-}
+  return false;
+};
 
 const is_generic_rss = (url: string): boolean => {
   if (!url || '' === url) {
-    return false
+    return false;
   }
-  return GENERIC_RSS_REGEX.test(url)
-}
+  return GENERIC_RSS_REGEX.test(url);
+};
 
 const convert_url = async (url: string): Promise<string> => {
   if (!url || '' === url) {
-    return url
+    return url;
   }
 
-  const m = url.match(CHANNEL_REGEX)
+  const m = url.match(CHANNEL_REGEX);
   if (!m?.groups || !m.groups.handle) {
-    return url
+    return url;
   }
 
-  const params = new URLSearchParams()
-  params.append('url', url)
-  params.append('args', '-I0')
+  const params = new URLSearchParams();
+  params.append('url', url);
+  params.append('args', '-I0');
 
   try {
-    convertInProgress.value = true
-    const resp = await request('/api/yt-dlp/url/info?' + params.toString())
-    const body = await resp.json()
-    const channel_id = ag(body, 'channel_id', null)
+    convertInProgress.value = true;
+    const resp = await request('/api/yt-dlp/url/info?' + params.toString());
+    const body = await resp.json();
+    const channel_id = ag(body, 'channel_id', null);
 
     if (channel_id) {
-      return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`)
+      return url.replace(`/@${m.groups.handle}`, `/channel/${channel_id}`);
     }
   } catch (e: any) {
-    console.error(e)
-    toast.error(`Error: ${e.message}`)
+    console.error(e);
+    toast.error(`Error: ${e.message}`);
   } finally {
-    convertInProgress.value = false
+    convertInProgress.value = false;
   }
 
-  return url
-}
+  return url;
+};
 
 const getDefault = (type: 'cookies' | 'cli' | 'template' | 'folder', ret: string = '') => {
   if (false !== hasFormatInConfig.value || !form.preset) {
-    return ret
+    return ret;
   }
 
-  const preset = config.presets.find(p => p.name === form.preset)
+  const preset = config.presets.find((p) => p.name === form.preset);
 
   if (!preset) {
-    return ret
+    return ret;
   }
 
   if (type === 'cookies' && preset.cookies) {
-    return preset.cookies
+    return preset.cookies;
   }
 
   if (type === 'cli' && preset.cli) {
-    return preset.cli
+    return preset.cli;
   }
 
   if (type === 'template' && preset.template) {
-    return preset.template
+    return preset.template;
   }
 
   if (type === 'folder' && preset.folder) {
-    return preset.folder.replace(config.app.download_path, '') || ret
+    return preset.folder.replace(config.app.download_path, '') || ret;
   }
 
-  return ret
-}
-
+  return ret;
+};
 </script>

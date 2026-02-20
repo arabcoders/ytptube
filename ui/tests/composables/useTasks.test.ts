@@ -1,18 +1,34 @@
+import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test'
+
+const successMock = mock(() => {})
+const errorMock = mock(() => {})
+
+globalThis.useNotificationStore = () => ({
+  add: () => 'test-id',
+  markRead: () => {},
+}) as any
+
+;(globalThis.document as any).hasFocus = () => true
+
+mock.module('~/composables/useNotification', () => ({
+  useNotification: () => ({ success: successMock, error: errorMock }),
+  default: () => ({ success: successMock, error: errorMock }),
+}))
+
+mock.module('~/stores/notification', () => ({
+  useNotificationStore: () => ({
+    add: () => 'test-id',
+    markRead: () => {},
+  }),
+}))
+
+// eslint-disable-next-line import/first
 import * as utils from '~/utils/index'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+// eslint-disable-next-line import/first
 import { useTasks } from '~/composables/useTasks'
+// eslint-disable-next-line import/first
 import type { Task, TaskInspectResponse, TaskMetadataResponse, Pagination } from '~/types/tasks'
 
-vi.mock('~/composables/useNotification', () => {
-  const success = vi.fn()
-  const error = vi.fn()
-  return {
-    useNotification: () => ({ success, error }),
-    default: () => ({ success, error }),
-  }
-})
-
-// Sample data
 const mockTask: Task = {
   id: 1,
   name: 'Test Task',
@@ -38,7 +54,6 @@ const mockPagination: Pagination = {
   has_prev: false,
 }
 
-// Helper to create a mock Response object
 function createMockResponse({ ok, status, jsonData }: { ok: boolean; status: number; jsonData: any }) {
   return {
     ok,
@@ -65,15 +80,16 @@ function createMockResponse({ ok, status, jsonData }: { ok: boolean; status: num
 
 describe('useTasks', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    // Reset composable state between tests
+    successMock.mockClear()
+    errorMock.mockClear()
     const tasks = useTasks()
     tasks.__resetForTesting()
   })
 
   describe('loadTasks', () => {
     it('loads tasks with pagination successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -91,6 +107,7 @@ describe('useTasks', () => {
       expect(tasks.tasks.value[0]).toEqual(mockTask)
       expect(tasks.pagination.value).toEqual(mockPagination)
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('sorts tasks by name A-Z', async () => {
@@ -100,7 +117,8 @@ describe('useTasks', () => {
         { ...mockTask, id: 3, name: 'Beta' },
       ]
 
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -118,10 +136,12 @@ describe('useTasks', () => {
       expect(sorted[0].name).toBe('Alpha')
       expect(sorted[1].name).toBe('Beta')
       expect(sorted[2].name).toBe('Zebra')
+      requestSpy.mockRestore()
     })
 
     it('handles empty tasks list', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -137,10 +157,12 @@ describe('useTasks', () => {
 
       expect(tasks.tasks.value).toEqual([])
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles errors during load', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -152,10 +174,12 @@ describe('useTasks', () => {
       await tasks.loadTasks()
 
       expect(tasks.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
 
     it('respects page and per_page parameters', async () => {
-      const requestSpy = vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -170,12 +194,14 @@ describe('useTasks', () => {
       await tasks.loadTasks(2, 25)
 
       expect(requestSpy).toHaveBeenCalledWith('/api/tasks/?page=2&per_page=25')
+      requestSpy.mockRestore()
     })
   })
 
   describe('getTask', () => {
     it('fetches a single task successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -188,10 +214,12 @@ describe('useTasks', () => {
 
       expect(result).toEqual(mockTask)
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles 404 not found', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -204,12 +232,14 @@ describe('useTasks', () => {
 
       expect(result).toBeNull()
       expect(tasks.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('createTask', () => {
     it('creates a task successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -227,10 +257,12 @@ describe('useTasks', () => {
       expect(result).toEqual(mockTask)
       expect(tasks.tasks.value).toContainEqual(mockTask)
       expect(tasks.pagination.value.total).toBe(initialTotal + 1)
+      requestSpy.mockRestore()
     })
 
     it('calls callback on success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -238,7 +270,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
       const newTask = { ...mockTask }
       delete (newTask as any).id
@@ -251,10 +283,12 @@ describe('useTasks', () => {
         detail: null,
         data: mockTask,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -262,7 +296,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
       const newTask = { ...mockTask }
       delete (newTask as any).id
@@ -275,12 +309,14 @@ describe('useTasks', () => {
           error: expect.any(String),
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('updateTask', () => {
     it('updates a task successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -294,11 +330,13 @@ describe('useTasks', () => {
       const result = await tasks.updateTask(1, updated)
 
       expect(result?.name).toBe('Updated Name')
+      requestSpy.mockRestore()
     })
 
     it('calls callback on success', async () => {
       const updatedTask = { ...mockTask, name: 'Updated' }
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -306,7 +344,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
 
       await tasks.updateTask(1, updatedTask, callback)
@@ -317,10 +355,12 @@ describe('useTasks', () => {
         detail: null,
         data: updatedTask,
       })
+      requestSpy.mockRestore()
     })
 
     it('removes id field from task before sending', async () => {
-      const requestSpy = vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -333,14 +373,15 @@ describe('useTasks', () => {
       await tasks.updateTask(1, taskWithId)
 
       const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
-      // The id field should be removed before sending
       expect('id' in requestBody).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 
   describe('patchTask', () => {
     it('patches a task successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -352,11 +393,13 @@ describe('useTasks', () => {
       const result = await tasks.patchTask(1, { enabled: false })
 
       expect(result?.enabled).toBe(false)
+      requestSpy.mockRestore()
     })
 
     it('calls callback on patch success', async () => {
       const patchedTask = { ...mockTask, enabled: false }
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -364,7 +407,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
 
       await tasks.patchTask(1, { enabled: false }, callback)
@@ -375,10 +418,12 @@ describe('useTasks', () => {
         detail: null,
         data: patchedTask,
       })
+      requestSpy.mockRestore()
     })
 
     it('handles validation errors with callback', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -386,7 +431,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
 
       await tasks.patchTask(1, { timer: 'invalid' }, callback)
@@ -397,12 +442,14 @@ describe('useTasks', () => {
           error: expect.any(String),
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('deleteTask', () => {
     it('deletes a task successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -417,10 +464,12 @@ describe('useTasks', () => {
 
       expect(result).toBe(true)
       expect(tasks.pagination.value.total).toBe(Math.max(0, initialTotal - 1))
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -428,7 +477,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
 
       await tasks.deleteTask(1, callback)
@@ -439,10 +488,12 @@ describe('useTasks', () => {
         detail: null,
         data: true,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -450,7 +501,7 @@ describe('useTasks', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const tasks = useTasks()
 
       await tasks.deleteTask(999, callback)
@@ -462,6 +513,7 @@ describe('useTasks', () => {
           data: false,
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
@@ -485,7 +537,8 @@ describe('useTasks', () => {
         },
       }
 
-      global.fetch = vi.fn().mockResolvedValueOnce(
+      const fetchSpy = spyOn(globalThis, 'fetch')
+      fetchSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -501,6 +554,7 @@ describe('useTasks', () => {
       expect(result).toEqual(inspectResponse)
       expect(result?.matched).toBe(true)
       expect(result?.handler).toBe('YoutubeHandler')
+      fetchSpy.mockRestore()
     })
 
     it('handles handler not supported', async () => {
@@ -512,7 +566,8 @@ describe('useTasks', () => {
         metadata: null,
       }
 
-      global.fetch = vi.fn().mockResolvedValueOnce(
+      const fetchSpy = spyOn(globalThis, 'fetch')
+      fetchSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -527,10 +582,12 @@ describe('useTasks', () => {
 
       expect(result?.supported).toBe(false)
       expect(result?.matched).toBe(false)
+      fetchSpy.mockRestore()
     })
 
     it('handles inspect errors', async () => {
-      global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
+      const fetchSpy = spyOn(globalThis, 'fetch')
+      fetchSpy.mockRejectedValueOnce(new Error('Network error'))
 
       const tasks = useTasks()
       const result = await tasks.inspectTaskHandler({
@@ -539,12 +596,14 @@ describe('useTasks', () => {
 
       expect(result).toBeNull()
       expect(tasks.lastError.value).toBeTruthy()
+      fetchSpy.mockRestore()
     })
   })
 
   describe('markTaskItems', () => {
     it('marks all items as downloaded successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -557,10 +616,12 @@ describe('useTasks', () => {
 
       expect(result).toBe('Marked 15 items')
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles mark errors', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -573,12 +634,14 @@ describe('useTasks', () => {
 
       expect(result).toBeNull()
       expect(tasks.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('unmarkTaskItems', () => {
     it('unmarks items successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -591,10 +654,12 @@ describe('useTasks', () => {
 
       expect(result).toBe('Unmarked 10 items')
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles unmark errors', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -607,6 +672,7 @@ describe('useTasks', () => {
 
       expect(result).toBeNull()
       expect(tasks.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
@@ -617,7 +683,8 @@ describe('useTasks', () => {
         generated: ['tvshow.nfo', 'info.json', 'poster.jpg'],
       }
 
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -631,10 +698,12 @@ describe('useTasks', () => {
       expect(result).toEqual(metadataResponse)
       expect(result?.status).toBe('success')
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles metadata generation errors', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -647,12 +716,14 @@ describe('useTasks', () => {
 
       expect(result).toBeNull()
       expect(tasks.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('error handling', () => {
     it('throws when throwInstead is true', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -664,10 +735,12 @@ describe('useTasks', () => {
       tasks.throwInstead.value = true
 
       await expect(tasks.loadTasks()).rejects.toThrow()
+      requestSpy.mockRestore()
     })
 
     it('clears error on clearError call', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -680,16 +753,17 @@ describe('useTasks', () => {
 
       await tasks.loadTasks()
 
-      // Error should be set after failed load
       expect(tasks.lastError.value).toBeTruthy()
 
       tasks.clearError()
 
       expect(tasks.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('parses API validation errors correctly', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -703,7 +777,6 @@ describe('useTasks', () => {
       )
 
       const tasks = useTasks()
-      // Clear any previous error
       tasks.clearError()
       
       const newTask = { ...mockTask, name: '', url: '' }
@@ -715,6 +788,7 @@ describe('useTasks', () => {
       expect(tasks.lastError.value).toBeTruthy()
       expect(tasks.lastError.value).toContain('name: Field required')
       expect(tasks.lastError.value).toContain('url: Invalid URL format')
+      requestSpy.mockRestore()
     })
   })
 
@@ -722,8 +796,8 @@ describe('useTasks', () => {
     it('sets addInProgress during create operation', async () => {
       let inProgressDuringCall = false
 
-      vi.spyOn(utils, 'request').mockImplementation(async (_url, _options) => {
-        // Get fresh instance to check current state
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockImplementation(async (_url, _options) => {
         const currentTasks = useTasks()
         inProgressDuringCall = currentTasks.addInProgress.value
         return createMockResponse({
@@ -741,10 +815,12 @@ describe('useTasks', () => {
 
       expect(inProgressDuringCall).toBe(true)
       expect(tasks.addInProgress.value).toBe(false)
+      requestSpy.mockRestore()
     })
 
     it('resets addInProgress on error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -759,6 +835,7 @@ describe('useTasks', () => {
       await tasks.createTask(newTask)
 
       expect(tasks.addInProgress.value).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 
@@ -766,8 +843,8 @@ describe('useTasks', () => {
     it('sets isLoading during loadTasks operation', async () => {
       let loadingDuringCall = false
 
-      vi.spyOn(utils, 'request').mockImplementation(async (_url, _options) => {
-        // Get fresh instance to check current state
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockImplementation(async (_url, _options) => {
         const currentTasks = useTasks()
         loadingDuringCall = currentTasks.isLoading.value
         return createMockResponse({
@@ -785,13 +862,14 @@ describe('useTasks', () => {
 
       expect(loadingDuringCall).toBe(true)
       expect(tasks.isLoading.value).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 
   describe('task list updates', () => {
     it('updates existing task in list', async () => {
-      // Load initial task
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -808,9 +886,8 @@ describe('useTasks', () => {
       expect(tasks.tasks.value).toHaveLength(1)
       expect(tasks.tasks.value[0].name).toBe('Test Task')
 
-      // Update task
       const updatedTask = { ...mockTask, name: 'Updated Name' }
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -821,11 +898,12 @@ describe('useTasks', () => {
       await tasks.updateTask(1, updatedTask)
 
       expect(tasks.tasks.value[0].name).toBe('Updated Name')
+      requestSpy.mockRestore()
     })
 
     it('removes deleted task from list', async () => {
-      // Load initial task
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -842,8 +920,7 @@ describe('useTasks', () => {
       expect(tasks.tasks.value).toHaveLength(1)
       expect(tasks.pagination.value.total).toBe(1)
 
-      // Delete task
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -855,6 +932,7 @@ describe('useTasks', () => {
 
       expect(tasks.tasks.value).toHaveLength(0)
       expect(tasks.pagination.value.total).toBe(0)
+      requestSpy.mockRestore()
     })
   })
 })

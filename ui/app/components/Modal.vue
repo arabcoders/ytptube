@@ -17,9 +17,9 @@
 </template>
 
 <script setup lang="ts">
-import { disableOpacity, enableOpacity } from '~/utils'
+import { disableOpacity, enableOpacity } from '~/utils';
 
-const emitter = defineEmits(['close'])
+const emitter = defineEmits(['close']);
 
 defineProps({
   title: {
@@ -32,22 +32,22 @@ defineProps({
     default: '',
     required: false,
   },
-})
+});
 
 const handle_event = (e: KeyboardEvent) => {
   if (e.key !== 'Escape') {
-    return
+    return;
   }
-  emitter('close')
-}
+  emitter('close');
+};
 
 onMounted(() => {
-  document.addEventListener('keydown', handle_event)
-  disableOpacity()
-})
+  document.addEventListener('keydown', handle_event);
+  disableOpacity();
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handle_event)
-  enableOpacity()
-})
+  document.removeEventListener('keydown', handle_event);
+  enableOpacity();
+});
 </script>

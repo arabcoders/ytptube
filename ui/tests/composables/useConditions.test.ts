@@ -1,18 +1,34 @@
+import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test'
+
+const successMock = mock(() => {})
+const errorMock = mock(() => {})
+
+globalThis.useNotificationStore = () => ({
+  add: () => 'test-id',
+  markRead: () => {},
+}) as any
+
+;(globalThis.document as any).hasFocus = () => true
+
+mock.module('~/composables/useNotification', () => ({
+  useNotification: () => ({ success: successMock, error: errorMock }),
+  default: () => ({ success: successMock, error: errorMock }),
+}))
+
+mock.module('~/stores/notification', () => ({
+  useNotificationStore: () => ({
+    add: () => 'test-id',
+    markRead: () => {},
+  }),
+}))
+
+// eslint-disable-next-line import/first
 import * as utils from '~/utils/index'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+// eslint-disable-next-line import/first
 import { useConditions } from '~/composables/useConditions'
+// eslint-disable-next-line import/first
 import type { Condition, Pagination } from '~/types/conditions'
 
-vi.mock('~/composables/useNotification', () => {
-  const success = vi.fn()
-  const error = vi.fn()
-  return {
-    useNotification: () => ({ success, error }),
-    default: () => ({ success, error }),
-  }
-})
-
-// Sample data
 const mockCondition: Condition = {
   id: 1,
   name: 'Test Condition',
@@ -33,7 +49,6 @@ const mockPagination: Pagination = {
   has_prev: false,
 }
 
-// Helper to create a mock Response object
 function createMockResponse({ ok, status, jsonData }: { ok: boolean; status: number; jsonData: any }) {
   return {
     ok,
@@ -60,12 +75,14 @@ function createMockResponse({ ok, status, jsonData }: { ok: boolean; status: num
 
 describe('useConditions', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    successMock.mockClear()
+    errorMock.mockClear()
   })
 
   describe('loadConditions', () => {
     it('loads conditions with pagination successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -83,6 +100,7 @@ describe('useConditions', () => {
       expect(conditions.conditions.value[0]).toEqual(mockCondition)
       expect(conditions.pagination.value).toEqual(mockPagination)
       expect(conditions.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('sorts conditions by priority then name', async () => {
@@ -92,7 +110,8 @@ describe('useConditions', () => {
         { ...mockCondition, id: 3, name: 'C', priority: 1 },
       ]
 
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -107,17 +126,18 @@ describe('useConditions', () => {
       await conditions.loadConditions()
 
       const sorted = conditions.conditions.value
-      // Priority descending (2 before 1), then name ascending (A before B)
       expect(sorted[0].priority).toBe(2)
       expect(sorted[0].name).toBe('A')
       expect(sorted[1].priority).toBe(2)
       expect(sorted[1].name).toBe('B')
       expect(sorted[2].priority).toBe(1)
       expect(sorted[2].name).toBe('C')
+      requestSpy.mockRestore()
     })
 
     it('handles empty conditions list', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -133,10 +153,12 @@ describe('useConditions', () => {
 
       expect(conditions.conditions.value).toEqual([])
       expect(conditions.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles errors during load', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -148,12 +170,14 @@ describe('useConditions', () => {
       await conditions.loadConditions()
 
       expect(conditions.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('getCondition', () => {
     it('fetches a single condition successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -166,10 +190,12 @@ describe('useConditions', () => {
 
       expect(result).toEqual(mockCondition)
       expect(conditions.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles 404 not found', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -182,12 +208,14 @@ describe('useConditions', () => {
 
       expect(result).toBeNull()
       expect(conditions.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('createCondition', () => {
     it('creates a condition successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -205,10 +233,12 @@ describe('useConditions', () => {
       expect(result).toEqual(mockCondition)
       expect(conditions.conditions.value).toContainEqual(mockCondition)
       expect(conditions.pagination.value.total).toBe(initialTotal + 1)
+      requestSpy.mockRestore()
     })
 
     it('calls callback on success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -216,7 +246,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
       const newCondition = { ...mockCondition }
       delete newCondition.id
@@ -229,10 +259,12 @@ describe('useConditions', () => {
         detail: null,
         data: mockCondition,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -240,7 +272,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
       const newCondition = { ...mockCondition }
       delete newCondition.id
@@ -253,12 +285,14 @@ describe('useConditions', () => {
           error: expect.any(String),
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('updateCondition', () => {
     it('updates a condition successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -272,11 +306,13 @@ describe('useConditions', () => {
       const result = await conditions.updateCondition(1, updated)
 
       expect(result?.name).toBe('Updated Name')
+      requestSpy.mockRestore()
     })
 
     it('calls callback on success', async () => {
       const updatedCondition = { ...mockCondition, name: 'Updated' }
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -284,7 +320,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
 
       await conditions.updateCondition(1, updatedCondition, callback)
@@ -295,10 +331,12 @@ describe('useConditions', () => {
         detail: null,
         data: updatedCondition,
       })
+      requestSpy.mockRestore()
     })
 
     it('removes id field from condition before sending', async () => {
-      const requestSpy = vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -311,12 +349,14 @@ describe('useConditions', () => {
 
       const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
       expect(requestBody.id).toBeUndefined()
+      requestSpy.mockRestore()
     })
   })
 
   describe('patchCondition', () => {
     it('patches a condition successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -328,11 +368,13 @@ describe('useConditions', () => {
       const result = await conditions.patchCondition(1, { enabled: false })
 
       expect(result?.enabled).toBe(false)
+      requestSpy.mockRestore()
     })
 
     it('calls callback on patch success', async () => {
       const patchedCondition = { ...mockCondition, enabled: false }
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -340,7 +382,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
 
       await conditions.patchCondition(1, { enabled: false }, callback)
@@ -351,10 +393,12 @@ describe('useConditions', () => {
         detail: null,
         data: patchedCondition,
       })
+      requestSpy.mockRestore()
     })
 
     it('handles validation errors with callback', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -362,7 +406,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
 
       await conditions.patchCondition(1, { priority: -1 }, callback)
@@ -373,12 +417,14 @@ describe('useConditions', () => {
           error: expect.any(String),
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('deleteCondition', () => {
     it('deletes a condition successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -393,10 +439,12 @@ describe('useConditions', () => {
 
       expect(result).toBe(true)
       expect(conditions.pagination.value.total).toBe(Math.max(0, initialTotal - 1))
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -404,7 +452,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
 
       await conditions.deleteCondition(1, callback)
@@ -415,10 +463,12 @@ describe('useConditions', () => {
         detail: null,
         data: true,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -426,7 +476,7 @@ describe('useConditions', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const conditions = useConditions()
 
       await conditions.deleteCondition(999, callback)
@@ -438,6 +488,7 @@ describe('useConditions', () => {
           data: false,
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
@@ -449,7 +500,8 @@ describe('useConditions', () => {
         data: { duration: 120 },
       }
 
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -465,10 +517,12 @@ describe('useConditions', () => {
 
       expect(result).toEqual(testResponse)
       expect(result?.status).toBe(true)
+      requestSpy.mockRestore()
     })
 
     it('handles test errors', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -484,12 +538,14 @@ describe('useConditions', () => {
 
       expect(result).toBeNull()
       expect(conditions.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('error handling', () => {
     it('throws when throwInstead is true', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -501,10 +557,12 @@ describe('useConditions', () => {
       conditions.throwInstead.value = true
 
       await expect(conditions.loadConditions()).rejects.toThrow()
+      requestSpy.mockRestore()
     })
 
     it('clears error on clearError call', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -515,7 +573,6 @@ describe('useConditions', () => {
       const conditions = useConditions()
       conditions.throwInstead.value = false
 
-      // Don't throw, just capture the error
       await conditions.loadConditions()
 
       expect(conditions.lastError.value).toBeTruthy()
@@ -523,6 +580,7 @@ describe('useConditions', () => {
       conditions.clearError()
 
       expect(conditions.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
   })
 
@@ -530,7 +588,8 @@ describe('useConditions', () => {
     it('sets addInProgress during create operation', async () => {
       let inProgressDuringCall = false
 
-      vi.spyOn(utils, 'request').mockImplementation(async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockImplementation(async () => {
         const conditions = useConditions()
         inProgressDuringCall = conditions.addInProgress.value
         return createMockResponse({
@@ -548,6 +607,7 @@ describe('useConditions', () => {
 
       expect(inProgressDuringCall).toBe(true)
       expect(conditions.addInProgress.value).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 })

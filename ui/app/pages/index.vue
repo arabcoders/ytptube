@@ -12,8 +12,13 @@
         <div class="is-pulled-right">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter">
-              <input type="search" v-model.lazy="query" class="input" id="filter"
-                placeholder="Filter displayed content">
+              <input
+                type="search"
+                v-model.lazy="query"
+                class="input"
+                id="filter"
+                placeholder="Filter displayed content"
+              />
               <span class="icon is-left"><i class="fas fa-filter" /></span>
             </p>
 
@@ -25,28 +30,49 @@
             </p>
 
             <p class="control">
-              <button class="button is-warning" @click="pauseDownload" v-if="false === config.paused">
+              <button
+                class="button is-warning"
+                @click="pauseDownload"
+                v-if="false === config.paused"
+              >
                 <span class="icon"><i class="fas fa-pause" /></span>
                 <span v-if="!isMobile">Pause</span>
               </button>
-              <button class="button is-danger" @click="resumeDownload" v-else v-tooltip.bottom="'Resume downloading.'">
+              <button
+                class="button is-danger"
+                @click="resumeDownload"
+                v-else
+                v-tooltip.bottom="'Resume downloading.'"
+              >
                 <span class="icon"><i class="fas fa-play" /></span>
                 <span v-if="!isMobile">Resume</span>
               </button>
             </p>
 
             <p class="control">
-              <button class="button is-primary has-tooltip-bottom" @click="config.showForm = !config.showForm">
+              <button
+                class="button is-primary has-tooltip-bottom"
+                @click="config.showForm = !config.showForm"
+              >
                 <span class="icon"><i class="fa-solid fa-plus" /></span>
                 <span v-if="!isMobile">Add</span>
               </button>
             </p>
 
             <p class="control">
-              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => changeDisplay()">
-                <span class="icon"><i class="fa-solid"
-                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+              <button
+                v-tooltip.bottom="'Change display style'"
+                class="button has-tooltip-bottom"
+                @click="() => changeDisplay()"
+              >
+                <span class="icon"
+                  ><i
+                    class="fa-solid"
+                    :class="{
+                      'fa-table': display_style !== 'list',
+                      'fa-table-list': display_style === 'list',
+                    }"
+                /></span>
                 <span v-if="!isMobile">
                   {{ display_style === 'list' ? 'List' : 'Grid' }}
                 </span>
@@ -55,15 +81,19 @@
           </div>
         </div>
         <div v-if="!isMobile">
-          <span class="subtitle">
-            Queued and completed downloads are displayed here.
-          </span>
+          <span class="subtitle"> Queued and completed downloads are displayed here. </span>
         </div>
       </div>
     </div>
 
-    <NewDownload v-if="config.showForm" :item="item_form" @clear_form="item_form = {}"
-      @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)" />
+    <NewDownload
+      v-if="config.showForm"
+      :item="item_form"
+      @clear_form="item_form = {}"
+      @getInfo="
+        (url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)
+      "
+    />
 
     <div class="tabs is-boxed is-medium">
       <ul>
@@ -86,132 +116,170 @@
 
     <div class="tab-content">
       <div v-show="'queue' === activeTab">
-        <Queue @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-          :thumbnails="show_thumbnail" :query="query"
-          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+        <Queue
+          @getInfo="
+            (url: string, preset: string = '', cli: string = '') =>
+              view_info(url, false, preset, cli)
+          "
+          :thumbnails="show_thumbnail"
+          :query="query"
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+          @clear_search="query = ''"
+        />
       </div>
 
       <div v-show="'history' === activeTab">
-        <History @getInfo="(url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)"
-          @add_new="(item: item_request) => toNewDownload(item)" :query="query" :thumbnails="show_thumbnail"
-          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)" @clear_search="query = ''" />
+        <History
+          @getInfo="
+            (url: string, preset: string = '', cli: string = '') =>
+              view_info(url, false, preset, cli)
+          "
+          @add_new="(item: item_request) => toNewDownload(item)"
+          :query="query"
+          :thumbnails="show_thumbnail"
+          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+          @clear_search="query = ''"
+        />
       </div>
     </div>
 
-    <GetInfo v-if="info_view.url" :link="info_view.url" :preset="info_view.preset" :cli="info_view.cli"
-      :useUrl="info_view.useUrl" @closeModel="close_info()" />
+    <GetInfo
+      v-if="info_view.url"
+      :link="info_view.url"
+      :preset="info_view.preset"
+      :cli="info_view.cli"
+      :useUrl="info_view.useUrl"
+      @closeModel="close_info()"
+    />
 
-    <ConfirmDialog v-if="dialog_confirm.visible" :visible="dialog_confirm.visible" :title="dialog_confirm.title"
-      :html_message="dialog_confirm.html_message" :options="dialog_confirm.options" @confirm="dialog_confirm.confirm"
-      @cancel="() => dialog_confirm.visible = false" />
+    <ConfirmDialog
+      v-if="dialog_confirm.visible"
+      :visible="dialog_confirm.visible"
+      :title="dialog_confirm.title"
+      :html_message="dialog_confirm.html_message"
+      :options="dialog_confirm.options"
+      @confirm="dialog_confirm.confirm"
+      @cancel="() => (dialog_confirm.visible = false)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
-import type { item_request } from '~/types/item'
-import type { StoreItem } from '~/types/store'
+import { useStorage } from '@vueuse/core';
+import type { item_request } from '~/types/item';
+import type { StoreItem } from '~/types/store';
 
-const config = useConfigStore()
-const stateStore = useStateStore()
-const route = useRoute()
-const router = useRouter()
+const config = useConfigStore();
+const stateStore = useStateStore();
+const route = useRoute();
+const router = useRouter();
 
-const bg_enable = useStorage<boolean>('random_bg', true)
-const bg_opacity = useStorage<number>('random_bg_opacity', 0.95)
-const display_style = useStorage<string>('display_style', 'grid')
-const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
-const isMobile = useMediaQuery({ maxWidth: 1024 })
+const bg_enable = useStorage<boolean>('random_bg', true);
+const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
+const display_style = useStorage<string>('display_style', 'grid');
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
+const isMobile = useMediaQuery({ maxWidth: 1024 });
 
 const info_view = ref({
   url: '',
   preset: '',
   cli: '',
   useUrl: false,
-}) as Ref<{ url: string, preset: string, cli: string, useUrl: boolean }>
-const item_form = ref<item_request | object>({})
-const query = ref()
-const toggleFilter = ref(false)
+}) as Ref<{ url: string; preset: string; cli: string; useUrl: boolean }>;
+const item_form = ref<item_request | object>({});
+const query = ref();
+const toggleFilter = ref(false);
 const dialog_confirm = ref({
   visible: false,
   title: 'Confirm Action',
-  confirm: () => { },
+  confirm: () => {},
   html_message: '',
   options: [],
-})
+});
 
 // Tab management with URL state
-type TabType = 'queue' | 'history'
+type TabType = 'queue' | 'history';
 
-const activeTab = ref<TabType>('queue')
+const activeTab = ref<TabType>('queue');
 
 const getInitialTab = (): TabType => {
-  const tabParam = route.query.tab as string
-  return (tabParam === 'queue' || tabParam === 'history') ? tabParam : 'queue'
-}
+  const tabParam = route.query.tab as string;
+  return tabParam === 'queue' || tabParam === 'history' ? tabParam : 'queue';
+};
 
 const setActiveTab = async (tab: TabType): Promise<void> => {
-  activeTab.value = tab
-  await router.push({ query: { ...route.query, tab }, replace: true })
-}
+  activeTab.value = tab;
+  await router.push({ query: { ...route.query, tab }, replace: true });
+};
 
-watch(() => route.query.tab, (newTab) => {
-  if (!['queue', 'history'].includes(newTab as string)) {
-    return
-  }
-  activeTab.value = newTab as TabType
-})
+watch(
+  () => route.query.tab,
+  (newTab) => {
+    if (!['queue', 'history'].includes(newTab as string)) {
+      return;
+    }
+    activeTab.value = newTab as TabType;
+  },
+);
 
 onMounted(async () => {
-  const route = useRoute()
+  const route = useRoute();
 
   if (route.query?.simple !== undefined) {
-    const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false)
-    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
-    await nextTick()
-    const url = new URL(window.location.href)
-    url.searchParams.delete('simple')
-    window.history.replaceState({}, '', url.toString())
+    const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
+    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string);
+    await nextTick();
+    const url = new URL(window.location.href);
+    url.searchParams.delete('simple');
+    window.history.replaceState({}, '', url.toString());
   }
 
-  activeTab.value = getInitialTab()
-  useHead({ title: getTitle() })
-})
+  activeTab.value = getInitialTab();
+  useHead({ title: getTitle() });
+});
 
-const queueCount = computed(() => stateStore.count('queue'))
-const historyCount = computed(() => stateStore.count('history'))
+const queueCount = computed(() => stateStore.count('queue'));
+const historyCount = computed(() => stateStore.count('history'));
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
-    query.value = ''
+    query.value = '';
   }
 });
 
 const getTitle = (): string => {
   if (!config.app.ui_update_title) {
-    return 'YTPTube'
+    return 'YTPTube';
   }
-  return `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}:${config.app.max_workers_per_extractor} | ${Object.keys(stateStore.history).length || 0} )`
-}
+  return `YTPTube: ( ${Object.keys(stateStore.queue).length || 0}/${config.app.max_workers}:${config.app.max_workers_per_extractor} | ${Object.keys(stateStore.history).length || 0} )`;
+};
 
-watch(() => stateStore.history, () => {
-  if (!config.app.ui_update_title) {
-    return
-  }
-  useHead({ title: getTitle() })
-}, { deep: true })
+watch(
+  () => stateStore.history,
+  () => {
+    if (!config.app.ui_update_title) {
+      return;
+    }
+    useHead({ title: getTitle() });
+  },
+  { deep: true },
+);
 
-watch(() => stateStore.queue, () => {
-  if (!config.app.ui_update_title) {
-    return
-  }
-  useHead({ title: getTitle() })
-}, { deep: true })
+watch(
+  () => stateStore.queue,
+  () => {
+    if (!config.app.ui_update_title) {
+      return;
+    }
+    useHead({ title: getTitle() });
+  },
+  { deep: true },
+);
 
-const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' })
+const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' });
 
 const pauseDownload = () => {
-  dialog_confirm.value.visible = true
+  dialog_confirm.value.visible = true;
   dialog_confirm.value.html_message = `
   <span class="icon-text">
     <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
@@ -223,49 +291,53 @@ const pauseDownload = () => {
       <li>This will not stop downloads that are currently in progress.</li>
       <li>If you are in middle of adding a playlist/channel, it will break and stop adding more items.</li>
     </ul>
-  </span>`
+  </span>`;
   dialog_confirm.value.confirm = async () => {
-    await request('/api/system/pause', { method: 'POST' })
-    dialog_confirm.value.visible = false
-  }
-}
+    await request('/api/system/pause', { method: 'POST' });
+    dialog_confirm.value.visible = false;
+  };
+};
 
 const close_info = () => {
-  info_view.value.url = ''
-  info_view.value.preset = ''
-  info_view.value.useUrl = false
-}
+  info_view.value.url = '';
+  info_view.value.preset = '';
+  info_view.value.useUrl = false;
+};
 
 const view_info = (url: string, useUrl: boolean = false, preset: string = '', cli: string = '') => {
-  info_view.value.url = url
-  info_view.value.useUrl = useUrl
-  info_view.value.preset = preset
-  info_view.value.cli = cli
-}
+  info_view.value.url = url;
+  info_view.value.useUrl = useUrl;
+  info_view.value.preset = preset;
+  info_view.value.cli = cli;
+};
 
-watch(() => info_view.value.url, v => {
-  if (!bg_enable.value) {
-    return
-  }
+watch(
+  () => info_view.value.url,
+  (v) => {
+    if (!bg_enable.value) {
+      return;
+    }
 
-  document.querySelector('body')?.setAttribute("style", `opacity: ${v ? 1 : bg_opacity.value}`)
-})
+    document.querySelector('body')?.setAttribute('style', `opacity: ${v ? 1 : bg_opacity.value}`);
+  },
+);
 
-const changeDisplay = () => display_style.value = display_style.value === 'grid' ? 'list' : 'grid'
+const changeDisplay = () =>
+  (display_style.value = display_style.value === 'grid' ? 'list' : 'grid');
 
 const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
   if (!item) {
-    return
+    return;
   }
 
   if (config.showForm) {
-    config.showForm = false
-    await nextTick()
+    config.showForm = false;
+    await nextTick();
   }
 
-  item_form.value = item
+  item_form.value = item;
 
-  await nextTick()
-  config.showForm = true
-}
+  await nextTick();
+  config.showForm = true;
+};
 </script>

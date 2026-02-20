@@ -1,19 +1,19 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly } from 'vue';
 
-import { useNotification } from '~/composables/useNotification'
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
+import { useNotification } from '~/composables/useNotification';
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
 import type {
   Condition,
   ConditionTestRequest,
   ConditionTestResponse,
   Pagination,
-} from '~/types/conditions'
-import type { APIResponse } from '~/types/responses'
+} from '~/types/conditions';
+import type { APIResponse } from '~/types/responses';
 
 /**
  * List of all conditions in memory.
  */
-const conditions = ref<Array<Condition>>([])
+const conditions = ref<Array<Condition>>([]);
 /**
  * Pagination state for conditions list.
  */
@@ -24,32 +24,32 @@ const pagination = ref<Pagination>({
   total_pages: 0,
   has_next: false,
   has_prev: false,
-})
+});
 /**
  * Indicates if a request is in progress.
  */
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(false);
 
 /**
  * Indicates if an add/update operation is in progress.
  * Used separately from isLoading for finer control.
  */
-const addInProgress = ref<boolean>(false)
+const addInProgress = ref<boolean>(false);
 
 /**
  * Stores the last error message, if any.
  */
-const lastError = ref<string | null>(null)
+const lastError = ref<string | null>(null);
 
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
-const throwInstead = ref(false)
+const throwInstead = ref(false);
 
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification()
+const notify = useNotification();
 
 /**
  * Sorts conditions by priority (descending - higher number first), then name (A-Z).
@@ -59,12 +59,12 @@ const notify = useNotification()
 const sortConditions = (items: Array<Condition>): Array<Condition> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name);
     }
 
-    return b.priority - a.priority
-  })
-}
+    return b.priority - a.priority;
+  });
+};
 
 /**
  * Safely reads JSON from a Response, returns null on error.
@@ -73,13 +73,12 @@ const sortConditions = (items: Array<Condition>): Array<Condition> => {
  */
 const readJson = async (response: Response): Promise<unknown> => {
   try {
-    const clone = response.clone()
-    return await clone.json()
+    const clone = response.clone();
+    return await clone.json();
+  } catch {
+    return null;
   }
-  catch {
-    return null
-  }
-}
+};
 
 /**
  * Throws an error if the response is not OK, using API error message if available.
@@ -88,23 +87,23 @@ const readJson = async (response: Response): Promise<unknown> => {
  */
 const ensureSuccess = async (response: Response): Promise<void> => {
   if (response.ok) {
-    return
+    return;
   }
 
-  const payload = await readJson(response)
-  const message = await parse_api_error(payload)
-  throw new Error(message)
-}
+  const payload = await readJson(response);
+  const message = await parse_api_error(payload);
+  throw new Error(message);
+};
 
 /**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
-  lastError.value = message
-  notify.error(message)
-}
+  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  lastError.value = message;
+  notify.error(message);
+};
 
 /**
  * Updates or adds a condition in the conditions list, keeping sort order.
@@ -112,15 +111,15 @@ const handleError = (error: unknown): void => {
  * @param condition Condition to update/add
  */
 const updateConditions = (condition: Condition): void => {
-  const isNew = !conditions.value.some(item => item.id === condition.id)
+  const isNew = !conditions.value.some((item) => item.id === condition.id);
   conditions.value = sortConditions([
-    ...conditions.value.filter(item => item.id !== condition.id),
+    ...conditions.value.filter((item) => item.id !== condition.id),
     condition,
-  ])
+  ]);
   if (isNew) {
-    pagination.value.total++
+    pagination.value.total++;
   }
-}
+};
 
 /**
  * Removes a condition from the conditions list by ID.
@@ -128,12 +127,12 @@ const updateConditions = (condition: Condition): void => {
  * @param id Condition ID
  */
 const removeCondition = (id: number) => {
-  const initialLength = conditions.value.length
-  conditions.value = conditions.value.filter(item => item.id !== id)
+  const initialLength = conditions.value.length;
+  conditions.value = conditions.value.filter((item) => item.id !== id);
   if (conditions.value.length < initialLength) {
-    pagination.value.total = Math.max(0, pagination.value.total - 1)
+    pagination.value.total = Math.max(0, pagination.value.total - 1);
   }
-}
+};
 
 /**
  * Loads all conditions from the API with pagination support.
@@ -141,31 +140,32 @@ const removeCondition = (id: number) => {
  * @param page Page number
  * @param perPage Items per page
  */
-const loadConditions = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
-  isLoading.value = true
+const loadConditions = async (
+  page: number = 1,
+  perPage: number | undefined = undefined,
+): Promise<void> => {
+  isLoading.value = true;
   try {
-    let url = `/api/conditions/?page=${page}`
+    let url = `/api/conditions/?page=${page}`;
     if (perPage !== undefined) {
-      url += `&per_page=${perPage}`
+      url += `&per_page=${perPage}`;
     }
-    const response = await request(url)
-    await ensureSuccess(response)
+    const response = await request(url);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const { items, pagination: paginationData } = await parse_list_response<Condition>(json)
+    const json = await response.json();
+    const { items, pagination: paginationData } = await parse_list_response<Condition>(json);
 
-    conditions.value = sortConditions(items)
-    pagination.value = paginationData
-    lastError.value = null
+    conditions.value = sortConditions(items);
+    pagination.value = paginationData;
+    lastError.value = null;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+  } finally {
+    isLoading.value = false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+};
 
 /**
  * Fetches a single condition by ID from the API.
@@ -174,21 +174,20 @@ const loadConditions = async (page: number = 1, perPage: number | undefined = un
  */
 const getCondition = async (id: number): Promise<Condition | null> => {
   try {
-    const response = await request(`/api/conditions/${id}`)
-    await ensureSuccess(response)
+    const response = await request(`/api/conditions/${id}`);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const condition = await parse_api_response<Condition>(json)
+    const json = await response.json();
+    const condition = await parse_api_response<Condition>(json);
 
-    lastError.value = null
-    return condition
+    lastError.value = null;
+    return condition;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Creates a new condition via API.
@@ -200,43 +199,41 @@ const createCondition = async (
   condition: Omit<Condition, 'id'>,
   callback?: (response: APIResponse<Condition>) => void,
 ): Promise<Condition | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     const response = await request('/api/conditions/', {
       method: 'POST',
       body: JSON.stringify(condition),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const created = await parse_api_response<Condition>(json)
+    const json = await response.json();
+    const created = await parse_api_response<Condition>(json);
 
-    updateConditions(created)
-    notify.success('Condition created.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: created })
-    }
-
-    return created
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateConditions(created);
+    notify.success('Condition created.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: created });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return created;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Updates an existing condition via API (PUT - full update).
@@ -250,46 +247,44 @@ const updateCondition = async (
   condition: Condition,
   callback?: (response: APIResponse<Condition>) => void,
 ): Promise<Condition | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     if (condition.id) {
-      condition.id = undefined
+      condition.id = undefined;
     }
     const response = await request(`/api/conditions/${id}`, {
       method: 'PUT',
       body: JSON.stringify(condition),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Condition>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Condition>(json);
 
-    updateConditions(updated)
-    notify.success(`Condition '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateConditions(updated);
+    notify.success(`Condition '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Partially updates an existing condition via API (PATCH).
@@ -303,46 +298,44 @@ const patchCondition = async (
   patch: Partial<Condition>,
   callback?: (response: APIResponse<Condition>) => void,
 ): Promise<Condition | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     if (patch.id) {
-      patch.id = undefined
+      patch.id = undefined;
     }
     const response = await request(`/api/conditions/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Condition>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Condition>(json);
 
-    updateConditions(updated)
-    notify.success(`Condition '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateConditions(updated);
+    notify.success(`Condition '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Deletes a condition by ID via API.
@@ -355,63 +348,63 @@ const deleteCondition = async (
   callback?: (response: APIResponse<boolean>) => void,
 ): Promise<boolean> => {
   try {
-    const response = await request(`/api/conditions/${id}`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/conditions/${id}`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    removeCondition(id)
-    notify.success('Condition deleted.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: true })
-    }
-
-    return true
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    removeCondition(id);
+    notify.success('Condition deleted.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: false })
+      callback({ success: true, error: null, detail: null, data: true });
     }
 
-    if (throwInstead.value) throw error
-    return false
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: false });
+    }
+
+    if (throwInstead.value) throw error;
+    return false;
   }
-}
+};
 
 /**
  * Tests a condition against a URL.
  * @param testRequest Test request parameters
  * @returns Test result or null on error
  */
-const testCondition = async (testRequest: ConditionTestRequest): Promise<ConditionTestResponse | null> => {
+const testCondition = async (
+  testRequest: ConditionTestRequest,
+): Promise<ConditionTestResponse | null> => {
   try {
     const response = await request('/api/conditions/test/', {
       method: 'POST',
       body: JSON.stringify(testRequest),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const result = await parse_api_response<ConditionTestResponse>(json)
+    const json = await response.json();
+    const result = await parse_api_response<ConditionTestResponse>(json);
 
-    lastError.value = null
-    return result
+    lastError.value = null;
+    return result;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Clears the last error message.
  */
-const clearError = () => lastError.value = null
+const clearError = () => (lastError.value = null);
 
 /**
  * useConditions composable
@@ -434,4 +427,4 @@ export const useConditions = () => ({
   testCondition,
   clearError,
   throwInstead,
-})
+});

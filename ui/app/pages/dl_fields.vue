@@ -5,7 +5,9 @@
         <span class="title is-4">
           <span class="icon-text">
             <template v-if="toggleForm">
-              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': itemRef, 'fa-plus': !itemRef }" /></span>
+              <span class="icon"
+                ><i class="fa-solid" :class="{ 'fa-edit': itemRef, 'fa-plus': !itemRef }"
+              /></span>
               <span>{{ itemRef ? `Edit - ${item.name}` : 'Add new field' }}</span>
             </template>
             <template v-else>
@@ -17,8 +19,13 @@
         <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter && items && items.length > 0">
-              <input type="search" v-model.lazy="query" class="input" id="filter"
-                placeholder="Filter displayed content">
+              <input
+                type="search"
+                v-model.lazy="query"
+                class="input"
+                id="filter"
+                placeholder="Filter displayed content"
+              />
               <span class="icon is-left"><i class="fas fa-filter" /></span>
             </p>
 
@@ -30,25 +37,44 @@
             </p>
 
             <p class="control">
-              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;">
+              <button
+                class="button is-primary"
+                @click="
+                  resetForm(false);
+                  toggleForm = !toggleForm;
+                "
+              >
                 <span class="icon"><i class="fas fa-add" /></span>
                 <span v-if="!isMobile">New Field</span>
               </button>
             </p>
             <p class="control">
-              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+              <button
+                v-tooltip.bottom="'Change display style'"
+                class="button has-tooltip-bottom"
+                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
+              >
                 <span class="icon">
-                  <i class="fa-solid"
-                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                  <i
+                    class="fa-solid"
+                    :class="{
+                      'fa-table': display_style !== 'list',
+                      'fa-table-list': display_style === 'list',
+                    }"
+                /></span>
                 <span v-if="!isMobile">
                   {{ display_style === 'list' ? 'List' : 'Grid' }}
                 </span>
               </button>
             </p>
             <p class="control">
-              <button class="button is-info" @click="async () => await loadContent(page)"
-                :class="{ 'is-loading': isLoading }" :disabled="isLoading" v-if="items && items.length > 0">
+              <button
+                class="button is-info"
+                @click="async () => await loadContent(page)"
+                :class="{ 'is-loading': isLoading }"
+                :disabled="isLoading"
+                v-if="items && items.length > 0"
+              >
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
               </button>
@@ -63,21 +89,40 @@
       </div>
 
       <div class="column is-12" v-if="!toggleForm && paging?.total_pages > 1">
-        <Pager :page="paging.page" :last_page="paging.total_pages" :isLoading="isLoading"
-          @navigate="async (newPage) => { page = newPage; await loadContent(newPage); }" />
+        <Pager
+          :page="paging.page"
+          :last_page="paging.total_pages"
+          :isLoading="isLoading"
+          @navigate="
+            async (newPage) => {
+              page = newPage;
+              await loadContent(newPage);
+            }
+          "
+        />
       </div>
 
       <div class="column is-12" v-if="toggleForm">
-        <DLFieldForm :addInProgress="dlFields.addInProgress.value" :reference="itemRef" :item="(item as DLField)"
-          @cancel="resetForm(true)" @submit="updateItem" />
+        <DLFieldForm
+          :addInProgress="dlFields.addInProgress.value"
+          :reference="itemRef"
+          :item="item as DLField"
+          @cancel="resetForm(true)"
+          @submit="updateItem"
+        />
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="!isLoading && !toggleForm && (filteredItems && filteredItems.length > 0)">
+    <div
+      class="columns is-multiline"
+      v-if="!isLoading && !toggleForm && filteredItems && filteredItems.length > 0"
+    >
       <div class="column is-12" v-if="'list' === display_style">
         <div class="table-container">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-            style="min-width: 850px; table-layout: fixed;">
+          <table
+            class="table is-striped is-hoverable is-fullwidth is-bordered"
+            style="min-width: 850px; table-layout: fixed"
+          >
             <thead>
               <tr class="has-text-centered is-unselectable">
                 <th width="80%">
@@ -111,19 +156,28 @@
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
                     <div class="control">
-                      <button class="button is-info is-small is-fullwidth" @click="exportItem(field)">
+                      <button
+                        class="button is-info is-small is-fullwidth"
+                        @click="exportItem(field)"
+                      >
                         <span class="icon"><i class="fa-solid fa-file-export" /></span>
                         <span v-if="!isMobile">Export</span>
                       </button>
                     </div>
                     <div class="control">
-                      <button class="button is-warning is-small is-fullwidth" @click="editItem(field)">
+                      <button
+                        class="button is-warning is-small is-fullwidth"
+                        @click="editItem(field)"
+                      >
                         <span class="icon"><i class="fa-solid fa-edit" /></span>
                         <span v-if="!isMobile">Edit</span>
                       </button>
                     </div>
                     <div class="control">
-                      <button class="button is-danger is-small is-fullwidth" @click="deleteItem(field)">
+                      <button
+                        class="button is-danger is-small is-fullwidth"
+                        @click="deleteItem(field)"
+                      >
                         <span class="icon"><i class="fa-solid fa-trash" /></span>
                         <span v-if="!isMobile">Delete</span>
                       </button>
@@ -149,7 +203,11 @@
                     </span>
                   </div>
                   <div class="control">
-                    <a class="has-text-info" v-tooltip="'Export item'" @click.prevent="exportItem(field)">
+                    <a
+                      class="has-text-info"
+                      v-tooltip="'Export item'"
+                      @click.prevent="exportItem(field)"
+                    >
                       <span class="icon"><i class="fa-solid fa-file-export" /></span>
                     </a>
                   </div>
@@ -187,19 +245,32 @@
       </template>
     </div>
 
-    <div class="columns is-multiline" v-if="!toggleForm && (isLoading || !filteredItems || filteredItems.length < 1)">
+    <div
+      class="columns is-multiline"
+      v-if="!toggleForm && (isLoading || !filteredItems || filteredItems.length < 1)"
+    >
       <div class="column is-12">
         <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
           Loading data. Please wait...
         </Message>
-        <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
-          @close="query = ''">
-          <p>No results found for the query: <code>{{ query }}</code>.</p>
+        <Message
+          title="No Results"
+          class="is-warning"
+          icon="fas fa-search"
+          v-else-if="query"
+          :useClose="true"
+          @close="query = ''"
+        >
+          <p>
+            No results found for the query: <code>{{ query }}</code
+            >.
+          </p>
           <p>Please try a different search term.</p>
         </Message>
         <Message v-else title="No items" class="is-warning" icon="fas fa-exclamation-circle">
-          There are no custom defined fields yet. Click the <span class="icon"><i class="fas fa-add" /></span>
-          <strong>New Field</strong> button to add your first field.
+          There are no custom defined fields yet. Click the
+          <span class="icon"><i class="fas fa-add" /></span> <strong>New Field</strong> button to
+          add your first field.
         </Message>
       </div>
     </div>
@@ -207,92 +278,98 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
-import type { DLField } from '~/types/dl_fields'
-import { useConfirm } from '~/composables/useConfirm'
-import { useDlFields } from '~/composables/useDlFields'
-import type { APIResponse } from '~/types/responses'
-import { copyText, encode } from '~/utils'
+import { useStorage } from '@vueuse/core';
+import type { DLField } from '~/types/dl_fields';
+import { useConfirm } from '~/composables/useConfirm';
+import { useDlFields } from '~/composables/useDlFields';
+import type { APIResponse } from '~/types/responses';
+import { copyText, encode } from '~/utils';
 
-const box = useConfirm()
-const isMobile = useMediaQuery({ maxWidth: 1024 })
-const display_style = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid')
-const dlFields = useDlFields()
-const route = useRoute()
+const box = useConfirm();
+const isMobile = useMediaQuery({ maxWidth: 1024 });
+const display_style = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
+const dlFields = useDlFields();
+const route = useRoute();
 
-const items = dlFields.dlFields as Ref<DLField[]>
-const paging = dlFields.pagination
-const isLoading = dlFields.isLoading
-const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1)
-const item = ref<Partial<DLField>>({})
-const itemRef = ref<number | null | undefined>(null)
-const toggleForm = ref(false)
-const query = ref<string>('')
-const toggleFilter = ref(false)
+const items = dlFields.dlFields as Ref<DLField[]>;
+const paging = dlFields.pagination;
+const isLoading = dlFields.isLoading;
+const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1);
+const item = ref<Partial<DLField>>({});
+const itemRef = ref<number | null | undefined>(null);
+const toggleForm = ref(false);
+const query = ref<string>('');
+const toggleFilter = ref(false);
 
 const filteredItems = computed<DLField[]>(() => {
-  const q = query.value?.toLowerCase()
-  if (!q) return items.value
-  return items.value.filter(entry => deepIncludes(entry, q, new WeakSet()))
-})
+  const q = query.value?.toLowerCase();
+  if (!q) return items.value;
+  return items.value.filter((entry) => deepIncludes(entry, q, new WeakSet()));
+});
 
 const loadContent = async (pageNumber: number = 1): Promise<void> => {
-  await dlFields.loadDlFields(pageNumber)
-  await nextTick()
+  await dlFields.loadDlFields(pageNumber);
+  await nextTick();
   if (dlFields.pagination.value.total_pages > 1) {
-    useRouter().replace({ query: { ...route.query, page: pageNumber.toString() } })
+    useRouter().replace({ query: { ...route.query, page: pageNumber.toString() } });
   }
-}
+};
 
-watch(toggleFilter, value => {
+watch(toggleFilter, (value) => {
   if (!value) {
-    query.value = ''
+    query.value = '';
   }
-})
+});
 
 const resetForm = (closeForm = false): void => {
-  item.value = {}
-  itemRef.value = null
+  item.value = {};
+  itemRef.value = null;
   if (closeForm) {
-    toggleForm.value = false
+    toggleForm.value = false;
   }
-}
+};
 
 const deleteItem = async (field: DLField): Promise<void> => {
   if (true !== (await box.confirm(`Delete '${field.name}'?`))) {
-    return
+    return;
   }
-  await dlFields.deleteDlField(field.id!)
-}
+  await dlFields.deleteDlField(field.id!);
+};
 
-const updateItem = async ({ reference, item: updatedItem }: {
-  reference: number | null | undefined,
-  item: DLField
+const updateItem = async ({
+  reference,
+  item: updatedItem,
+}: {
+  reference: number | null | undefined;
+  item: DLField;
 }): Promise<void> => {
   const cb = (resp: APIResponse) => {
     if (resp.success) {
-      resetForm(true)
+      resetForm(true);
     }
-  }
+  };
 
   if (reference) {
-    await dlFields.patchDlField(reference, updatedItem, cb)
+    await dlFields.patchDlField(reference, updatedItem, cb);
   } else {
-    await dlFields.createDlField(updatedItem, cb)
+    await dlFields.createDlField(updatedItem, cb);
   }
-}
+};
 
 const editItem = (field: DLField): void => {
-  item.value = { ...field }
-  itemRef.value = field.id
-  toggleForm.value = true
-}
+  item.value = { ...field };
+  itemRef.value = field.id;
+  toggleForm.value = true;
+};
 
-const exportItem = (field: DLField): void => copyText(encode({
-  ...Object.fromEntries(Object.entries(field).filter(([k, v]) => !!v && 'id' !== k)),
-  _type: 'dl_field',
-  _version: '1.0',
-}))
+const exportItem = (field: DLField): void =>
+  copyText(
+    encode({
+      ...Object.fromEntries(Object.entries(field).filter(([k, v]) => !!v && 'id' !== k)),
+      _type: 'dl_field',
+      _version: '1.0',
+    }),
+  );
 
-onMounted(async () => await loadContent(page.value))
+onMounted(async () => await loadContent(page.value));
 </script>

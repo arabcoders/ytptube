@@ -7,30 +7,56 @@
             <template v-if="!isMobile">{{ greetingMessage }}</template>
             <template v-else>What would you like to download?</template>
             <span class="is-pulled-right">
-              <span class="icon has-text-info is-pointer mr-2" v-if="!socketStore.isConnected"
-                v-tooltip="'Reload queue'" @click="async () => await refreshQueue()">
+              <span
+                class="icon has-text-info is-pointer mr-2"
+                v-if="!socketStore.isConnected"
+                v-tooltip="'Reload queue'"
+                @click="async () => await refreshQueue()"
+              >
                 <i class="fas fa-sync-alt" :class="{ 'fa-spin': isRefreshing }" />
               </span>
 
-              <span class="icon is-pointer" :class="connectionStatusColor" @click="$emit('show_settings')"
-                v-tooltip="'WebUI Settings'">
-                <i class="fas fa-cogs" /></span>
+              <span
+                class="icon is-pointer"
+                :class="connectionStatusColor"
+                @click="$emit('show_settings')"
+                v-tooltip="'WebUI Settings'"
+              >
+                <i class="fas fa-cogs"
+              /></span>
             </span>
           </label>
           <div class="field has-addons">
             <div class="control">
-              <button type="button" class="button is-info" @click="() => showExtras = !showExtras"
-                v-tooltip="showExtras ? 'Hide extra options' : 'Show extra options'">
-                <span class="icon"><i class="fas" :class="showExtras ? 'fa-chevron-up' : 'fa-chevron-down'" /></span>
+              <button
+                type="button"
+                class="button is-info"
+                @click="() => (showExtras = !showExtras)"
+                v-tooltip="showExtras ? 'Hide extra options' : 'Show extra options'"
+              >
+                <span class="icon"
+                  ><i class="fas" :class="showExtras ? 'fa-chevron-up' : 'fa-chevron-down'"
+                /></span>
               </button>
             </div>
             <div class="control is-expanded">
-              <input id="download-url" v-model="formUrl" :disabled="!socketStore.isConnected || addInProgress"
-                class="input" placeholder="https://..." type="url" required>
+              <input
+                id="download-url"
+                v-model="formUrl"
+                :disabled="!socketStore.isConnected || addInProgress"
+                class="input"
+                placeholder="https://..."
+                type="url"
+                required
+              />
             </div>
             <div class="control">
-              <button type="submit" class="button is-primary" :class="{ 'is-loading': addInProgress }"
-                :disabled="!socketStore.isConnected || addInProgress || !formUrl.trim()">
+              <button
+                type="submit"
+                class="button is-primary"
+                :class="{ 'is-loading': addInProgress }"
+                :disabled="!socketStore.isConnected || addInProgress || !formUrl.trim()"
+              >
                 <span class="icon"><i class="fas fa-plus" /></span>
                 <span>Add</span>
               </button>
@@ -45,15 +71,30 @@
             </div>
             <div class="control is-expanded">
               <div class="select is-fullwidth">
-                <select id="preset" class="is-fullwidth" :disabled="!socketStore.isConnected || addInProgress"
-                  v-model="formPreset.preset">
-                  <optgroup label="Custom presets" v-if="presets.filter(p => !p?.default).length > 0">
-                    <option v-for="cPreset in filter_presets(false)" :key="cPreset.name" :value="cPreset.name">
+                <select
+                  id="preset"
+                  class="is-fullwidth"
+                  :disabled="!socketStore.isConnected || addInProgress"
+                  v-model="formPreset.preset"
+                >
+                  <optgroup
+                    label="Custom presets"
+                    v-if="presets.filter((p) => !p?.default).length > 0"
+                  >
+                    <option
+                      v-for="cPreset in filter_presets(false)"
+                      :key="cPreset.name"
+                      :value="cPreset.name"
+                    >
                       {{ cPreset.name }}
                     </option>
                   </optgroup>
                   <optgroup label="Default presets">
-                    <option v-for="dPreset in filter_presets(true)" :key="dPreset.name" :value="dPreset.name">
+                    <option
+                      v-for="dPreset in filter_presets(true)"
+                      :key="dPreset.name"
+                      :value="dPreset.name"
+                    >
                       {{ dPreset.name }}
                     </option>
                   </optgroup>
@@ -62,48 +103,90 @@
             </div>
           </div>
 
-          <div class="columns is-multiline is-mobile" v-if="showExtras && configStore.dl_fields.length > 0">
+          <div
+            class="columns is-multiline is-mobile"
+            v-if="showExtras && configStore.dl_fields.length > 0"
+          >
             <div class="column is-6-tablet is-12-mobile">
-              <DLInput id="force_download" type="bool" label="Force download"
-                v-model="dlFields['--no-download-archive']" icon="fa-solid fa-download"
-                :disabled="!socketStore.isConnected || addInProgress" description="Ignore archive and re-download." />
+              <DLInput
+                id="force_download"
+                type="bool"
+                label="Force download"
+                v-model="dlFields['--no-download-archive']"
+                icon="fa-solid fa-download"
+                :disabled="!socketStore.isConnected || addInProgress"
+                description="Ignore archive and re-download."
+              />
             </div>
-            <div class="column is-6-tablet is-12-mobile" v-for="(fi, index) in sortedDLFields"
-              :key="fi.id || `dlf-${index}`">
-              <DLInput :id="fi?.id || `dlf-${index}`" :type="fi.kind" :description="fi.description" :label="fi.name"
-                :icon="fi.icon" v-model="dlFields[fi.field]" :field="fi.field"
-                :disabled="!socketStore.isConnected || addInProgress" />
+            <div
+              class="column is-6-tablet is-12-mobile"
+              v-for="(fi, index) in sortedDLFields"
+              :key="fi.id || `dlf-${index}`"
+            >
+              <DLInput
+                :id="fi?.id || `dlf-${index}`"
+                :type="fi.kind"
+                :description="fi.description"
+                :label="fi.name"
+                :icon="fi.icon"
+                v-model="dlFields[fi.field]"
+                :field="fi.field"
+                :disabled="!socketStore.isConnected || addInProgress"
+              />
             </div>
           </div>
-
         </form>
       </section>
     </div>
 
     <Transition name="queue-fade">
       <section v-if="hasAnyItems" key="queue" class="queue-section">
-
-        <TransitionGroup name="queue-card" tag="div" class="columns is-multiline queue-card-columns">
-          <div v-for="entry in displayItems" :key="entry.item._id" class="column is-12-mobile is-6-tablet">
+        <TransitionGroup
+          name="queue-card"
+          tag="div"
+          class="columns is-multiline queue-card-columns"
+        >
+          <div
+            v-for="entry in displayItems"
+            :key="entry.item._id"
+            class="column is-12-mobile is-6-tablet"
+          >
             <article class="queue-card card" :class="{ 'is-history': 'history' === entry.source }">
-              <div v-if="'queue' === entry.source && shouldShowProgress(entry.item)"
-                class="progress-bar is-unselectable mb-3">
+              <div
+                v-if="'queue' === entry.source && shouldShowProgress(entry.item)"
+                class="progress-bar is-unselectable mb-3"
+              >
                 <div class="progress-percentage">{{ updateProgress(entry.item) }}</div>
                 <div class="progress" :style="{ width: getProgressWidth(entry.item) }"></div>
               </div>
               <div class="card-content">
                 <article class="media">
                   <figure class="media-left">
-                    <figure class="image is-16by9 queue-thumb" :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
-                      role="presentation" @click="openPlayer(entry.item)">
-                      <img :src="resolveThumbnail(entry)" :alt="entry.item.title || 'Video thumbnail'" loading="lazy"
-                        @error="onImgError">
+                    <figure
+                      class="image is-16by9 queue-thumb"
+                      :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
+                      role="presentation"
+                      @click="openPlayer(entry.item)"
+                    >
+                      <img
+                        :src="resolveThumbnail(entry)"
+                        :alt="entry.item.title || 'Video thumbnail'"
+                        loading="lazy"
+                        @error="onImgError"
+                      />
                       <span v-if="getDurationLabel(entry.item)" class="queue-thumb__badge">
                         {{ getDurationLabel(entry.item) }}
                       </span>
-                      <span v-if="entry.item.filename || isEmbedable(entry.item.url)" class="queue-thumb__overlay">
-                        <span class="icon circle-border"
-                          :class="{ 'has-text-danger': isEmbedable(entry.item.url) && !entry.item.filename }">
+                      <span
+                        v-if="entry.item.filename || isEmbedable(entry.item.url)"
+                        class="queue-thumb__overlay"
+                      >
+                        <span
+                          class="icon circle-border"
+                          :class="{
+                            'has-text-danger': isEmbedable(entry.item.url) && !entry.item.filename,
+                          }"
+                        >
                           <i class="fas fa-play" />
                         </span>
                       </span>
@@ -117,18 +200,27 @@
                     </p>
                     <div class="field is-grouped is-unselectable">
                       <div class="control">
-                        <span class="tag is-size-7 has-text-weight-semibold is-uppercase"
-                          :class="getSourceTagClass(entry)">
+                        <span
+                          class="tag is-size-7 has-text-weight-semibold is-uppercase"
+                          :class="getSourceTagClass(entry)"
+                        >
                           {{ getSourceLabel(entry) }}
                         </span>
                       </div>
                       <div class="control">
-                        <span class="tag is-size-7 has-text-weight-semibold" :class="getStatusClass(entry.item)">
+                        <span
+                          class="tag is-size-7 has-text-weight-semibold"
+                          :class="getStatusClass(entry.item)"
+                        >
                           {{ getStatusLabel(entry.item) }}
                         </span>
                       </div>
                       <div class="control">
-                        <span class="tag" :date-datetime="entry.item.datetime" v-rtime="entry.item.datetime" />
+                        <span
+                          class="tag"
+                          :date-datetime="entry.item.datetime"
+                          v-rtime="entry.item.datetime"
+                        />
                       </div>
                     </div>
                     <p class="content is-size-7 has-text-grey queue-description">
@@ -147,34 +239,58 @@
                   </div>
                 </article>
                 <div v-if="'queue' === entry.source" class="buttons are-small queue-actions mt-3">
-                  <button v-if="canStart(entry.item)" class="button is-success is-light" type="button"
-                    @click="startQueueItem(entry.item)">
+                  <button
+                    v-if="canStart(entry.item)"
+                    class="button is-success is-light"
+                    type="button"
+                    @click="startQueueItem(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-circle-play" /></span>
                     <span>Start</span>
                   </button>
-                  <button v-if="canPause(entry.item)" class="button is-warning is-light" type="button"
-                    @click="pauseQueueItem(entry.item)">
+                  <button
+                    v-if="canPause(entry.item)"
+                    class="button is-warning is-light"
+                    type="button"
+                    @click="pauseQueueItem(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-pause" /></span>
                     <span>Pause</span>
                   </button>
-                  <button class="button is-warning" type="button" @click="cancelDownload(entry.item)">
+                  <button
+                    class="button is-warning"
+                    type="button"
+                    @click="cancelDownload(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-xmark" /></span>
                     <span>Cancel</span>
                   </button>
                 </div>
 
                 <div v-else class="buttons are-small queue-actions mt-3">
-                  <a v-if="getDownloadLink(entry.item)" class="button is-link" :href="getDownloadLink(entry.item)"
-                    :download="getDownloadName(entry.item)">
+                  <a
+                    v-if="getDownloadLink(entry.item)"
+                    class="button is-link"
+                    :href="getDownloadLink(entry.item)"
+                    :download="getDownloadName(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-download" /></span>
                     <span>Download</span>
                   </a>
-                  <button v-if="!entry.item.filename" class="button is-info is-light" type="button"
-                    @click="async () => await requeueItem(entry.item)">
+                  <button
+                    v-if="!entry.item.filename"
+                    class="button is-info is-light"
+                    type="button"
+                    @click="async () => await requeueItem(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-rotate-right" /></span>
                     <span>Requeue</span>
                   </button>
-                  <button class="button is-danger" type="button" @click="deleteHistoryItem(entry.item)">
+                  <button
+                    class="button is-danger"
+                    type="button"
+                    @click="deleteHistoryItem(entry.item)"
+                  >
                     <span class="icon"><i class="fas fa-trash" /></span>
                     <span>Delete</span>
                   </button>
@@ -184,11 +300,16 @@
           </div>
         </TransitionGroup>
 
-        <div v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages" ref="loadMoreTrigger"
-          class="columns is-centered mt-4">
+        <div
+          v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages"
+          ref="loadMoreTrigger"
+          class="columns is-centered mt-4"
+        >
           <div class="column is-narrow">
             <div v-if="paginationInfo.isLoading" class="has-text-centered">
-              <span class="icon is-large has-text-info"><i class="fas fa-spinner fa-pulse fa-2x" /></span>
+              <span class="icon is-large has-text-info"
+                ><i class="fas fa-spinner fa-pulse fa-2x"
+              /></span>
               <p class="is-size-7 has-text-grey mt-2">Loading more items...</p>
             </div>
           </div>
@@ -199,8 +320,16 @@
     <div class="modal is-active" v-if="videoItem">
       <div class="modal-background" @click="closePlayer"></div>
       <div class="modal-content is-unbounded-model">
-        <VideoPlayer type="default" :isMuted="false" autoplay="true" :isControls="true" :item="videoItem"
-          class="is-fullwidth" @closeModel="closePlayer" @error="async (error: string) => await box.alert(error)" />
+        <VideoPlayer
+          type="default"
+          :isMuted="false"
+          autoplay="true"
+          :isControls="true"
+          :item="videoItem"
+          class="is-fullwidth"
+          @closeModel="closePlayer"
+          @error="async (error: string) => await box.alert(error)"
+        />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
     </div>
@@ -220,284 +349,320 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, toRef, watch } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useStorage, useIntersectionObserver } from '@vueuse/core'
-import type { item_request } from '~/types/item'
-import type { Preset } from '~/types/presets'
-import type { ItemStatus, StoreItem } from '~/types/store'
-import { useNotification } from '~/composables/useNotification'
-import { useConfigStore } from '~/stores/ConfigStore'
-import { useStateStore } from '~/stores/StateStore'
-import { useSocketStore } from '~/stores/SocketStore'
-import { isEmbedable, getEmbedable } from '~/utils/embedable'
-import EmbedPlayer from '~/components/EmbedPlayer.vue'
-import { ag, encodePath, formatTime, makeDownload, request, stripPath, ucFirst, uri } from '~/utils'
+import { computed, onMounted, ref, toRef, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useStorage, useIntersectionObserver } from '@vueuse/core';
+import type { item_request } from '~/types/item';
+import type { Preset } from '~/types/presets';
+import type { ItemStatus, StoreItem } from '~/types/store';
+import { useNotification } from '~/composables/useNotification';
+import { useConfigStore } from '~/stores/ConfigStore';
+import { useStateStore } from '~/stores/StateStore';
+import { useSocketStore } from '~/stores/SocketStore';
+import { isEmbedable, getEmbedable } from '~/utils/embedable';
+import EmbedPlayer from '~/components/EmbedPlayer.vue';
+import {
+  ag,
+  encodePath,
+  formatTime,
+  makeDownload,
+  request,
+  stripPath,
+  ucFirst,
+  uri,
+} from '~/utils';
 
-defineEmits<{ (e: 'show_settings'): void }>()
+defineEmits<{ (e: 'show_settings'): void }>();
 
-withDefaults(defineProps<{
-  settingsOpen?: boolean
-}>(), {
-  settingsOpen: false
-})
+withDefaults(
+  defineProps<{
+    settingsOpen?: boolean;
+  }>(),
+  {
+    settingsOpen: false,
+  },
+);
 
-const configStore = useConfigStore()
-const stateStore = useStateStore()
-const socketStore = useSocketStore()
-const toast = useNotification()
-const dlFields = useStorage<Record<string, any>>('dl_fields', {})
-const show_thumbnail = useStorage<boolean>('show_thumbnail', true)
-const isMobile = useMediaQuery({ maxWidth: 1024 })
-const box = useConfirm()
+const configStore = useConfigStore();
+const stateStore = useStateStore();
+const socketStore = useSocketStore();
+const toast = useNotification();
+const dlFields = useStorage<Record<string, any>>('dl_fields', {});
+const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
+const isMobile = useMediaQuery({ maxWidth: 1024 });
+const box = useConfirm();
 
-const app = toRef(configStore, 'app')
-const paused = toRef(configStore, 'paused')
-const presets = toRef(configStore, 'presets')
-const { queue, history } = storeToRefs(stateStore)
+const app = toRef(configStore, 'app');
+const paused = toRef(configStore, 'paused');
+const presets = toRef(configStore, 'presets');
+const { queue, history } = storeToRefs(stateStore);
 
-const embedUrl = ref<string>('')
-const videoItem = ref<StoreItem | null>(null)
-const loadMoreTrigger = ref<HTMLElement | null>(null)
+const embedUrl = ref<string>('');
+const videoItem = ref<StoreItem | null>(null);
+const loadMoreTrigger = ref<HTMLElement | null>(null);
 
-const formUrl = ref<string>('')
-const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' })
-const addInProgress = ref<boolean>(false)
-const showExtras = ref<boolean>(false)
-const isRefreshing = ref<boolean>(false)
+const formUrl = ref<string>('');
+const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' });
+const addInProgress = ref<boolean>(false);
+const showExtras = ref<boolean>(false);
+const isRefreshing = ref<boolean>(false);
 
 const refreshQueue = async (): Promise<void> => {
   if (isRefreshing.value) {
-    return
+    return;
   }
-  isRefreshing.value = true
+  isRefreshing.value = true;
   try {
-    await stateStore.loadQueue()
+    await stateStore.loadQueue();
   } catch (error) {
-    console.error('Failed to refresh queue:', error)
-    toast.error('Failed to refresh queue')
+    console.error('Failed to refresh queue:', error);
+    toast.error('Failed to refresh queue');
   } finally {
-    isRefreshing.value = false
+    isRefreshing.value = false;
   }
-}
+};
 
-const paginationInfo = computed(() => stateStore.getPagination())
-const queueItems = computed<StoreItem[]>(() => Object.values(queue.value ?? {}).slice().sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)))
+const paginationInfo = computed(() => stateStore.getPagination());
+const queueItems = computed<StoreItem[]>(() =>
+  Object.values(queue.value ?? {})
+    .slice()
+    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)),
+);
 const historyEntries = computed<StoreItem[]>(() => {
-  const items = Object.values(history.value ?? {})
-  return items.slice().sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime())
-})
+  const items = Object.values(history.value ?? {});
+  return items
+    .slice()
+    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+});
 
-const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set(['downloading', 'postprocessing', 'preparing'])
+const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set([
+  'downloading',
+  'postprocessing',
+  'preparing',
+]);
 
-const isDownloading = (status: ItemStatus | null): boolean => downloadingStatuses.has(status)
+const isDownloading = (status: ItemStatus | null): boolean => downloadingStatuses.has(status);
 
-type DisplayEntry = { item: StoreItem; source: 'queue' | 'history' }
+type DisplayEntry = { item: StoreItem; source: 'queue' | 'history' };
 
 const displayItems = computed<DisplayEntry[]>(() => [
-  ...queueItems.value.filter(item => isDownloading(item.status)).map(item => ({ item, source: 'queue' as const })),
-  ...queueItems.value.filter(item => !isDownloading(item.status)).map(item => ({ item, source: 'queue' as const })),
-  ...historyEntries.value.map(item => ({ item, source: 'history' as const }))
-])
+  ...queueItems.value
+    .filter((item) => isDownloading(item.status))
+    .map((item) => ({ item, source: 'queue' as const })),
+  ...queueItems.value
+    .filter((item) => !isDownloading(item.status))
+    .map((item) => ({ item, source: 'queue' as const })),
+  ...historyEntries.value.map((item) => ({ item, source: 'history' as const })),
+]);
 
-const hasActiveQueue = computed<boolean>(() => queueItems.value.length > 0)
-const hasAnyItems = computed<boolean>(() => hasActiveQueue.value || historyEntries.value.length > 0)
-const shouldCenterForm = computed<boolean>(() => 0 === queueItems.value.length && 0 === historyEntries.value.length)
-const DEFAULT_PAGE_SIZE = 12
+const hasActiveQueue = computed<boolean>(() => queueItems.value.length > 0);
+const hasAnyItems = computed<boolean>(
+  () => hasActiveQueue.value || historyEntries.value.length > 0,
+);
+const shouldCenterForm = computed<boolean>(
+  () => 0 === queueItems.value.length && 0 === historyEntries.value.length,
+);
+const DEFAULT_PAGE_SIZE = 12;
 
 const greetingMessage = computed<string>(() => {
-  const hour = new Date().getHours()
-  let greeting = ''
+  const hour = new Date().getHours();
+  let greeting = '';
 
   if (hour >= 5 && hour < 12) {
-    greeting = 'Good morning'
+    greeting = 'Good morning';
   } else if (hour >= 12 && hour < 17) {
-    greeting = 'Good afternoon'
+    greeting = 'Good afternoon';
   } else if (hour >= 17 && hour < 21) {
-    greeting = 'Good evening'
+    greeting = 'Good evening';
   } else {
-    greeting = 'Hello'
+    greeting = 'Hello';
   }
 
-  return `${greeting}, what would you like to download?`
-})
+  return `${greeting}, what would you like to download?`;
+});
 
 const addDownload = async (): Promise<void> => {
-  const url = formUrl.value.trim()
+  const url = formUrl.value.trim();
   if (!url) {
-    toast.error('Please enter a valid URL.')
-    return
+    toast.error('Please enter a valid URL.');
+    return;
   }
 
-  let cli = ''
+  let cli = '';
 
-  const dlFieldsExtra = ['--no-download-archive']
+  const dlFieldsExtra = ['--no-download-archive'];
 
   const is_valid = (dl_field: string): boolean => {
     if (dlFieldsExtra.includes(dl_field)) {
-      return true
+      return true;
     }
 
     if (configStore.dl_fields && configStore.dl_fields.length > 0) {
-      return configStore.dl_fields.some(f => dl_field === f.field)
+      return configStore.dl_fields.some((f) => dl_field === f.field);
     }
 
-    return false
-  }
+    return false;
+  };
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
-    const joined = []
+    const joined = [];
     for (const [key, value] of Object.entries(dlFields.value)) {
       if (false === is_valid(key)) {
-        continue
+        continue;
       }
 
       if ([undefined, null, '', false].includes(value as any)) {
-        continue
+        continue;
       }
 
-      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`)
+      const keyRegex = new RegExp(`(^|\\s)${key}(\\s|$)`);
       if (cli && keyRegex.test(cli)) {
-        continue
+        continue;
       }
 
-      joined.push(true === value ? `${key}` : `${key} ${value}`)
+      joined.push(true === value ? `${key}` : `${key} ${value}`);
     }
 
     if (joined.length > 0) {
-      cli = joined.join(' ')
+      cli = joined.join(' ');
     }
   }
 
-  const payload: item_request[] = [{
-    url,
-    preset: formPreset.value.preset || app.value.default_preset,
-    cli: cli || '',
-    auto_start: true,
-  }]
+  const payload: item_request[] = [
+    {
+      url,
+      preset: formPreset.value.preset || app.value.default_preset,
+      cli: cli || '',
+      auto_start: true,
+    },
+  ];
 
   try {
-    addInProgress.value = true
+    addInProgress.value = true;
     const response = await request('/api/history', {
       method: 'POST',
       body: JSON.stringify(payload),
-    })
-    const data = await response.json()
+    });
+    const data = await response.json();
 
     if (!response.ok) {
-      toast.error(data?.error ?? 'Failed to add download.')
-      return
+      toast.error(data?.error ?? 'Failed to add download.');
+      return;
     }
 
-    const failures = Array.isArray(data) ? data.filter((item: Record<string, any>) => false === item?.status) : []
+    const failures = Array.isArray(data)
+      ? data.filter((item: Record<string, any>) => false === item?.status)
+      : [];
     if (failures.length > 0) {
-      failures.forEach((item: Record<string, any>) => toast.error(item?.msg ?? 'Failed to add download.'))
-      return
+      failures.forEach((item: Record<string, any>) =>
+        toast.error(item?.msg ?? 'Failed to add download.'),
+      );
+      return;
     }
 
-    formUrl.value = ''
-    formPreset.value.preset = app.value.default_preset || ''
-    dlFields.value = {}
+    formUrl.value = '';
+    formPreset.value.preset = app.value.default_preset || '';
+    dlFields.value = {};
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to add download.'
-    toast.error(message)
+    const message = error instanceof Error ? error.message : 'Failed to add download.';
+    toast.error(message);
   } finally {
-    addInProgress.value = false
+    addInProgress.value = false;
   }
-}
+};
 
 const resolveThumbnail = (entry: DisplayEntry): string => {
   if (!show_thumbnail.value) {
-    return '/images/placeholder.png'
+    return '/images/placeholder.png';
   }
 
-  const { item, source } = entry
+  const { item, source } = entry;
 
-  const sidecarImage = item.sidecar?.image?.[0]?.file
+  const sidecarImage = item.sidecar?.image?.[0]?.file;
   if ('history' === source && sidecarImage) {
-    const relativePath = stripPath(app.value.download_path ?? '', sidecarImage)
-    return uri(`/api/download/${encodeURIComponent(relativePath)}`)
+    const relativePath = stripPath(app.value.download_path ?? '', sidecarImage);
+    return uri(`/api/download/${encodeURIComponent(relativePath)}`);
   }
 
-  const remoteThumb = ag<string | null>(item, 'extras.thumbnail', null)
+  const remoteThumb = ag<string | null>(item, 'extras.thumbnail', null);
   if (remoteThumb) {
-    return uri(`/api/thumbnail?id=${item._id}&url=${encodePath(remoteThumb)}`)
+    return uri(`/api/thumbnail?id=${item._id}&url=${encodePath(remoteThumb)}`);
   }
 
-  return '/images/placeholder.png'
-}
+  return '/images/placeholder.png';
+};
 
 const openPlayer = (item: StoreItem): void => {
   if (item.filename) {
-    videoItem.value = item
-    return
+    videoItem.value = item;
+    return;
   }
 
   if (!isEmbedable(item.url)) {
-    return
+    return;
   }
-  const embed = getEmbedable(item.url)
+  const embed = getEmbedable(item.url);
   if (embed) {
-    embedUrl.value = embed
+    embedUrl.value = embed;
   }
-}
+};
 
 const closePlayer = (): void => {
-  embedUrl.value = ''
-  videoItem.value = null
-}
+  embedUrl.value = '';
+  videoItem.value = null;
+};
 
 const getSourceLabel = (entry: DisplayEntry): string => {
   if ('history' === entry.source) {
-    return 'History'
+    return 'History';
   }
   if (isDownloading(entry.item.status)) {
-    return 'Active'
+    return 'Active';
   }
-  return 'Queued'
-}
+  return 'Queued';
+};
 
 const getSourceTagClass = (entry: DisplayEntry): string => {
   if ('history' === entry.source) {
-    return 'is-light'
+    return 'is-light';
   }
   if (isDownloading(entry.item.status)) {
-    return 'is-info is-light'
+    return 'is-info is-light';
   }
-  return 'is-warning is-light'
-}
+  return 'is-warning is-light';
+};
 
 const getDescription = (item: StoreItem): string => {
-  const direct = (item.description ?? '').toString().trim()
+  const direct = (item.description ?? '').toString().trim();
   if (direct) {
-    return direct
+    return direct;
   }
 
-  const extrasDescription = ag<string | null>(item, 'extras.description', null)?.toString().trim()
+  const extrasDescription = ag<string | null>(item, 'extras.description', null)?.toString().trim();
   if (extrasDescription) {
-    return extrasDescription
+    return extrasDescription;
   }
 
-  const errorDescription = item.error?.trim()
+  const errorDescription = item.error?.trim();
   if (errorDescription) {
-    return errorDescription
+    return errorDescription;
   }
 
-  const message = ag<string | null>(item, 'msg', null)?.toString().trim()
+  const message = ag<string | null>(item, 'msg', null)?.toString().trim();
   if (message) {
-    return message
+    return message;
   }
 
-  return ''
-}
+  return '';
+};
 
 const getDurationLabel = (item: StoreItem): string | null => {
-  const duration = ag<number | null>(item, 'extras.duration', null)
+  const duration = ag<number | null>(item, 'extras.duration', null);
   if (null == duration || Number.isNaN(duration) || 0 >= duration) {
-    return null
+    return null;
   }
-  return formatTime(duration)
-}
+  return formatTime(duration);
+};
 
 const statusOverrides: Record<string, string> = {
   downloading: 'Downloading',
@@ -508,17 +673,17 @@ const statusOverrides: Record<string, string> = {
   cancelled: 'Cancelled',
   not_live: 'Not live yet',
   skip: 'Skipped',
-}
+};
 
 const getStatusLabel = (item: StoreItem): string => {
   if (null === item.status) {
-    return 'Queued'
+    return 'Queued';
   }
   if ('error' === item.status && item.filename) {
-    return 'Partial Error'
+    return 'Partial Error';
   }
-  return statusOverrides[item.status] ?? ucFirst(item.status.replace(/_/g, ' '))
-}
+  return statusOverrides[item.status] ?? ucFirst(item.status.replace(/_/g, ' '));
+};
 
 const statusColorMap: Record<string, string> = {
   downloading: 'has-text-info',
@@ -529,117 +694,118 @@ const statusColorMap: Record<string, string> = {
   cancelled: 'has-text-grey',
   not_live: 'has-text-warning',
   skip: 'has-text-grey',
-}
+};
 
 const getStatusClass = (item: StoreItem): string => {
   if (null === item.status) {
-    return 'has-text-grey'
+    return 'has-text-grey';
   }
   if ('error' === item.status && item.filename) {
-    return 'has-text-warning'
+    return 'has-text-warning';
   }
-  return statusColorMap[item.status] ?? 'has-text-info'
-}
+  return statusColorMap[item.status] ?? 'has-text-info';
+};
 
-const shouldShowProgress = (item: StoreItem): boolean => isDownloading(item.status) || null === item.status
+const shouldShowProgress = (item: StoreItem): boolean =>
+  isDownloading(item.status) || null === item.status;
 
 const percentPipe = (value: number | null): string => {
   if (null === value || Number.isNaN(value)) {
-    return '00.00'
+    return '00.00';
   }
-  return parseFloat(String(value)).toFixed(2)
-}
+  return parseFloat(String(value)).toFixed(2);
+};
 
 const ETAPipe = (value: number | null): string => {
   if (null === value || 0 === value) {
-    return 'Live'
+    return 'Live';
   }
   if (value < 60) {
-    return `${Math.round(value)}s`
+    return `${Math.round(value)}s`;
   }
   if (value < 3600) {
-    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`
+    return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`;
   }
-  const hours = Math.floor(value / 3600)
-  const minutes = value % 3600
-  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`
-}
+  const hours = Math.floor(value / 3600);
+  const minutes = value % 3600;
+  return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`;
+};
 
 const speedPipe = (value: number | null): string => {
   if (null === value || 0 === value) {
-    return '0KB/s'
+    return '0KB/s';
   }
-  const k = 1024
-  const dm = 2
-  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s']
-  const i = Math.floor(Math.log(value) / Math.log(k))
-  return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
-}
+  const k = 1024;
+  const dm = 2;
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s'];
+  const i = Math.floor(Math.log(value) / Math.log(k));
+  return `${parseFloat((value / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+};
 
 const updateProgress = (item: StoreItem): string => {
-  let text = ''
+  let text = '';
   if (!item.auto_start) {
-    return 'Manual start'
+    return 'Manual start';
   }
   if (null === item.status && true === paused.value) {
-    return 'Global Pause'
+    return 'Global Pause';
   }
   if ('postprocessing' === item.status) {
-    return 'Post-processors are running.'
+    return 'Post-processors are running.';
   }
   if ('preparing' === item.status) {
-    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing'
+    return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
   }
   if (null != item.status) {
-    text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live'
+    text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live';
   }
-  text += item.speed ? ` - ${speedPipe(item.speed)}` : ' - Waiting..'
+  text += item.speed ? ` - ${speedPipe(item.speed)}` : ' - Waiting..';
   if (null != item.status && item.eta) {
-    text += ` - ${ETAPipe(item.eta)}`
+    text += ` - ${ETAPipe(item.eta)}`;
   }
-  return text
-}
+  return text;
+};
 
 const getProgressWidth = (item: StoreItem): string => {
-  const percent = parseFloat(percentPipe(item.percent ?? 0))
-  const clamped = Number.isNaN(percent) ? 0 : Math.min(100, Math.max(0, percent))
-  return `${clamped}%`
-}
+  const percent = parseFloat(percentPipe(item.percent ?? 0));
+  const clamped = Number.isNaN(percent) ? 0 : Math.min(100, Math.max(0, percent));
+  return `${clamped}%`;
+};
 
-const canStart = (item: StoreItem): boolean => !item.status && false === item.auto_start
-const canPause = (item: StoreItem): boolean => !item.status && true === item.auto_start
+const canStart = (item: StoreItem): boolean => !item.status && false === item.auto_start;
+const canPause = (item: StoreItem): boolean => !item.status && true === item.auto_start;
 
 const startQueueItem = async (item: StoreItem): Promise<void> => {
-  await stateStore.startItems([item._id])
-}
+  await stateStore.startItems([item._id]);
+};
 
 const pauseQueueItem = async (item: StoreItem): Promise<void> => {
-  await stateStore.pauseItems([item._id])
-}
+  await stateStore.pauseItems([item._id]);
+};
 
 const cancelDownload = async (item: StoreItem): Promise<void> => {
-  await stateStore.cancelItems([item._id])
-}
+  await stateStore.cancelItems([item._id]);
+};
 
 const getDownloadLink = (item: StoreItem): string => {
   if (!item.filename) {
-    return ''
+    return '';
   }
-  return makeDownload(app.value, item)
-}
+  return makeDownload(app.value, item);
+};
 
 const getDownloadName = (item: StoreItem): string => {
   if (!item.filename) {
-    return 'download'
+    return 'download';
   }
-  const segments = item.filename.split('/')
-  return segments[segments.length - 1] || 'download'
-}
+  const segments = item.filename.split('/');
+  return segments[segments.length - 1] || 'download';
+};
 
 const requeueItem = async (item: StoreItem): Promise<void> => {
   if (!item.url) {
-    toast.error('Unable to requeue item; missing URL.')
-    return
+    toast.error('Unable to requeue item; missing URL.');
+    return;
   }
 
   const payload: item_request = {
@@ -650,108 +816,129 @@ const requeueItem = async (item: StoreItem): Promise<void> => {
     cookies: item.cookies,
     cli: item.cli,
     auto_start: item.auto_start ?? true,
-  }
+  };
 
   if (item.extras && Object.keys(item.extras).length > 0) {
-    payload.extras = JSON.parse(JSON.stringify(item.extras))
+    payload.extras = JSON.parse(JSON.stringify(item.extras));
   }
 
-  await stateStore.removeItems('history', [item._id], false)
-  await stateStore.addDownload(payload)
-}
+  await stateStore.removeItems('history', [item._id], false);
+  await stateStore.addDownload(payload);
+};
 
 const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
-  await stateStore.removeItems('history', [item._id], app.value.remove_files)
-  toast.info('Removed from history queue.')
-}
+  await stateStore.removeItems('history', [item._id], app.value.remove_files);
+  toast.info('Removed from history queue.');
+};
 
-const filter_presets = (flag: boolean = true) => presets.value.filter((item: Preset) => item.default === flag)
+const filter_presets = (flag: boolean = true) =>
+  presets.value.filter((item: Preset) => item.default === flag);
 
 const showMessage = (item: StoreItem) => {
   if (!item?.msg || item.msg === item?.error) {
-    return false
+    return false;
   }
-  return (item.msg?.length || 0) > 0
-}
+  return (item.msg?.length || 0) > 0;
+};
 
-// eslint-disable-next-line vue/no-side-effects-in-computed-properties
-const sortedDLFields = computed(() => configStore.dl_fields.sort((a, b) => (a.order || 0) - (b.order || 0)))
+const sortedDLFields = computed(() =>
+  [...configStore.dl_fields].sort((a, b) => (a.order || 0) - (b.order || 0)),
+);
 
 const connectionStatusColor = computed(() => {
   switch (socketStore.connectionStatus) {
     case 'connected':
-      return 'has-text-success'
+      return 'has-text-success';
     case 'connecting':
-      return 'has-text-warning fa-spin'
+      return 'has-text-warning fa-spin';
     case 'disconnected':
     default:
-      return 'has-text-danger'
+      return 'has-text-danger';
   }
-})
+});
 
 // Load history via API on mount
 onMounted(async () => {
-  const route = useRoute()
+  const route = useRoute();
 
   if (route.query?.simple !== undefined) {
-    const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false)
-    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string)
-    await nextTick()
-    const url = new URL(window.location.href)
-    url.searchParams.delete('simple')
-    window.history.replaceState({}, '', url.toString())
+    const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false);
+    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string);
+    await nextTick();
+    const url = new URL(window.location.href);
+    url.searchParams.delete('simple');
+    window.history.replaceState({}, '', url.toString());
   }
 
   if (!paginationInfo.value.isLoaded) {
     try {
-      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
+      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
     } catch (error) {
-      console.error('Failed to load history on mount:', error)
+      console.error('Failed to load history on mount:', error);
     }
   }
 
   if (window?.location && '/' !== window.location.pathname) {
-    window.history.replaceState({}, '', '/')
+    window.history.replaceState({}, '', '/');
   }
-})
+});
 
-watch(() => socketStore.isConnected, async (connected) => {
-  if (connected && !paginationInfo.value.isLoaded) {
-    try {
-      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC')
-    } catch (error) {
-      console.error('Failed to load history after socket connection:', error)
+watch(
+  () => socketStore.isConnected,
+  async (connected) => {
+    if (connected && !paginationInfo.value.isLoaded) {
+      try {
+        await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
+      } catch (error) {
+        console.error('Failed to load history after socket connection:', error);
+      }
     }
-  }
-})
+  },
+);
 
 const loadMoreHistory = async (): Promise<void> => {
-  if (paginationInfo.value.isLoading || paginationInfo.value.page >= paginationInfo.value.total_pages) {
-    return
+  if (
+    paginationInfo.value.isLoading ||
+    paginationInfo.value.page >= paginationInfo.value.total_pages
+  ) {
+    return;
   }
 
   try {
-    await stateStore.loadPaginated('history', paginationInfo.value.page + 1, DEFAULT_PAGE_SIZE, 'DESC', true)
+    await stateStore.loadPaginated(
+      'history',
+      paginationInfo.value.page + 1,
+      DEFAULT_PAGE_SIZE,
+      'DESC',
+      true,
+    );
   } catch (error) {
-    console.error('Failed to load more history:', error)
-    toast.error('Failed to load more history')
+    console.error('Failed to load more history:', error);
+    toast.error('Failed to load more history');
   }
-}
+};
 
 const onImgError = (e: Event) => {
-  const target = e.target as HTMLImageElement
+  const target = e.target as HTMLImageElement;
   if (target.src.endsWith('/images/placeholder.png')) {
-    return
+    return;
   }
-  target.src = '/images/placeholder.png'
-}
+  target.src = '/images/placeholder.png';
+};
 
-useIntersectionObserver(loadMoreTrigger, ([entry]) => {
-  if (entry?.isIntersecting && !paginationInfo.value.isLoading && paginationInfo.value.page < paginationInfo.value.total_pages) {
-    loadMoreHistory()
-  }
-}, { threshold: 0.5 })
-
+useIntersectionObserver(
+  loadMoreTrigger,
+  ([entry]) => {
+    if (
+      entry?.isIntersecting &&
+      !paginationInfo.value.isLoading &&
+      paginationInfo.value.page < paginationInfo.value.total_pages
+    ) {
+      loadMoreHistory();
+    }
+  },
+  { threshold: 0.5 },
+);
 </script>
 
 <style scoped>
@@ -779,7 +966,8 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
   width: 100%;
   display: flex;
   justify-content: center;
-  transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
+  transition:
+    transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
     filter 0.35s ease;
   will-change: transform;
 }
@@ -820,7 +1008,9 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
 
 .queue-card {
   height: 100%;
-  transition: transform 0.3s ease, box-shadow 0.35s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.35s ease;
 }
 
 .queue-card:hover {
@@ -833,7 +1023,6 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
   flex-direction: column;
   height: 100%;
 }
-
 
 .queue-card .media-left {
   margin-right: 1rem;
@@ -921,7 +1110,9 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
 
 .queue-fade-enter-active,
 .queue-fade-leave-active {
-  transition: opacity 0.35s ease, transform 0.45s ease;
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s ease;
 }
 
 .queue-fade-enter-from,
@@ -932,7 +1123,9 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
 
 .queue-card-enter-active,
 .queue-card-leave-active {
-  transition: opacity 0.3s ease, transform 0.35s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.35s ease;
 }
 
 .queue-card-enter-from,
@@ -980,7 +1173,7 @@ useIntersectionObserver(loadMoreTrigger, ([entry]) => {
 }
 
 .progress-bar {
-  border-radius: 0.75rem 0.75rem 0 0
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .circle-border {

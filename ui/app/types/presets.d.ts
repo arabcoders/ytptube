@@ -1,35 +1,35 @@
 type Preset = {
   /** Unique identifier for the preset */
-  id?: number
+  id?: number;
   /** Preset name, e.g. "default" */
-  name: string
+  name: string;
   /** Optional description for the preset */
-  description: string
+  description: string;
   /** Folder where files will be saved, e.g. "/downloads" */
-  folder: string
+  folder: string;
   /** Output template for the preset, e.g. "%(title)s.%(ext)s" */
-  template: string
+  template: string;
   /** Cookies for the preset, e.g. "cookies.txt" */
-  cookies: string
+  cookies: string;
   /** Additional command line options for yt-dlp */
-  cli: string
+  cli: string;
   /** Indicates if this is the default preset */
-  default: boolean
+  default: boolean;
   /** Priority for sorting. Higher priority presets appear first */
-  priority: number
-}
+  priority: number;
+};
 
 /**
  * Request payload for creating/updating preset
  */
 type PresetRequest = {
-  name: string
-  description?: string
-  folder?: string
-  template?: string
-  cookies?: string
-  cli?: string
-  priority?: number
-}
+  name: string;
+  description?: string;
+  folder?: string;
+  template?: string;
+  cookies?: string;
+  cli?: string;
+  priority?: number;
+};
 
-export type { Preset, PresetRequest }
+export type { Preset, PresetRequest };

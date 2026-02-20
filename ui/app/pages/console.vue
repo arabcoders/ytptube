@@ -23,8 +23,8 @@
         </span>
       </h1>
       <div class="subtitle is-6 is-unselectable">
-        You can use this page to run yt-dlp commands directly in a non-interactive way, bypassing the web interface and
-        it's settings.
+        You can use this page to run yt-dlp commands directly in a non-interactive way, bypassing
+        the web interface and it's settings.
       </div>
     </div>
     <div class="column is-12">
@@ -43,22 +43,45 @@
           </p>
         </header>
         <section class="card-content p-0 m-0">
-          <div ref="terminal_window" style="min-height: 60vh;max-height:70vh;" />
+          <div ref="terminal_window" style="min-height: 60vh; max-height: 70vh" />
         </section>
         <section class="card-content p-1 m-1">
           <div class="field is-grouped">
             <div class="control is-expanded">
-              <TextareaAutocomplete v-if="isMultiLineInput" ref="commandTextarea" v-model="command"
-                :options="ytDlpOptions" :disabled="isLoading" placeholder="--help" @keydown="handleKeyDown" />
-              <InputAutocomplete v-else v-model="command" ref="commandInput" :options="ytDlpOptions"
-                :disabled="isLoading" placeholder="--help" @keydown="handleKeyDown" @paste="handlePaste"
-                :multiple="true" :allowShortFlags="true" />
+              <TextareaAutocomplete
+                v-if="isMultiLineInput"
+                ref="commandTextarea"
+                v-model="command"
+                :options="ytDlpOptions"
+                :disabled="isLoading"
+                placeholder="--help"
+                @keydown="handleKeyDown"
+              />
+              <InputAutocomplete
+                v-else
+                v-model="command"
+                ref="commandInput"
+                :options="ytDlpOptions"
+                :disabled="isLoading"
+                placeholder="--help"
+                @keydown="handleKeyDown"
+                @paste="handlePaste"
+                :multiple="true"
+                :allowShortFlags="true"
+              />
             </div>
             <p class="control">
-              <button class="button is-primary" type="button" :disabled="isLoading || !hasValidCommand"
-                @click="runCommand">
+              <button
+                class="button is-primary"
+                type="button"
+                :disabled="isLoading || !hasValidCommand"
+                @click="runCommand"
+              >
                 <span class="icon">
-                  <i class="fa-solid" :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'" />
+                  <i
+                    class="fa-solid"
+                    :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'"
+                  />
                 </span>
               </button>
             </p>
@@ -70,7 +93,10 @@
     <div class="column is-12">
       <div class="card">
         <header class="card-header">
-          <p class="card-header-title is-pointer is-unselectable" @click="isHistoryCollapsed = !isHistoryCollapsed">
+          <p
+            class="card-header-title is-pointer is-unselectable"
+            @click="isHistoryCollapsed = !isHistoryCollapsed"
+          >
             <span class="icon"><i class="fa-solid fa-clock-rotate-left" /></span>
             <span class="ml-2">Commands History</span>
           </p>
@@ -78,9 +104,15 @@
             <span v-tooltip.top="'Clear command history'" class="icon" @click="clearHistory()">
               <i class="fa-solid fa-trash" />
             </span>
-            <span v-tooltip.top="isHistoryCollapsed ? 'Expand' : 'Collapse'" class="icon ml-2"
-              @click="isHistoryCollapsed = !isHistoryCollapsed">
-              <i class="fa-solid" :class="isHistoryCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'" />
+            <span
+              v-tooltip.top="isHistoryCollapsed ? 'Expand' : 'Collapse'"
+              class="icon ml-2"
+              @click="isHistoryCollapsed = !isHistoryCollapsed"
+            >
+              <i
+                class="fa-solid"
+                :class="isHistoryCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
+              />
             </span>
           </p>
         </header>
@@ -89,16 +121,21 @@
             Commands history is empty.
           </Message>
           <div class="table-container" v-if="commandHistory.length > 0">
-            <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-              style="min-width: 850px; table-layout: fixed;">
+            <table
+              class="table is-striped is-hoverable is-fullwidth is-bordered"
+              style="min-width: 850px; table-layout: fixed"
+            >
               <tbody>
                 <tr v-for="(cmd, index) in commandHistory" :key="index">
                   <td>
-                    <code class="is-family-monospace is-text-overflow is-pointer is-block" @click="loadCommand(cmd)">
+                    <code
+                      class="is-family-monospace is-text-overflow is-pointer is-block"
+                      @click="loadCommand(cmd)"
+                    >
                       {{ cmd.replace(/\n/g, ' ') }}
                     </code>
                   </td>
-                  <td style="width: 40px; text-align: center;">
+                  <td style="width: 40px; text-align: center">
                     <button class="delete" @click="removeFromHistory(index)" />
                   </td>
                 </tr>
@@ -112,154 +149,166 @@
 </template>
 
 <script setup lang="ts">
-import { fetchEventSource } from '@microsoft/fetch-event-source'
-import type { EventSourceMessage } from '@microsoft/fetch-event-source'
-import '@xterm/xterm/css/xterm.css'
-import { Terminal } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
-import { useStorage } from '@vueuse/core'
-import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils'
-import InputAutocomplete from '~/components/InputAutocomplete.vue'
-import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
-import { useDialog } from '~/composables/useDialog'
-import type { AutoCompleteOptions } from '~/types/autocomplete'
+import { fetchEventSource } from '@microsoft/fetch-event-source';
+import type { EventSourceMessage } from '@microsoft/fetch-event-source';
+import '@xterm/xterm/css/xterm.css';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { useStorage } from '@vueuse/core';
+import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils';
+import InputAutocomplete from '~/components/InputAutocomplete.vue';
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
+import { useDialog } from '~/composables/useDialog';
+import type { AutoCompleteOptions } from '~/types/autocomplete';
 
-const config = useConfigStore()
-const toast = useNotification()
-const dialog = useDialog()
+const config = useConfigStore();
+const toast = useNotification();
+const dialog = useDialog();
 
-const terminal = ref<Terminal>()
-const terminalFit = ref<FitAddon>()
-const command = ref<string>('')
-const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window')
-const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null)
-const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null)
-const isLoading = ref<boolean>(false)
-const storedCommand = useStorage<string>('console_command', '')
-const commandHistory = useStorage<string[]>('console_command_history', [])
-const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false)
-const sseController = ref<AbortController | null>(null)
-const MAX_HISTORY_ITEMS = 50
+const terminal = ref<Terminal>();
+const terminalFit = ref<FitAddon>();
+const command = ref<string>('');
+const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window');
+const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null);
+const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null);
+const isLoading = ref<boolean>(false);
+const storedCommand = useStorage<string>('console_command', '');
+const commandHistory = useStorage<string[]>('console_command_history', []);
+const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false);
+const sseController = ref<AbortController | null>(null);
+const MAX_HISTORY_ITEMS = 50;
 
-const ytDlpOptions = computed<AutoCompleteOptions>(() => config.ytdlp_options.flatMap(opt => opt.flags
-  .map(flag => ({ value: flag, description: opt.description || '' }))
-))
+const ytDlpOptions = computed<AutoCompleteOptions>(() =>
+  config.ytdlp_options.flatMap((opt) =>
+    opt.flags.map((flag) => ({ value: flag, description: opt.description || '' })),
+  ),
+);
 
-const hasValidCommand = computed(() => command.value && command.value.trim().length > 0)
-const isMultiLineInput = computed(() => !!command.value && command.value.includes('\n'))
+const hasValidCommand = computed(() => command.value && command.value.trim().length > 0);
+const isMultiLineInput = computed(() => !!command.value && command.value.includes('\n'));
 
-watch(() => isLoading.value, async value => {
-  if (value) {
-    return
-  }
-  if (command.value.trim()) {
-    addToHistory(command.value.trim())
-  }
-  command.value = ''
-  await nextTick();
-  focusInput()
-}, { immediate: true })
+watch(
+  () => isLoading.value,
+  async (value) => {
+    if (value) {
+      return;
+    }
+    if (command.value.trim()) {
+      addToHistory(command.value.trim());
+    }
+    command.value = '';
+    await nextTick();
+    focusInput();
+  },
+  { immediate: true },
+);
 
-watch(() => config.app.console_enabled, async () => {
-  if (config.app.console_enabled) {
-    return
-  }
-  toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
-  await navigateTo('/')
-})
+watch(
+  () => config.app.console_enabled,
+  async () => {
+    if (config.app.console_enabled) {
+      return;
+    }
+    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    await navigateTo('/');
+  },
+);
 
 const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
-  const target = event.target as HTMLInputElement | HTMLTextAreaElement
-  const isTextarea = 'TEXTAREA' === target.tagName
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  const isTextarea = 'TEXTAREA' === target.tagName;
 
   if (event.key !== 'Enter') {
-    return
+    return;
   }
 
   if (((event.ctrlKey && isTextarea) || !isTextarea) && hasValidCommand.value) {
-    event.preventDefault()
-    runCommand()
-    return
+    event.preventDefault();
+    runCommand();
+    return;
   }
 
   if (event.shiftKey && !isTextarea) {
-    event.preventDefault()
-    const cursorPos = target.selectionStart || command.value.length
-    command.value = command.value.substring(0, cursorPos) + '\n' + command.value.substring(target.selectionEnd || cursorPos)
-    await nextTick()
+    event.preventDefault();
+    const cursorPos = target.selectionStart || command.value.length;
+    command.value =
+      command.value.substring(0, cursorPos) +
+      '\n' +
+      command.value.substring(target.selectionEnd || cursorPos);
+    await nextTick();
     if (commandTextarea.value) {
-      const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement
+      const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement;
       if (textarea) {
-        textarea.setSelectionRange(cursorPos + 1, cursorPos + 1)
-        textarea.focus()
+        textarea.setSelectionRange(cursorPos + 1, cursorPos + 1);
+        textarea.focus();
       }
     }
   }
-}
+};
 
 const handlePaste = async (event: ClipboardEvent): Promise<void> => {
-  const pastedText = event.clipboardData?.getData('text') || ''
+  const pastedText = event.clipboardData?.getData('text') || '';
   if (!pastedText.includes('\n')) {
-    return
+    return;
   }
 
-  event.preventDefault()
-  const target = event.target as HTMLInputElement
-  const currentValue = command.value || ''
-  const start = target.selectionStart || currentValue.length
-  const end = target.selectionEnd || currentValue.length
-  command.value = currentValue.substring(0, start) + pastedText + currentValue.substring(end)
-  await nextTick()
+  event.preventDefault();
+  const target = event.target as HTMLInputElement;
+  const currentValue = command.value || '';
+  const start = target.selectionStart || currentValue.length;
+  const end = target.selectionEnd || currentValue.length;
+  command.value = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
+  await nextTick();
 
   if (!commandTextarea.value) {
-    return
+    return;
   }
 
-  const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement
+  const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement;
   if (textarea) {
-    const newPos = start + pastedText.length
-    textarea.setSelectionRange(newPos, newPos)
-    textarea.focus()
+    const newPos = start + pastedText.length;
+    textarea.setSelectionRange(newPos, newPos);
+    textarea.focus();
   }
-}
+};
 
 const handle_event = () => {
   if (!terminal.value) {
-    return
+    return;
   }
-  terminalFit.value?.fit()
-}
+  terminalFit.value?.fit();
+};
 
 const handleStreamMessage = (event: EventSourceMessage) => {
   if (!terminal.value) {
-    return
+    return;
   }
 
-  let payload: { type?: string; line?: string; exitcode?: number } | null = null
+  let payload: { type?: string; line?: string; exitcode?: number } | null = null;
   if (event.data) {
     try {
-      payload = JSON.parse(event.data) as { type?: string; line?: string; exitcode?: number }
+      payload = JSON.parse(event.data) as { type?: string; line?: string; exitcode?: number };
     } catch {
-      payload = null
+      payload = null;
     }
   }
 
   if ('output' === event.event) {
-    terminal.value.writeln(payload?.line ?? '')
-    return
+    terminal.value.writeln(payload?.line ?? '');
+    return;
   }
 
   if ('close' === event.event) {
-    isLoading.value = false
-    sseController.value?.abort()
+    isLoading.value = false;
+    sseController.value?.abort();
   }
-}
+};
 
 const startStream = async (cmd: string) => {
-  sseController.value?.abort()
-  const controller = new AbortController()
-  sseController.value = controller
-  isLoading.value = true
+  sseController.value?.abort();
+  const controller = new AbortController();
+  sseController.value = controller;
+  isLoading.value = true;
 
   try {
     await fetchEventSource(uri('/api/system/terminal'), {
@@ -267,53 +316,53 @@ const startStream = async (cmd: string) => {
       body: JSON.stringify({ command: cmd }),
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'text/event-stream',
+        Accept: 'text/event-stream',
       },
       credentials: 'same-origin',
       signal: controller.signal,
       onopen: async (response) => {
         if (response.ok) {
-          return
+          return;
         }
-        let message = response.statusText || 'Failed to start command stream.'
+        let message = response.statusText || 'Failed to start command stream.';
         try {
-          message = await parse_api_error(response.clone().json())
+          message = await parse_api_error(response.clone().json());
         } catch {
           try {
-            const text = await response.text()
+            const text = await response.text();
             if (text) {
-              message = text
+              message = text;
             }
           } catch {
-            message = response.statusText || 'Failed to start command stream.'
+            message = response.statusText || 'Failed to start command stream.';
           }
         }
-        throw new Error(message)
+        throw new Error(message);
       },
       onmessage: handleStreamMessage,
       onerror: (error) => {
         if (controller.signal.aborted) {
-          return
+          return;
         }
-        terminal.value?.writeln(`Error: ${error}`)
-        isLoading.value = false
+        terminal.value?.writeln(`Error: ${error}`);
+        isLoading.value = false;
       },
-    })
+    });
   } catch (error) {
     if (!controller.signal.aborted) {
-      terminal.value?.writeln(`Error: ${error}`)
-      isLoading.value = false
+      terminal.value?.writeln(`Error: ${error}`);
+      isLoading.value = false;
     }
   } finally {
     if (controller === sseController.value) {
-      sseController.value = null
+      sseController.value = null;
     }
   }
-}
+};
 
 const ensureTerminal = async () => {
   if (terminal.value) {
-    return
+    return;
   }
 
   terminal.value = new Terminal({
@@ -325,124 +374,128 @@ const ensureTerminal = async () => {
     rows: 10,
     disableStdin: true,
     scrollback: 1000,
-  })
+  });
 
-  terminalFit.value = new FitAddon()
-  terminal.value.loadAddon(terminalFit.value)
+  terminalFit.value = new FitAddon();
+  terminal.value.loadAddon(terminalFit.value);
 
-  await nextTick()
+  await nextTick();
 
   if (terminal_window.value) {
-    terminal.value.open(terminal_window.value)
+    terminal.value.open(terminal_window.value);
   }
 
   terminalFit.value.fit();
-}
+};
 
 const runCommand = async () => {
   if (!hasValidCommand.value) {
-    return
+    return;
   }
 
   if (true !== config.app.console_enabled) {
-    await navigateTo('/')
-    toast.error('Console is disabled in the configuration. Please enable it to use this feature.')
-    return
+    await navigateTo('/');
+    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    return;
   }
 
-  let cmd = command.value.trim().replace(/\n/g, ' ').trim()
+  let cmd = command.value.trim().replace(/\n/g, ' ').trim();
 
   if (cmd.startsWith('yt-dlp')) {
-    cmd = cmd.replace(/^yt-dlp/, '').trim()
-    await nextTick()
+    cmd = cmd.replace(/^yt-dlp/, '').trim();
+    await nextTick();
     if ('' === cmd) {
-      return
+      return;
     }
   }
 
-  await ensureTerminal()
+  await ensureTerminal();
 
   if ('clear' === cmd) {
-    clearOutput(true)
-    return
+    clearOutput(true);
+    return;
   }
 
-  await startStream(cmd)
-  terminal.value?.writeln(`user@YTPTube ~`)
-  terminal.value?.writeln(`$ yt-dlp ${command.value}`)
-  storedCommand.value = ''
-}
+  await startStream(cmd);
+  terminal.value?.writeln(`user@YTPTube ~`);
+  terminal.value?.writeln(`$ yt-dlp ${command.value}`);
+  storedCommand.value = '';
+};
 
 const clearOutput = async (withCommand: boolean = false) => {
   if (terminal.value) {
-    terminal.value.clear()
+    terminal.value.clear();
   }
 
   if (true === withCommand) {
-    command.value = ''
+    command.value = '';
   }
 
-  focusInput()
-}
+  focusInput();
+};
 
 const focusInput = async () => {
-  await nextTick()
+  await nextTick();
   let elm;
   if (isMultiLineInput.value) {
-    elm = commandTextarea.value?.$el?.querySelector('textarea') as HTMLTextAreaElement
+    elm = commandTextarea.value?.$el?.querySelector('textarea') as HTMLTextAreaElement;
   } else {
-    elm = commandInput.value?.$el?.querySelector('input') as HTMLInputElement
+    elm = commandInput.value?.$el?.querySelector('input') as HTMLInputElement;
   }
 
-  elm?.focus()
-}
+  elm?.focus();
+};
 
 const addToHistory = (cmd: string) => {
-  commandHistory.value = [cmd, ...commandHistory.value.filter(h => h !== cmd)].slice(0, MAX_HISTORY_ITEMS)
-}
+  commandHistory.value = [cmd, ...commandHistory.value.filter((h) => h !== cmd)].slice(
+    0,
+    MAX_HISTORY_ITEMS,
+  );
+};
 
 const loadCommand = async (cmd: string) => {
-  command.value = cmd
-  await nextTick()
-  focusInput()
-}
+  command.value = cmd;
+  await nextTick();
+  focusInput();
+};
 
 const clearHistory = async () => {
   if (commandHistory.value.length === 0) {
-    return
+    return;
   }
   const { status } = await dialog.confirmDialog({
     title: 'Confirm Action',
     message: `Clear commands history?`,
     confirmColor: 'is-danger',
-  })
+  });
   if (!status) {
-    return
+    return;
   }
-  commandHistory.value = []
-}
+  commandHistory.value = [];
+};
 
-const removeFromHistory = (index: number) => commandHistory.value = commandHistory.value.filter((_, i) => i !== index)
+const removeFromHistory = (index: number) =>
+  (commandHistory.value = commandHistory.value.filter((_, i) => i !== index));
 
-watch(isMultiLineInput, () => focusInput())
+watch(isMultiLineInput, () => focusInput());
 
 onMounted(async () => {
   document.addEventListener('resize', handle_event);
-  focusInput()
+  focusInput();
 
-  disableOpacity()
+  disableOpacity();
 
-  await ensureTerminal()
+  await ensureTerminal();
 
   if (storedCommand.value) {
-    command.value = storedCommand.value
-    await nextTick()
+    command.value = storedCommand.value;
+    await nextTick();
   }
-})
+});
 
 onBeforeUnmount(() => {
-  sseController.value?.abort()
-  document.removeEventListener('resize', handle_event)
-  enableOpacity()
+  sseController.value?.abort();
+  document.removeEventListener('resize', handle_event);
+  enableOpacity();
 });
 </script>

@@ -83,25 +83,51 @@
 
 <template>
   <div v-if="infoLoaded">
-    <div style="position: relative;">
-      <video class="player" ref="video" :poster="uri(thumbnail)" playsinline controls crossorigin="anonymous"
-        preload="auto" autoplay>
-        <source v-for="source in sources" :key="source.src" :src="source.src" @error="source.onerror"
-          :type="source.type" />
-        <track v-for="(track, i) in tracks" :key="track.file" :kind="track.kind" :label="track.label"
-          :srclang="track.lang" :src="track.file" :default="notFirefox && 0 === i" />
+    <div style="position: relative">
+      <video
+        class="player"
+        ref="video"
+        :poster="uri(thumbnail)"
+        playsinline
+        controls
+        crossorigin="anonymous"
+        preload="auto"
+        autoplay
+      >
+        <source
+          v-for="source in sources"
+          :key="source.src"
+          :src="source.src"
+          @error="source.onerror"
+          :type="source.type"
+        />
+        <track
+          v-for="(track, i) in tracks"
+          :key="track.file"
+          :kind="track.kind"
+          :label="track.label"
+          :srclang="track.lang"
+          :src="track.file"
+          :default="notFirefox && 0 === i"
+        />
       </video>
 
       <div class="is-flex is-justify-content-space-between">
         <div>
-          <span v-if="infoLoaded && !usingHls && hasVideoStream" class="is-hidden-mobile has-text-info is-pointer"
-            @click.prevent="forceSwitchToHls">
+          <span
+            v-if="infoLoaded && !usingHls && hasVideoStream"
+            class="is-hidden-mobile has-text-info is-pointer"
+            @click.prevent="forceSwitchToHls"
+          >
             <span class="icon"><i class="fa-solid fa-arrows-rotate" /></span>
             <span>Trouble playing? switch to HLS stream.</span>
           </span>
         </div>
         <div>
-          <span class="is-hidden-mobile has-text-grey-lighter is-pointer" @click="showHelp = !showHelp">
+          <span
+            class="is-hidden-mobile has-text-grey-lighter is-pointer"
+            @click="showHelp = !showHelp"
+          >
             <span class="icon"><i class="fa-solid fa-question" /></span>
             <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
           </span>
@@ -109,7 +135,7 @@
       </div>
 
       <div v-if="showHelp" class="keyboard-help" @click.self="showHelp = false">
-        <h2 style="margin-bottom: 1.5rem;">Keyboard Shortcuts</h2>
+        <h2 style="margin-bottom: 1.5rem">Keyboard Shortcuts</h2>
 
         <div class="shortcuts-grid">
           <div class="shortcut-section">
@@ -238,11 +264,13 @@
           </div>
         </div>
 
-        <div class="help-close-hint">Click outside or press <kbd>?</kbd> or <kbd>/</kbd> to close</div>
+        <div class="help-close-hint">
+          Click outside or press <kbd>?</kbd> or <kbd>/</kbd> to close
+        </div>
       </div>
     </div>
   </div>
-  <div style="text-align: center;" v-else>
+  <div style="text-align: center" v-else>
     <div class="icon">
       <i class="fa-solid fa-spinner fa-spin fa-4x" />
     </div>
@@ -250,311 +278,325 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
-import { watch } from 'vue'
-import Hls from 'hls.js'
-import { disableOpacity, enableOpacity } from '~/utils'
-import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts'
+import { useStorage } from '@vueuse/core';
+import { watch } from 'vue';
+import Hls from 'hls.js';
+import { disableOpacity, enableOpacity } from '~/utils';
+import { useKeyboardShortcuts } from '~/composables/useKeyboardShortcuts';
 
-import type { StoreItem } from '~/types/store'
-import type { file_info, video_source_element, video_track_element } from '~/types/video'
+import type { StoreItem } from '~/types/store';
+import type { file_info, video_source_element, video_track_element } from '~/types/video';
 
-const config = useConfigStore()
+const config = useConfigStore();
 
-const props = defineProps<{ item: StoreItem }>()
+const props = defineProps<{ item: StoreItem }>();
 const emitter = defineEmits<{
-  (e: 'closeModel'): void,
-  (e: 'error', message: string): void,
-}>()
+  (e: 'closeModel'): void;
+  (e: 'error', message: string): void;
+}>();
 
-const video = useTemplateRef<HTMLVideoElement>('video')
-const tracks = ref<Array<video_track_element>>([])
-const sources = ref<Array<video_source_element>>([])
+const video = useTemplateRef<HTMLVideoElement>('video');
+const tracks = ref<Array<video_track_element>>([]);
+const sources = ref<Array<video_source_element>>([]);
 
-const thumbnail = ref('/images/placeholder.png')
-const artist = ref('')
-const title = ref('')
-const isAudio = ref(false)
-const hasVideoStream = ref(false)
-const videoWidth = ref<number | undefined>(undefined)
-const videoHeight = ref<number | undefined>(undefined)
-const volume = useStorage('player_volume', 1)
-const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox')
-const infoLoaded = ref(false)
-const destroyed = ref(false)
-const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent)
-const havePoster = ref(false)
-const showHelp = ref(false)
-const usingHls = ref(false)
+const thumbnail = ref('/images/placeholder.png');
+const artist = ref('');
+const title = ref('');
+const isAudio = ref(false);
+const hasVideoStream = ref(false);
+const videoWidth = ref<number | undefined>(undefined);
+const videoHeight = ref<number | undefined>(undefined);
+const volume = useStorage('player_volume', 1);
+const notFirefox = !navigator.userAgent.toLowerCase().includes('firefox');
+const infoLoaded = ref(false);
+const destroyed = ref(false);
+const isApple = /(iPhone|iPod|iPad).*AppleWebKit/i.test(navigator.userAgent);
+const havePoster = ref(false);
+const showHelp = ref(false);
+const usingHls = ref(false);
 
-let unbindMediaSessionListeners: null | (() => void) = null
-let hls: Hls | null = null
-let cleanupKeyboardShortcuts: null | (() => void) = null
+let unbindMediaSessionListeners: null | (() => void) = null;
+let hls: Hls | null = null;
+let cleanupKeyboardShortcuts: null | (() => void) = null;
 
 const handle_event = (e: KeyboardEvent) => {
   if ('Escape' !== e.key) {
-    return
+    return;
   }
-  emitter('closeModel')
-}
+  emitter('closeModel');
+};
 
 const bindMediaSessionListeners = (el: HTMLVideoElement) => {
-  const onLoadedMetadata = (e: Event) => updateMediaSessionPosition(e.currentTarget)
-  const onTimeUpdate = (e: Event) => updateMediaSessionPosition(e.currentTarget)
-  const onRateChange = (e: Event) => updateMediaSessionPosition(e.currentTarget)
-  const onSeeked = (e: Event) => updateMediaSessionPosition(e.currentTarget)
+  const onLoadedMetadata = (e: Event) => updateMediaSessionPosition(e.currentTarget);
+  const onTimeUpdate = (e: Event) => updateMediaSessionPosition(e.currentTarget);
+  const onRateChange = (e: Event) => updateMediaSessionPosition(e.currentTarget);
+  const onSeeked = (e: Event) => updateMediaSessionPosition(e.currentTarget);
   const onPause = async (e: Event) => {
-    const target = (e.currentTarget as HTMLVideoElement) ?? null
+    const target = (e.currentTarget as HTMLVideoElement) ?? null;
     if (!target || destroyed.value) {
-      return
+      return;
     }
-    const dataUrl = await captureFrame(target)
+    const dataUrl = await captureFrame(target);
     if (dataUrl) {
-      thumbnail.value = dataUrl
-      havePoster.value = true
-      applyMediaSessionMetadata()
+      thumbnail.value = dataUrl;
+      havePoster.value = true;
+      applyMediaSessionMetadata();
     }
-  }
+  };
 
-  el.addEventListener('loadedmetadata', onLoadedMetadata)
-  el.addEventListener('timeupdate', onTimeUpdate)
-  el.addEventListener('ratechange', onRateChange)
-  el.addEventListener('seeked', onSeeked)
-  el.addEventListener('pause', onPause)
+  el.addEventListener('loadedmetadata', onLoadedMetadata);
+  el.addEventListener('timeupdate', onTimeUpdate);
+  el.addEventListener('ratechange', onRateChange);
+  el.addEventListener('seeked', onSeeked);
+  el.addEventListener('pause', onPause);
 
   return () => {
-    el.removeEventListener('loadedmetadata', onLoadedMetadata)
-    el.removeEventListener('timeupdate', onTimeUpdate)
-    el.removeEventListener('ratechange', onRateChange)
-    el.removeEventListener('seeked', onSeeked)
-    el.removeEventListener('pause', onPause)
-  }
-}
+    el.removeEventListener('loadedmetadata', onLoadedMetadata);
+    el.removeEventListener('timeupdate', onTimeUpdate);
+    el.removeEventListener('ratechange', onRateChange);
+    el.removeEventListener('seeked', onSeeked);
+    el.removeEventListener('pause', onPause);
+  };
+};
 
 const updateMediaSessionPosition = (target: EventTarget | null) => {
-  if (false === ('mediaSession' in navigator)) {
-    return
+  if (false === 'mediaSession' in navigator) {
+    return;
   }
-  const el = (target as HTMLVideoElement) ?? null
+  const el = (target as HTMLVideoElement) ?? null;
   if (!el || destroyed.value) {
-    return
+    return;
   }
-  const d = el.duration
+  const d = el.duration;
   if (false === Number.isFinite(d) || 0 >= d) {
-    return
+    return;
   }
   try {
     navigator.mediaSession.setPositionState({
       duration: d,
       playbackRate: el.playbackRate,
       position: el.currentTime,
-    })
-  } catch { }
-}
+    });
+  } catch {}
+};
 
 const volume_change_handler = () => {
-  const el = video.value
+  const el = video.value;
   if (!el) {
-    return
+    return;
   }
-  volume.value = el.volume
-  updateMediaSessionPosition(el)
-}
+  volume.value = el.volume;
+  updateMediaSessionPosition(el);
+};
 
 const captureFrame = async (el: HTMLVideoElement): Promise<string> => {
   if (!el || destroyed.value) {
-    return ''
+    return '';
   }
   if (0 === el.videoWidth || 0 === el.videoHeight) {
-    return ''
+    return '';
   }
 
-  const w = el.videoWidth
-  const h = el.videoHeight
+  const w = el.videoWidth;
+  const h = el.videoHeight;
 
   try {
     if ('OffscreenCanvas' in window) {
-      const c = new (window as any).OffscreenCanvas(w, h)
-      const ctx = c.getContext('2d')
-      if (!ctx) { return '' }
-      ctx.drawImage(el, 0, 0, w, h)
-      const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.86 })
-      return await new Promise<string>(r => {
-        const fr = new FileReader()
-        fr.onload = () => r(String(fr.result))
-        fr.readAsDataURL(blob)
-      })
+      const c = new (window as any).OffscreenCanvas(w, h);
+      const ctx = c.getContext('2d');
+      if (!ctx) {
+        return '';
+      }
+      ctx.drawImage(el, 0, 0, w, h);
+      const blob = await c.convertToBlob({ type: 'image/jpeg', quality: 0.86 });
+      return await new Promise<string>((r) => {
+        const fr = new FileReader();
+        fr.onload = () => r(String(fr.result));
+        fr.readAsDataURL(blob);
+      });
     } else {
-      const c = document.createElement('canvas')
-      c.width = w
-      c.height = h
-      const ctx = c.getContext('2d')
-      if (!ctx) { return '' }
-      ctx.drawImage(el, 0, 0, w, h)
-      return c.toDataURL('image/jpeg', 0.86)
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext('2d');
+      if (!ctx) {
+        return '';
+      }
+      ctx.drawImage(el, 0, 0, w, h);
+      return c.toDataURL('image/jpeg', 0.86);
     }
   } catch {
-    return ''
+    return '';
   }
-}
+};
 
 const captureFirstFramePoster = async (el: HTMLVideoElement): Promise<void> => {
   if (!el || destroyed.value) {
-    return
+    return;
   }
   if (havePoster.value) {
-    return
+    return;
   }
   if (0 === el.videoWidth || 0 === el.videoHeight) {
-    return
+    return;
   }
 
-  const dataUrl = await captureFrame(el)
+  const dataUrl = await captureFrame(el);
   if (!dataUrl) {
-    return
+    return;
   }
 
-  thumbnail.value = dataUrl
-  havePoster.value = true
-  applyMediaSessionMetadata()
-}
+  thumbnail.value = dataUrl;
+  havePoster.value = true;
+  applyMediaSessionMetadata();
+};
 
 const restoreDefaultTextTrack = async () => {
-  const el = video.value
+  const el = video.value;
   if (!el) {
-    return
+    return;
   }
 
   try {
-    const tracksList = el.textTracks
+    const tracksList = el.textTracks;
     if (!tracksList || 0 === tracksList.length) {
-      return
+      return;
     }
 
     // Check if first track has cues - if not, we need to reload tracks
-    const firstTrack = tracksList[0] as TextTrack | undefined
-    const needsReload = firstTrack && (!firstTrack.cues || firstTrack.cues.length === 0)
+    const firstTrack = tracksList[0] as TextTrack | undefined;
+    const needsReload = firstTrack && (!firstTrack.cues || firstTrack.cues.length === 0);
 
     if (needsReload) {
-      const trackElements = el.querySelectorAll('track')
+      const trackElements = el.querySelectorAll('track');
 
       trackElements.forEach((trackEl, idx) => {
-        const parent = trackEl.parentNode
-        const clone = trackEl.cloneNode(true) as HTMLTrackElement
-        trackEl.remove()
+        const parent = trackEl.parentNode;
+        const clone = trackEl.cloneNode(true) as HTMLTrackElement;
+        trackEl.remove();
         setTimeout(() => {
           if (parent) {
-            parent.appendChild(clone)
+            parent.appendChild(clone);
             // Set mode after cues load
-            clone.addEventListener('load', () => {
-              const trackObj = clone.track
-              if (trackObj) {
-                trackObj.mode = idx === 0 ? 'showing' : 'disabled'
-              }
-            }, { once: true })
+            clone.addEventListener(
+              'load',
+              () => {
+                const trackObj = clone.track;
+                if (trackObj) {
+                  trackObj.mode = idx === 0 ? 'showing' : 'disabled';
+                }
+              },
+              { once: true },
+            );
           }
-        }, idx * 10)
-      })
+        }, idx * 10);
+      });
 
-      return
+      return;
     }
 
     for (let i = 0; i < tracksList.length; i += 1) {
-      const track = tracksList[i] as TextTrack | undefined
+      const track = tracksList[i] as TextTrack | undefined;
       if (track) {
-        track.mode = 'disabled'
+        track.mode = 'disabled';
       }
     }
 
-    await new Promise(resolve => setTimeout(resolve, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     for (let i = 0; i < tracksList.length; i += 1) {
-      const track = tracksList[i] as TextTrack | undefined
+      const track = tracksList[i] as TextTrack | undefined;
       if (!track) {
-        continue
+        continue;
       }
-      const newMode = 0 === i ? 'showing' : 'disabled'
-      track.mode = newMode
+      const newMode = 0 === i ? 'showing' : 'disabled';
+      track.mode = newMode;
     }
   } catch (error) {
-    console.warn('Failed to restore subtitle track state', error)
+    console.warn('Failed to restore subtitle track state', error);
   }
-}
+};
 
 onMounted(async () => {
-  disableOpacity()
-  const req = await request(makeDownload(config, props.item, 'api/file/info'))
-  const response: file_info = await req.json()
+  disableOpacity();
+  const req = await request(makeDownload(config, props.item, 'api/file/info'));
+  const response: file_info = await req.json();
 
   if (!req.ok) {
-    emitter('error', response?.error || 'Failed to fetch video info. Unknown error')
-    emitter('closeModel')
-    return
+    emitter('error', response?.error || 'Failed to fetch video info. Unknown error');
+    emitter('closeModel');
+    return;
   }
 
-  await nextTick()
+  await nextTick();
 
   if (props.item.extras?.thumbnail) {
-    thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail)
-    havePoster.value = true
+    thumbnail.value = '/api/thumbnail?url=' + encodePath(props.item.extras.thumbnail);
+    havePoster.value = true;
   } else {
     if (response.sidecar?.image?.[0]?.file) {
-      thumbnail.value = makeDownload(config, { 'filename': response.sidecar.image[0].file })
-      havePoster.value = true
+      thumbnail.value = makeDownload(config, { filename: response.sidecar.image[0].file });
+      havePoster.value = true;
     }
   }
 
-  hasVideoStream.value = Array.isArray(response.ffprobe?.video)
-    && response.ffprobe.video.some(s => 'video' === s.codec_type)
+  hasVideoStream.value =
+    Array.isArray(response.ffprobe?.video) &&
+    response.ffprobe.video.some((s) => 'video' === s.codec_type);
 
   // Extract video dimensions to prevent layout reflow
   if (hasVideoStream.value && response.ffprobe?.video) {
-    const videoStream = response.ffprobe.video.find(s => 'video' === s.codec_type)
+    const videoStream = response.ffprobe.video.find((s) => 'video' === s.codec_type);
     if (videoStream?.width && videoStream?.height) {
-      videoWidth.value = videoStream.width
-      videoHeight.value = videoStream.height
+      videoWidth.value = videoStream.width;
+      videoHeight.value = videoStream.height;
     }
   }
 
   if (!props.item.extras?.is_video && props.item.extras?.is_audio) {
-    isAudio.value = true
+    isAudio.value = true;
   } else {
     if (false === hasVideoStream.value) {
-      isAudio.value = true
+      isAudio.value = true;
     }
   }
 
   if (isApple) {
-    const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4')
-    const src = makeDownload(config, props.item, allowedCodec ? 'api/download' : 'm3u8', allowedCodec ? false : true)
+    const allowedCodec = response.mimetype && response.mimetype.includes('video/mp4');
+    const src = makeDownload(
+      config,
+      props.item,
+      allowedCodec ? 'api/download' : 'm3u8',
+      allowedCodec ? false : true,
+    );
     sources.value.push({
       src,
       type: allowedCodec ? response.mimetype : 'application/x-mpegURL',
       onerror: (err: Event) => src_error(err),
-    })
-    usingHls.value = !allowedCodec
+    });
+    usingHls.value = !allowedCodec;
   } else {
-    const src = makeDownload(config, props.item, 'api/download', false)
-    sources.value.push({ src, type: response.mimetype, onerror: (err: Event) => src_error(err), })
-    usingHls.value = false
+    const src = makeDownload(config, props.item, 'api/download', false);
+    sources.value.push({ src, type: response.mimetype, onerror: (err: Event) => src_error(err) });
+    usingHls.value = false;
   }
 
   if (props.item.extras?.channel) {
-    artist.value = props.item.extras.channel
+    artist.value = props.item.extras.channel;
   }
 
   if (!artist.value && props.item.extras?.uploader) {
-    artist.value = props.item.extras.uploader
+    artist.value = props.item.extras.uploader;
   }
 
   if (props.item?.title) {
-    title.value = props.item.title
+    title.value = props.item.title;
   } else {
     if (response?.title) {
-      title.value = response.title
+      title.value = response.title;
     } else {
       if (response.ffprobe?.metadata?.tags?.title) {
-        title.value = response.ffprobe.metadata.tags.title
+        title.value = response.ffprobe.metadata.tags.title;
       }
     }
   }
@@ -564,146 +606,145 @@ onMounted(async () => {
       kind: 'captions',
       label: cap.name,
       lang: cap.lang,
-      file: `${makeDownload(config, { filename: cap.file }, 'api/player/subtitle')}.vtt`
-    })
-  })
+      file: `${makeDownload(config, { filename: cap.file }, 'api/player/subtitle')}.vtt`,
+    });
+  });
 
   if (isApple) {
-    document.documentElement.style.setProperty('--webkit-text-track-display', 'block')
+    document.documentElement.style.setProperty('--webkit-text-track-display', 'block');
   }
 
-  infoLoaded.value = true
-  await nextTick()
+  infoLoaded.value = true;
+  await nextTick();
 
-  prepareVideoPlayer()
+  prepareVideoPlayer();
 
   if (video.value) {
-    unbindMediaSessionListeners = bindMediaSessionListeners(video.value)
+    unbindMediaSessionListeners = bindMediaSessionListeners(video.value);
   }
 
   const keyboardShortcutsResult = useKeyboardShortcuts({
     videoElement: video,
     enabled: ref(true),
     closePlayer: () => emitter('closeModel'),
-  })
+  });
 
-  cleanupKeyboardShortcuts = keyboardShortcutsResult.attach()
+  cleanupKeyboardShortcuts = keyboardShortcutsResult.attach();
 
-  watch(keyboardShortcutsResult.showHelp, newVal => showHelp.value = newVal)
+  watch(keyboardShortcutsResult.showHelp, (newVal) => (showHelp.value = newVal));
 
-  document.addEventListener('keydown', handle_event)
-})
+  document.addEventListener('keydown', handle_event);
+});
 
 const applyMediaSessionMetadata = () => {
-  if (false === ('mediaSession' in navigator)) {
-    return
+  if (false === 'mediaSession' in navigator) {
+    return;
   }
-  const meta: MediaMetadataInit = { title: title.value }
+  const meta: MediaMetadataInit = { title: title.value };
   if (artist.value) {
-    meta.artist = artist.value
+    meta.artist = artist.value;
   }
   if (thumbnail.value) {
-    meta.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }]
+    meta.artwork = [{ src: thumbnail.value, sizes: '1920x1080', type: 'image/jpeg' }];
   }
   try {
-    navigator.mediaSession.metadata = new MediaMetadata(meta)
-  } catch { }
-}
+    navigator.mediaSession.metadata = new MediaMetadata(meta);
+  } catch {}
+};
 
-onUpdated(() => prepareVideoPlayer())
+onUpdated(() => prepareVideoPlayer());
 
 onBeforeUnmount(() => {
-  enableOpacity()
+  enableOpacity();
   if (hls) {
-    hls.destroy()
-    hls = null
+    hls.destroy();
+    hls = null;
   }
 
-  usingHls.value = false
+  usingHls.value = false;
 
-  document.removeEventListener('keydown', handle_event)
+  document.removeEventListener('keydown', handle_event);
 
   if (cleanupKeyboardShortcuts) {
-    cleanupKeyboardShortcuts()
-    cleanupKeyboardShortcuts = null
+    cleanupKeyboardShortcuts();
+    cleanupKeyboardShortcuts = null;
   }
 
   if (unbindMediaSessionListeners) {
-    unbindMediaSessionListeners()
-    unbindMediaSessionListeners = null
+    unbindMediaSessionListeners();
+    unbindMediaSessionListeners = null;
   }
 
   if (title.value) {
-    window.document.title = 'YTPTube'
+    window.document.title = 'YTPTube';
   }
 
   if (!video.value) {
-    return
+    return;
   }
 
-  destroyed.value = true
+  destroyed.value = true;
 
   try {
-    video.value.pause()
-    video.value.querySelectorAll('source').forEach(source => source.removeAttribute('src'))
-    video.value.removeEventListener('volumechange', volume_change_handler)
-    video.value.load()
+    video.value.pause();
+    video.value.querySelectorAll('source').forEach((source) => source.removeAttribute('src'));
+    video.value.removeEventListener('volumechange', volume_change_handler);
+    video.value.load();
+  } catch (e) {
+    console.error(e);
   }
-  catch (e) {
-    console.error(e)
-  }
-})
+});
 
 const prepareVideoPlayer = () => {
   if (!infoLoaded.value) {
-    return
+    return;
   }
 
-  applyMediaSessionMetadata()
+  applyMediaSessionMetadata();
 
   if (title.value) {
-    window.document.title = `YTPTube - Playing: ${title.value}`
+    window.document.title = `YTPTube - Playing: ${title.value}`;
   }
 
   if (!video.value) {
-    return
+    return;
   }
 
-  video.value.volume = volume.value
-  video.value.addEventListener('volumechange', volume_change_handler)
-  restoreDefaultTextTrack()
+  video.value.volume = volume.value;
+  video.value.addEventListener('volumechange', volume_change_handler);
+  restoreDefaultTextTrack();
 
   if (hasVideoStream.value) {
     if ('requestVideoFrameCallback' in video.value) {
-      ; (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!))
+      (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!));
     } else {
       const tryOnce = () => captureFirstFramePoster(video.value!);
-      ; (video.value as any).addEventListener('loadeddata', tryOnce, { once: true })
+      (video.value as any).addEventListener('loadeddata', tryOnce, { once: true });
     }
   }
-}
+};
 
 const src_error = async (e: any) => {
   if (hls) {
-    return
+    return;
   }
 
-  await nextTick()
+  await nextTick();
   if (destroyed.value) {
-    return
+    return;
   }
 
-  if (video.value && (notFirefox && video.value.paused)) {
-    return
+  if (video.value && notFirefox && video.value.paused) {
+    return;
   }
 
-  console.warn('Source failed to load, attempting HLS fallback via hls.js...', e)
-  attach_hls(makeDownload(config, props.item, 'm3u8', true))
-}
+  console.warn('Source failed to load, attempting HLS fallback via hls.js...', e);
+  attach_hls(makeDownload(config, props.item, 'm3u8', true));
+};
 
 const attach_hls = (link: string) => {
   if (!video.value) {
-    return
+    return;
   }
 
   hls = new Hls({
@@ -712,45 +753,45 @@ const attach_hls = (link: string) => {
     lowLatencyMode: true,
     backBufferLength: 120,
     fragLoadingTimeOut: 200000,
-  })
+  });
 
-  hls.on(Hls.Events.MANIFEST_PARSED, () => applyMediaSessionMetadata())
+  hls.on(Hls.Events.MANIFEST_PARSED, () => applyMediaSessionMetadata());
   hls.on(Hls.Events.MANIFEST_PARSED, async () => {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    await restoreDefaultTextTrack()
-  })
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await restoreDefaultTextTrack();
+  });
 
   hls.on(Hls.Events.MEDIA_ATTACHED, async () => {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    await restoreDefaultTextTrack()
-  })
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await restoreDefaultTextTrack();
+  });
 
   hls.on(Hls.Events.LEVEL_LOADED, () => {
     if (video.value) {
       if ('requestVideoFrameCallback' in video.value) {
-        ; (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!))
+        (video.value as any).requestVideoFrameCallback(() => captureFirstFramePoster(video.value!));
       } else {
-        const once = () => captureFirstFramePoster(video.value!)
-          ; (video.value as any).addEventListener('loadeddata', once, { once: true })
+        const once = () => captureFirstFramePoster(video.value!);
+        (video.value as any).addEventListener('loadeddata', once, { once: true });
       }
     }
-  })
+  });
 
-  hls.loadSource(link)
-  hls.attachMedia(video.value)
-  usingHls.value = true
-}
+  hls.loadSource(link);
+  hls.attachMedia(video.value);
+  usingHls.value = true;
+};
 
 const forceSwitchToHls = () => {
   if (usingHls.value) {
-    return
+    return;
   }
 
   if (!hasVideoStream.value) {
-    useNotification().error('Cannot switch to HLS: stream has no video track.')
-    return
+    useNotification().error('Cannot switch to HLS: stream has no video track.');
+    return;
   }
 
-  attach_hls(makeDownload(config, props.item, 'm3u8', true))
-}
+  attach_hls(makeDownload(config, props.item, 'm3u8', true));
+};
 </script>

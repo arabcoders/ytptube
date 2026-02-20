@@ -4,7 +4,8 @@
       <div class="columns is-multiline">
         <div class="column is-12">
           <h1 class="title is-4">
-            {{ error.statusCode }}<span v-if="error.statusMessage"> - {{ error.statusMessage }}</span>
+            {{ error.statusCode
+            }}<span v-if="error.statusMessage"> - {{ error.statusMessage }}</span>
           </h1>
         </div>
       </div>
@@ -46,10 +47,10 @@
 const props = defineProps({
   error: {
     type: Object,
-    required: true
-  }
-})
-const showStacks = ref(false)
+    required: true,
+  },
+});
+const showStacks = ref(false);
 
-onMounted(() => console.error(props.error))
+onMounted(() => console.error(props.error));
 </script>
