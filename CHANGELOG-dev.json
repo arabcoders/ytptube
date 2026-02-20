@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260220-befc7df5",
-        "date": "2026-02-20T19:46:30+00:00",
+        "tag": "dev-20260220-850a1b2e",
+        "date": "2026-02-20T19:59:01+00:00",
         "commits": [
+            {
+                "sha": "850a1b2e",
+                "message": "fix: refactor document focus handling in test files - tests were failing in gitea CI",
+                "author": "arabcoders",
+                "date": "2026-02-20T19:59:01+00:00",
+                "full_sha": "850a1b2eca69d7c1389c68894000f05f9399ab7e"
+            },
             {
                 "sha": "befc7df5",
                 "message": "refactor: switch from pnpm to bun",
@@ -4134,7 +4141,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd"
+        "full_sha": "850a1b2eca69d7c1389c68894000f05f9399ab7e"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd",
-    "date": "2026-02-20T19:46:30+00:00",
+    "full_sha": "850a1b2eca69d7c1389c68894000f05f9399ab7e",
+    "date": "2026-02-20T19:59:01+00:00",
     "commits": [
+      {
+        "sha": "850a1b2e",
+        "full_sha": "850a1b2eca69d7c1389c68894000f05f9399ab7e",
+        "message": "fix: refactor document focus handling in test files - tests were failing in gitea CI",
+        "author": "arabcoders",
+        "date": "2026-02-20T19:59:01+00:00"
+      },
       {
         "sha": "befc7df5",
         "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd",
