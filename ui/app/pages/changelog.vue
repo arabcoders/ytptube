@@ -9,7 +9,7 @@
 
 hr {
   background-color: unset;
-  border-bottom: 1px solid var(--bulma-grey-light) !important
+  border-bottom: 1px solid var(--bulma-grey-light) !important;
 }
 </style>
 
@@ -25,8 +25,13 @@ hr {
         <div class="is-pulled-right">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter && logs && logs.length > 0">
-              <input type="search" v-model.lazy="query" class="input" id="filter"
-                placeholder="Filter changelog entries">
+              <input
+                type="search"
+                v-model.lazy="query"
+                class="input"
+                id="filter"
+                placeholder="Filter changelog entries"
+              />
               <span class="icon is-left"><i class="fas fa-filter" /></span>
             </p>
 
@@ -40,7 +45,9 @@ hr {
         </div>
 
         <div class="is-hidden-mobile">
-          <span class="subtitle">This page display the latest changes and updates from the project.</span>
+          <span class="subtitle"
+            >This page display the latest changes and updates from the project.</span
+          >
         </div>
       </div>
     </div>
@@ -60,32 +67,40 @@ hr {
             <div class="content p-0 m-0">
               <h1 class="is-4">
                 <span class="icon"><i class="fas fa-code-branch" /></span>
-                {{ log.tag }} <span class="tag has-text-success" v-if="isInstalled(log)">Installed</span>
+                {{ log.tag }}
+                <span class="tag has-text-success" v-if="isInstalled(log)">Installed</span>
                 <template v-if="log.date">
-                  <span style="font-size:0.5em;">
-                    - <span class="has-tooltip" v-tooltip="`Release Date: ${log.date}`">
+                  <span style="font-size: 0.5em">
+                    -
+                    <span class="has-tooltip" v-tooltip="`Release Date: ${log.date}`">
                       {{ moment(log.date).fromNow() }}
-                    </span></span>
+                    </span></span
+                  >
                 </template>
               </h1>
-              <hr>
+              <hr />
               <ul>
                 <li v-for="commit in log.commits" :key="commit.sha">
-                  <strong>
-                    {{ ucFirst(commit.message).replace(/\.$/, "") }}.
-                  </strong> -
+                  <strong> {{ ucFirst(commit.message).replace(/\.$/, '') }}. </strong> -
                   <small>
                     <NuxtLink :to="`${REPO}/commit/${commit.full_sha}`" target="_blank">
-                      <span class="has-tooltip" v-tooltip="`SHA: ${commit.full_sha} - Date: ${commit.date}`">
+                      <span
+                        class="has-tooltip"
+                        v-tooltip="`SHA: ${commit.full_sha} - Date: ${commit.date}`"
+                      >
                         {{ moment(commit.date).fromNow() }}
                       </span>
                     </NuxtLink>
-                    <span v-tooltip="'Code is at this commit.'" v-if="commit.full_sha === app_sha"
-                      class="icon has-text-success"><i class="fas fa-check" /></span>
+                    <span
+                      v-tooltip="'Code is at this commit.'"
+                      v-if="commit.full_sha === app_sha"
+                      class="icon has-text-success"
+                      ><i class="fas fa-check"
+                    /></span>
                   </small>
                 </li>
               </ul>
-              <hr v-if="index < logs.length - 1">
+              <hr v-if="index < logs.length - 1" />
             </div>
           </div>
         </div>
@@ -93,9 +108,18 @@ hr {
 
       <div class="columns is-multiline" v-if="!filteredLogs || filteredLogs.length < 1">
         <div class="column is-12">
-          <Message title="No Results" class="is-warning" icon="fas fa-search" v-if="query"
-            :useClose="true" @close="query = ''">
-            <p>No changelog entries found for the query: <strong>{{ query }}</strong>.</p>
+          <Message
+            title="No Results"
+            class="is-warning"
+            icon="fas fa-search"
+            v-if="query"
+            :useClose="true"
+            @close="query = ''"
+          >
+            <p>
+              No changelog entries found for the query: <strong>{{ query }}</strong
+              >.
+            </p>
             <p>Please try a different search term.</p>
           </Message>
         </div>
@@ -105,99 +129,105 @@ hr {
 </template>
 
 <script setup lang="ts">
-import moment from 'moment'
-import type { changelogs, changeset } from '~/types/changelogs'
+import moment from 'moment';
+import type { changelogs, changeset } from '~/types/changelogs';
 
-const toast = useNotification()
-const config = useConfigStore()
-const isMobile = useMediaQuery({ maxWidth: 1024 })
+const toast = useNotification();
+const config = useConfigStore();
+const isMobile = useMediaQuery({ maxWidth: 1024 });
 
-useHead({ title: 'CHANGELOG' })
+useHead({ title: 'CHANGELOG' });
 
-const PROJECT = 'ytptube'
-const REPO = `https://github.com/arabcoders/${PROJECT}`
-const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`
+const PROJECT = 'ytptube';
+const REPO = `https://github.com/arabcoders/${PROJECT}`;
+const REPO_URL = `https://arabcoders.github.io/${PROJECT}/CHANGELOG.json?version={version}`;
 
-const logs = ref<changelogs>([])
-const app_version = ref('')
-const app_branch = ref('')
-const app_sha = ref('')
-const isLoading = ref(true)
-const query = ref<string>('')
-const toggleFilter = ref<boolean>(false)
+const logs = ref<changelogs>([]);
+const app_version = ref('');
+const app_branch = ref('');
+const app_sha = ref('');
+const isLoading = ref(true);
+const query = ref<string>('');
+const toggleFilter = ref<boolean>(false);
 
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
-    query.value = ''
+    query.value = '';
   }
-})
+});
 
 const filteredLogs = computed<changelogs>(() => {
-  const q = query.value?.toLowerCase()
-  if (!q) return logs.value
+  const q = query.value?.toLowerCase();
+  if (!q) return logs.value;
 
-  return logs.value.map(log => {
-    const tagMatches = log.tag.toLowerCase().includes(q)
+  return logs.value
+    .map((log) => {
+      const tagMatches = log.tag.toLowerCase().includes(q);
 
-    const filteredCommits = log.commits?.filter(commit =>
-      commit.message.toLowerCase().includes(q) ||
-      commit.author.toLowerCase().includes(q) ||
-      commit.full_sha.toLowerCase().includes(q)
-    ) ?? []
+      const filteredCommits =
+        log.commits?.filter(
+          (commit) =>
+            commit.message.toLowerCase().includes(q) ||
+            commit.author.toLowerCase().includes(q) ||
+            commit.full_sha.toLowerCase().includes(q),
+        ) ?? [];
 
-    if (tagMatches || filteredCommits.length > 0) {
-      return { ...log, commits: tagMatches ? log.commits : filteredCommits }
-    }
+      if (tagMatches || filteredCommits.length > 0) {
+        return { ...log, commits: tagMatches ? log.commits : filteredCommits };
+      }
 
-    return null
-  }).filter((log): log is changeset => log !== null)
-})
+      return null;
+    })
+    .filter((log): log is changeset => log !== null);
+});
 
 const loadContent = async () => {
   if ('' === app_version.value || logs.value.length > 0) {
-    return
+    return;
   }
 
   try {
     try {
-      const changes = await fetch(REPO_URL.replace('{branch}', app_branch.value).replace('{version}', app_version.value))
-      logs.value = await changes.json()
+      const changes = await fetch(
+        REPO_URL.replace('{branch}', app_branch.value).replace('{version}', app_version.value),
+      );
+      logs.value = await changes.json();
     } catch (e) {
-      console.error(e)
-      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json()
+      console.error(e);
+      logs.value = await (await request(uri('/CHANGELOG.json'), { method: 'GET' })).json();
     }
 
-    await nextTick()
-    logs.value = logs.value.slice(0, 10)
+    await nextTick();
+    logs.value = logs.value.slice(0, 10);
   } catch (e: any) {
-    console.error(e)
-    toast.error(`Failed to fetch changelog. ${e.message}`)
+    console.error(e);
+    toast.error(`Failed to fetch changelog. ${e.message}`);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const isInstalled = (log: changeset) => {
-  const installed = String(app_sha.value)
+  const installed = String(app_sha.value);
 
   if (log.full_sha.startsWith(installed)) {
-    return true
+    return true;
   }
 
   for (const commit of log?.commits ?? []) {
     if (commit.full_sha.startsWith(installed)) {
-      return true
+      return true;
     }
   }
 
-  return false
-}
+  return false;
+};
 
 onMounted(async () => {
-  await awaiter(config.isLoaded)
-  app_branch.value = config.app.app_branch
-  app_version.value = config.app.app_version
-  app_sha.value = config.app.app_commit_sha
-  loadContent()
-})
+  await awaiter(config.isLoaded);
+  app_branch.value = config.app.app_branch;
+  app_version.value = config.app.app_version;
+  app_sha.value = config.app.app_commit_sha;
+  loadContent();
+});
 </script>

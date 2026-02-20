@@ -38,7 +38,7 @@ jobs:
 
     env:
       PYTHON_VERSION: 3.11
-      PNPM_VERSION: 10
+      BUN_VERSION: latest
       NODE_VERSION: 20
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
 
@@ -85,24 +85,31 @@ jobs:
           uv venv --system-site-packages --relocatable
           uv sync --link-mode=copy --active --extra installer
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: Cache bun installation
+        id: cache-bun
+        uses: actions/cache@v4
         with:
-          version: ${{ env.PNPM_VERSION }}
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ matrix.arch }}-bun-${{ hashFiles('**/bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-bun-
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-          cache-dependency-path: "ui/pnpm-lock.yaml"
 
       - name: Build frontend
         working-directory: ui
         shell: bash
         run: |
-          pnpm install --production --prefer-offline --frozen-lockfile
-          pnpm run generate
+          bun install --production --prefer-offline --frozen-lockfile
+          bun run generate
 
       - name: Clean build outputs (Unix)
         if: runner.os != 'Windows'

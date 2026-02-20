@@ -1,4 +1,4 @@
-type DLFieldType = "string" | "text" | "bool";
+type DLFieldType = 'string' | 'text' | 'bool';
 
 type DLField = {
   /** The id of the field */
@@ -27,7 +27,7 @@ type DLField = {
 
   /** Additional options for the field */
   extras: Record<string, any>;
-}
+};
 
 /**
  * Request payload for creating/updating DLField
@@ -39,6 +39,6 @@ type DLFieldRequest = {
   kind: DLFieldType;
   value?: string;
   extras?: Record<string, any>;
-}
+};
 
 export type { DLField, DLFieldRequest, DLFieldType };

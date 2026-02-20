@@ -16,27 +16,37 @@
         </span>
         <div class="is-pulled-right" v-if="!isEditorOpen">
           <div class="field is-grouped">
-
             <p class="control">
-              <button class="button is-primary" @click="isEditorOpen ? closeEditor() : openCreate()">
+              <button
+                class="button is-primary"
+                @click="isEditorOpen ? closeEditor() : openCreate()"
+              >
                 <span class="icon"><i class="fa-solid fa-add" /></span>
                 <span v-if="!isMobile">New Definition</span>
               </button>
             </p>
 
             <p class="control">
-              <button @click="() => inspect = true" class="button is-warning">
+              <button @click="() => (inspect = true)" class="button is-warning">
                 <span class="icon"><i class="fa-solid fa-magnifying-glass" /></span>
                 <span v-if="!isMobile">Inspect</span>
               </button>
             </p>
 
             <p class="control">
-              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+              <button
+                v-tooltip.bottom="'Change display style'"
+                class="button has-tooltip-bottom"
+                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
+              >
                 <span class="icon">
-                  <i class="fa-solid"
-                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                  <i
+                    class="fa-solid"
+                    :class="{
+                      'fa-table': display_style !== 'list',
+                      'fa-table-list': display_style === 'list',
+                    }"
+                /></span>
                 <span v-if="!isMobile">
                   {{ display_style === 'list' ? 'List' : 'Grid' }}
                 </span>
@@ -44,8 +54,11 @@
             </p>
 
             <p class="control">
-              <button class="button is-info" @click="async () => await loadDefinitions()"
-                :class="{ 'is-loading': isLoading }">
+              <button
+                class="button is-info"
+                @click="async () => await loadDefinitions()"
+                :class="{ 'is-loading': isLoading }"
+              >
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
               </button>
@@ -63,8 +76,10 @@
     <div class="columns" v-if="'list' === display_style && definitions.length > 0 && !isEditorOpen">
       <div class="column is-12">
         <div class="table-container">
-          <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-            style="min-width: 850px; table-layout: fixed;">
+          <table
+            class="table is-striped is-hoverable is-fullwidth is-bordered"
+            style="min-width: 850px; table-layout: fixed"
+          >
             <thead>
               <tr class="has-text-centered is-unselectable">
                 <th width="40%">Name</th>
@@ -76,13 +91,25 @@
             <tbody>
               <tr v-for="definition in definitions" :key="definition.id">
                 <td class="is-vcentered">
-                  <div class="is-text-overflow">{{ definition.name || '(Unnamed definition)' }}</div>
+                  <div class="is-text-overflow">
+                    {{ definition.name || '(Unnamed definition)' }}
+                  </div>
                   <div class="is-size-7">
-                    <span class="icon-text is-clickable" @click="toggle(definition)"
-                      v-tooltip="'Click to ' + (definition.enabled ? 'disable' : 'enable') + ' definition'">
+                    <span
+                      class="icon-text is-clickable"
+                      @click="toggle(definition)"
+                      v-tooltip="
+                        'Click to ' + (definition.enabled ? 'disable' : 'enable') + ' definition'
+                      "
+                    >
                       <span class="icon">
-                        <i class="fa-solid fa-power-off"
-                          :class="{ 'has-text-success': definition.enabled, 'has-text-danger': !definition.enabled }" />
+                        <i
+                          class="fa-solid fa-power-off"
+                          :class="{
+                            'has-text-success': definition.enabled,
+                            'has-text-danger': !definition.enabled,
+                          }"
+                        />
                       </span>
                       <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
                     </span>
@@ -90,26 +117,41 @@
                 </td>
                 <td class="is-vcentered has-text-centered">{{ definition.priority }}</td>
                 <td class="is-vcentered has-text-centered">
-                  <span class="has-tooltip" :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
+                  <span
+                    class="has-tooltip"
+                    :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                     v-tooltip="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
-                    v-rtime="definition.updated_at" />
+                    v-rtime="definition.updated_at"
+                  />
                 </td>
                 <td class="is-vcentered is-items-center">
                   <div class="field is-grouped is-grouped-centered">
                     <div class="control">
-                      <button class="button is-small is-info" type="button" @click="exportDefinition(definition)">
+                      <button
+                        class="button is-small is-info"
+                        type="button"
+                        @click="exportDefinition(definition)"
+                      >
                         <span class="icon"><i class="fa-solid fa-file-export" /></span>
                         <span v-if="!isMobile">Export</span>
                       </button>
                     </div>
                     <div class="control">
-                      <button class="button is-small is-warning" type="button" @click="openEdit(definition)">
+                      <button
+                        class="button is-small is-warning"
+                        type="button"
+                        @click="openEdit(definition)"
+                      >
                         <span class="icon"><i class="fa-solid fa-cog" /></span>
                         <span v-if="!isMobile">Edit</span>
                       </button>
                     </div>
                     <div class="control">
-                      <button class="button is-small is-danger" type="button" @click="remove(definition)">
+                      <button
+                        class="button is-small is-danger"
+                        type="button"
+                        @click="remove(definition)"
+                      >
                         <span class="icon"><i class="fa-solid fa-trash" /></span>
                         <span v-if="!isMobile">Delete</span>
                       </button>
@@ -123,7 +165,10 @@
       </div>
     </div>
 
-    <div class="columns is-multiline" v-if="'grid' === display_style && definitions.length > 0 && !isEditorOpen">
+    <div
+      class="columns is-multiline"
+      v-if="'grid' === display_style && definitions.length > 0 && !isEditorOpen"
+    >
       <div class="column is-6" v-for="definition in definitions" :key="definition.id">
         <div class="card">
           <header class="card-header">
@@ -133,13 +178,22 @@
             <div class="card-header-icon">
               <div class="field has-addons">
                 <div class="control" @click="toggle(definition)">
-                  <span class="icon" :class="definition.enabled ? 'has-text-success' : 'has-text-danger'"
-                    v-tooltip="`Definition is ${definition.enabled ? 'enabled' : 'disabled'}. Click to toggle.`">
+                  <span
+                    class="icon"
+                    :class="definition.enabled ? 'has-text-success' : 'has-text-danger'"
+                    v-tooltip="
+                      `Definition is ${definition.enabled ? 'enabled' : 'disabled'}. Click to toggle.`
+                    "
+                  >
                     <i class="fa-solid fa-power-off" />
                   </span>
                 </div>
                 <div class="control">
-                  <button class="has-text-info" v-tooltip="'Export'" @click="exportDefinition(definition)">
+                  <button
+                    class="has-text-info"
+                    v-tooltip="'Export'"
+                    @click="exportDefinition(definition)"
+                  >
                     <span class="icon"><i class="fa-solid fa-file-export" /></span>
                   </button>
                 </div>
@@ -157,10 +211,14 @@
               <p>
                 <span class="icon-text">
                   <span class="icon"><i class="fa-solid fa-clock" /></span>
-                  <span>Updated: <span class="has-tooltip"
+                  <span
+                    >Updated:
+                    <span
+                      class="has-tooltip"
                       :date-datetime="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
                       v-tooltip="moment(definition.updated_at).format('YYYY-M-DD H:mm Z')"
-                      v-rtime="definition.updated_at" />
+                      v-rtime="definition.updated_at"
+                    />
                   </span>
                 </span>
               </p>
@@ -193,47 +251,58 @@
         <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
           Loading data. Please wait...
         </Message>
-        <Message v-if="!isLoading && !isEditorOpen" title="No definitions" class="is-warning"
-          icon="fas fa-exclamation-circle">
-          There are no task definitions. Click the <span class="icon"><i class="fas fa-add" /></span> <strong>New
-            Definition</strong> button to create your first task definition.
+        <Message
+          v-if="!isLoading && !isEditorOpen"
+          title="No definitions"
+          class="is-warning"
+          icon="fas fa-exclamation-circle"
+        >
+          There are no task definitions. Click the
+          <span class="icon"><i class="fas fa-add" /></span> <strong>New Definition</strong> button
+          to create your first task definition.
         </Message>
       </div>
     </div>
 
     <div class="columns" v-if="isEditorOpen">
       <div class="column is-12">
-        <TaskDefinitionEditor :title="editorTitle" :document="workingDefinition"
-          :initial-show-import="'create' === editorMode" :available-definitions="definitions" :loading="editorLoading"
-          :submitting="editorSubmitting" @submit="submitDefinition" @cancel="closeEditor"
-          @import-existing="importExistingDefinition" />
+        <TaskDefinitionEditor
+          :title="editorTitle"
+          :document="workingDefinition"
+          :initial-show-import="'create' === editorMode"
+          :available-definitions="definitions"
+          :loading="editorLoading"
+          :submitting="editorSubmitting"
+          @submit="submitDefinition"
+          @cancel="closeEditor"
+          @import-existing="importExistingDefinition"
+        />
       </div>
     </div>
 
-    <Modal v-if="inspect" @close="() => inspect = false" :contentClass="`modal-content-max`">
+    <Modal v-if="inspect" @close="() => (inspect = false)" :contentClass="`modal-content-max`">
       <TaskInspect />
     </Modal>
-
   </main>
 </template>
 
 <script setup lang="ts">
-import moment from 'moment'
-import { computed, onMounted, ref } from 'vue'
-import { useStorage } from '@vueuse/core'
+import moment from 'moment';
+import { computed, onMounted, ref } from 'vue';
+import { useStorage } from '@vueuse/core';
 
-import TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue'
-import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions'
-import { useDialog } from '~/composables/useDialog'
-import { useNotification } from '~/composables/useNotification'
-import { copyText, encode } from '~/utils'
-import { useMediaQuery } from '~/composables/useMediaQuery'
+import TaskDefinitionEditor from '~/components/TaskDefinitionEditor.vue';
+import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
+import { useDialog } from '~/composables/useDialog';
+import { useNotification } from '~/composables/useNotification';
+import { copyText, encode } from '~/utils';
+import { useMediaQuery } from '~/composables/useMediaQuery';
 
 import type {
   TaskDefinitionDetailed,
   TaskDefinitionDocument,
   TaskDefinitionSummary,
-} from '~/types/task_definitions'
+} from '~/types/task_definitions';
 
 const DEFAULT_DEFINITION: TaskDefinitionDocument = {
   name: 'New Definition',
@@ -252,74 +321,74 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
       },
     },
   },
-}
+};
 
-const isMobile = useMediaQuery({ maxWidth: 1024 })
+const isMobile = useMediaQuery({ maxWidth: 1024 });
 
-const taskDefs = useTaskDefinitionsComposable()
-const definitionsRef = taskDefs.definitions
-const isLoading = taskDefs.isLoading
-const loadDefinitions = taskDefs.loadDefinitions
-const getDefinition = taskDefs.getDefinition
-const createDefinition = taskDefs.createDefinition
-const updateDefinition = taskDefs.updateDefinition
-const deleteDefinition = taskDefs.deleteDefinition
-const toggleEnabled = taskDefs.toggleEnabled
+const taskDefs = useTaskDefinitionsComposable();
+const definitionsRef = taskDefs.definitions;
+const isLoading = taskDefs.isLoading;
+const loadDefinitions = taskDefs.loadDefinitions;
+const getDefinition = taskDefs.getDefinition;
+const createDefinition = taskDefs.createDefinition;
+const updateDefinition = taskDefs.updateDefinition;
+const deleteDefinition = taskDefs.deleteDefinition;
+const toggleEnabled = taskDefs.toggleEnabled;
 
-const definitions = computed(() => definitionsRef.value)
+const definitions = computed(() => definitionsRef.value);
 
-const { confirmDialog } = useDialog()
-const toast = useNotification()
+const { confirmDialog } = useDialog();
+const toast = useNotification();
 
-const isEditorOpen = ref<boolean>(false)
-const editorMode = ref<'create' | 'edit'>('create')
-const editorLoading = ref<boolean>(false)
-const editorSubmitting = ref<boolean>(false)
-const workingDefinition = ref<TaskDefinitionDocument | null>(null)
-const workingId = ref<number | null>(null)
-const inspect = ref<boolean>(false)
-const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid')
+const isEditorOpen = ref<boolean>(false);
+const editorMode = ref<'create' | 'edit'>('create');
+const editorLoading = ref<boolean>(false);
+const editorSubmitting = ref<boolean>(false);
+const workingDefinition = ref<TaskDefinitionDocument | null>(null);
+const workingId = ref<number | null>(null);
+const inspect = ref<boolean>(false);
+const display_style = useStorage<'list' | 'grid'>('task-definitions:display', 'grid');
 
 const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
   if ('edit' !== editorMode.value || !workingId.value) {
-    return undefined
+    return undefined;
   }
 
-  return definitions.value.find(item => item.id === workingId.value)
-})
+  return definitions.value.find((item) => item.id === workingId.value);
+});
 
 const editorTitle = computed<string>(() => {
   return 'create' === editorMode.value
     ? 'Create Task Definition'
-    : `Edit - ${currentSummary.value?.name || 'Task Definition'}`
-})
+    : `Edit - ${currentSummary.value?.name || 'Task Definition'}`;
+});
 
 const cloneDocument = (document: TaskDefinitionDocument): TaskDefinitionDocument => {
-  return JSON.parse(JSON.stringify(document)) as TaskDefinitionDocument
-}
+  return JSON.parse(JSON.stringify(document)) as TaskDefinitionDocument;
+};
 
 const openCreate = (): void => {
-  editorMode.value = 'create'
-  workingId.value = null
-  workingDefinition.value = cloneDocument(DEFAULT_DEFINITION)
-  isEditorOpen.value = true
-  editorLoading.value = false
-  editorSubmitting.value = false
-}
+  editorMode.value = 'create';
+  workingId.value = null;
+  workingDefinition.value = cloneDocument(DEFAULT_DEFINITION);
+  isEditorOpen.value = true;
+  editorLoading.value = false;
+  editorSubmitting.value = false;
+};
 
 const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
-  editorMode.value = 'edit'
-  workingId.value = summary.id
-  workingDefinition.value = null
-  editorLoading.value = true
-  editorSubmitting.value = false
-  isEditorOpen.value = true
+  editorMode.value = 'edit';
+  workingId.value = summary.id;
+  workingDefinition.value = null;
+  editorLoading.value = true;
+  editorSubmitting.value = false;
+  isEditorOpen.value = true;
 
-  const detailed: TaskDefinitionDetailed | null = await getDefinition(summary.id)
+  const detailed: TaskDefinitionDetailed | null = await getDefinition(summary.id);
   if (!detailed) {
-    isEditorOpen.value = false
-    editorLoading.value = false
-    return
+    isEditorOpen.value = false;
+    editorLoading.value = false;
+    return;
   }
 
   const document: TaskDefinitionDocument = {
@@ -328,17 +397,17 @@ const openEdit = async (summary: TaskDefinitionSummary): Promise<void> => {
     enabled: detailed.enabled,
     match_url: [...detailed.match_url],
     definition: JSON.parse(JSON.stringify(detailed.definition)),
-  }
+  };
 
-  workingDefinition.value = document
-  editorLoading.value = false
-}
+  workingDefinition.value = document;
+  editorLoading.value = false;
+};
 
 const importExistingDefinition = async (id: number): Promise<void> => {
-  const detailed = await getDefinition(id)
+  const detailed = await getDefinition(id);
   if (!detailed) {
-    toast.error('Failed to load task definition for import.')
-    return
+    toast.error('Failed to load task definition for import.');
+    return;
   }
 
   const document: TaskDefinitionDocument = {
@@ -347,89 +416,89 @@ const importExistingDefinition = async (id: number): Promise<void> => {
     enabled: detailed.enabled,
     match_url: [...detailed.match_url],
     definition: JSON.parse(JSON.stringify(detailed.definition)),
-  }
+  };
 
-  editorMode.value = 'create'
-  workingId.value = null
-  workingDefinition.value = document
-  isEditorOpen.value = true
-  editorLoading.value = false
-}
+  editorMode.value = 'create';
+  workingId.value = null;
+  workingDefinition.value = document;
+  isEditorOpen.value = true;
+  editorLoading.value = false;
+};
 
 const closeEditor = (): void => {
   if (editorSubmitting.value) {
-    return
+    return;
   }
 
-  isEditorOpen.value = false
-  workingDefinition.value = null
-  workingId.value = null
-  editorLoading.value = false
-}
+  isEditorOpen.value = false;
+  workingDefinition.value = null;
+  workingId.value = null;
+  editorLoading.value = false;
+};
 
 const submitDefinition = async (definition: TaskDefinitionDocument): Promise<void> => {
-  editorSubmitting.value = true
+  editorSubmitting.value = true;
   try {
     if ('create' === editorMode.value) {
-      const created = await createDefinition(definition)
+      const created = await createDefinition(definition);
       if (created) {
-        isEditorOpen.value = false
-        workingDefinition.value = null
-        workingId.value = null
+        isEditorOpen.value = false;
+        workingDefinition.value = null;
+        workingId.value = null;
       }
-    }
-    else if (workingId.value) {
-      const updated = await updateDefinition(workingId.value, definition)
+    } else if (workingId.value) {
+      const updated = await updateDefinition(workingId.value, definition);
       if (updated) {
-        isEditorOpen.value = false
-        workingDefinition.value = null
-        workingId.value = null
+        isEditorOpen.value = false;
+        workingDefinition.value = null;
+        workingId.value = null;
       }
     }
+  } finally {
+    editorSubmitting.value = false;
   }
-  finally {
-    editorSubmitting.value = false
-  }
-}
+};
 
 const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   const result = await confirmDialog({
     title: 'Delete Task Definition',
     message: `Are you sure you want to delete "${summary.name || summary.id}"?`,
     confirmColor: 'is-danger',
-  })
+  });
 
   if (!result.status) {
-    return
+    return;
   }
 
-  await deleteDefinition(summary.id)
-}
+  await deleteDefinition(summary.id);
+};
 
 const toggle = async (summary: TaskDefinitionSummary): Promise<void> => {
-  await toggleEnabled(summary.id, !summary.enabled)
-}
+  await toggleEnabled(summary.id, !summary.enabled);
+};
 
 const exportDefinition = async (summary: TaskDefinitionSummary): Promise<void> => {
-  const detailed = await getDefinition(summary.id)
+  const detailed = await getDefinition(summary.id);
   if (!detailed) {
-    return
+    return;
   }
 
-  return copyText(encode({
-    _type: 'task_definition',
-    _version: '2.0',
-    name: detailed.name,
-    priority: detailed.priority,
-    enabled: detailed.enabled,
-    match_url: detailed.match_url,
-    definition: detailed.definition,
-  }))
-}
+  return copyText(
+    encode({
+      _type: 'task_definition',
+      _version: '2.0',
+      name: detailed.name,
+      priority: detailed.priority,
+      enabled: detailed.enabled,
+      match_url: detailed.match_url,
+      definition: detailed.definition,
+    }),
+  );
+};
 
 onMounted(async () => {
   if (!definitions.value.length) {
-    await loadDefinitions()
+    await loadDefinitions();
   }
-})
+});
 </script>

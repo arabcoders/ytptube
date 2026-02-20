@@ -8,21 +8,37 @@
         </span>
       </p>
       <div class="card-header-icon is-flex is-align-items-center">
-        <button type="button" class="button is-small" @click="() => showImport = !showImport" :disabled="isBusy">
-          <span class="icon"><i class="fa-solid"
-              :class="{ 'fa-arrow-down': !showImport, 'fa-arrow-up': showImport }" /></span>
+        <button
+          type="button"
+          class="button is-small"
+          @click="() => (showImport = !showImport)"
+          :disabled="isBusy"
+        >
+          <span class="icon"
+            ><i
+              class="fa-solid"
+              :class="{ 'fa-arrow-down': !showImport, 'fa-arrow-up': showImport }"
+          /></span>
           <span>{{ showImport ? 'Hide import' : 'Show import' }}</span>
         </button>
         <div class="buttons has-addons ml-2">
-          <button type="button" class="button is-small"
-            :class="{ 'is-primary': 'gui' === mode, 'is-light': 'gui' !== mode }" @click="() => switchMode('gui')"
-            :disabled="!guiSupported || isBusy">
+          <button
+            type="button"
+            class="button is-small"
+            :class="{ 'is-primary': 'gui' === mode, 'is-light': 'gui' !== mode }"
+            @click="() => switchMode('gui')"
+            :disabled="!guiSupported || isBusy"
+          >
             <span class="icon"><i class="fa-solid fa-sliders" /></span>
             <span>GUI</span>
           </button>
-          <button type="button" class="button is-small"
+          <button
+            type="button"
+            class="button is-small"
             :class="{ 'is-primary': 'advanced' === mode, 'is-light': 'advanced' !== mode }"
-            @click="() => switchMode('advanced')" :disabled="isBusy">
+            @click="() => switchMode('advanced')"
+            :disabled="isBusy"
+          >
             <span class="icon"><i class="fa-solid fa-code" /></span>
             <span>Advanced</span>
           </button>
@@ -57,8 +73,13 @@
           </div>
         </div>
 
-        <div class="column"
-          :class="{ 'is-6-tablet is-12-mobile': availableDefinitions.length, 'is-12': !availableDefinitions.length }">
+        <div
+          class="column"
+          :class="{
+            'is-6-tablet is-12-mobile': availableDefinitions.length,
+            'is-12': !availableDefinitions.length,
+          }"
+        >
           <div class="field">
             <label class="label is-inline">
               <span class="icon"><i class="fa-solid fa-file-import" /></span>
@@ -66,11 +87,21 @@
             </label>
             <div class="field has-addons">
               <div class="control is-expanded">
-                <input class="input" type="text" v-model="importString" :disabled="isBusy" autocomplete="off">
+                <input
+                  class="input"
+                  type="text"
+                  v-model="importString"
+                  :disabled="isBusy"
+                  autocomplete="off"
+                />
               </div>
               <div class="control">
-                <button class="button is-primary" type="button" @click="importFromString"
-                  :disabled="isBusy || !importString.trim()">
+                <button
+                  class="button is-primary"
+                  type="button"
+                  @click="importFromString"
+                  :disabled="isBusy || !importString.trim()"
+                >
                   <span class="icon"><i class="fa-solid fa-file-import" /></span>
                   <span>Import</span>
                 </button>
@@ -88,8 +119,10 @@
 
       <Message v-if="!guiSupported" class="is-warning">
         <span class="icon"><i class="fa-solid fa-triangle-exclamation" /></span>
-        <span>This task definition uses features that cannot be represented with the visual editor. You can still
-          update it via the advanced view.</span>
+        <span
+          >This task definition uses features that cannot be represented with the visual editor. You
+          can still update it via the advanced view.</span
+        >
       </Message>
 
       <div v-if="'gui' === mode">
@@ -101,7 +134,7 @@
                 Name
               </label>
               <div class="control">
-                <input class="input" type="text" v-model="guiState.name" :disabled="isBusy">
+                <input class="input" type="text" v-model="guiState.name" :disabled="isBusy" />
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -117,7 +150,13 @@
                 Priority
               </label>
               <div class="control">
-                <input class="input" type="number" min="0" v-model.number="guiState.priority" :disabled="isBusy">
+                <input
+                  class="input"
+                  type="number"
+                  min="0"
+                  v-model.number="guiState.priority"
+                  :disabled="isBusy"
+                />
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -134,7 +173,7 @@
               </label>
               <div class="control">
                 <label class="checkbox">
-                  <input type="checkbox" v-model="guiState.enabled" :disabled="isBusy">
+                  <input type="checkbox" v-model="guiState.enabled" :disabled="isBusy" />
                   <span class="ml-2">Enabled</span>
                 </label>
               </div>
@@ -152,8 +191,13 @@
                 Match patterns
               </label>
               <div class="control">
-                <textarea class="textarea" rows="3" v-model="guiState.matchText" :disabled="isBusy"
-                  placeholder="https://example.com/*&#10;https://example.org/channel/*" />
+                <textarea
+                  class="textarea"
+                  rows="3"
+                  v-model="guiState.matchText"
+                  :disabled="isBusy"
+                  placeholder="https://example.com/*&#10;https://example.org/channel/*"
+                />
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -190,8 +234,13 @@
                 Selenium Hub URL (Required)
               </label>
               <div class="control">
-                <input class="input" type="url" v-model="guiState.engineUrl" :disabled="isBusy"
-                  placeholder="http://selenium:4444/wd/hub">
+                <input
+                  class="input"
+                  type="url"
+                  v-model="guiState.engineUrl"
+                  :disabled="isBusy"
+                  placeholder="http://selenium:4444/wd/hub"
+                />
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -228,12 +277,20 @@
                 Request URL (optional)
               </label>
               <div class="control">
-                <input class="input" type="url" v-model="guiState.requestUrl" :disabled="isBusy"
-                  placeholder="https://example.com/feed">
+                <input
+                  class="input"
+                  type="url"
+                  v-model="guiState.requestUrl"
+                  :disabled="isBusy"
+                  placeholder="https://example.com/feed"
+                />
               </div>
               <p class="help is-bold">
                 <span class="icon"><i class="fa-solid fa-info" /></span>
-                <span>Overrides the URL used to fetch the page. Useful for sites with separate feed URLs.</span>
+                <span
+                  >Overrides the URL used to fetch the page. Useful for sites with separate feed
+                  URLs.</span
+                >
               </p>
             </div>
           </div>
@@ -274,8 +331,13 @@
                       Selector / Expression
                     </label>
                     <div class="control">
-                      <input class="input" type="text" v-model="guiState.containerSelector" :disabled="isBusy"
-                        placeholder="div.card">
+                      <input
+                        class="input"
+                        type="text"
+                        v-model="guiState.containerSelector"
+                        :disabled="isBusy"
+                        placeholder="div.card"
+                      />
                     </div>
                   </div>
                 </div>
@@ -283,7 +345,12 @@
 
               <h4 class="title is-6 mt-4">Extracted fields</h4>
               <div class="field">
-                <button class="button is-small is-primary" type="button" @click="addField" :disabled="isBusy">
+                <button
+                  class="button is-small is-primary"
+                  type="button"
+                  @click="addField"
+                  :disabled="isBusy"
+                >
                   <span class="icon"><i class="fa-solid fa-plus" /></span>
                   <span>Add field</span>
                 </button>
@@ -306,7 +373,7 @@
                     </tr>
                     <tr v-for="(field, index) in guiState.fields" :key="field.key">
                       <td>
-                        <input class="input" type="text" v-model="field.key" :disabled="isBusy">
+                        <input class="input" type="text" v-model="field.key" :disabled="isBusy" />
                       </td>
                       <td>
                         <div class="select is-fullwidth">
@@ -319,15 +386,29 @@
                         </div>
                       </td>
                       <td>
-                        <input class="input" type="text" v-model="field.expression" :disabled="isBusy">
+                        <input
+                          class="input"
+                          type="text"
+                          v-model="field.expression"
+                          :disabled="isBusy"
+                        />
                       </td>
                       <td>
-                        <input class="input" type="text" v-model="field.attribute" :disabled="isBusy"
-                          placeholder="Optional">
+                        <input
+                          class="input"
+                          type="text"
+                          v-model="field.attribute"
+                          :disabled="isBusy"
+                          placeholder="Optional"
+                        />
                       </td>
                       <td class="has-text-right">
-                        <button class="button is-small is-danger" type="button" @click="removeField(index)"
-                          :disabled="isBusy">
+                        <button
+                          class="button is-small is-danger"
+                          type="button"
+                          @click="removeField(index)"
+                          :disabled="isBusy"
+                        >
                           <span class="icon"><i class="fa-solid fa-trash" /></span>
                         </button>
                       </td>
@@ -348,8 +429,13 @@
       </div>
 
       <div v-else>
-        <textarea class="textarea is-family-monospace" rows="18" v-model="jsonText" :readonly="submitting"
-          spellcheck="false" />
+        <textarea
+          class="textarea is-family-monospace"
+          rows="18"
+          v-model="jsonText"
+          :readonly="submitting"
+          spellcheck="false"
+        />
         <p v-if="errorMessage" class="help is-danger mt-2">
           <span class="icon-text">
             <span class="icon"><i class="fa-solid fa-circle-exclamation" /></span>
@@ -369,7 +455,13 @@
           <span class="icon"><i class="fa-solid fa-xmark" /></span>
           <span>Cancel</span>
         </button>
-        <button class="button is-link" type="button" v-if="'advanced' === mode" @click="beautify" :disabled="isBusy">
+        <button
+          class="button is-link"
+          type="button"
+          v-if="'advanced' === mode"
+          @click="beautify"
+          :disabled="isBusy"
+        >
           <span class="icon"><i class="fa-solid fa-wand-magic-sparkles" /></span>
           <span>Format</span>
         </button>
@@ -379,60 +471,62 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue';
 
-import Message from '~/components/Message.vue'
-import { decode } from '~/utils'
-import type { TaskDefinitionDocument, TaskDefinitionSummary } from '~/types/task_definitions'
+import Message from '~/components/Message.vue';
+import { decode } from '~/utils';
+import type { TaskDefinitionDocument, TaskDefinitionSummary } from '~/types/task_definitions';
 
-type EditorMode = 'gui' | 'advanced'
+type EditorMode = 'gui' | 'advanced';
 
 type GuiField = {
-  key: string
-  type: string
-  expression: string
-  attribute: string
-}
+  key: string;
+  type: string;
+  expression: string;
+  attribute: string;
+};
 
 type GuiState = {
-  name: string
-  priority: number
-  enabled: boolean
-  matchText: string
-  engineType: 'httpx' | 'selenium'
-  engineUrl: string
-  requestMethod: string
-  requestUrl: string
-  containerType: 'css' | 'xpath' | 'jsonpath'
-  containerSelector: string
-  fields: GuiField[]
-}
+  name: string;
+  priority: number;
+  enabled: boolean;
+  matchText: string;
+  engineType: 'httpx' | 'selenium';
+  engineUrl: string;
+  requestMethod: string;
+  requestUrl: string;
+  containerType: 'css' | 'xpath' | 'jsonpath';
+  containerSelector: string;
+  fields: GuiField[];
+};
 
 const props = defineProps<{
-  title: string
-  document: TaskDefinitionDocument | null
-  loading?: boolean
-  submitting?: boolean
-  availableDefinitions?: readonly TaskDefinitionSummary[]
-  initialShowImport?: boolean
-}>()
+  title: string;
+  document: TaskDefinitionDocument | null;
+  loading?: boolean;
+  submitting?: boolean;
+  availableDefinitions?: readonly TaskDefinitionSummary[];
+  initialShowImport?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'submit', payload: TaskDefinitionDocument): void
-  (e: 'cancel'): void
-  (e: 'import-existing', id: number): void
-}>()
+  (e: 'submit', payload: TaskDefinitionDocument): void;
+  (e: 'cancel'): void;
+  (e: 'import-existing', id: number): void;
+}>();
 
-const jsonText = ref<string>('')
-const errorMessage = ref<string | null>(null)
-const guiError = ref<string | null>(null)
-const guiSupported = ref<boolean>(true)
-const mode = ref<EditorMode>('gui')
-const showImport = ref<boolean>(false)
-const importString = ref<string>('')
-const selectedExisting = ref<number | ''>('')
+const jsonText = ref<string>('');
+const errorMessage = ref<string | null>(null);
+const guiError = ref<string | null>(null);
+const guiSupported = ref<boolean>(true);
+const mode = ref<EditorMode>('gui');
+const showImport = ref<boolean>(false);
+const importString = ref<string>('');
+const selectedExisting = ref<number | ''>('');
 
-const availableDefinitions = computed<readonly TaskDefinitionSummary[]>(() => props.availableDefinitions ?? [])
+const availableDefinitions = computed<readonly TaskDefinitionSummary[]>(
+  () => props.availableDefinitions ?? [],
+);
 
 const guiState = reactive<GuiState>({
   name: '',
@@ -446,114 +540,123 @@ const guiState = reactive<GuiState>({
   containerType: 'css',
   containerSelector: '',
   fields: [],
-})
+});
 
-const loading = computed<boolean>(() => props.loading ?? false)
-const submitting = computed<boolean>(() => props.submitting ?? false)
-const isBusy = computed<boolean>(() => loading.value || submitting.value)
-const headerTitle = computed<string>(() => props.title)
+const loading = computed<boolean>(() => props.loading ?? false);
+const submitting = computed<boolean>(() => props.submitting ?? false);
+const isBusy = computed<boolean>(() => loading.value || submitting.value);
+const headerTitle = computed<string>(() => props.title);
 
-const guiLimitations = 'Only a single container selector and per-field extractors are exposed. ' +
-  'More advanced constructs require raw view mode.'
+const guiLimitations =
+  'Only a single container selector and per-field extractors are exposed. ' +
+  'More advanced constructs require raw view mode.';
 
 const resetGuiState = (state: GuiState): void => {
-  guiState.name = state.name
-  guiState.priority = state.priority
-  guiState.enabled = state.enabled
-  guiState.matchText = state.matchText
-  guiState.engineType = state.engineType
-  guiState.engineUrl = state.engineUrl
-  guiState.requestMethod = state.requestMethod
-  guiState.requestUrl = state.requestUrl
-  guiState.containerType = state.containerType
-  guiState.containerSelector = state.containerSelector
-  guiState.fields = state.fields.map(field => ({ ...field }))
-}
+  guiState.name = state.name;
+  guiState.priority = state.priority;
+  guiState.enabled = state.enabled;
+  guiState.matchText = state.matchText;
+  guiState.engineType = state.engineType;
+  guiState.engineUrl = state.engineUrl;
+  guiState.requestMethod = state.requestMethod;
+  guiState.requestUrl = state.requestUrl;
+  guiState.containerType = state.containerType;
+  guiState.containerSelector = state.containerSelector;
+  guiState.fields = state.fields.map((field) => ({ ...field }));
+};
 
-const defaultField = (): GuiField => ({ key: '', type: 'css', expression: '', attribute: '' })
+const defaultField = (): GuiField => ({ key: '', type: 'css', expression: '', attribute: '' });
 
 const addField = (): void => {
-  guiState.fields.push(defaultField())
-}
+  guiState.fields.push(defaultField());
+};
 
 const removeField = (index: number): void => {
-  guiState.fields.splice(index, 1)
-}
+  guiState.fields.splice(index, 1);
+};
 
 const splitMatches = (text: string): string[] => {
-  return text.split(/\r?\n/).map(item => item.trim()).filter(Boolean)
-}
+  return text
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
 
 const toGui = (document: TaskDefinitionDocument): GuiState | null => {
   if (!document || Array.isArray(document) || 'object' !== typeof document) {
-    return null
+    return null;
   }
 
-  const entry = document
-  const match = entry.match_url
-  if (!Array.isArray(match) || match.some(item => 'string' !== typeof item)) {
-    return null
+  const entry = document;
+  const match = entry.match_url;
+  if (!Array.isArray(match) || match.some((item) => 'string' !== typeof item)) {
+    return null;
   }
 
-  const definition = entry.definition
+  const definition = entry.definition;
   if (!definition || Array.isArray(definition) || 'object' !== typeof definition) {
-    return null
+    return null;
   }
 
-  const parse = definition.parse
+  const parse = definition.parse;
   if (!parse || Array.isArray(parse) || 'object' !== typeof parse) {
-    return null
+    return null;
   }
 
-  const parseRecord = parse as Record<string, unknown>
-  const items = parseRecord.items
+  const parseRecord = parse as Record<string, unknown>;
+  const items = parseRecord.items;
   if (!items || Array.isArray(items) || 'object' !== typeof items) {
-    return null
+    return null;
   }
 
-  const itemRecord = items as Record<string, unknown>
-  const fields = itemRecord.fields
+  const itemRecord = items as Record<string, unknown>;
+  const fields = itemRecord.fields;
   if (!fields || Array.isArray(fields) || 'object' !== typeof fields) {
-    return null
+    return null;
   }
 
-  const fieldRecord = fields as Record<string, unknown>
-  const guiFields: GuiField[] = []
+  const fieldRecord = fields as Record<string, unknown>;
+  const guiFields: GuiField[] = [];
   for (const [key, value] of Object.entries(fieldRecord)) {
     if (!value || Array.isArray(value) || 'object' !== typeof value) {
-      return null
+      return null;
     }
-    const rule = value as Record<string, unknown>
+    const rule = value as Record<string, unknown>;
     if ('string' !== typeof rule.type || 'string' !== typeof rule.expression) {
-      return null
+      return null;
     }
-    if (Object.keys(rule).some(prop => !['type', 'expression', 'attribute', 'post_filter'].includes(prop))) {
-      return null
+    if (
+      Object.keys(rule).some(
+        (prop) => !['type', 'expression', 'attribute', 'post_filter'].includes(prop),
+      )
+    ) {
+      return null;
     }
     guiFields.push({
       key,
       type: String(rule.type),
       expression: String(rule.expression),
       attribute: 'string' === typeof rule.attribute ? String(rule.attribute) : '',
-    })
+    });
   }
 
-  const engine = definition.engine as Record<string, unknown> | undefined
-  const engineType = (engine?.type === 'selenium') ? 'selenium' : 'httpx'
-  const engineUrl = 'string' === typeof engine?.options && engineType === 'selenium'
-    ? ''
-    : (engine?.options as Record<string, unknown> | undefined)?.url as string | undefined
+  const engine = definition.engine as Record<string, unknown> | undefined;
+  const engineType = engine?.type === 'selenium' ? 'selenium' : 'httpx';
+  const engineUrl =
+    'string' === typeof engine?.options && engineType === 'selenium'
+      ? ''
+      : ((engine?.options as Record<string, unknown> | undefined)?.url as string | undefined);
 
   if (engineUrl && engineType === 'selenium' && 'string' !== typeof engineUrl) {
-    return null
+    return null;
   }
 
-  const request = definition.request as Record<string, unknown> | undefined
+  const request = definition.request as Record<string, unknown> | undefined;
 
-  const selectorType = String(itemRecord.type ?? 'css') as GuiState['containerType']
-  const selectorSource = (itemRecord.selector ?? itemRecord.expression) as string | undefined
+  const selectorType = String(itemRecord.type ?? 'css') as GuiState['containerType'];
+  const selectorSource = (itemRecord.selector ?? itemRecord.expression) as string | undefined;
   if (!selectorSource || 'string' !== typeof selectorSource) {
-    return null
+    return null;
   }
 
   return {
@@ -568,40 +671,40 @@ const toGui = (document: TaskDefinitionDocument): GuiState | null => {
     containerType: selectorType,
     containerSelector: selectorSource,
     fields: guiFields.length ? guiFields : [defaultField()],
-  }
-}
+  };
+};
 
 const fromGui = (state: GuiState): TaskDefinitionDocument => {
   if (!state.name.trim()) {
-    throw new Error('Name is required.')
+    throw new Error('Name is required.');
   }
 
-  const matches = splitMatches(state.matchText)
+  const matches = splitMatches(state.matchText);
   if (!matches.length) {
-    throw new Error('At least one match pattern is required.')
+    throw new Error('At least one match pattern is required.');
   }
 
   if (!state.containerSelector.trim()) {
-    throw new Error('Container selector is required.')
+    throw new Error('Container selector is required.');
   }
 
-  const formattedFields: Record<string, Record<string, string>> = {}
-  state.fields.forEach(field => {
+  const formattedFields: Record<string, Record<string, string>> = {};
+  state.fields.forEach((field) => {
     if (!field.key.trim()) {
-      return
+      return;
     }
     if (!field.expression.trim()) {
-      throw new Error(`Expression is required for field "${field.key}".`)
+      throw new Error(`Expression is required for field "${field.key}".`);
     }
     formattedFields[field.key.trim()] = {
       type: field.type || 'css',
       expression: field.expression,
       ...(field.attribute ? { attribute: field.attribute } : {}),
-    }
-  })
+    };
+  });
 
   if (!Object.keys(formattedFields).length) {
-    throw new Error('Configure at least one extractor field.')
+    throw new Error('Configure at least one extractor field.');
   }
 
   const definition: Record<string, unknown> = {
@@ -613,7 +716,7 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
         fields: formattedFields,
       },
     },
-  }
+  };
 
   if ('httpx' !== state.engineType || state.engineUrl) {
     definition.engine = {
@@ -621,18 +724,18 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
       ...(state.engineType === 'selenium' && state.engineUrl
         ? { options: { url: state.engineUrl } }
         : {}),
-    }
+    };
   }
 
-  const request: Record<string, string> = {}
+  const request: Record<string, string> = {};
   if (state.requestMethod && 'GET' !== state.requestMethod) {
-    request.method = state.requestMethod
+    request.method = state.requestMethod;
   }
   if (state.requestUrl) {
-    request.url = state.requestUrl
+    request.url = state.requestUrl;
   }
   if (Object.keys(request).length) {
-    definition.request = request
+    definition.request = request;
   }
 
   return {
@@ -641,67 +744,72 @@ const fromGui = (state: GuiState): TaskDefinitionDocument => {
     enabled: state.enabled,
     match_url: matches,
     definition: definition as unknown as TaskDefinitionDocument['definition'],
-  }
-}
+  };
+};
 
 const normalizeRequestConfig = (request: any): any => {
   if (!request || 'object' !== typeof request) {
-    return request
+    return request;
   }
 
   if ('json' in request) {
-    const normalized = { ...request }
-    normalized.json_data = normalized.json
-    delete normalized.json
-    return normalized
+    const normalized = { ...request };
+    normalized.json_data = normalized.json;
+    delete normalized.json;
+    return normalized;
   }
 
-  return request
-}
+  return request;
+};
 
 const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
   if (!payload || Array.isArray(payload) || 'object' !== typeof payload) {
-    throw new Error('Import payload is not a task definition object.')
+    throw new Error('Import payload is not a task definition object.');
   }
 
-  const record = payload as Record<string, unknown>
+  const record = payload as Record<string, unknown>;
 
   if ('_type' in record && record._type !== undefined && record._type !== 'task_definition') {
-    throw new Error('Import string is not a task definition export.')
+    throw new Error('Import string is not a task definition export.');
   }
 
-  const version = record._version as string | undefined
+  const version = record._version as string | undefined;
   if (-1 === ['1.0', '2.0'].indexOf(version ?? '')) {
-    throw new Error(`Unsupported or missing _version field. Expected "1.0" or "2.0", got: ${version ?? 'undefined'}`)
+    throw new Error(
+      `Unsupported or missing _version field. Expected "1.0" or "2.0", got: ${version ?? 'undefined'}`,
+    );
   }
 
-  let base: TaskDefinitionDocument
+  let base: TaskDefinitionDocument;
 
   if ('1.0' === version) {
     // v1.0 format migration
-    const oldDef = record.definition as Record<string, unknown>
+    const oldDef = record.definition as Record<string, unknown>;
 
     // Normalize match_url from old v1.0 format
-    const oldMatch = Array.isArray(oldDef.match) ? oldDef.match : []
-    const normalizedMatch: string[] = []
+    const oldMatch = Array.isArray(oldDef.match) ? oldDef.match : [];
+    const normalizedMatch: string[] = [];
 
     for (const item of oldMatch) {
       if ('string' === typeof item) {
-        normalizedMatch.push(item)
-      }
-      else if ('object' === typeof item && item !== null) {
-        const obj = item as Record<string, unknown>
+        normalizedMatch.push(item);
+      } else if ('object' === typeof item && item !== null) {
+        const obj = item as Record<string, unknown>;
         if ('string' === typeof obj.regex) {
-          normalizedMatch.push(`/${obj.regex}/`)
-        }
-        else if ('string' === typeof obj.glob) {
-          normalizedMatch.push(obj.glob)
+          normalizedMatch.push(`/${obj.regex}/`);
+        } else if ('string' === typeof obj.glob) {
+          normalizedMatch.push(obj.glob);
         }
       }
     }
 
     base = {
-      name: 'string' === typeof oldDef.name ? oldDef.name : 'string' === typeof record.name ? record.name : '',
+      name:
+        'string' === typeof oldDef.name
+          ? oldDef.name
+          : 'string' === typeof record.name
+            ? record.name
+            : '',
       priority: Number(oldDef.priority ?? record.priority ?? 0) || 0,
       enabled: true,
       match_url: normalizedMatch,
@@ -711,42 +819,40 @@ const parseImportedDocument = (payload: unknown): TaskDefinitionDocument => {
         request: normalizeRequestConfig(oldDef.request),
         response: oldDef.response as any,
       },
-    }
-  }
-  else {
-    base = record as unknown as TaskDefinitionDocument
+    };
+  } else {
+    base = record as unknown as TaskDefinitionDocument;
   }
 
-  return JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument
-}
+  return JSON.parse(JSON.stringify(base)) as TaskDefinitionDocument;
+};
 
 const parseDocument = (): TaskDefinitionDocument | null => {
   try {
     if (!jsonText.value.trim()) {
-      throw new Error('Definition cannot be empty.')
+      throw new Error('Definition cannot be empty.');
     }
-    const parsed = JSON.parse(jsonText.value) as unknown
+    const parsed = JSON.parse(jsonText.value) as unknown;
     if (!parsed || Array.isArray(parsed) || 'object' !== typeof parsed) {
-      throw new Error('Definition must be a JSON object.')
+      throw new Error('Definition must be a JSON object.');
     }
-    errorMessage.value = null
-    return parsed as TaskDefinitionDocument
+    errorMessage.value = null;
+    return parsed as TaskDefinitionDocument;
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Invalid JSON document.';
+    return null;
   }
-  catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Invalid JSON document.'
-    return null
-  }
-}
+};
 
 const applyDocument = (document: TaskDefinitionDocument | null): void => {
-  const shouldShowImport = props.initialShowImport ?? !document
-  showImport.value = shouldShowImport
-  importString.value = ''
-  selectedExisting.value = ''
+  const shouldShowImport = props.initialShowImport ?? !document;
+  showImport.value = shouldShowImport;
+  importString.value = '';
+  selectedExisting.value = '';
 
   if (!document) {
-    jsonText.value = ''
-    guiSupported.value = true
+    jsonText.value = '';
+    guiSupported.value = true;
     resetGuiState({
       name: '',
       priority: 0,
@@ -759,154 +865,153 @@ const applyDocument = (document: TaskDefinitionDocument | null): void => {
       containerType: 'css',
       containerSelector: '',
       fields: [defaultField()],
-    })
-    return
+    });
+    return;
   }
 
   try {
-    jsonText.value = JSON.stringify(document, null, 2)
-    const gui = toGui(document)
+    jsonText.value = JSON.stringify(document, null, 2);
+    const gui = toGui(document);
     if (gui) {
-      guiSupported.value = true
-      resetGuiState(gui)
-      guiError.value = null
+      guiSupported.value = true;
+      resetGuiState(gui);
+      guiError.value = null;
       if ('gui' !== mode.value) {
-        mode.value = 'gui'
+        mode.value = 'gui';
       }
+    } else {
+      guiSupported.value = false;
+      mode.value = 'advanced';
     }
-    else {
-      guiSupported.value = false
-      mode.value = 'advanced'
-    }
+  } catch (error) {
+    console.error('Failed to prepare definition for editing.', error);
+    jsonText.value = '';
+    guiSupported.value = false;
+    mode.value = 'advanced';
+    errorMessage.value = 'Failed to prepare definition for editing.';
   }
-  catch (error) {
-    console.error('Failed to prepare definition for editing.', error)
-    jsonText.value = ''
-    guiSupported.value = false
-    mode.value = 'advanced'
-    errorMessage.value = 'Failed to prepare definition for editing.'
-  }
-}
+};
 
 const importFromString = (): void => {
   if (isBusy.value) {
-    return
+    return;
   }
 
   if (!importString.value.trim()) {
-    guiError.value = 'Import string cannot be empty.'
-    return
+    guiError.value = 'Import string cannot be empty.';
+    return;
   }
 
   try {
-    const decoded = decode(importString.value.trim())
-    const document = parseImportedDocument(decoded)
-    applyDocument(document)
-    guiError.value = null
-    errorMessage.value = null
-    importString.value = ''
-    showImport.value = false
+    const decoded = decode(importString.value.trim());
+    const document = parseImportedDocument(decoded);
+    applyDocument(document);
+    guiError.value = null;
+    errorMessage.value = null;
+    importString.value = '';
+    showImport.value = false;
+  } catch (error) {
+    guiError.value = error instanceof Error ? error.message : 'Unable to import definition.';
   }
-  catch (error) {
-    guiError.value = error instanceof Error ? error.message : 'Unable to import definition.'
-  }
-}
+};
 
 const importExisting = (): void => {
   if (!selectedExisting.value || isBusy.value) {
-    return
+    return;
   }
 
-  emit('import-existing', Number(selectedExisting.value))
-  selectedExisting.value = ''
-}
+  emit('import-existing', Number(selectedExisting.value));
+  selectedExisting.value = '';
+};
 
-watch(() => props.document, (doc) => applyDocument(doc), { immediate: true })
+watch(
+  () => props.document,
+  (doc) => applyDocument(doc),
+  { immediate: true },
+);
 
 const switchMode = (next: EditorMode): void => {
   if (isBusy.value || next === mode.value) {
-    return
+    return;
   }
 
   if ('gui' === next) {
     if (!guiSupported.value) {
-      return
+      return;
     }
 
-    const parsed = parseDocument()
+    const parsed = parseDocument();
     if (!parsed) {
-      return
+      return;
     }
 
-    const gui = toGui(parsed)
+    const gui = toGui(parsed);
     if (!gui) {
-      guiSupported.value = false
-      return
+      guiSupported.value = false;
+      return;
     }
-    resetGuiState(gui)
-    guiSupported.value = true
+    resetGuiState(gui);
+    guiSupported.value = true;
   }
 
   if ('advanced' === next) {
     try {
-      const doc = fromGui(guiState)
-      jsonText.value = JSON.stringify(doc, null, 2)
-      errorMessage.value = null
-      guiError.value = null
-    }
-    catch (error) {
-      guiError.value = error instanceof Error ? error.message : 'Failed to serialize GUI changes.'
-      return
+      const doc = fromGui(guiState);
+      jsonText.value = JSON.stringify(doc, null, 2);
+      errorMessage.value = null;
+      guiError.value = null;
+    } catch (error) {
+      guiError.value = error instanceof Error ? error.message : 'Failed to serialize GUI changes.';
+      return;
     }
   }
 
-  mode.value = next
-}
+  mode.value = next;
+};
 
 const submit = (): void => {
   if (isBusy.value) {
-    return
+    return;
   }
 
   if ('gui' === mode.value) {
     try {
-      const doc = fromGui(guiState)
-      emit('submit', doc)
-      guiError.value = null
+      const doc = fromGui(guiState);
+      emit('submit', doc);
+      guiError.value = null;
+    } catch (error) {
+      guiError.value = error instanceof Error ? error.message : 'Unable to build definition.';
     }
-    catch (error) {
-      guiError.value = error instanceof Error ? error.message : 'Unable to build definition.'
-    }
-    return
+    return;
   }
 
-  const parsed = parseDocument()
+  const parsed = parseDocument();
   if (!parsed) {
-    return
+    return;
   }
-  emit('submit', parsed)
-}
+  emit('submit', parsed);
+};
 
 const beautify = (): void => {
   if ('advanced' !== mode.value) {
-    return
+    return;
   }
-  const parsed = parseDocument()
+  const parsed = parseDocument();
   if (!parsed) {
-    return
+    return;
   }
-  jsonText.value = JSON.stringify(parsed, null, 2)
-  errorMessage.value = null
-}
+  jsonText.value = JSON.stringify(parsed, null, 2);
+  errorMessage.value = null;
+};
 
 const cancel = (): void => {
   if (submitting.value) {
-    return
+    return;
   }
-  emit('cancel')
-}
+  emit('cancel');
+};
 
-defineExpose({ submit, beautify })
+defineExpose({ submit, beautify });
 </script>
 
 <style scoped>

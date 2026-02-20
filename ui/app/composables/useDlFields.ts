@@ -1,14 +1,14 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly } from 'vue';
 
-import { useNotification } from '~/composables/useNotification'
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
-import type { DLField, DLFieldRequest } from '~/types/dl_fields'
-import type { APIResponse, Pagination } from '~/types/responses'
+import { useNotification } from '~/composables/useNotification';
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import type { DLField, DLFieldRequest } from '~/types/dl_fields';
+import type { APIResponse, Pagination } from '~/types/responses';
 
 /**
  * List of all dl fields in memory.
  */
-const dlFields = ref<Array<DLField>>([])
+const dlFields = ref<Array<DLField>>([]);
 /**
  * Pagination state for dl fields list.
  */
@@ -19,27 +19,27 @@ const pagination = ref<Pagination>({
   total_pages: 0,
   has_next: false,
   has_prev: false,
-})
+});
 /**
  * Indicates if a request is in progress.
  */
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(false);
 /**
  * Indicates if an add/update operation is in progress.
  */
-const addInProgress = ref<boolean>(false)
+const addInProgress = ref<boolean>(false);
 /**
  * Stores the last error message, if any.
  */
-const lastError = ref<string | null>(null)
+const lastError = ref<string | null>(null);
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
-const throwInstead = ref(false)
+const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification()
+const notify = useNotification();
 
 /**
  * Sorts dl fields by order (ascending), then name (A-Z).
@@ -49,12 +49,12 @@ const notify = useNotification()
 const sortDlFields = (items: Array<DLField>): Array<DLField> => {
   return [...items].sort((a, b) => {
     if (a.order === b.order) {
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name);
     }
 
-    return a.order - b.order
-  })
-}
+    return a.order - b.order;
+  });
+};
 
 /**
  * Safely reads JSON from a Response, returns null on error.
@@ -63,13 +63,12 @@ const sortDlFields = (items: Array<DLField>): Array<DLField> => {
  */
 const readJson = async (response: Response): Promise<unknown> => {
   try {
-    const clone = response.clone()
-    return await clone.json()
+    const clone = response.clone();
+    return await clone.json();
+  } catch {
+    return null;
   }
-  catch {
-    return null
-  }
-}
+};
 
 /**
  * Throws an error if the response is not OK, using API error message if available.
@@ -78,23 +77,23 @@ const readJson = async (response: Response): Promise<unknown> => {
  */
 const ensureSuccess = async (response: Response): Promise<void> => {
   if (response.ok) {
-    return
+    return;
   }
 
-  const payload = await readJson(response)
-  const message = await parse_api_error(payload)
-  throw new Error(message)
-}
+  const payload = await readJson(response);
+  const message = await parse_api_error(payload);
+  throw new Error(message);
+};
 
 /**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
-  lastError.value = message
-  notify.error(message)
-}
+  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  lastError.value = message;
+  notify.error(message);
+};
 
 /**
  * Updates or adds a dl field in the dlFields list, keeping sort order.
@@ -102,15 +101,12 @@ const handleError = (error: unknown): void => {
  * @param field DLField to update/add
  */
 const updateDlFields = (field: DLField): void => {
-  const isNew = !dlFields.value.some(item => item.id === field.id)
-  dlFields.value = sortDlFields([
-    ...dlFields.value.filter(item => item.id !== field.id),
-    field,
-  ])
+  const isNew = !dlFields.value.some((item) => item.id === field.id);
+  dlFields.value = sortDlFields([...dlFields.value.filter((item) => item.id !== field.id), field]);
   if (isNew) {
-    pagination.value.total++
+    pagination.value.total++;
   }
-}
+};
 
 /**
  * Removes a dl field from the dlFields list by ID.
@@ -118,12 +114,12 @@ const updateDlFields = (field: DLField): void => {
  * @param id DLField ID
  */
 const removeDlField = (id: number) => {
-  const initialLength = dlFields.value.length
-  dlFields.value = dlFields.value.filter(item => item.id !== id)
+  const initialLength = dlFields.value.length;
+  dlFields.value = dlFields.value.filter((item) => item.id !== id);
   if (dlFields.value.length < initialLength) {
-    pagination.value.total = Math.max(0, pagination.value.total - 1)
+    pagination.value.total = Math.max(0, pagination.value.total - 1);
   }
-}
+};
 
 /**
  * Loads all dl fields from the API with pagination support.
@@ -131,31 +127,32 @@ const removeDlField = (id: number) => {
  * @param page Page number
  * @param perPage Items per page
  */
-const loadDlFields = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
-  isLoading.value = true
+const loadDlFields = async (
+  page: number = 1,
+  perPage: number | undefined = undefined,
+): Promise<void> => {
+  isLoading.value = true;
   try {
-    let url = `/api/dl_fields/?page=${page}`
+    let url = `/api/dl_fields/?page=${page}`;
     if (perPage !== undefined) {
-      url += `&per_page=${perPage}`
+      url += `&per_page=${perPage}`;
     }
-    const response = await request(url)
-    await ensureSuccess(response)
+    const response = await request(url);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const { items, pagination: paginationData } = await parse_list_response<DLField>(json)
+    const json = await response.json();
+    const { items, pagination: paginationData } = await parse_list_response<DLField>(json);
 
-    dlFields.value = sortDlFields(items)
-    pagination.value = paginationData
-    lastError.value = null
+    dlFields.value = sortDlFields(items);
+    pagination.value = paginationData;
+    lastError.value = null;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+  } finally {
+    isLoading.value = false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+};
 
 /**
  * Fetches a single dl field by ID from the API.
@@ -164,21 +161,20 @@ const loadDlFields = async (page: number = 1, perPage: number | undefined = unde
  */
 const getDlField = async (id: number): Promise<DLField | null> => {
   try {
-    const response = await request(`/api/dl_fields/${id}`)
-    await ensureSuccess(response)
+    const response = await request(`/api/dl_fields/${id}`);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const field = await parse_api_response<DLField>(json)
+    const json = await response.json();
+    const field = await parse_api_response<DLField>(json);
 
-    lastError.value = null
-    return field
+    lastError.value = null;
+    return field;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Creates a new dl field via API.
@@ -190,43 +186,41 @@ const createDlField = async (
   field: DLFieldRequest,
   callback?: (response: APIResponse<DLField>) => void,
 ): Promise<DLField | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     const response = await request('/api/dl_fields/', {
       method: 'POST',
       body: JSON.stringify(field),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const created = await parse_api_response<DLField>(json)
+    const json = await response.json();
+    const created = await parse_api_response<DLField>(json);
 
-    updateDlFields(created)
-    notify.success('DL field created.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: created })
-    }
-
-    return created
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateDlFields(created);
+    notify.success('DL field created.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: created });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return created;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Updates an existing dl field via API (PUT - full update).
@@ -240,46 +234,44 @@ const updateDlField = async (
   field: DLField,
   callback?: (response: APIResponse<DLField>) => void,
 ): Promise<DLField | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     if (field.id) {
-      field.id = undefined
+      field.id = undefined;
     }
     const response = await request(`/api/dl_fields/${id}`, {
       method: 'PUT',
       body: JSON.stringify(field),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<DLField>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<DLField>(json);
 
-    updateDlFields(updated)
-    notify.success(`DL field '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateDlFields(updated);
+    notify.success(`DL field '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Partially updates an existing dl field via API (PATCH).
@@ -293,46 +285,44 @@ const patchDlField = async (
   patch: Partial<DLField>,
   callback?: (response: APIResponse<DLField>) => void,
 ): Promise<DLField | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     if (patch.id) {
-      patch.id = undefined
+      patch.id = undefined;
     }
     const response = await request(`/api/dl_fields/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<DLField>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<DLField>(json);
 
-    updateDlFields(updated)
-    notify.success(`DL field '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateDlFields(updated);
+    notify.success(`DL field '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Deletes a dl field by ID via API.
@@ -345,36 +335,35 @@ const deleteDlField = async (
   callback?: (response: APIResponse<boolean>) => void,
 ): Promise<boolean> => {
   try {
-    const response = await request(`/api/dl_fields/${id}`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/dl_fields/${id}`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    removeDlField(id)
-    notify.success('DL field deleted.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: true })
-    }
-
-    return true
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    removeDlField(id);
+    notify.success('DL field deleted.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: false })
+      callback({ success: true, error: null, detail: null, data: true });
     }
 
-    if (throwInstead.value) throw error
-    return false
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: false });
+    }
+
+    if (throwInstead.value) throw error;
+    return false;
   }
-}
+};
 
 /**
  * Clears the last error message.
  */
-const clearError = () => lastError.value = null
+const clearError = () => (lastError.value = null);
 
 /**
  * useDlFields composable
@@ -396,4 +385,4 @@ export const useDlFields = () => ({
   deleteDlField,
   clearError,
   throwInstead,
-})
+});

@@ -3,7 +3,8 @@
     <div class="columns">
       <div class="column">
         <section
-          class="hero has-text-centered is-flex is-align-items-center is-justify-content-center">
+          class="hero has-text-centered is-flex is-align-items-center is-justify-content-center"
+        >
           <div class="goodbye-box">
             <div class="goodbye-title">Goodbye!</div>
             <p class="goodbye-subtitle">YTPTube has shut down.</p>
@@ -72,7 +73,8 @@
 }
 
 @keyframes floatTitle {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {

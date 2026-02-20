@@ -1,13 +1,12 @@
-# syntax=docker/dockerfile:1.4
 FROM node:lts-alpine AS node_builder
 
 WORKDIR /app
 COPY ui ./
 ENV NODE_ENV=production
 RUN if [ ! -f "/app/exported/index.html" ]; then \
-  npm install -g pnpm && \
-  NODE_ENV=production pnpm install --frozen-lockfile --prod --ignore-scripts && \
-  pnpm run generate; \
+  npm install -g bun && \
+  NODE_ENV=production bun install --frozen-lockfile --production && \
+  bun run generate; \
   else echo "Skipping UI build, already built."; fi
 
 FROM python:3.13-bookworm AS python_builder

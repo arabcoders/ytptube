@@ -1,19 +1,19 @@
-import { ref, readonly } from 'vue'
-import { useNotification } from '~/composables/useNotification'
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
+import { ref, readonly } from 'vue';
+import { useNotification } from '~/composables/useNotification';
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
 import type {
   Task,
   TaskPatch,
   TaskInspectRequest,
   TaskInspectResponse,
   TaskMetadataResponse,
-} from '~/types/tasks'
-import type { APIResponse, Pagination } from '~/types/responses'
+} from '~/types/tasks';
+import type { APIResponse, Pagination } from '~/types/responses';
 
 /**
  * List of all tasks in memory.
  */
-const tasks = ref<Array<Task>>([])
+const tasks = ref<Array<Task>>([]);
 /**
  * Pagination state for tasks list.
  */
@@ -24,31 +24,30 @@ const pagination = ref<Pagination>({
   total_pages: 0,
   has_next: false,
   has_prev: false,
-})
+});
 /**
  * Indicates if a request is in progress.
  */
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(false);
 /**
  * Indicates if an add/update operation is in progress.
  */
-const addInProgress = ref<boolean>(false)
+const addInProgress = ref<boolean>(false);
 /**
  * Set of task IDs that are currently in progress.
  */
-const inProgressIds = ref<Set<number>>(new Set())
+const inProgressIds = ref<Set<number>>(new Set());
 /**
  * Stores the last error message, if any.
  */
-const lastError = ref<string | null>(null)
+const lastError = ref<string | null>(null);
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
-const throwInstead = ref(false)
+const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification()
 
 /**
  * Sorts tasks by name (A-Z).
@@ -56,8 +55,8 @@ const notify = useNotification()
  * @returns Sorted array of tasks
  */
 const sortTasks = (items: Array<Task>): Array<Task> => {
-  return [...items].sort((a, b) => a.name.localeCompare(b.name))
-}
+  return [...items].sort((a, b) => a.name.localeCompare(b.name));
+};
 
 /**
  * Safely reads JSON from a Response, returns null on error.
@@ -66,13 +65,12 @@ const sortTasks = (items: Array<Task>): Array<Task> => {
  */
 const readJson = async (response: Response): Promise<unknown> => {
   try {
-    const clone = response.clone()
-    return await clone.json()
+    const clone = response.clone();
+    return await clone.json();
+  } catch {
+    return null;
   }
-  catch {
-    return null
-  }
-}
+};
 
 /**
  * Throws an error if the response is not OK, using API error message if available.
@@ -81,23 +79,23 @@ const readJson = async (response: Response): Promise<unknown> => {
  */
 const ensureSuccess = async (response: Response): Promise<void> => {
   if (response.ok) {
-    return
+    return;
   }
 
-  const payload = await readJson(response)
-  const message = await parse_api_error(payload)
-  throw new Error(message)
-}
+  const payload = await readJson(response);
+  const message = await parse_api_error(payload);
+  throw new Error(message);
+};
 
 /**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
-  lastError.value = message
-  notify.error(message)
-}
+  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  lastError.value = message;
+  useNotification().error(message);
+};
 
 /**
  * Updates or adds a task in the list, keeping sort order.
@@ -105,15 +103,12 @@ const handleError = (error: unknown): void => {
  * @param item Task to update/add
  */
 const updateTasksList = (item: Task): void => {
-  const isNew = !tasks.value.some(existing => existing.id === item.id)
-  tasks.value = sortTasks([
-    ...tasks.value.filter(existing => existing.id !== item.id),
-    item,
-  ])
+  const isNew = !tasks.value.some((existing) => existing.id === item.id);
+  tasks.value = sortTasks([...tasks.value.filter((existing) => existing.id !== item.id), item]);
   if (isNew) {
-    pagination.value.total++
+    pagination.value.total++;
   }
-}
+};
 
 /**
  * Removes a task from the list by ID.
@@ -121,43 +116,44 @@ const updateTasksList = (item: Task): void => {
  * @param id Task ID
  */
 const removeTask = (id: number) => {
-  const initialLength = tasks.value.length
-  tasks.value = tasks.value.filter(item => item.id !== id)
+  const initialLength = tasks.value.length;
+  tasks.value = tasks.value.filter((item) => item.id !== id);
   if (tasks.value.length < initialLength) {
-    pagination.value.total = Math.max(0, pagination.value.total - 1)
+    pagination.value.total = Math.max(0, pagination.value.total - 1);
   }
-}
+};
 
 /**
  * Loads tasks from the API with pagination support.
  * @param page Page number
  * @param perPage Items per page
  */
-const loadTasks = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
-  isLoading.value = true
+const loadTasks = async (
+  page: number = 1,
+  perPage: number | undefined = undefined,
+): Promise<void> => {
+  isLoading.value = true;
   try {
-    let url = `/api/tasks/?page=${page}`
+    let url = `/api/tasks/?page=${page}`;
     if (perPage !== undefined) {
-      url += `&per_page=${perPage}`
+      url += `&per_page=${perPage}`;
     }
-    const response = await request(url)
-    await ensureSuccess(response)
+    const response = await request(url);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const { items, pagination: paginationData } = await parse_list_response<Task>(json)
+    const json = await response.json();
+    const { items, pagination: paginationData } = await parse_list_response<Task>(json);
 
-    tasks.value = sortTasks(items)
-    pagination.value = paginationData
-    lastError.value = null
+    tasks.value = sortTasks(items);
+    pagination.value = paginationData;
+    lastError.value = null;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+  } finally {
+    isLoading.value = false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+};
 
 /**
  * Fetches a single task by ID from the API.
@@ -166,21 +162,20 @@ const loadTasks = async (page: number = 1, perPage: number | undefined = undefin
  */
 const getTask = async (id: number): Promise<Task | null> => {
   try {
-    const response = await request(`/api/tasks/${id}`)
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/${id}`);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const task = await parse_api_response<Task>(json)
+    const json = await response.json();
+    const task = await parse_api_response<Task>(json);
 
-    lastError.value = null
-    return task
+    lastError.value = null;
+    return task;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Creates a new task via API.
@@ -189,57 +184,57 @@ const getTask = async (id: number): Promise<Task | null> => {
  * @returns Created task(s) or null on error
  */
 const createTask = async (
-  task: Omit<Task, 'id' | 'created_at' | 'updated_at'> | Omit<Task, 'id' | 'created_at' | 'updated_at'>[],
+  task:
+    | Omit<Task, 'id' | 'created_at' | 'updated_at'>
+    | Omit<Task, 'id' | 'created_at' | 'updated_at'>[],
   callback?: (response: APIResponse<Task | Task[]>) => void,
 ): Promise<Task | Task[] | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     const response = await request('/api/tasks/', {
       method: 'POST',
       body: JSON.stringify(task),
-    })
-    await ensureSuccess(response)
+    });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const created = await parse_api_response<Task | Array<Task>>(json)
+    const json = await response.json();
+    const created = await parse_api_response<Task | Array<Task>>(json);
 
     if (Array.isArray(created)) {
-      notify.success(`${created.length} tasks created.`)
-      created.forEach(t => updateTasksList(t))
-      lastError.value = null
+      useNotification().success(`${created.length} tasks created.`);
+      created.forEach((t) => updateTasksList(t));
+      lastError.value = null;
 
       if (callback) {
-        callback({ success: true, error: null, detail: null, data: created })
+        callback({ success: true, error: null, detail: null, data: created });
       }
 
-      return created
+      return created;
     }
 
-    updateTasksList(created)
-    notify.success('Task created.')
-    lastError.value = null
+    updateTasksList(created);
+    useNotification().success('Task created.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: true, error: null, detail: null, data: created })
+      callback({ success: true, error: null, detail: null, data: created });
     }
 
-    return created
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    return created;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Updates an existing task via API (PUT - full update).
@@ -253,45 +248,43 @@ const updateTask = async (
   task: Omit<Task, 'id' | 'created_at' | 'updated_at'>,
   callback?: (response: APIResponse<Task>) => void,
 ): Promise<Task | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     // Explicitly remove id, created_at, updated_at fields if present
-    const { id: _, created_at: __, updated_at: ___, ...taskData } = task as Task
+    const { id: _, created_at: __, updated_at: ___, ...taskData } = task as Task;
 
     const response = await request(`/api/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(taskData),
-    })
-    await ensureSuccess(response)
+    });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Task>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Task>(json);
 
-    updateTasksList(updated)
-    notify.success(`Task '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateTasksList(updated);
+    useNotification().success(`Task '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Partially updates an existing task via API (PATCH).
@@ -305,42 +298,40 @@ const patchTask = async (
   patch: TaskPatch,
   callback?: (response: APIResponse<Task>) => void,
 ): Promise<Task | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     const response = await request(`/api/tasks/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
-    })
-    await ensureSuccess(response)
+    });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Task>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Task>(json);
 
-    updateTasksList(updated)
-    notify.success(`Task '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updateTasksList(updated);
+    useNotification().success(`Task '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Deletes a task by ID via API.
@@ -353,55 +344,55 @@ const deleteTask = async (
   callback?: (response: APIResponse<boolean>) => void,
 ): Promise<boolean> => {
   try {
-    const response = await request(`/api/tasks/${id}`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/${id}`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    removeTask(id)
-    notify.success('Task deleted.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: true })
-    }
-
-    return true
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    removeTask(id);
+    useNotification().success('Task deleted.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: false })
+      callback({ success: true, error: null, detail: null, data: true });
     }
 
-    if (throwInstead.value) throw error
-    return false
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: false });
+    }
+
+    if (throwInstead.value) throw error;
+    return false;
   }
-}
+};
 
 /**
  * Inspects a task handler to check if it can process the given URL.
  * @param request Task inspect request parameters
  * @returns Inspect result or null on error
  */
-const inspectTaskHandler = async (request: TaskInspectRequest): Promise<TaskInspectResponse | null> => {
+const inspectTaskHandler = async (
+  request: TaskInspectRequest,
+): Promise<TaskInspectResponse | null> => {
   try {
     const response = await fetch('/api/tasks/inspect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(request),
-    })
+    });
 
-    const json = await response.json()
-    lastError.value = null
-    return json as TaskInspectResponse
+    const json = await response.json();
+    lastError.value = null;
+    return json as TaskInspectResponse;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Marks all items from a task as downloaded in the download archive.
@@ -410,22 +401,21 @@ const inspectTaskHandler = async (request: TaskInspectRequest): Promise<TaskInsp
  */
 const markTaskItems = async (id: number): Promise<string | null> => {
   try {
-    const response = await request(`/api/tasks/${id}/mark`, { method: 'POST' })
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/${id}/mark`, { method: 'POST' });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const message = json.message || 'All items marked as downloaded.'
+    const json = await response.json();
+    const message = json.message || 'All items marked as downloaded.';
 
-    notify.success(message)
-    lastError.value = null
-    return message
+    useNotification().success(message);
+    lastError.value = null;
+    return message;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Removes all items from a task from the download archive.
@@ -434,22 +424,21 @@ const markTaskItems = async (id: number): Promise<string | null> => {
  */
 const unmarkTaskItems = async (id: number): Promise<string | null> => {
   try {
-    const response = await request(`/api/tasks/${id}/mark`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/${id}/mark`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const message = json.message || 'All items removed from archive.'
+    const json = await response.json();
+    const message = json.message || 'All items removed from archive.';
 
-    notify.success(message)
-    lastError.value = null
-    return message
+    useNotification().success(message);
+    lastError.value = null;
+    return message;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Generates metadata for a task (tvshow.nfo, info.json, thumbnails).
@@ -458,56 +447,55 @@ const unmarkTaskItems = async (id: number): Promise<string | null> => {
  */
 const generateTaskMetadata = async (id: number): Promise<TaskMetadataResponse | null> => {
   try {
-    const response = await request(`/api/tasks/${id}/metadata`, { method: 'POST' })
-    await ensureSuccess(response)
+    const response = await request(`/api/tasks/${id}/metadata`, { method: 'POST' });
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const metadata = await parse_api_response<TaskMetadataResponse>(json)
+    const json = await response.json();
+    const metadata = await parse_api_response<TaskMetadataResponse>(json);
 
-    notify.success('Metadata generation completed.')
-    lastError.value = null
-    return metadata
+    useNotification().success('Metadata generation completed.');
+    lastError.value = null;
+    return metadata;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Clears the last error message.
  */
-const clearError = () => lastError.value = null
+const clearError = () => (lastError.value = null);
 
 /**
  * Checks if a task is currently in progress.
  * @param id Task ID
  * @returns true if the task is in progress
  */
-const isTaskInProgress = (id: number): boolean => inProgressIds.value.has(id)
+const isTaskInProgress = (id: number): boolean => inProgressIds.value.has(id);
 
 /**
  * Sets a task as in progress.
  * @param id Task ID
  */
 const setTaskInProgress = (id: number): void => {
-  inProgressIds.value.add(id)
-}
+  inProgressIds.value.add(id);
+};
 
 /**
  * Clears the in progress state for a task.
  * @param id Task ID
  */
 const clearTaskInProgress = (id: number): void => {
-  inProgressIds.value.delete(id)
-}
+  inProgressIds.value.delete(id);
+};
 
 /**
  * Resets all state to initial values (for testing only).
  */
 const __resetForTesting = () => {
-  tasks.value = []
+  tasks.value = [];
   pagination.value = {
     page: 1,
     per_page: 50,
@@ -515,13 +503,13 @@ const __resetForTesting = () => {
     total_pages: 0,
     has_next: false,
     has_prev: false,
-  }
-  isLoading.value = false
-  addInProgress.value = false
-  lastError.value = null
-  throwInstead.value = false
-  inProgressIds.value = new Set()
-}
+  };
+  isLoading.value = false;
+  addInProgress.value = false;
+  lastError.value = null;
+  throwInstead.value = false;
+  inProgressIds.value = new Set();
+};
 
 /**
  * useTasks composable
@@ -552,4 +540,4 @@ export const useTasks = () => ({
   clearError,
   throwInstead,
   __resetForTesting,
-})
+});

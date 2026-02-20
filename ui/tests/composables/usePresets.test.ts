@@ -1,17 +1,33 @@
-import * as utils from '~/utils/index'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { usePresets } from '~/composables/usePresets'
-import type { Preset, PresetRequest } from '~/types/presets'
-import type { Pagination } from '~/types/responses'
+import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test'
 
-vi.mock('~/composables/useNotification', () => {
-  const success = vi.fn()
-  const error = vi.fn()
-  return {
-    useNotification: () => ({ success, error }),
-    default: () => ({ success, error }),
-  }
-})
+const successMock = mock(() => {})
+const errorMock = mock(() => {})
+
+globalThis.useNotificationStore = () => ({
+  add: () => 'test-id',
+  markRead: () => {},
+}) as any
+
+mock.module('~/composables/useNotification', () => ({
+  useNotification: () => ({ success: successMock, error: errorMock }),
+  default: () => ({ success: successMock, error: errorMock }),
+}))
+
+mock.module('~/stores/notification', () => ({
+  useNotificationStore: () => ({
+    add: () => 'test-id',
+    markRead: () => {},
+  }),
+}))
+
+// eslint-disable-next-line import/first
+import * as utils from '~/utils/index'
+// eslint-disable-next-line import/first
+import { usePresets } from '~/composables/usePresets'
+// eslint-disable-next-line import/first
+import type { Preset, PresetRequest } from '~/types/presets'
+// eslint-disable-next-line import/first
+import type { Pagination } from '~/types/responses'
 
 const mockPreset: Preset = {
   id: 1,
@@ -60,12 +76,14 @@ function createMockResponse({ ok, status, jsonData }: { ok: boolean; status: num
 
 describe('usePresets', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    successMock.mockClear()
+    errorMock.mockClear()
   })
 
   describe('loadPresets', () => {
     it('loads presets with pagination successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -83,6 +101,7 @@ describe('usePresets', () => {
       expect(presets.presets.value[0]).toEqual(mockPreset)
       expect(presets.pagination.value).toEqual(mockPagination)
       expect(presets.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('sorts presets by priority then name', async () => {
@@ -92,7 +111,8 @@ describe('usePresets', () => {
         { ...mockPreset, id: 3, name: 'C', priority: 1 },
       ]
 
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -113,10 +133,12 @@ describe('usePresets', () => {
       expect(sorted[1].name).toBe('B')
       expect(sorted[2].priority).toBe(1)
       expect(sorted[2].name).toBe('C')
+      requestSpy.mockRestore()
     })
 
     it('handles empty presets list', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -132,10 +154,12 @@ describe('usePresets', () => {
 
       expect(presets.presets.value).toEqual([])
       expect(presets.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles errors during load', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -147,12 +171,14 @@ describe('usePresets', () => {
       await presets.loadPresets()
 
       expect(presets.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('getPreset', () => {
     it('fetches a single preset successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -165,10 +191,12 @@ describe('usePresets', () => {
 
       expect(result).toEqual(mockPreset)
       expect(presets.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
 
     it('handles 404 not found', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -181,12 +209,14 @@ describe('usePresets', () => {
 
       expect(result).toBeNull()
       expect(presets.lastError.value).toBeTruthy()
+      requestSpy.mockRestore()
     })
   })
 
   describe('createPreset', () => {
     it('creates a preset successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -207,10 +237,12 @@ describe('usePresets', () => {
       expect(result).toEqual(mockPreset)
       expect(presets.presets.value).toContainEqual(mockPreset)
       expect(presets.pagination.value.total).toBe(initialTotal + 1)
+      requestSpy.mockRestore()
     })
 
     it('calls callback on success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -218,7 +250,7 @@ describe('usePresets', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const presets = usePresets()
       const newPreset: PresetRequest = {
         name: 'New Preset',
@@ -234,10 +266,12 @@ describe('usePresets', () => {
         detail: null,
         data: mockPreset,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 400,
@@ -245,7 +279,7 @@ describe('usePresets', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const presets = usePresets()
       const newPreset: PresetRequest = {
         name: 'New Preset',
@@ -261,12 +295,14 @@ describe('usePresets', () => {
           error: expect.any(String),
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('updatePreset', () => {
     it('updates a preset successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -278,10 +314,12 @@ describe('usePresets', () => {
       const result = await presets.updatePreset(1, mockPreset)
 
       expect(result).toEqual(mockPreset)
+      requestSpy.mockRestore()
     })
 
     it('strips id from update payload', async () => {
-      const requestSpy = vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -295,12 +333,14 @@ describe('usePresets', () => {
       const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
       expect(requestBody.id).toBeUndefined()
       expect(requestBody.default).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 
   describe('patchPreset', () => {
     it('patches a preset successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -312,10 +352,12 @@ describe('usePresets', () => {
       const result = await presets.patchPreset(1, { priority: 20 })
 
       expect(result?.priority).toBe(20)
+      requestSpy.mockRestore()
     })
 
     it('strips id and default from patch payload', async () => {
-      const requestSpy = vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -329,12 +371,14 @@ describe('usePresets', () => {
       const requestBody = JSON.parse((requestSpy.mock.calls[0][1] as any).body)
       expect(requestBody.id).toBeUndefined()
       expect(requestBody.default).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 
   describe('deletePreset', () => {
     it('deletes a preset successfully', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -349,10 +393,12 @@ describe('usePresets', () => {
 
       expect(result).toBe(true)
       expect(presets.pagination.value.total).toBe(Math.max(0, initialTotal - 1))
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete success', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: true,
           status: 200,
@@ -360,7 +406,7 @@ describe('usePresets', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const presets = usePresets()
 
       await presets.deletePreset(1, callback)
@@ -371,10 +417,12 @@ describe('usePresets', () => {
         detail: null,
         data: true,
       })
+      requestSpy.mockRestore()
     })
 
     it('calls callback on delete error', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 404,
@@ -382,7 +430,7 @@ describe('usePresets', () => {
         }),
       )
 
-      const callback = vi.fn()
+      const callback = mock(() => {})
       const presets = usePresets()
 
       await presets.deletePreset(999, callback)
@@ -394,12 +442,14 @@ describe('usePresets', () => {
           data: false,
         }),
       )
+      requestSpy.mockRestore()
     })
   })
 
   describe('error handling', () => {
     it('throws when throwInstead is true', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -411,10 +461,12 @@ describe('usePresets', () => {
       presets.throwInstead.value = true
 
       await expect(presets.loadPresets()).rejects.toThrow()
+      requestSpy.mockRestore()
     })
 
     it('clears error on clearError call', async () => {
-      vi.spyOn(utils, 'request').mockResolvedValueOnce(
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockResolvedValueOnce(
         createMockResponse({
           ok: false,
           status: 500,
@@ -432,6 +484,7 @@ describe('usePresets', () => {
       presets.clearError()
 
       expect(presets.lastError.value).toBeNull()
+      requestSpy.mockRestore()
     })
   })
 
@@ -439,7 +492,8 @@ describe('usePresets', () => {
     it('sets addInProgress during create operation', async () => {
       let inProgressDuringCall = false
 
-      vi.spyOn(utils, 'request').mockImplementation(async () => {
+      const requestSpy = spyOn(utils, 'request')
+      requestSpy.mockImplementation(async () => {
         const presets = usePresets()
         inProgressDuringCall = presets.addInProgress.value
         return createMockResponse({
@@ -460,6 +514,7 @@ describe('usePresets', () => {
 
       expect(inProgressDuringCall).toBe(true)
       expect(presets.addInProgress.value).toBe(false)
+      requestSpy.mockRestore()
     })
   })
 })

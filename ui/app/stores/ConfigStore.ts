@@ -1,4 +1,4 @@
-import { useStorage } from '@vueuse/core'
+import { useStorage } from '@vueuse/core';
 import type { ConfigState } from '~/types/config';
 import type { DLField } from '~/types/dl_fields';
 import type { Preset } from '~/types/presets';
@@ -39,15 +39,15 @@ export const useConfigStore = defineStore('config', () => {
     },
     presets: [
       {
-        'name': 'default',
-        'description': 'Default preset',
-        'folder': '',
-        'template': '',
-        'cookies': '',
-        'cli': '',
-        'default': true,
-        'priority': 0
-      }
+        name: 'default',
+        description: 'Default preset',
+        folder: '',
+        template: '',
+        cookies: '',
+        cli: '',
+        default: true,
+        priority: 0,
+      },
     ],
     dl_fields: [],
     folders: [],
@@ -61,12 +61,12 @@ export const useConfigStore = defineStore('config', () => {
     if (state.is_loading) {
       return;
     }
-    const now = Date.now()
+    const now = Date.now();
 
     if (state.is_loaded && !force && last_reload > 0) {
-      const age = (now - last_reload) / 1000
+      const age = (now - last_reload) / 1000;
       if (age < CONFIG_TTL) {
-        return
+        return;
       }
     }
 
@@ -95,126 +95,133 @@ export const useConfigStore = defineStore('config', () => {
       last_reload = now;
     } catch (e: any) {
       console.error(`Failed to load configuration: ${e}`);
-    }
-    finally {
+    } finally {
       state.is_loading = false;
     }
-  }
+  };
 
   const add = (key: string, value: any) => {
     if (key.includes('.')) {
-      const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string]
+      const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string];
       state[parentKey][subKey] = value;
       return;
     }
-    (state as any)[key] = value
-  }
+    (state as any)[key] = value;
+  };
 
   const get = (key: string, defaultValue: any = null): any => {
     if (key.includes('.')) {
-      const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string]
-      const parent = state[parentKey] as any
-      return parent?.[subKey] ?? defaultValue
+      const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string];
+      const parent = state[parentKey] as any;
+      return parent?.[subKey] ?? defaultValue;
     }
-    return (state as any)[key] ?? defaultValue
-  }
-  const isLoaded = () => state.is_loaded
+    return (state as any)[key] ?? defaultValue;
+  };
+  const isLoaded = () => state.is_loaded;
 
-  const update = add
+  const update = add;
 
-  const getAll = (): ConfigState => state
+  const getAll = (): ConfigState => state;
 
   const setAll = (data: Record<string, any>) => {
     Object.keys(data).forEach((key) => {
       if (key.includes('.')) {
-        const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string]
-        const parent = state[parentKey] as any
-        parent[subKey] = data[key]
-        return
+        const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string];
+        const parent = state[parentKey] as any;
+        parent[subKey] = data[key];
+        return;
       }
-      (state as any)[key] = data[key]
-    })
+      (state as any)[key] = data[key];
+    });
 
-    state.is_loaded = true
-  }
+    state.is_loaded = true;
+  };
 
   const patch = (feature: ConfigFeature, action: ConfigUpdateAction, data: unknown): void => {
-    const supportedFeatures: ConfigFeature[] = ['dl_fields', 'presets']
+    const supportedFeatures: ConfigFeature[] = ['dl_fields', 'presets'];
 
     if (!supportedFeatures.includes(feature)) {
-      return
+      return;
     }
 
     if ('presets' === feature) {
-      const item = data as Preset
-      const current = get(feature, []) as Array<Preset>
+      const item = data as Preset;
+      const current = get(feature, []) as Array<Preset>;
 
       if ('create' === action) {
-        current.push(item)
-        return
+        current.push(item);
+        return;
       }
 
       if ('delete' === action) {
-        const index = current.findIndex(i => i.id === item.id)
+        const index = current.findIndex((i) => i.id === item.id);
         if (-1 !== index) {
-          current.splice(index, 1)
+          current.splice(index, 1);
         }
-        return
+        return;
       }
 
       if ('update' === action) {
-        const target = current.find(i => i.id === item.id)
+        const target = current.find((i) => i.id === item.id);
         if (target) {
-          Object.assign(target, item)
+          Object.assign(target, item);
         }
-        return
+        return;
       }
 
-      return
+      return;
     }
 
     if ('dl_fields' === feature) {
-      const item = data as DLField
-      const current = get(feature, []) as Array<DLField>
+      const item = data as DLField;
+      const current = get(feature, []) as Array<DLField>;
 
       if ('create' === action) {
-        current.push(item)
-        return
+        current.push(item);
+        return;
       }
 
       if ('delete' === action) {
-        const index = current.findIndex(i => i.id === item.id)
+        const index = current.findIndex((i) => i.id === item.id);
         if (-1 !== index) {
-          current.splice(index, 1)
+          current.splice(index, 1);
         }
-        return
+        return;
       }
 
       if ('update' === action) {
-        const target = current.find(i => i.id === item.id)
+        const target = current.find((i) => i.id === item.id);
         if (target) {
-          Object.assign(target, item)
+          Object.assign(target, item);
         }
-        return
+        return;
       }
       if ('replace' === action) {
-        state.dl_fields = data as Array<DLField>
-        return
+        state.dl_fields = data as Array<DLField>;
+        return;
       }
-      return
+      return;
     }
-  }
+  };
 
   return {
-    ...toRefs(state), add, get, update, getAll, setAll, isLoaded, patch, loadConfig
+    ...toRefs(state),
+    add,
+    get,
+    update,
+    getAll,
+    setAll,
+    isLoaded,
+    patch,
+    loadConfig,
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
-    add: typeof add
-    get: typeof get
-    update: typeof update
-    getAll: typeof getAll
-    setAll: typeof setAll
-    patch: typeof patch
-    isLoaded: typeof isLoaded
-    loadConfig: typeof loadConfig
-  }
+    add: typeof add;
+    get: typeof get;
+    update: typeof update;
+    getAll: typeof getAll;
+    setAll: typeof setAll;
+    patch: typeof patch;
+    isLoaded: typeof isLoaded;
+    loadConfig: typeof loadConfig;
+  };
 });

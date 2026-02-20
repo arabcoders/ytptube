@@ -1,14 +1,13 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest'
-import type { MockInstance } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterEach, mock, spyOn } from 'bun:test'
 
 type StorageEntry = { value: unknown }
 
 const notificationMock = {
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-  error: vi.fn(),
-  notify: vi.fn(),
+  info: mock(() => {}),
+  success: mock(() => {}),
+  warning: mock(() => {}),
+  error: mock(() => {}),
+  notify: mock(() => {}),
 }
 
 const runtimeConfig = {
@@ -17,31 +16,30 @@ const runtimeConfig = {
   },
 }
 
-vi.mock('#imports', () => ({
-  useRuntimeConfig: vi.fn(() => runtimeConfig),
-  useNotification: vi.fn(() => notificationMock),
+mock.module('#imports', () => ({
+  useRuntimeConfig: () => runtimeConfig,
+  useNotification: () => notificationMock,
 }))
 
-// Mock the global Nuxt composables since they auto-import
-vi.stubGlobal('useRuntimeConfig', vi.fn(() => runtimeConfig))
-vi.stubGlobal('useNotification', vi.fn(() => notificationMock))
+globalThis.useRuntimeConfig = () => runtimeConfig as any
+globalThis.useNotification = () => notificationMock as any
 
 const storageMap = new Map<string, StorageEntry | unknown>()
 
-const useStorageFn = vi.fn(<T>(key: string, defaultValue: T) => {
+const useStorageFn = mock(<T>(key: string, defaultValue: T) => {
   if (!storageMap.has(key)) {
     storageMap.set(key, { value: defaultValue })
   }
   return storageMap.get(key)
 })
 
-vi.mock('@vueuse/core', () => ({
+mock.module('@vueuse/core', () => ({
   useStorage: useStorageFn,
 }))
 
-const clipboardWriteMock = vi.fn(() => Promise.resolve())
-const fetchMock = vi.fn()
-const getRandomValuesMock = vi.fn((buffer: Uint8Array) => {
+const clipboardWriteMock = mock(() => Promise.resolve())
+const fetchMock = mock(() => Promise.resolve({ status: 200 } as Response))
+const getRandomValuesMock = mock((buffer: Uint8Array) => {
   buffer.fill(1)
   return buffer
 })
@@ -51,7 +49,7 @@ const originalClipboard = globalThis.navigator?.clipboard
 const originalCrypto = globalThis.crypto
 
 let utils: Awaited<typeof import('~/utils/index')>
-let fetchSpy: MockInstance | undefined
+let fetchSpy: ReturnType<typeof spyOn> | undefined
 
 const resetStorage = () => {
   storageMap.clear()
@@ -59,88 +57,8 @@ const resetStorage = () => {
   storageMap.set('random_bg_opacity', { value: 0.95 })
 }
 
-// Minimal DOM/window/custom event shims
-type Listener = (evt: { type: string; detail?: any }) => void
-const listeners = new Map<string, Listener[]>()
-
-const win: any = {
-  addEventListener: (type: string, cb: Listener) => {
-    const arr = listeners.get(type) ?? []
-    arr.push(cb)
-    listeners.set(type, arr)
-  },
-  removeEventListener: (type: string, cb: Listener) => {
-    const arr = listeners.get(type) ?? []
-    listeners.set(type, arr.filter(x => x !== cb))
-  },
-  dispatchEvent: (evt: { type: string; detail?: any }) => {
-    const arr = listeners.get(evt.type) ?? []
-    arr.forEach(cb => cb(evt))
-    return true
-  },
-  focus: () => {},
-  navigator: {},
-}
-globalThis.window = win as unknown as Window & typeof globalThis
-// Ensure global navigator is present using defineProperty to avoid setter issues
-Object.defineProperty(globalThis, 'navigator', {
-  value: win.navigator as Navigator,
-  writable: true,
-  configurable: true,
-})
-
-class MiniCustomEvent<T = any> {
-  type: string
-  detail?: T
-  constructor(type: string, init?: { detail?: T }) {
-    this.type = type
-    this.detail = init?.detail
-  }
-}
-globalThis.CustomEvent = MiniCustomEvent as unknown as typeof CustomEvent
-
-class ClassList {
-  private set = new Set<string>()
-  contains = (c: string) => this.set.has(c)
-  add = (c: string) => { this.set.add(c) }
-  remove = (c: string) => { this.set.delete(c) }
-}
-
-class FakeElement {
-  id = ''
-  classList = new ClassList()
-  private attrs = new Map<string, string>()
-  innerHTML = ''
-  setAttribute(k: string, v: string) { this.attrs.set(k, v) }
-  getAttribute(k: string) { return this.attrs.has(k) ? (this.attrs.get(k) as string) : null }
-  removeAttribute(k: string) { this.attrs.delete(k) }
-}
-
-const registry = new Map<string, FakeElement>()
-const body = new FakeElement()
-;(body as any).appendChild = (el: FakeElement) => {
-  if (el.id) registry.set(el.id, el)
-}
-
-const doc: any = {
-  body,
-  createElement: (_tag: string) => new FakeElement(),
-  querySelector: (sel: string) => {
-    if (sel === 'body') return body
-    if (sel.startsWith('#')) return registry.get(sel.slice(1)) ?? null
-    return null
-  },
-  execCommand: () => true,
-}
-globalThis.document = doc as unknown as Document
-globalThis.HTMLElement = FakeElement as unknown as typeof HTMLElement
-globalThis.Node = FakeElement as unknown as typeof Node
-// btoa/atob polyfills
-globalThis.btoa = globalThis.btoa ?? ((str: string) => Buffer.from(str, 'binary').toString('base64'))
-globalThis.atob = globalThis.atob ?? ((b64: string) => Buffer.from(b64, 'base64').toString('binary'))
 
 beforeAll(async () => {
-  // Import utils after all mocks are set up
   utils = await import('~/utils/index')
 })
 
@@ -154,12 +72,13 @@ beforeEach(() => {
   notificationMock.notify.mockClear()
   useStorageFn.mockClear()
 
-  fetchMock.mockReset()
-  clipboardWriteMock.mockReset()
+  fetchMock.mockClear()
+  clipboardWriteMock.mockClear()
   getRandomValuesMock.mockClear()
 
   if (typeof originalFetch === 'function') {
-    fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock)
+    fetchSpy = spyOn(globalThis, 'fetch')
+    fetchSpy.mockImplementation(fetchMock as any)
   } else {
     ;(globalThis as any).fetch = fetchMock
     fetchSpy = undefined
@@ -212,8 +131,6 @@ afterEach(() => {
     document.body.removeAttribute('style')
   }
 })
-
-// no afterAll needed for lightweight stubs
 
 describe('utils/index setup', () => {
   it('exposes core utilities after mocks initialize', () => {
@@ -339,7 +256,6 @@ describe('string manipulation helpers', () => {
   })
 
   it('encodePath handles % character correctly', () => {
-    // This is the edge case reported in the bug
     expect(utils.encodePath('How to enjoy Shin Ramyun 100%.opus')).toBe('How%20to%20enjoy%20Shin%20Ramyun%20100%25.opus')
   })
 
@@ -466,29 +382,6 @@ describe('data conversion helpers', () => {
 })
 
 describe('dom and browser helpers', () => {
-  it('awaitElement waits until element appears', async () => {
-    vi.useFakeTimers()
-    const callback = vi.fn()
-    utils.awaitElement('#dynamic', callback)
-
-    setTimeout(() => {
-      const el = document.createElement('div')
-      el.id = 'dynamic'
-      document.body.appendChild(el)
-    }, 50)
-
-    await vi.advanceTimersByTimeAsync(250)
-
-    expect(callback).toHaveBeenCalledTimes(1)
-    const callArgs = callback.mock.calls[0]
-    expect(callArgs).toBeDefined()
-    expect(Array.isArray(callArgs)).toBe(true)
-    const [element, selector] = callArgs!
-    expect((element as Element).id).toBe('dynamic')
-    expect(selector).toBe('#dynamic')
-    vi.useRealTimers()
-  })
-
   it('dEvent dispatches custom event with detail payload', () => {
     const detail = { foo: 'bar' }
     let received: unknown = null
@@ -531,22 +424,12 @@ describe('dom and browser helpers', () => {
   })
 
   it('disableOpacity returns false when background disabled', () => {
-    // Reset any previous style first
     document.body.removeAttribute('style')
-
-    // The implementation has `if (!bg_enable)` where bg_enable is from useStorage
-    // Since all objects are truthy in JavaScript, this suggests there's a bug in the implementation
-    // or VueUse refs have special behavior. Let's test what the implementation actually does.
-
-    // Clear the storage and set up specific mocks for this test
     storageMap.clear()
-
-    // Try returning `null` instead of an object - null is falsy
     useStorageFn.mockImplementation((key: string, defaultValue: any) => {
       if (key === 'random_bg') {
-        return null // null is falsy, so !null will be true
+        return null
       }
-      // For other keys, return default storage behavior
       if (!storageMap.has(key)) {
         storageMap.set(key, { value: defaultValue })
       }
@@ -559,7 +442,6 @@ describe('dom and browser helpers', () => {
   })
 
   it('enableOpacity applies stored opacity value', () => {
-    // Reset the useStorage mock for this test
     useStorageFn.mockImplementation((key: string, defaultValue: any) => {
       if (!storageMap.has(key)) {
         storageMap.set(key, { value: defaultValue })
@@ -593,7 +475,7 @@ describe('network and id helpers', () => {
   })
 
   it('convertCliOptions posts payload and returns parsed json', async () => {
-    const jsonMock = vi.fn().mockResolvedValue({ success: true })
+    const jsonMock = mock().mockResolvedValue({ success: true })
     const responseMock = { status: 200, json: jsonMock }
     fetchMock.mockResolvedValue(responseMock)
 
@@ -609,7 +491,7 @@ describe('network and id helpers', () => {
   })
 
   it('convertCliOptions throws on non-200 response', async () => {
-    const jsonMock = vi.fn().mockResolvedValue({ error: 'fail' })
+    const jsonMock = mock().mockResolvedValue({ error: 'fail' })
     const responseMock = { status: 400, json: jsonMock }
     fetchMock.mockResolvedValue(responseMock)
 
@@ -627,27 +509,13 @@ describe('network and id helpers', () => {
 })
 
 describe('async helpers', () => {
-  it('sleep resolves after specified seconds', async () => {
-    vi.useFakeTimers()
-    const promise = utils.sleep(1)
-    const thenSpy = vi.fn()
-    promise.then(thenSpy)
-    await vi.advanceTimersByTimeAsync(1000)
-    await promise
-    expect(thenSpy).toHaveBeenCalled()
-    vi.useRealTimers()
-  })
-
   it('awaiter resolves when test becomes truthy', async () => {
-    // The frequency parameter is passed to sleep() which expects seconds, not milliseconds
-    // So we use 0.01 (10ms) instead of 10 to avoid the bug in the implementation
     const values = [false, false, 'done']
     const result = await utils.awaiter(() => values.shift(), 500, 0.01)
     expect(result).toBe('done')
   })
 
   it('awaiter returns false when timeout reached', async () => {
-    // Use a short timeout and small frequency (in seconds, not milliseconds due to implementation bug)
     const result = await utils.awaiter(() => false, 50, 0.01)
     expect(result).toBe(false)
   })

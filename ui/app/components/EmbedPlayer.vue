@@ -16,31 +16,31 @@
 </template>
 
 <script setup lang="ts">
-import { disableOpacity, enableOpacity } from '~/utils'
+import { disableOpacity, enableOpacity } from '~/utils';
 
 defineProps({
   url: {
     type: String,
     required: true,
-  }
-})
+  },
+});
 
-const emitter = defineEmits(['closeModel'])
+const emitter = defineEmits(['closeModel']);
 
 const handle_event = (e: KeyboardEvent) => {
   if (e.key !== 'Escape') {
-    return
+    return;
   }
-  emitter('closeModel')
-}
+  emitter('closeModel');
+};
 
 onMounted(() => {
-  document.addEventListener('keydown', handle_event)
-  disableOpacity()
-})
+  document.addEventListener('keydown', handle_event);
+  disableOpacity();
+});
 
 onBeforeUnmount(() => {
-  enableOpacity()
-  document.removeEventListener('keydown', handle_event)
-})
+  enableOpacity();
+  document.removeEventListener('keydown', handle_event);
+});
 </script>

@@ -5,7 +5,9 @@
         <span class="title is-4">
           <span class="icon-text">
             <template v-if="toggleForm">
-              <span class="icon"><i class="fa-solid" :class="{ 'fa-edit': presetRef, 'fa-plus': !presetRef }" /></span>
+              <span class="icon"
+                ><i class="fa-solid" :class="{ 'fa-edit': presetRef, 'fa-plus': !presetRef }"
+              /></span>
               <span>{{ presetRef ? `Edit - ${prettyName(preset.name || '')}` : 'Add' }}</span>
             </template>
             <template v-else>
@@ -17,8 +19,13 @@
         <div class="is-pulled-right" v-if="!toggleForm">
           <div class="field is-grouped">
             <p class="control has-icons-left" v-if="toggleFilter && presets && presets.length > 0">
-              <input type="search" v-model.lazy="query" class="input" id="filter"
-                placeholder="Filter displayed content">
+              <input
+                type="search"
+                v-model.lazy="query"
+                class="input"
+                id="filter"
+                placeholder="Filter displayed content"
+              />
               <span class="icon is-left"><i class="fas fa-filter" /></span>
             </p>
 
@@ -30,19 +37,33 @@
             </p>
 
             <p class="control">
-              <button class="button is-primary" @click="resetForm(false); toggleForm = !toggleForm;"
-                v-tooltip.bottom="'Toggle add form'">
+              <button
+                class="button is-primary"
+                @click="
+                  resetForm(false);
+                  toggleForm = !toggleForm;
+                "
+                v-tooltip.bottom="'Toggle add form'"
+              >
                 <span class="icon"><i class="fas fa-add" /></span>
                 <span v-if="!isMobile">New Preset</span>
               </button>
             </p>
 
             <p class="control">
-              <button v-tooltip.bottom="'Change display style'" class="button has-tooltip-bottom"
-                @click="() => display_style = display_style === 'list' ? 'grid' : 'list'">
+              <button
+                v-tooltip.bottom="'Change display style'"
+                class="button has-tooltip-bottom"
+                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
+              >
                 <span class="icon">
-                  <i class="fa-solid"
-                    :class="{ 'fa-table': display_style !== 'list', 'fa-table-list': display_style === 'list' }" /></span>
+                  <i
+                    class="fa-solid"
+                    :class="{
+                      'fa-table': display_style !== 'list',
+                      'fa-table-list': display_style === 'list',
+                    }"
+                /></span>
                 <span v-if="!isMobile">
                   {{ display_style === 'list' ? 'List' : 'Grid' }}
                 </span>
@@ -50,8 +71,13 @@
             </p>
 
             <p class="control">
-              <button class="button is-info" @click="reloadContent()" :class="{ 'is-loading': isLoading }"
-                :disabled="isLoading" v-if="presets && presets.length > 0">
+              <button
+                class="button is-info"
+                @click="reloadContent()"
+                :class="{ 'is-loading': isLoading }"
+                :disabled="isLoading"
+                v-if="presets && presets.length > 0"
+              >
                 <span class="icon"><i class="fas fa-refresh" /></span>
                 <span v-if="!isMobile">Reload</span>
               </button>
@@ -59,26 +85,39 @@
           </div>
         </div>
         <div class="is-hidden-mobile" v-if="!toggleForm">
-          <span class="subtitle">Presets are pre-defined command options for yt-dlp that you want to apply to given
-            download.</span>
+          <span class="subtitle"
+            >Presets are pre-defined command options for yt-dlp that you want to apply to given
+            download.</span
+          >
         </div>
       </div>
     </div>
 
     <div class="columns" v-if="toggleForm">
       <div class="column is-12">
-        <PresetForm :addInProgress="addInProgress" :reference="presetRef" :preset="preset" @cancel="resetForm(true)"
-          @submit="updateItem" :presets="presets" />
+        <PresetForm
+          :addInProgress="addInProgress"
+          :reference="presetRef"
+          :preset="preset"
+          @cancel="resetForm(true)"
+          @submit="updateItem"
+          :presets="presets"
+        />
       </div>
     </div>
 
     <template v-if="!toggleForm">
-      <div class="columns is-multiline" v-if="!isLoading && presetsNoDefault && presetsNoDefault.length > 0">
+      <div
+        class="columns is-multiline"
+        v-if="!isLoading && presetsNoDefault && presetsNoDefault.length > 0"
+      >
         <template v-if="'list' === display_style">
           <div class="column is-12">
             <div class="table-container">
-              <table class="table is-striped is-hoverable is-fullwidth is-bordered"
-                style="min-width: 650px; table-layout: fixed;">
+              <table
+                class="table is-striped is-hoverable is-fullwidth is-bordered"
+                style="min-width: 650px; table-layout: fixed"
+              >
                 <thead>
                   <tr class="has-text-centered is-unselectable">
                     <th width="80%">Preset</th>
@@ -109,19 +148,28 @@
                     <td class="is-vcentered is-items-center">
                       <div class="field is-grouped is-grouped-centered">
                         <div class="control">
-                          <button class="button is-info is-small is-fullwidth" @click="exportItem(item)">
+                          <button
+                            class="button is-info is-small is-fullwidth"
+                            @click="exportItem(item)"
+                          >
                             <span class="icon"><i class="fa-solid fa-file-export" /></span>
                             <span v-if="!isMobile">Export</span>
                           </button>
                         </div>
                         <div class="control">
-                          <button class="button is-warning is-small is-fullwidth" @click="editItem(item)">
+                          <button
+                            class="button is-warning is-small is-fullwidth"
+                            @click="editItem(item)"
+                          >
                             <span class="icon"><i class="fa-solid fa-cog" /></span>
                             <span v-if="!isMobile">Edit</span>
                           </button>
                         </div>
                         <div class="control">
-                          <button class="button is-danger is-small is-fullwidth" @click="deleteItem(item)">
+                          <button
+                            class="button is-danger is-small is-fullwidth"
+                            @click="deleteItem(item)"
+                          >
                             <span class="icon"><i class="fa-solid fa-trash" /></span>
                             <span v-if="!isMobile">Delete</span>
                           </button>
@@ -139,9 +187,13 @@
           <div class="column is-6" v-for="item in filteredPresets" :key="item.id">
             <div class="card is-flex is-full-height is-flex-direction-column">
               <header class="card-header">
-                <div class="card-header-title is-block is-clickable"
-                  :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }" @click="toggleExpand(item.id, 'title')"
-                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'" v-text="prettyName(item.name)" />
+                <div
+                  class="card-header-title is-block is-clickable"
+                  :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }"
+                  @click="toggleExpand(item.id, 'title')"
+                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'"
+                  v-text="prettyName(item.name)"
+                />
                 <div class="card-header-icon">
                   <div class="field is-grouped">
                     <div class="control" v-if="item.priority > 0">
@@ -154,7 +206,11 @@
                       <span class="icon has-text-primary"><i class="fa-solid fa-cookie" /></span>
                     </div>
                     <div class="control">
-                      <button class="has-text-info" v-tooltip="'Export preset'" @click="exportItem(item)">
+                      <button
+                        class="has-text-info"
+                        v-tooltip="'Export preset'"
+                        @click="exportItem(item)"
+                      >
                         <span class="icon"><i class="fa-solid fa-file-export" /></span>
                       </button>
                     </div>
@@ -169,34 +225,65 @@
                       <span>Priority: {{ item.priority }}</span>
                     </p>
                   </template>
-                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'folder'), 'is-clickable': true }"
-                    v-if="item.folder" @click="toggleExpand(item.id, 'folder')"
-                    :title="!isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'">
+                  <p
+                    :class="{
+                      'is-text-overflow': !isExpanded(item.id, 'folder'),
+                      'is-clickable': true,
+                    }"
+                    v-if="item.folder"
+                    @click="toggleExpand(item.id, 'folder')"
+                    :title="
+                      !isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'
+                    "
+                  >
                     <span class="icon"><i class="fa-solid fa-save" /></span>
                     <span>{{ calcPath(item.folder) }}</span>
                   </p>
-                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'template'), 'is-clickable': true }"
-                    v-if="item.template" @click="toggleExpand(item.id, 'template')"
-                    :title="!isExpanded(item.id, 'template') ? 'Click to expand' : 'Click to collapse'">
+                  <p
+                    :class="{
+                      'is-text-overflow': !isExpanded(item.id, 'template'),
+                      'is-clickable': true,
+                    }"
+                    v-if="item.template"
+                    @click="toggleExpand(item.id, 'template')"
+                    :title="
+                      !isExpanded(item.id, 'template') ? 'Click to expand' : 'Click to collapse'
+                    "
+                  >
                     <span class="icon"><i class="fa-solid fa-file" /></span>
                     <span>{{ item.template }}</span>
                   </p>
-                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'cli'), 'is-clickable': true }" v-if="item.cli"
+                  <p
+                    :class="{
+                      'is-text-overflow': !isExpanded(item.id, 'cli'),
+                      'is-clickable': true,
+                    }"
+                    v-if="item.cli"
                     @click="toggleExpand(item.id, 'cli')"
-                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'">
+                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'"
+                  >
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>{{ item.cli }}</span>
                   </p>
-                  <p :class="{ 'is-text-overflow': !isExpanded(item.id, 'description'), 'is-clickable': true }"
-                    v-if="item.description" @click="toggleExpand(item.id, 'description')"
-                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'">
+                  <p
+                    :class="{
+                      'is-text-overflow': !isExpanded(item.id, 'description'),
+                      'is-clickable': true,
+                    }"
+                    v-if="item.description"
+                    @click="toggleExpand(item.id, 'description')"
+                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'"
+                  >
                     <span class="icon"><i class="fa-solid fa-d" /></span>
                     <span>{{ item.description }}</span>
                   </p>
                 </div>
               </div>
-              <div class="card-content content m-1 p-1 is-overflow-auto" style="max-height: 300px;"
-                v-if="item?.toggle_description">
+              <div
+                class="card-content content m-1 p-1 is-overflow-auto"
+                style="max-height: 300px"
+                v-if="item?.toggle_description"
+              >
                 <div class="is-pre-wrap">{{ item.description }}</div>
               </div>
               <div class="card-footer mt-auto">
@@ -218,15 +305,26 @@
         </template>
       </div>
 
-      <div class="columns is-multiline"
-        v-if="!toggleForm && (isLoading || !filteredPresets || filteredPresets.length < 1)">
+      <div
+        class="columns is-multiline"
+        v-if="!toggleForm && (isLoading || !filteredPresets || filteredPresets.length < 1)"
+      >
         <div class="column is-12">
           <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
             Loading data. Please wait...
           </Message>
-          <Message title="No Results" class="is-warning" icon="fas fa-search" v-else-if="query" :useClose="true"
-            @close="query = ''">
-            <p>No results found for the query: <code>{{ query }}</code>.</p>
+          <Message
+            title="No Results"
+            class="is-warning"
+            icon="fas fa-search"
+            v-else-if="query"
+            :useClose="true"
+            @close="query = ''"
+          >
+            <p>
+              No results found for the query: <code>{{ query }}</code
+              >.
+            </p>
             <p>Please try a different search term.</p>
           </Message>
           <Message v-else title="No presets" class="is-warning" icon="fas fa-exclamation-circle">
@@ -239,8 +337,8 @@
         <div class="column is-12">
           <Message class="is-info">
             <span class="icon"><i class="fas fa-info-circle" /></span>
-            When you <b>export</b> preset, it doesn't include the <code>cookies</code> field contents for security
-            reasons.
+            When you <b>export</b> preset, it doesn't include the <code>cookies</code> field
+            contents for security reasons.
           </Message>
         </div>
       </div>
@@ -249,142 +347,145 @@
 </template>
 
 <script setup lang="ts">
-import { useStorage } from '@vueuse/core'
-import type { Preset } from '~/types/presets'
-import { useConfirm } from '~/composables/useConfirm'
-import { usePresets } from '~/composables/usePresets'
-import { prettyName } from '~/utils'
+import { useStorage } from '@vueuse/core';
+import type { Preset } from '~/types/presets';
+import { useConfirm } from '~/composables/useConfirm';
+import { usePresets } from '~/composables/usePresets';
+import { prettyName } from '~/utils';
 
-type PresetWithUI = Preset & { raw?: boolean, toggle_description?: boolean }
+type PresetWithUI = Preset & { raw?: boolean; toggle_description?: boolean };
 
-const presetsStore = usePresets()
-const config = useConfigStore()
-const box = useConfirm()
+const presetsStore = usePresets();
+const config = useConfigStore();
+const box = useConfirm();
 
-const display_style = useStorage<string>('preset_display_style', 'cards')
-const isMobile = useMediaQuery({ maxWidth: 1024 })
+const display_style = useStorage<string>('preset_display_style', 'cards');
+const isMobile = useMediaQuery({ maxWidth: 1024 });
 
-const query = ref<string>('')
-const toggleFilter = ref(false)
+const query = ref<string>('');
+const toggleFilter = ref(false);
 
-const presets = presetsStore.presets as Ref<PresetWithUI[]>
-const preset = ref<Partial<Preset>>({})
-const presetRef = ref<number | null>(null)
-const toggleForm = ref(false)
-const isLoading = presetsStore.isLoading
-const addInProgress = presetsStore.addInProgress
-const remove_keys = ['raw', 'toggle_description']
-const expandedItems = ref<Record<string, Set<string>>>({})
+const presets = presetsStore.presets as Ref<PresetWithUI[]>;
+const preset = ref<Partial<Preset>>({});
+const presetRef = ref<number | null>(null);
+const toggleForm = ref(false);
+const isLoading = presetsStore.isLoading;
+const addInProgress = presetsStore.addInProgress;
+const remove_keys = ['raw', 'toggle_description'];
+const expandedItems = ref<Record<string, Set<string>>>({});
 
-const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default))
+const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default));
 
 const filteredPresets = computed<PresetWithUI[]>(() => {
   const q = query.value?.toLowerCase();
   if (!q) return presetsNoDefault.value;
-  return presetsNoDefault.value.filter((item: PresetWithUI) => deepIncludes(item, q, new WeakSet()));
+  return presetsNoDefault.value.filter((item: PresetWithUI) =>
+    deepIncludes(item, q, new WeakSet()),
+  );
 });
 
 const toggleExpand = (itemId: number | string | undefined, field: string) => {
-  if (itemId === undefined || itemId === null) return
-  const key = String(itemId)
+  if (itemId === undefined || itemId === null) return;
+  const key = String(itemId);
 
   if (!expandedItems.value[key]) {
-    expandedItems.value[key] = new Set()
+    expandedItems.value[key] = new Set();
   }
 
   if (expandedItems.value[key].has(field)) {
-    expandedItems.value[key].delete(field)
+    expandedItems.value[key].delete(field);
   } else {
-    expandedItems.value[key].add(field)
+    expandedItems.value[key].add(field);
   }
-}
+};
 
 const isExpanded = (itemId: number | string | undefined, field: string): boolean => {
-  if (itemId === undefined || itemId === null) return false
-  const key = String(itemId)
-  return expandedItems.value[key]?.has(field) ?? false
-}
-
+  if (itemId === undefined || itemId === null) return false;
+  const key = String(itemId);
+  return expandedItems.value[key]?.has(field) ?? false;
+};
 
 watch(toggleFilter, (val) => {
   if (!val) {
-    query.value = ''
+    query.value = '';
   }
-})
+});
 
 const reloadContent = async () => {
-  await presetsStore.loadPresets(1, 1000)
-}
+  await presetsStore.loadPresets(1, 1000);
+};
 
 const resetForm = (closeForm = false) => {
-  preset.value = {}
-  presetRef.value = null
+  preset.value = {};
+  presetRef.value = null;
   if (closeForm) {
-    toggleForm.value = false
+    toggleForm.value = false;
   }
-}
+};
 
 const deleteItem = async (item: Preset) => {
   if (true !== (await box.confirm(`Delete preset '${item.name}'?`))) {
-    return
+    return;
   }
 
   if (item.id) {
-    await presetsStore.deletePreset(item.id)
+    await presetsStore.deletePreset(item.id);
   }
-}
+};
 
 const updateItem = async ({
   reference,
   preset: item,
 }: {
-  reference: number | null
-  preset: Preset
+  reference: number | null;
+  preset: Preset;
 }) => {
-  item = cleanObject(item, remove_keys) as Preset
+  item = cleanObject(item, remove_keys) as Preset;
   if (reference) {
-    const updated = await presetsStore.updatePreset(reference, item)
+    const updated = await presetsStore.updatePreset(reference, item);
     if (updated) {
-      resetForm(true)
+      resetForm(true);
     }
   } else {
-    const created = await presetsStore.createPreset(item)
+    const created = await presetsStore.createPreset(item);
     if (created) {
-      resetForm(true)
+      resetForm(true);
     }
   }
-}
+};
 
 const filterItem = (item: Preset) => {
-  const rest = cleanObject(item, remove_keys)
+  const rest = cleanObject(item, remove_keys);
   if ('default' in rest) {
-    delete rest.default
+    delete rest.default;
   }
-  return JSON.stringify(rest, null, 2)
-}
+  return JSON.stringify(rest, null, 2);
+};
 
 const editItem = (item: Preset) => {
-  preset.value = JSON.parse(filterItem(item))
-  presetRef.value = item.id ?? null
-  toggleForm.value = true
-}
+  preset.value = JSON.parse(filterItem(item));
+  presetRef.value = item.id ?? null;
+  toggleForm.value = true;
+};
 
-onMounted(async () => await reloadContent())
+onMounted(async () => await reloadContent());
 
 const exportItem = (item: Preset) => {
-  const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description']
+  const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description'];
   const userData = Object.fromEntries(
-    Object.entries(JSON.parse(JSON.stringify(item))).filter(([key, value]) => !excludedKeys.includes(key) && value)
-  )
+    Object.entries(JSON.parse(JSON.stringify(item))).filter(
+      ([key, value]) => !excludedKeys.includes(key) && value,
+    ),
+  );
 
-  userData['_type'] = 'preset'
-  userData['_version'] = '2.6'
+  userData['_type'] = 'preset';
+  userData['_version'] = '2.6';
 
-  copyText(encode(userData))
-}
+  copyText(encode(userData));
+};
 
 const calcPath = (path?: string): string => {
-  const loc = config.app.download_path || '/downloads'
-  return path ? loc + '/' + sTrim(path, '/') : loc
-}
+  const loc = config.app.download_path || '/downloads';
+  return path ? loc + '/' + sTrim(path, '/') : loc;
+};
 </script>

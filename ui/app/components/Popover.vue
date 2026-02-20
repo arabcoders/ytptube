@@ -1,6 +1,14 @@
 <template>
-  <div class="popover-wrapper" ref="triggerElm" :tabindex="triggerTabIndex" @mouseenter="handleHoverEnter"
-    @mouseleave="handleHoverLeave" @focusin="handleFocusIn" @focusout="handleFocusOut" @click="handleClick">
+  <div
+    class="popover-wrapper"
+    ref="triggerElm"
+    :tabindex="triggerTabIndex"
+    @mouseenter="handleHoverEnter"
+    @mouseleave="handleHoverLeave"
+    @focusin="handleFocusIn"
+    @focusout="handleFocusOut"
+    @click="handleClick"
+  >
     <div class="popover-trigger">
       <slot name="trigger">
         <button type="button" class="button is-small is-rounded" aria-label="More information">
@@ -13,9 +21,20 @@
 
     <Teleport to="body">
       <div v-if="isOpen" class="popover-portal" ref="portal">
-        <div ref="popover" class="popover-card box" :class="placementClass" role="tooltip" :style="portalStyle"
-          @mouseenter="handleHoverEnter" @mouseleave="handleHoverLeave">
-          <button type="button" class="button is-bold is-fullwidth is-hidden-tablet" @click="closePopover">
+        <div
+          ref="popover"
+          class="popover-card box"
+          :class="placementClass"
+          role="tooltip"
+          :style="portalStyle"
+          @mouseenter="handleHoverEnter"
+          @mouseleave="handleHoverLeave"
+        >
+          <button
+            type="button"
+            class="button is-bold is-fullwidth is-hidden-tablet"
+            @click="closePopover"
+          >
             <span class="icon"><i class="fas fa-times" /></span>
             <span>Close</span>
           </button>
@@ -38,10 +57,19 @@
 </template>
 
 <script setup lang="ts">
-import type { PopoverProps } from '~/types/popover'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch, useTemplateRef } from 'vue'
+import type { PopoverProps } from '~/types/popover';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  useSlots,
+  watch,
+  useTemplateRef,
+} from 'vue';
 
-const emit = defineEmits<{ (event: 'shown' | 'hidden'): void }>()
+const emit = defineEmits<{ (event: 'shown' | 'hidden'): void }>();
 
 const props = withDefaults(defineProps<PopoverProps>(), {
   placement: 'top',
@@ -54,211 +82,211 @@ const props = withDefaults(defineProps<PopoverProps>(), {
   minWidth: 220,
   maxWidth: 340,
   maxHeight: 360,
-  showDelay: 0
-})
+  showDelay: 0,
+});
 
-const slots = useSlots()
-const isOpen = ref(false)
-const triggerRef = useTemplateRef<HTMLElement>('triggerElm')
-const popover = useTemplateRef<HTMLDivElement>('popover')
-const portalStyle = ref<Record<string, string>>({})
-const hoverTimeout = ref<number | null>(null)
-const openTimeout = ref<number | null>(null)
+const slots = useSlots();
+const isOpen = ref(false);
+const triggerRef = useTemplateRef<HTMLElement>('triggerElm');
+const popover = useTemplateRef<HTMLDivElement>('popover');
+const portalStyle = ref<Record<string, string>>({});
+const hoverTimeout = ref<number | null>(null);
+const openTimeout = ref<number | null>(null);
 
-const placementClass = computed(() => `is-${props.placement}`)
-const triggerTabIndex = computed(() => props.trigger === 'hover' ? -1 : 0)
+const placementClass = computed(() => `is-${props.placement}`);
+const triggerTabIndex = computed(() => (props.trigger === 'hover' ? -1 : 0));
 
-const hasTitleContent = computed(() => Boolean(props.title) || Boolean(slots.title))
-const hasBodyContent = computed(() => Boolean(props.description) || Boolean(slots.default))
+const hasTitleContent = computed(() => Boolean(props.title) || Boolean(slots.title));
+const hasBodyContent = computed(() => Boolean(props.description) || Boolean(slots.default));
 
 const clearHoverTimeout = () => {
   if (null !== hoverTimeout.value) {
-    window.clearTimeout(hoverTimeout.value)
-    hoverTimeout.value = null
+    window.clearTimeout(hoverTimeout.value);
+    hoverTimeout.value = null;
   }
-}
+};
 
 const clearOpenTimeout = () => {
   if (null !== openTimeout.value) {
-    window.clearTimeout(openTimeout.value)
-    openTimeout.value = null
+    window.clearTimeout(openTimeout.value);
+    openTimeout.value = null;
   }
-}
+};
 
 const scheduleClose = () => {
-  clearHoverTimeout()
-  clearOpenTimeout()
+  clearHoverTimeout();
+  clearOpenTimeout();
   hoverTimeout.value = window.setTimeout(() => {
-    isOpen.value = false
-  }, 120)
-}
+    isOpen.value = false;
+  }, 120);
+};
 
 const openPopoverImmediate = async () => {
   if (props.disabled || isOpen.value) {
-    return
+    return;
   }
 
-  isOpen.value = true
-  await nextTick()
-  updatePosition()
-}
+  isOpen.value = true;
+  await nextTick();
+  updatePosition();
+};
 
 const openPopover = () => {
-  clearOpenTimeout()
+  clearOpenTimeout();
   if (props.showDelay && 0 < props.showDelay) {
     openTimeout.value = window.setTimeout(() => {
-      openTimeout.value = null
-      void openPopoverImmediate()
-    }, props.showDelay)
-    return
+      openTimeout.value = null;
+      void openPopoverImmediate();
+    }, props.showDelay);
+    return;
   }
 
-  void openPopoverImmediate()
-}
+  void openPopoverImmediate();
+};
 
 const closePopover = () => {
   if (!isOpen.value) {
-    return
+    return;
   }
 
-  isOpen.value = false
-}
+  isOpen.value = false;
+};
 
 const togglePopover = async () => {
   if (isOpen.value) {
-    closePopover()
-    return
+    closePopover();
+    return;
   }
 
-  openPopover()
-}
+  openPopover();
+};
 
 const handleHoverEnter = () => {
   if ('hover' !== props.trigger || props.disabled) {
-    return
+    return;
   }
 
-  clearHoverTimeout()
-  openPopover()
-}
+  clearHoverTimeout();
+  openPopover();
+};
 
 const handleHoverLeave = () => {
   if ('hover' !== props.trigger) {
-    return
+    return;
   }
 
-  clearOpenTimeout()
-  scheduleClose()
-}
+  clearOpenTimeout();
+  scheduleClose();
+};
 
 const handleFocusIn = () => {
   if ('focus' !== props.trigger || props.disabled) {
-    return
+    return;
   }
 
-  openPopover()
-}
+  openPopover();
+};
 
 const handleFocusOut = () => {
   if ('focus' !== props.trigger) {
-    return
+    return;
   }
 
-  clearOpenTimeout()
-  scheduleClose()
-}
+  clearOpenTimeout();
+  scheduleClose();
+};
 
 const handleClick = (event: MouseEvent) => {
   if ('click' !== props.trigger || props.disabled) {
-    return
+    return;
   }
 
-  event.stopPropagation()
-  void togglePopover()
-}
+  event.stopPropagation();
+  void togglePopover();
+};
 
 const handleDocumentClick = (event: MouseEvent) => {
   if (!props.closeOnClickOutside || 'click' !== props.trigger) {
-    return
+    return;
   }
 
-  const target = event.target as Node | null
-  const isInsideTrigger = Boolean(triggerRef.value && triggerRef.value.contains(target))
-  const isInsidePopover = Boolean(popover.value && popover.value.contains(target))
+  const target = event.target as Node | null;
+  const isInsideTrigger = Boolean(triggerRef.value && triggerRef.value.contains(target));
+  const isInsidePopover = Boolean(popover.value && popover.value.contains(target));
 
   if (!isInsideTrigger && !isInsidePopover) {
-    clearOpenTimeout()
-    closePopover()
+    clearOpenTimeout();
+    closePopover();
   }
-}
+};
 
 const handleEscape = (event: KeyboardEvent) => {
   if ('Escape' === event.key && isOpen.value) {
-    closePopover()
+    closePopover();
   }
-}
+};
 
 const updatePosition = () => {
   if (!triggerRef.value || !popover.value) {
-    return
+    return;
   }
 
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-  const constrainedMaxWidth = Math.min(props.maxWidth, viewportWidth * 0.96)
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const constrainedMaxWidth = Math.min(props.maxWidth, viewportWidth * 0.96);
 
-  popover.value.style.minWidth = `${props.minWidth}px`
-  popover.value.style.maxWidth = `${constrainedMaxWidth}px`
-  popover.value.style.maxHeight = `${props.maxHeight}px`
-  popover.value.style.overflowY = 'auto'
+  popover.value.style.minWidth = `${props.minWidth}px`;
+  popover.value.style.maxWidth = `${constrainedMaxWidth}px`;
+  popover.value.style.maxHeight = `${props.maxHeight}px`;
+  popover.value.style.overflowY = 'auto';
 
-  const triggerRect = triggerRef.value.getBoundingClientRect()
-  const popoverRect = popover.value.getBoundingClientRect()
-  const offset = props.offset
+  const triggerRect = triggerRef.value.getBoundingClientRect();
+  const popoverRect = popover.value.getBoundingClientRect();
+  const offset = props.offset;
 
-  let effectivePlacement = props.placement
+  let effectivePlacement = props.placement;
 
   if ('top' === props.placement) {
-    const spaceAbove = triggerRect.top - offset
+    const spaceAbove = triggerRect.top - offset;
     if (spaceAbove < popoverRect.height) {
-      effectivePlacement = 'bottom'
+      effectivePlacement = 'bottom';
     }
   } else if ('bottom' === props.placement) {
-    const spaceBelow = viewportHeight - triggerRect.bottom - offset
+    const spaceBelow = viewportHeight - triggerRect.bottom - offset;
     if (spaceBelow < popoverRect.height) {
-      effectivePlacement = 'top'
+      effectivePlacement = 'top';
     }
   } else if ('left' === props.placement) {
-    const spaceLeft = triggerRect.left - offset
+    const spaceLeft = triggerRect.left - offset;
     if (spaceLeft < popoverRect.width) {
-      effectivePlacement = 'right'
+      effectivePlacement = 'right';
     }
   } else if ('right' === props.placement) {
-    const spaceRight = viewportWidth - triggerRect.right - offset
+    const spaceRight = viewportWidth - triggerRect.right - offset;
     if (spaceRight < popoverRect.width) {
-      effectivePlacement = 'left'
+      effectivePlacement = 'left';
     }
   }
 
-  let top = triggerRect.bottom + offset
-  let left = triggerRect.left + (triggerRect.width - popoverRect.width) / 2
+  let top = triggerRect.bottom + offset;
+  let left = triggerRect.left + (triggerRect.width - popoverRect.width) / 2;
 
   if ('top' === effectivePlacement) {
-    top = triggerRect.top - popoverRect.height - offset
+    top = triggerRect.top - popoverRect.height - offset;
   } else if ('left' === effectivePlacement) {
-    top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2
-    left = triggerRect.left - popoverRect.width - offset
+    top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2;
+    left = triggerRect.left - popoverRect.width - offset;
   } else if ('right' === effectivePlacement) {
-    top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2
-    left = triggerRect.right + offset
+    top = triggerRect.top + (triggerRect.height - popoverRect.height) / 2;
+    left = triggerRect.right + offset;
   }
 
-  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-  const maxLeft = viewportWidth - popoverRect.width - 8
-  const maxTop = viewportHeight - popoverRect.height - 8
+  const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+  const maxLeft = viewportWidth - popoverRect.width - 8;
+  const maxTop = viewportHeight - popoverRect.height - 8;
 
-  const clampedTop = clamp(Math.round(top), 8, maxTop)
-  const clampedLeft = clamp(Math.round(left), 8, maxLeft)
+  const clampedTop = clamp(Math.round(top), 8, maxTop);
+  const clampedLeft = clamp(Math.round(left), 8, maxLeft);
 
   portalStyle.value = {
     position: 'fixed',
@@ -267,37 +295,37 @@ const updatePosition = () => {
     minWidth: `${props.minWidth}px`,
     maxWidth: `${constrainedMaxWidth}px`,
     maxHeight: `${props.maxHeight}px`,
-    overflowY: 'auto'
-  }
-}
+    overflowY: 'auto',
+  };
+};
 
 watch(isOpen, async (value) => {
   if (value) {
-    await nextTick()
-    updatePosition()
-    await nextTick()
-    emit('shown')
-    return
+    await nextTick();
+    updatePosition();
+    await nextTick();
+    emit('shown');
+    return;
   }
 
-  emit('hidden')
-})
+  emit('hidden');
+});
 
 onMounted(() => {
-  document.addEventListener('click', handleDocumentClick, true)
-  document.addEventListener('keydown', handleEscape)
-  window.addEventListener('resize', updatePosition)
-  window.addEventListener('scroll', updatePosition, true)
-})
+  document.addEventListener('click', handleDocumentClick, true);
+  document.addEventListener('keydown', handleEscape);
+  window.addEventListener('resize', updatePosition);
+  window.addEventListener('scroll', updatePosition, true);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleDocumentClick, true)
-  document.removeEventListener('keydown', handleEscape)
-  window.removeEventListener('resize', updatePosition)
-  window.removeEventListener('scroll', updatePosition, true)
-  clearHoverTimeout()
-  clearOpenTimeout()
-})
+  document.removeEventListener('click', handleDocumentClick, true);
+  document.removeEventListener('keydown', handleEscape);
+  window.removeEventListener('resize', updatePosition);
+  window.removeEventListener('scroll', updatePosition, true);
+  clearHoverTimeout();
+  clearOpenTimeout();
+});
 </script>
 
 <style>
@@ -315,7 +343,7 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.popover-trigger>* {
+.popover-trigger > * {
   max-width: 100%;
   min-width: 0;
 }
@@ -332,7 +360,11 @@ onBeforeUnmount(() => {
   background-color: var(--bulma-scheme-main, #fff);
   color: var(--bulma-text, #363636);
   border: 1px solid var(--bulma-border, rgba(0, 0, 0, 0.08));
-  box-shadow: var(--bulma-shadow, 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02));
+  box-shadow: var(
+    --bulma-shadow,
+    0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1),
+    0 0px 0 1px rgba(10, 10, 10, 0.02)
+  );
   border-radius: var(--bulma-radius-large, 0.5rem);
   pointer-events: auto;
   padding: 0.9rem 1rem;

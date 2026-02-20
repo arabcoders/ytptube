@@ -1,9 +1,8 @@
 interface Option {
-  value: string
-  description: string
+  value: string;
+  description: string;
 }
 
+type AutoCompleteOptions = Option[];
 
-type AutoCompleteOptions = Option[]
-
-export type { Option, AutoCompleteOptions }
+export type { Option, AutoCompleteOptions };

@@ -1,14 +1,14 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly } from 'vue';
 
-import { useNotification } from '~/composables/useNotification'
-import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils'
-import type { Preset, PresetRequest } from '~/types/presets'
-import type { APIResponse, Pagination } from '~/types/responses'
+import { useNotification } from '~/composables/useNotification';
+import { request, parse_list_response, parse_api_response, parse_api_error } from '~/utils';
+import type { Preset, PresetRequest } from '~/types/presets';
+import type { APIResponse, Pagination } from '~/types/responses';
 
 /**
  * List of all presets in memory.
  */
-const presets = ref<Array<Preset>>([])
+const presets = ref<Array<Preset>>([]);
 /**
  * Pagination state for presets list.
  */
@@ -19,27 +19,26 @@ const pagination = ref<Pagination>({
   total_pages: 0,
   has_next: false,
   has_prev: false,
-})
+});
 /**
  * Indicates if a request is in progress.
  */
-const isLoading = ref<boolean>(false)
+const isLoading = ref<boolean>(false);
 /**
  * Indicates if an add/update operation is in progress.
  */
-const addInProgress = ref<boolean>(false)
+const addInProgress = ref<boolean>(false);
 /**
  * Stores the last error message, if any.
  */
-const lastError = ref<string | null>(null)
+const lastError = ref<string | null>(null);
 /**
  * If true, methods will throw errors instead of returning null/false (for testing)
  */
-const throwInstead = ref(false)
+const throwInstead = ref(false);
 /**
  * Notification composable for showing success/error messages.
  */
-const notify = useNotification()
 
 /**
  * Sorts presets by priority (descending), then name (A-Z).
@@ -49,12 +48,12 @@ const notify = useNotification()
 const sortPresets = (items: Array<Preset>): Array<Preset> => {
   return [...items].sort((a, b) => {
     if (a.priority === b.priority) {
-      return a.name.localeCompare(b.name)
+      return a.name.localeCompare(b.name);
     }
 
-    return b.priority - a.priority
-  })
-}
+    return b.priority - a.priority;
+  });
+};
 
 /**
  * Safely reads JSON from a Response, returns null on error.
@@ -63,13 +62,12 @@ const sortPresets = (items: Array<Preset>): Array<Preset> => {
  */
 const readJson = async (response: Response): Promise<unknown> => {
   try {
-    const clone = response.clone()
-    return await clone.json()
+    const clone = response.clone();
+    return await clone.json();
+  } catch {
+    return null;
   }
-  catch {
-    return null
-  }
-}
+};
 
 /**
  * Throws an error if the response is not OK, using API error message if available.
@@ -78,23 +76,23 @@ const readJson = async (response: Response): Promise<unknown> => {
  */
 const ensureSuccess = async (response: Response): Promise<void> => {
   if (response.ok) {
-    return
+    return;
   }
 
-  const payload = await readJson(response)
-  const message = await parse_api_error(payload)
-  throw new Error(message)
-}
+  const payload = await readJson(response);
+  const message = await parse_api_error(payload);
+  throw new Error(message);
+};
 
 /**
  * Handles errors by updating lastError and showing a notification.
  * @param error Error object or unknown
  */
 const handleError = (error: unknown): void => {
-  const message = error instanceof Error ? error.message : 'Unexpected error occurred.'
-  lastError.value = message
-  notify.error(message)
-}
+  const message = error instanceof Error ? error.message : 'Unexpected error occurred.';
+  lastError.value = message;
+  useNotification().error(message);
+};
 
 /**
  * Updates or adds a preset in the presets list, keeping sort order.
@@ -102,15 +100,12 @@ const handleError = (error: unknown): void => {
  * @param preset Preset to update/add
  */
 const updatePresets = (preset: Preset): void => {
-  const isNew = !presets.value.some(item => item.id === preset.id)
-  presets.value = sortPresets([
-    ...presets.value.filter(item => item.id !== preset.id),
-    preset,
-  ])
+  const isNew = !presets.value.some((item) => item.id === preset.id);
+  presets.value = sortPresets([...presets.value.filter((item) => item.id !== preset.id), preset]);
   if (isNew) {
-    pagination.value.total++
+    pagination.value.total++;
   }
-}
+};
 
 /**
  * Removes a preset from the presets list by ID.
@@ -118,12 +113,12 @@ const updatePresets = (preset: Preset): void => {
  * @param id Preset ID
  */
 const removePreset = (id: number) => {
-  const initialLength = presets.value.length
-  presets.value = presets.value.filter(item => item.id !== id)
+  const initialLength = presets.value.length;
+  presets.value = presets.value.filter((item) => item.id !== id);
   if (presets.value.length < initialLength) {
-    pagination.value.total = Math.max(0, pagination.value.total - 1)
+    pagination.value.total = Math.max(0, pagination.value.total - 1);
   }
-}
+};
 
 /**
  * Loads all presets from the API with pagination support.
@@ -131,31 +126,32 @@ const removePreset = (id: number) => {
  * @param page Page number
  * @param perPage Items per page
  */
-const loadPresets = async (page: number = 1, perPage: number | undefined = undefined): Promise<void> => {
-  isLoading.value = true
+const loadPresets = async (
+  page: number = 1,
+  perPage: number | undefined = undefined,
+): Promise<void> => {
+  isLoading.value = true;
   try {
-    let url = `/api/presets/?page=${page}`
+    let url = `/api/presets/?page=${page}`;
     if (perPage !== undefined) {
-      url += `&per_page=${perPage}`
+      url += `&per_page=${perPage}`;
     }
-    const response = await request(url)
-    await ensureSuccess(response)
+    const response = await request(url);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const { items, pagination: paginationData } = await parse_list_response<Preset>(json)
+    const json = await response.json();
+    const { items, pagination: paginationData } = await parse_list_response<Preset>(json);
 
-    presets.value = sortPresets(items)
-    pagination.value = paginationData
-    lastError.value = null
+    presets.value = sortPresets(items);
+    pagination.value = paginationData;
+    lastError.value = null;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+  } finally {
+    isLoading.value = false;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-  }
-  finally {
-    isLoading.value = false
-  }
-}
+};
 
 /**
  * Fetches a single preset by ID from the API.
@@ -164,21 +160,20 @@ const loadPresets = async (page: number = 1, perPage: number | undefined = undef
  */
 const getPreset = async (id: number): Promise<Preset | null> => {
   try {
-    const response = await request(`/api/presets/${id}`)
-    await ensureSuccess(response)
+    const response = await request(`/api/presets/${id}`);
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const preset = await parse_api_response<Preset>(json)
+    const json = await response.json();
+    const preset = await parse_api_response<Preset>(json);
 
-    lastError.value = null
-    return preset
+    lastError.value = null;
+    return preset;
+  } catch (error) {
+    handleError(error);
+    if (throwInstead.value) throw error;
+    return null;
   }
-  catch (error) {
-    handleError(error)
-    if (throwInstead.value) throw error
-    return null
-  }
-}
+};
 
 /**
  * Creates a new preset via API.
@@ -190,43 +185,41 @@ const createPreset = async (
   preset: PresetRequest,
   callback?: (response: APIResponse<Preset>) => void,
 ): Promise<Preset | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
     const response = await request('/api/presets/', {
       method: 'POST',
       body: JSON.stringify(preset),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const created = await parse_api_response<Preset>(json)
+    const json = await response.json();
+    const created = await parse_api_response<Preset>(json);
 
-    updatePresets(created)
-    notify.success('Preset created.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: created })
-    }
-
-    return created
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updatePresets(created);
+    useNotification().success('Preset created.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: created });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return created;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Updates an existing preset via API (PUT - full update).
@@ -240,50 +233,48 @@ const updatePreset = async (
   preset: Preset,
   callback?: (response: APIResponse<Preset>) => void,
 ): Promise<Preset | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
-    const payload = { ...preset }
+    const payload = { ...preset };
     if (payload.id) {
-      payload.id = undefined
+      payload.id = undefined;
     }
     if ('default' in payload) {
-      payload.default = false
+      payload.default = false;
     }
     const response = await request(`/api/presets/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Preset>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Preset>(json);
 
-    updatePresets(updated)
-    notify.success(`Preset '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updatePresets(updated);
+    useNotification().success(`Preset '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Partially updates an existing preset via API (PATCH).
@@ -297,50 +288,48 @@ const patchPreset = async (
   patch: Partial<Preset>,
   callback?: (response: APIResponse<Preset>) => void,
 ): Promise<Preset | null> => {
-  addInProgress.value = true
+  addInProgress.value = true;
   try {
-    const payload = { ...patch }
+    const payload = { ...patch };
     if (payload.id) {
-      payload.id = undefined
+      payload.id = undefined;
     }
     if ('default' in payload) {
-      payload.default = false
+      payload.default = false;
     }
     const response = await request(`/api/presets/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
-    })
+    });
 
-    await ensureSuccess(response)
+    await ensureSuccess(response);
 
-    const json = await response.json()
-    const updated = await parse_api_response<Preset>(json)
+    const json = await response.json();
+    const updated = await parse_api_response<Preset>(json);
 
-    updatePresets(updated)
-    notify.success(`Preset '${updated.name}' updated.`)
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: updated })
-    }
-
-    return updated
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    updatePresets(updated);
+    useNotification().success(`Preset '${updated.name}' updated.`);
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: undefined })
+      callback({ success: true, error: null, detail: null, data: updated });
     }
 
-    if (throwInstead.value) throw error
-    return null
+    return updated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: undefined });
+    }
+
+    if (throwInstead.value) throw error;
+    return null;
+  } finally {
+    addInProgress.value = false;
   }
-  finally {
-    addInProgress.value = false
-  }
-}
+};
 
 /**
  * Deletes a preset by ID via API.
@@ -353,36 +342,35 @@ const deletePreset = async (
   callback?: (response: APIResponse<boolean>) => void,
 ): Promise<boolean> => {
   try {
-    const response = await request(`/api/presets/${id}`, { method: 'DELETE' })
-    await ensureSuccess(response)
+    const response = await request(`/api/presets/${id}`, { method: 'DELETE' });
+    await ensureSuccess(response);
 
-    removePreset(id)
-    notify.success('Preset deleted.')
-    lastError.value = null
-
-    if (callback) {
-      callback({ success: true, error: null, detail: null, data: true })
-    }
-
-    return true
-  }
-  catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.'
-    handleError(error)
+    removePreset(id);
+    useNotification().success('Preset deleted.');
+    lastError.value = null;
 
     if (callback) {
-      callback({ success: false, error: errorMessage, detail: error, data: false })
+      callback({ success: true, error: null, detail: null, data: true });
     }
 
-    if (throwInstead.value) throw error
-    return false
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error occurred.';
+    handleError(error);
+
+    if (callback) {
+      callback({ success: false, error: errorMessage, detail: error, data: false });
+    }
+
+    if (throwInstead.value) throw error;
+    return false;
   }
-}
+};
 
 /**
  * Clears the last error message.
  */
-const clearError = () => lastError.value = null
+const clearError = () => (lastError.value = null);
 
 /**
  * usePresets composable
@@ -404,4 +392,4 @@ export const usePresets = () => ({
   deletePreset,
   clearError,
   throwInstead,
-})
+});

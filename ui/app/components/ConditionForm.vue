@@ -6,25 +6,29 @@
           <div class="card-header">
             <div class="card-header-title is-text-overflow is-block">
               <span class="icon-text">
-                <span class="icon"><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'" /></span>
+                <span class="icon"
+                  ><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'"
+                /></span>
                 <span>{{ reference ? 'Edit' : 'Add' }}</span>
               </span>
             </div>
             <div class="card-header-icon" v-if="reference">
               <button type="button" @click="showImport = !showImport">
-                <span class="icon"><i class="fa-solid" :class="{
-                  'fa-arrow-down': !showImport,
-                  'fa-arrow-up': showImport,
-                }" /></span>
+                <span class="icon"
+                  ><i
+                    class="fa-solid"
+                    :class="{
+                      'fa-arrow-down': !showImport,
+                      'fa-arrow-up': showImport,
+                    }"
+                /></span>
                 <span>{{ showImport ? 'Hide' : 'Show' }} import</span>
               </button>
             </div>
           </div>
 
           <div class="card-content">
-
             <div class="columns is-multiline is-mobile">
-
               <div class="column is-12" v-if="showImport || !reference">
                 <label class="label is-inline" for="import_string">
                   <span class="icon"><i class="fa-solid fa-file-import" /></span>
@@ -33,11 +37,22 @@
 
                 <div class="field has-addons">
                   <div class="control is-expanded">
-                    <input type="text" class="input" id="import_string" v-model="import_string" autocomplete="off">
+                    <input
+                      type="text"
+                      class="input"
+                      id="import_string"
+                      v-model="import_string"
+                      autocomplete="off"
+                    />
                   </div>
 
                   <div class="control">
-                    <button class="button is-primary" :disabled="!import_string" type="button" @click="importItem">
+                    <button
+                      class="button is-primary"
+                      :disabled="!import_string"
+                      type="button"
+                      @click="importItem"
+                    >
                       <span class="icon"><i class="fa-solid fa-add" /></span>
                       <span>Import</span>
                     </button>
@@ -56,8 +71,14 @@
                     Name
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="name" v-model="form.name" :disabled="addInProgress"
-                      placeholder="For the problematic channel or video name.">
+                    <input
+                      type="text"
+                      class="input"
+                      id="name"
+                      v-model="form.name"
+                      :disabled="addInProgress"
+                      placeholder="For the problematic channel or video name."
+                    />
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -73,8 +94,13 @@
                     Enabled
                   </label>
                   <div class="control is-unselectable">
-                    <input id="enabled" type="checkbox" v-model="form.enabled" :disabled="addInProgress"
-                      class="switch is-success" />
+                    <input
+                      id="enabled"
+                      type="checkbox"
+                      v-model="form.enabled"
+                      :disabled="addInProgress"
+                      class="switch is-success"
+                    />
                     <label for="enabled" class="is-unselectable">
                       {{ form.enabled ? 'Yes' : 'No' }}
                     </label>
@@ -93,8 +119,15 @@
                     Priority
                   </label>
                   <div class="control">
-                    <input type="number" class="input" id="priority" v-model.number="form.priority"
-                      :disabled="addInProgress" min="0" placeholder="0">
+                    <input
+                      type="number"
+                      class="input"
+                      id="priority"
+                      v-model.number="form.priority"
+                      :disabled="addInProgress"
+                      min="0"
+                      placeholder="0"
+                    />
                   </div>
                   <span class="help">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -109,19 +142,28 @@
                     <span class="icon"><i class="fa-solid fa-filter" /></span>
                     Condition Filter
                     <template v-if="!addInProgress || form.filter">
-                      - <NuxtLink @click="test_data.show = true" class="is-bold">
+                      -
+                      <NuxtLink @click="test_data.show = true" class="is-bold">
                         Test filter logic
                       </NuxtLink>
                     </template>
                   </label>
                   <div class="control">
-                    <input type="text" class="input" id="filter" v-model="form.filter" :disabled="addInProgress"
-                      placeholder="availability = 'needs_auth' & channel_id = 'channel_id'">
+                    <input
+                      type="text"
+                      class="input"
+                      id="filter"
+                      v-model="form.filter"
+                      :disabled="addInProgress"
+                      placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
+                    />
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>yt-dlp <code>--match-filters</code> logic with <code>OR</code>, <code>||</code>
-                      support.</span>
+                    <span
+                      >yt-dlp <code>--match-filters</code> logic with <code>OR</code>,
+                      <code>||</code> support.</span
+                    >
                   </span>
                 </div>
               </div>
@@ -132,15 +174,22 @@
                     <span class="icon"><i class="fa-solid fa-terminal" /></span>
                     <span>Command options for yt-dlp</span>
                   </label>
-                  <TextareaAutocomplete id="cli_options" v-model="form.cli" :options="ytDlpOpt"
-                    :disabled="addInProgress" />
+                  <TextareaAutocomplete
+                    id="cli_options"
+                    v-model="form.cli"
+                    :options="ytDlpOpt"
+                    :disabled="addInProgress"
+                  />
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
                     <span>
-                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all options are
-                      supported <NuxtLink target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26">some
-                        are ignored</NuxtLink>. Use with caution.
+                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all
+                      options are supported
+                      <NuxtLink
+                        target="_blank"
+                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26"
+                        >some are ignored</NuxtLink
+                      >. Use with caution.
                     </span>
                   </span>
                 </div>
@@ -154,18 +203,38 @@
                   </label>
                   <div class="content">
                     <div v-if="form.extras && Object.keys(form.extras).length > 0" class="mb-3">
-                      <div v-for="(value, key) in form.extras" :key="key" class="field is-grouped mb-2">
+                      <div
+                        v-for="(value, key) in form.extras"
+                        :key="key"
+                        class="field is-grouped mb-2"
+                      >
                         <div class="control">
-                          <input type="text" class="input" :value="key" @input="updateExtraKey($event, key)"
-                            :disabled="addInProgress" placeholder="key_name">
+                          <input
+                            type="text"
+                            class="input"
+                            :value="key"
+                            @input="updateExtraKey($event, key)"
+                            :disabled="addInProgress"
+                            placeholder="key_name"
+                          />
                         </div>
                         <div class="control is-expanded">
-                          <input type="text" class="input" :value="value" @input="updateExtraValue(key, $event)"
-                            :disabled="addInProgress" placeholder="value">
+                          <input
+                            type="text"
+                            class="input"
+                            :value="value"
+                            @input="updateExtraValue(key, $event)"
+                            :disabled="addInProgress"
+                            placeholder="value"
+                          />
                         </div>
                         <div class="control">
-                          <button type="button" class="button is-danger" @click="removeExtra(key)"
-                            :disabled="addInProgress">
+                          <button
+                            type="button"
+                            class="button is-danger"
+                            @click="removeExtra(key)"
+                            :disabled="addInProgress"
+                          >
                             <span class="icon"><i class="fa-solid fa-times" /></span>
                           </button>
                         </div>
@@ -174,36 +243,60 @@
 
                     <div class="field is-grouped">
                       <div class="control">
-                        <input type="text" class="input" v-model="newExtraKey" :disabled="addInProgress"
-                          placeholder="new_key" @keyup.enter="addExtra">
+                        <input
+                          type="text"
+                          class="input"
+                          v-model="newExtraKey"
+                          :disabled="addInProgress"
+                          placeholder="new_key"
+                          @keyup.enter="addExtra"
+                        />
                       </div>
                       <div class="control is-expanded">
-                        <input type="text" class="input" v-model="newExtraValue" :disabled="addInProgress"
-                          placeholder="new_value" @keyup.enter="addExtra">
+                        <input
+                          type="text"
+                          class="input"
+                          v-model="newExtraValue"
+                          :disabled="addInProgress"
+                          placeholder="new_value"
+                          @keyup.enter="addExtra"
+                        />
                       </div>
                       <div class="control">
-                        <button type="button" class="button is-primary" @click="addExtra"
-                          :disabled="addInProgress || !newExtraKey || !newExtraValue">
+                        <button
+                          type="button"
+                          class="button is-primary"
+                          @click="addExtra"
+                          :disabled="addInProgress || !newExtraKey || !newExtraValue"
+                        >
                           <span class="icon"><i class="fa-solid fa-plus" /></span>
                           <span>Add</span>
                         </button>
                       </div>
                     </div>
                   </div>
-                  <span class="help ">
+                  <span class="help">
                     <div class="message is-info">
                       <div class="message-body content pl-0 is-small pt-1">
                         <ul>
-                          <li>For advanced users only. This feature is meant to be expanded later.</li>
-                          <li>Keys must be lowercase with underscores (e.g., custom_field).</li>
-                          <li class="has-text-danger is-bold">You must click on Add to actually add the option.</li>
-                          <li>The key <code>ignore_download</code> with value of <code>true</code> will instruct
-                            <b>YTPTube</b> to ignore the download and directly mark the item as archived. this is useful
-                            to skip certain kind of downloads.
+                          <li>
+                            For advanced users only. This feature is meant to be expanded later.
                           </li>
-                          <li>The key <code>set_preset</code> with the name of an existing preset will instruct
-                            <b>YTPTube</b> to switch the download to use the specified preset. This is useful
-                            to apply different download settings based on content type or source.
+                          <li>Keys must be lowercase with underscores (e.g., custom_field).</li>
+                          <li class="has-text-danger is-bold">
+                            You must click on Add to actually add the option.
+                          </li>
+                          <li>
+                            The key <code>ignore_download</code> with value of
+                            <code>true</code> will instruct <b>YTPTube</b> to ignore the download
+                            and directly mark the item as archived. this is useful to skip certain
+                            kind of downloads.
+                          </li>
+                          <li>
+                            The key <code>set_preset</code> with the name of an existing preset will
+                            instruct <b>YTPTube</b> to switch the download to use the specified
+                            preset. This is useful to apply different download settings based on
+                            content type or source.
                           </li>
                         </ul>
                       </div>
@@ -219,8 +312,13 @@
                     Description
                   </label>
                   <div class="control">
-                    <textarea class="textarea" id="description" v-model="form.description" :disabled="addInProgress"
-                      placeholder="Describe what this condition does" />
+                    <textarea
+                      class="textarea"
+                      id="description"
+                      v-model="form.description"
+                      :disabled="addInProgress"
+                      placeholder="Describe what this condition does"
+                    />
                   </div>
                   <span class="help is-bold">
                     <span class="icon"><i class="fa-solid fa-info" /></span>
@@ -228,22 +326,30 @@
                   </span>
                 </div>
               </div>
-
             </div>
           </div>
 
           <div class="card-footer mt-auto">
             <div class="card-footer-item">
               <div class="card-footer-item">
-                <button class="button is-fullwidth is-primary" :disabled="addInProgress" type="submit"
-                  :class="{ 'is-loading': addInProgress }" form="addForm">
+                <button
+                  class="button is-fullwidth is-primary"
+                  :disabled="addInProgress"
+                  type="submit"
+                  :class="{ 'is-loading': addInProgress }"
+                  form="addForm"
+                >
                   <span class="icon"><i class="fa-solid fa-save" /></span>
                   <span>Save</span>
                 </button>
               </div>
               <div class="card-footer-item">
-                <button class="button is-fullwidth is-danger" @click="emitter('cancel')" :disabled="addInProgress"
-                  type="button">
+                <button
+                  class="button is-fullwidth is-danger"
+                  @click="emitter('cancel')"
+                  :disabled="addInProgress"
+                  type="button"
+                >
                   <span class="icon"><i class="fa-solid fa-times" /></span>
                   <span>Cancel</span>
                 </button>
@@ -267,12 +373,23 @@
                 <div class="field-body">
                   <div class="field is-grouped">
                     <div class="control is-expanded">
-                      <input type="url" class="input " id="url" v-model="test_data.url"
-                        :disabled="test_data.in_progress" placeholder="https://..." required>
+                      <input
+                        type="url"
+                        class="input"
+                        id="url"
+                        v-model="test_data.url"
+                        :disabled="test_data.in_progress"
+                        placeholder="https://..."
+                        required
+                      />
                     </div>
                     <div class="control">
-                      <button class="button is-primary" type="submit" :disabled="test_data.in_progress"
-                        :class="{ 'is-loading': test_data.in_progress }">
+                      <button
+                        class="button is-primary"
+                        type="submit"
+                        :disabled="test_data.in_progress"
+                        :class="{ 'is-loading': test_data.in_progress }"
+                      >
                         <span class="icon"><i class="fa-solid fa-play" /></span>
                         <span>Test</span>
                       </button>
@@ -291,33 +408,49 @@
                   Condition Filter
                 </label>
                 <div class="control">
-                  <input type="text" class="input" id="filter" v-model="form.filter" :disabled="test_data.in_progress"
-                    placeholder="availability = 'needs_auth' & channel_id = 'channel_id'" required>
+                  <input
+                    type="text"
+                    class="input"
+                    id="filter"
+                    v-model="form.filter"
+                    :disabled="test_data.in_progress"
+                    placeholder="availability = 'needs_auth' & channel_id = 'channel_id'"
+                    required
+                  />
                 </div>
                 <span class="help is-bold">
                   <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>yt-dlp <code>--match-filters</code> logic with <code>OR</code>, <code>||</code>
-                    support.</span>
+                  <span
+                    >yt-dlp <code>--match-filters</code> logic with <code>OR</code>,
+                    <code>||</code> support.</span
+                  >
                 </span>
               </div>
 
               <div class="field">
-                <span class="is-bold" :class="{
-                  'has-text-success': true === logic_test,
-                  'has-text-danger': false === logic_test,
-                }">
-                  <span class="icon"><i class="fa-solid" :class="{
-                    'fa-check': true === logic_test,
-                    'fa-xmark': false === logic_test,
-                    'fa-question': null === logic_test,
-                  }" /></span>
+                <span
+                  class="is-bold"
+                  :class="{
+                    'has-text-success': true === logic_test,
+                    'has-text-danger': false === logic_test,
+                  }"
+                >
+                  <span class="icon"
+                    ><i
+                      class="fa-solid"
+                      :class="{
+                        'fa-check': true === logic_test,
+                        'fa-xmark': false === logic_test,
+                        'fa-question': null === logic_test,
+                      }"
+                  /></span>
                   Filter Status:
                   <template v-if="null === test_data?.data?.status">Not tested</template>
                   <template v-else>{{ logic_test ? 'Matched' : 'Not matched' }}</template>
                 </span>
               </div>
               <div class="field">
-                <pre style="height:60vh;"><code>{{ show_data() }}</code></pre>
+                <pre style="height: 60vh"><code>{{ show_data() }}</code></pre>
               </div>
             </div>
           </div>
@@ -331,310 +464,323 @@
 </template>
 
 <script setup lang="ts">
-import 'assets/css/bulma-switch.css'
-import { useStorage } from '@vueuse/core'
-import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue'
+import 'assets/css/bulma-switch.css';
+import { useStorage } from '@vueuse/core';
+import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
-import type { Condition } from '~/types/conditions'
-import { useConfirm } from '~/composables/useConfirm'
+import type { Condition } from '~/types/conditions';
+import { useConfirm } from '~/composables/useConfirm';
 import type { ImportedItem } from '~/types';
 
 const emitter = defineEmits<{
-  (e: 'cancel'): void
-  (e: 'submit', payload: { reference: number | null | undefined, item: Condition }): void
-}>()
+  (e: 'cancel'): void;
+  (e: 'submit', payload: { reference: number | null | undefined; item: Condition }): void;
+}>();
 
 const props = defineProps<{
-  reference?: number | null
-  item: Condition
-  addInProgress?: boolean
-}>()
+  reference?: number | null;
+  item: Condition;
+  addInProgress?: boolean;
+}>();
 
-const toast = useNotification()
-const showImport = useStorage('showImport', false)
-const box = useConfirm()
-const config = useConfigStore()
+const toast = useNotification();
+const showImport = useStorage('showImport', false);
+const box = useConfirm();
+const config = useConfigStore();
 
-const form = reactive<Condition>(JSON.parse(JSON.stringify(props.item)))
-const import_string = ref('')
-const newExtraKey = ref('')
-const newExtraValue = ref('')
+const form = reactive<Condition>(JSON.parse(JSON.stringify(props.item)));
+const import_string = ref('');
+const newExtraKey = ref('');
+const newExtraValue = ref('');
 const test_data = ref<{
-  show: boolean,
-  url: string,
-  in_progress: boolean,
-  changed: boolean,
-  data: { status: boolean | null, data: Record<string, any> }
-}>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } })
-const showOptions = ref<boolean>(false)
-const ytDlpOpt = ref<AutoCompleteOptions>([])
+  show: boolean;
+  url: string;
+  in_progress: boolean;
+  changed: boolean;
+  data: { status: boolean | null; data: Record<string, any> };
+}>({ show: false, url: '', in_progress: false, changed: false, data: { status: null, data: {} } });
+const showOptions = ref<boolean>(false);
+const ytDlpOpt = ref<AutoCompleteOptions>([]);
 
 if (!form.extras) {
-  form.extras = {}
+  form.extras = {};
 }
 
 if (form.enabled === undefined) {
-  form.enabled = true
+  form.enabled = true;
 }
 
 if (form.priority === undefined) {
-  form.priority = 0
+  form.priority = 0;
 }
 
 if (form.description === undefined) {
-  form.description = ''
+  form.description = '';
 }
 
-watch(() => config.ytdlp_options, newOptions => ytDlpOpt.value = newOptions
-  .filter(opt => !opt.ignored)
-  .flatMap(opt => opt.flags.filter(flag => flag.startsWith('--'))
-    .map(flag => ({ value: flag, description: opt.description || '' }))),
-  { immediate: true }
-)
+watch(
+  () => config.ytdlp_options,
+  (newOptions) =>
+    (ytDlpOpt.value = newOptions
+      .filter((opt) => !opt.ignored)
+      .flatMap((opt) =>
+        opt.flags
+          .filter((flag) => flag.startsWith('--'))
+          .map((flag) => ({ value: flag, description: opt.description || '' })),
+      )),
+  { immediate: true },
+);
 
-watch(() => form.filter, () => test_data.value.changed = true)
+watch(
+  () => form.filter,
+  () => (test_data.value.changed = true),
+);
 
 const checkInfo = async (): Promise<void> => {
-  const required: (keyof Condition)[] = ['name', 'filter']
+  const required: (keyof Condition)[] = ['name', 'filter'];
 
   for (const key of required) {
     if (!form[key]) {
-      toast.error(`The ${key} field is required.`)
-      return
+      toast.error(`The ${key} field is required.`);
+      return;
     }
   }
 
   if ((!form.cli || '' === form.cli.trim()) && Object.keys(form.extras).length < 1) {
-    toast.error('Command options for yt-dlp or at least one extra option is required.')
-    return
+    toast.error('Command options for yt-dlp or at least one extra option is required.');
+    return;
   }
 
   if (form.cli && '' !== form.cli.trim()) {
-    const options = await convertOptions(form.cli)
+    const options = await convertOptions(form.cli);
     if (options === null) {
-      return
+      return;
     }
-    form.cli = form.cli.trim()
+    form.cli = form.cli.trim();
   }
 
-  const copy: Condition = JSON.parse(JSON.stringify(form))
+  const copy: Condition = JSON.parse(JSON.stringify(form));
 
   for (const key in copy) {
     if (typeof (copy as any)[key] !== 'string') {
-      continue
+      continue;
     }
-    (copy as any)[key] = (copy as any)[key].trim()
+    (copy as any)[key] = (copy as any)[key].trim();
   }
 
-  emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) })
-}
+  emitter('submit', { reference: toRaw(props.reference), item: toRaw(copy) });
+};
 
 const convertOptions = async (args: string): Promise<any | null> => {
   try {
-    const response = await convertCliOptions(args)
-    return response.opts
+    const response = await convertCliOptions(args);
+    return response.opts;
   } catch (e: any) {
-    toast.error(e.message)
+    toast.error(e.message);
   }
-  return null
-}
+  return null;
+};
 
 const run_test = async (): Promise<void> => {
   if (!test_data.value.url) {
-    toast.error('The URL is required for testing.', { force: true })
-    return
+    toast.error('The URL is required for testing.', { force: true });
+    return;
   }
 
   try {
-    new URL(test_data.value.url)
+    new URL(test_data.value.url);
   } catch {
-    toast.error('The URL is invalid.', { force: true })
-    return
+    toast.error('The URL is invalid.', { force: true });
+    return;
   }
 
-  test_data.value.in_progress = true
-  test_data.value.data.status = false
+  test_data.value.in_progress = true;
+  test_data.value.data.status = false;
 
   try {
     const response = await request('/api/conditions/test', {
       method: 'POST',
-      body: JSON.stringify({ url: test_data.value.url, condition: form.filter })
-    })
+      body: JSON.stringify({ url: test_data.value.url, condition: form.filter }),
+    });
 
-    const json = await response.json()
+    const json = await response.json();
     if (!response.ok) {
-      toast.error(json.message || json.error || 'Unknown error', { force: true })
-      return
+      toast.error(json.message || json.error || 'Unknown error', { force: true });
+      return;
     }
 
-    test_data.value.data = json
-    test_data.value.changed = false
+    test_data.value.data = json;
+    test_data.value.changed = false;
   } catch (error: any) {
-    toast.error(`Failed to test condition. ${error.message}`)
+    toast.error(`Failed to test condition. ${error.message}`);
   } finally {
-    test_data.value.in_progress = false
+    test_data.value.in_progress = false;
   }
-}
+};
 
 const importItem = async (): Promise<void> => {
-  const val = import_string.value.trim()
+  const val = import_string.value.trim();
   if (!val) {
-    toast.error('The import string is required.')
-    return
+    toast.error('The import string is required.');
+    return;
   }
 
   try {
-    const item = decode(val) as Condition & ImportedItem
+    const item = decode(val) as Condition & ImportedItem;
 
     if (!item._type || item._type !== 'condition') {
-      toast.error(`Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`)
-      return
+      toast.error(
+        `Invalid import string. Expected type 'condition', got '${item._type ?? 'unknown'}'.`,
+      );
+      return;
     }
 
-    if ((form.filter || form.cli || Object.keys(form.extras).length > 0) && !(await box.confirm('Overwrite the current form fields?'))) {
-      return
+    if (
+      (form.filter || form.cli || Object.keys(form.extras).length > 0) &&
+      !(await box.confirm('Overwrite the current form fields?'))
+    ) {
+      return;
     }
 
     if (item.name) {
-      form.name = item.name
+      form.name = item.name;
     }
 
     if (item.filter) {
-      form.filter = item.filter
+      form.filter = item.filter;
     }
 
     if (item.cli) {
-      form.cli = item.cli
+      form.cli = item.cli;
     }
 
     if (item.extras) {
-      form.extras = { ...item.extras }
+      form.extras = { ...item.extras };
     }
 
     if (item.enabled !== undefined) {
-      form.enabled = item.enabled
+      form.enabled = item.enabled;
     }
 
     if (item.priority !== undefined) {
-      form.priority = item.priority
+      form.priority = item.priority;
     }
 
     if (item.description !== undefined) {
-      form.description = item.description
+      form.description = item.description;
     }
 
-    import_string.value = ''
-    showImport.value = false
+    import_string.value = '';
+    showImport.value = false;
   } catch (e: any) {
-    console.error(e)
-    toast.error(`Failed to parse import string. ${e.message}`)
+    console.error(e);
+    toast.error(`Failed to parse import string. ${e.message}`);
   }
-}
+};
 
 const show_data = (): string => {
   if (!test_data.value.data?.data || Object.keys(test_data.value.data.data).length === 0) {
-    return 'No data to show.'
+    return 'No data to show.';
   }
 
-  return JSON.stringify(test_data.value.data.data, null, 2)
-}
+  return JSON.stringify(test_data.value.data.data, null, 2);
+};
 
 const logic_test = computed(() => {
   if (Object.keys(test_data.value.data?.data ?? {}).length < 1) {
-    return null
+    return null;
   }
 
   if (!test_data.value.changed) {
-    return test_data.value.data.status
+    return test_data.value.data.status;
   }
 
   try {
-    const st = match_str(form.filter, test_data.value.data.data)
-    console.log('Logic test:', st, form.filter, test_data.value.data.data)
-    return st
+    const st = match_str(form.filter, test_data.value.data.data);
+    console.log('Logic test:', st, form.filter, test_data.value.data.data);
+    return st;
   } catch (e: any) {
-    console.error(e)
-    return false
+    console.error(e);
+    return false;
   }
-})
+});
 
-const validateKey = (key: string): boolean => /^[a-z][a-z0-9_]*$/.test(key)
+const validateKey = (key: string): boolean => /^[a-z][a-z0-9_]*$/.test(key);
 
 const parseValue = (value: string): string | number | boolean => {
   if (!isNaN(Number(value)) && !isNaN(parseFloat(value))) {
-    return Number(value)
+    return Number(value);
   }
 
   if ('true' === value.toLowerCase()) {
-    return true
+    return true;
   }
   if ('false' === value.toLowerCase()) {
-    return false
+    return false;
   }
 
-  return value
-}
+  return value;
+};
 
 const addExtra = (): void => {
-  const key = newExtraKey.value.trim()
-  const value = newExtraValue.value.trim()
+  const key = newExtraKey.value.trim();
+  const value = newExtraValue.value.trim();
 
   if (!key || !value) {
-    toast.error('Both key and value are required.')
-    return
+    toast.error('Both key and value are required.');
+    return;
   }
 
   if (!validateKey(key)) {
-    toast.error('Key must be lower_case.')
-    return
+    toast.error('Key must be lower_case.');
+    return;
   }
 
   if (form.extras[key]) {
-    toast.error(`Key '${key}' already exists.`)
-    return
+    toast.error(`Key '${key}' already exists.`);
+    return;
   }
 
-  form.extras[key] = parseValue(value)
-  newExtraKey.value = ''
-  newExtraValue.value = ''
-}
+  form.extras[key] = parseValue(value);
+  newExtraKey.value = '';
+  newExtraValue.value = '';
+};
 
 const removeExtra = (key: string): void => {
-  const { [key]: _, ...rest } = form.extras
-  form.extras = rest
-}
+  const { [key]: _, ...rest } = form.extras;
+  form.extras = rest;
+};
 
 const updateExtraKey = (event: Event, oldKey: string): void => {
-  const target = event.target as HTMLInputElement
-  const newKey = target.value.trim()
+  const target = event.target as HTMLInputElement;
+  const newKey = target.value.trim();
 
   if (!newKey) {
-    return
+    return;
   }
 
   if (!validateKey(newKey)) {
-    toast.error('Key must be lowercase and contain only letters, numbers, and underscores.')
-    target.value = oldKey
-    return
+    toast.error('Key must be lowercase and contain only letters, numbers, and underscores.');
+    target.value = oldKey;
+    return;
   }
 
   if (newKey !== oldKey) {
     if (form.extras[newKey]) {
-      toast.error(`Key '${newKey}' already exists.`)
-      target.value = oldKey
-      return
+      toast.error(`Key '${newKey}' already exists.`);
+      target.value = oldKey;
+      return;
     }
 
-    const value = form.extras[oldKey]
-    const { [oldKey]: _, ...rest } = form.extras
-    form.extras = { ...rest, [newKey]: value }
+    const value = form.extras[oldKey];
+    const { [oldKey]: _, ...rest } = form.extras;
+    form.extras = { ...rest, [newKey]: value };
   }
-}
+};
 
 const updateExtraValue = (key: string, event: Event): void => {
-  const target = event.target as HTMLInputElement
-  const value = target.value.trim()
-  form.extras[key] = value ? parseValue(value) : ''
-}
-
+  const target = event.target as HTMLInputElement;
+  const value = target.value.trim();
+  form.extras[key] = value ? parseValue(value) : '';
+};
 </script>

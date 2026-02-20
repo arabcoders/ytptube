@@ -7,7 +7,7 @@ const on_mounted = (el: HTMLElement) => {
 
   AUTO_SCROLL_EVENTS.forEach((ev, index) => {
     const handler = () => {
-      scrolledToBottom = (el.scrollHeight - el.scrollTop) - el.clientHeight <= 80;
+      scrolledToBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 80;
     };
     events_handlers[index] = handler;
     el.addEventListener(ev as string, handler, { passive: true } as AddEventListenerOptions);
@@ -19,7 +19,7 @@ const on_mounted = (el: HTMLElement) => {
   });
 
   observer.observe(el, { childList: true, subtree: true });
-}
+};
 const on_unmounted = (el: HTMLElement) => {
   AUTO_SCROLL_EVENTS.forEach((ev, index) => {
     const handler = events_handlers[index];
@@ -28,9 +28,9 @@ const on_unmounted = (el: HTMLElement) => {
     }
   });
   observer.disconnect();
-}
+};
 
-export default defineNuxtPlugin(nuxtApp => {
+export default defineNuxtPlugin((nuxtApp) => {
   nuxtApp.vueApp.directive('autoscroll', {
     mounted: on_mounted,
     unmounted: on_unmounted,
