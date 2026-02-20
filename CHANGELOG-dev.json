@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260219-f2e9dc97",
-        "date": "2026-02-19T17:03:00+00:00",
+        "tag": "dev-20260220-befc7df5",
+        "date": "2026-02-20T19:46:30+00:00",
         "commits": [
+            {
+                "sha": "befc7df5",
+                "message": "refactor: switch from pnpm to bun",
+                "author": "arabcoders",
+                "date": "2026-02-20T19:46:30+00:00",
+                "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd"
+            },
             {
                 "sha": "f2e9dc97",
                 "message": "fix: update docker setup to include temporary and download directories",
@@ -4127,7 +4134,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39"
+        "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd"
     },
     {
         "tag": "dev-20250616-c07465a6",

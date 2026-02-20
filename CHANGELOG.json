@@ -36,9 +36,16 @@
   },
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39",
-    "date": "2026-02-19T17:03:00+00:00",
+    "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd",
+    "date": "2026-02-20T19:46:30+00:00",
     "commits": [
+      {
+        "sha": "befc7df5",
+        "full_sha": "befc7df583a3874aa0d9bdbed97cecd3a5fad7fd",
+        "message": "refactor: switch from pnpm to bun",
+        "author": "arabcoders",
+        "date": "2026-02-20T19:46:30+00:00"
+      },
       {
         "sha": "f2e9dc97",
         "full_sha": "f2e9dc97f51208c9c3364f55f3a3c4d9ed833e39",
