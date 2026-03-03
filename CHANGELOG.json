@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unreleased (b4620486)",
+    "full_sha": "b46204867956972d68b228a5daf3d4d8ddc2dba0",
+    "date": "2026-03-03T19:39:05+00:00",
+    "commits": [
+      {
+        "sha": "0808a055",
+        "full_sha": "0808a055af9b4787bbff2015059ec16cf7aa2974",
+        "message": "chore: update dependancies",
+        "author": "arabcoders",
+        "date": "2026-03-03T19:12:57+00:00"
+      },
+      {
+        "sha": "9a86f135",
+        "full_sha": "9a86f1358ee5c903d9c7f4da8eae2c4381ab8e73",
+        "message": "feat: implement generic browser extractor with Playwright and Selenium support",
+        "author": "arabcoders",
+        "date": "2026-03-03T19:12:28+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.6",
     "full_sha": "ffbd82096c1d7666049837a79695cea91c0d9eb7",
     "date": "2026-02-22T19:38:43+00:00",
