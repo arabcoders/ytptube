@@ -52,6 +52,7 @@ or the `environment:` section in `compose.yaml` file.
 | YTP_SIMPLE_MODE                 | Switch default interface to Simple mode.                            | `false`               |
 | YTP_STATIC_UI_PATH              | Path to custom static UI files.                                     | `(not_set)`           |
 | YTP_AUTO_CLEAR_HISTORY_DAYS     | Number of days after which completed download history is cleared.   | `0`                   |
+| YTP_MAX_HISTORY                 | Maximum number of history items to keep. `0` means unlimited.       | `0`                   |
 | YTP_DEFAULT_PAGINATION          | The default number of items per page for history.                   | `50`                  |
 | YTP_TASK_HANDLER_RANDOM_DELAY   | The maximum random delay in seconds before starting a task handler. | `60`                  |
 | YTP_IGNORE_ARCHIVED_ITEMS       | Don't report archived items in the download history.                | `false`               |
@@ -70,6 +71,13 @@ or the `environment:` section in `compose.yaml` file.
 
 - `0` days means no automatic clearing of the download history. lowest value that will trigger the clearing is `1` day.
 - This setting will **NOT** delete the downloaded files, it will only clear the history from the database.
+
+## Notes about YTP_MAX_HISTORY
+
+- `0` means no limit on the number of history items kept.
+- When set to a positive value (e.g. `YTP_MAX_HISTORY=100`), the oldest history items will be automatically deleted to keep at most that many items.
+- The check runs every 5 minutes.
+- This setting will **NOT** delete the downloaded files, it will only remove the records from the database.
 
 # Browser extensions & bookmarklets
 

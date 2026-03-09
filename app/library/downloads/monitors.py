@@ -171,3 +171,26 @@ async def delete_old_history(queue: "DownloadQueue") -> None:
 
     if titles:
         LOG.info(f"Automatically cleared '{', '.join(titles)}' from download history due to age.")
+
+
+async def enforce_max_history(queue: "DownloadQueue") -> None:
+    """
+    Enforce the maximum number of history items by deleting the oldest excess items.
+
+    When config.max_history is set to a positive value, this function trims the
+    history store so that only the most recent max_history items are kept.
+
+    Args:
+        queue: DownloadQueue instance
+
+    """
+    if queue.config.max_history < 1 or queue.is_paused():
+        return
+
+    deleted_ids: list[str] = await queue.done._connection.trim_history("done", queue.config.max_history)
+
+    for _id in deleted_ids:
+        queue.done._dict.pop(_id, None)
+
+    if deleted_ids:
+        LOG.info(f"Trimmed '{len(deleted_ids)}' oldest items from history to enforce max_history={queue.config.max_history}.")

@@ -308,3 +308,78 @@ async def test_exists_and_get_raise_without_key_or_url():
     with pytest.raises(KeyError):
         await store.get("queue")
     await store.close()
+
+
+@pytest.mark.asyncio
+async def test_trim_history_removes_oldest_items():
+    """Test that trim_history deletes the oldest items when count exceeds limit."""
+    store = await make_store()
+    base = datetime(2024, 1, 1, tzinfo=UTC)
+
+    # Insert 10 items with known timestamps, track their IDs
+    items = []
+    for i in range(10):
+        itm = make_item(i)
+        items.append(itm)
+        encoded = itm.json()
+        created_at = (base + timedelta(minutes=i)).strftime("%Y-%m-%d %H:%M:%S")
+        await store._conn.execute(
+            text(
+                'INSERT INTO "history" ("id", "type", "url", "data", "created_at") '
+                "VALUES (:id, :type, :url, :data, :created_at)"
+            ),
+            {"id": itm._id, "type": "done", "url": itm.url, "data": encoded, "created_at": created_at},
+        )
+    await store._conn.commit()
+
+    assert await store.count("done") == 10
+
+    # Trim to keep only 7 items
+    deleted = await store.trim_history("done", max_items=7)
+    assert len(deleted) == 3
+    assert await store.count("done") == 7
+
+    # Verify the oldest 3 items were deleted (items[0], items[1], items[2])
+    remaining = await store.fetch_saved("done")
+    remaining_ids = [r[0] for r in remaining]
+    for i in range(3):
+        assert items[i]._id not in remaining_ids
+    for i in range(3, 10):
+        assert items[i]._id in remaining_ids
+
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_trim_history_no_op_when_under_limit():
+    """Test that trim_history does nothing when item count is within the limit."""
+    store = await make_store()
+
+    # Use unique index offset to avoid URL conflicts with shared DB
+    for i in range(100, 105):
+        await store.enqueue_upsert("done", make_item(i))
+    await store.flush()
+
+    count_before = await store.count("done")
+    deleted = await store.trim_history("done", max_items=count_before + 10)
+    assert deleted == []
+    assert await store.count("done") == count_before
+
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_trim_history_no_op_for_zero_or_negative_max():
+    """Test that trim_history returns empty list for invalid max_items values."""
+    store = await make_store()
+
+    for i in range(200, 203):
+        await store.enqueue_upsert("done", make_item(i))
+    await store.flush()
+
+    count_before = await store.count("done")
+    assert await store.trim_history("done", max_items=0) == []
+    assert await store.trim_history("done", max_items=-1) == []
+    assert await store.count("done") == count_before
+
+    await store.close()
