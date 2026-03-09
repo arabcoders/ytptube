@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates, system_config
+from app.routes.api.system import check_updates, system_config, system_folders
 
 
 class TestSystemConfigEndpoint:
@@ -31,7 +31,6 @@ class TestSystemConfigEndpoint:
         with (
             patch("app.routes.api.system.Presets") as mock_presets_cls,
             patch("app.routes.api.system.DLFields") as mock_dl_fields_cls,
-            patch("app.routes.api.system.list_folders", return_value=[]),
         ):
             mock_presets_cls.get_instance.return_value.get_all.return_value = []
             mock_dl_fields_cls.get_instance.return_value.get_all_serialized = AsyncMock(return_value=[])
@@ -46,7 +45,43 @@ class TestSystemConfigEndpoint:
             assert "history_count" in body, "Configuration response should include history_count"
             assert "presets" in body, "Configuration response should include presets"
             assert "dl_fields" in body, "Configuration response should include dl_fields"
-            assert "folders" in body, "Configuration response should include folders"
+            assert "folders" not in body, "Configuration response should not include folders"
+
+
+class TestSystemFoldersEndpoint:
+    """Tests for the system folders endpoint."""
+
+    def setup_method(self):
+        """Reset singletons before each test."""
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_system_folders_returns_folders(self):
+        """Test that the folders endpoint returns the folders list."""
+        config = Config.get_instance()
+        encoder = Encoder()
+
+        with patch("app.routes.api.system.list_folders", return_value=["folder1", "subfolder/nested"]):
+            response = await system_folders(config, encoder)
+
+            assert 200 == response.status
+            body = json.loads(response.body.decode("utf-8"))
+            assert "folders" in body, "Folders response should include folders"
+            assert ["folder1", "subfolder/nested"] == body["folders"]
+
+    @pytest.mark.asyncio
+    async def test_system_folders_returns_empty_list(self):
+        """Test that the folders endpoint returns an empty list when no folders exist."""
+        config = Config.get_instance()
+        encoder = Encoder()
+
+        with patch("app.routes.api.system.list_folders", return_value=[]):
+            response = await system_folders(config, encoder)
+
+            assert 200 == response.status
+            body = json.loads(response.body.decode("utf-8"))
+            assert "folders" in body, "Folders response should include folders"
+            assert [] == body["folders"]
 
 
 class TestCheckUpdatesEndpoint:

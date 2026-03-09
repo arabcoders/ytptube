@@ -6,6 +6,7 @@ import type { ConfigFeature, ConfigUpdateAction } from '~/types/sockets';
 import { request } from '~/utils';
 
 let last_reload = 0;
+let folders_loaded = false;
 const CONFIG_TTL = 10;
 
 export const useConfigStore = defineStore('config', () => {
@@ -92,6 +93,25 @@ export const useConfigStore = defineStore('config', () => {
       console.error(`Failed to load configuration: ${e}`);
     } finally {
       state.is_loading = false;
+    }
+  };
+
+  const loadFolders = async () => {
+    if (folders_loaded) {
+      return;
+    }
+    try {
+      const resp = await request('/api/system/folders', { timeout: 10 });
+      if (!resp.ok) {
+        return;
+      }
+      const data = await resp.json();
+      if (Array.isArray(data.folders)) {
+        state.folders = data.folders;
+        folders_loaded = true;
+      }
+    } catch (e: any) {
+      console.error(`Failed to load folders: ${e}`);
     }
   };
 
@@ -209,6 +229,7 @@ export const useConfigStore = defineStore('config', () => {
     isLoaded,
     patch,
     loadConfig,
+    loadFolders,
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
     add: typeof add;
     get: typeof get;
@@ -218,5 +239,6 @@ export const useConfigStore = defineStore('config', () => {
     patch: typeof patch;
     isLoaded: typeof isLoaded;
     loadConfig: typeof loadConfig;
+    loadFolders: typeof loadFolders;
   };
 });

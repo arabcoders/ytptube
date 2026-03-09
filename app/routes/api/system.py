@@ -49,12 +49,33 @@ async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) 
             "presets": Presets.get_instance().get_all(),
             "dl_fields": await DLFields.get_instance().get_all_serialized(),
             "paused": queue.is_paused(),
+            "history_count": await queue.done.get_total_count(),
+        },
+        status=web.HTTPOk.status_code,
+        dumps=encoder.encode,
+    )
+
+
+@route("GET", "api/system/folders", "system.folders")
+async def system_folders(config: Config, encoder: Encoder) -> Response:
+    """
+    Get the list of folders available for downloads.
+
+    Args:
+        config (Config): The config instance.
+        encoder (Encoder): The encoder instance.
+
+    Returns:
+        Response: The response object.
+
+    """
+    return web.json_response(
+        data={
             "folders": list_folders(
                 path=Path(config.download_path),
                 base=Path(config.download_path),
                 depth_limit=config.download_path_depth - 1,
             ),
-            "history_count": await queue.done.get_total_count(),
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,

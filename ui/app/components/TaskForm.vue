@@ -319,6 +319,7 @@
                       v-model="form.folder"
                       :disabled="addInProgress"
                       list="folders"
+                      @focus="config.loadFolders()"
                     />
                   </div>
                 </div>
