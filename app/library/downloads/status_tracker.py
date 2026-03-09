@@ -57,6 +57,38 @@ class StatusTracker:
         self._candidate_filepath: Path | None = None
         self.update_task: asyncio.Task | None = None
 
+        self._last_emit_time: float = 0.0
+        self._last_status: str | None = None
+        self._pending_emit: bool = False
+        self._emit_interval: float = 0.5
+
+    def _emit_update(self, force: bool = False) -> None:
+        """
+        Emit an item_updated event with time-based throttling.
+
+        Progress-only updates are throttled to at most once per ``_emit_interval``
+        seconds. Status changes are always emitted immediately.
+
+        Args:
+            force: If True, emit regardless of throttle interval.
+
+        """
+        now = time.monotonic()
+        status_changed = self.info.status != self._last_status
+
+        if force or status_changed or (now - self._last_emit_time) >= self._emit_interval:
+            self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+            self._last_emit_time = now
+            self._last_status = self.info.status
+            self._pending_emit = False
+        else:
+            self._pending_emit = True
+
+    def flush_pending(self) -> None:
+        """Emit any pending throttled update so the final state is sent."""
+        if self._pending_emit:
+            self._emit_update(force=True)
+
     async def _finalize_file(self, filepath: Path) -> None:
         """
         Set filename, file_size, and run ffprobe on completed file.
@@ -164,7 +196,7 @@ class StatusTracker:
             await self._finalize_file(Path(final_name))
             self.info.status = "finished"
 
-        self._notify.emit(Events.ITEM_UPDATED, data=self.info)
+        self._emit_update()
 
     async def progress_update(self) -> None:
         """
@@ -177,6 +209,7 @@ class StatusTracker:
                 self.update_task = asyncio.get_running_loop().run_in_executor(None, self.status_queue.get)
                 status = await self.update_task
                 if status is None or isinstance(status, Terminator):
+                    self.flush_pending()
                     return
                 await self.process_status_update(status)
             except (asyncio.CancelledError, OSError, FileNotFoundError, EOFError, BrokenPipeError, ConnectionError):
@@ -211,6 +244,8 @@ class StatusTracker:
                 await self.process_status_update(next_status)
             except (queue.Empty, BrokenPipeError, ConnectionRefusedError, EOFError, OSError):
                 continue
+
+        self.flush_pending()
 
     def cancel_update_task(self) -> None:
         """Cancel the progress update task if it's running."""

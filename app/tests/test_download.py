@@ -866,3 +866,77 @@ class TestStatusTracker:
         st.put_terminator()
         assert 1 == len(queue.items), "Should add terminator to queue"
         assert isinstance(queue.items[0], Terminator), "Should add Terminator instance"
+
+    @pytest.mark.asyncio
+    async def test_throttle_skips_rapid_progress_updates(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        emit_calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: emit_calls.append(a))
+
+        # First update: always emitted (time-based: _last_emit_time starts at 0)
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 100})
+        # Second update: should be throttled (within _emit_interval)
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 200})
+        # Third update: also throttled
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 300})
+
+        item_updated_calls = [c for c in emit_calls if c[0] == Events.ITEM_UPDATED]
+        assert len(item_updated_calls) == 1, "Should throttle rapid progress updates to one emission"
+        assert st._pending_emit is True, "Should mark pending emit for throttled updates"
+
+    @pytest.mark.asyncio
+    async def test_throttle_always_emits_on_status_change(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        emit_calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: emit_calls.append(a))
+
+        # First update with status "downloading"
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 100})
+        # Second update with a different status — should emit immediately
+        await st.process_status_update({"id": "test-id", "status": "error", "error": "fail"})
+
+        item_updated_calls = [c for c in emit_calls if c[0] == Events.ITEM_UPDATED]
+        assert len(item_updated_calls) == 2, "Should emit immediately when status changes"
+
+    @pytest.mark.asyncio
+    async def test_flush_pending_sends_throttled_update(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        emit_calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: emit_calls.append(a))
+
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 100})
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 200})
+
+        item_updated_before = [c for c in emit_calls if c[0] == Events.ITEM_UPDATED]
+        assert len(item_updated_before) == 1, "Second update should be throttled"
+
+        st.flush_pending()
+
+        item_updated_after = [c for c in emit_calls if c[0] == Events.ITEM_UPDATED]
+        assert len(item_updated_after) == 2, "flush_pending should emit the throttled update"
+        assert st._pending_emit is False, "Should clear pending flag after flush"
+
+    def test_flush_pending_noop_when_no_pending(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st._notify = Mock()
+        st._notify.emit = Mock()
+
+        st.flush_pending()
+        st._notify.emit.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_throttle_emits_after_interval(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        st._emit_interval = 0.0  # disable throttle to allow all emissions
+        emit_calls: list = []
+        st._notify = Mock()
+        st._notify.emit = Mock(side_effect=lambda *a, **kw: emit_calls.append(a))
+
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 100})
+        await st.process_status_update({"id": "test-id", "status": "downloading", "downloaded_bytes": 200})
+
+        item_updated_calls = [c for c in emit_calls if c[0] == Events.ITEM_UPDATED]
+        assert len(item_updated_calls) == 2, "Should emit all updates when interval is 0"
