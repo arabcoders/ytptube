@@ -209,8 +209,13 @@
                       </span>
                     </div>
                     <div>
-                      <NuxtLink target="_blank" :href="item.url" class="is-bold">
+                      <a href="#" class="is-bold is-clickable" @click.prevent="editItem(item)">
                         {{ remove_tags(item.name) }}
+                      </a>
+                    </div>
+                    <div class="is-text-overflow">
+                      <NuxtLink target="_blank" :href="item.url" class="is-size-7">
+                        {{ item.url }}
                       </NuxtLink>
                     </div>
                     <div class="is-unselectable">
@@ -364,9 +369,9 @@
           <div class="card is-flex is-full-height is-flex-direction-column">
             <header class="card-header">
               <div class="card-header-title is-text-overflow is-block">
-                <NuxtLink target="_blank" :href="item.url">
+                <a href="#" class="is-clickable" @click.prevent="editItem(item)">
                   {{ remove_tags(item.name) }}
-                </NuxtLink>
+                </a>
                 <span class="icon" v-if="isTaskInProgress(item.id!)">
                   <i class="fa-solid fa-spinner fa-spin has-text-info" />
                 </span>
@@ -442,6 +447,12 @@
             </header>
             <div class="card-content is-flex-grow-1">
               <div class="content">
+                <p class="is-text-overflow">
+                  <span class="icon"><i class="fa-solid fa-link" /></span>
+                  <NuxtLink target="_blank" :href="item.url" class="is-size-7">
+                    {{ item.url }}
+                  </NuxtLink>
+                </p>
                 <p class="is-text-overflow">
                   <span class="icon">
                     <i
