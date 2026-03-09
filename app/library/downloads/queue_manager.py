@@ -18,7 +18,7 @@ from app.library.Utils import calc_download_path
 
 from .core import Download
 from .item_adder import add as add_impl
-from .monitors import check_for_stale, check_live, delete_old_history
+from .monitors import check_for_stale, check_live, delete_old_history, enforce_max_history
 from .pool_manager import PoolManager
 
 if TYPE_CHECKING:
@@ -72,6 +72,13 @@ class DownloadQueue(metaclass=Singleton):
                 timer="8 */1 * * *",
                 func=functools.partial(delete_old_history, self),
                 id=delete_old_history.__name__,
+            )
+
+        if self.config.max_history > 0:
+            Scheduler.get_instance().add(
+                timer="*/5 * * * *",
+                func=functools.partial(enforce_max_history, self),
+                id=enforce_max_history.__name__,
             )
 
         # app.on_shutdown.append(self.on_shutdown)

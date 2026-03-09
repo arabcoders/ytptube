@@ -296,6 +296,43 @@ class SqliteStore(metaclass=ThreadSafe):
 
         return row["count"] if row else 0
 
+    async def trim_history(self, type_value: str, max_items: int) -> list[str]:
+        """
+        Delete oldest history items exceeding the max_items limit.
+
+        Args:
+            type_value: The history type to trim (e.g., "done").
+            max_items: Maximum number of items to keep. Must be > 0.
+
+        Returns:
+            list[str]: List of deleted item IDs.
+
+        """
+        if max_items < 1:
+            return []
+
+        await self.get_connection()
+
+        total = await self.count(type_value)
+        if total <= max_items:
+            return []
+
+        excess = total - max_items
+        # Select the oldest excess items
+        result = await self._conn.execute(
+            text(
+                'SELECT "id" FROM "history" WHERE "type" = :type_value ORDER BY "created_at" ASC LIMIT :limit'
+            ),
+            {"type_value": type_value, "limit": excess},
+        )
+        rows = result.mappings().all()
+        ids_to_delete = [row["id"] for row in rows]
+
+        if ids_to_delete:
+            await self.bulk_delete(type_value, ids_to_delete)
+
+        return ids_to_delete
+
     async def paginate(
         self,
         type_value: str,
