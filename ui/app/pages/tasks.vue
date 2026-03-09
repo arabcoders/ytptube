@@ -536,6 +536,20 @@
 
     <div
       class="columns is-multiline"
+      v-if="!toggleForm && !isLoading && pagination.total_pages > 1"
+    >
+      <div class="column is-12">
+        <Pager
+          :page="pagination.page"
+          :last_page="pagination.total_pages"
+          :isLoading="isLoading"
+          @navigate="(newPage) => reloadContent(false, newPage)"
+        />
+      </div>
+    </div>
+
+    <div
+      class="columns is-multiline"
       v-if="!toggleForm && (isLoading || !filteredTasks || filteredTasks.length < 1)"
     >
       <div class="column is-12">
@@ -639,6 +653,7 @@ const isMobile = useMediaQuery({ maxWidth: 1024 });
 const tasksComposable = useTasks();
 const {
   tasks,
+  pagination,
   isLoading,
   addInProgress,
   isTaskInProgress,
@@ -758,9 +773,9 @@ const filteredTasks = computed(() => {
   return tasks.value.filter((task) => deepIncludes(task, q, new WeakSet()));
 }) as ComputedRef<Array<Task>>;
 
-const reloadContent = async (fromMounted: boolean = false) => {
+const reloadContent = async (fromMounted: boolean = false, page?: number) => {
   try {
-    await tasksComposable.loadTasks();
+    await tasksComposable.loadTasks(page ?? pagination.value.page);
 
     if (tasks.value.length > 0) {
       cleanStaleCache(tasks.value);
