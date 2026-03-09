@@ -125,6 +125,111 @@ class TestItemDTO:
         for key in ItemDTO.removed_fields():
             assert key not in data
 
+    @patch("app.library.ItemDTO.archive_read")
+    def test_serialize_for_list_excludes_unused_fields(self, mock_read):
+        """Test that serialize_for_list excludes fields not needed by the UI."""
+        dto = ItemDTO(id="vid", title="t", url="u", folder="f")
+        dto.archive_id = "arch"
+        dto._archive_file = "/tmp/a.txt"
+        dto.status = "finished"
+        dto.options = {"format": "best", "verbose": True}
+        dto.template_chapter = "%(chapter)s.%(ext)s"
+        dto.temp_dir = "/tmp/temp"
+        dto.total_bytes = 1000000
+        dto.total_bytes_estimate = 2000000
+        dto.tmpfilename = "video.tmp"
+        mock_read.return_value = ["arch"]
+
+        data = dto.serialize_for_list()
+
+        # list_excluded_fields must not be present
+        for key in ItemDTO.list_excluded_fields():
+            assert key not in data, f"Field '{key}' should be excluded from list serialization"
+
+        # removed_fields must not be present either
+        for key in ItemDTO.removed_fields():
+            assert key not in data, f"Removed field '{key}' should not be present"
+
+        # Essential fields must still be present
+        assert data["_id"] == dto._id
+        assert data["id"] == "vid"
+        assert data["title"] == "t"
+        assert data["url"] == "u"
+        assert data["folder"] == "f"
+        assert data["status"] == "finished"
+        assert data["is_archived"] is True
+
+    def test_serialize_for_list_keeps_ui_required_fields(self):
+        """Test that serialize_for_list retains all fields needed by the UI."""
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="vid", title="Title", url="https://example.com", folder="media")
+            dto.preset = "custom"
+            dto.status = "downloading"
+            dto.datetime = "Mon, 01 Jan 2024 00:00:00 GMT"
+            dto.auto_start = True
+            dto.downloaded_bytes = 5000
+            dto.percent = 50
+            dto.speed = 1024
+            dto.eta = 30
+            dto.msg = "Downloading"
+            dto.postprocessor = "ffmpeg"
+            dto.is_live = False
+            dto.description = "A video"
+            dto.sidecar = {"image": []}
+            dto.extras = {"duration": 120}
+            dto.error = None
+            dto.filename = "video.mp4"
+            dto.file_size = 10000
+            dto.live_in = None
+            dto.is_archivable = True
+            dto.is_archived = False
+            dto.cli = "--embed-metadata"
+            dto.cookies = "session=abc"
+            dto.template = "%(title)s.%(ext)s"
+            dto.download_dir = "/downloads/media"
+            dto.timestamp = 1704067200
+
+        data = dto.serialize_for_list()
+
+        # All UI-required fields must be present
+        ui_fields = [
+            "_id", "id", "title", "url", "preset", "status", "datetime",
+            "auto_start", "downloaded_bytes", "percent", "speed", "eta",
+            "msg", "postprocessor", "is_live", "description", "sidecar",
+            "extras", "error", "filename", "file_size", "live_in",
+            "is_archivable", "is_archived", "cli", "cookies", "template",
+            "download_dir", "timestamp", "folder",
+        ]
+
+        for field in ui_fields:
+            assert field in data, f"UI-required field '{field}' is missing from serialize_for_list()"
+
+    def test_list_excluded_fields_not_empty(self):
+        """Test that list_excluded_fields returns a non-empty tuple."""
+        excluded = ItemDTO.list_excluded_fields()
+        assert isinstance(excluded, tuple)
+        assert len(excluded) > 0
+
+    def test_serialize_full_includes_all_fields(self):
+        """Test that full serialize() still includes fields excluded from list."""
+        with patch.object(ItemDTO, "__post_init__", lambda _: None):
+            dto = ItemDTO(id="vid", title="t", url="u", folder="f")
+            dto.options = {"format": "best"}
+            dto.template_chapter = "%(chapter)s.%(ext)s"
+            dto.temp_dir = "/tmp/temp"
+            dto.total_bytes = 1000000
+            dto.total_bytes_estimate = 2000000
+            dto.tmpfilename = "video.tmp"
+            dto.archive_id = "arch"
+
+        full_data = dto.serialize()
+        list_data = dto.serialize_for_list()
+
+        # Full serialization should include list-excluded fields
+        for key in ItemDTO.list_excluded_fields():
+            assert key in full_data, f"Field '{key}' should be in full serialize()"
+            assert key not in list_data, f"Field '{key}' should NOT be in serialize_for_list()"
+
     @patch("app.library.ItemDTO.YTDLPOpts")
     def test_get_ytdlp_opts_uses_preset_and_cli(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
