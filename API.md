@@ -2446,10 +2446,6 @@ or an error:
     }
   ],
   "paused": false,
-  "folders": [
-    {"name": "folder1", "path": "folder1"},
-    {"name": "folder2", "path": "folder2"}
-  ],
   "history_count": 150,
   "queue": [
     {
@@ -2464,8 +2460,25 @@ or an error:
 
 **Notes**:
 - This endpoint combines multiple data sources into a single response for efficient initialization
-- The `folders` array includes available download folders up to the configured depth limit
 - The `queue` array contains active download items
+
+---
+
+### GET /api/system/folders
+**Purpose**: Retrieve available download folders. This endpoint is designed to be called lazily when the user interacts with the download path input.
+
+**Response**:
+```json
+{
+  "folders": [
+    "folder1",
+    "folder2"
+  ]
+}
+```
+
+**Notes**:
+- The `folders` array includes available download folders up to the configured depth limit
 
 ---
 

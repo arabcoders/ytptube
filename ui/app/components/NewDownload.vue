@@ -128,6 +128,7 @@
                     :placeholder="getDefault('folder', '/')"
                     :disabled="addInProgress"
                     list="folders"
+                    @focus="config.loadFolders()"
                   />
                 </div>
               </div>

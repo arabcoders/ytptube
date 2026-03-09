@@ -95,6 +95,21 @@ export const useConfigStore = defineStore('config', () => {
     }
   };
 
+  const loadFolders = async () => {
+    try {
+      const resp = await request('/api/system/folders', { timeout: 10 });
+      if (!resp.ok) {
+        return;
+      }
+      const data = await resp.json();
+      if (Array.isArray(data.folders)) {
+        state.folders = data.folders;
+      }
+    } catch (e: any) {
+      console.error(`Failed to load folders: ${e}`);
+    }
+  };
+
   const add = (key: string, value: any) => {
     if (key.includes('.')) {
       const [parentKey, subKey] = key.split('.') as [keyof ConfigState, string];
@@ -209,6 +224,7 @@ export const useConfigStore = defineStore('config', () => {
     isLoaded,
     patch,
     loadConfig,
+    loadFolders,
   } as { [K in keyof ConfigState]: Ref<ConfigState[K]> } & {
     add: typeof add;
     get: typeof get;
@@ -218,5 +234,6 @@ export const useConfigStore = defineStore('config', () => {
     patch: typeof patch;
     isLoaded: typeof isLoaded;
     loadConfig: typeof loadConfig;
+    loadFolders: typeof loadFolders;
   };
 });
