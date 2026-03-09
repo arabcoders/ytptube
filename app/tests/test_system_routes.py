@@ -1,10 +1,52 @@
+import json
+
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.library.config import Config
 from app.library.encoder import Encoder
 from app.library.UpdateChecker import UpdateChecker
-from app.routes.api.system import check_updates
+from app.routes.api.system import check_updates, system_config
+
+
+class TestSystemConfigEndpoint:
+    """Tests for the system configuration endpoint."""
+
+    def setup_method(self):
+        """Reset singletons before each test."""
+        Config._reset_singleton()
+
+    @pytest.mark.asyncio
+    async def test_system_config_does_not_return_queue(self):
+        """Test that the configuration endpoint does not include queue data."""
+        config = Config.get_instance()
+        encoder = Encoder()
+
+        mock_queue = MagicMock()
+        mock_queue.is_paused.return_value = False
+        mock_done = AsyncMock()
+        mock_done.get_total_count = AsyncMock(return_value=0)
+        mock_queue.done = mock_done
+
+        with (
+            patch("app.routes.api.system.Presets") as mock_presets_cls,
+            patch("app.routes.api.system.DLFields") as mock_dl_fields_cls,
+            patch("app.routes.api.system.list_folders", return_value=[]),
+        ):
+            mock_presets_cls.get_instance.return_value.get_all.return_value = []
+            mock_dl_fields_cls.get_instance.return_value.get_all_serialized = AsyncMock(return_value=[])
+
+            response = await system_config(mock_queue, config, encoder)
+
+            assert 200 == response.status
+            body = json.loads(response.body.decode("utf-8"))
+            assert "queue" not in body, "Configuration response should not include queue data"
+            assert "app" in body, "Configuration response should include app data"
+            assert "paused" in body, "Configuration response should include paused status"
+            assert "history_count" in body, "Configuration response should include history_count"
+            assert "presets" in body, "Configuration response should include presets"
+            assert "dl_fields" in body, "Configuration response should include dl_fields"
+            assert "folders" in body, "Configuration response should include folders"
 
 
 class TestCheckUpdatesEndpoint:

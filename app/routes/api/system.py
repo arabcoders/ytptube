@@ -32,7 +32,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @route("GET", "api/system/configuration", "system.configuration")
 async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) -> Response:
     """
-    Pause non-active downloads.
+    Get the system configuration.
 
     Args:
         queue (DownloadQueue): The download queue instance.
@@ -55,7 +55,6 @@ async def system_config(queue: DownloadQueue, config: Config, encoder: Encoder) 
                 depth_limit=config.download_path_depth - 1,
             ),
             "history_count": await queue.done.get_total_count(),
-            "queue": (await queue.get("queue"))["queue"],
         },
         status=web.HTTPOk.status_code,
         dumps=encoder.encode,

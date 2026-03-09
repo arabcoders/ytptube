@@ -407,6 +407,8 @@ const addInProgress = ref<boolean>(false);
 const showExtras = ref<boolean>(false);
 const isRefreshing = ref<boolean>(false);
 
+const queuePaginationInfo = computed(() => stateStore.getQueuePagination());
+
 const refreshQueue = async (): Promise<void> => {
   if (isRefreshing.value) {
     return;
@@ -426,7 +428,7 @@ const paginationInfo = computed(() => stateStore.getPagination());
 const queueItems = computed<StoreItem[]>(() =>
   Object.values(queue.value ?? {})
     .slice()
-    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)),
+    .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0)),
 );
 const historyEntries = computed<StoreItem[]>(() => {
   const items = Object.values(history.value ?? {});
@@ -857,7 +859,7 @@ const connectionStatusColor = computed(() => {
   }
 });
 
-// Load history via API on mount
+// Load queue and history via API on mount
 onMounted(async () => {
   const route = useRoute();
 
@@ -868,6 +870,14 @@ onMounted(async () => {
     const url = new URL(window.location.href);
     url.searchParams.delete('simple');
     window.history.replaceState({}, '', url.toString());
+  }
+
+  if (!queuePaginationInfo.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('queue', 1, DEFAULT_PAGE_SIZE, 'ASC');
+    } catch (error) {
+      console.error('Failed to load queue on mount:', error);
+    }
   }
 
   if (!paginationInfo.value.isLoaded) {

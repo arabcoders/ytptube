@@ -470,6 +470,21 @@
     </div>
   </div>
 
+  <div
+    v-if="queuePagination.isLoaded && queuePagination.page < queuePagination.total_pages"
+    ref="loadMoreTrigger"
+    class="columns is-centered mt-4"
+  >
+    <div class="column is-narrow">
+      <div v-if="queuePagination.isLoading" class="has-text-centered">
+        <span class="icon is-large has-text-info">
+          <i class="fas fa-spinner fa-pulse fa-2x"></i>
+        </span>
+        <p class="is-size-7 has-text-grey mt-2">Loading more items...</p>
+      </div>
+    </div>
+  </div>
+
   <div class="modal is-active" v-if="embed_url">
     <div class="modal-background" @click="embed_url = ''"></div>
     <div class="modal-content is-unbounded-model">
@@ -481,7 +496,7 @@
 
 <script setup lang="ts">
 import moment from 'moment';
-import { useStorage } from '@vueuse/core';
+import { useStorage, useIntersectionObserver } from '@vueuse/core';
 import type { StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
 import { deepIncludes } from '~/utils';
@@ -514,11 +529,14 @@ const selectedElms = ref<string[]>([]);
 const masterSelectAll = ref(false);
 const embed_url = ref('');
 const isRefreshing = ref(false);
+const loadMoreTrigger = ref<HTMLElement | null>(null);
 const autoRefreshInterval = ref<NodeJS.Timeout | null>(null);
 const autoRefreshEnabled = useStorage<boolean>('queue_auto_refresh', true);
 const autoRefreshDelay = useStorage<number>('queue_auto_refresh_delay', 10000);
 
 const showThumbnails = computed(() => !!props.thumbnails && !hideThumbnail.value);
+
+const queuePagination = computed(() => stateStore.getQueuePagination());
 
 const refreshQueue = async () => {
   isRefreshing.value = true;
@@ -528,6 +546,14 @@ const refreshQueue = async () => {
     toast.error('Failed to refresh queue');
   } finally {
     isRefreshing.value = false;
+  }
+};
+
+const loadMoreQueue = async () => {
+  try {
+    await stateStore.loadNextPage('queue', true);
+  } catch {
+    toast.error('Failed to load more queue items');
   }
 };
 
@@ -573,13 +599,34 @@ watch(autoRefreshEnabled, (enabled) => {
   }
 });
 
-onMounted(() => {
+onMounted(async () => {
+  if (!queuePagination.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('queue', 1, config.app.default_pagination, 'ASC', false);
+    } catch {
+      toast.error('Failed to load queue');
+    }
+  }
   if (!socket.isConnected && autoRefreshEnabled.value) {
     startAutoRefresh();
   }
 });
 
 onBeforeUnmount(() => stopAutoRefresh());
+
+useIntersectionObserver(
+  loadMoreTrigger,
+  ([entry]) => {
+    if (
+      entry?.isIntersecting &&
+      !queuePagination.value.isLoading &&
+      queuePagination.value.page < queuePagination.value.total_pages
+    ) {
+      loadMoreQueue();
+    }
+  },
+  { threshold: 0.5 },
+);
 
 watch(masterSelectAll, (value) => {
   if (value) {
@@ -590,13 +637,14 @@ watch(masterSelectAll, (value) => {
 });
 
 const filteredItems = computed<StoreItem[]>(() => {
+  const items = Object.values(stateStore.queue)
+    .slice()
+    .sort((a, b) => (a.timestamp ?? 0) - (b.timestamp ?? 0));
   const q = props.query?.toLowerCase();
   if (!q) {
-    return Object.values(stateStore.queue);
+    return items;
   }
-  return Object.values(stateStore.queue).filter((i: StoreItem) =>
-    deepIncludes(i, q, new WeakSet()),
-  );
+  return items.filter((i: StoreItem) => deepIncludes(i, q, new WeakSet()));
 });
 
 const hasSelected = computed(() => 0 < selectedElms.value.length);

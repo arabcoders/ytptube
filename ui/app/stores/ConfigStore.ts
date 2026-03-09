@@ -85,11 +85,6 @@ export const useConfigStore = defineStore('config', () => {
         delete data.history_count;
       }
 
-      if (data.queue) {
-        stateStore.addAll('queue', data.queue);
-        delete data.queue;
-      }
-
       setAll(data);
       state.is_loaded = true;
       last_reload = now;

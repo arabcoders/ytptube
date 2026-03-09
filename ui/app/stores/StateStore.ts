@@ -6,35 +6,41 @@ import { request } from '~/utils';
 type StateType = 'queue' | 'history';
 type KeyType = string;
 
+interface PaginationState {
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+  has_next: boolean;
+  has_prev: boolean;
+  isLoaded: boolean;
+  isLoading: boolean;
+}
+
 interface State {
   queue: Record<KeyType, StoreItem>;
   history: Record<KeyType, StoreItem>;
-  pagination: {
-    page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-    has_next: boolean;
-    has_prev: boolean;
-    isLoaded: boolean;
-    isLoading: boolean;
-  };
+  pagination: PaginationState;
+  queue_pagination: PaginationState;
 }
+
+const defaultPagination = (): PaginationState => ({
+  page: 1,
+  per_page: 50,
+  total: 0,
+  total_pages: 0,
+  has_next: false,
+  has_prev: false,
+  isLoaded: false,
+  isLoading: false,
+});
 
 export const useStateStore = defineStore('state', () => {
   const state = reactive<State>({
     queue: {},
     history: {},
-    pagination: {
-      page: 1,
-      per_page: 50,
-      total: 0,
-      total_pages: 0,
-      has_next: false,
-      has_prev: false,
-      isLoaded: false,
-      isLoading: false,
-    },
+    pagination: defaultPagination(),
+    queue_pagination: defaultPagination(),
   });
 
   const add = (type: StateType, key: KeyType, value: StoreItem): void => {
@@ -73,17 +79,18 @@ export const useStateStore = defineStore('state', () => {
     return !!state[type][key];
   };
 
+  const paginationFor = (type: StateType): PaginationState => {
+    return type === 'queue' ? state.queue_pagination : state.pagination;
+  };
+
   const clearAll = (type: StateType): void => {
     state[type] = {};
-    if ('queue' === type) {
-      return;
-    }
-
-    state.pagination.total = 0;
-    state.pagination.page = 1;
-    state.pagination.total_pages = 0;
-    state.pagination.has_next = false;
-    state.pagination.has_prev = false;
+    const pg = paginationFor(type);
+    pg.total = 0;
+    pg.page = 1;
+    pg.total_pages = 0;
+    pg.has_next = false;
+    pg.has_prev = false;
   };
 
   const addAll = (type: StateType, data: Record<KeyType, StoreItem>): void => {
@@ -99,8 +106,9 @@ export const useStateStore = defineStore('state', () => {
   };
 
   const count = (type: StateType): number => {
-    if ('history' === type && state.pagination.total > 0) {
-      return state.pagination.total;
+    const pg = paginationFor(type);
+    if (pg.total > 0) {
+      return pg.total;
     }
     return Object.keys(state[type]).length;
   };
@@ -113,15 +121,14 @@ export const useStateStore = defineStore('state', () => {
     append: boolean = false,
     status?: string,
   ): Promise<void> => {
-    if ('history' !== type) {
-      throw new Error('Pagination is only supported for history type');
-    }
+    const pg = paginationFor(type);
+    pg.isLoading = true;
 
-    state.pagination.isLoading = true;
+    const apiType = type === 'queue' ? 'queue' : 'done';
 
     try {
       const params: Record<string, string> = {
-        type: 'done',
+        type: apiType,
         page: page.toString(),
         per_page: per_page.toString(),
         order,
@@ -137,7 +144,7 @@ export const useStateStore = defineStore('state', () => {
       const data = await response.json();
 
       if (data.pagination) {
-        state.pagination = { ...data.pagination, isLoaded: true, isLoading: false };
+        Object.assign(pg, { ...data.pagination, isLoaded: true, isLoading: false });
         const items: Record<KeyType, StoreItem> = {};
         for (const item of data.items || []) {
           items[item._id] = item;
@@ -147,46 +154,46 @@ export const useStateStore = defineStore('state', () => {
       }
     } catch (error) {
       console.error(`Failed to load ${type} page ${page}:`, error);
-      state.pagination.isLoading = false;
+      pg.isLoading = false;
     }
+  };
+
+  const orderFor = (type: StateType): 'ASC' | 'DESC' => {
+    return type === 'queue' ? 'ASC' : 'DESC';
   };
 
   const loadNextPage = async (type: StateType, append: boolean = false): Promise<void> => {
-    if ('history' !== type) {
-      throw new Error('Pagination is only supported for history type');
-    }
+    const pg = paginationFor(type);
 
-    if (!state.pagination.has_next || state.pagination.isLoading) {
+    if (!pg.has_next || pg.isLoading) {
       return;
     }
 
-    await loadPaginated(type, state.pagination.page + 1, state.pagination.per_page, 'DESC', append);
+    await loadPaginated(type, pg.page + 1, pg.per_page, orderFor(type), append);
   };
 
   const loadPreviousPage = async (type: StateType): Promise<void> => {
-    if ('history' !== type) {
-      throw new Error('Pagination is only supported for history type');
-    }
+    const pg = paginationFor(type);
 
-    if (!state.pagination.has_prev || state.pagination.isLoading) {
+    if (!pg.has_prev || pg.isLoading) {
       return;
     }
 
-    await loadPaginated(type, state.pagination.page - 1, state.pagination.per_page);
+    await loadPaginated(type, pg.page - 1, pg.per_page, orderFor(type));
   };
 
   const reloadCurrentPage = async (type: StateType): Promise<void> => {
-    if ('history' !== type) {
-      throw new Error('Pagination is only supported for history type');
-    }
-    if (!state.pagination.isLoaded) {
+    const pg = paginationFor(type);
+    if (!pg.isLoaded) {
       return;
     }
 
-    await loadPaginated(type, state.pagination.page, state.pagination.per_page);
+    await loadPaginated(type, pg.page, pg.per_page, orderFor(type));
   };
 
   const getPagination = () => state.pagination;
+
+  const getQueuePagination = () => state.queue_pagination;
 
   const setHistoryCount = (count: number) => {
     state.pagination.total = count;
@@ -196,25 +203,12 @@ export const useStateStore = defineStore('state', () => {
   };
 
   /**
-   * Load queue data from REST API.
-   * Uses the /live endpoint to get real-time in-memory data with live progress.
+   * Load queue data from REST API using the paginated history endpoint.
    *
    * @returns Promise that resolves when queue is loaded
    */
   const loadQueue = async (): Promise<void> => {
-    try {
-      const response = await request('/api/history/live');
-      const data = (await response.json()) as {
-        queue: Record<KeyType, StoreItem>;
-        history_count: number;
-      };
-
-      state.queue = data.queue || {};
-      setHistoryCount(data.history_count);
-    } catch (error) {
-      console.error('Failed to load queue:', error);
-      throw error;
-    }
+    await loadPaginated('queue', 1, state.queue_pagination.per_page, 'ASC');
   };
 
   /**
@@ -519,6 +513,7 @@ export const useStateStore = defineStore('state', () => {
     loadPreviousPage,
     reloadCurrentPage,
     getPagination,
+    getQueuePagination,
     setHistoryCount,
     loadQueue,
     addDownload,
