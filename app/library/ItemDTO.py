@@ -659,6 +659,40 @@ class ItemDTO:
             "_archive_file",
         )
 
+    @staticmethod
+    def list_excluded_fields() -> tuple:
+        """
+        Fields excluded from list/event serialization because they are not used by the UI.
+
+        Returns:
+            tuple: A tuple of field names excluded from list serialization.
+
+        """
+        return (
+            "options",
+            "template_chapter",
+            "temp_dir",
+            "total_bytes",
+            "total_bytes_estimate",
+            "tmpfilename",
+            "archive_id",
+        )
+
+    def serialize_for_list(self) -> dict:
+        """
+        Serialize the item for list views and WebSocket events,
+        excluding fields not needed by the UI.
+
+        Returns:
+            dict: The serialized item with only fields needed by the UI.
+
+        """
+        if "finished" == self.status and not self._recomputed:
+            self.archive_status()
+
+        item, _ = clean_item(self.__dict__.copy(), ItemDTO.removed_fields() + ItemDTO.list_excluded_fields())
+        return item
+
     def __post_init__(self):
         """
         Post-initialization to compute archive status if applicable.

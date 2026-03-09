@@ -39,7 +39,7 @@ type StoreItem = {
   /** Download directory */
   download_dir: string;
   /** Temporary directory for the item */
-  temp_dir: string;
+  temp_dir?: string;
   /** Status of the item */
   status: ItemStatus;
   /** If the item has cookies */
@@ -47,7 +47,7 @@ type StoreItem = {
   /** If the item has custom output_template */
   template: string;
   /** If the item has custom output_template for chapters */
-  template_chapter: string;
+  template_chapter?: string;
   /** When the item was created */
   timestamp: number;
   /** If the item is a live stream */
@@ -63,7 +63,7 @@ type StoreItem = {
   /** If the item is auto-started */
   auto_start: boolean;
   /** Options for the item */
-  options: Record<string, unknown>;
+  options?: Record<string, unknown>;
   /** Sidecar associated with the item. */
   sidecar: {
     Unknown?: Array<SideCar>;
