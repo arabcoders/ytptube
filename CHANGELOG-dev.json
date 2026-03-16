@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260308-ee2bddcb",
-        "date": "2026-03-08T15:48:55+00:00",
+        "tag": "dev-20260316-e7b48d23",
+        "date": "2026-03-16T20:51:11+00:00",
         "commits": [
+            {
+                "sha": "e7b48d23",
+                "message": "chore: update external packages.",
+                "author": "arabcoders",
+                "date": "2026-03-16T20:51:11+00:00",
+                "full_sha": "e7b48d237a37c69d195f503f25bbf647ffc51ebf"
+            },
             {
                 "sha": "ee2bddcb",
                 "message": "chore: update external packages",
@@ -4183,7 +4190,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ee2bddcb81fbc9f1abedfd39ae4f3fed4f01c66b"
+        "full_sha": "e7b48d237a37c69d195f503f25bbf647ffc51ebf"
     },
     {
         "tag": "dev-20250616-c07465a6",

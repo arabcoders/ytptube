@@ -14,6 +14,20 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "e7b48d237a37c69d195f503f25bbf647ffc51ebf",
+    "date": "2026-03-16T20:51:11+00:00",
+    "commits": [
+      {
+        "sha": "e7b48d23",
+        "full_sha": "e7b48d237a37c69d195f503f25bbf647ffc51ebf",
+        "message": "chore: update external packages.",
+        "author": "arabcoders",
+        "date": "2026-03-16T20:51:11+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.7",
     "full_sha": "b46204867956972d68b228a5daf3d4d8ddc2dba0",
     "date": "2026-03-03T19:39:05+00:00",
