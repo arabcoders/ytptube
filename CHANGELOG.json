@@ -1,22 +1,8 @@
 [
   {
-    "tag": "Unreleased (2f435a3a)",
-    "full_sha": "2f435a3a641a227bb8adf0cff31cf23167762f9f",
-    "date": "2026-03-09T18:19:22+00:00",
-    "commits": [
-      {
-        "sha": "ee2bddcb",
-        "full_sha": "ee2bddcb81fbc9f1abedfd39ae4f3fed4f01c66b",
-        "message": "chore: update external packages",
-        "author": "arabcoders",
-        "date": "2026-03-08T15:48:55+00:00"
-      }
-    ]
-  },
-  {
-    "tag": "Unmerged (dev branch)",
-    "full_sha": "58fc5573dcf91c7c742cf2e421e060bfb058da14",
-    "date": "2026-03-18T18:13:22+00:00",
+    "tag": "Unreleased (932f51c5)",
+    "full_sha": "932f51c5833cee4d83a12ae918fcae1d2627e280",
+    "date": "2026-03-18T18:46:27+00:00",
     "commits": [
       {
         "sha": "58fc5573",
@@ -31,6 +17,13 @@
         "message": "chore: update external packages.",
         "author": "arabcoders",
         "date": "2026-03-16T20:51:11+00:00"
+      },
+      {
+        "sha": "ee2bddcb",
+        "full_sha": "ee2bddcb81fbc9f1abedfd39ae4f3fed4f01c66b",
+        "message": "chore: update external packages",
+        "author": "arabcoders",
+        "date": "2026-03-08T15:48:55+00:00"
       }
     ]
   },
