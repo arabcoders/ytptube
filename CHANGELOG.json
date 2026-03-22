@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f",
+    "date": "2026-03-22T16:21:31+00:00",
+    "commits": [
+      {
+        "sha": "980f39d5",
+        "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f",
+        "message": "feat: add sorting and ordering functionality to paginated presets list",
+        "author": "arabcoders",
+        "date": "2026-03-22T16:21:31+00:00"
+      },
+      {
+        "sha": "67074489",
+        "full_sha": "670744890c38149ecf81f231602f6b2118d999b3",
+        "message": "chore: update dependencies",
+        "author": "arabcoders",
+        "date": "2026-03-22T16:20:57+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v1.2.8",
     "full_sha": "932f51c5833cee4d83a12ae918fcae1d2627e280",
     "date": "2026-03-18T18:46:27+00:00",

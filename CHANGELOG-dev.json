@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260318-58fc5573",
-        "date": "2026-03-18T18:13:22+00:00",
+        "tag": "dev-20260322-980f39d5",
+        "date": "2026-03-22T16:21:31+00:00",
         "commits": [
+            {
+                "sha": "980f39d5",
+                "message": "feat: add sorting and ordering functionality to paginated presets list",
+                "author": "arabcoders",
+                "date": "2026-03-22T16:21:31+00:00",
+                "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f"
+            },
+            {
+                "sha": "67074489",
+                "message": "chore: update dependencies",
+                "author": "arabcoders",
+                "date": "2026-03-22T16:20:57+00:00",
+                "full_sha": "670744890c38149ecf81f231602f6b2118d999b3"
+            },
             {
                 "sha": "58fc5573",
                 "message": "chore: updating external packages.",
@@ -4197,7 +4211,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "58fc5573dcf91c7c742cf2e421e060bfb058da14"
+        "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f"
     },
     {
         "tag": "dev-20250616-c07465a6",
