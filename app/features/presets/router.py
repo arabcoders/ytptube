@@ -23,8 +23,17 @@ def _serialize(model: Any) -> dict:
 
 @route("GET", "api/presets/", "presets")
 async def presets_list(request: Request, encoder: Encoder, repo: PresetsRepository) -> Response:
-    page, per_page = normalize_pagination(request)
-    items, total, current_page, total_pages = await repo.list_paginated(page, per_page)
+    try:
+        page, per_page = normalize_pagination(request)
+        items, total, current_page, total_pages = await repo.list_paginated(
+            page,
+            per_page,
+            sort=request.query.get("sort"),
+            order=request.query.get("order"),
+        )
+    except ValueError as exc:
+        return web.json_response(data={"error": str(exc)}, status=web.HTTPBadRequest.status_code)
+
     return web.json_response(
         data=PresetList(
             items=[_model(model) for model in items],

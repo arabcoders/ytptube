@@ -16,7 +16,8 @@ from app.library.Services import Services
 from app.library.Singleton import Singleton
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncGenerator
+    from collections.abc import Callable
+    from contextlib import AbstractAsyncContextManager
 
     from aiohttp import web
     from sqlalchemy.engine.result import Result
@@ -24,13 +25,34 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.selectable import Select
 
+    SessionFactory = Callable[[], AbstractAsyncContextManager[AsyncSession]]
+
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class PresetsRepository(metaclass=Singleton):
-    def __init__(self, session: AsyncGenerator[AsyncSession] | None = None) -> None:
+    SORT_FIELDS: dict[str, Any] = {
+        "id": PresetModel.id,
+        "name": PresetModel.name,
+        "priority": PresetModel.priority,
+        "default": PresetModel.default,
+        "created_at": PresetModel.created_at,
+        "updated_at": PresetModel.updated_at,
+    }
+    SORT_DIRECTIONS: tuple[str, str] = ("asc", "desc")
+    DEFAULT_SORT_ORDER: tuple[tuple[str, str], ...] = (("priority", "desc"), ("name", "asc"))
+    FIELD_DEFAULT_DIRECTIONS: dict[str, str] = {
+        "id": "asc",
+        "name": "asc",
+        "priority": "desc",
+        "default": "desc",
+        "created_at": "desc",
+        "updated_at": "desc",
+    }
+
+    def __init__(self, session: SessionFactory | None = None) -> None:
         self._migrated = False
-        self.session: AsyncGenerator[AsyncSession] = session or get_session
+        self.session: SessionFactory = session or get_session
 
     async def run_migrations(self) -> None:
         if self._migrated:
@@ -82,7 +104,85 @@ class PresetsRepository(metaclass=Singleton):
             )
             return list(result.scalars().all())
 
-    async def list_paginated(self, page: int, per_page: int) -> tuple[list[PresetModel], int, int, int]:
+    @classmethod
+    def parse_sorting(cls, sort: str | None = None, order: str | None = None) -> tuple[tuple[str, str], ...]:
+        sort_value = (sort or "").strip()
+        order_value = (order or "").strip()
+
+        if not sort_value and not order_value:
+            return cls.DEFAULT_SORT_ORDER
+
+        if order_value and not sort_value:
+            msg = "sort is required when order is provided."
+            raise ValueError(msg)
+
+        fields: list[str] = []
+        for raw_field in sort_value.split(","):
+            field = raw_field.strip().lower()
+            if not field:
+                continue
+            if field not in cls.SORT_FIELDS:
+                msg = f"sort must use supported fields: {', '.join(cls.SORT_FIELDS)}."
+                raise ValueError(msg)
+            if field not in fields:
+                fields.append(field)
+
+        if not fields:
+            msg = "sort must include at least one field."
+            raise ValueError(msg)
+
+        directions: list[str] = []
+        if order_value:
+            for raw_direction in order_value.split(","):
+                direction = raw_direction.strip().lower()
+                if not direction:
+                    continue
+                if direction not in cls.SORT_DIRECTIONS:
+                    msg = "order must be 'asc' or 'desc'."
+                    raise ValueError(msg)
+                directions.append(direction)
+
+            if not directions:
+                msg = "order must include at least one direction."
+                raise ValueError(msg)
+
+            if len(directions) not in {1, len(fields)}:
+                msg = "order must provide one direction or match the number of sort fields."
+                raise ValueError(msg)
+
+        if not directions:
+            return tuple((field, cls.FIELD_DEFAULT_DIRECTIONS.get(field, "asc")) for field in fields)
+
+        if len(directions) == 1:
+            return tuple((field, directions[0]) for field in fields)
+
+        return tuple((field, directions[index]) for index, field in enumerate(fields))
+
+    @classmethod
+    def _apply_sort_direction(cls, field: str, direction: str) -> Any:
+        column = cls.SORT_FIELDS[field]
+        return column.asc() if direction == "asc" else column.desc()
+
+    @classmethod
+    def _build_order_by(cls, sort: str | None = None, order: str | None = None) -> list[Any]:
+        sorting = cls.parse_sorting(sort, order)
+
+        order_by: list[Any] = [cls._apply_sort_direction(field, direction) for field, direction in sorting]
+
+        if all(field != "id" for field, _ in sorting):
+            order_by.append(PresetModel.id.asc())
+
+        return order_by
+
+    async def list_paginated(
+        self,
+        page: int,
+        per_page: int,
+        sort: str | None = None,
+        order: str | None = None,
+    ) -> tuple[list[PresetModel], int, int, int]:
+        order_by = self._build_order_by(sort, order)
+
         async with self.session() as session:
             total: int = await self.count()
             total_pages: int = (total + per_page - 1) // per_page if total > 0 else 1
@@ -91,10 +191,7 @@ class PresetsRepository(metaclass=Singleton):
                 page = total_pages
 
             query: Select[tuple[PresetModel]] = (
-                select(PresetModel)
-                .order_by(PresetModel.priority.desc(), PresetModel.name.asc())
-                .limit(per_page)
-                .offset((page - 1) * per_page)
+                select(PresetModel).order_by(*order_by).limit(per_page).offset((page - 1) * per_page)
             )
             result: Result[tuple[PresetModel]] = await session.execute(query)
             return list(result.scalars().all()), total, page, total_pages
@@ -136,9 +233,25 @@ class PresetsRepository(metaclass=Singleton):
 
     async def create(self, payload: PresetModel | dict) -> PresetModel:
         async with self.session() as session:
-            model: PresetModel = PresetModel(**payload) if isinstance(payload, dict) else payload
-            if model.id is not None:
-                model.id = None
+            data: dict[str, Any]
+            if isinstance(payload, dict):
+                data = dict(payload)
+            else:
+                data = {
+                    "name": payload.name,
+                    "description": payload.description,
+                    "folder": payload.folder,
+                    "template": payload.template,
+                    "cookies": payload.cookies,
+                    "cli": payload.cli,
+                    "default": payload.default,
+                    "priority": payload.priority,
+                    "created_at": payload.created_at,
+                    "updated_at": payload.updated_at,
+                }
+
+            data.pop("id", None)
+            model = PresetModel(**data)
 
             model.name = preset_name(model.name)
 
@@ -163,11 +276,9 @@ class PresetsRepository(metaclass=Singleton):
             result: Result[tuple[PresetModel]] = await session.execute(select(PresetModel).where(clause).limit(1))
             model: PresetModel | None = result.scalar_one_or_none()
 
-            if None is model:
+            if model is None:
                 msg: str = f"Preset '{identifier}' not found."
                 raise KeyError(msg)
-
-            assert None is not model
 
             payload.pop("id", None)
             payload.pop("created_at", None)
@@ -177,9 +288,10 @@ class PresetsRepository(metaclass=Singleton):
                 if hasattr(model, key):
                     setattr(model, key, value)
 
-            model.name = preset_name(model.name)
-            if await self.get_by_name(name=model.name, exclude_id=model.id) is not None:
-                msg = f"Preset with name '{model.name}' already exists."
+            normalized_name = preset_name(model.name)
+            model.name = normalized_name
+            if await self.get_by_name(name=normalized_name, exclude_id=model.id) is not None:
+                msg = f"Preset with name '{normalized_name}' already exists."
                 raise ValueError(msg)
 
             await session.commit()
@@ -196,11 +308,10 @@ class PresetsRepository(metaclass=Singleton):
                 clause = PresetModel.name == preset_name(identifier)
 
             result: Result[tuple[PresetModel]] = await session.execute(select(PresetModel).where(clause).limit(1))
-            if not (model := result.scalar_one_or_none()):
+            model: PresetModel | None = result.scalar_one_or_none()
+            if model is None:
                 msg: str = f"Preset '{identifier}' not found."
                 raise KeyError(msg)
-
-            assert None is not model
 
             await session.delete(model)
             await session.commit()
