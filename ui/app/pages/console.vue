@@ -1,165 +1,208 @@
-<style>
-.terminal {
-  padding-left: 10px;
-}
-
-.history-item {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.history-item:hover {
-  background-color: #f5f5f5;
-}
-</style>
-
 <template>
-  <div class="mt-1 columns is-multiline">
-    <div class="column is-12 is-clearfix">
-      <h1 class="title is-4">
-        <span class="icon-text">
-          <span class="icon"><i class="fa-solid fa-terminal" /></span>
+  <main class="w-full min-w-0 max-w-full space-y-4">
+    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div class="min-w-0 space-y-1">
+        <div class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
+          <UIcon name="i-lucide-terminal" class="size-5 text-toned" />
           <span>Console</span>
-        </span>
-      </h1>
-      <div class="subtitle is-6 is-unselectable">
-        You can use this page to run yt-dlp commands directly in a non-interactive way, bypassing
-        the web interface and it's settings.
+
+          <UBadge :color="isLoading ? 'info' : 'neutral'" variant="soft" size="sm">
+            {{ isLoading ? 'Streaming output' : 'Idle' }}
+          </UBadge>
+
+          <UBadge v-if="commandHistory.length > 0" color="neutral" variant="outline" size="sm">
+            {{ commandHistory.length }} saved
+          </UBadge>
+        </div>
+
+        <p class="text-sm text-toned">Run yt-dlp commands directly in a non-interactive session.</p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-eraser"
+          @click="() => void clearOutput()"
+        >
+          Clear output
+        </UButton>
       </div>
     </div>
-    <div class="column is-12">
-      <div class="card">
-        <header class="card-header">
-          <p class="card-header-title">
-            <span class="icon">
-              <i class="fa-solid fa-desktop" />
-            </span>
-            <span class="ml-2">Output</span>
-          </p>
-          <p class="card-header-icon">
-            <span v-tooltip.top="'Clear console window'" class="icon" @click="clearOutput()">
-              <i class="fa-solid fa-broom" />
-            </span>
-          </p>
-        </header>
-        <section class="card-content p-0 m-0">
-          <div ref="terminal_window" style="min-height: 60vh; max-height: 70vh" />
-        </section>
-        <section class="card-content p-1 m-1">
-          <div class="field is-grouped">
-            <div class="control is-expanded">
-              <TextareaAutocomplete
-                v-if="isMultiLineInput"
-                ref="commandTextarea"
-                v-model="command"
-                :options="ytDlpOptions"
-                :disabled="isLoading"
-                placeholder="--help"
-                @keydown="handleKeyDown"
-              />
-              <InputAutocomplete
-                v-else
-                v-model="command"
-                ref="commandInput"
-                :options="ytDlpOptions"
-                :disabled="isLoading"
-                placeholder="--help"
-                @keydown="handleKeyDown"
-                @paste="handlePaste"
-                :multiple="true"
-                :allowShortFlags="true"
+
+    <UPageCard variant="naked" :ui="pageCardUi">
+      <template #body>
+        <div class="space-y-4">
+          <div>
+            <div>
+              <div
+                ref="terminal_window"
+                class="terminal-host min-h-[55vh] max-h-[55vh] overflow-hidden rounded-xl scroll-none"
               />
             </div>
-            <p class="control">
-              <button
-                class="button is-primary"
-                type="button"
-                :disabled="isLoading || !hasValidCommand"
-                @click="runCommand"
-              >
-                <span class="icon">
-                  <i
-                    class="fa-solid"
-                    :class="isLoading ? 'fa-spinner fa-spin' : 'fa-paper-plane'"
-                  />
-                </span>
-              </button>
-            </p>
           </div>
-        </section>
-      </div>
-    </div>
 
-    <div class="column is-12">
-      <div class="card">
-        <header class="card-header">
-          <p
-            class="card-header-title is-pointer is-unselectable"
-            @click="isHistoryCollapsed = !isHistoryCollapsed"
-          >
-            <span class="icon"><i class="fa-solid fa-clock-rotate-left" /></span>
-            <span class="ml-2">Commands History</span>
-          </p>
-          <p class="card-header-icon">
-            <span v-tooltip.top="'Clear command history'" class="icon" @click="clearHistory()">
-              <i class="fa-solid fa-trash" />
-            </span>
-            <span
-              v-tooltip.top="isHistoryCollapsed ? 'Expand' : 'Collapse'"
-              class="icon ml-2"
-              @click="isHistoryCollapsed = !isHistoryCollapsed"
+          <div class="rounded-xl border border-default bg-default">
+            <div
+              class="flex flex-col gap-3 border-b border-default bg-muted/10 px-4 py-3 lg:flex-row lg:items-start lg:justify-between"
             >
-              <i
-                class="fa-solid"
-                :class="isHistoryCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'"
-              />
-            </span>
-          </p>
-        </header>
-        <div v-show="!isHistoryCollapsed" class="card-content p-2">
-          <Message class="is-info" v-if="commandHistory.length < 1">
-            Commands history is empty.
-          </Message>
-          <div class="table-container" v-if="commandHistory.length > 0">
-            <table
-              class="table is-striped is-hoverable is-fullwidth is-bordered"
-              style="min-width: 850px; table-layout: fixed"
-            >
-              <tbody>
-                <tr v-for="(cmd, index) in commandHistory" :key="index">
-                  <td>
-                    <code
-                      class="is-family-monospace is-text-overflow is-pointer is-block"
-                      @click="loadCommand(cmd)"
-                    >
-                      {{ cmd.replace(/\n/g, ' ') }}
-                    </code>
-                  </td>
-                  <td style="width: 40px; text-align: center">
-                    <button class="delete" @click="removeFromHistory(index)" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+              <div class="min-w-0 space-y-1">
+                <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                  <UIcon name="i-lucide-send" class="size-4 text-toned" />
+                  <span>Command</span>
+                </div>
+
+                <p class="text-xs text-toned">
+                  Press <code>Enter</code> to run single-line input, <code>Shift+Enter</code> to
+                  switch to multi-line, and <code>Ctrl+Enter</code> to run multi-line input.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid gap-3 px-4 py-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+              <div class="space-y-3">
+                <TextareaAutocomplete
+                  v-if="isMultiLineInput"
+                  ref="commandTextarea"
+                  v-model="command"
+                  :options="ytDlpOptions"
+                  :disabled="isLoading"
+                  placeholder="--help"
+                  :rows="5"
+                  @keydown="handleKeyDown"
+                />
+
+                <InputAutocomplete
+                  v-else
+                  ref="commandInput"
+                  v-model="command"
+                  :options="ytDlpOptions"
+                  :disabled="isLoading"
+                  placeholder="--help"
+                  :multiple="true"
+                  :allowShortFlags="true"
+                  @keydown="handleKeyDown"
+                  @paste="handlePaste"
+                />
+              </div>
+
+              <div class="flex flex-wrap items-center justify-end gap-2 xl:self-end">
+                <UPopover :content="{ side: 'top', align: 'end', sideOffset: 8 }">
+                  <UButton
+                    color="neutral"
+                    variant="outline"
+                    size="lg"
+                    icon="i-lucide-history"
+                    trailing-icon="i-lucide-chevron-up"
+                    class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                  >
+                    History
+                  </UButton>
+
+                  <template #content>
+                    <UCard class="w-[min(92vw,42rem)]" :ui="{ body: 'space-y-3 p-4' }">
+                      <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+                          <UIcon name="i-lucide-history" class="size-4 text-toned" />
+                          <span>Command history</span>
+                        </div>
+
+                        <UButton
+                          color="error"
+                          variant="outline"
+                          size="sm"
+                          icon="i-lucide-trash"
+                          :disabled="commandHistory.length < 1"
+                          @click="() => void clearHistory()"
+                        >
+                          Clear history
+                        </UButton>
+                      </div>
+
+                      <UAlert
+                        v-if="commandHistory.length < 1"
+                        color="info"
+                        variant="soft"
+                        icon="i-lucide-clock-3"
+                        title="Commands history is empty"
+                      />
+
+                      <div
+                        v-else
+                        class="max-h-96 w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+                      >
+                        <div class="w-full max-w-full overflow-auto overscroll-contain">
+                          <table class="min-w-155 w-full text-sm">
+                            <tbody class="divide-y divide-default">
+                              <tr
+                                v-for="(cmd, index) in commandHistory"
+                                :key="`${index}-${cmd}`"
+                                class="hover:bg-muted/20"
+                              >
+                                <td class="px-3 py-3 align-middle">
+                                  <button
+                                    type="button"
+                                    class="block w-full text-left font-mono text-xs text-default hover:text-highlighted"
+                                    @click="() => void loadCommand(cmd)"
+                                  >
+                                    {{ cmd.replace(/\n/g, ' ') }}
+                                  </button>
+                                </td>
+
+                                <td
+                                  class="w-[2%] px-3 py-3 text-center align-middle whitespace-nowrap"
+                                >
+                                  <UButton
+                                    color="error"
+                                    variant="ghost"
+                                    size="xs"
+                                    icon="i-lucide-x"
+                                    square
+                                    @click="removeFromHistory(index)"
+                                  />
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </UCard>
+                  </template>
+                </UPopover>
+
+                <UButton
+                  color="primary"
+                  size="lg"
+                  :icon="isLoading ? 'i-lucide-loader-circle' : 'i-lucide-send'"
+                  :loading="isLoading"
+                  :disabled="isLoading || !hasValidCommand"
+                  class="flex-1 justify-center sm:flex-none sm:min-w-36"
+                  @click="() => void runCommand()"
+                >
+                  Run command
+                </UButton>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
+      </template>
+    </UPageCard>
+  </main>
 </template>
 
 <script setup lang="ts">
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import type { EventSourceMessage } from '@microsoft/fetch-event-source';
+import { useStorage } from '@vueuse/core';
+import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 import { Terminal } from '@xterm/xterm';
-import { FitAddon } from '@xterm/addon-fit';
-import { useStorage } from '@vueuse/core';
-import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils';
 import InputAutocomplete from '~/components/InputAutocomplete.vue';
 import TextareaAutocomplete from '~/components/TextareaAutocomplete.vue';
 import { useDialog } from '~/composables/useDialog';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
+import { disableOpacity, enableOpacity, parse_api_error, uri } from '~/utils';
 
 const config = useConfigStore();
 const toast = useNotification();
@@ -167,16 +210,23 @@ const dialog = useDialog();
 
 const terminal = ref<Terminal>();
 const terminalFit = ref<FitAddon>();
-const command = ref<string>('');
+const command = ref('');
 const terminal_window = useTemplateRef<HTMLDivElement>('terminal_window');
 const commandInput = ref<InstanceType<typeof InputAutocomplete> | null>(null);
 const commandTextarea = ref<InstanceType<typeof TextareaAutocomplete> | null>(null);
-const isLoading = ref<boolean>(false);
+const isLoading = ref(false);
 const storedCommand = useStorage<string>('console_command', '');
 const commandHistory = useStorage<string[]>('console_command_history', []);
-const isHistoryCollapsed = useStorage<boolean>('console_history_collapsed', false);
 const sseController = ref<AbortController | null>(null);
+
 const MAX_HISTORY_ITEMS = 50;
+
+const pageCardUi = {
+  root: 'w-full bg-transparent',
+  container: 'w-full p-0 sm:p-0',
+  wrapper: 'w-full items-stretch',
+  body: 'w-full',
+};
 
 const ytDlpOptions = computed<AutoCompleteOptions>(() =>
   config.ytdlp_options.flatMap((opt) =>
@@ -184,8 +234,12 @@ const ytDlpOptions = computed<AutoCompleteOptions>(() =>
   ),
 );
 
-const hasValidCommand = computed(() => command.value && command.value.trim().length > 0);
-const isMultiLineInput = computed(() => !!command.value && command.value.includes('\n'));
+const hasValidCommand = computed(() => Boolean(command.value && command.value.trim().length > 0));
+const isMultiLineInput = computed(() => Boolean(command.value && command.value.includes('\n')));
+
+watch(command, (value) => {
+  storedCommand.value = value;
+});
 
 watch(
   () => isLoading.value,
@@ -193,12 +247,14 @@ watch(
     if (value) {
       return;
     }
+
     if (command.value.trim()) {
       addToHistory(command.value.trim());
     }
+
     command.value = '';
     await nextTick();
-    focusInput();
+    await focusInput();
   },
   { immediate: true },
 );
@@ -209,6 +265,7 @@ watch(
     if (config.app.console_enabled) {
       return;
     }
+
     toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
     await navigateTo('/');
   },
@@ -216,7 +273,7 @@ watch(
 
 const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
-  const isTextarea = 'TEXTAREA' === target.tagName;
+  const isTextarea = target.tagName === 'TEXTAREA';
 
   if (event.key !== 'Enter') {
     return;
@@ -224,7 +281,7 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
 
   if (((event.ctrlKey && isTextarea) || !isTextarea) && hasValidCommand.value) {
     event.preventDefault();
-    runCommand();
+    await runCommand();
     return;
   }
 
@@ -235,7 +292,9 @@ const handleKeyDown = async (event: KeyboardEvent): Promise<void> => {
       command.value.substring(0, cursorPos) +
       '\n' +
       command.value.substring(target.selectionEnd || cursorPos);
+
     await nextTick();
+
     if (commandTextarea.value) {
       const textarea = commandTextarea.value.$el?.querySelector('textarea') as HTMLTextAreaElement;
       if (textarea) {
@@ -272,14 +331,11 @@ const handlePaste = async (event: ClipboardEvent): Promise<void> => {
   }
 };
 
-const handle_event = () => {
-  if (!terminal.value) {
-    return;
-  }
+const handle_event = (): void => {
   terminalFit.value?.fit();
 };
 
-const handleStreamMessage = (event: EventSourceMessage) => {
+const handleStreamMessage = (event: EventSourceMessage): void => {
   if (!terminal.value) {
     return;
   }
@@ -293,18 +349,18 @@ const handleStreamMessage = (event: EventSourceMessage) => {
     }
   }
 
-  if ('output' === event.event) {
+  if (event.event === 'output') {
     terminal.value.writeln(payload?.line ?? '');
     return;
   }
 
-  if ('close' === event.event) {
+  if (event.event === 'close') {
     isLoading.value = false;
     sseController.value?.abort();
   }
 };
 
-const startStream = async (cmd: string) => {
+const startStream = async (cmd: string): Promise<void> => {
   sseController.value?.abort();
   const controller = new AbortController();
   sseController.value = controller;
@@ -324,7 +380,9 @@ const startStream = async (cmd: string) => {
         if (response.ok) {
           return;
         }
+
         let message = response.statusText || 'Failed to start command stream.';
+
         try {
           message = await parse_api_error(response.clone().json());
         } catch {
@@ -337,6 +395,7 @@ const startStream = async (cmd: string) => {
             message = response.statusText || 'Failed to start command stream.';
           }
         }
+
         throw new Error(message);
       },
       onmessage: handleStreamMessage,
@@ -344,6 +403,7 @@ const startStream = async (cmd: string) => {
         if (controller.signal.aborted) {
           return;
         }
+
         terminal.value?.writeln(`Error: ${error}`);
         isLoading.value = false;
       },
@@ -360,7 +420,7 @@ const startStream = async (cmd: string) => {
   }
 };
 
-const ensureTerminal = async () => {
+const ensureTerminal = async (): Promise<void> => {
   if (terminal.value) {
     return;
   }
@@ -374,6 +434,10 @@ const ensureTerminal = async () => {
     rows: 10,
     disableStdin: true,
     scrollback: 1000,
+    theme: {
+      background: '#09090b',
+      foreground: '#f4f4f5',
+    },
   });
 
   terminalFit.value = new FitAddon();
@@ -388,12 +452,12 @@ const ensureTerminal = async () => {
   terminalFit.value.fit();
 };
 
-const runCommand = async () => {
+const runCommand = async (): Promise<void> => {
   if (!hasValidCommand.value) {
     return;
   }
 
-  if (true !== config.app.console_enabled) {
+  if (config.app.console_enabled !== true) {
     await navigateTo('/');
     toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
     return;
@@ -404,39 +468,38 @@ const runCommand = async () => {
   if (cmd.startsWith('yt-dlp')) {
     cmd = cmd.replace(/^yt-dlp/, '').trim();
     await nextTick();
-    if ('' === cmd) {
+    if (cmd === '') {
       return;
     }
   }
 
   await ensureTerminal();
 
-  if ('clear' === cmd) {
-    clearOutput(true);
+  if (cmd === 'clear') {
+    await clearOutput(true);
     return;
   }
 
   await startStream(cmd);
-  terminal.value?.writeln(`user@YTPTube ~`);
+  terminal.value?.writeln('user@YTPTube ~');
   terminal.value?.writeln(`$ yt-dlp ${command.value}`);
   storedCommand.value = '';
 };
 
-const clearOutput = async (withCommand: boolean = false) => {
-  if (terminal.value) {
-    terminal.value.clear();
-  }
+const clearOutput = async (withCommand: boolean = false): Promise<void> => {
+  terminal.value?.clear();
 
-  if (true === withCommand) {
+  if (withCommand === true) {
     command.value = '';
   }
 
-  focusInput();
+  await focusInput();
 };
 
-const focusInput = async () => {
+const focusInput = async (): Promise<void> => {
   await nextTick();
-  let elm;
+
+  let elm: HTMLInputElement | HTMLTextAreaElement | undefined;
   if (isMultiLineInput.value) {
     elm = commandTextarea.value?.$el?.querySelector('textarea') as HTMLTextAreaElement;
   } else {
@@ -446,43 +509,53 @@ const focusInput = async () => {
   elm?.focus();
 };
 
-const addToHistory = (cmd: string) => {
+const addToHistory = (cmd: string): void => {
   commandHistory.value = [cmd, ...commandHistory.value.filter((h) => h !== cmd)].slice(
     0,
     MAX_HISTORY_ITEMS,
   );
 };
 
-const loadCommand = async (cmd: string) => {
+const loadCommand = async (cmd: string): Promise<void> => {
   command.value = cmd;
   await nextTick();
-  focusInput();
+  await focusInput();
 };
 
-const clearHistory = async () => {
+const clearHistory = async (): Promise<void> => {
   if (commandHistory.value.length === 0) {
     return;
   }
+
   const { status } = await dialog.confirmDialog({
     title: 'Confirm Action',
-    message: `Clear commands history?`,
-    confirmColor: 'is-danger',
+    message: 'Clear commands history?',
+    confirmColor: 'error',
   });
+
   if (!status) {
     return;
   }
+
   commandHistory.value = [];
 };
 
-const removeFromHistory = (index: number) =>
-  (commandHistory.value = commandHistory.value.filter((_, i) => i !== index));
+const removeFromHistory = (index: number): void => {
+  commandHistory.value = commandHistory.value.filter((_, i) => i !== index);
+};
 
-watch(isMultiLineInput, () => focusInput());
+watch(isMultiLineInput, async () => {
+  await focusInput();
+});
 
 onMounted(async () => {
-  document.addEventListener('resize', handle_event);
-  focusInput();
+  if (config.app.console_enabled !== true) {
+    toast.error('Console is disabled in the configuration. Please enable it to use this feature.');
+    await navigateTo('/');
+    return;
+  }
 
+  window.addEventListener('resize', handle_event);
   disableOpacity();
 
   await ensureTerminal();
@@ -491,11 +564,13 @@ onMounted(async () => {
     command.value = storedCommand.value;
     await nextTick();
   }
+
+  await focusInput();
 });
 
 onBeforeUnmount(() => {
   sseController.value?.abort();
-  document.removeEventListener('resize', handle_event);
+  window.removeEventListener('resize', handle_event);
   enableOpacity();
 });
 </script>

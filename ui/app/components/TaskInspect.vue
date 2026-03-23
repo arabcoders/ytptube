@@ -1,142 +1,131 @@
-<style scoped>
-code {
-  color: var(--bulma-code) !important;
-}
-</style>
-
 <template>
-  <div class="box">
-    <h2 class="title is-5">Inspect Task Handler</h2>
-    <form @submit.prevent="onSubmit">
-      <div class="field">
-        <label class="label" for="url">
-          <span class="icon-text">
-            <span class="icon"><i class="fas fa-link" /></span>
-            <span>URL</span>
-          </span>
-        </label>
-        <div class="control has-icons-left">
-          <input
+  <div class="space-y-5">
+    <form class="space-y-5" @submit.prevent="onSubmit">
+      <div class="grid gap-4 lg:grid-cols-2">
+        <UFormField
+          label="URL"
+          :ui="fieldUi"
+          :error="urlError || undefined"
+          description="Enter the URL of the resource you want to inspect."
+          class="lg:col-span-2"
+        >
+          <UInput
             id="url"
             v-model="url"
             type="url"
-            class="input"
-            :class="{ 'is-danger': urlError }"
             placeholder="https://..."
-            required
+            class="w-full"
+            :ui="inputUi"
+            :disabled="loading"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-link" class="size-4 text-toned" />
+            </template>
+          </UInput>
+        </UFormField>
+
+        <UFormField
+          label="Preset"
+          :ui="fieldUi"
+          description="Select a preset to apply its settings during inspection. In real scenario, the preset will be based on what is selected when creating the task."
+        >
+          <USelect
+            id="preset"
+            v-model="preset"
+            :items="presetItems"
+            placeholder="Select a preset"
+            value-key="value"
+            label-key="label"
+            class="w-full"
+            :ui="inputUi"
+            :disabled="loading"
           />
-          <span class="icon is-small is-left"><i class="fa-solid fa-link" /></span>
-        </div>
-        <p v-if="urlError" class="help is-danger">{{ urlError }}</p>
-        <p v-else class="help is-bold">Enter the URL of the resource you want to inspect.</p>
-      </div>
-      <div class="field">
-        <label class="label" for="preset">
-          <span class="icon-text">
-            <span class="icon"> <i class="fa-solid fa-list" /> </span>
-            <span>Preset</span>
-          </span>
-        </label>
-        <div class="control has-icons-left">
-          <div class="select is-fullwidth">
-            <select id="preset" class="is-fullwidth" v-model="preset">
-              <optgroup
-                label="Custom presets"
-                v-if="config?.presets.filter((p) => !p?.default).length > 0"
-              >
-                <option
-                  v-for="cPreset in filter_presets(false)"
-                  :key="cPreset.name"
-                  :value="cPreset.name"
-                >
-                  {{ cPreset.name }}
-                </option>
-              </optgroup>
-              <optgroup label="Default presets">
-                <option
-                  v-for="dPreset in filter_presets(true)"
-                  :key="dPreset.name"
-                  :value="dPreset.name"
-                >
-                  {{ dPreset.name }}
-                </option>
-              </optgroup>
-            </select>
-          </div>
-          <span class="icon is-small is-left"><i class="fa-solid fa-list" /></span>
-        </div>
-        <p class="help is-bold">
-          Select a preset to apply its settings during inspection. In real scenario, the preset will
-          be based on what is selected when creating the task.
-        </p>
-      </div>
-      <div class="field">
-        <label class="label" for="handler">
-          <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-cogs" /></span>
-            <span>Handler (For testing)</span>
-          </span>
-        </label>
-        <div class="control has-icons-left">
-          <input
+        </UFormField>
+
+        <UFormField
+          label="Handler (For testing)"
+          :ui="fieldUi"
+          description="In real scenario, the system auto-detects the appropriate handler based on the URL. This field is for testing purposes only."
+        >
+          <UInput
             id="handler"
             v-model="handler"
             type="text"
-            class="input"
             placeholder="Handler class name"
-          />
-          <span class="icon is-small is-left"><i class="fa-solid fa-cogs" /></span>
-        </div>
-        <p class="help is-bold">
-          In real scenario, the system auto-detects the appropriate handler based on the URL. This
-          field is for testing purposes only.
-        </p>
+            class="w-full"
+            :ui="inputUi"
+            :disabled="loading"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-rss" class="size-4 text-toned" />
+            </template>
+          </UInput>
+        </UFormField>
       </div>
-      <div class="field is-grouped is-grouped-right">
-        <div class="control">
-          <button class="button is-primary" type="submit" :disabled="loading">
-            <span class="icon"> <i class="fas fa-search" /></span>
-            <span>Inspect</span>
-          </button>
-        </div>
-        <div class="control">
-          <button class="button is-warning" type="button" @click="onReset" :disabled="loading">
-            <span class="icon"> <i class="fas fa-undo" /> </span>
-            <span>Reset</span>
-          </button>
-        </div>
+
+      <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <UButton
+          type="button"
+          color="warning"
+          variant="outline"
+          icon="i-lucide-rotate-ccw"
+          :disabled="loading"
+          class="justify-center"
+          @click="onReset"
+        >
+          Reset
+        </UButton>
+
+        <UButton
+          type="submit"
+          color="primary"
+          icon="i-lucide-search"
+          :loading="loading"
+          :disabled="loading"
+          class="justify-center"
+        >
+          Inspect
+        </UButton>
       </div>
     </form>
 
-    <Message v-if="loading" class="is-info">
-      <p>
-        <span class="icon-text">
-          <span class="icon"><i class="fas fa-spinner fa-spin" /></span>
-          <span>Inspecting.. please wait.</span>
-        </span>
-      </p>
-    </Message>
+    <UAlert
+      v-if="loading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Inspecting"
+      description="Inspecting.. please wait."
+    />
 
-    <div v-if="response" class="mt-4">
-      <Message
-        v-if="response.error"
-        class="is-danger"
-        title="Error"
-        icon="fas fa-exclamation-triangle"
-      >
-        <p>{{ response.error }}</p>
-        <p v-if="response.message">{{ response.message }}</p>
-      </Message>
-      <div class="content" v-else>
-        <h4>Result:</h4>
-        <pre><code>{{ response }}</code></pre>
+    <UAlert
+      v-else-if="response && 'error' in response"
+      color="error"
+      variant="soft"
+      icon="i-lucide-triangle-alert"
+      title="Error"
+      :description="errorDescription"
+    />
+
+    <div v-else-if="response" class="space-y-3">
+      <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+        <UIcon name="i-lucide-braces" class="size-4 text-toned" />
+        <span>Result:</span>
+      </div>
+
+      <div class="overflow-hidden rounded-lg border border-default bg-default">
+        <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+          <pre
+            class="min-w-0 max-w-full overflow-x-auto p-4 text-xs leading-6 text-default"
+          ><code>{{ formattedResponse }}</code></pre>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { request } from '~/utils';
 import { useConfigStore } from '~/stores/ConfigStore';
 import type { TaskInspectRequest, TaskInspectResponse } from '~/types/task_inspect';
@@ -147,38 +136,84 @@ const props = defineProps<{
   handler?: string;
 }>();
 
-const config = useConfigStore();
-const url = ref<string>(props.url ?? '');
-const preset = ref<string>(props.preset || config.app.default_preset || '');
-const handler = ref<string>(props.handler ?? '');
-const loading = ref<boolean>(false);
-const response = ref<TaskInspectResponse | null>(null);
-const urlError = ref<string>('');
+const { selectItems } = usePresetOptions();
 
-// Watch for prop changes and update fields
+const config = useConfigStore();
+const url = ref(props.url ?? '');
+const preset = ref(props.preset || config.app.default_preset || '');
+const handler = ref(props.handler ?? '');
+const loading = ref(false);
+const response = ref<TaskInspectResponse | null>(null);
+const urlError = ref('');
+
+const fieldUi = {
+  label: 'font-semibold text-default',
+  container: 'space-y-2',
+  description: 'text-sm text-toned',
+  error: 'text-sm text-error',
+};
+
+const inputUi = {
+  root: 'w-full',
+  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const presetItems = computed(
+  () => selectItems.value as Array<{ type?: 'label' | 'item'; label: string; value?: string }>,
+);
+
+const formattedResponse = computed(() => {
+  return response.value ? JSON.stringify(response.value, null, 2) : '';
+});
+
+const errorDescription = computed(() => {
+  if (!response.value || !('error' in response.value)) {
+    return undefined;
+  }
+
+  const error =
+    typeof response.value.error === 'string'
+      ? response.value.error
+      : String(response.value.error ?? '');
+  const message =
+    typeof response.value.message === 'string'
+      ? response.value.message
+      : String(response.value.message ?? '');
+
+  return message ? `${error} ${message}` : error;
+});
+
 watch(
   () => props.url,
   (val) => {
-    if (val !== undefined) url.value = val;
+    if (val !== undefined) {
+      url.value = val;
+    }
   },
 );
+
 watch(
   () => props.preset,
   (val) => {
-    if (val !== undefined) preset.value = val;
+    if (val !== undefined) {
+      preset.value = val;
+    }
   },
 );
+
 watch(
   () => props.handler,
   (val) => {
-    if (val !== undefined) handler.value = val;
+    if (val !== undefined) {
+      handler.value = val;
+    }
   },
 );
 
 const validateUrl = (val: string): boolean => {
   try {
-    const u = new URL(val);
-    return u.protocol === 'http:' || u.protocol === 'https:';
+    const parsed = new URL(val);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
@@ -222,6 +257,4 @@ const onReset = () => {
   response.value = null;
   urlError.value = '';
 };
-const filter_presets = (flag: boolean = true) =>
-  config.presets.filter((item) => item.default === flag);
 </script>

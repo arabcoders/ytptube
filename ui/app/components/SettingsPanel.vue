@@ -1,339 +1,273 @@
 <template>
-  <div class="modal" :class="{ 'is-active': isOpen }">
-    <div class="modal-background" @click="emitter('close')" />
-    <div
-      class="modal-card"
-      :class="{
-        'slide-from-right': direction === 'right',
-        'slide-from-left': direction === 'left',
-      }"
-    >
-      <header class="modal-card-head is-rounded-less">
-        <p class="modal-card-title">WebUI Settings</p>
-        <button class="delete" @click="emitter('close')" aria-label="close" />
-      </header>
-      <section class="modal-card-body">
-        <div class="box">
-          <div class="field">
-            <label class="label">Page View</label>
-            <div class="control">
-              <input
-                id="view_mode"
-                type="checkbox"
-                class="switch is-success"
-                v-model="simpleMode"
-              />
-              <label for="view_mode" class="is-unselectable">
-                {{ simpleMode ? 'Simple View' : 'Regular View' }}
-              </label>
-            </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              The simple view is ideal for non-technical users and mobile devices.
-            </p>
-          </div>
+  <USlideover
+    :open="isOpen"
+    :side="direction"
+    :dismissible="true"
+    :overlay="true"
+    :ui="{ content: 'w-full sm:max-w-xl' }"
+    @update:open="(open) => !open && emitter('close')"
+  >
+    <template #header>
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-base font-semibold text-highlighted">WebUI Settings</p>
+          <p class="text-sm text-toned">Adjust interface behavior and download defaults.</p>
         </div>
+      </div>
+    </template>
 
-        <div class="box">
-          <p class="title is-5 mb-4">
-            <span class="icon-text">
-              <span class="icon"><i class="fas fa-palette" /></span>
-              <span>Theming</span>
-            </span>
-          </p>
-
-          <div class="field">
-            <label class="label">Color scheme</label>
-            <div class="control">
-              <label for="auto" class="radio">
-                <input id="auto" type="radio" v-model="selectedTheme" value="auto" />
-                <span class="icon"><i class="fa-solid fa-circle-half-stroke" /></span>
-                <span>Auto</span>
-              </label>
-              <label for="light" class="radio">
-                <input id="light" type="radio" v-model="selectedTheme" value="light" />
-                <span class="icon has-text-warning"><i class="fa-solid fa-sun" /></span>
-                <span>Light</span>
-              </label>
-              <label for="dark" class="radio">
-                <input id="dark" type="radio" v-model="selectedTheme" value="dark" />
-                <span class="icon"><i class="fa-solid fa-moon" /></span>
-                <span>Dark</span>
-              </label>
+    <template #body>
+      <div class="w-full space-y-6">
+        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-layout-dashboard" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">Page View</span>
             </div>
-          </div>
+          </template>
 
-          <div class="field">
-            <label class="label">Show Background</label>
-            <div class="control">
-              <input id="random_bg" type="checkbox" class="switch is-success" v-model="bg_enable" />
-              <label for="random_bg" class="is-unselectable">
-                {{ bg_enable ? 'Yes' : 'No' }}
-              </label>
+          <template #body>
+            <USwitch
+              v-model="simpleMode"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="simpleMode ? 'Simple View' : 'Regular View'"
+              description="The simple view is ideal for non-technical users and mobile devices."
+            />
+          </template>
+        </UPageCard>
+
+        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-image" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">Background</span>
             </div>
-          </div>
+          </template>
 
-          <div class="field" v-if="bg_enable">
-            <div class="control">
-              <button
-                @click="$emit('reload_bg')"
-                class="button is-link is-light is-fullwidth"
-                :disabled="isLoading"
-              >
-                <span class="icon"
-                  ><i
-                    class="fa"
-                    :class="{ 'fa-spin fa-spinner': isLoading, 'fa-file-image': !isLoading }"
-                /></span>
-                <span>Reload Background</span>
-              </button>
-            </div>
-          </div>
+          <template #body>
+            <USwitch
+              v-model="bg_enable"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="bg_enable ? 'Shown' : 'Hidden'"
+            />
 
-          <div class="field" v-if="bg_enable">
-            <label class="label">Background visibility</label>
-            <div class="field has-addons">
-              <div class="control">
-                <a class="button is-static">
-                  <code>{{ parseFloat(String(1.0 - bg_opacity)).toFixed(2) }}</code>
-                </a>
-              </div>
-              <div class="control is-expanded">
-                <input
-                  class="input"
-                  type="range"
-                  v-model="bg_opacity"
-                  min="0.50"
-                  max="1.00"
-                  step="0.05"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+            <UButton
+              v-if="bg_enable"
+              color="info"
+              variant="outline"
+              icon="i-lucide-image-up"
+              class="w-full justify-center"
+              :disabled="isLoading"
+              :loading="isLoading"
+              @click="$emit('reload_bg')"
+            >
+              Reload Background
+            </UButton>
 
-        <div class="box">
-          <p class="title is-5 mb-4">
-            <span class="icon-text">
-              <span class="icon"><i class="fas fa-home" /></span>
-              <span>Dashboard</span>
-            </span>
-          </p>
-
-          <div class="field" v-if="!simpleMode">
-            <label class="label">URL Separator</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select v-model="separator">
-                  <option
-                    v-for="(sep, index) in separators"
-                    :key="`sep-${index}`"
-                    :value="sep.value"
-                  >
-                    {{ sep.name }} ({{ sep.value }})
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="field">
-            <label class="label">Show Thumbnails</label>
-            <div class="control">
-              <input
-                id="show_thumbnail"
-                type="checkbox"
-                class="switch is-success"
-                v-model="show_thumbnail"
+            <UFormField
+              class="w-full"
+              v-if="bg_enable"
+              label="Background visibility"
+              :hint="String(parseFloat(String(1.0 - bg_opacity)).toFixed(2))"
+            >
+              <USlider
+                v-model="bgOpacityModel"
+                :min="0.5"
+                :max="1"
+                :step="0.05"
+                size="lg"
+                class="w-full"
               />
-              <label for="show_thumbnail" class="is-unselectable">
-                {{ show_thumbnail ? 'Yes' : 'No' }}
-              </label>
-            </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              Show videos thumbnail if available
-            </p>
-          </div>
+            </UFormField>
+          </template>
+        </UPageCard>
 
-          <div class="field" v-if="show_thumbnail">
-            <label class="label">Aspect Ratio</label>
-            <div class="control">
-              <label for="ratio_16by9" class="radio">
-                <input id="ratio_16by9" type="radio" v-model="thumbnail_ratio" value="is-16by9" />
-                <span>&nbsp;16:9</span>
-              </label>
-              <label for="ratio_3by1" class="radio">
-                <input id="ratio_3by1" type="radio" v-model="thumbnail_ratio" value="is-3by1" />
-                <span>&nbsp;3:1</span>
-              </label>
+        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-monitor" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">Downloads</span>
             </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              Choose the aspect ratio for thumbnail display.
-            </p>
-          </div>
-          <div class="field">
-            <label class="label">Popover</label>
-            <div class="control">
-              <input
-                id="show_popover"
-                type="checkbox"
-                class="switch is-success"
-                v-model="show_popover"
+          </template>
+
+          <template #body>
+            <UFormField
+              v-if="!simpleMode"
+              label="URL Separator"
+              class="w-full"
+              :ui="settingsFieldUi"
+            >
+              <USelect
+                v-model="separator"
+                :items="separatorItems"
+                value-key="value"
+                label-key="label"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'w-full' }"
               />
-              <label for="show_popover" class="is-unselectable">
-                {{ show_popover ? 'Yes' : 'No' }}
-              </label>
-            </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              Show additional information over certain elements.
-            </p>
-          </div>
-        </div>
+            </UFormField>
 
-        <div class="box">
-          <p class="title is-5 mb-4">
-            <span class="icon-text">
-              <span class="icon"><i class="fas fa-download" /></span>
-              <span>Queue</span>
-            </span>
-          </p>
+            <USwitch
+              v-model="show_thumbnail"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="show_thumbnail ? 'Show Thumbnails' : 'Hide Thumbnails'"
+              description="Show videos thumbnail if available"
+            />
 
-          <div class="field">
-            <label class="label">Auto-refresh queue when disconnected</label>
-            <div class="control">
-              <input
-                id="queue_auto_refresh"
-                type="checkbox"
-                class="switch is-success"
-                v-model="queue_auto_refresh"
+            <UFormField
+              v-if="show_thumbnail"
+              label="Aspect Ratio"
+              class="w-full"
+              :ui="settingsFieldUi"
+            >
+              <USelect
+                v-model="thumbnail_ratio"
+                :items="thumbnailRatioItems"
+                value-key="value"
+                label-key="label"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'w-full' }"
               />
-              <label for="queue_auto_refresh" class="is-unselectable">
-                {{ queue_auto_refresh ? 'Enabled' : 'Disabled' }}
-              </label>
+            </UFormField>
+
+            <USwitch
+              v-model="show_popover"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="show_popover ? 'Popover On' : 'Popover Off'"
+              description="Show additional information over certain elements."
+            />
+          </template>
+        </UPageCard>
+
+        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-download" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">Queue</span>
             </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              Automatically refresh queue data when WebSocket connection is unavailable.
-            </p>
-          </div>
+          </template>
 
-          <div class="field" v-if="queue_auto_refresh">
-            <label class="label">Auto-refresh interval (seconds)</label>
-            <div class="field has-addons">
-              <div class="control">
-                <a class="button is-static">
-                  <code>{{ queue_auto_refresh_delay / 1000 }}s</code>
-                </a>
-              </div>
-              <div class="control is-expanded">
-                <input
-                  class="input"
-                  type="range"
-                  v-model.number="queue_auto_refresh_delay"
-                  min="5000"
-                  max="60000"
-                  step="5000"
-                />
-              </div>
-            </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              How often to refresh the queue (5-60 seconds). Lower values increase server load.
-            </p>
-          </div>
-        </div>
+          <template #body>
+            <USwitch
+              v-model="queue_auto_refresh"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="queue_auto_refresh ? 'Auto-refresh Enabled' : 'Auto-refresh Disabled'"
+              description="Automatically refresh queue data when WebSocket connection is unavailable."
+            />
 
-        <div class="box">
-          <p class="title is-5 mb-4">
-            <span class="icon-text">
-              <span class="icon"><i class="fas fa-bell" /></span>
-              <span>Notifications</span>
-            </span>
-          </p>
-
-          <div class="field">
-            <label class="label">Show notifications</label>
-            <div class="control">
-              <input
-                id="allow_toasts"
-                type="checkbox"
-                class="switch is-success"
-                v-model="allow_toasts"
+            <UFormField
+              class="w-full"
+              v-if="queue_auto_refresh"
+              label="Auto-refresh interval"
+              :hint="`${queue_auto_refresh_delay / 1000}s`"
+              :ui="settingsFieldUi"
+            >
+              <USlider
+                v-model="queueRefreshDelayModel"
+                :min="5000"
+                :max="60000"
+                :step="5000"
+                size="lg"
+                class="w-full"
               />
-              <label for="allow_toasts" class="is-unselectable">
-                {{ allow_toasts ? 'Yes' : 'No' }}
-              </label>
-            </div>
-          </div>
+              <p class="mt-2 text-sm text-toned">
+                How often to refresh the queue (5-60 seconds). Lower values increase server load.
+              </p>
+            </UFormField>
+          </template>
+        </UPageCard>
 
-          <div class="field" v-if="allow_toasts">
-            <label class="label">Notification target</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select v-model="toast_target" @change="onNotificationTargetChange">
-                  <option value="toast">Toast</option>
-                  <option value="browser" :disabled="!isSecureContext">Browser</option>
-                </select>
-              </div>
+        <UPageCard variant="subtle" class="w-full" :ui="settingsCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-bell" class="size-4 text-toned" />
+              <span class="text-sm font-semibold text-highlighted">Notifications</span>
             </div>
-            <p class="help">
-              <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-              <template v-if="!isSecureContext">
-                Browser notifications require HTTPS connection.
-              </template>
-              <template v-else>
-                Choose where to display notifications. Browser requires permission.
-              </template>
-            </p>
-          </div>
+          </template>
 
-          <div class="field" v-if="allow_toasts && toast_target === 'toast'">
-            <label class="label">Notifications position</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select v-model="toast_position">
-                  <option :value="POSITION.TOP_RIGHT">{{ POSITION.TOP_RIGHT }}</option>
-                  <option :value="POSITION.TOP_CENTER">{{ POSITION.TOP_CENTER }}</option>
-                  <option :value="POSITION.TOP_LEFT">{{ POSITION.TOP_LEFT }}</option>
-                  <option :value="POSITION.BOTTOM_RIGHT">{{ POSITION.BOTTOM_RIGHT }}</option>
-                  <option :value="POSITION.BOTTOM_CENTER">{{ POSITION.BOTTOM_CENTER }}</option>
-                  <option :value="POSITION.BOTTOM_LEFT">{{ POSITION.BOTTOM_LEFT }}</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          <template #body>
+            <USwitch
+              v-model="allow_toasts"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="allow_toasts ? 'Shown' : 'Hidden'"
+            />
 
-          <div class="field" v-if="allow_toasts && toast_target === 'toast'">
-            <label class="label">Dismiss notification on click</label>
-            <div class="control">
-              <input
-                id="dismiss_on_click"
-                type="checkbox"
-                class="switch is-success"
-                v-model="toast_dismiss_on_click"
+            <UFormField
+              v-if="allow_toasts"
+              label="Notification target"
+              class="w-full"
+              :ui="settingsFieldUi"
+            >
+              <USelect
+                v-model="toast_target"
+                :items="notificationTargetItems"
+                value-key="value"
+                label-key="label"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'w-full' }"
+                @update:model-value="() => void onNotificationTargetChange()"
               />
-              <label for="dismiss_on_click" class="is-unselectable">
-                {{ toast_dismiss_on_click ? 'Yes' : 'No' }}
-              </label>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
+              <p class="mt-2 text-sm text-toned">
+                <template v-if="!isSecureContext">
+                  Browser notifications require HTTPS connection.
+                </template>
+                <template v-else>
+                  Choose where to display notifications. Browser requires permission.
+                </template>
+              </p>
+            </UFormField>
+
+            <UFormField
+              v-if="allow_toasts && toast_target === 'toast'"
+              label="Notifications position"
+              class="w-full"
+              :ui="settingsFieldUi"
+            >
+              <USelect
+                v-model="toast_position"
+                :items="toastPositionItems"
+                size="lg"
+                class="w-full"
+                :ui="{ base: 'w-full' }"
+              />
+            </UFormField>
+
+            <USwitch
+              v-if="allow_toasts && toast_target === 'toast'"
+              v-model="toast_dismiss_on_click"
+              class="w-full"
+              size="lg"
+              :ui="settingsSwitchUi"
+              :label="toast_dismiss_on_click ? 'Dismiss on click' : 'Keep on click'"
+            />
+          </template>
+        </UPageCard>
+      </div>
+    </template>
+  </USlideover>
 </template>
 
 <script setup lang="ts">
-import 'assets/css/bulma-switch.css';
-import { watch, onMounted, onBeforeUnmount, ref } from 'vue';
+import { watch, onMounted, onBeforeUnmount, ref, computed } from 'vue';
 import { useStorage } from '@vueuse/core';
-import { POSITION } from 'vue-toastification';
 import { useConfigStore } from '~/stores/ConfigStore';
 import { useNotification } from '~/composables/useNotification';
-import type { notificationTarget } from '~/composables/useNotification';
+import type { notificationTarget, toastPosition } from '~/composables/useNotification';
 
 const props = withDefaults(
   defineProps<{
@@ -355,9 +289,8 @@ const notification = useNotification();
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
-const selectedTheme = useStorage<'auto' | 'light' | 'dark'>('theme', 'auto');
 const allow_toasts = useStorage<boolean>('allow_toasts', true);
-const toast_position = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT);
+const toast_position = useStorage<toastPosition>('toast_position', 'top-right');
 const toast_dismiss_on_click = useStorage<boolean>('toast_dismiss_on_click', true);
 const toast_target = useStorage<notificationTarget>('toast_target', 'toast');
 const show_thumbnail = useStorage<boolean>('show_thumbnail', true);
@@ -368,6 +301,60 @@ const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || 
 const queue_auto_refresh = useStorage<boolean>('queue_auto_refresh', true);
 const queue_auto_refresh_delay = useStorage<number>('queue_auto_refresh_delay', 10000);
 const isSecureContext = ref<boolean>(false);
+
+const settingsCardUi = {
+  root: 'w-full',
+  container: 'w-full p-4 sm:p-5',
+  wrapper: 'w-full items-stretch',
+  body: 'w-full space-y-4',
+};
+
+const settingsFieldUi = {
+  root: 'w-full',
+  container: 'mt-2 w-full',
+};
+
+const settingsSwitchUi = {
+  root: 'w-full items-start justify-between gap-4',
+  wrapper: 'ms-0 flex-1 text-sm',
+};
+
+const bgOpacityModel = computed<number>({
+  get: () => Number(bg_opacity.value),
+  set: (value) => {
+    bg_opacity.value = Number(value);
+  },
+});
+
+const queueRefreshDelayModel = computed<number>({
+  get: () => Number(queue_auto_refresh_delay.value),
+  set: (value) => {
+    queue_auto_refresh_delay.value = Number(value);
+  },
+});
+
+const separatorItems = computed(() =>
+  separators.map((sep) => ({ label: `${sep.name} (${sep.value})`, value: sep.value })),
+);
+
+const thumbnailRatioItems = [
+  { label: '16:9', value: 'is-16by9' },
+  { label: '3:1', value: 'is-3by1' },
+];
+
+const notificationTargetItems = computed(() => [
+  { label: 'Toast', value: 'toast' },
+  { label: 'Browser', value: 'browser', disabled: !isSecureContext.value },
+]);
+
+const toastPositionItems: Array<{ label: string; value: toastPosition }> = [
+  { label: 'top-left', value: 'top-left' },
+  { label: 'top-center', value: 'top-center' },
+  { label: 'top-right', value: 'top-right' },
+  { label: 'bottom-left', value: 'bottom-left' },
+  { label: 'bottom-center', value: 'bottom-center' },
+  { label: 'bottom-right', value: 'bottom-right' },
+];
 
 const handleKeydown = (e: KeyboardEvent) => {
   if ('Escape' === e.key && props.isOpen) {
@@ -415,63 +402,7 @@ watch(
 </script>
 
 <style scoped>
-.modal-card.slide-from-right {
-  position: fixed;
-  right: 0;
-  top: 0;
-  height: 100vh;
-  max-height: 100vh;
-  margin: 0;
-  width: 600px;
-  max-width: 90vw;
-  transition: transform 0.3s ease;
-  transform: translateX(100%);
-}
-
-.modal.is-active .modal-card.slide-from-right {
-  transform: translateX(0);
-}
-
-.modal-card.slide-from-left {
-  position: fixed;
-  left: 0;
-  top: 0;
-  height: 100vh;
-  max-height: 100vh;
-  margin: 0;
-  width: 600px;
-  max-width: 90vw;
-  transition: transform 0.3s ease;
-  transform: translateX(-100%);
-}
-
-.modal.is-active .modal-card.slide-from-left {
-  transform: translateX(0);
-}
-
-.modal-card-body {
-  overflow-y: auto;
-}
-
-@media screen and (max-width: 768px) {
-  .modal-card.slide-from-right,
-  .modal-card.slide-from-left {
-    width: 100vw;
-    max-width: 100vw;
-  }
-}
-
 :global(body.settings-panel-open) {
   overflow: hidden;
-}
-
-#main_container {
-  transition: transform 0.3s ease;
-}
-
-@media screen and (min-width: 769px) {
-  :global(.settings-open #main_container) {
-    transform: translateX(-300px);
-  }
 }
 </style>

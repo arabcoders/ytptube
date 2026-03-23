@@ -1,189 +1,259 @@
-<!-- ui/app/pages/options.vue -->
 <template>
-  <div class="p-1 container" style="border-radius: 0; padding: 0">
-    <div class="box m-2">
-      <div class="columns is-multiline is-vcentered">
-        <div class="column is-12 is-6-desktop">
-          <label class="label is-small">Search</label>
-          <div class="control has-icons-left">
-            <input
-              v-model.trim="filters.query"
-              type="text"
-              class="input"
-              placeholder="Filter by flag or description..."
-              autocomplete="off"
-            />
-            <span class="icon is-left"><i class="fa-solid fa-magnifying-glass" /></span>
-          </div>
-        </div>
+  <div class="w-full min-w-0 max-w-full space-y-4 p-1 sm:p-2">
+    <div class="grid gap-4 rounded-lg border border-default bg-muted/10 p-4 lg:grid-cols-12">
+      <UFormField label="Search" class="lg:col-span-4" :ui="fieldUi">
+        <UInput
+          v-model.trim="filters.query"
+          type="text"
+          placeholder="Filter by flag or description..."
+          autocomplete="off"
+          class="w-full"
+          :ui="inputUi"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-search" class="size-4 text-toned" />
+          </template>
+        </UInput>
+      </UFormField>
 
-        <div class="column is-6-tablet is-3-desktop">
-          <label class="label is-small">Group Filter</label>
-          <div class="select is-fullwidth">
-            <select v-model="filters.group">
-              <option value="">All</option>
-              <option v-for="g in groupNames" :key="g" :value="g">{{ g }}</option>
-            </select>
-          </div>
-        </div>
+      <UFormField label="Group Filter" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+        <USelect
+          v-model="filters.group"
+          :items="groupItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
 
-        <div class="column is-6-tablet is-3-desktop">
-          <label class="label is-small">Display</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select v-model="displayMode">
-                <option value="grouped">Grouped</option>
-                <option value="list">List</option>
-              </select>
-            </div>
-          </div>
-        </div>
+      <UFormField label="Display" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+        <USelect
+          v-model="displayMode"
+          :items="displayItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
 
-        <div class="column is-6-tablet is-3-desktop">
-          <label class="label is-small">Sort By</label>
-          <div class="select is-fullwidth">
-            <select v-model="sortBy">
-              <option value="flag">Flag</option>
-              <option value="group">Group</option>
-            </select>
-          </div>
-        </div>
+      <UFormField label="Sort By" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+        <USelect
+          v-model="sortBy"
+          :items="sortItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
 
-        <div class="column is-6-tablet is-3-desktop">
-          <label class="label is-small">Order</label>
-          <div class="select is-fullwidth">
-            <select v-model="sortDir">
-              <option value="asc">Asc</option>
-              <option value="desc">Desc</option>
-            </select>
-          </div>
-        </div>
+      <UFormField label="Order" class="sm:col-span-6 lg:col-span-2" :ui="fieldUi">
+        <USelect
+          v-model="sortDir"
+          :items="orderItems"
+          value-key="value"
+          label-key="label"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
 
-        <div class="column is-12 is-6-desktop">
-          <label class="label is-small">Flags</label>
-          <div class="buttons are-small">
-            <button
-              class="button"
-              :class="{ 'is-link': filters.flagKind === 'any' }"
-              @click="filters.flagKind = 'any'"
-            >
-              Any
-            </button>
-            <button
-              class="button"
-              :class="{ 'is-link': filters.flagKind === 'short' }"
-              @click="filters.flagKind = 'short'"
-            >
-              Short Only (-x)
-            </button>
-            <button
-              class="button"
-              :class="{ 'is-link': filters.flagKind === 'long' }"
-              @click="filters.flagKind = 'long'"
-            >
-              Long Only (--xyz)
-            </button>
-          </div>
+      <UFormField label="Flags" class="lg:col-span-12" :ui="fieldUi">
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-for="item in flagFilterItems"
+            :key="item.value"
+            type="button"
+            size="xs"
+            :color="filters.flagKind === item.value ? 'primary' : 'neutral'"
+            :variant="filters.flagKind === item.value ? 'solid' : 'outline'"
+            @click="filters.flagKind = item.value"
+          >
+            {{ item.label }}
+          </UButton>
+
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-refresh-cw"
+            :loading="isLoading"
+            :disabled="isLoading"
+            @click="() => void reload()"
+          >
+            Reload
+          </UButton>
         </div>
-      </div>
+      </UFormField>
     </div>
 
-    <div v-if="0 === visible.length" class="has-text-centered has-text-grey">
-      <p>No options match your criteria.</p>
-    </div>
+    <UAlert
+      v-if="isLoading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading"
+      description="Loading yt-dlp options. Please wait..."
+    />
 
-    <template v-if="'grouped' === displayMode && 0 !== grouped.length">
-      <section v-for="group in grouped" :key="group.name" class="m-2 mb-5">
-        <h2 class="title is-6 mb-3">
-          <span class="icon-text">
-            <span class="icon"><i class="fa-regular fa-folder-open" /></span>
-            <span
-              >{{ group.name }}
-              <small class="has-text-grey">({{ group.items.length }})</small></span
-            >
-          </span>
-        </h2>
-        <div class="table-container">
-          <table class="table is-fullwidth is-striped is-hoverable is-bordered">
-            <thead>
-              <tr>
-                <th style="width: 30%">Flags</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-for="opt in group.items" :key="opt.flags.join('|')">
-                <tr v-if="!opt.ignored">
-                  <td>
-                    <i
-                      class="has-text-primary is-pointer is-pulled-right fa-regular fa-copy is-unselectable"
-                      @click="copyFlag(opt.flags)"
-                    />
-                    <div class="is-flex is-align-items-center">
-                      <div class="tags">
-                        <span v-for="f in opt.flags" :key="f" class="tag is-info">{{ f }}</span>
+    <UAlert
+      v-else-if="visible.length === 0"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-search-x"
+      title="No options match your criteria."
+    />
+
+    <template v-else-if="displayMode === 'grouped' && grouped.length !== 0">
+      <section v-for="group in grouped" :key="group.name" class="space-y-3">
+        <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+          <UIcon name="i-lucide-folder-open" class="size-4 text-toned" />
+          <span>{{ group.name }}</span>
+          <UBadge color="neutral" variant="soft" size="sm">{{ group.items.length }}</UBadge>
+        </div>
+
+        <div
+          class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+        >
+          <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+            <table class="min-w-180 w-full table-auto text-sm">
+              <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+                <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+                  <th class="w-[1%] whitespace-nowrap">Flags</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-default">
+                <tr
+                  v-for="opt in group.items"
+                  :key="opt.flags.join('|')"
+                  class="align-top hover:bg-muted/20"
+                >
+                  <td class="w-[1%] px-3 py-3 align-top whitespace-nowrap">
+                    <div class="flex items-start gap-2">
+                      <div class="flex flex-wrap gap-1.5">
+                        <UBadge
+                          v-for="flag in opt.flags"
+                          :key="flag"
+                          color="info"
+                          variant="soft"
+                          size="sm"
+                          class="max-w-full whitespace-nowrap font-mono"
+                        >
+                          {{ flag }}
+                        </UBadge>
                       </div>
+
+                      <UTooltip text="Copy long flag">
+                        <UButton
+                          type="button"
+                          color="neutral"
+                          variant="ghost"
+                          size="xs"
+                          icon="i-lucide-copy"
+                          square
+                          class="shrink-0"
+                          :disabled="!hasLongFlag(opt.flags)"
+                          @click="() => void copyFlag(opt.flags)"
+                        />
+                      </UTooltip>
                     </div>
                   </td>
-                  <td>
-                    <span v-if="opt.description && 0 !== opt.description.length">{{
-                      opt.description
-                    }}</span>
-                    <span v-else class="has-text-grey">—</span>
+                  <td class="px-3 py-3 align-top text-default">
+                    <div class="min-w-0 wrap-break-word whitespace-normal">
+                      <span v-if="opt.description && opt.description.length !== 0">{{
+                        opt.description
+                      }}</span>
+                      <span v-else class="text-toned">-</span>
+                    </div>
                   </td>
                 </tr>
-              </template>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </template>
 
-    <template v-else>
-      <div class="table-container">
-        <table class="table is-fullwidth is-striped is-hoverable is-bordered m-2">
-          <thead>
-            <tr>
-              <th style="width: 30%">Flags</th>
-              <th style="width: 20%">Group</th>
+    <div
+      v-else
+      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+    >
+      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table class="min-w-215 w-full table-auto text-sm">
+          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+            <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-[1%] whitespace-nowrap">Flags</th>
+              <th class="w-[1%] whitespace-nowrap">Group</th>
               <th>Description</th>
             </tr>
           </thead>
-          <tbody>
-            <template v-for="opt in visible" :key="opt.flags.join('|')">
-              <tr v-if="!opt.ignored">
-                <td>
-                  <i
-                    class="has-text-primary is-pointer is-pulled-right fa-regular fa-copy is-unselectable"
-                    @click="copyFlag(opt.flags)"
-                  />
-                  <div class="is-flex is-align-items-center">
-                    <div class="tags">
-                      <span v-for="f in opt.flags" :key="f" class="tag is-info">{{ f }}</span>
-                    </div>
+          <tbody class="divide-y divide-default">
+            <tr
+              v-for="opt in visible"
+              :key="opt.flags.join('|')"
+              class="align-top hover:bg-muted/20"
+            >
+              <td class="w-[1%] px-3 py-3 align-top">
+                <div class="flex items-start gap-2">
+                  <div class="flex flex-wrap gap-1.5">
+                    <UBadge
+                      v-for="flag in opt.flags"
+                      :key="flag"
+                      color="info"
+                      variant="soft"
+                      size="sm"
+                      class="max-w-full whitespace-nowrap font-mono"
+                    >
+                      {{ flag }}
+                    </UBadge>
                   </div>
-                </td>
-                <td class="is-bold">
-                  {{ opt.group || 'root' }}
-                </td>
-                <td>
-                  <span v-if="opt.description && 0 !== opt.description.length">{{
+
+                  <UTooltip text="Copy long flag">
+                    <UButton
+                      type="button"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
+                      icon="i-lucide-copy"
+                      square
+                      class="shrink-0"
+                      :disabled="!hasLongFlag(opt.flags)"
+                      @click="() => void copyFlag(opt.flags)"
+                    />
+                  </UTooltip>
+                </div>
+              </td>
+              <td class="w-[1%] px-3 py-3 align-top font-medium text-default whitespace-nowrap">
+                {{ opt.group || 'root' }}
+              </td>
+              <td class="px-3 py-3 align-top text-default">
+                <div class="min-w-0 wrap-break-word whitespace-normal">
+                  <span v-if="opt.description && opt.description.length !== 0">{{
                     opt.description
                   }}</span>
-                  <span v-else class="has-text-grey">—</span>
-                </td>
-              </tr>
-            </template>
+                  <span v-else class="text-toned">-</span>
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
 import type { YTDLPOption } from '~/types/ytdlp';
+import {
+  buildYtdlpGroupItems,
+  normalizeYtdlpGroupFilter,
+  YTDLP_ALL_GROUPS,
+} from '~/utils/ytdlpOptions';
 
 const isLoading = ref(false);
 const options = ref<YTDLPOption[]>([]);
@@ -193,9 +263,41 @@ const sortDir = useStorage<'asc' | 'desc'>('opts_sort_dir', 'asc');
 
 const filters = reactive({
   query: '',
-  group: '',
+  group: YTDLP_ALL_GROUPS,
   flagKind: 'any' as 'any' | 'short' | 'long',
 });
+
+const fieldUi = {
+  label: 'font-semibold text-default',
+  container: 'space-y-2',
+  description: 'text-sm text-toned',
+};
+
+const inputUi = {
+  root: 'w-full',
+  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const displayItems = [
+  { label: 'Grouped', value: 'grouped' },
+  { label: 'List', value: 'list' },
+];
+
+const sortItems = [
+  { label: 'Flag', value: 'flag' },
+  { label: 'Group', value: 'group' },
+];
+
+const orderItems = [
+  { label: 'Asc', value: 'asc' },
+  { label: 'Desc', value: 'desc' },
+];
+
+const flagFilterItems = [
+  { label: 'Any', value: 'any' as const },
+  { label: 'Short Only (-x)', value: 'short' as const },
+  { label: 'Long Only (--xyz)', value: 'long' as const },
+];
 
 const reload = async (): Promise<void> => {
   try {
@@ -213,8 +315,12 @@ const reload = async (): Promise<void> => {
   }
 };
 
+const hasLongFlag = (flags: string[]): boolean => {
+  return flags.some((flag) => flag.startsWith('--'));
+};
+
 const copyFlag = async (flags: string[]): Promise<void> => {
-  const longFlag = flags.find((f) => f.startsWith('--'));
+  const longFlag = flags.find((flag) => flag.startsWith('--'));
   if (!longFlag) {
     return;
   }
@@ -224,35 +330,49 @@ const copyFlag = async (flags: string[]): Promise<void> => {
 onMounted(async () => await reload());
 
 const groupNames = computed<string[]>(() => {
-  const s = new Set<string>();
-  for (const o of options.value) {
-    s.add(o.group || 'root');
+  const names = new Set<string>();
+  for (const option of options.value) {
+    names.add(option.group || 'root');
   }
-  return Array.from(s).sort((a, b) => a.localeCompare(b));
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
+});
+
+const groupItems = computed(() => {
+  return buildYtdlpGroupItems(groupNames.value);
 });
 
 const filtered = computed<YTDLPOption[]>(() => {
   const q = filters.query.toLowerCase();
-  const g = filters.group;
+  const g = normalizeYtdlpGroupFilter(filters.group);
 
-  return options.value.filter((o) => {
-    if (g && (o.group || 'root') !== g) {
+  return options.value.filter((option) => {
+    if (option.ignored) {
       return false;
     }
 
-    if ('short' === filters.flagKind && !o.flags.some((f) => /^-\w(,|$)|^-\w$/.test(f))) {
+    if (g && (option.group || 'root') !== g) {
       return false;
     }
 
-    if ('long' === filters.flagKind && !o.flags.some((f) => /^--[a-zA-Z0-9][\w-]*/.test(f))) {
+    if (
+      filters.flagKind === 'short' &&
+      !option.flags.some((flag) => /^-\w(,|$)|^-\w$/.test(flag))
+    ) {
       return false;
     }
 
-    if (0 !== q.length) {
-      const hay = [o.flags.join(' '), o.description || '', o.group || 'root']
+    if (
+      filters.flagKind === 'long' &&
+      !option.flags.some((flag) => /^--[a-zA-Z0-9][\w-]*/.test(flag))
+    ) {
+      return false;
+    }
+
+    if (q.length !== 0) {
+      const haystack = [option.flags.join(' '), option.description || '', option.group || 'root']
         .join(' ')
         .toLowerCase();
-      if (-1 === hay.indexOf(q)) {
+      if (!haystack.includes(q)) {
         return false;
       }
     }
@@ -262,54 +382,45 @@ const filtered = computed<YTDLPOption[]>(() => {
 });
 
 const sorted = computed<YTDLPOption[]>(() => {
-  const dir = 'asc' === sortDir.value ? 1 : -1;
-  const arr = [...filtered.value];
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  const list = [...filtered.value];
 
-  arr.sort((a, b) => {
-    if ('group' === sortBy.value) {
-      const ga = (a.group || 'root').localeCompare(b.group || 'root');
-      if (0 !== ga) {
-        return ga * dir;
+  list.sort((a, b) => {
+    if (sortBy.value === 'group') {
+      const groupCompare = (a.group || 'root').localeCompare(b.group || 'root');
+      if (groupCompare !== 0) {
+        return groupCompare * dir;
       }
     }
 
-    const fa = (a.flags[0] || '').localeCompare(b.flags[0] || '');
-    return fa * dir;
+    return (a.flags[0] || '').localeCompare(b.flags[0] || '') * dir;
   });
 
-  return arr;
+  return list;
 });
 
-const visible = computed<YTDLPOption[]>(() => sorted.value);
+const visible = computed(() => sorted.value);
 
 const grouped = computed<{ name: string; items: YTDLPOption[] }[]>(() => {
   const map = new Map<string, YTDLPOption[]>();
 
-  for (const o of visible.value) {
-    const key = o.group || 'root';
+  for (const option of visible.value) {
+    const key = option.group || 'root';
     if (!map.has(key)) {
       map.set(key, []);
     }
-    map.get(key)!.push(o);
+    map.get(key)?.push(option);
   }
 
-  const dir = 'asc' === sortDir.value ? 1 : -1;
-  const out = Array.from(map.entries()).map(([name, items]) => ({ name, items }));
+  const dir = sortDir.value === 'asc' ? 1 : -1;
+  const list = Array.from(map.entries()).map(([name, items]) => ({ name, items }));
 
-  if ('group' === sortBy.value) {
-    out.sort((a, b) => a.name.localeCompare(b.name) * dir);
+  if (sortBy.value === 'group') {
+    list.sort((a, b) => a.name.localeCompare(b.name) * dir);
   } else {
-    // When sorting by flag, groups should still be in alphabetical order
-    out.sort((a, b) => a.name.localeCompare(b.name));
+    list.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  return out;
+  return list;
 });
 </script>
-
-<style scoped>
-.table td,
-.table th {
-  vertical-align: top;
-}
-</style>

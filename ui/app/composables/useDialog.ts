@@ -2,6 +2,12 @@ import { reactive, readonly } from 'vue';
 
 export type DialogResult<T = string | null> = { status: boolean; value: T };
 
+export type DialogOption = {
+  key: string;
+  label: string;
+  checked?: boolean;
+};
+
 type BaseOptions = {
   /**
    * Title of the dialog
@@ -16,9 +22,9 @@ type BaseOptions = {
    */
   confirmText?: string;
   /**
-   * Color class for the confirm button (e.g., 'is-primary', 'is-danger')
+   * Color for the confirm button.
    */
-  confirmColor?: string;
+  confirmColor?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral';
 };
 
 export type PromptOptions = BaseOptions & {
@@ -50,6 +56,10 @@ export type ConfirmOptions = BaseOptions & {
    * Raw HTML content to include in the dialog message.
    */
   rawHTML?: string;
+  /**
+   * Optional checkbox-style options to return with the confirmation result.
+   */
+  options?: DialogOption[];
 };
 
 export type AlertOptions = BaseOptions & {};
@@ -97,7 +107,7 @@ export const useDialog = () => {
     });
 
   const confirmDialog = (opts: ConfirmOptions) =>
-    new Promise<DialogResult<null>>((resolve) => {
+    new Promise<DialogResult<Record<string, boolean> | null>>((resolve) => {
       state.queue.push({ type: 'confirm', opts, resolve });
       _dequeue();
     });
@@ -108,16 +118,21 @@ export const useDialog = () => {
       _dequeue();
     });
 
-  const confirm = (value?: string) => {
+  const confirm = (value?: string | Record<string, boolean>) => {
     if (!state.current) return;
     if (state.current.type === 'prompt') {
-      const val = value ?? state.input;
+      const val = 'string' === typeof value ? value : state.input;
       const v = (state.current.opts as PromptOptions).validate?.(val);
       if (v && v !== true) {
         state.errorMsg = v;
         return;
       }
       state.current.resolve({ status: true, value: val });
+    } else if (state.current.type === 'confirm') {
+      state.current.resolve({
+        status: true,
+        value: 'object' === typeof value && null !== value ? value : null,
+      });
     } else {
       state.current.resolve({ status: true, value: null });
     }

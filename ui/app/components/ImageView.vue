@@ -9,8 +9,8 @@ img {
 
 <template>
   <div>
-    <div style="font-size: 30vh; width: 99%" class="has-text-centered" v-if="isLoading">
-      <i class="fas fa-circle-notch fa-spin"></i>
+    <div v-if="isLoading" class="flex min-h-[50vh] items-center justify-center">
+      <UIcon name="i-lucide-loader-circle" class="size-20 animate-spin text-toned sm:size-24" />
     </div>
     <div v-else>
       <img :src="image" />

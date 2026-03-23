@@ -1,438 +1,761 @@
 <template>
-  <template v-if="simpleMode">
-    <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-    <Simple
-      @show_settings="() => (show_settings = true)"
-      :class="{ 'settings-open': show_settings }"
-    />
-  </template>
-
-  <SettingsPanel
-    :isOpen="show_settings"
-    :isLoading="loadingImage"
-    @close="closeSettings()"
-    @reload_bg="() => loadImage(true)"
-    direction="right"
-  />
-
-  <template v-if="!simpleMode">
-    <Shutdown v-if="app_shutdown" />
-    <div id="main_container" class="container" :class="{ 'settings-open': show_settings }" v-else>
-      <NewVersion v-if="newVersionIsAvailable" />
-      <nav class="navbar is-mobile is-dark">
-        <div class="navbar-brand pl-5">
-          <NuxtLink
-            class="navbar-item is-text-overflow"
-            to="/"
-            @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            v-tooltip="socket.isConnected ? 'Connected' : 'Connecting'"
-            id="top"
-          >
-            <span class="is-text-overflow">
-              <span class="icon">
-                <i
-                  v-if="'connecting' === socket.connectionStatus"
-                  class="fas fa-arrows-rotate fa-spin"
-                />
-                <i v-else class="fas fa-home" />
-              </span>
-              <span class="has-text-bold" :class="connectionStatusColor"> YTPTube </span>
-              <span class="has-text-bold" v-if="config?.app?.instance_title"
-                >: {{ config.app.instance_title }}</span
-              >
-            </span>
-          </NuxtLink>
-
-          <button class="navbar-burger burger" @click="showMenu = !showMenu">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-          </button>
-        </div>
-
-        <div class="navbar-menu is-unselectable" :class="{ 'is-active': showMenu }">
-          <div class="navbar-start">
-            <NuxtLink
-              class="navbar-item"
-              to="/browser"
-              @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            >
-              <span class="icon"><i class="fa-solid fa-folder-tree" /></span>
-              <span>Files</span>
-            </NuxtLink>
-
-            <NuxtLink
-              class="navbar-item"
-              to="/presets"
-              @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            >
-              <span class="icon"><i class="fa-solid fa-sliders" /></span>
-              <span>Presets</span>
-            </NuxtLink>
-
-            <div class="navbar-item has-dropdown">
-              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
-                <span class="icon"><i class="fas fa-tasks" /></span>
-                <span>Tasks</span>
-              </a>
-              <div class="navbar-dropdown">
-                <NuxtLink
-                  class="navbar-item"
-                  to="/tasks"
-                  @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                >
-                  <span class="icon"><i class="fa-solid fa-tasks" /></span>
-                  <span>List</span>
-                </NuxtLink>
-
-                <NuxtLink
-                  class="navbar-item"
-                  to="/task_definitions"
-                  @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                >
-                  <span class="icon"><i class="fa-solid fa-diagram-project" /></span>
-                  <span>Definitions</span>
-                </NuxtLink>
-              </div>
-            </div>
-
-            <NuxtLink
-              class="navbar-item"
-              to="/notifications"
-              @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            >
-              <span class="icon-text">
-                <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
-                <span>Notifications</span>
-              </span>
-            </NuxtLink>
-
-            <NuxtLink
-              class="navbar-item"
-              to="/conditions"
-              @click.prevent="(e: MouseEvent) => changeRoute(e)"
-            >
-              <span class="icon"><i class="fa-solid fa-filter" /></span>
-              <span>Conditions</span>
-            </NuxtLink>
-          </div>
-          <div class="navbar-end">
-            <div class="navbar-item has-dropdown">
-              <a class="navbar-link" @click="(e: MouseEvent) => openMenu(e)">
-                <span class="icon"><i class="fas fa-tools" /></span>
-                <span>Other</span>
-              </a>
-
-              <div class="navbar-dropdown">
-                <NuxtLink
-                  class="navbar-item"
-                  to="/logs"
-                  @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                  v-if="config.app?.file_logging"
-                >
-                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-                  <span>Logs</span>
-                </NuxtLink>
-
-                <NuxtLink
-                  class="navbar-item"
-                  to="/console"
-                  @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                  v-if="config.app.console_enabled"
-                >
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  <span>Console</span>
-                </NuxtLink>
-
-                <NuxtLink
-                  class="navbar-item"
-                  to="/dl_fields"
-                  @click.prevent="(e: MouseEvent) => changeRoute(e)"
-                >
-                  <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-                  <span>Custom fields</span>
-                </NuxtLink>
-              </div>
-            </div>
-
-            <div class="navbar-item" v-if="true === config.app.is_native">
-              <button class="button is-dark" @click="shutdownApp">
-                <span class="icon"><i class="fas fa-power-off" /></span>
-                <span v-if="isMobile">Shutdown</span>
-              </button>
-            </div>
-
-            <NotifyDropdown />
-
-            <div class="navbar-item">
-              <button class="button is-dark" @click="reloadPage">
-                <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="isMobile">Reload</span>
-              </button>
-            </div>
-
-            <div class="navbar-item">
-              <button
-                class="button is-dark"
-                :class="{ 'has-tooltip-bottom mr-4': !isMobile }"
-                @click="show_settings = !show_settings"
-              >
-                <span class="icon"><i class="fas fa-cog" /></span>
-                <span v-if="isMobile">WebUI Settings</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-      <div>
-        <NuxtLoadingIndicator />
-        <NuxtPage
-          v-if="config.is_loaded"
-          :isLoading="loadingImage"
-          @reload_bg="() => loadImage(true)"
-        />
-        <Message
-          v-if="!config.is_loaded"
-          class="mt-5"
-          :class="{ 'is-info': config.is_loading, 'is-danger': !config.is_loading }"
-          :title="config.is_loading ? 'Loading configuration...' : 'Failed to load configuration'"
-          :icon="config.is_loading ? 'fas fa-spinner fa-spin' : 'fas fa-triangle-exclamation'"
+  <UApp :toaster="toasterConfig">
+    <Transition name="shell-mode" mode="out-in">
+      <div v-if="simpleMode" key="simple" class="shell-stage flex flex-col">
+        <UAlert
+          v-if="showConnectionBanner"
+          color="warning"
+          variant="soft"
+          orientation="horizontal"
+          :title="connectionBannerTitle"
         >
-          <p v-if="config.is_loading">
-            This usually takes less than a few seconds. If this is taking too long,
-            <NuxtLink class="button is-text p-0" @click="reloadPage">click here</NuxtLink> to reload
-            the page.
-          </p>
-          <p v-if="!config.is_loading">
-            Failed to load the application configuration. This likely indicates a problem with the
-            backend. Try to
-            <NuxtLink class="button is-text p-0" @click="() => config.loadConfig(true)"
-              >reload configuration</NuxtLink
-            >
-            or <NuxtLink class="button is-text p-0" @click="reloadPage">reload the page </NuxtLink>.
-          </p>
-          <template v-if="socket.error">
-            <hr />
-            <p class="has-text-danger">
-              <span class="icon-text">
-                <span class="icon"><i class="fas fa-triangle-exclamation" /></span>
-                <span class="tag is-danger">{{ socket.error_count }}</span>
-                {{ socket.error }}. Check the developer console for more information.
-              </span>
-            </p>
+          <template #leading>
+            <UIcon
+              :name="connectionBannerIcon"
+              :class="[
+                'size-4 shrink-0 text-warning',
+                socket.connectionStatus === 'connecting' ? 'animate-spin' : '',
+              ]"
+            />
           </template>
-        </Message>
-        <Markdown @closeModel="() => (doc.file = '')" :file="doc.file" v-if="doc.file" />
-        <ClientOnly>
-          <Dialog />
-        </ClientOnly>
-      </div>
 
-      <div class="mt-6">
-        <div class="columns is-multiline">
-          <div class="column is-12">
-            <Connection :status="socket.connectionStatus" @reconnect="() => socket.reconnect()" />
-          </div>
-        </div>
-      </div>
-
-      <footer class="footer py-5 is-unselectable" v-if="config.is_loaded">
-        <div class="columns is-multiline is-variable is-8">
-          <div class="column is-12-mobile is-6-tablet">
-            <div class="mb-3">
-              <NuxtLink
-                href="https://github.com/ArabCoders/ytptube"
-                target="_blank"
-                class="has-text-weight-semibold is-size-6"
-              >
-                <span class="icon-text">
-                  <span class="icon"><i class="fab fa-github" /></span>
-                  <span>YTPTube</span>
-                </span>
-              </NuxtLink>
-              <span
-                class="is-size-7 ml-2 has-tooltip"
-                style="opacity: 0.7"
-                v-tooltip="
-                  `Build: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, SHA: ${config.app?.app_commit_sha}`
-                "
-              >
-                {{ config?.app?.app_version || 'unknown' }}
-              </span>
-            </div>
-
-            <p v-if="config.app?.new_version" class="is-size-7 mb-2" style="opacity: 0.8">
-              <span class="icon-text">
-                <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
-                <span>Update available:</span>
-                <NuxtLink
-                  :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
-                  target="_blank"
-                  class="has-text-weight-semibold ml-1"
-                >
-                  {{ config.app.new_version }}
-                </NuxtLink>
-              </span>
-            </p>
-
-            <p v-else class="is-size-7 mb-2" style="opacity: 0.6">
-              <button
-                @click="checkForUpdates"
-                :disabled="checkingUpdates"
-                class="is-text is-small p-0 is-size-7"
-                :class="{ 'is-loading': checkingUpdates }"
-                style="
-                  opacity: 0.8;
-                  height: auto;
-                  vertical-align: baseline;
-                  border: none;
-                  text-decoration: none;
-                  background: none;
-                "
-              >
-                <span class="icon-text">
-                  <span class="icon">
-                    <i
-                      class="fas"
-                      :class="checkingUpdates ? 'fa-spinner fa-spin' : 'fa-circle-check'"
-                    />
-                  </span>
-                  <span>{{ updateCheckMessage }}</span>
-                </span>
-              </button>
-            </p>
-
-            <p v-if="config.app?.started" class="is-size-7 mb-0" style="opacity: 0.6">
-              <span class="icon-text">
-                <span class="icon"><i class="fas fa-clock" /></span>
-                <span
-                  class="has-tooltip"
-                  v-tooltip="
-                    'Started: ' + moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')
-                  "
-                >
-                  {{ moment.unix(config.app?.started).fromNow() }}
-                </span>
-              </span>
-            </p>
-          </div>
-
-          <div class="column is-12-mobile is-3-tablet">
-            <div
-              class="footer-divider"
-              style="
-                border-left: 1px solid rgba(128, 128, 128, 0.2);
-                border-right: 1px solid rgba(128, 128, 128, 0.2);
-                padding: 0 2rem;
-              "
+          <template v-if="socket.connectionStatus === 'disconnected'" #actions>
+            <UButton
+              color="neutral"
+              variant="link"
+              size="sm"
+              class="px-0"
+              @click="() => socket.reconnect()"
             >
-              <p class="is-size-7 mb-2" style="opacity: 0.7">Powered by</p>
-              <NuxtLink
-                href="https://github.com/yt-dlp/yt-dlp"
-                target="_blank"
-                class="has-text-weight-semibold"
-              >
-                <span class="icon-text">
-                  <span class="icon"><i class="fab fa-github" /></span>
-                  <span>yt-dlp</span>
-                </span>
-              </NuxtLink>
-              <span class="is-size-7 ml-1" style="opacity: 0.6">{{
-                config?.app?.ytdlp_version || 'unknown'
-              }}</span>
+              Reconnect
+            </UButton>
+          </template>
+        </UAlert>
 
-              <p v-if="config.app?.yt_new_version" class="is-size-7 mb-0 mt-2" style="opacity: 0.8">
-                <span class="icon-text">
-                  <span class="has-tooltip" v-tooltip="`Restart container to update yt-dlp`">
-                    <span class="icon has-text-warning"><i class="fas fa-circle-info" /></span>
-                    <span>Update available:</span>
-                  </span>
-                  <NuxtLink
-                    :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
-                    target="_blank"
-                    class="has-text-weight-semibold ml-1"
+        <Simple @show_settings="() => (show_settings = true)" />
+      </div>
+
+      <div v-else key="regular" class="shell-stage flex flex-col">
+        <Shutdown v-if="app_shutdown" />
+
+        <div id="main_container" class="shell-root flex flex-col" v-else>
+          <UAlert
+            v-if="newVersionIsAvailable"
+            color="success"
+            variant="soft"
+            orientation="horizontal"
+            title="A new WebUI version is installed."
+          >
+            <template #leading>
+              <UIcon name="i-lucide-info" class="size-4 shrink-0 text-success" />
+            </template>
+
+            <template #actions>
+              <UButton color="neutral" variant="link" size="sm" class="px-0" @click="reloadPage">
+                Reload app
+              </UButton>
+            </template>
+          </UAlert>
+
+          <UDashboardGroup
+            storage="local"
+            storage-key="ytptube-shell"
+            class="shell-dashboard flex-1"
+            :ui="{ base: 'relative flex min-h-full overflow-visible' }"
+          >
+            <UDashboardSidebar
+              side="left"
+              collapsible
+              resizable
+              :default-size="15"
+              :min-size="10"
+              :max-size="20"
+              :collapsed-size="4"
+              :ui="dashboardSidebarUi"
+            >
+              <template #header="{ collapsed }">
+                <div
+                  class="flex w-full min-w-0 items-center gap-2"
+                  :class="collapsed ? 'justify-center' : ''"
+                >
+                  <span
+                    class="inline-flex shrink-0 items-center justify-center transition-all duration-200"
+                    :class="
+                      collapsed
+                        ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
+                        : ''
+                    "
                   >
-                    {{ config.app.yt_new_version }}
-                  </NuxtLink>
-                </span>
-              </p>
-            </div>
-          </div>
+                    <UIcon
+                      v-if="'connecting' === socket.connectionStatus"
+                      name="i-lucide-loader-circle"
+                      :class="[collapsed ? 'size-6' : 'size-4', 'animate-spin']"
+                    />
+                    <UIcon v-else name="i-lucide-house" :class="collapsed ? 'size-6' : 'size-4'" />
+                  </span>
 
-          <div class="column is-12-mobile is-3-tablet">
-            <p class="is-size-7 mb-2" style="opacity: 0.7">Quick Links</p>
-            <div
-              class="is-flex is-flex-direction-row is-flex-wrap-wrap is-justify-content-flex-start is-justify-content-flex-end-tablet"
-              style="gap: 0.75rem"
-            >
-              <NuxtLink to="/changelog" class="is-size-7">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-list" /></span>
-                  <span>Changelog</span>
-                </span>
-              </NuxtLink>
-              <NuxtLink @click="doc.file = '/api/docs/FAQ.md'" class="is-size-7">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-question-circle" /></span>
-                  <span>FAQ</span>
-                </span>
-              </NuxtLink>
-              <NuxtLink @click="doc.file = '/api/docs/README.md'" class="is-size-7">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-book" /></span>
-                  <span>Docs</span>
-                </span>
-              </NuxtLink>
-              <NuxtLink @click="doc.file = '/api/docs/API.md'" class="is-size-7">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-code" /></span>
-                  <span>API</span>
-                </span>
-              </NuxtLink>
-              <button @click="scrollToTop" class="is-size-7 button is-text is-small p-0">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-arrow-up" /></span>
-                  <span>Top</span>
-                </span>
-              </button>
-            </div>
-          </div>
+                  <div v-if="false === collapsed" class="min-w-0">
+                    <UTooltip :text="connectionStatusLabel">
+                      <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
+                        YTPTube
+                      </p>
+                    </UTooltip>
+                    <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
+                      {{ config.app.instance_title }}
+                    </p>
+                  </div>
+                </div>
+              </template>
+
+              <template #default="{ collapsed }">
+                <div class="flex h-full flex-col gap-6 px-1 py-1">
+                  <div v-for="section in sidebarSections" :key="section.id" class="space-y-2">
+                    <p
+                      v-if="false === collapsed && section.label"
+                      class="px-2 text-[11px] font-semibold tracking-[0.22em] text-toned uppercase"
+                    >
+                      {{ section.label }}
+                    </p>
+
+                    <UNavigationMenu
+                      orientation="vertical"
+                      :collapsed="collapsed"
+                      :items="section.items"
+                      :tooltip="true"
+                      :ui="navigationUi(collapsed)"
+                    />
+                  </div>
+                </div>
+              </template>
+
+              <template #footer="{ collapsed }">
+                <div v-if="false === collapsed" class="w-full"></div>
+              </template>
+            </UDashboardSidebar>
+
+            <UDashboardPanel class="min-w-0 bg-transparent" :ui="dashboardPanelUi">
+              <template #header>
+                <UDashboardNavbar :toggle="false" :title="pageTitle" :ui="dashboardNavbarUi">
+                  <template #left>
+                    <div class="flex items-center gap-2">
+                      <UDashboardSidebarToggle class="lg:hidden" />
+                      <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
+                    </div>
+                  </template>
+
+                  <template #right>
+                    <div class="flex items-center gap-1 sm:gap-2">
+                      <NotifyDropdown />
+
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-refresh-cw"
+                        @click="reloadPage"
+                      >
+                        <span class="hidden xl:inline">Reload</span>
+                      </UButton>
+
+                      <UDashboardSearchButton class="shrink-0" />
+
+                      <UColorModeButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Toggle color mode"
+                      />
+
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-settings-2"
+                        @click="show_settings = !show_settings"
+                      >
+                        <span class="hidden xl:inline">WebUI Settings</span>
+                      </UButton>
+
+                      <UButton
+                        v-if="true === config.app.is_native"
+                        color="error"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-power"
+                        @click="shutdownApp"
+                      >
+                        <span class="hidden xl:inline">Shutdown</span>
+                      </UButton>
+                    </div>
+                  </template>
+                </UDashboardNavbar>
+              </template>
+
+              <template #body>
+                <div class="relative flex min-h-full min-w-0 max-w-full flex-1 flex-col">
+                  <NuxtLoadingIndicator />
+
+                  <div
+                    class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col px-4 py-4 sm:px-5 sm:py-5 lg:px-6"
+                  >
+                    <div class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-4">
+                      <UAlert
+                        v-if="!config.is_loaded"
+                        :color="config.is_loading ? 'info' : 'error'"
+                        variant="soft"
+                        :title="
+                          config.is_loading
+                            ? 'Loading configuration...'
+                            : 'Failed to load configuration'
+                        "
+                      >
+                        <template #leading>
+                          <UIcon
+                            :name="
+                              config.is_loading
+                                ? 'i-lucide-loader-circle'
+                                : 'i-lucide-triangle-alert'
+                            "
+                            :class="[
+                              'size-4 shrink-0',
+                              config.is_loading ? 'animate-spin text-info' : 'text-error',
+                            ]"
+                          />
+                        </template>
+
+                        <template #description>
+                          <div class="space-y-3">
+                            <p v-if="config.is_loading" class="text-sm text-default">
+                              This usually takes less than a few seconds. If this is taking too
+                              long,
+                              <button
+                                type="button"
+                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                                @click="reloadPage"
+                              >
+                                click here
+                              </button>
+                              to reload the page.
+                            </p>
+
+                            <p v-else class="text-sm text-default">
+                              Failed to load the application configuration. This likely indicates a
+                              problem with the backend. Try to
+                              <button
+                                type="button"
+                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                                @click="() => config.loadConfig(true)"
+                              >
+                                reload configuration
+                              </button>
+                              or
+                              <button
+                                type="button"
+                                class="font-semibold text-highlighted underline-offset-2 hover:underline"
+                                @click="reloadPage"
+                              >
+                                reload the page
+                              </button>
+                              .
+                            </p>
+
+                            <div
+                              v-if="socket.error"
+                              class="flex flex-wrap items-center gap-2 border-t border-default pt-3 text-error"
+                            >
+                              <UIcon name="i-lucide-triangle-alert" class="size-4" />
+                              <span
+                                class="inline-flex min-w-6 items-center justify-center rounded-full bg-error px-2 py-0.5 text-xs font-semibold text-white"
+                              >
+                                {{ socket.error_count }}
+                              </span>
+                              <span>
+                                {{ socket.error }}. Check the developer console for more
+                                information.
+                              </span>
+                            </div>
+                          </div>
+                        </template>
+                      </UAlert>
+
+                      <UAlert
+                        v-if="showConnectionBanner"
+                        color="warning"
+                        variant="soft"
+                        orientation="horizontal"
+                        :title="connectionBannerTitle"
+                      >
+                        <template #leading>
+                          <UIcon
+                            :name="connectionBannerIcon"
+                            :class="[
+                              'size-4 shrink-0 text-warning',
+                              socket.connectionStatus === 'connecting' ? 'animate-spin' : '',
+                            ]"
+                          />
+                        </template>
+
+                        <template v-if="socket.connectionStatus === 'disconnected'" #actions>
+                          <UButton
+                            color="neutral"
+                            variant="link"
+                            size="sm"
+                            class="px-0"
+                            @click="() => socket.reconnect()"
+                          >
+                            Reconnect
+                          </UButton>
+                        </template>
+                      </UAlert>
+
+                      <div
+                        v-if="config.is_loaded"
+                        class="flex min-h-0 min-w-0 max-w-full flex-1 flex-col"
+                      >
+                        <NuxtPage :isLoading="loadingImage" @reload_bg="() => loadImage(true)" />
+                      </div>
+                    </div>
+
+                    <footer
+                      v-if="config.is_loaded"
+                      class="shell-footer mt-auto border-t border-default pt-6 text-sm text-toned"
+                    >
+                      <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                        <div class="space-y-3">
+                          <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                            <NuxtLink
+                              href="https://github.com/ArabCoders/ytptube"
+                              target="_blank"
+                              class="inline-flex items-center gap-2 font-semibold text-highlighted"
+                            >
+                              <UIcon name="i-lucide-github" class="size-4" />
+                              <span>YTPTube</span>
+                            </NuxtLink>
+
+                            <UTooltip :text="buildTooltip">
+                              <span class="text-xs has-tooltip">
+                                {{ config?.app?.app_version || 'unknown' }}
+                              </span>
+                            </UTooltip>
+                          </div>
+
+                          <p
+                            v-if="config.app?.new_version"
+                            class="flex flex-wrap items-center gap-2 text-xs"
+                          >
+                            <UIcon name="i-lucide-info" class="size-4 text-warning" />
+                            <span>Update available:</span>
+                            <NuxtLink
+                              :href="`https://github.com/ArabCoders/ytptube/releases/tag/${config.app.new_version}`"
+                              target="_blank"
+                              class="font-semibold text-highlighted"
+                            >
+                              {{ config.app.new_version }}
+                            </NuxtLink>
+                          </p>
+
+                          <button
+                            v-else
+                            type="button"
+                            class="inline-flex items-center gap-2 text-xs text-left transition-colors hover:text-highlighted disabled:opacity-60"
+                            :disabled="checkingUpdates"
+                            @click="checkForUpdates"
+                          >
+                            <UIcon
+                              :name="
+                                checkingUpdates
+                                  ? 'i-lucide-loader-circle'
+                                  : 'i-lucide-circle-check-big'
+                              "
+                              :class="['size-4', checkingUpdates ? 'animate-spin' : '']"
+                            />
+                            <span>{{ updateCheckMessage }}</span>
+                          </button>
+
+                          <p v-if="config.app?.started" class="flex items-center gap-2 text-xs">
+                            <UIcon name="i-lucide-clock-3" class="size-4" />
+                            <UTooltip
+                              :text="
+                                'Started: ' +
+                                moment.unix(config.app?.started).format('YYYY-MM-DD HH:mm Z')
+                              "
+                            >
+                              <span class="has-tooltip">
+                                {{ moment.unix(config.app?.started).fromNow() }}
+                              </span>
+                            </UTooltip>
+                          </p>
+                        </div>
+
+                        <div
+                          class="space-y-3 border-t border-default pt-4 lg:border-t-0 lg:border-l lg:pl-6 lg:pt-0"
+                        >
+                          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-toned">
+                            Powered by
+                          </p>
+
+                          <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <NuxtLink
+                                href="https://github.com/yt-dlp/yt-dlp"
+                                target="_blank"
+                                class="inline-flex items-center gap-2 font-semibold text-highlighted"
+                              >
+                                <UIcon name="i-lucide-github" class="size-4" />
+                                <span>yt-dlp</span>
+                              </NuxtLink>
+
+                              <span class="text-xs">{{
+                                config?.app?.ytdlp_version || 'unknown'
+                              }}</span>
+                            </div>
+
+                            <p
+                              v-if="config.app?.yt_new_version"
+                              class="flex flex-wrap items-center gap-2 text-xs"
+                            >
+                              <UTooltip text="Restart container to update yt-dlp">
+                                <span class="has-tooltip">
+                                  <UIcon name="i-lucide-info" class="size-4 text-warning" />
+                                </span>
+                              </UTooltip>
+                              <span>Update available:</span>
+                              <NuxtLink
+                                :href="`https://github.com/yt-dlp/yt-dlp/releases/tag/${config.app.yt_new_version}`"
+                                target="_blank"
+                                class="font-semibold text-highlighted"
+                              >
+                                {{ config.app.yt_new_version }}
+                              </NuxtLink>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </footer>
+                  </div>
+
+                  <ClientOnly>
+                    <Dialog />
+                  </ClientOnly>
+                </div>
+              </template>
+            </UDashboardPanel>
+
+            <UDashboardSearch
+              v-model:open="showRouteSearch"
+              :groups="routeSearchGroups"
+              shortcut="meta_k"
+              placeholder="Search routes and actions"
+              :ui="{ modal: 'sm:max-w-3xl h-full sm:h-[28rem]' }"
+            />
+          </UDashboardGroup>
         </div>
-      </footer>
-    </div>
-  </template>
+      </div>
+    </Transition>
+
+    <SettingsPanel
+      :isOpen="show_settings"
+      :isLoading="loadingImage"
+      @close="closeSettings()"
+      @reload_bg="() => loadImage(true)"
+      direction="right"
+    />
+  </UApp>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, readonly } from 'vue';
-import 'assets/css/bulma.css';
-import 'assets/css/style.css';
-import 'assets/css/all.css';
+import type { NavigationMenuItem } from '@nuxt/ui';
+import { ref, onMounted, readonly } from 'vue';
 import { useStorage } from '@vueuse/core';
 import moment from 'moment';
+import type { toastPosition } from '~/composables/useNotification';
+import { getDocsNavigationEntries } from '~/composables/useDocs';
 import type { YTDLPOption } from '~/types/ytdlp';
 import { useDialog } from '~/composables/useDialog';
 import Dialog from '~/components/Dialog.vue';
 import Simple from '~/components/Simple.vue';
 import Shutdown from '~/components/shutdown.vue';
-import Markdown from '~/components/Markdown.vue';
 import type { version_check } from '~/types';
 
-const selectedTheme = useStorage('theme', 'auto');
+type NavEntry = {
+  id: string;
+  label: string;
+  icon: string;
+  to?: string;
+  children?: NavEntry[];
+};
+
+type SidebarSection = {
+  id: string;
+  label?: string;
+  items: Array<Array<NavigationMenuItem>>;
+};
+
 const socket = useSocketStore();
 const config = useConfigStore();
+const route = useRoute();
 const loadedImage = ref();
 const loadingImage = ref(false);
 const bg_enable = useStorage('random_bg', true);
 const bg_opacity = useStorage('random_bg_opacity', 0.95);
-const showMenu = ref(false);
-const isMobile = useMediaQuery({ maxWidth: 1024 });
 const app_shutdown = ref<boolean>(false);
 const simpleMode = useStorage<boolean>('simple_mode', config.app.simple_mode || false);
 const show_settings = ref(false);
-const doc = ref<{ file: string }>({ file: '' });
 const checkingUpdates = ref(false);
 const updateCheckMessage = ref('Up to date - Click to check');
+const showRouteSearch = ref(false);
+const { alertDialog, confirmDialog } = useDialog();
+
+const dashboardSidebarUi = {
+  root: 'border-r border-default bg-default/95 backdrop-blur-sm',
+  header: 'border-b border-default px-2.5 py-3',
+  body: 'gap-3 px-2.5 py-3',
+  footer: 'border-t border-default px-2.5 py-3',
+};
+
+const dashboardNavbarUi = {
+  root: 'border-b border-default bg-transparent px-4 py-3 sm:px-5 lg:px-6',
+  title: 'text-sm font-semibold text-highlighted',
+  right: 'flex items-center shrink-0 gap-1.5',
+};
+
+const dashboardPanelUi = {
+  root: 'min-w-0 min-h-screen max-w-full flex flex-1 flex-col bg-transparent',
+  body: 'flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-y-visible p-0',
+};
+
+const navigationUi = (collapsed: boolean) => ({
+  root: 'w-full',
+  list: 'gap-1.5',
+  link: collapsed
+    ? 'justify-center rounded-lg px-2 py-2'
+    : 'rounded-lg px-2.5 py-2 text-sm font-medium text-default transition-colors',
+  linkLeadingIcon: collapsed ? 'size-5' : 'size-4',
+  linkLabel: collapsed ? 'hidden' : 'truncate',
+});
+
+const makeNavigationItem = (item: NavEntry): NavigationMenuItem => ({
+  label: item.label,
+  icon: item.icon,
+  to: item.to,
+  value: item.id,
+});
+
+const docsNavigationEntries = getDocsNavigationEntries();
+
+const allNavItems = computed<NavEntry[]>(() => [
+  { id: 'downloads', label: 'Downloads', icon: 'i-lucide-download', to: '/' },
+  { id: 'files', label: 'Files', icon: 'i-lucide-folder-tree', to: '/browser' },
+  { id: 'presets', label: 'Presets', icon: 'i-lucide-sliders-horizontal', to: '/presets' },
+  { id: 'custom-fields', label: 'Custom Fields', icon: 'i-lucide-braces', to: '/dl_fields' },
+  { id: 'conditions', label: 'Conditions', icon: 'i-lucide-filter', to: '/conditions' },
+  { id: 'notifications', label: 'Notifications', icon: 'i-lucide-bell', to: '/notifications' },
+  {
+    id: 'tasks',
+    label: 'Tasks',
+    icon: 'i-lucide-list-todo',
+    children: [
+      { id: 'tasks-list', label: 'Tasks', icon: 'i-lucide-list-todo', to: '/tasks' },
+      {
+        id: 'task-definitions',
+        label: 'Task Definitions',
+        icon: 'i-lucide-workflow',
+        to: '/task_definitions',
+      },
+    ],
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    icon: 'i-lucide-wrench',
+    children: [
+      ...(config.app?.file_logging
+        ? [{ id: 'logs', label: 'Logs', icon: 'i-lucide-file-text', to: '/logs' }]
+        : []),
+      ...(config.app.console_enabled
+        ? [{ id: 'console', label: 'Console', icon: 'i-lucide-terminal', to: '/console' }]
+        : []),
+    ],
+  },
+  {
+    id: 'docs',
+    label: 'Docs',
+    icon: 'i-lucide-book-open',
+    children: [
+      ...docsNavigationEntries,
+      { id: 'changelog', label: 'Changelog', icon: 'i-lucide-list', to: '/changelog' },
+    ],
+  },
+]);
+
+const pageTitle = computed(() => {
+  const path = route.path;
+  const flat = allNavItems.value.flatMap((item) => [item, ...(item.children || [])]);
+  const match = flat
+    .filter((item) => item.to && (item.to === '/' ? path === '/' : path.startsWith(item.to)))
+    .sort((left, right) => (right.to?.length || 0) - (left.to?.length || 0))[0];
+  return match?.label || 'YTPTube';
+});
+
+const buildTooltip = computed(
+  () =>
+    `Build: ${config.app?.app_build_date}, Branch: ${config.app?.app_branch}, SHA: ${config.app?.app_commit_sha}`,
+);
+
+const showConnectionBanner = computed(() => socket.connectionStatus !== 'connected');
+
+const connectionBannerTitle = computed(() => {
+  switch (socket.connectionStatus) {
+    case 'connecting':
+      return 'Connecting to websocket server...';
+    case 'disconnected':
+    default:
+      return 'Websocket connection lost.';
+  }
+});
+
+const connectionBannerIcon = computed(() =>
+  socket.connectionStatus === 'connecting' ? 'i-lucide-loader-circle' : 'i-lucide-info',
+);
+
+const sidebarSections = computed<Array<SidebarSection>>(() => {
+  const topLevelItems = (ids: string[]) =>
+    ids
+      .map((id) => allNavItems.value.find((item) => item.id === id))
+      .filter((item): item is NavEntry => Boolean(item))
+      .map((item) => makeNavigationItem(item));
+
+  const childItems = (id: string) =>
+    (allNavItems.value.find((item) => item.id === id)?.children || []).map((item) =>
+      makeNavigationItem(item),
+    );
+
+  return [
+    {
+      id: 'downloads',
+      label: 'Downloads',
+      items:
+        topLevelItems(['downloads', 'files']).length > 0
+          ? [topLevelItems(['downloads', 'files'])]
+          : [],
+    },
+    {
+      id: 'automation',
+      label: 'Automation',
+      items: childItems('tasks').length > 0 ? [childItems('tasks')] : [],
+    },
+    {
+      id: 'configuration',
+      label: 'Configuration',
+      items: [
+        topLevelItems(['presets', 'custom-fields']),
+        topLevelItems(['conditions', 'notifications']),
+      ].filter((group) => group.length > 0),
+    },
+    {
+      id: 'tools',
+      label: 'Tools',
+      items: childItems('tools').length > 0 ? [childItems('tools')] : [],
+    },
+    {
+      id: 'docs',
+      label: 'Docs',
+      items: childItems('docs').length > 0 ? [childItems('docs')] : [],
+    },
+  ].filter((section) => section.items.some((group) => group.length > 0));
+});
+
+const routeSearchGroups = computed(() => [
+  {
+    id: 'routes',
+    label: 'Routes',
+    items: allNavItems.value.flatMap((item) => {
+      const self = item.to
+        ? [
+            {
+              label: item.label,
+              icon: item.icon,
+              suffix: item.to,
+              onSelect: () => handleRouteSelect(item),
+            },
+          ]
+        : [];
+
+      const children = (item.children || []).map((child) => ({
+        label: child.label,
+        icon: child.icon,
+        suffix: child.to || '',
+        onSelect: () => handleRouteSelect(child),
+      }));
+
+      return [...self, ...children];
+    }),
+  },
+  {
+    id: 'downloads',
+    label: 'Downloads',
+    items: [
+      config.paused
+        ? {
+            label: 'Resume Downloads',
+            description: 'Resume the global download queue so pending items can start again.',
+            icon: 'i-lucide-play',
+            onSelect: () => void resumeDownloads(),
+          }
+        : {
+            label: 'Pause Downloads',
+            description: 'Pause pending downloads without stopping items already in progress.',
+            icon: 'i-lucide-pause',
+            onSelect: () => void pauseDownloads(),
+          },
+    ],
+  },
+]);
+
+const closeRouteSearch = async (): Promise<void> => {
+  if (!showRouteSearch.value) {
+    return;
+  }
+
+  showRouteSearch.value = false;
+  await nextTick();
+};
+
+const pauseDownloads = async (): Promise<void> => {
+  await closeRouteSearch();
+
+  const { status } = await confirmDialog({
+    title: 'Pause Downloads',
+    confirmText: 'Pause',
+    cancelText: 'Cancel',
+    confirmColor: 'warning',
+    message: 'Are you sure you want to pause all non-active downloads?',
+  });
+
+  if (!status) {
+    return;
+  }
+
+  await request('/api/system/pause', { method: 'POST' });
+};
+
+const resumeDownloads = async (): Promise<void> => {
+  await closeRouteSearch();
+  await request('/api/system/resume', { method: 'POST' });
+};
+
+const syncShellModeClass = () => {
+  const html = document.documentElement;
+  html.classList.toggle('simple-mode', simpleMode.value);
+};
+
+const handleRouteSelect = async (item: NavEntry) => {
+  await closeRouteSearch();
+
+  if (item.to) {
+    await navigateTo(item.to);
+  }
+};
 
 const checkForUpdates = async () => {
   if (checkingUpdates.value) {
@@ -463,14 +786,12 @@ const checkForUpdates = async () => {
       config.app.yt_new_version = data.ytdlp.new_version;
     }
 
-    // Only show "Update found!" if app has update (button is in app section)
     if ('update_available' === data.app.status) {
       updateCheckMessage.value = 'Update found!';
     } else if ('up_to_date' === data.app.status && 'up_to_date' === data.ytdlp?.status) {
       updateCheckMessage.value = 'Up to date ✓';
       setTimeout(() => (updateCheckMessage.value = msg), 3000);
     } else if ('up_to_date' === data.app.status && 'update_available' === data.ytdlp?.status) {
-      // App is up to date, but yt-dlp has update (shows in yt-dlp section)
       updateCheckMessage.value = 'Up to date ✓';
       setTimeout(() => (updateCheckMessage.value = msg), 3000);
     } else {
@@ -486,82 +807,8 @@ const checkForUpdates = async () => {
   }
 };
 
-const applyPreferredColorScheme = (scheme: string) => {
-  if (!scheme || scheme === 'auto') {
-    return;
-  }
-
-  for (let s = 0; s < document.styleSheets.length; s++) {
-    const styleSheet = document.styleSheets[s];
-    if (!styleSheet?.cssRules) {
-      continue;
-    }
-
-    let rules: CSSRuleList;
-    try {
-      rules = styleSheet.cssRules;
-    } catch (e) {
-      // Cross-origin stylesheet
-      console.debug('Unable to access stylesheet rules:', e);
-      continue;
-    }
-
-    for (let i = 0; i < rules.length; i++) {
-      const rule = rules[i];
-
-      if (rule instanceof CSSMediaRule && rule.media.mediaText.includes('prefers-color-scheme')) {
-        const media = rule.media;
-
-        const safeDelete = (medium: string) => {
-          if (media.mediaText.includes(medium)) {
-            try {
-              media.deleteMedium(medium);
-            } catch (e) {
-              console.debug(`Failed to delete medium "${medium}"`, e);
-            }
-          }
-        };
-
-        try {
-          switch (scheme) {
-            case 'light':
-              if (!media.mediaText.includes('original-prefers-color-scheme')) {
-                media.appendMedium('original-prefers-color-scheme');
-              }
-              safeDelete('(prefers-color-scheme: light)');
-              safeDelete('(prefers-color-scheme: dark)');
-              break;
-
-            case 'dark':
-              if (!media.mediaText.includes('(prefers-color-scheme: light)')) {
-                media.appendMedium('(prefers-color-scheme: light)');
-              }
-              if (!media.mediaText.includes('(prefers-color-scheme: dark)')) {
-                media.appendMedium('(prefers-color-scheme: dark)');
-              }
-              safeDelete('original-prefers-color-scheme');
-              break;
-
-            default:
-              if (!media.mediaText.includes('(prefers-color-scheme: dark)')) {
-                media.appendMedium('(prefers-color-scheme: dark)');
-              }
-              safeDelete('(prefers-color-scheme: light)');
-              safeDelete('original-prefers-color-scheme');
-              break;
-          }
-        } catch (e) {
-          console.debug('Error modifying media rule:', e);
-        }
-      }
-    }
-  }
-};
-
 onMounted(async () => {
-  try {
-    applyPreferredColorScheme(selectedTheme.value);
-  } catch {}
+  syncShellModeClass();
 
   try {
     await config.loadConfig();
@@ -583,19 +830,8 @@ onMounted(async () => {
   } catch {}
 });
 
-watch(selectedTheme, (value) => {
-  try {
-    if ('auto' === value) {
-      applyPreferredColorScheme(
-        window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
-      );
-      return;
-    }
-    applyPreferredColorScheme(value);
-  } catch {}
-});
-
 watch(bg_enable, async (v) => await handleImage(v));
+watch(simpleMode, () => syncShellModeClass());
 watch(bg_opacity, (v) => {
   if (false === bg_enable.value) {
     return;
@@ -603,7 +839,7 @@ watch(bg_opacity, (v) => {
   document.querySelector('body')?.setAttribute('style', `opacity: ${v}`);
 });
 
-watch(loadedImage, (_) => {
+watch(loadedImage, () => {
   if (false === bg_enable.value) {
     return;
   }
@@ -632,12 +868,10 @@ watch(loadedImage, (_) => {
 
 const handleImage = async (enabled: boolean) => {
   if (false === enabled) {
-    if (!loadedImage.value) {
-      return;
-    }
-
     const html = document.documentElement;
     const body = document.querySelector('body');
+
+    html.classList.remove('bg-fanart');
 
     if (html.getAttribute('style')) {
       html.removeAttribute('style');
@@ -684,14 +918,6 @@ const loadImage = async (force = false) => {
   }
 };
 
-const changeRoute = async (_: MouseEvent, callback: (() => void) | null = null) => {
-  showMenu.value = false;
-  document.querySelectorAll('div.has-dropdown').forEach((el) => el.classList.remove('is-active'));
-  if (callback) {
-    callback();
-  }
-};
-
 const useVersionUpdate = () => {
   const newVersionIsAvailable = ref(false);
   const nuxtApp = useNuxtApp();
@@ -711,8 +937,6 @@ const { newVersionIsAvailable } = useVersionUpdate();
 const closeSettings = () => (show_settings.value = false);
 
 const shutdownApp = async () => {
-  const { alertDialog, confirmDialog: cDialog } = useDialog();
-
   if (false === config.app.is_native) {
     await alertDialog({
       title: 'Shutdown Unavailable',
@@ -721,7 +945,7 @@ const shutdownApp = async () => {
     return;
   }
 
-  const { status } = await cDialog({
+  const { status } = await confirmDialog({
     title: 'Shutdown Application',
     message: 'Are you sure you want to shutdown the application?',
   });
@@ -750,61 +974,74 @@ const shutdownApp = async () => {
   }
 };
 
-const openMenu = (e: MouseEvent) => {
-  const elm = (e.target as HTMLElement)?.closest('div.has-dropdown') as HTMLElement | null;
-
-  document.querySelectorAll<HTMLElement>('div.has-dropdown').forEach((el) => {
-    if (el !== elm) {
-      el.classList.remove('is-active');
-    }
-  });
-
-  elm?.classList.toggle('is-active');
-};
-
 const reloadPage = () => window.location.reload();
 
 const connectionStatusColor = computed(() => {
   switch (socket.connectionStatus) {
     case 'connected':
-      return 'has-text-success';
+      return 'text-success';
     case 'connecting':
-      return 'has-text-warning';
+      return 'text-warning';
     case 'disconnected':
     default:
-      return 'has-text-danger';
+      return 'text-error';
   }
 });
 
-const scrollToTop = () => document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' });
+const connectionStatusLabel = computed(() => {
+  switch (socket.connectionStatus) {
+    case 'connected':
+      return 'Connected';
+    case 'connecting':
+      return 'Connecting...';
+    case 'disconnected':
+    default:
+      return 'Disconnected';
+  }
+});
+
+const toastPosition = useStorage<toastPosition>('toast_position', 'top-right');
+
+const toasterConfig = computed(() => ({
+  position: toastPosition.value,
+  max: 5,
+  expand: true,
+  progress: true,
+}));
 </script>
 
 <style>
-#main_container,
-.basic-wrapper {
+.shell-stage {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.shell-mode-enter-active,
+.shell-mode-leave-active {
   transition:
-    transform 0.3s ease,
-    margin-right 0.3s ease;
+    opacity 0.28s ease,
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
-#main_container.settings-open,
-.basic-wrapper.settings-open {
-  transform: translateX(-300px);
+.shell-mode-enter-from,
+.shell-mode-leave-to {
+  opacity: 0;
+  transform: translateY(18px) scale(0.985);
 }
 
-@media screen and (max-width: 768px) {
-  #main_container.settings-open,
-  .basic-wrapper.settings-open {
-    transform: translateX(0);
-  }
+.shell-root {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
 
-  .footer .footer-divider {
-    border-left: none !important;
-    border-right: none !important;
-    padding: 0 !important;
-    border-top: 1px solid rgba(128, 128, 128, 0.2);
-    padding-top: 1.5rem !important;
-    margin-top: 1.5rem !important;
-  }
+.shell-dashboard {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.shell-footer {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 }
 </style>

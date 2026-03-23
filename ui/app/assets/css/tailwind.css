@@ -1,0 +1,121 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@layer base {
+  html,
+  body,
+  #__nuxt {
+    min-height: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  html.bg-fanart {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+
+  html.simple-mode.bg-fanart,
+  html.simple-mode.bg-fanart body,
+  html.simple-mode.bg-fanart #__nuxt {
+    background-color: transparent !important;
+  }
+
+  html.simple-mode.bg-fanart body,
+  html.simple-mode.bg-fanart #__nuxt {
+    background-image: none !important;
+  }
+}
+
+@layer components {
+  .play-overlay {
+    position: relative;
+    display: block;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+    overflow: hidden;
+    background: rgb(0 0 0 / 0.04);
+  }
+
+  .play-overlay img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    transition: transform 0.22s ease;
+  }
+
+  .play-overlay::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 0.18);
+    transition: background-color 0.22s ease;
+  }
+
+  .play-overlay:hover::after {
+    background: rgb(0 0 0 / 0.34);
+  }
+
+  .play-overlay:hover img {
+    transform: scale(1.02);
+  }
+
+  .play-icon {
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    display: flex;
+    height: 3.5rem;
+    width: 3.5rem;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(255 255 255 / 0.62);
+    border-radius: 9999px;
+    background: rgb(0 0 0 / 0.24);
+    box-shadow: 0 0.5rem 1.25rem rgb(0 0 0 / 0.16);
+    backdrop-filter: blur(2px);
+    transition:
+      transform 0.22s ease,
+      background-color 0.22s ease,
+      border-color 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+
+  .play-overlay:hover .play-icon {
+    transform: translate(-50%, -50%) scale(1.05);
+    background: rgb(0 0 0 / 0.55);
+    border-color: rgb(255 255 255 / 0.82);
+    box-shadow: 0 0.75rem 1.75rem rgb(0 0 0 / 0.22);
+  }
+
+  .play-icon.embed-icon {
+    border-color: rgb(239 68 68 / 0.68);
+    background: rgb(127 29 29 / 0.3);
+    box-shadow:
+      0 0 0 1px rgb(239 68 68 / 0.2),
+      0 0.5rem 1.25rem rgb(0 0 0 / 0.16);
+  }
+
+  .play-overlay:hover .play-icon.embed-icon {
+    background: rgb(127 29 29 / 0.74);
+    border-color: rgb(239 68 68 / 0.95);
+    box-shadow:
+      0 0 0 1px rgb(239 68 68 / 0.3),
+      0 0.75rem 1.75rem rgb(0 0 0 / 0.22);
+  }
+}
+
+:root {
+  --ui-radius: 0.5rem;
+  --ui-container: 96rem;
+  --ui-header-height: 4.25rem;
+}

@@ -725,25 +725,49 @@ const decode = (str: string): object => {
   return JSON.parse(jsonStr);
 };
 
-const disableOpacity = (): boolean => {
-  const bg_enable = useStorage<boolean>('random_bg', true);
-  if (!bg_enable) {
+let opacityLockCount = 0;
+
+const getStorageValue = <T>(key: string, defaultValue: T, missingValue: T = defaultValue): T => {
+  const stored = useStorage<T>(key, defaultValue);
+  if (!stored || typeof stored !== 'object' || !('value' in stored)) {
+    return missingValue;
+  }
+
+  return (stored.value === undefined ? defaultValue : stored.value) as T;
+};
+
+const setBodyOpacity = (value: string): boolean => {
+  const body = document.querySelector('body');
+  if (!body) {
     return false;
   }
 
-  document.querySelector('body')?.setAttribute('style', `opacity: 1.0`);
+  body.setAttribute('style', `opacity: ${value}`);
   return true;
 };
 
-const enableOpacity = (): boolean => {
-  const bg_enable = useStorage<boolean>('random_bg', true);
-  if (!bg_enable) {
+const disableOpacity = (): boolean => {
+  if (!getStorageValue<boolean>('random_bg', true, false)) {
+    opacityLockCount = 0;
     return false;
   }
 
-  const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
-  document.querySelector('body')?.setAttribute('style', `opacity: ${bg_opacity.value}`);
-  return true;
+  opacityLockCount += 1;
+  return setBodyOpacity('1.0');
+};
+
+const enableOpacity = (): boolean => {
+  if (!getStorageValue<boolean>('random_bg', true, false)) {
+    opacityLockCount = 0;
+    return false;
+  }
+
+  opacityLockCount = Math.max(0, opacityLockCount - 1);
+  if (opacityLockCount > 0) {
+    return setBodyOpacity('1.0');
+  }
+
+  return setBodyOpacity(String(getStorageValue<number>('random_bg_opacity', 0.95)));
 };
 
 const stripPath = (base_path: string, real_path: string): string => {

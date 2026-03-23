@@ -5,7 +5,7 @@
   align-items: center;
   height: auto;
   max-height: 80vh;
-  max-width: 80vw;
+  max-width: 100%;
   position: relative;
 }
 
@@ -112,25 +112,27 @@
         />
       </video>
 
-      <div class="is-flex is-justify-content-space-between">
+      <div class="flex items-center justify-between gap-3">
         <div>
-          <span
+          <button
             v-if="infoLoaded && !usingHls && hasVideoStream"
-            class="is-hidden-mobile has-text-info is-pointer"
+            type="button"
+            class="hidden items-center gap-2 text-info transition-colors hover:text-info/80 md:inline-flex"
             @click.prevent="forceSwitchToHls"
           >
-            <span class="icon"><i class="fa-solid fa-arrows-rotate" /></span>
+            <UIcon name="i-lucide-refresh-cw" class="size-4" />
             <span>Trouble playing? switch to HLS stream.</span>
-          </span>
+          </button>
         </div>
         <div>
-          <span
-            class="is-hidden-mobile has-text-grey-lighter is-pointer"
+          <button
+            type="button"
+            class="hidden items-center gap-2 text-toned transition-colors hover:text-default md:inline-flex"
             @click="showHelp = !showHelp"
           >
-            <span class="icon"><i class="fa-solid fa-question" /></span>
+            <UIcon name="i-lucide-circle-help" class="size-4" />
             <span>Show keyboard shortcuts with <kbd>?</kbd> or <kbd>/</kbd></span>
-          </span>
+          </button>
         </div>
       </div>
 
@@ -270,10 +272,8 @@
       </div>
     </div>
   </div>
-  <div style="text-align: center" v-else>
-    <div class="icon">
-      <i class="fa-solid fa-spinner fa-spin fa-4x" />
-    </div>
+  <div v-else class="flex justify-center py-10">
+    <UIcon name="i-lucide-loader-circle" class="size-16 animate-spin text-toned" />
   </div>
 </template>
 

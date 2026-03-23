@@ -1,6 +1,6 @@
 <template>
   <div
-    class="file-dropzone is-relative"
+    class="relative flex h-full w-full cursor-text flex-col"
     :class="{ 'is-dragging': isDragging }"
     @drop.prevent="handleDrop"
     @dragover.prevent="handleDragOver"
@@ -8,24 +8,34 @@
     @dragleave.prevent="handleDragLeave"
     @click="handleClick"
   >
-    <textarea
+    <UTextarea
+      :id="id"
       ref="textareaRef"
-      class="control textarea is-fullwidth"
-      :class="{ 'is-focused': isDragging }"
-      :value="model"
-      @input="handleInput"
+      v-model="model"
       :disabled="disabled"
       :placeholder="placeholder"
-      :id="id"
+      :rows="rows"
+      size="lg"
+      variant="outline"
+      color="neutral"
+      class="h-full w-full"
+      :ui="{
+        root: 'w-full',
+        base: 'min-h-[10rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
+      }"
     />
 
     <div
       v-if="isDragging"
-      class="dropzone-overlay has-background-success-90 is-flex is-align-items-center is-justify-content-center"
+      class="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded-md border border-dashed border-success bg-success/15"
     >
-      <div class="has-text-centered has-text-dark">
-        <span class="icon is-large"><i class="fa-solid fa-file-arrow-down fa-3x" /></span>
-        <p class="mt-3 is-size-5 has-text-weight-bold">Drop file here</p>
+      <div class="text-center text-success">
+        <span
+          class="mb-3 inline-flex size-12 items-center justify-center rounded-full bg-success/15"
+        >
+          <UIcon name="i-lucide-file-down" class="size-5" />
+        </span>
+        <p class="text-sm font-semibold">Drop file here</p>
       </div>
     </div>
 
@@ -33,8 +43,8 @@
       ref="fileInputRef"
       type="file"
       :accept="accept"
+      class="hidden"
       @change="handleFileSelect"
-      style="display: none"
     />
   </div>
 </template>
@@ -42,35 +52,33 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-interface Props {
-  disabled?: boolean;
-  placeholder?: string;
-  id?: string;
-  accept?: string;
-  maxSize?: number;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  disabled: false,
-  placeholder: '',
-  id: '',
-  accept: '',
-  maxSize: 2 * 1024 * 1024,
-});
+const props = withDefaults(
+  defineProps<{
+    disabled?: boolean;
+    placeholder?: string;
+    id?: string;
+    accept?: string;
+    maxSize?: number;
+    rows?: number;
+  }>(),
+  {
+    disabled: false,
+    placeholder: '',
+    id: '',
+    accept: '',
+    maxSize: 2 * 1024 * 1024,
+    rows: 5,
+  },
+);
 
 const model = defineModel<string>({ default: '' });
 
 const emit = defineEmits<{ error: [message: string] }>();
 
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = ref<{ textareaRef?: HTMLTextAreaElement | null } | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isDragging = ref<boolean>(false);
 const dragCounter = ref<number>(0);
-
-const handleInput = (event: Event): void => {
-  const target = event.target as HTMLTextAreaElement;
-  model.value = target.value;
-};
 
 const handleDragEnter = (event: DragEvent): void => {
   if (props.disabled) {
@@ -83,14 +91,15 @@ const handleDragEnter = (event: DragEvent): void => {
   }
 };
 
-const handleDragLeave = (_event: DragEvent): void => {
+const handleDragLeave = (): void => {
   if (props.disabled) {
     return;
   }
 
   dragCounter.value--;
-  if (0 === dragCounter.value) {
+  if (dragCounter.value <= 0) {
     isDragging.value = false;
+    dragCounter.value = 0;
   }
 };
 
@@ -133,7 +142,7 @@ const handleClick = (event: MouseEvent): void => {
     return;
   }
 
-  if (event && event.target === textareaRef.value) {
+  if (event.target === textareaRef.value?.textareaRef) {
     return;
   }
 };
@@ -161,26 +170,19 @@ const processFile = async (file: File): Promise<void> => {
     if (file.size > props.maxSize) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(2);
       const maxSizeMB = (props.maxSize / 1024 / 1024).toFixed(2);
-      const errorMsg = `File too large: ${sizeMB}MB. Maximum allowed size is ${maxSizeMB}MB.`;
-      emit('error', errorMsg);
-      console.error(errorMsg);
+      emit('error', `File too large: ${sizeMB}MB. Maximum allowed size is ${maxSizeMB}MB.`);
       return;
     }
 
     const isBinary = await checkIfBinary(file);
     if (isBinary) {
-      const errorMsg = 'File appears to be binary. Please provide a text file.';
-      emit('error', errorMsg);
-      console.error(errorMsg);
+      emit('error', 'File appears to be binary. Please provide a text file.');
       return;
     }
 
-    const text = await readFileAsText(file);
-    model.value = text;
+    model.value = await readFileAsText(file);
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Failed to read file';
-    emit('error', errorMsg);
-    console.error('Failed to read file:', error);
+    emit('error', error instanceof Error ? error.message : 'Failed to read file');
   }
 };
 
@@ -198,21 +200,13 @@ const checkIfBinary = async (file: File): Promise<boolean> => {
       }
 
       const bytes = new Uint8Array(e.target.result as ArrayBuffer);
-
       let nullBytes = 0;
       let nonPrintable = 0;
 
-      for (let i = 0; i < bytes.length; i++) {
-        const byte = bytes[i];
-
-        if (undefined === byte) {
-          continue;
-        }
-
+      for (const byte of bytes) {
         if (0 === byte) {
           nullBytes++;
         }
-
         if (9 !== byte && 10 !== byte && 13 !== byte && (byte < 32 || byte > 126)) {
           nonPrintable++;
         }
@@ -226,8 +220,8 @@ const checkIfBinary = async (file: File): Promise<boolean> => {
   });
 };
 
-const readFileAsText = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const readFileAsText = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = (e: ProgressEvent<FileReader>) => {
@@ -241,7 +235,6 @@ const readFileAsText = (file: File): Promise<string> => {
     reader.onerror = () => reject(new Error('File reading error'));
     reader.readAsText(file);
   });
-};
 
 const triggerFileSelect = (): void => {
   if (props.disabled) {
@@ -250,27 +243,5 @@ const triggerFileSelect = (): void => {
   fileInputRef.value?.click();
 };
 
-defineExpose({ triggerFileSelect });
+defineExpose({ triggerFileSelect, textareaRef });
 </script>
-
-<style>
-.file-dropzone {
-  cursor: text;
-}
-
-.dropzone-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 4px;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.file-dropzone.is-dragging textarea {
-  box-shadow: --var(--bulma-card-shadow) !important;
-  border-color: --var(--bulma-success);
-}
-</style>

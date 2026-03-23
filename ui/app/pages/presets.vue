@@ -1,348 +1,340 @@
 <template>
-  <main>
-    <div class="mt-1 columns is-multiline">
-      <div class="column is-12 is-clearfix is-unselectable">
-        <span class="title is-4">
-          <span class="icon-text">
-            <template v-if="toggleForm">
-              <span class="icon"
-                ><i class="fa-solid" :class="{ 'fa-edit': presetRef, 'fa-plus': !presetRef }"
-              /></span>
-              <span>{{ presetRef ? `Edit - ${prettyName(preset.name || '')}` : 'Add' }}</span>
-            </template>
-            <template v-else>
-              <span class="icon"><i class="fa-solid fa-sliders" /></span>
-              <span>Presets</span>
-            </template>
-          </span>
-        </span>
-        <div class="is-pulled-right" v-if="!toggleForm">
-          <div class="field is-grouped">
-            <p class="control has-icons-left" v-if="toggleFilter && presets && presets.length > 0">
-              <input
-                type="search"
-                v-model.lazy="query"
-                class="input"
-                id="filter"
-                placeholder="Filter displayed content"
-              />
-              <span class="icon is-left"><i class="fas fa-filter" /></span>
-            </p>
-
-            <p class="control" v-if="presets && presets.length > 0">
-              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
-                <span class="icon"><i class="fas fa-filter" /></span>
-                <span v-if="!isMobile">Filter</span>
-              </button>
-            </p>
-
-            <p class="control">
-              <button
-                class="button is-primary"
-                @click="
-                  resetForm(false);
-                  toggleForm = !toggleForm;
-                "
-                v-tooltip.bottom="'Toggle add form'"
-              >
-                <span class="icon"><i class="fas fa-add" /></span>
-                <span v-if="!isMobile">New Preset</span>
-              </button>
-            </p>
-
-            <p class="control">
-              <button
-                v-tooltip.bottom="'Change display style'"
-                class="button has-tooltip-bottom"
-                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
-              >
-                <span class="icon">
-                  <i
-                    class="fa-solid"
-                    :class="{
-                      'fa-table': display_style !== 'list',
-                      'fa-table-list': display_style === 'list',
-                    }"
-                /></span>
-                <span v-if="!isMobile">
-                  {{ display_style === 'list' ? 'List' : 'Grid' }}
-                </span>
-              </button>
-            </p>
-
-            <p class="control">
-              <button
-                class="button is-info"
-                @click="reloadContent()"
-                :class="{ 'is-loading': isLoading }"
-                :disabled="isLoading"
-                v-if="presets && presets.length > 0"
-              >
-                <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="!isMobile">Reload</span>
-              </button>
-            </p>
-          </div>
+  <main class="w-full min-w-0 max-w-full space-y-4">
+    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div class="min-w-0 space-y-1">
+        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+          <UIcon name="i-lucide-sliders-horizontal" class="size-5 text-toned" />
+          <span>Presets</span>
         </div>
-        <div class="is-hidden-mobile" v-if="!toggleForm">
-          <span class="subtitle"
-            >Presets are pre-defined command options for yt-dlp that you want to apply to given
-            download.</span
+
+        <p class="text-sm text-toned">
+          Presets are pre-defined command options for yt-dlp that you want to apply to given
+          download.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <div v-if="showFilter && presetsNoDefault.length > 0" class="relative w-full sm:w-80">
+          <span
+            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
           >
+            <UIcon name="i-lucide-filter" class="size-4" />
+          </span>
+          <input
+            id="filter"
+            ref="filterInput"
+            v-model="query"
+            type="search"
+            placeholder="Filter displayed content"
+            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
+          />
         </div>
+
+        <UButton
+          v-if="presetsNoDefault.length > 0"
+          color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilterPanel"
+        >
+          <span v-if="!isMobile">Filter</span>
+        </UButton>
+
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="editor.openCreate()"
+        >
+          <span v-if="!isMobile">New Preset</span>
+        </UButton>
+
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          @click="toggleDisplayStyle"
+        >
+          <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
+
+        <UButton
+          v-if="presets.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent()"
+        >
+          <span v-if="!isMobile">Reload</span>
+        </UButton>
       </div>
     </div>
 
-    <div class="columns" v-if="toggleForm">
-      <div class="column is-12">
-        <PresetForm
-          :addInProgress="addInProgress"
-          :reference="presetRef"
-          :preset="preset"
-          @cancel="resetForm(true)"
-          @submit="updateItem"
-          :presets="presets"
-        />
-      </div>
-    </div>
+    <div
+      v-if="display_style === 'list' && filteredPresets.length > 0"
+      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+    >
+      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table class="min-w-190 w-full text-sm">
+          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-full text-left">Preset</th>
+              <th class="w-[1%]">Actions</th>
+            </tr>
+          </thead>
 
-    <template v-if="!toggleForm">
-      <div
-        class="columns is-multiline"
-        v-if="!isLoading && presetsNoDefault && presetsNoDefault.length > 0"
-      >
-        <template v-if="'list' === display_style">
-          <div class="column is-12">
-            <div class="table-container">
-              <table
-                class="table is-striped is-hoverable is-fullwidth is-bordered"
-                style="min-width: 650px; table-layout: fixed"
-              >
-                <thead>
-                  <tr class="has-text-centered is-unselectable">
-                    <th width="80%">Preset</th>
-                    <th width="20%">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="item in filteredPresets" :key="item.id">
-                    <td class="is-text-overflow is-vcentered">
-                      <div class="is-text-overflow is-bold">
-                        {{ prettyName(item.name) }}
-                      </div>
-                      <div class="is-unselectable">
-                        <span class="icon-text" :class="{ 'has-text-primary': item.cookies }">
-                          <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                          <span>{{ item.cookies ? 'Has cookies' : 'No cookies' }}</span>
-                        </span>
-                        &nbsp;
-                        <template v-if="item.priority > 0">
-                          &nbsp;
-                          <span class="icon-text">
-                            <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                            <span>Priority: {{ item.priority }}</span>
-                          </span>
-                        </template>
-                      </div>
-                    </td>
-                    <td class="is-vcentered is-items-center">
-                      <div class="field is-grouped is-grouped-centered">
-                        <div class="control">
-                          <button
-                            class="button is-info is-small is-fullwidth"
-                            @click="exportItem(item)"
-                          >
-                            <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                            <span v-if="!isMobile">Export</span>
-                          </button>
-                        </div>
-                        <div class="control">
-                          <button
-                            class="button is-warning is-small is-fullwidth"
-                            @click="editItem(item)"
-                          >
-                            <span class="icon"><i class="fa-solid fa-cog" /></span>
-                            <span v-if="!isMobile">Edit</span>
-                          </button>
-                        </div>
-                        <div class="control">
-                          <button
-                            class="button is-danger is-small is-fullwidth"
-                            @click="deleteItem(item)"
-                          >
-                            <span class="icon"><i class="fa-solid fa-trash" /></span>
-                            <span v-if="!isMobile">Delete</span>
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </template>
+          <tbody class="divide-y divide-default">
+            <tr v-for="item in filteredPresets" :key="item.id" class="hover:bg-muted/20">
+              <td class="px-3 py-3 align-middle">
+                <div class="space-y-1">
+                  <div class="font-semibold text-highlighted">
+                    {{ prettyName(item.name) }}
+                  </div>
 
-        <template v-else>
-          <div class="column is-6" v-for="item in filteredPresets" :key="item.id">
-            <div class="card is-flex is-full-height is-flex-direction-column">
-              <header class="card-header">
-                <div
-                  class="card-header-title is-block is-clickable"
-                  :class="{ 'is-text-overflow': !isExpanded(item.id, 'title') }"
-                  @click="toggleExpand(item.id, 'title')"
-                  :title="!isExpanded(item.id, 'title') ? 'Click to expand' : 'Click to collapse'"
-                  v-text="prettyName(item.name)"
-                />
-                <div class="card-header-icon">
-                  <div class="field is-grouped">
-                    <div class="control" v-if="item.priority > 0">
-                      <span class="tag is-dark">
-                        <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                        <span v-text="item.priority" />
-                      </span>
-                    </div>
-                    <div class="control" v-if="item.cookies" v-tooltip="'This preset has cookies'">
-                      <span class="icon has-text-primary"><i class="fa-solid fa-cookie" /></span>
-                    </div>
-                    <div class="control">
-                      <button
-                        class="has-text-info"
-                        v-tooltip="'Export preset'"
-                        @click="exportItem(item)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                      </button>
-                    </div>
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
+                    <span
+                      class="inline-flex items-center gap-1"
+                      :class="item.cookies ? 'text-info' : ''"
+                    >
+                      <UIcon name="i-lucide-cookie" class="size-3.5" />
+                      <span>{{ item.cookies ? 'Has cookies' : 'No cookies' }}</span>
+                    </span>
+
+                    <span v-if="item.priority > 0" class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                      <span>Priority: {{ item.priority }}</span>
+                    </span>
                   </div>
                 </div>
-              </header>
-              <div class="card-content is-flex-grow-1">
-                <div class="content">
-                  <template v-if="item.priority > 0">
-                    <p>
-                      <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                      <span>Priority: {{ item.priority }}</span>
-                    </p>
-                  </template>
-                  <p
-                    :class="{
-                      'is-text-overflow': !isExpanded(item.id, 'folder'),
-                      'is-clickable': true,
-                    }"
-                    v-if="item.folder"
-                    @click="toggleExpand(item.id, 'folder')"
-                    :title="
-                      !isExpanded(item.id, 'folder') ? 'Click to expand' : 'Click to collapse'
-                    "
+              </td>
+
+              <td class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <UButton
+                    color="info"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-file-up"
+                    @click="exportItem(item)"
                   >
-                    <span class="icon"><i class="fa-solid fa-save" /></span>
-                    <span>{{ calcPath(item.folder) }}</span>
-                  </p>
-                  <p
-                    :class="{
-                      'is-text-overflow': !isExpanded(item.id, 'template'),
-                      'is-clickable': true,
-                    }"
-                    v-if="item.template"
-                    @click="toggleExpand(item.id, 'template')"
-                    :title="
-                      !isExpanded(item.id, 'template') ? 'Click to expand' : 'Click to collapse'
-                    "
+                    <span v-if="!isMobile">Export</span>
+                  </UButton>
+
+                  <UButton
+                    color="warning"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-pencil"
+                    @click="editor.openEdit(item)"
                   >
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    <span>{{ item.template }}</span>
-                  </p>
-                  <p
-                    :class="{
-                      'is-text-overflow': !isExpanded(item.id, 'cli'),
-                      'is-clickable': true,
-                    }"
-                    v-if="item.cli"
-                    @click="toggleExpand(item.id, 'cli')"
-                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'"
+                    <span v-if="!isMobile">Edit</span>
+                  </UButton>
+
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-trash"
+                    @click="() => void deleteItem(item)"
                   >
-                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>{{ item.cli }}</span>
-                  </p>
-                  <p
-                    :class="{
-                      'is-text-overflow': !isExpanded(item.id, 'description'),
-                      'is-clickable': true,
-                    }"
-                    v-if="item.description"
-                    @click="toggleExpand(item.id, 'description')"
-                    :title="!isExpanded(item.id, 'cli') ? 'Click to expand' : 'Click to collapse'"
-                  >
-                    <span class="icon"><i class="fa-solid fa-d" /></span>
-                    <span>{{ item.description }}</span>
-                  </p>
+                    <span v-if="!isMobile">Delete</span>
+                  </UButton>
                 </div>
-              </div>
-              <div
-                class="card-content content m-1 p-1 is-overflow-auto"
-                style="max-height: 300px"
-                v-if="item?.toggle_description"
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-else-if="filteredPresets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <UCard
+        v-for="item in filteredPresets"
+        :key="item.id"
+        class="flex h-full flex-col border bg-default"
+        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+      >
+        <template #header>
+          <div class="flex items-start justify-between gap-3">
+            <button
+              type="button"
+              class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+              @click="toggleExpand(item.id, 'title')"
+            >
+              <span
+                :class="
+                  !isExpanded(item.id, 'title') ? 'block truncate' : 'block whitespace-pre-wrap'
+                "
               >
-                <div class="is-pre-wrap">{{ item.description }}</div>
-              </div>
-              <div class="card-footer mt-auto">
-                <div class="card-footer-item">
-                  <button class="button is-warning is-fullwidth" @click="editItem(item)">
-                    <span class="icon"><i class="fa-solid fa-edit" /></span>
-                    <span>Edit</span>
-                  </button>
-                </div>
-                <div class="card-footer-item">
-                  <button class="button is-danger is-fullwidth" @click="deleteItem(item)">
-                    <span class="icon"><i class="fa-solid fa-trash" /></span>
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+                {{ prettyName(item.name) }}
+              </span>
+            </button>
+
+            <UButton
+              color="info"
+              variant="ghost"
+              size="xs"
+              icon="i-lucide-file-up"
+              square
+              @click="exportItem(item)"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+            <span
+              class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              :class="item.cookies ? 'border-info/40 text-info' : ''"
+            >
+              <UIcon name="i-lucide-cookie" class="size-3.5" />
+              <span>{{ item.cookies ? 'Has cookies' : 'No cookies' }}</span>
+            </span>
+
+            <span
+              v-if="item.priority > 0"
+              class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+            >
+              <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+              <span>Priority {{ item.priority }}</span>
+            </span>
           </div>
         </template>
-      </div>
 
-      <div
-        class="columns is-multiline"
-        v-if="!toggleForm && (isLoading || !filteredPresets || filteredPresets.length < 1)"
-      >
-        <div class="column is-12">
-          <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
-            Loading data. Please wait...
-          </Message>
-          <Message
-            title="No Results"
-            class="is-warning"
-            icon="fas fa-search"
-            v-else-if="query"
-            :useClose="true"
-            @close="query = ''"
+        <div class="space-y-2 text-sm text-default">
+          <button
+            v-if="item.folder"
+            type="button"
+            class="flex w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+            @click="toggleExpand(item.id, 'folder')"
           >
-            <p>
-              No results found for the query: <code>{{ query }}</code
-              >.
-            </p>
-            <p>Please try a different search term.</p>
-          </Message>
-          <Message v-else title="No presets" class="is-warning" icon="fas fa-exclamation-circle">
-            There are no custom defined presets.
-          </Message>
-        </div>
-      </div>
+            <UIcon name="i-lucide-folder-output" class="mt-0.5 size-4 shrink-0 text-toned" />
+            <span :class="expandClass(item.id, 'folder')">{{ calcPath(item.folder) }}</span>
+          </button>
 
-      <div class="columns is-multiline" v-if="!query && presets && presets.length > 0">
-        <div class="column is-12">
-          <Message class="is-info">
-            <span class="icon"><i class="fas fa-info-circle" /></span>
-            When you <b>export</b> preset, it doesn't include the <code>cookies</code> field
-            contents for security reasons.
-          </Message>
+          <button
+            v-if="item.template"
+            type="button"
+            class="flex w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+            @click="toggleExpand(item.id, 'template')"
+          >
+            <UIcon name="i-lucide-file-code-2" class="mt-0.5 size-4 shrink-0 text-toned" />
+            <span :class="expandClass(item.id, 'template')">{{ item.template }}</span>
+          </button>
+
+          <button
+            v-if="item.cli"
+            type="button"
+            class="flex w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+            @click="toggleExpand(item.id, 'cli')"
+          >
+            <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
+            <span :class="expandClass(item.id, 'cli')">{{ item.cli }}</span>
+          </button>
+
+          <button
+            v-if="item.description"
+            type="button"
+            class="flex w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+            @click="toggleExpand(item.id, 'description')"
+          >
+            <UIcon name="i-lucide-align-left" class="mt-0.5 size-4 shrink-0 text-toned" />
+            <span :class="expandClass(item.id, 'description')">{{ item.description }}</span>
+          </button>
         </div>
-      </div>
-    </template>
+
+        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+          <UButton
+            color="warning"
+            variant="outline"
+            icon="i-lucide-pencil"
+            class="w-full justify-center"
+            @click="editor.openEdit(item)"
+          >
+            Edit
+          </UButton>
+
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash"
+            class="w-full justify-center"
+            @click="() => void deleteItem(item)"
+          >
+            Delete
+          </UButton>
+        </div>
+      </UCard>
+    </div>
+
+    <UAlert
+      v-if="isLoading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading"
+      description="Loading data. Please wait..."
+    />
+
+    <div v-else-if="query && filteredPresets.length < 1" class="space-y-3">
+      <UAlert
+        color="warning"
+        variant="soft"
+        icon="i-lucide-search"
+        title="No Results"
+        :description="`No results found for the query: ${query}. Please try a different search term.`"
+      />
+
+      <UButton color="neutral" variant="outline" size="sm" @click="query = ''"
+        >Clear filter</UButton
+      >
+    </div>
+
+    <UAlert
+      v-else-if="!filteredPresets.length"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-circle-alert"
+      title="No presets"
+      description="There are no custom defined presets."
+    />
+
+    <UAlert v-if="!query && presets.length > 0" color="info" variant="soft">
+      <template #description>
+        <ul class="list-disc space-y-2 pl-5 text-sm text-default">
+          <li>
+            When you export preset, it doesn't include the cookies field contents for security
+            reasons.
+          </li>
+        </ul>
+      </template>
+    </UAlert>
+
+    <UModal
+      v-if="editor.isOpen.value"
+      :open="editor.isOpen.value"
+      :title="editor.modalTitle.value"
+      :description="editor.modalDescription.value"
+      :dismissible="!editor.addInProgress.value"
+      :ui="{ content: 'w-full sm:max-w-6xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
+      @update:open="(open) => !open && void editor.requestClose()"
+    >
+      <template #body>
+        <PresetForm
+          :key="editor.modalKey.value"
+          :addInProgress="editor.addInProgress.value"
+          :reference="editor.reference.value"
+          :preset="editor.preset.value"
+          :presets="presets"
+          @cancel="() => void editor.requestClose()"
+          @submit="editor.submit"
+        />
+      </template>
+    </UModal>
   </main>
 </template>
 
@@ -350,7 +342,6 @@
 import { useStorage } from '@vueuse/core';
 import type { Preset } from '~/types/presets';
 import { useConfirm } from '~/composables/useConfirm';
-import { usePresets } from '~/composables/usePresets';
 import { prettyName } from '~/utils';
 
 type PresetWithUI = Preset & { raw?: boolean; toggle_description?: boolean };
@@ -358,72 +349,54 @@ type PresetWithUI = Preset & { raw?: boolean; toggle_description?: boolean };
 const presetsStore = usePresets();
 const config = useConfigStore();
 const box = useConfirm();
+const editor = usePresetEditor();
 
-const display_style = useStorage<string>('preset_display_style', 'cards');
+const display_style = useStorage<string>('preset_display_style', 'grid');
 const isMobile = useMediaQuery({ maxWidth: 1024 });
 
-const query = ref<string>('');
-const toggleFilter = ref(false);
+const query = ref('');
+const showFilter = ref(false);
+const filterInput = ref<HTMLInputElement | null>(null);
 
-const presets = presetsStore.presets as Ref<PresetWithUI[]>;
-const preset = ref<Partial<Preset>>({});
-const presetRef = ref<number | null>(null);
-const toggleForm = ref(false);
+const presets = computed(() => presetsStore.presets.value as PresetWithUI[]);
 const isLoading = presetsStore.isLoading;
-const addInProgress = presetsStore.addInProgress;
-const remove_keys = ['raw', 'toggle_description'];
 const expandedItems = ref<Record<string, Set<string>>>({});
 
-const presetsNoDefault = computed(() => presets.value.filter((t) => !t.default));
+const presetsNoDefault = computed(() => presets.value.filter((item) => !item.default));
 
 const filteredPresets = computed<PresetWithUI[]>(() => {
-  const q = query.value?.toLowerCase();
-  if (!q) return presetsNoDefault.value;
-  return presetsNoDefault.value.filter((item: PresetWithUI) =>
-    deepIncludes(item, q, new WeakSet()),
+  const normalizedQuery = query.value?.toLowerCase();
+  if (!normalizedQuery) {
+    return presetsNoDefault.value;
+  }
+
+  return presetsNoDefault.value.filter((item) =>
+    deepIncludes(item, normalizedQuery, new WeakSet()),
   );
 });
 
-const toggleExpand = (itemId: number | string | undefined, field: string) => {
-  if (itemId === undefined || itemId === null) return;
-  const key = String(itemId);
-
-  if (!expandedItems.value[key]) {
-    expandedItems.value[key] = new Set();
-  }
-
-  if (expandedItems.value[key].has(field)) {
-    expandedItems.value[key].delete(field);
-  } else {
-    expandedItems.value[key].add(field);
-  }
-};
-
-const isExpanded = (itemId: number | string | undefined, field: string): boolean => {
-  if (itemId === undefined || itemId === null) return false;
-  const key = String(itemId);
-  return expandedItems.value[key]?.has(field) ?? false;
-};
-
-watch(toggleFilter, (val) => {
-  if (!val) {
+watch(showFilter, (value) => {
+  if (!value) {
     query.value = '';
   }
 });
 
-const reloadContent = async () => {
+const toggleFilterPanel = async (): Promise<void> => {
+  showFilter.value = !showFilter.value;
+  if (!showFilter.value) {
+    query.value = '';
+    return;
+  }
+
+  await nextTick();
+  filterInput.value?.focus();
+};
+
+const reloadContent = async (): Promise<void> => {
   await presetsStore.loadPresets(1, 1000);
 };
 
-const resetForm = (closeForm = false) => {
-  preset.value = {};
-  presetRef.value = null;
-  if (closeForm) {
-    toggleForm.value = false;
-  }
-};
-
-const deleteItem = async (item: Preset) => {
+const deleteItem = async (item: Preset): Promise<void> => {
   if (true !== (await box.confirm(`Delete preset '${item.name}'?`))) {
     return;
   }
@@ -433,44 +406,40 @@ const deleteItem = async (item: Preset) => {
   }
 };
 
-const updateItem = async ({
-  reference,
-  preset: item,
-}: {
-  reference: number | null;
-  preset: Preset;
-}) => {
-  item = cleanObject(item, remove_keys) as Preset;
-  if (reference) {
-    const updated = await presetsStore.updatePreset(reference, item);
-    if (updated) {
-      resetForm(true);
-    }
+const toggleDisplayStyle = (): void => {
+  display_style.value = display_style.value === 'list' ? 'grid' : 'list';
+};
+
+const toggleExpand = (itemId: number | string | undefined, field: string): void => {
+  if (itemId === undefined || itemId === null) {
+    return;
+  }
+
+  const key = String(itemId);
+  if (!expandedItems.value[key]) {
+    expandedItems.value[key] = new Set();
+  }
+
+  if (expandedItems.value[key]?.has(field)) {
+    expandedItems.value[key]?.delete(field);
   } else {
-    const created = await presetsStore.createPreset(item);
-    if (created) {
-      resetForm(true);
-    }
+    expandedItems.value[key]?.add(field);
   }
 };
 
-const filterItem = (item: Preset) => {
-  const rest = cleanObject(item, remove_keys);
-  if ('default' in rest) {
-    delete rest.default;
+const isExpanded = (itemId: number | string | undefined, field: string): boolean => {
+  if (itemId === undefined || itemId === null) {
+    return false;
   }
-  return JSON.stringify(rest, null, 2);
+
+  return expandedItems.value[String(itemId)]?.has(field) ?? false;
 };
 
-const editItem = (item: Preset) => {
-  preset.value = JSON.parse(filterItem(item));
-  presetRef.value = item.id ?? null;
-  toggleForm.value = true;
+const expandClass = (itemId: number | string | undefined, field: string): string => {
+  return isExpanded(itemId, field) ? 'whitespace-pre-wrap break-words' : 'truncate';
 };
 
-onMounted(async () => await reloadContent());
-
-const exportItem = (item: Preset) => {
+const exportItem = (item: Preset): void => {
   const excludedKeys = ['id', 'default', 'raw', 'cookies', 'toggle_description'];
   const userData = Object.fromEntries(
     Object.entries(JSON.parse(JSON.stringify(item))).filter(
@@ -485,7 +454,9 @@ const exportItem = (item: Preset) => {
 };
 
 const calcPath = (path?: string): string => {
-  const loc = config.app.download_path || '/downloads';
-  return path ? loc + '/' + sTrim(path, '/') : loc;
+  const location = config.app.download_path || '/downloads';
+  return path ? location + '/' + sTrim(path, '/') : location;
 };
+
+onMounted(async () => await reloadContent());
 </script>

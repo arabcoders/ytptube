@@ -1,136 +1,94 @@
-<style scoped>
-/* container fades */
-.dialog-enter-active,
-.dialog-leave-active {
-  transition: opacity 0.18s ease;
-}
-
-.dialog-enter-from,
-.dialog-leave-to {
-  opacity: 0;
-}
-
-/* animate the card itself */
-.dialog-enter-active .modal-card,
-.dialog-leave-active .modal-card {
-  transition:
-    transform 0.18s ease,
-    opacity 0.18s ease;
-}
-
-.dialog-enter-from .modal-card {
-  transform: translateY(-8px);
-  opacity: 0.98;
-}
-
-.dialog-leave-to .modal-card {
-  transform: translateY(-8px);
-  opacity: 0.98;
-}
-</style>
-
 <template>
-  <Teleport to="body">
-    <transition name="dialog" @after-enter="focusInput">
+  <UModal
+    v-if="state.current"
+    :open="true"
+    :title="state.current?.opts.title ?? defaultTitle"
+    :dismissible="true"
+    :ui="{ content: 'max-w-lg', body: 'space-y-4', footer: 'justify-end gap-2' }"
+    @update:open="(open) => !open && onCancel()"
+    @after:enter="focusInput"
+  >
+    <template #body>
+      <p v-if="state.current?.opts.message">
+        {{ state.current?.opts.message }}
+      </p>
+
+      <UFormField v-if="'prompt' === state.current?.type" :error="state.errorMsg || undefined">
+        <UInput
+          ref="inputEl"
+          v-model="localInput"
+          :placeholder="(state.current?.opts as PromptOptions)?.placeholder ?? ''"
+          class="w-full"
+          @keydown.enter.stop.prevent="onEnter"
+        />
+      </UFormField>
+
       <div
-        id="app-dialog-host"
-        v-if="state.current"
-        class="modal is-active"
-        @keydown.esc="onCancel"
+        v-else-if="
+          'confirm' === state.current?.type && (state.current?.opts as ConfirmOptions)?.rawHTML
+        "
+        class="max-h-[40vh] overflow-auto text-sm text-default"
+        v-html="(state.current?.opts as ConfirmOptions)?.rawHTML"
+      />
+
+      <div
+        v-if="
+          'confirm' === state.current?.type &&
+          (state.current?.opts as ConfirmOptions)?.options?.length
+        "
+        class="space-y-3 border-t border-default pt-4"
       >
-        <div class="modal-background" @click="onCancel" />
-        <div class="modal-card" @keydown.enter.stop.prevent="onEnter">
-          <header class="modal-card-head p-4">
-            <p class="modal-card-title">{{ state.current?.opts.title ?? defaultTitle }}</p>
-            <button class="delete" aria-label="close" @click="onCancel" />
-          </header>
-
-          <section class="modal-card-body">
-            <p v-if="state.current?.opts.message" class="mb-3">
-              {{ state.current?.opts.message }}
-            </p>
-
-            <!-- prompt input -->
-            <div v-if="'prompt' === state.current?.type" class="field">
-              <div class="control">
-                <input
-                  ref="inputEl"
-                  class="input"
-                  type="text"
-                  v-model="localInput"
-                  :placeholder="(state.current?.opts as any)?.placeholder ?? ''"
-                  @keyup.stop
-                />
-              </div>
-              <p v-if="state.errorMsg" class="help is-danger is-bold is-unselectable">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-exclamation-triangle" /></span>
-                  <span>{{ state.errorMsg }}</span>
-                </span>
-              </p>
-            </div>
-            <div
-              v-else-if="
-                'confirm' === state.current?.type &&
-                (state.current?.opts as ConfirmOptions)?.rawHTML
-              "
-              class="content"
-              v-html="(state.current?.opts as ConfirmOptions)?.rawHTML"
-            />
-          </section>
-
-          <footer class="modal-card-foot p-4 is-justify-content-flex-end">
-            <template v-if="'alert' === state.current?.type">
-              <button id="primaryButton" class="button is-danger" @click="onEnter">
-                <span class="icon-text">
-                  <span class="icon"><i class="fas fa-check" /></span>
-                  <span>{{ (state.current?.opts as any)?.confirmText ?? 'OK' }}</span>
-                </span>
-              </button>
-            </template>
-
-            <template
-              v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type"
-            >
-              <div class="field is-grouped">
-                <div class="control">
-                  <button
-                    id="primaryButton"
-                    class="button"
-                    @click="onEnter"
-                    :class="state.current?.opts.confirmColor ?? 'is-primary'"
-                    :disabled="localInput === (state.current?.opts as PromptOptions)?.initial"
-                  >
-                    <span class="icon-text">
-                      <span class="icon"><i class="fas fa-check" /></span>
-                      <span>{{ (state.current?.opts as any)?.confirmText ?? 'OK' }}</span>
-                    </span>
-                  </button>
-                </div>
-                <div class="control">
-                  <button class="button is-info" @click="onCancel">
-                    <span class="icon-text">
-                      <span class="icon"><i class="fas fa-times" /></span>
-                      <span>{{ (state.current?.opts as any)?.cancelText ?? 'Cancel' }}</span>
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </template>
-          </footer>
-        </div>
+        <UCheckbox
+          v-for="opt in (state.current?.opts as ConfirmOptions).options"
+          :key="opt.key"
+          v-model="selected[opt.key]"
+          :label="opt.label"
+        />
       </div>
-    </transition>
-  </Teleport>
+    </template>
+
+    <template #footer>
+      <template v-if="'alert' === state.current?.type">
+        <UButton
+          id="primaryButton"
+          :color="resolveConfirmColor(state.current?.opts.confirmColor)"
+          @click="onEnter"
+        >
+          {{ state.current?.opts.confirmText ?? 'OK' }}
+        </UButton>
+      </template>
+
+      <template v-else-if="'confirm' === state.current?.type || 'prompt' === state.current?.type">
+        <UButton
+          id="primaryButton"
+          :color="resolveConfirmColor(state.current?.opts.confirmColor)"
+          :disabled="
+            'prompt' === state.current?.type &&
+            localInput === (state.current?.opts as PromptOptions)?.initial
+          "
+          @click="onEnter"
+        >
+          {{ state.current?.opts.confirmText ?? 'OK' }}
+        </UButton>
+
+        <UButton color="neutral" variant="outline" @click="onCancel">
+          {{ (state.current?.opts as PromptOptions | ConfirmOptions)?.cancelText ?? 'Cancel' }}
+        </UButton>
+      </template>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue';
+import { UButton, UCheckbox, UInput } from '#components';
+import { disableOpacity, enableOpacity } from '~/utils';
 import { useDialog, type ConfirmOptions, type PromptOptions } from '~/composables/useDialog';
 
 const { state, confirm, cancel } = useDialog();
 
 const localInput = ref('');
+const selected = ref<Record<string, boolean>>({});
 
 watch(
   () => state.current,
@@ -141,31 +99,41 @@ watch(
       enableOpacity();
     }
 
-    localInput.value = 'prompt' === cur?.type ? ((cur.opts as any).initial ?? '') : '';
+    localInput.value = 'prompt' === cur?.type ? ((cur.opts as PromptOptions).initial ?? '') : '';
+
+    if ('confirm' === cur?.type) {
+      selected.value = Object.fromEntries(
+        ((cur.opts as ConfirmOptions).options ?? []).map((opt) => [opt.key, Boolean(opt.checked)]),
+      );
+      return;
+    }
+
+    selected.value = {};
   },
   { immediate: true },
 );
 
-const inputEl = ref<HTMLInputElement>();
+const inputEl = ref<{ inputRef?: { value?: HTMLInputElement | null } } | null>(null);
+
 const focusPrimary = () => {
-  const root = document.getElementById('app-dialog-host');
-  if (!root) {
-    return;
-  }
-  const btn = root.querySelector<HTMLButtonElement>('#primaryButton');
-  btn?.focus();
+  const root = document.getElementById('primaryButton');
+  root?.focus();
 };
+
 const focusInput = async () => {
   await nextTick();
   if ('prompt' === state.current?.type) {
-    requestAnimationFrame(() => inputEl.value?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => inputEl.value?.inputRef?.value?.focus?.({ preventScroll: true }));
     return;
   }
   requestAnimationFrame(focusPrimary);
 };
 
+const resolveConfirmColor = (color?: ConfirmOptions['confirmColor']) => color ?? 'primary';
+
 const onCancel = () => cancel();
-const onEnter = () => confirm(localInput.value);
+const onEnter = () =>
+  confirm('confirm' === state.current?.type ? selected.value : localInput.value);
 
 const defaultTitle = computed(() => {
   if (!state.current) {

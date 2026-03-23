@@ -1,147 +1,162 @@
 <template>
-  <div>
-    <div class="mt-1 columns is-multiline">
-      <div class="column is-12 is-clearfix is-unselectable">
-        <span class="title is-4" v-if="!isMobile">
-          <span class="icon-text">
-            <span class="icon"><i class="fa-solid fa-download" /></span>
-            <span>Downloads</span>
-          </span>
-        </span>
+  <div class="space-y-6">
+    <UPageHeader
+      title="Downloads"
+      description="Queued and completed downloads are displayed here."
+      :ui="{
+        root: 'border-b border-default py-4',
+        headline: 'hidden',
+        title: 'text-2xl font-semibold text-highlighted',
+        description: 'text-sm text-toned',
+        wrapper: 'flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between',
+        links: 'flex flex-wrap items-center gap-2',
+      }"
+    >
+      <template #links>
+        <UDashboardToolbar
+          :ui="{
+            root: 'w-full border-0 p-0',
+            left: 'flex flex-wrap items-center gap-2',
+            right: 'flex flex-wrap items-center gap-2',
+          }"
+        >
+          <template #left>
+            <UInput
+              v-if="toggleFilter"
+              id="filter"
+              v-model.lazy="query"
+              type="search"
+              placeholder="Filter displayed content"
+              icon="i-lucide-filter"
+              size="sm"
+              class="w-full sm:w-72"
+            />
 
-        <div class="is-pulled-right">
-          <div class="field is-grouped">
-            <p class="control has-icons-left" v-if="toggleFilter">
-              <input
-                type="search"
-                v-model.lazy="query"
-                class="input"
-                id="filter"
-                placeholder="Filter displayed content"
-              />
-              <span class="icon is-left"><i class="fas fa-filter" /></span>
-            </p>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-filter"
+              @click="toggleFilter = !toggleFilter"
+            >
+              <span v-if="!isMobile">Filter</span>
+            </UButton>
 
-            <p class="control">
-              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
-                <span class="icon"><i class="fas fa-filter" /></span>
-                <span v-if="!isMobile">Filter</span>
-              </button>
-            </p>
+            <UButton
+              v-if="false === config.paused"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-pause"
+              @click="() => void pauseDownload()"
+            >
+              <span v-if="!isMobile">Pause</span>
+            </UButton>
 
-            <p class="control">
-              <button
-                class="button is-warning"
-                @click="pauseDownload"
-                v-if="false === config.paused"
-              >
-                <span class="icon"><i class="fas fa-pause" /></span>
-                <span v-if="!isMobile">Pause</span>
-              </button>
-              <button
-                class="button is-danger"
-                @click="resumeDownload"
-                v-else
-                v-tooltip.bottom="'Resume downloading.'"
-              >
-                <span class="icon"><i class="fas fa-play" /></span>
-                <span v-if="!isMobile">Resume</span>
-              </button>
-            </p>
+            <UButton
+              v-else
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-play"
+              @click="() => void resumeDownload()"
+            >
+              <span v-if="!isMobile">Resume</span>
+            </UButton>
 
-            <p class="control">
-              <button
-                class="button is-primary has-tooltip-bottom"
-                @click="config.showForm = !config.showForm"
-              >
-                <span class="icon"><i class="fa-solid fa-plus" /></span>
-                <span v-if="!isMobile">Add</span>
-              </button>
-            </p>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-plus"
+              @click="config.showForm = !config.showForm"
+            >
+              <span v-if="!isMobile">Add</span>
+            </UButton>
+          </template>
 
-            <p class="control">
-              <button
-                v-tooltip.bottom="'Change display style'"
-                class="button has-tooltip-bottom"
-                @click="() => changeDisplay()"
-              >
-                <span class="icon"
-                  ><i
-                    class="fa-solid"
-                    :class="{
-                      'fa-table': display_style !== 'list',
-                      'fa-table-list': display_style === 'list',
-                    }"
-                /></span>
-                <span v-if="!isMobile">
-                  {{ display_style === 'list' ? 'List' : 'Grid' }}
-                </span>
-              </button>
-            </p>
+          <template #right>
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              :icon="display_style === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+              @click="changeDisplay"
+            >
+              <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
+            </UButton>
+          </template>
+        </UDashboardToolbar>
+      </template>
+    </UPageHeader>
+
+    <div v-if="config.showForm" class="page-form-wrap">
+      <NewDownload
+        :item="item_form"
+        @clear_form="item_form = {}"
+        @getInfo="
+          (url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)
+        "
+      />
+    </div>
+
+    <UPageCard
+      variant="outline"
+      :ui="{
+        root: 'w-full min-w-0 max-w-full bg-default',
+        container: 'w-full min-w-0 max-w-full p-0 sm:p-0',
+        wrapper: 'w-full min-w-0 items-stretch',
+        body: 'w-full min-w-0 max-w-full p-0',
+      }"
+    >
+      <template #body>
+        <UTabs
+          v-model="activeTab"
+          :items="tabItems"
+          value-key="value"
+          color="neutral"
+          variant="link"
+          size="md"
+          :content="false"
+          :ui="{
+            root: 'flex-col gap-4',
+            list: 'border-b border-default px-2 sm:px-4',
+            trigger: 'justify-start rounded-none px-3 py-3 text-sm font-medium',
+            trailingBadge: 'ml-1',
+          }"
+          @update:model-value="(value) => void setActiveTab(value as TabType)"
+        />
+
+        <div class="w-full min-w-0 max-w-full px-0 pt-2">
+          <div v-show="'queue' === activeTab" class="w-full min-w-0 max-w-full">
+            <Queue
+              :thumbnails="show_thumbnail"
+              :query="query"
+              @getInfo="
+                (url: string, preset: string = '', cli: string = '') =>
+                  view_info(url, false, preset, cli)
+              "
+              @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+              @clear_search="query = ''"
+            />
+          </div>
+
+          <div v-show="'history' === activeTab" class="w-full min-w-0 max-w-full">
+            <History
+              :query="query"
+              :thumbnails="show_thumbnail"
+              @getInfo="
+                (url: string, preset: string = '', cli: string = '') =>
+                  view_info(url, false, preset, cli)
+              "
+              @add_new="(item: item_request) => toNewDownload(item)"
+              @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
+              @clear_search="query = ''"
+            />
           </div>
         </div>
-        <div v-if="!isMobile">
-          <span class="subtitle"> Queued and completed downloads are displayed here. </span>
-        </div>
-      </div>
-    </div>
-
-    <NewDownload
-      v-if="config.showForm"
-      :item="item_form"
-      @clear_form="item_form = {}"
-      @getInfo="
-        (url: string, preset: string = '', cli: string = '') => view_info(url, false, preset, cli)
-      "
-    />
-
-    <div class="tabs is-boxed is-medium">
-      <ul>
-        <li :class="{ 'is-active': activeTab === 'queue' }">
-          <a @click="setActiveTab('queue')">
-            <span class="icon is-small"><i class="fas fa-download" /></span>
-            <span>Downloads</span>
-            <span class="tag is-info is-rounded is-bold ml-2">{{ queueCount }}</span>
-          </a>
-        </li>
-        <li :class="{ 'is-active': activeTab === 'history' }">
-          <a @click="setActiveTab('history')">
-            <span class="icon is-small"><i class="fas fa-history" /></span>
-            <span>History</span>
-            <span class="tag is-primary is-rounded is-bold ml-2">{{ historyCount }}</span>
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <div class="tab-content">
-      <div v-show="'queue' === activeTab">
-        <Queue
-          @getInfo="
-            (url: string, preset: string = '', cli: string = '') =>
-              view_info(url, false, preset, cli)
-          "
-          :thumbnails="show_thumbnail"
-          :query="query"
-          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-          @clear_search="query = ''"
-        />
-      </div>
-
-      <div v-show="'history' === activeTab">
-        <History
-          @getInfo="
-            (url: string, preset: string = '', cli: string = '') =>
-              view_info(url, false, preset, cli)
-          "
-          @add_new="(item: item_request) => toNewDownload(item)"
-          :query="query"
-          :thumbnails="show_thumbnail"
-          @getItemInfo="(id: string) => view_info(`/api/history/${id}`, true)"
-          @clear_search="query = ''"
-        />
-      </div>
-    </div>
+      </template>
+    </UPageCard>
 
     <GetInfo
       v-if="info_view.url"
@@ -151,21 +166,12 @@
       :useUrl="info_view.useUrl"
       @closeModel="close_info()"
     />
-
-    <ConfirmDialog
-      v-if="dialog_confirm.visible"
-      :visible="dialog_confirm.visible"
-      :title="dialog_confirm.title"
-      :html_message="dialog_confirm.html_message"
-      :options="dialog_confirm.options"
-      @confirm="dialog_confirm.confirm"
-      @cancel="() => (dialog_confirm.visible = false)"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
+import { useDialog } from '~/composables/useDialog';
 import type { item_request } from '~/types/item';
 import type { StoreItem } from '~/types/store';
 
@@ -173,6 +179,7 @@ const config = useConfigStore();
 const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
+const { confirmDialog } = useDialog();
 
 const bg_enable = useStorage<boolean>('random_bg', true);
 const bg_opacity = useStorage<number>('random_bg_opacity', 0.95);
@@ -187,17 +194,9 @@ const info_view = ref({
   useUrl: false,
 }) as Ref<{ url: string; preset: string; cli: string; useUrl: boolean }>;
 const item_form = ref<item_request | object>({});
-const query = ref();
+const query = ref('');
 const toggleFilter = ref(false);
-const dialog_confirm = ref({
-  visible: false,
-  title: 'Confirm Action',
-  confirm: () => {},
-  html_message: '',
-  options: [],
-});
 
-// Tab management with URL state
 type TabType = 'queue' | 'history';
 
 const activeTab = ref<TabType>('queue');
@@ -241,6 +240,25 @@ onMounted(async () => {
 const queueCount = computed(() => stateStore.count('queue'));
 const historyCount = computed(() => stateStore.count('history'));
 
+const tabItems = computed(() => [
+  {
+    label: 'Downloads',
+    icon: 'i-lucide-download',
+    value: 'queue',
+    badge: { label: String(queueCount.value), color: 'info' as const, variant: 'soft' as const },
+  },
+  {
+    label: 'History',
+    icon: 'i-lucide-history',
+    value: 'history',
+    badge: {
+      label: String(historyCount.value),
+      color: 'primary' as const,
+      variant: 'soft' as const,
+    },
+  },
+]);
+
 watch(toggleFilter, () => {
   if (!toggleFilter.value) {
     query.value = '';
@@ -276,26 +294,24 @@ watch(
   { deep: true },
 );
 
-const resumeDownload = async () => await request('/api/system/resume', { method: 'POST' });
+const resumeDownload = async (): Promise<void> => {
+  await request('/api/system/resume', { method: 'POST' });
+};
 
-const pauseDownload = () => {
-  dialog_confirm.value.visible = true;
-  dialog_confirm.value.html_message = `
-  <span class="icon-text">
-    <span class="icon"><i class="fa-solid fa-exclamation-triangle"></i></span>
-    <span class="is-bold">Pause All non-active downloads?</span>
-  </span>
-  <br>
-  <span class="has-text-danger">
-    <ul>
-      <li>This will not stop downloads that are currently in progress.</li>
-      <li>If you are in middle of adding a playlist/channel, it will break and stop adding more items.</li>
-    </ul>
-  </span>`;
-  dialog_confirm.value.confirm = async () => {
-    await request('/api/system/pause', { method: 'POST' });
-    dialog_confirm.value.visible = false;
-  };
+const pauseDownload = async (): Promise<void> => {
+  const { status } = await confirmDialog({
+    title: 'Pause Downloads',
+    confirmText: 'Pause',
+    cancelText: 'Cancel',
+    confirmColor: 'warning',
+    message: 'Are you sure you want to pause all non-active downloads?',
+  });
+
+  if (!status) {
+    return;
+  }
+
+  await request('/api/system/pause', { method: 'POST' });
 };
 
 const close_info = () => {
@@ -322,8 +338,9 @@ watch(
   },
 );
 
-const changeDisplay = () =>
-  (display_style.value = display_style.value === 'grid' ? 'list' : 'grid');
+const changeDisplay = (): void => {
+  display_style.value = display_style.value === 'grid' ? 'list' : 'grid';
+};
 
 const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
   if (!item) {
@@ -341,3 +358,9 @@ const toNewDownload = async (item: item_request | Partial<StoreItem>) => {
   config.showForm = true;
 };
 </script>
+
+<style scoped>
+.page-form-wrap {
+  max-width: 100%;
+}
+</style>

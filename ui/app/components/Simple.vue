@@ -1,346 +1,427 @@
 <template>
-  <div class="basic-wrapper" :class="{ 'settings-open': settingsOpen }">
-    <div class="form-container" :class="{ 'is-centered': shouldCenterForm }">
-      <section class="download-form box">
-        <form class="download-form__body" autocomplete="off" @submit.prevent="addDownload">
-          <label class="label" for="download-url">
-            <template v-if="!isMobile">{{ greetingMessage }}</template>
-            <template v-else>What would you like to download?</template>
-            <span class="is-pulled-right">
-              <span
-                class="icon has-text-info is-pointer mr-2"
-                v-if="!socketStore.isConnected"
-                v-tooltip="'Reload queue'"
-                @click="async () => await refreshQueue()"
-              >
-                <i class="fas fa-sync-alt" :class="{ 'fa-spin': isRefreshing }" />
-              </span>
+  <div
+    class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col gap-4 px-3 py-4 sm:px-4 sm:py-5"
+  >
+    <div
+      class="transition-transform duration-300"
+      :class="{
+        'lg:-translate-x-72': settingsOpen,
+      }"
+    >
+      <div class="mx-auto w-full transition-all duration-300" :class="formContainerClass">
+        <UPageCard variant="outline" :ui="formCardUi">
+          <template #body>
+            <form autocomplete="off" class="space-y-4" @submit.prevent="addDownload">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                  <div class="flex items-center gap-2 text-base font-semibold text-highlighted">
+                    <UIcon name="i-lucide-link" class="size-4 text-toned" />
+                    <span>{{
+                      isMobile ? 'What would you like to download?' : greetingMessage
+                    }}</span>
+                  </div>
+                </div>
 
-              <span
-                class="icon is-pointer"
-                :class="connectionStatusColor"
-                @click="$emit('show_settings')"
-                v-tooltip="'WebUI Settings'"
-              >
-                <i class="fas fa-cogs"
-              /></span>
-            </span>
-          </label>
-          <div class="field has-addons">
-            <div class="control">
-              <button
-                type="button"
-                class="button is-info"
-                @click="() => (showExtras = !showExtras)"
-                v-tooltip="showExtras ? 'Hide extra options' : 'Show extra options'"
-              >
-                <span class="icon"
-                  ><i class="fas" :class="showExtras ? 'fa-chevron-up' : 'fa-chevron-down'"
-                /></span>
-              </button>
-            </div>
-            <div class="control is-expanded">
-              <input
-                id="download-url"
-                v-model="formUrl"
-                :disabled="!socketStore.isConnected || addInProgress"
-                class="input"
-                placeholder="https://..."
-                type="url"
-                required
-              />
-            </div>
-            <div class="control">
-              <button
-                type="submit"
-                class="button is-primary"
-                :class="{ 'is-loading': addInProgress }"
-                :disabled="!socketStore.isConnected || addInProgress || !formUrl.trim()"
-              >
-                <span class="icon"><i class="fas fa-plus" /></span>
-                <span>Add</span>
-              </button>
-            </div>
-          </div>
-          <div class="field has-addons" v-if="showExtras">
-            <div class="control">
-              <label class="button is-static">
-                <span class="icon"><i class="fas fa-sliders" /></span>
-                <span>Preset</span>
-              </label>
-            </div>
-            <div class="control is-expanded">
-              <div class="select is-fullwidth">
-                <select
-                  id="preset"
-                  class="is-fullwidth"
-                  :disabled="!socketStore.isConnected || addInProgress"
-                  v-model="formPreset.preset"
-                >
-                  <optgroup
-                    label="Custom presets"
-                    v-if="presets.filter((p) => !p?.default).length > 0"
-                  >
-                    <option
-                      v-for="cPreset in filter_presets(false)"
-                      :key="cPreset.name"
-                      :value="cPreset.name"
-                    >
-                      {{ cPreset.name }}
-                    </option>
-                  </optgroup>
-                  <optgroup label="Default presets">
-                    <option
-                      v-for="dPreset in filter_presets(true)"
-                      :key="dPreset.name"
-                      :value="dPreset.name"
-                    >
-                      {{ dPreset.name }}
-                    </option>
-                  </optgroup>
-                </select>
+                <div class="flex shrink-0 items-center gap-1">
+                  <UTooltip v-if="!socketStore.isConnected" text="Reload queue">
+                    <UButton
+                      color="info"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-refresh-cw"
+                      :loading="isRefreshing"
+                      :disabled="isRefreshing"
+                      square
+                      @click="() => void refreshQueue()"
+                    />
+                  </UTooltip>
+
+                  <UTooltip text="Toggle color mode">
+                    <UColorModeButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Toggle color mode"
+                    />
+                  </UTooltip>
+
+                  <UTooltip text="WebUI Settings">
+                    <UButton
+                      color="neutral"
+                      variant="ghost"
+                      size="sm"
+                      icon="i-lucide-settings-2"
+                      square
+                      @click="$emit('show_settings')"
+                    />
+                  </UTooltip>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div
-            class="columns is-multiline is-mobile"
-            v-if="showExtras && configStore.dl_fields.length > 0"
-          >
-            <div class="column is-6-tablet is-12-mobile">
-              <DLInput
-                id="force_download"
-                type="bool"
-                label="Force download"
-                v-model="dlFields['--no-download-archive']"
-                icon="fa-solid fa-download"
-                :disabled="!socketStore.isConnected || addInProgress"
-                description="Ignore archive and re-download."
+              <UAlert
+                v-if="!socketStore.isConnected"
+                color="warning"
+                variant="soft"
+                icon="i-lucide-plug-zap"
+                title="Realtime connection unavailable"
+                description="Downloads are disabled until the socket reconnects."
               />
-            </div>
-            <div
-              class="column is-6-tablet is-12-mobile"
-              v-for="(fi, index) in sortedDLFields"
-              :key="fi.id || `dlf-${index}`"
-            >
-              <DLInput
-                :id="fi?.id || `dlf-${index}`"
-                :type="fi.kind"
-                :description="fi.description"
-                :label="fi.name"
-                :icon="fi.icon"
-                v-model="dlFields[fi.field]"
-                :field="fi.field"
-                :disabled="!socketStore.isConnected || addInProgress"
-              />
-            </div>
-          </div>
-        </form>
-      </section>
+
+              <div class="flex flex-col gap-2 sm:flex-row">
+                <UTooltip :text="showExtras ? 'Hide extra options' : 'Show extra options'">
+                  <UButton
+                    type="button"
+                    color="info"
+                    variant="outline"
+                    size="lg"
+                    :icon="showExtras ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                    class="justify-center sm:w-12"
+                    :disabled="addInProgress"
+                    @click="showExtras = !showExtras"
+                  />
+                </UTooltip>
+
+                <UInput
+                  id="download-url"
+                  v-model="formUrl"
+                  type="url"
+                  placeholder="https://..."
+                  size="lg"
+                  required
+                  :disabled="isFormDisabled"
+                  class="w-full"
+                  :ui="urlInputUi"
+                />
+
+                <UButton
+                  type="submit"
+                  color="primary"
+                  size="lg"
+                  icon="i-lucide-plus"
+                  :loading="addInProgress"
+                  :disabled="isFormDisabled || !formUrl.trim()"
+                  class="justify-center sm:min-w-28"
+                >
+                  Add
+                </UButton>
+              </div>
+
+              <div v-if="showExtras" class="space-y-3 border-t border-default pt-4">
+                <UFormField label="Preset" :ui="fieldUi" class="w-full">
+                  <template #label>
+                    <span class="inline-flex items-center gap-2 font-semibold">
+                      <UIcon name="i-lucide-sliders-horizontal" class="size-4 text-toned" />
+                      <span>Preset</span>
+                    </span>
+                  </template>
+
+                  <USelect
+                    id="preset"
+                    v-model="formPreset"
+                    :items="presetItems"
+                    value-key="value"
+                    label-key="label"
+                    size="lg"
+                    class="w-full"
+                    :ui="selectUi"
+                    :disabled="isFormDisabled"
+                    placeholder="Select preset"
+                  />
+                </UFormField>
+
+                <div
+                  v-if="configStore.dl_fields.length > 0"
+                  class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+                >
+                  <DLInput
+                    id="force_download"
+                    v-model="dlFields['--no-download-archive']"
+                    type="bool"
+                    label="Force download"
+                    icon="i-lucide-download"
+                    :disabled="isFormDisabled"
+                    description="Ignore archive and re-download."
+                    compact
+                  />
+
+                  <DLInput
+                    v-for="(fi, index) in sortedDLFields"
+                    :id="fi?.id || `dlf-${index}`"
+                    :key="fi.id || `dlf-${index}`"
+                    v-model="dlFields[fi.field]"
+                    :type="fi.kind"
+                    :description="fi.description"
+                    :label="fi.name"
+                    :icon="fi.icon"
+                    :field="fi.field"
+                    :disabled="isFormDisabled"
+                    compact
+                  />
+                </div>
+              </div>
+            </form>
+          </template>
+        </UPageCard>
+      </div>
     </div>
 
     <Transition name="queue-fade">
-      <section v-if="hasAnyItems" key="queue" class="queue-section">
-        <TransitionGroup
-          name="queue-card"
-          tag="div"
-          class="columns is-multiline queue-card-columns"
-        >
-          <div
+      <section v-if="hasAnyItems" class="w-full space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 text-sm font-semibold text-highlighted">
+              <UIcon name="i-lucide-list-video" class="size-4 text-toned" />
+              <span>Queue and history</span>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge color="info" variant="soft" size="sm">Queue {{ queueItems.length }}</UBadge>
+            <UBadge color="neutral" variant="soft" size="sm"
+              >History {{ historyEntries.length }}</UBadge
+            >
+          </div>
+        </div>
+
+        <TransitionGroup name="queue-card" tag="div" class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <UCard
             v-for="entry in displayItems"
             :key="entry.item._id"
-            class="column is-12-mobile is-6-tablet"
+            class="w-full min-w-0 max-w-full overflow-hidden border bg-default"
+            :ui="queueCardUi"
           >
-            <article class="queue-card card" :class="{ 'is-history': 'history' === entry.source }">
+            <template #header>
               <div
-                v-if="'queue' === entry.source && shouldShowProgress(entry.item)"
-                class="progress-bar is-unselectable mb-3"
+                v-if="entry.source === 'queue' && shouldShowProgress(entry.item)"
+                class="space-y-2"
               >
-                <div class="progress-percentage">{{ updateProgress(entry.item) }}</div>
-                <div class="progress" :style="{ width: getProgressWidth(entry.item) }"></div>
-              </div>
-              <div class="card-content">
-                <article class="media">
-                  <figure class="media-left">
-                    <figure
-                      class="image is-16by9 queue-thumb"
-                      :class="{ 'is-clickable': isEmbedable(entry.item.url) }"
-                      role="presentation"
-                      @click="openPlayer(entry.item)"
-                    >
-                      <img
-                        :src="resolveThumbnail(entry)"
-                        :alt="entry.item.title || 'Video thumbnail'"
-                        loading="lazy"
-                        @error="onImgError"
-                      />
-                      <span v-if="getDurationLabel(entry.item)" class="queue-thumb__badge">
-                        {{ getDurationLabel(entry.item) }}
-                      </span>
-                      <span
-                        v-if="entry.item.filename || isEmbedable(entry.item.url)"
-                        class="queue-thumb__overlay"
-                      >
-                        <span
-                          class="icon circle-border"
-                          :class="{
-                            'has-text-danger': isEmbedable(entry.item.url) && !entry.item.filename,
-                          }"
-                        >
-                          <i class="fas fa-play" />
-                        </span>
-                      </span>
-                    </figure>
-                  </figure>
-                  <div class="media-content is-grid">
-                    <p class="title is-6 mb-0 queue-title">
-                      <NuxtLink target="_blank" :href="entry.item.url" v-tooltip="entry.item.title">
-                        {{ entry.item.title || 'Untitled' }}
-                      </NuxtLink>
-                    </p>
-                    <div class="field is-grouped is-unselectable">
-                      <div class="control">
-                        <span
-                          class="tag is-size-7 has-text-weight-semibold is-uppercase"
-                          :class="getSourceTagClass(entry)"
-                        >
-                          {{ getSourceLabel(entry) }}
-                        </span>
-                      </div>
-                      <div class="control">
-                        <span
-                          class="tag is-size-7 has-text-weight-semibold"
-                          :class="getStatusClass(entry.item)"
-                        >
-                          {{ getStatusLabel(entry.item) }}
-                        </span>
-                      </div>
-                      <div class="control">
-                        <span
-                          class="tag"
-                          :date-datetime="entry.item.datetime"
-                          v-rtime="entry.item.datetime"
-                        />
-                      </div>
-                    </div>
-                    <p class="content is-size-7 has-text-grey queue-description">
-                      <template v-if="entry.item.error || showMessage(entry.item)">
-                        <template v-if="entry.item.error">
-                          <span class="has-text-danger">{{ entry.item.error }}</span>
-                        </template>
-                        <template v-if="showMessage(entry.item)">
-                          <span class="has-text-danger">{{ entry.item.msg }}</span>
-                        </template>
-                      </template>
-                      <template v-else>
-                        {{ getDescription(entry.item) || 'No description available.' }}
-                      </template>
-                    </p>
-                  </div>
-                </article>
-                <div v-if="'queue' === entry.source" class="buttons are-small queue-actions mt-3">
-                  <button
-                    v-if="canStart(entry.item)"
-                    class="button is-success is-light"
-                    type="button"
-                    @click="startQueueItem(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-circle-play" /></span>
-                    <span>Start</span>
-                  </button>
-                  <button
-                    v-if="canPause(entry.item)"
-                    class="button is-warning is-light"
-                    type="button"
-                    @click="pauseQueueItem(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-pause" /></span>
-                    <span>Pause</span>
-                  </button>
-                  <button
-                    class="button is-warning"
-                    type="button"
-                    @click="cancelDownload(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-xmark" /></span>
-                    <span>Cancel</span>
-                  </button>
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
+                  <span class="font-medium text-highlighted">{{ updateProgress(entry.item) }}</span>
+                  <span>{{ getProgressWidth(entry.item) }}</span>
                 </div>
 
-                <div v-else class="buttons are-small queue-actions mt-3">
-                  <a
-                    v-if="getDownloadLink(entry.item)"
-                    class="button is-link"
-                    :href="getDownloadLink(entry.item)"
-                    :download="getDownloadName(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-download" /></span>
-                    <span>Download</span>
-                  </a>
-                  <button
-                    v-if="!entry.item.filename"
-                    class="button is-info is-light"
-                    type="button"
-                    @click="async () => await requeueItem(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-rotate-right" /></span>
-                    <span>Requeue</span>
-                  </button>
-                  <button
-                    class="button is-danger"
-                    type="button"
-                    @click="deleteHistoryItem(entry.item)"
-                  >
-                    <span class="icon"><i class="fas fa-trash" /></span>
-                    <span>Delete</span>
-                  </button>
+                <div class="h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full bg-primary transition-[width] duration-300"
+                    :style="{ width: getProgressWidth(entry.item) }"
+                  />
                 </div>
               </div>
-            </article>
-          </div>
+            </template>
+
+            <div class="flex min-w-0 flex-col gap-4 sm:flex-row">
+              <button
+                type="button"
+                class="group relative block w-full shrink-0 overflow-hidden rounded-lg border border-default bg-muted/20 sm:w-52"
+                :class="{ 'cursor-pointer': canOpenPlayer(entry.item) }"
+                @click="openPlayer(entry.item)"
+              >
+                <img
+                  :src="resolveThumbnail(entry)"
+                  :alt="entry.item.title || 'Video thumbnail'"
+                  loading="lazy"
+                  class="aspect-video h-full w-full object-cover"
+                  @error="onImgError"
+                />
+
+                <span
+                  v-if="getDurationLabel(entry.item)"
+                  class="absolute top-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-medium text-white"
+                >
+                  {{ getDurationLabel(entry.item) }}
+                </span>
+
+                <span
+                  v-if="entry.item.filename || isEmbedable(entry.item.url)"
+                  class="absolute inset-0 flex items-center justify-center bg-black/0 text-white transition group-hover:bg-black/45"
+                >
+                  <span
+                    class="rounded-full border-2 border-white/90 bg-black/35 p-3"
+                    :class="{
+                      'text-error': isEmbedable(entry.item.url) && !entry.item.filename,
+                    }"
+                  >
+                    <UIcon name="i-lucide-play" class="size-5" />
+                  </span>
+                </span>
+              </button>
+
+              <div class="min-w-0 flex-1 space-y-3">
+                <div class="space-y-2">
+                  <UTooltip :text="entry.item.title">
+                    <a
+                      :href="entry.item.url"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="block truncate text-sm font-semibold text-highlighted hover:underline"
+                    >
+                      {{ entry.item.title || 'Untitled' }}
+                    </a>
+                  </UTooltip>
+
+                  <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <UBadge :color="getSourceColor(entry)" variant="soft" size="sm">
+                      {{ getSourceLabel(entry) }}
+                    </UBadge>
+
+                    <UBadge :color="getStatusColor(entry.item)" variant="soft" size="sm">
+                      {{ getStatusLabel(entry.item) }}
+                    </UBadge>
+
+                    <span
+                      class="inline-flex items-center rounded-full border border-default px-2 py-0.5 text-toned"
+                      :date-datetime="entry.item.datetime"
+                      v-rtime="entry.item.datetime"
+                    />
+                  </div>
+                </div>
+
+                <p class="line-clamp-3 text-xs leading-5 text-toned wrap-break-word">
+                  <template v-if="entry.item.error || showMessage(entry.item)">
+                    <template v-if="entry.item.error">
+                      <span class="text-error">{{ entry.item.error }}</span>
+                    </template>
+                    <template v-if="showMessage(entry.item)">
+                      <span class="text-error">{{ entry.item.msg }}</span>
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ getDescription(entry.item) || 'No description available.' }}
+                  </template>
+                </p>
+
+                <div class="mt-auto flex flex-wrap items-center justify-end gap-2 pt-1">
+                  <template v-if="entry.source === 'queue'">
+                    <UButton
+                      v-if="canStart(entry.item)"
+                      color="success"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-play-circle"
+                      @click="() => void startQueueItem(entry.item)"
+                    >
+                      Start
+                    </UButton>
+
+                    <UButton
+                      v-if="canPause(entry.item)"
+                      color="warning"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-pause"
+                      @click="() => void pauseQueueItem(entry.item)"
+                    >
+                      Pause
+                    </UButton>
+
+                    <UButton
+                      color="error"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-x"
+                      @click="() => void cancelDownload(entry.item)"
+                    >
+                      Cancel
+                    </UButton>
+                  </template>
+
+                  <template v-else>
+                    <UButton
+                      v-if="getDownloadLink(entry.item)"
+                      color="primary"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-download"
+                      external
+                      :href="getDownloadLink(entry.item)"
+                      :download="getDownloadName(entry.item)"
+                    >
+                      Download
+                    </UButton>
+
+                    <UButton
+                      v-if="!entry.item.filename"
+                      color="info"
+                      variant="soft"
+                      size="xs"
+                      icon="i-lucide-rotate-cw"
+                      @click="() => void requeueItem(entry.item)"
+                    >
+                      Requeue
+                    </UButton>
+
+                    <UButton
+                      color="error"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-trash"
+                      @click="() => void deleteHistoryItem(entry.item)"
+                    >
+                      Delete
+                    </UButton>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </UCard>
         </TransitionGroup>
 
         <div
           v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages"
           ref="loadMoreTrigger"
-          class="columns is-centered mt-4"
+          class="flex justify-center py-2"
         >
-          <div class="column is-narrow">
-            <div v-if="paginationInfo.isLoading" class="has-text-centered">
-              <span class="icon is-large has-text-info"
-                ><i class="fas fa-spinner fa-pulse fa-2x"
-              /></span>
-              <p class="is-size-7 has-text-grey mt-2">Loading more items...</p>
-            </div>
+          <div v-if="paginationInfo.isLoading" class="flex items-center gap-2 text-sm text-toned">
+            <UIcon name="i-lucide-loader-circle" class="size-4 animate-spin text-info" />
+            <span>Loading more items...</span>
           </div>
         </div>
       </section>
     </Transition>
 
-    <div class="modal is-active" v-if="videoItem">
-      <div class="modal-background" @click="closePlayer"></div>
-      <div class="modal-content is-unbounded-model">
+    <UAlert
+      v-if="!hasAnyItems"
+      color="neutral"
+      variant="soft"
+      icon="i-lucide-inbox"
+      title="No queue or history items"
+      description="Add a URL to get started."
+    />
+
+    <UModal
+      v-if="videoItem"
+      :open="Boolean(videoItem)"
+      title="Video"
+      :dismissible="true"
+      :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && closePlayer()"
+    >
+      <template #body>
         <VideoPlayer
           type="default"
           :isMuted="false"
           autoplay="true"
           :isControls="true"
           :item="videoItem"
-          class="is-fullwidth"
+          class="w-full"
           @closeModel="closePlayer"
           @error="async (error: string) => await box.alert(error)"
         />
-      </div>
-      <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
-    </div>
+      </template>
+    </UModal>
 
-    <div class="modal is-active" v-if="embedUrl">
-      <div class="modal-background" @click="closePlayer"></div>
-      <div class="modal-content is-unbounded-model">
+    <UModal
+      v-if="embedUrl"
+      :open="Boolean(embedUrl)"
+      title="Embed"
+      :dismissible="true"
+      :ui="{ content: 'w-full sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && closePlayer()"
+    >
+      <template #body>
         <EmbedPlayer :url="embedUrl" @closeModel="closePlayer" />
-      </div>
-      <button class="modal-close is-large" aria-label="close" @click="closePlayer"></button>
-    </div>
+      </template>
+    </UModal>
 
     <ClientOnly>
       <Dialog />
@@ -351,16 +432,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRef, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useStorage, useIntersectionObserver } from '@vueuse/core';
+import { useIntersectionObserver, useStorage } from '@vueuse/core';
 import type { item_request } from '~/types/item';
-import type { Preset } from '~/types/presets';
 import type { ItemStatus, StoreItem } from '~/types/store';
 import { useNotification } from '~/composables/useNotification';
 import { useConfigStore } from '~/stores/ConfigStore';
-import { useStateStore } from '~/stores/StateStore';
 import { useSocketStore } from '~/stores/SocketStore';
-import { isEmbedable, getEmbedable } from '~/utils/embedable';
+import { useStateStore } from '~/stores/StateStore';
 import EmbedPlayer from '~/components/EmbedPlayer.vue';
+import { isEmbedable, getEmbedable } from '~/utils/embedable';
 import {
   ag,
   encodePath,
@@ -395,55 +475,79 @@ const box = useConfirm();
 const app = toRef(configStore, 'app');
 const paused = toRef(configStore, 'paused');
 const presets = toRef(configStore, 'presets');
+const { selectItems: presetItems } = usePresetOptions(presets, { order: 'custom-first' });
 const { queue, history } = storeToRefs(stateStore);
 
-const embedUrl = ref<string>('');
+const embedUrl = ref('');
 const videoItem = ref<StoreItem | null>(null);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
 
-const formUrl = ref<string>('');
-const formPreset = ref<{ preset: string }>({ preset: app.value.default_preset || '' });
-const addInProgress = ref<boolean>(false);
-const showExtras = ref<boolean>(false);
-const isRefreshing = ref<boolean>(false);
+const formUrl = ref('');
+const formPreset = ref(app.value.default_preset || '');
+const addInProgress = ref(false);
+const showExtras = ref(false);
+const isRefreshing = ref(false);
 
-const refreshQueue = async (): Promise<void> => {
-  if (isRefreshing.value) {
-    return;
-  }
-  isRefreshing.value = true;
-  try {
-    await stateStore.loadQueue();
-  } catch (error) {
-    console.error('Failed to refresh queue:', error);
-    toast.error('Failed to refresh queue');
-  } finally {
-    isRefreshing.value = false;
-  }
-};
-
-const paginationInfo = computed(() => stateStore.getPagination());
-const queueItems = computed<StoreItem[]>(() =>
-  Object.values(queue.value ?? {})
-    .slice()
-    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)),
-);
-const historyEntries = computed<StoreItem[]>(() => {
-  const items = Object.values(history.value ?? {});
-  return items
-    .slice()
-    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
-});
-
+const DEFAULT_PAGE_SIZE = 12;
 const downloadingStatuses: ReadonlySet<ItemStatus | null> = new Set([
   'downloading',
   'postprocessing',
   'preparing',
 ]);
 
-const isDownloading = (status: ItemStatus | null): boolean => downloadingStatuses.has(status);
-
 type DisplayEntry = { item: StoreItem; source: 'queue' | 'history' };
+
+const fieldUi = {
+  label: 'font-semibold text-default',
+  container: 'space-y-2',
+};
+
+const formCardUi = {
+  root: 'w-full border bg-default',
+  container: 'w-full p-4 sm:p-5',
+  wrapper: 'w-full items-stretch',
+  body: 'w-full',
+};
+
+const queueCardUi = {
+  root: 'w-full',
+  header: 'p-4 pb-0',
+  body: 'p-4',
+};
+
+const urlInputUi = {
+  root: 'w-full',
+  base: 'bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const selectUi = {
+  base: 'w-full',
+};
+
+const isFormDisabled = computed(() => !socketStore.isConnected || addInProgress.value);
+
+const formContainerClass = computed(() => {
+  if (queueItems.value.length === 0 && historyEntries.value.length === 0) {
+    return 'max-w-2xl simple-form-center';
+  }
+
+  return 'max-w-full';
+});
+
+const paginationInfo = computed(() => stateStore.getPagination());
+
+const queueItems = computed<StoreItem[]>(() =>
+  Object.values(queue.value ?? {})
+    .slice()
+    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0)),
+);
+
+const historyEntries = computed<StoreItem[]>(() => {
+  const items = Object.values(history.value ?? {});
+  return items
+    .slice()
+    .sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime());
+});
 
 const displayItems = computed<DisplayEntry[]>(() => [
   ...queueItems.value
@@ -455,31 +559,48 @@ const displayItems = computed<DisplayEntry[]>(() => [
   ...historyEntries.value.map((item) => ({ item, source: 'history' as const })),
 ]);
 
-const hasActiveQueue = computed<boolean>(() => queueItems.value.length > 0);
-const hasAnyItems = computed<boolean>(
-  () => hasActiveQueue.value || historyEntries.value.length > 0,
-);
-const shouldCenterForm = computed<boolean>(
-  () => 0 === queueItems.value.length && 0 === historyEntries.value.length,
-);
-const DEFAULT_PAGE_SIZE = 12;
+const hasAnyItems = computed(() => queueItems.value.length > 0 || historyEntries.value.length > 0);
 
-const greetingMessage = computed<string>(() => {
+const greetingMessage = computed(() => {
   const hour = new Date().getHours();
-  let greeting = '';
 
   if (hour >= 5 && hour < 12) {
-    greeting = 'Good morning';
-  } else if (hour >= 12 && hour < 17) {
-    greeting = 'Good afternoon';
-  } else if (hour >= 17 && hour < 21) {
-    greeting = 'Good evening';
-  } else {
-    greeting = 'Hello';
+    return 'Good morning, what would you like to download?';
   }
 
-  return `${greeting}, what would you like to download?`;
+  if (hour >= 12 && hour < 17) {
+    return 'Good afternoon, what would you like to download?';
+  }
+
+  if (hour >= 17 && hour < 21) {
+    return 'Good evening, what would you like to download?';
+  }
+
+  return 'Hello, what would you like to download?';
 });
+
+const sortedDLFields = computed(() =>
+  [...configStore.dl_fields].sort((a, b) => (a.order || 0) - (b.order || 0)),
+);
+
+const isDownloading = (status: ItemStatus | null): boolean => downloadingStatuses.has(status);
+
+const refreshQueue = async (): Promise<void> => {
+  if (isRefreshing.value) {
+    return;
+  }
+
+  isRefreshing.value = true;
+
+  try {
+    await stateStore.loadQueue();
+  } catch (error) {
+    console.error('Failed to refresh queue:', error);
+    toast.error('Failed to refresh queue');
+  } finally {
+    isRefreshing.value = false;
+  }
+};
 
 const addDownload = async (): Promise<void> => {
   const url = formUrl.value.trim();
@@ -489,7 +610,6 @@ const addDownload = async (): Promise<void> => {
   }
 
   let cli = '';
-
   const dlFieldsExtra = ['--no-download-archive'];
 
   const is_valid = (dl_field: string): boolean => {
@@ -506,8 +626,9 @@ const addDownload = async (): Promise<void> => {
 
   if (dlFields.value && Object.keys(dlFields.value).length > 0) {
     const joined = [];
+
     for (const [key, value] of Object.entries(dlFields.value)) {
-      if (false === is_valid(key)) {
+      if (is_valid(key) === false) {
         continue;
       }
 
@@ -520,7 +641,7 @@ const addDownload = async (): Promise<void> => {
         continue;
       }
 
-      joined.push(true === value ? `${key}` : `${key} ${value}`);
+      joined.push(value === true ? `${key}` : `${key} ${value}`);
     }
 
     if (joined.length > 0) {
@@ -531,7 +652,7 @@ const addDownload = async (): Promise<void> => {
   const payload: item_request[] = [
     {
       url,
-      preset: formPreset.value.preset || app.value.default_preset,
+      preset: formPreset.value || app.value.default_preset,
       cli: cli || '',
       auto_start: true,
     },
@@ -539,10 +660,12 @@ const addDownload = async (): Promise<void> => {
 
   try {
     addInProgress.value = true;
+
     const response = await request('/api/history', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -551,8 +674,9 @@ const addDownload = async (): Promise<void> => {
     }
 
     const failures = Array.isArray(data)
-      ? data.filter((item: Record<string, any>) => false === item?.status)
+      ? data.filter((item: Record<string, any>) => item?.status === false)
       : [];
+
     if (failures.length > 0) {
       failures.forEach((item: Record<string, any>) =>
         toast.error(item?.msg ?? 'Failed to add download.'),
@@ -561,7 +685,7 @@ const addDownload = async (): Promise<void> => {
     }
 
     formUrl.value = '';
-    formPreset.value.preset = app.value.default_preset || '';
+    formPreset.value = app.value.default_preset || '';
     dlFields.value = {};
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to add download.';
@@ -577,9 +701,9 @@ const resolveThumbnail = (entry: DisplayEntry): string => {
   }
 
   const { item, source } = entry;
-
   const sidecarImage = item.sidecar?.image?.[0]?.file;
-  if ('history' === source && sidecarImage) {
+
+  if (source === 'history' && sidecarImage) {
     const relativePath = stripPath(app.value.download_path ?? '', sidecarImage);
     return uri(`/api/download/${encodeURIComponent(relativePath)}`);
   }
@@ -592,6 +716,8 @@ const resolveThumbnail = (entry: DisplayEntry): string => {
   return '/images/placeholder.png';
 };
 
+const canOpenPlayer = (item: StoreItem): boolean => Boolean(item.filename || isEmbedable(item.url));
+
 const openPlayer = (item: StoreItem): void => {
   if (item.filename) {
     videoItem.value = item;
@@ -601,6 +727,7 @@ const openPlayer = (item: StoreItem): void => {
   if (!isEmbedable(item.url)) {
     return;
   }
+
   const embed = getEmbedable(item.url);
   if (embed) {
     embedUrl.value = embed;
@@ -613,23 +740,27 @@ const closePlayer = (): void => {
 };
 
 const getSourceLabel = (entry: DisplayEntry): string => {
-  if ('history' === entry.source) {
+  if (entry.source === 'history') {
     return 'History';
   }
+
   if (isDownloading(entry.item.status)) {
     return 'Active';
   }
+
   return 'Queued';
 };
 
-const getSourceTagClass = (entry: DisplayEntry): string => {
-  if ('history' === entry.source) {
-    return 'is-light';
+const getSourceColor = (entry: DisplayEntry): 'neutral' | 'info' | 'warning' => {
+  if (entry.source === 'history') {
+    return 'neutral';
   }
+
   if (isDownloading(entry.item.status)) {
-    return 'is-info is-light';
+    return 'info';
   }
-  return 'is-warning is-light';
+
+  return 'warning';
 };
 
 const getDescription = (item: StoreItem): string => {
@@ -658,9 +789,10 @@ const getDescription = (item: StoreItem): string => {
 
 const getDurationLabel = (item: StoreItem): string | null => {
   const duration = ag<number | null>(item, 'extras.duration', null);
-  if (null == duration || Number.isNaN(duration) || 0 >= duration) {
+  if (duration == null || Number.isNaN(duration) || duration <= 0) {
     return null;
   }
+
   return formatTime(duration);
 };
 
@@ -676,65 +808,74 @@ const statusOverrides: Record<string, string> = {
 };
 
 const getStatusLabel = (item: StoreItem): string => {
-  if (null === item.status) {
+  if (item.status === null) {
     return 'Queued';
   }
-  if ('error' === item.status && item.filename) {
+
+  if (item.status === 'error' && item.filename) {
     return 'Partial Error';
   }
+
   return statusOverrides[item.status] ?? ucFirst(item.status.replace(/_/g, ' '));
 };
 
-const statusColorMap: Record<string, string> = {
-  downloading: 'has-text-info',
-  postprocessing: 'has-text-link',
-  preparing: 'has-text-link',
-  finished: 'has-text-success',
-  error: 'has-text-danger',
-  cancelled: 'has-text-grey',
-  not_live: 'has-text-warning',
-  skip: 'has-text-grey',
-};
+const getStatusColor = (item: StoreItem): 'neutral' | 'info' | 'success' | 'error' | 'warning' => {
+  if (item.status === null) {
+    return 'neutral';
+  }
 
-const getStatusClass = (item: StoreItem): string => {
-  if (null === item.status) {
-    return 'has-text-grey';
+  if (item.status === 'error' && item.filename) {
+    return 'warning';
   }
-  if ('error' === item.status && item.filename) {
-    return 'has-text-warning';
-  }
-  return statusColorMap[item.status] ?? 'has-text-info';
+
+  const map: Record<string, 'neutral' | 'info' | 'success' | 'error' | 'warning'> = {
+    downloading: 'info',
+    postprocessing: 'info',
+    preparing: 'info',
+    finished: 'success',
+    error: 'error',
+    cancelled: 'neutral',
+    not_live: 'warning',
+    skip: 'neutral',
+  };
+
+  return map[item.status] ?? 'info';
 };
 
 const shouldShowProgress = (item: StoreItem): boolean =>
-  isDownloading(item.status) || null === item.status;
+  isDownloading(item.status) || item.status === null;
 
 const percentPipe = (value: number | null): string => {
-  if (null === value || Number.isNaN(value)) {
+  if (value === null || Number.isNaN(value)) {
     return '00.00';
   }
+
   return parseFloat(String(value)).toFixed(2);
 };
 
 const ETAPipe = (value: number | null): string => {
-  if (null === value || 0 === value) {
+  if (value === null || value === 0) {
     return 'Live';
   }
+
   if (value < 60) {
     return `${Math.round(value)}s`;
   }
+
   if (value < 3600) {
     return `${Math.floor(value / 60)}m ${Math.round(value % 60)}s`;
   }
+
   const hours = Math.floor(value / 3600);
   const minutes = value % 3600;
   return `${hours}h ${Math.floor(minutes / 60)}m ${Math.round(minutes % 60)}s`;
 };
 
 const speedPipe = (value: number | null): string => {
-  if (null === value || 0 === value) {
+  if (value === null || value === 0) {
     return '0KB/s';
   }
+
   const k = 1024;
   const dm = 2;
   const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s', 'PB/s', 'EB/s', 'ZB/s', 'YB/s'];
@@ -744,25 +885,33 @@ const speedPipe = (value: number | null): string => {
 
 const updateProgress = (item: StoreItem): string => {
   let text = '';
+
   if (!item.auto_start) {
     return 'Manual start';
   }
-  if (null === item.status && true === paused.value) {
+
+  if (item.status === null && paused.value === true) {
     return 'Global Pause';
   }
-  if ('postprocessing' === item.status) {
+
+  if (item.status === 'postprocessing') {
     return 'Post-processors are running.';
   }
-  if ('preparing' === item.status) {
+
+  if (item.status === 'preparing') {
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
   }
-  if (null != item.status) {
+
+  if (item.status !== null) {
     text += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live';
   }
+
   text += item.speed ? ` - ${speedPipe(item.speed)}` : ' - Waiting..';
-  if (null != item.status && item.eta) {
+
+  if (item.status !== null && item.eta) {
     text += ` - ${ETAPipe(item.eta)}`;
   }
+
   return text;
 };
 
@@ -772,8 +921,8 @@ const getProgressWidth = (item: StoreItem): string => {
   return `${clamped}%`;
 };
 
-const canStart = (item: StoreItem): boolean => !item.status && false === item.auto_start;
-const canPause = (item: StoreItem): boolean => !item.status && true === item.auto_start;
+const canStart = (item: StoreItem): boolean => !item.status && item.auto_start === false;
+const canPause = (item: StoreItem): boolean => !item.status && item.auto_start === true;
 
 const startQueueItem = async (item: StoreItem): Promise<void> => {
   await stateStore.startItems([item._id]);
@@ -791,6 +940,7 @@ const getDownloadLink = (item: StoreItem): string => {
   if (!item.filename) {
     return '';
   }
+
   return makeDownload(app.value, item);
 };
 
@@ -798,6 +948,7 @@ const getDownloadName = (item: StoreItem): string => {
   if (!item.filename) {
     return 'download';
   }
+
   const segments = item.filename.split('/');
   return segments[segments.length - 1] || 'download';
 };
@@ -831,70 +982,13 @@ const deleteHistoryItem = async (item: StoreItem): Promise<void> => {
   toast.info('Removed from history queue.');
 };
 
-const filter_presets = (flag: boolean = true) =>
-  presets.value.filter((item: Preset) => item.default === flag);
-
-const showMessage = (item: StoreItem) => {
+const showMessage = (item: StoreItem): boolean => {
   if (!item?.msg || item.msg === item?.error) {
     return false;
   }
+
   return (item.msg?.length || 0) > 0;
 };
-
-const sortedDLFields = computed(() =>
-  [...configStore.dl_fields].sort((a, b) => (a.order || 0) - (b.order || 0)),
-);
-
-const connectionStatusColor = computed(() => {
-  switch (socketStore.connectionStatus) {
-    case 'connected':
-      return 'has-text-success';
-    case 'connecting':
-      return 'has-text-warning fa-spin';
-    case 'disconnected':
-    default:
-      return 'has-text-danger';
-  }
-});
-
-// Load history via API on mount
-onMounted(async () => {
-  const route = useRoute();
-
-  if (route.query?.simple !== undefined) {
-    const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false);
-    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string);
-    await nextTick();
-    const url = new URL(window.location.href);
-    url.searchParams.delete('simple');
-    window.history.replaceState({}, '', url.toString());
-  }
-
-  if (!paginationInfo.value.isLoaded) {
-    try {
-      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
-    } catch (error) {
-      console.error('Failed to load history on mount:', error);
-    }
-  }
-
-  if (window?.location && '/' !== window.location.pathname) {
-    window.history.replaceState({}, '', '/');
-  }
-});
-
-watch(
-  () => socketStore.isConnected,
-  async (connected) => {
-    if (connected && !paginationInfo.value.isLoaded) {
-      try {
-        await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
-      } catch (error) {
-        console.error('Failed to load history after socket connection:', error);
-      }
-    }
-  },
-);
 
 const loadMoreHistory = async (): Promise<void> => {
   if (
@@ -918,11 +1012,12 @@ const loadMoreHistory = async (): Promise<void> => {
   }
 };
 
-const onImgError = (e: Event) => {
-  const target = e.target as HTMLImageElement;
+const onImgError = (event: Event): void => {
+  const target = event.target as HTMLImageElement;
   if (target.src.endsWith('/images/placeholder.png')) {
     return;
   }
+
   target.src = '/images/placeholder.png';
 };
 
@@ -934,204 +1029,90 @@ useIntersectionObserver(
       !paginationInfo.value.isLoading &&
       paginationInfo.value.page < paginationInfo.value.total_pages
     ) {
-      loadMoreHistory();
+      void loadMoreHistory();
     }
   },
   { threshold: 0.5 },
 );
+
+onMounted(async () => {
+  const route = useRoute();
+
+  if (route.query?.simple !== undefined) {
+    const simpleMode = useStorage<boolean>('simple_mode', configStore.app.simple_mode || false);
+    simpleMode.value = ['true', '1', 'yes', 'on'].includes(route.query.simple as string);
+    await nextTick();
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('simple');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  if (!paginationInfo.value.isLoaded) {
+    try {
+      await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
+    } catch (error) {
+      console.error('Failed to load history on mount:', error);
+    }
+  }
+
+  if (window?.location && window.location.pathname !== '/') {
+    window.history.replaceState({}, '', '/');
+  }
+});
+
+watch(
+  () => socketStore.isConnected,
+  async (connected) => {
+    if (connected && !paginationInfo.value.isLoaded) {
+      try {
+        await stateStore.loadPaginated('history', 1, DEFAULT_PAGE_SIZE, 'DESC');
+      } catch (error) {
+        console.error('Failed to load history after socket connection:', error);
+      }
+    }
+  },
+);
+
+watch(
+  () => app.value.default_preset,
+  (value) => {
+    if (!formPreset.value) {
+      formPreset.value = value || '';
+    }
+  },
+);
 </script>
 
 <style scoped>
-.basic-wrapper {
-  min-height: calc(100vh - 6rem);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2.5rem;
-  padding: 2rem 1rem 4rem;
-  transition: transform 0.3s ease;
-}
-
-.basic-wrapper.settings-open {
-  transform: translateX(-300px);
-}
-
-@media screen and (max-width: 768px) {
-  .basic-wrapper.settings-open {
-    transform: translateX(0);
-  }
-}
-
-.form-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  transition:
-    transform 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
-    filter 0.35s ease;
-  will-change: transform;
-}
-
-.form-container.is-centered {
-  transform: translateY(30vh);
-  filter: drop-shadow(0 18px 32px rgba(10, 10, 10, 0.25));
-}
-
-.download-form {
-  width: min(560px, 100%);
-  transition: box-shadow 0.45s ease;
-}
-
-.download-form__body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.queue-section {
-  width: min(1100px, 100%);
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  transform-origin: top center;
-}
-
-.queue-header {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.queue-card-columns {
-  margin-top: 0.75rem;
-}
-
-.queue-card {
-  height: 100%;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.35s ease;
-}
-
-.queue-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 30px rgba(10, 10, 10, 0.12);
-}
-
-.queue-card .card-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.queue-card .media-left {
-  margin-right: 1rem;
-}
-
-.queue-thumb {
-  position: relative;
-  width: 12rem;
-  max-width: 100%;
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.queue-thumb img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.queue-thumb.is-clickable {
-  cursor: pointer;
-}
-
-.queue-thumb__overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0);
-  color: #fff;
-  transition: background-color 0.2s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.queue-thumb.is-clickable:hover .queue-thumb__overlay {
-  background: rgba(0, 0, 0, 0.45);
-}
-
-.queue-thumb__badge {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.15rem 0.5rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  font-size: 0.7rem;
-  line-height: 1;
-  z-index: 1;
-}
-
-.queue-title {
-  overflow: hidden;
-}
-
-.queue-title a {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.queue-description {
-  max-height: 4.5rem;
-  min-height: 2.5rem;
-  overflow: hidden;
-  display: -webkit-box;
-  line-clamp: 3;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.queue-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: auto;
+.simple-form-center {
+  transform: translateY(24vh);
 }
 
 .queue-fade-enter-active,
 .queue-fade-leave-active {
   transition:
-    opacity 0.35s ease,
-    transform 0.45s ease;
+    opacity 0.28s ease,
+    transform 0.32s ease;
 }
 
 .queue-fade-enter-from,
 .queue-fade-leave-to {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(14px);
 }
 
 .queue-card-enter-active,
 .queue-card-leave-active {
   transition:
-    opacity 0.3s ease,
-    transform 0.35s ease;
+    opacity 0.24s ease,
+    transform 0.28s ease;
 }
 
 .queue-card-enter-from,
 .queue-card-leave-to {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(10px);
 }
 
 .queue-card-leave-active {
@@ -1139,46 +1120,8 @@ useIntersectionObserver(
 }
 
 @media (max-width: 768px) {
-  .form-container.is-centered {
-    transform: translateY(18vh);
+  .simple-form-center {
+    transform: translateY(16vh);
   }
-
-  .queue-card .media {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .queue-card .media-left {
-    margin-right: 0;
-    margin-bottom: 1rem;
-    width: 100%;
-  }
-
-  .queue-thumb {
-    width: 100%;
-  }
-
-  .queue-card .media-content {
-    width: 100%;
-  }
-
-  .queue-title {
-    width: 100%;
-  }
-
-  .queue-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
-}
-
-.progress-bar {
-  border-radius: 0.75rem 0.75rem 0 0;
-}
-
-.circle-border {
-  border: 2px solid;
-  border-radius: 50%;
-  padding: 0.5rem;
 }
 </style>
