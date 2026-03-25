@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260325-4e60f4bc",
-        "date": "2026-03-25T20:28:27+00:00",
+        "tag": "dev-20260325-218832a4",
+        "date": "2026-03-25T20:38:40+00:00",
         "commits": [
+            {
+                "sha": "218832a4",
+                "message": "chore: update package versions",
+                "author": "arabcoders",
+                "date": "2026-03-25T20:38:40+00:00",
+                "full_sha": "218832a493ef72b0499e22f8cf42502925529143"
+            },
             {
                 "sha": "4e60f4bc",
                 "message": "chore: update screenshots",
@@ -4232,7 +4239,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4e60f4bc8ae0c1fabb90f30dfbc150a13a9a8bb7"
+        "full_sha": "218832a493ef72b0499e22f8cf42502925529143"
     },
     {
         "tag": "dev-20250616-c07465a6",
