@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import json
+from unittest.mock import MagicMock
+
 import pytest
 import pytest_asyncio
+from aiohttp import web
+from aiohttp.web import Request
 
 from app.features.presets.repository import PresetsRepository
+from app.features.presets.router import presets_list
+from app.library.encoder import Encoder
 from app.library.sqlite_store import SqliteStore
 
 
@@ -69,3 +76,80 @@ class TestPresetsRepository:
         assert total == 5, "Should report total count"
         assert page == 1, "Should be on page 1"
         assert total_pages == 3, "Should have 3 pages total"
+        assert [item.priority for item in items] == [4, 3], "Should keep default priority-desc order"
+
+    @pytest.mark.asyncio
+    async def test_list_paginated_sorts_by_name_desc(self, repo):
+        await repo.create({"name": "Alpha", "priority": 1})
+        await repo.create({"name": "Gamma", "priority": 3})
+        await repo.create({"name": "Beta", "priority": 2})
+
+        items, _, _, _ = await repo.list_paginated(page=1, per_page=10, sort="name", order="desc")
+
+        assert [item.name for item in items] == ["gamma", "beta", "alpha"], "Should sort by requested field"
+
+    @pytest.mark.asyncio
+    async def test_list_paginated_supports_multiple_sort_fields(self, repo):
+        await repo.create({"name": "Charlie", "priority": 2})
+        await repo.create({"name": "Alpha", "priority": 1})
+        await repo.create({"name": "Bravo", "priority": 1})
+
+        items, _, _, _ = await repo.list_paginated(page=1, per_page=10, sort="priority,name", order="asc,desc")
+
+        assert [(item.priority, item.name) for item in items] == [
+            (1, "bravo"),
+            (1, "alpha"),
+            (2, "charlie"),
+        ], "Should support multiple sort fields and directions"
+
+    @pytest.mark.asyncio
+    async def test_list_paginated_rejects_invalid_sort_field(self, repo):
+        with pytest.raises(ValueError, match="sort must use supported fields"):
+            await repo.list_paginated(page=1, per_page=10, sort="cli", order="asc")
+
+    @pytest.mark.asyncio
+    async def test_list_paginated_rejects_invalid_sort_direction(self, repo):
+        with pytest.raises(ValueError, match="order must be 'asc' or 'desc'"):
+            await repo.list_paginated(page=1, per_page=10, sort="name", order="sideways")
+
+    @pytest.mark.asyncio
+    async def test_list_paginated_rejects_mismatched_sort_and_order_lengths(self, repo):
+        with pytest.raises(ValueError, match="order must provide one direction or match the number of sort fields"):
+            await repo.list_paginated(page=1, per_page=10, sort="priority,name", order="asc,desc,asc")
+
+
+@pytest.mark.asyncio
+class TestPresetRoutes:
+    async def test_list_route_supports_sort_params(self, repo):
+        await repo.create({"name": "Alpha", "priority": 1})
+        await repo.create({"name": "Bravo", "priority": 1})
+        await repo.create({"name": "Charlie", "priority": 2})
+
+        request = MagicMock(spec=Request)
+        request.query = {"page": "1", "per_page": "10", "sort": "priority,name", "order": "asc,desc"}
+
+        response = await presets_list(request, Encoder(), repo)
+        payload = json.loads(response.text)
+
+        assert response.status == web.HTTPOk.status_code, "Should return 200 for valid sorting"
+        assert [item["name"] for item in payload["items"]] == ["bravo", "alpha", "charlie"], "Should sort response"
+
+    async def test_list_route_rejects_invalid_sort_field(self, repo):
+        request = MagicMock(spec=Request)
+        request.query = {"sort": "cli", "order": "asc"}
+
+        response = await presets_list(request, Encoder(), repo)
+        payload = json.loads(response.text)
+
+        assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort field"
+        assert "sort" in payload["error"], "Should explain invalid sort field"
+
+    async def test_list_route_rejects_invalid_sort_direction(self, repo):
+        request = MagicMock(spec=Request)
+        request.query = {"sort": "name", "order": "sideways"}
+
+        response = await presets_list(request, Encoder(), repo)
+        payload = json.loads(response.text)
+
+        assert response.status == web.HTTPBadRequest.status_code, "Should reject unsupported sort direction"
+        assert "order" in payload["error"], "Should explain invalid sort direction"

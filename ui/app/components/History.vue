@@ -1,345 +1,260 @@
 <template>
-  <div
-    class="columns is-multiline is-mobile has-text-centered is-justify-content-flex-end"
-    v-if="hasItems"
-  >
-    <div class="column is-narrow">
-      <button
-        type="button"
-        class="button is-fullwidth"
-        @click="masterSelectAll = !masterSelectAll"
-        :class="{ 'has-text-primary': !masterSelectAll, 'has-text-danger': masterSelectAll }"
-      >
-        <span class="icon">
-          <i :class="!masterSelectAll ? 'fa-regular fa-square-check' : 'fa-regular fa-square'" />
-        </span>
-        <span v-if="!masterSelectAll">Select</span>
-        <span v-else>Unselect</span>
-        <span v-if="selectedElms.length > 0">
-          &nbsp;(<u class="has-text-danger">{{ selectedElms.length }}</u
-          >)
-        </span>
-      </button>
-    </div>
-    <div class="column is-2-tablet is-5-mobile">
-      <Dropdown label="Actions" icons="fa-solid fa-list">
-        <a
-          class="dropdown-item has-text-link"
-          @click="hasDownloaded && hasSelected ? downloadSelected() : null"
-          :style="{
-            opacity: !hasDownloaded || !hasSelected ? 0.5 : 1,
-            cursor: !hasDownloaded || !hasSelected ? 'not-allowed' : 'pointer',
-          }"
-          v-tooltip="!hasSelected || !hasDownloaded ? '' : 'Download items as zip'"
+  <div class="w-full min-w-0 max-w-full space-y-4">
+    <div v-if="hasItems" class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+          @click="toggleMasterSelection"
         >
-          <span class="icon"><i class="fa-solid fa-compress-alt" /></span>
-          <span>Download</span>
-        </a>
-        <a
-          class="dropdown-item has-text-danger"
-          @click="hasSelected ? deleteSelectedItems() : null"
-          :style="{
-            opacity: !hasSelected ? 0.5 : 1,
-            cursor: !hasSelected ? 'not-allowed' : 'pointer',
-          }"
-        >
-          <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-          <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
-        </a>
-        <hr class="dropdown-divider" v-if="hasCompleted || hasIncomplete" />
-        <a v-if="hasCompleted" class="dropdown-item has-text-primary" @click="clearCompleted">
-          <span class="icon"><i class="fa-solid fa-circle-check" /></span>
-          <span>Clear Completed</span>
-        </a>
-        <a v-if="hasIncomplete" class="dropdown-item has-text-info" @click="clearIncomplete">
-          <span class="icon"><i class="fa-solid fa-circle-xmark" /></span>
-          <span>Clear Incomplete</span>
-        </a>
-        <a v-if="hasIncomplete" class="dropdown-item has-text-warning" @click="retryIncomplete">
-          <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-          <span>Retry Incomplete</span>
-        </a>
-      </Dropdown>
-    </div>
-    <div class="column is-narrow">
-      <button
-        type="button"
-        class="button"
-        @click="direction = direction === 'desc' ? 'asc' : 'desc'"
-      >
-        <span class="icon-text is-block">
-          <span class="icon">
-            <i
-              class="fa-solid"
-              :class="direction === 'desc' ? 'fa-arrow-down-a-z' : 'fa-arrow-up-a-z'"
-            />
-          </span>
-        </span>
-      </button>
-    </div>
-  </div>
+          {{ masterSelectAll ? 'Unselect' : 'Select' }}
+        </UButton>
 
-  <div class="columns is-multiline" v-if="paginationInfo.isLoading && !hasItems">
-    <div class="column is-12">
-      <div class="message is-info">
-        <div class="message-body">
-          <span class="icon-text">
-            <span class="icon"> <i class="fa-solid fa-spinner fa-spin fa-2x" /> </span>
-            <span class="ml-3">Loading history...</span>
-          </span>
-        </div>
+        <UBadge v-if="selectedElms.length > 0" color="error" variant="soft" size="sm">
+          {{ selectedElms.length }}
+        </UBadge>
+
+        <UDropdownMenu :items="bulkActionGroups">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
       </div>
-    </div>
-  </div>
 
-  <div class="columns is-multiline" v-if="'list' === display_style">
-    <div class="column is-12" v-if="hasItems">
-      <div class="table-container">
-        <table
-          class="table is-striped is-hoverable is-fullwidth is-bordered"
-          style="min-width: 1300px; table-layout: fixed"
-        >
-          <thead>
-            <tr class="has-text-centered is-unselectable">
-              <th width="5%" v-tooltip="masterSelectAll ? 'Unselect all' : 'Select all'">
-                <a href="#" @click.prevent="masterSelectAll = !masterSelectAll">
-                  <span class="icon-text is-block">
-                    <span class="icon">
-                      <i
-                        class="fa-regular"
-                        :class="{
-                          'fa-square-check': !masterSelectAll,
-                          'fa-square': masterSelectAll,
-                        }"
-                      />
-                    </span>
-                  </span>
-                </a>
+      <UButton
+        color="neutral"
+        variant="outline"
+        size="sm"
+        :icon="direction === 'desc' ? 'i-lucide-arrow-down-a-z' : 'i-lucide-arrow-up-a-z'"
+        square
+        @click="toggleDirection"
+      />
+    </div>
+
+    <UAlert
+      v-if="paginationInfo.isLoading && !hasItems"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading history..."
+    />
+
+    <div
+      v-if="'list' === display_style && hasItems"
+      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+    >
+      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table class="min-w-325 w-full text-sm">
+          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-[5%]">
+                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                  <UIcon
+                    :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
+                    class="size-4"
+                  />
+                </button>
               </th>
-              <th width="40%">Title</th>
-              <th width="15%">Status</th>
-              <th width="15%">Created</th>
-              <th width="10%">Size/Starts</th>
-              <th width="20%">Actions</th>
+              <th class="w-full text-left">Title</th>
+              <th class="w-[15%]">Status</th>
+              <th class="w-[15%]">Created</th>
+              <th class="w-[10%]">Size/Starts</th>
+              <th class="w-[1%]">Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="item in sortCompleted" :key="item._id">
-              <td class="is-vcentered has-text-centered">
-                <label class="checkbox is-block">
+
+          <tbody class="divide-y divide-default">
+            <tr v-for="item in displayedItems" :key="item._id" class="align-top hover:bg-muted/20">
+              <td class="px-3 py-3 text-center align-top">
+                <label class="inline-flex cursor-pointer items-center justify-center">
                   <input
-                    class="completed-checkbox"
-                    type="checkbox"
+                    :id="`checkbox-${item._id}`"
                     v-model="selectedElms"
-                    :id="'checkbox-' + item._id"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
                     :value="item._id"
                   />
                 </label>
               </td>
-              <td class="is-text-overflow is-vcentered">
-                <div class="is-inline is-pulled-right" v-if="item.extras?.duration || show_popover">
-                  <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
-                    {{ formatTime(item.extras.duration) }}
-                  </span>
 
-                  <Popover :showDelay="400" :maxWidth="450" v-if="show_popover">
-                    <template #trigger>
-                      <span class="icon is-pointer"><i class="fa-solid fa-info-circle" /></span>
-                    </template>
-                    <template #title>
-                      <strong>
-                        {{ item.title }}
-                        <span class="tag is-info is-unselectable">{{ item.preset }}</span>
-                      </strong>
-                    </template>
-                    <p v-if="getPath(config.app.download_path, item)">
-                      <b>Path:</b> {{ getPath(config.app.download_path, item) }}
-                    </p>
-                    <hr
-                      v-if="
-                        (showThumbnails && getImage(config.app.download_path, item, false)) ||
-                        item.description
+              <td class="px-3 py-3 align-top">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0 flex-1">
+                    <UTooltip
+                      :text="
+                        show_popover
+                          ? `${item.preset}: ${item.title}`
+                          : `[${item.preset}] - ${item.title}`
                       "
-                    />
-                    <img
-                      v-if="showThumbnails && getImage(config.app.download_path, item, false)"
-                      :src="getImage(config.app.download_path, item, false)"
-                      class="card-image mt-2 mb-2"
-                    />
-                    <p v-if="item.description">{{ item.description }}</p>
-                  </Popover>
-                </div>
-                <div v-if="show_popover">
-                  <div class="is-text-overflow">
-                    <NuxtLink
-                      class="is-text-overflow"
-                      v-tooltip="`${item.preset}: ${item.title}`"
-                      target="_blank"
-                      :href="item.url"
                     >
-                      {{ item.title }}</NuxtLink
+                      <div class="truncate font-medium text-highlighted">
+                        <a target="_blank" :href="item.url" class="hover:underline">
+                          {{ item.title }}
+                        </a>
+                      </div>
+                    </UTooltip>
+                  </div>
+
+                  <div
+                    v-if="item.extras?.duration || show_popover"
+                    class="flex shrink-0 items-center gap-2"
+                  >
+                    <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
+                      {{ formatTime(item.extras.duration) }}
+                    </UBadge>
+
+                    <UPopover
+                      v-if="show_popover"
+                      :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
                     >
-                  </div>
-                </div>
-                <template v-else>
-                  <div class="is-text-overflow" v-tooltip="`[${item.preset}] - ${item.title}`">
-                    <NuxtLink target="_blank" :href="item.url">{{ item.title }}</NuxtLink>
-                  </div>
-                </template>
-                <div
-                  v-if="item.error"
-                  class="is-text-overflow is-pointer"
-                  @click="toggle_class($event)"
-                >
-                  <span class="has-text-danger">{{ item.error }}</span>
-                </div>
-                <div
-                  v-if="showMessage(item)"
-                  class="is-text-overflow is-pointer"
-                  @click="toggle_class($event)"
-                >
-                  <span class="has-text-danger">{{ item.msg }}</span>
-                </div>
-              </td>
-              <td class="is-vcentered has-text-centered is-unselectable">
-                <span class="icon" :class="setIconColor(item)"
-                  ><i :class="[setIcon(item), is_queued(item)]"
-                /></span>
-                <span>{{ setStatus(item) }}</span>
-              </td>
-              <td class="is-vcentered has-text-centered is-unselectable">
-                <span
-                  class="has-tooltip"
-                  :date-datetime="item.datetime"
-                  v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')"
-                  v-rtime="item.datetime"
-                />
-              </td>
-              <td
-                class="is-vcentered has-text-centered is-unselectable"
-                v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
-              >
-                <span
-                  :date-datetime="item.live_in || item.extras?.release_in"
-                  class="has-tooltip"
-                  v-tooltip="
-                    `Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`
-                  "
-                  v-rtime="item.live_in || item.extras?.release_in"
-                />
-              </td>
-              <td class="is-vcentered has-text-centered is-unselectable" v-else>
-                {{ item.file_size ? formatBytes(item.file_size) : 'N/A' }}
-              </td>
-              <td class="is-vcentered is-items-center">
-                <div class="field is-grouped is-grouped-centered">
-                  <div class="control" v-if="!item.filename">
-                    <button
-                      class="button is-warning is-fullwidth is-small"
-                      v-tooltip="'Retry download'"
-                      @click="async () => await retryItem(item, true)"
-                    >
-                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                    </button>
-                  </div>
-                  <div class="control" v-if="item.filename">
-                    <a
-                      class="button is-link is-fullwidth is-small"
-                      :href="makeDownload(config, item)"
-                      v-tooltip="'Download video'"
-                      :download="item.filename?.split('/').reverse()[0]"
-                    >
-                      <span class="icon"><i class="fa-solid fa-download" /></span>
-                    </a>
-                  </div>
-                  <div class="control">
-                    <button
-                      class="button is-danger is-fullwidth is-small"
-                      @click="removeItem(item)"
-                      v-tooltip="config.app.remove_files ? 'Remove video' : 'Clear video'"
-                    >
-                      <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-                    </button>
-                  </div>
-                  <div class="control is-expanded" v-if="item.url">
-                    <Dropdown icons="fa-solid fa-cogs" :button_classes="'is-small'" label="Actions">
-                      <template v-if="item.filename">
-                        <NuxtLink @click="playVideo(item)" class="dropdown-item">
-                          <span class="icon"><i class="fa-solid fa-play" /></span>
-                          <span>Play video</span>
-                        </NuxtLink>
-                        <template v-if="'error' === item.status">
-                          <hr class="dropdown-divider" />
-                          <NuxtLink
-                            class="dropdown-item has-text-warning"
-                            @click="async () => await retryItem(item, true)"
+                      <UButton
+                        color="neutral"
+                        variant="ghost"
+                        size="xs"
+                        icon="i-lucide-info"
+                        square
+                      />
+
+                      <template #content>
+                        <UCard class="max-w-112.5" :ui="{ body: 'space-y-3 p-4' }">
+                          <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
+                              <UBadge color="info" variant="soft" size="sm">{{
+                                item.preset
+                              }}</UBadge>
+                            </div>
+
+                            <p v-if="getItemPath(item)" class="text-xs text-toned">
+                              <span class="font-semibold text-default">Path:</span>
+                              {{ getItemPath(item) }}
+                            </p>
+                          </div>
+
+                          <img
+                            v-if="showThumbnails && getListImage(item)"
+                            :src="getListImage(item)"
+                            class="max-h-56 w-full rounded-md object-cover"
+                          />
+
+                          <div
+                            v-if="item.description"
+                            class="max-h-40 overflow-y-auto rounded-md border border-default bg-muted/20 px-3 py-2 text-sm text-default"
                           >
-                            <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                            <span>Retry download</span>
-                          </NuxtLink>
-                        </template>
-                        <hr class="dropdown-divider" />
-                        <NuxtLink class="dropdown-item has-text-info" @click="generateNfo(item)">
-                          <span class="icon"><i class="fa-solid fa-file-code" /></span>
-                          <span>Generate NFO</span>
-                        </NuxtLink>
-                        <hr class="dropdown-divider" />
+                            {{ item.description }}
+                          </div>
+                        </UCard>
                       </template>
-                      <template v-else-if="isEmbedable(item.url)">
-                        <NuxtLink
-                          class="dropdown-item has-text-danger"
-                          @click="embed_url = getEmbedable(item.url) as string"
-                        >
-                          <span class="icon"><i class="fa-solid fa-play" /></span>
-                          <span>Play video</span>
-                        </NuxtLink>
-                        <hr class="dropdown-divider" />
-                      </template>
-                      <NuxtLink
-                        class="dropdown-item"
-                        @click="emitter('getInfo', item.url, item.preset, item.cli)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-info" /></span>
-                        <span>yt-dlp Information</span>
-                      </NuxtLink>
-
-                      <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
-                        <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                        <span>Local Information</span>
-                      </NuxtLink>
-
-                      <hr class="dropdown-divider" />
-                      <NuxtLink
-                        class="dropdown-item"
-                        @click="async () => await retryItem(item, true)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                        <span>Add to download form</span>
-                      </NuxtLink>
-
-                      <template v-if="item.is_archivable && !item.is_archived">
-                        <hr class="dropdown-divider" />
-                        <NuxtLink
-                          class="dropdown-item has-text-danger"
-                          @click="addArchiveDialog(item)"
-                        >
-                          <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                          <span>Add to archive</span>
-                        </NuxtLink>
-                      </template>
-
-                      <template v-if="item.is_archivable && item.is_archived">
-                        <hr class="dropdown-divider" />
-                        <NuxtLink
-                          class="dropdown-item has-text-danger"
-                          @click="removeFromArchiveDialog(item)"
-                        >
-                          <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                          <span>Remove from archive</span>
-                        </NuxtLink>
-                      </template>
-                    </Dropdown>
+                    </UPopover>
                   </div>
+                </div>
+
+                <p
+                  v-if="item.error"
+                  class="is-text-overflow mt-2 cursor-pointer text-sm text-error"
+                  @click="toggle_class($event)"
+                >
+                  {{ item.error }}
+                </p>
+
+                <p
+                  v-if="showMessage(item)"
+                  class="is-text-overflow mt-1 cursor-pointer text-sm text-error"
+                  @click="toggle_class($event)"
+                >
+                  {{ item.msg }}
+                </p>
+              </td>
+
+              <td class="px-3 py-3 text-center align-top text-sm">
+                <div class="inline-flex items-center gap-2 text-default">
+                  <span class="inline-flex items-center">
+                    <UIcon
+                      :name="setIcon(item)"
+                      :class="[setIconColor(item), isQueuedAnimation(item), 'size-4 shrink-0']"
+                    />
+                  </span>
+                  <span>{{ setStatus(item) }}</span>
+                </div>
+              </td>
+
+              <td class="px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap">
+                <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                  <span :date-datetime="item.datetime" v-rtime="item.datetime" />
+                </UTooltip>
+              </td>
+
+              <td class="px-3 py-3 text-center align-top text-sm text-toned whitespace-nowrap">
+                <template
+                  v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
+                >
+                  <UTooltip
+                    :text="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
+                  >
+                    <span
+                      :date-datetime="item.live_in || item.extras?.release_in"
+                      v-rtime="item.live_in || item.extras?.release_in"
+                    />
+                  </UTooltip>
+                </template>
+
+                <template v-else>
+                  {{ item.file_size ? formatBytes(item.file_size) : 'N/A' }}
+                </template>
+              </td>
+
+              <td class="w-[1%] px-3 py-3 align-top whitespace-nowrap">
+                <div class="flex items-center justify-end gap-1">
+                  <UButton
+                    v-if="!item.filename"
+                    color="warning"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-rotate-cw"
+                    square
+                    @click="() => void retryItem(item, true)"
+                  />
+
+                  <UButton
+                    v-if="item.filename"
+                    color="info"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-download"
+                    square
+                    external
+                    :href="makeDownload(config, item)"
+                    :download="item.filename?.split('/').reverse()[0]"
+                  />
+
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-trash"
+                    square
+                    @click="() => void removeItem(item)"
+                  />
+
+                  <UDropdownMenu v-if="item.url" :items="itemActionGroups(item)">
+                    <UButton
+                      color="neutral"
+                      variant="outline"
+                      size="xs"
+                      icon="i-lucide-settings-2"
+                      trailing-icon="i-lucide-chevron-down"
+                    >
+                      Actions
+                    </UButton>
+                  </UDropdownMenu>
                 </div>
               </td>
             </tr>
@@ -347,379 +262,358 @@
         </table>
       </div>
     </div>
-  </div>
 
-  <div class="columns is-multiline" v-else>
-    <LateLoader
-      :unrender="true"
-      :min-height="showThumbnails ? 410 : 210"
-      class="column is-6"
-      v-for="item in filteredItems(sortCompleted)"
-      :key="item._id"
-    >
-      <div
-        class="card is-flex is-full-height is-flex-direction-column"
-        :class="{
-          'is-bordered-danger': item.status === 'error',
-          'is-bordered-info': item.live_in || item.is_live,
-        }"
+    <div v-else-if="hasItems" class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <LateLoader
+        v-for="item in displayedItems"
+        :key="item._id"
+        :unrender="true"
+        :min-height="showThumbnails ? 410 : 210"
+        class="min-h-0 min-w-0 w-full max-w-full"
       >
-        <header class="card-header">
-          <div class="card-header-title is-text-overflow is-block">
-            <NuxtLink target="_blank" v-tooltip="item.title" :href="item.url">{{
-              item.title
-            }}</NuxtLink>
-          </div>
+        <UCard
+          class="flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden border"
+          :class="historyCardClass(item)"
+          :ui="{ body: 'flex flex-1 flex-col gap-4 p-4', header: 'p-4 pb-3', root: 'bg-default' }"
+        >
+          <template #header>
+            <div class="flex min-w-0 flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <UTooltip :text="item.title">
+                  <div class="min-w-0 text-sm font-semibold text-highlighted">
+                    <a target="_blank" :href="item.url" class="block truncate hover:underline">
+                      {{ item.title }}
+                    </a>
+                  </div>
+                </UTooltip>
+              </div>
 
-          <div class="card-header-icon">
-            <div class="field is-grouped">
-              <div class="control">
-                <span class="tag is-info is-unselectable" v-if="item.extras?.duration">
+              <div class="flex max-w-full flex-wrap items-center justify-end gap-1 sm:shrink-0">
+                <UBadge v-if="item.extras?.duration" color="info" variant="soft" size="sm">
                   {{ formatTime(item.extras.duration) }}
-                </span>
-              </div>
+                </UBadge>
 
-              <div class="control" v-if="show_popover && getPath(config.app.download_path, item)">
-                <Popover :showDelay="400" :maxWidth="550" v-if="show_popover">
-                  <template #trigger>
-                    <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                  </template>
-                  <template #title
-                    ><strong>{{ item.title }}</strong></template
-                  >
-                  <p v-if="getPath(config.app.download_path, item)">
-                    <b>Path:</b> {{ getPath(config.app.download_path, item) }}
-                  </p>
-                  <template v-if="item.description">
-                    <hr />
-                    <p>{{ item.description }}</p>
-                  </template>
-                </Popover>
-              </div>
+                <UPopover
+                  v-if="show_popover && getItemPath(item)"
+                  :content="{ side: 'bottom', align: 'end', sideOffset: 8 }"
+                >
+                  <UButton color="neutral" variant="ghost" size="xs" icon="i-lucide-info" square />
 
-              <div class="control">
-                <button @click="hideThumbnail = !hideThumbnail" v-if="thumbnails">
-                  <span class="icon"
-                    ><i
-                      class="fa-solid"
-                      :class="{ 'fa-arrow-down': hideThumbnail, 'fa-arrow-up': !hideThumbnail }"
-                  /></span>
-                </button>
-              </div>
-              <div class="control">
-                <label class="checkbox is-block">
+                  <template #content>
+                    <UCard class="max-w-137.5" :ui="{ body: 'space-y-3 p-4' }">
+                      <div class="space-y-2">
+                        <p class="text-sm font-semibold text-highlighted">{{ item.title }}</p>
+                        <p class="text-xs text-toned">
+                          <span class="font-semibold text-default">Path:</span>
+                          {{ getItemPath(item) }}
+                        </p>
+                      </div>
+
+                      <div
+                        v-if="item.description"
+                        class="max-h-40 overflow-y-auto rounded-md border border-default bg-muted/20 px-3 py-2 text-sm text-default"
+                      >
+                        {{ item.description }}
+                      </div>
+                    </UCard>
+                  </template>
+                </UPopover>
+
+                <UButton
+                  v-if="thumbnails"
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  :icon="hideThumbnail ? 'i-lucide-chevron-down' : 'i-lucide-chevron-up'"
+                  square
+                  @click="hideThumbnail = !hideThumbnail"
+                />
+
+                <label class="inline-flex cursor-pointer items-center justify-center px-1">
                   <input
-                    class="completed-checkbox"
-                    type="checkbox"
+                    :id="`checkbox-${item._id}`"
                     v-model="selectedElms"
-                    :id="'checkbox-' + item._id"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
                     :value="item._id"
                   />
                 </label>
               </div>
             </div>
+          </template>
+
+          <div
+            v-if="showThumbnails"
+            class="-mx-4 -mt-4 overflow-hidden border-b border-default bg-muted/20"
+          >
+            <figure :class="['relative w-full overflow-hidden', thumbnailRatioClass]">
+              <span v-if="item.filename" class="play-overlay" @click="playVideo(item)">
+                <span class="play-icon" aria-hidden="true">
+                  <UIcon name="i-lucide-play" class="size-6 translate-x-px text-white" />
+                </span>
+                <img
+                  v-if="getGridImage(item)"
+                  :src="getGridImage(item)"
+                  @load="pImg"
+                  @error="onImgError"
+                />
+                <img v-else src="/images/placeholder.png" />
+              </span>
+
+              <span
+                v-else-if="isEmbedable(item.url)"
+                class="play-overlay"
+                @click="embed_url = getEmbedable(item.url) as string"
+              >
+                <span class="play-icon embed-icon" aria-hidden="true">
+                  <UIcon name="i-lucide-play" class="size-6 translate-x-px text-white" />
+                </span>
+                <img
+                  v-if="getGridImage(item)"
+                  :src="getGridImage(item)"
+                  @load="pImg"
+                  @error="onImgError"
+                />
+                <img v-else src="/images/placeholder.png" />
+              </span>
+
+              <template v-else>
+                <img
+                  v-if="getGridImage(item)"
+                  :src="getGridImage(item)"
+                  @load="pImg"
+                  @error="onImgError"
+                />
+                <img v-else src="/images/placeholder.png" />
+              </template>
+            </figure>
           </div>
-        </header>
-        <div v-if="showThumbnails" class="card-image">
-          <figure :class="['image', thumbnail_ratio]">
-            <span v-if="item.filename" @click="playVideo(item)" class="play-overlay">
-              <div class="play-icon"></div>
-              <img
-                @load="pImg"
-                @error="onImgError"
-                :src="getImage(config.app.download_path, item)"
-                v-if="getImage(config.app.download_path, item)"
-              />
-              <img v-else src="/images/placeholder.png" />
-            </span>
-            <span
-              v-else-if="isEmbedable(item.url)"
-              @click="embed_url = getEmbedable(item.url) as string"
-              class="play-overlay"
-            >
-              <div class="play-icon embed-icon"></div>
-              <img
-                @load="pImg"
-                @error="onImgError"
-                :src="getImage(config.app.download_path, item)"
-                v-if="getImage(config.app.download_path, item)"
-              />
-              <img v-else src="/images/placeholder.png" />
-            </span>
-            <template v-else>
-              <img
-                @load="pImg"
-                @error="onImgError"
-                v-if="getImage(config.app.download_path, item)"
-                :src="getImage(config.app.download_path, item)"
-              />
-              <img v-else src="/images/placeholder.png" />
-            </template>
-          </figure>
-        </div>
-        <div class="card-content">
-          <div class="columns is-mobile is-multiline">
-            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-              <span class="icon" :class="setIconColor(item)"
-                ><i :class="[setIcon(item), is_queued(item)]"
-              /></span>
-              <span>{{ setStatus(item) }}</span>
-            </div>
-            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-              <span class="icon"><i class="fa-solid fa-sliders" /></span>
-              <span v-tooltip="`Preset: ${item.preset}`" class="has-tooltip">{{
-                item.preset
-              }}</span>
-            </div>
+
+          <div class="grid gap-2 text-sm sm:auto-cols-fr sm:grid-flow-col">
             <div
-              class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            >
+              <span class="inline-flex items-center gap-2">
+                <UIcon
+                  :name="setIcon(item)"
+                  :class="[setIconColor(item), isQueuedAnimation(item), 'size-4 shrink-0']"
+                />
+                <span>{{ setStatus(item) }}</span>
+              </span>
+            </div>
+
+            <div
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
+            >
+              <UTooltip :text="`Preset: ${item.preset}`">
+                <span class="block min-w-0 truncate">{{ item.preset }}</span>
+              </UTooltip>
+            </div>
+
+            <div
               v-if="'not_live' === item.status && (item.live_in || item.extras?.release_in)"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
             >
-              <span
-                :date-datetime="item.live_in || item.extras?.release_in"
-                class="has-tooltip"
-                v-tooltip="
-                  `Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`
-                "
-                v-rtime="item.live_in || item.extras?.release_in"
-              />
+              <UTooltip
+                :text="`Retry at: ${moment(item.live_in || item.extras?.release_in).format('YYYY-M-DD H:mm Z')}`"
+              >
+                <span
+                  :date-datetime="item.live_in || item.extras?.release_in"
+                  v-rtime="item.live_in || item.extras?.release_in"
+                />
+              </UTooltip>
             </div>
-            <div class="column is-half-mobile has-text-centered is-text-overflow is-unselectable">
-              <span
-                class="has-tooltip"
-                :date-datetime="item.datetime"
-                v-tooltip="moment(item.datetime).format('YYYY-M-DD H:mm Z')"
-                v-rtime="item.datetime"
-              />
-            </div>
+
             <div
-              class="column is-half-mobile has-text-centered is-text-overflow is-unselectable"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
+            >
+              <UTooltip :text="moment(item.datetime).format('YYYY-M-DD H:mm Z')">
+                <span :date-datetime="item.datetime" v-rtime="item.datetime" />
+              </UTooltip>
+            </div>
+
+            <div
               v-if="item.file_size"
+              class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-toned"
             >
               {{ formatBytes(item.file_size) }}
             </div>
           </div>
-          <div class="columns is-mobile is-multiline">
-            <div class="column is-half-mobile" v-if="!item.filename">
-              <a class="button is-warning is-fullwidth" @click="async () => retryItem(item, false)">
-                <span class="icon-text is-block">
-                  <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                  <span>Retry</span>
-                </span>
-              </a>
-            </div>
 
-            <div class="column is-half-mobile" v-if="item.filename">
-              <a
-                class="button is-link is-fullwidth"
-                :href="makeDownload(config, item)"
-                :download="item.filename?.split('/').reverse()[0]"
+          <div class="grid gap-2 sm:grid-cols-3">
+            <UButton
+              v-if="!item.filename"
+              color="warning"
+              variant="outline"
+              icon="i-lucide-rotate-cw"
+              class="w-full justify-center"
+              @click="() => void retryItem(item, false)"
+            >
+              Retry
+            </UButton>
+
+            <UButton
+              v-if="item.filename"
+              color="info"
+              variant="outline"
+              icon="i-lucide-download"
+              class="w-full justify-center"
+              external
+              :href="makeDownload(config, item)"
+              :download="item.filename?.split('/').reverse()[0]"
+            >
+              Download
+            </UButton>
+
+            <UButton
+              color="error"
+              variant="outline"
+              icon="i-lucide-trash"
+              class="w-full justify-center"
+              @click="() => void removeItem(item)"
+            >
+              {{ config.app.remove_files ? 'Remove' : 'Clear' }}
+            </UButton>
+
+            <UDropdownMenu :items="itemActionGroups(item)" class="w-full">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-settings-2"
+                trailing-icon="i-lucide-chevron-down"
+                class="w-full justify-center"
               >
-                <span class="icon-text is-block">
-                  <span class="icon"><i class="fa-solid fa-download" /></span>
-                  <span>Download</span>
-                </span>
-              </a>
-            </div>
-
-            <div class="column is-half-mobile">
-              <a class="button is-danger is-fullwidth" @click="removeItem(item)">
-                <span class="icon-text is-block">
-                  <span class="icon"><i class="fa-solid fa-trash-can" /></span>
-                  <span>{{ config.app.remove_files ? 'Remove' : 'Clear' }}</span>
-                </span>
-              </a>
-            </div>
-
-            <div class="column">
-              <Dropdown icons="fa-solid fa-cogs" label="Actions">
-                <template v-if="item.filename">
-                  <NuxtLink @click="playVideo(item)" class="dropdown-item">
-                    <span class="icon"><i class="fa-solid fa-play" /></span>
-                    <span>Play video</span>
-                  </NuxtLink>
-                  <template v-if="'error' === item.status">
-                    <hr class="dropdown-divider" />
-                    <NuxtLink
-                      class="dropdown-item has-text-warning"
-                      @click="async () => await retryItem(item, true)"
-                    >
-                      <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                      <span>Retry download</span>
-                    </NuxtLink>
-                  </template>
-                  <hr class="dropdown-divider" />
-                  <NuxtLink class="dropdown-item has-text-info" @click="generateNfo(item)">
-                    <span class="icon"><i class="fa-solid fa-file-code" /></span>
-                    <span>Generate NFO</span>
-                  </NuxtLink>
-                  <hr class="dropdown-divider" />
-                </template>
-
-                <template v-else-if="isEmbedable(item.url)">
-                  <NuxtLink
-                    class="dropdown-item has-text-danger"
-                    @click="embed_url = getEmbedable(item.url) as string"
-                  >
-                    <span class="icon"><i class="fa-solid fa-play" /></span>
-                    <span>Play video</span>
-                  </NuxtLink>
-                  <hr class="dropdown-divider" />
-                </template>
-
-                <NuxtLink
-                  class="dropdown-item"
-                  @click="emitter('getInfo', item.url, item.preset, item.cli)"
-                >
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>yt-dlp Information</span>
-                </NuxtLink>
-
-                <NuxtLink class="dropdown-item" @click="emitter('getItemInfo', item._id)">
-                  <span class="icon"><i class="fa-solid fa-info-circle" /></span>
-                  <span>Local Information</span>
-                </NuxtLink>
-
-                <hr class="dropdown-divider" />
-                <NuxtLink class="dropdown-item" @click="async () => await retryItem(item, true)">
-                  <span class="icon"><i class="fa-solid fa-rotate-right" /></span>
-                  <span>Add to download form</span>
-                </NuxtLink>
-
-                <template v-if="item.is_archivable && !item.is_archived">
-                  <hr class="dropdown-divider" />
-                  <NuxtLink class="dropdown-item has-text-danger" @click="addArchiveDialog(item)">
-                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span>Archive Item</span>
-                  </NuxtLink>
-                </template>
-
-                <template v-if="item.is_archivable && item.is_archived">
-                  <hr class="dropdown-divider" />
-                  <NuxtLink
-                    class="dropdown-item has-text-danger"
-                    @click="removeFromArchiveDialog(item)"
-                  >
-                    <span class="icon"><i class="fa-solid fa-box-archive" /></span>
-                    <span>Remove from archive</span>
-                  </NuxtLink>
-                </template>
-              </Dropdown>
-            </div>
+                Actions
+              </UButton>
+            </UDropdownMenu>
           </div>
-          <div class="columns is-mobile is-multiline" v-if="item.error || showMessage(item)">
-            <div class="column is-12" v-if="item.error">
-              <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
-                <span class="has-text-danger">{{ item.error }}</span>
-              </div>
-            </div>
-            <div class="column is-12" v-if="showMessage(item)">
-              <div class="is-text-overflow is-pointer" @click="toggle_class($event)">
-                <span class="has-text-danger">{{ item.msg }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </LateLoader>
-  </div>
 
-  <div class="columns is-multiline" v-if="!hasItems && !paginationInfo.isLoading">
-    <div class="column is-12">
-      <Message
-        class="is-warning"
-        title="Filter results"
-        icon="fas fa-search"
-        :useClose="true"
-        @close="() => emitter('clear_search')"
+          <div
+            v-if="item.error || showMessage(item)"
+            class="space-y-2 border-t border-default pt-3"
+          >
+            <p
+              v-if="item.error"
+              class="is-text-overflow cursor-pointer text-sm text-error"
+              @click="toggle_class($event)"
+            >
+              {{ item.error }}
+            </p>
+
+            <p
+              v-if="showMessage(item)"
+              class="is-text-overflow cursor-pointer text-sm text-error"
+              @click="toggle_class($event)"
+            >
+              {{ item.msg }}
+            </p>
+          </div>
+        </UCard>
+      </LateLoader>
+    </div>
+
+    <div v-if="!hasItems && !paginationInfo.isLoading" class="space-y-4">
+      <UAlert
         v-if="query"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-search"
+        title="Filter results"
       >
-        <span class="is-block"
-          >No results found for: <code>{{ query }}</code
-          >.</span
-        >
-        <hr />
-        <p>
-          You can search using any value shown in the item’s
-          <code
-            ><span class="icon"><i class="fa-solid fa-info-circle" /></span> Local Information</code
-          >. You can also do a targeted search using <code><u>key</u>:value</code>.
-        </p>
+        <template #description>
+          <div class="space-y-3 text-sm text-default">
+            <p>
+              No results found for: <code>{{ query }}</code
+              >.
+            </p>
 
-        <h5>Examples:</h5>
+            <p>
+              You can search using any value shown in the item's <code>Local Information</code>. You
+              can also do a targeted search using <code><u>key</u>:value</code>.
+            </p>
 
-        <ul>
-          <li><code>youtube.com</code> - items containing that text</li>
-          <li><code>is_live:true</code> - only live downloads</li>
-          <li><code>source_name:task_name</code> - items added by the specified task.</li>
-        </ul>
-      </Message>
-      <Message
+            <div>
+              <p class="mb-1 font-medium">Examples:</p>
+              <ul class="list-disc space-y-1 pl-5">
+                <li><code>youtube.com</code> - items containing that text</li>
+                <li><code>is_live:true</code> - only live downloads</li>
+                <li><code>source_name:task_name</code> - items added by the specified task.</li>
+              </ul>
+            </div>
+
+            <UButton
+              color="neutral"
+              variant="outline"
+              size="sm"
+              @click="() => emitter('clear_search')"
+            >
+              Clear filter
+            </UButton>
+          </div>
+        </template>
+      </UAlert>
+
+      <UEmpty
         v-else
-        class="is-primary"
+        icon="i-lucide-triangle-alert"
         title="No items"
-        icon="fas fa-exclamation-triangle"
-        :new-style="true"
-      >
-        <p>Download history is empty.</p>
-      </Message>
-    </div>
-  </div>
-
-  <div
-    v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages"
-    ref="loadMoreTrigger"
-    class="columns is-centered mt-4"
-  >
-    <div class="column is-narrow">
-      <div v-if="paginationInfo.isLoading" class="has-text-centered">
-        <span class="icon is-large has-text-info">
-          <i class="fas fa-spinner fa-pulse fa-2x"></i>
-        </span>
-        <p class="is-size-7 has-text-grey mt-2">Loading more items...</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal is-active" v-if="video_item">
-    <div class="modal-background" @click="closeVideo"></div>
-    <div class="modal-content is-unbounded-model">
-      <VideoPlayer
-        type="default"
-        :isMuted="false"
-        autoplay="true"
-        :isControls="true"
-        :item="video_item"
-        class="is-fullwidth"
-        @closeModel="closeVideo"
-        @error="async (error: string) => await box.alert(error)"
+        description="Download history is empty."
+        class="rounded-lg border border-dashed border-default bg-muted/10 py-10"
       />
     </div>
-    <button class="modal-close is-large" aria-label="close" @click="closeVideo"></button>
-  </div>
 
-  <div class="modal is-active" v-if="embed_url">
-    <div class="modal-background" @click="embed_url = ''"></div>
-    <div class="modal-content is-unbounded-model">
-      <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+    <div
+      v-if="paginationInfo.isLoaded && paginationInfo.page < paginationInfo.total_pages"
+      ref="loadMoreTrigger"
+      class="flex justify-center pt-2"
+    >
+      <div v-if="paginationInfo.isLoading" class="text-center text-sm text-toned">
+        <UIcon name="i-lucide-loader-circle" class="mx-auto size-7 animate-spin text-info" />
+        <p class="mt-2">Loading more items...</p>
+      </div>
     </div>
-    <button class="modal-close is-large" aria-label="close" @click="embed_url = ''"></button>
-  </div>
 
-  <ConfirmDialog
-    v-if="dialog_confirm.visible"
-    :visible="dialog_confirm.visible"
-    :title="dialog_confirm.title"
-    :message="dialog_confirm.message"
-    :options="dialog_confirm.options"
-    @confirm="dialog_confirm.confirm"
-    @cancel="() => (dialog_confirm.visible = false)"
-  />
+    <UModal
+      v-if="video_item"
+      :open="Boolean(video_item)"
+      :dismissible="true"
+      :title="video_item?.title || 'Player'"
+      :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && closeVideo()"
+    >
+      <template #body>
+        <VideoPlayer
+          type="default"
+          :isMuted="false"
+          autoplay="true"
+          :isControls="true"
+          :item="video_item"
+          class="w-full"
+          @closeModel="closeVideo"
+          @error="async (error: string) => await box.alert(error)"
+        />
+      </template>
+    </UModal>
+
+    <UModal
+      v-if="embed_url"
+      :open="Boolean(embed_url)"
+      :dismissible="true"
+      title="Embedded player"
+      :ui="{ content: 'sm:max-w-5xl', body: 'p-0' }"
+      @update:open="(open) => !open && (embed_url = '')"
+    >
+      <template #body>
+        <EmbedPlayer :url="embed_url" @closeModel="embed_url = ''" />
+      </template>
+    </UModal>
+  </div>
 </template>
 
 <script setup lang="ts">
 import moment from 'moment';
 import { useStorage, useIntersectionObserver } from '@vueuse/core';
+import { useDialog } from '~/composables/useDialog';
 import type { StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
 import { deepIncludes, getPath, getImage } from '~/utils';
@@ -742,6 +636,7 @@ const stateStore = useStateStore();
 const socket = useSocketStore();
 const toast = useNotification();
 const box = useConfirm();
+const { confirmDialog } = useDialog();
 
 const showCompleted = useStorage<boolean>('showCompleted', true);
 const hideThumbnail = useStorage<boolean>('hideThumbnailHistory', false);
@@ -757,19 +652,6 @@ const masterSelectAll = ref(false);
 const embed_url = ref('');
 const video_item = ref<StoreItem | null>(null);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
-const dialog_confirm = ref<{
-  visible: boolean;
-  title: string;
-  confirm: (opts?: any) => void;
-  message: string;
-  options: { key: string; label: string }[];
-}>({
-  visible: false,
-  title: 'Confirm Action',
-  confirm: () => {},
-  message: '',
-  options: [],
-});
 
 const paginationInfo = computed(() => stateStore.getPagination());
 
@@ -867,14 +749,6 @@ const filterItem = (item: StoreItem) => {
   return deepIncludes(item, q, new WeakSet());
 };
 
-watch(masterSelectAll, (value) => {
-  if (value) {
-    selectedElms.value = Object.values(stateStore.history).map((element: StoreItem) => element._id);
-  } else {
-    selectedElms.value = [];
-  }
-});
-
 const sortCompleted = computed(() => {
   const thisDirection = direction.value;
   return Object.values(stateStore.history as Record<string, StoreItem>).sort((a, b) => {
@@ -885,8 +759,209 @@ const sortCompleted = computed(() => {
   });
 });
 
+const displayedItems = computed(() => filteredItems(sortCompleted.value as StoreItem[]));
+
 const hasSelected = computed(() => selectedElms.value.length > 0);
-const hasItems = computed(() => filteredItems(sortCompleted.value as StoreItem[]).length > 0);
+const hasItems = computed(() => displayedItems.value.length > 0);
+
+const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
+
+const selectedDownloadableCount = computed(() =>
+  selectedElms.value.reduce((count, itemId) => {
+    const item = stateStore.get('history', itemId, {} as StoreItem) as StoreItem;
+    return item?.filename ? count + 1 : count;
+  }, 0),
+);
+
+const thumbnailRatioClass = computed(() =>
+  thumbnail_ratio.value === 'is-16by9' ? 'aspect-video' : 'aspect-[3/1]',
+);
+
+const toggleMasterSelection = () => {
+  if (masterSelectAll.value) {
+    selectedElms.value = [];
+    masterSelectAll.value = false;
+    return;
+  }
+
+  selectedElms.value = [...displayedItemIds.value];
+  masterSelectAll.value = true;
+};
+
+const toggleDirection = () => {
+  direction.value = direction.value === 'desc' ? 'asc' : 'desc';
+};
+
+watch(
+  displayedItemIds,
+  (ids) => {
+    if (!masterSelectAll.value) {
+      return;
+    }
+    selectedElms.value = [...ids];
+  },
+  { immediate: true },
+);
+
+watch(selectedElms, (value) => {
+  const ids = displayedItemIds.value;
+  masterSelectAll.value = ids.length > 0 && ids.every((id) => value.includes(id));
+});
+
+const getItemPath = (item: StoreItem): string => getPath(config.app.download_path, item) || '';
+
+const getListImage = (item: StoreItem): string =>
+  getImage(config.app.download_path, item, false) || '';
+
+const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
+
+const historyCardClass = (item: StoreItem): string => {
+  if (item.status === 'error') {
+    return 'border-error';
+  }
+
+  if (item.live_in || item.is_live) {
+    return 'border-info';
+  }
+
+  return 'border-default';
+};
+
+const bulkActionGroups = computed(() => {
+  const groups: Array<Array<Record<string, unknown>>> = [
+    [
+      {
+        label: 'Download',
+        icon: 'i-lucide-download',
+        disabled: !hasSelected.value || selectedDownloadableCount.value < 1,
+        onSelect: () => void downloadSelected(),
+      },
+      {
+        label: config.app.remove_files ? 'Remove' : 'Clear',
+        icon: 'i-lucide-trash',
+        color: 'error',
+        disabled: !hasSelected.value,
+        onSelect: () => void deleteSelectedItems(),
+      },
+    ],
+  ];
+
+  const cleanupActions: Array<Record<string, unknown>> = [];
+
+  if (hasCompleted.value) {
+    cleanupActions.push({
+      label: 'Clear Completed',
+      icon: 'i-lucide-circle-check-big',
+      onSelect: () => void clearCompleted(),
+    });
+  }
+
+  if (hasIncomplete.value) {
+    cleanupActions.push(
+      {
+        label: 'Clear Incomplete',
+        icon: 'i-lucide-circle-x',
+        onSelect: () => void clearIncomplete(),
+      },
+      {
+        label: 'Retry Incomplete',
+        icon: 'i-lucide-rotate-cw',
+        color: 'warning',
+        onSelect: () => void retryIncomplete(),
+      },
+    );
+  }
+
+  if (cleanupActions.length > 0) {
+    groups.push(cleanupActions);
+  }
+
+  return groups;
+});
+
+const itemActionGroups = (item: StoreItem) => {
+  const groups: Array<Array<Record<string, unknown>>> = [];
+  const mediaActions: Array<Record<string, unknown>> = [];
+
+  if (item.filename) {
+    mediaActions.push({
+      label: 'Play video',
+      icon: 'i-lucide-play',
+      onSelect: () => playVideo(item),
+    });
+
+    if ('error' === item.status) {
+      mediaActions.push({
+        label: 'Retry download',
+        icon: 'i-lucide-rotate-cw',
+        color: 'warning',
+        onSelect: () => void retryItem(item, true),
+      });
+    }
+
+    mediaActions.push({
+      label: 'Generate NFO',
+      icon: 'i-lucide-file-code-2',
+      color: 'info',
+      onSelect: () => void generateNfo(item),
+    });
+  } else if (isEmbedable(item.url)) {
+    mediaActions.push({
+      label: 'Play video',
+      icon: 'i-lucide-play',
+      color: 'error',
+      onSelect: () => {
+        embed_url.value = getEmbedable(item.url) as string;
+      },
+    });
+  }
+
+  if (mediaActions.length > 0) {
+    groups.push(mediaActions);
+  }
+
+  groups.push([
+    {
+      label: 'yt-dlp Information',
+      icon: 'i-lucide-info',
+      onSelect: () => emitter('getInfo', item.url, item.preset, item.cli),
+    },
+    {
+      label: 'Local Information',
+      icon: 'i-lucide-info',
+      onSelect: () => emitter('getItemInfo', item._id),
+    },
+    {
+      label: 'Add to download form',
+      icon: 'i-lucide-copy',
+      onSelect: () => void retryItem(item, true),
+    },
+  ]);
+
+  if (item.is_archivable && !item.is_archived) {
+    groups.push([
+      {
+        label: 'Add to archive',
+        icon: 'i-lucide-archive',
+        color: 'error',
+        onSelect: () => addArchiveDialog(item),
+      },
+    ]);
+  }
+
+  if (item.is_archivable && item.is_archived) {
+    groups.push([
+      {
+        label: 'Remove from archive',
+        icon: 'i-lucide-archive-x',
+        color: 'error',
+        onSelect: () => removeFromArchiveDialog(item),
+      },
+    ]);
+  }
+
+  return groups;
+};
 
 const showMessage = (item: StoreItem) => {
   if (!item?.msg || item.msg === item?.error) {
@@ -915,19 +990,6 @@ const hasCompleted = computed(() => {
   for (const key in stateStore.history) {
     const element = stateStore.history[key] as StoreItem;
     if (element.status === 'finished') {
-      return true;
-    }
-  }
-  return false;
-});
-
-const hasDownloaded = computed(() => {
-  if (Object.keys(stateStore.history)?.length < 0) {
-    return false;
-  }
-  for (const key in stateStore.history) {
-    const element = stateStore.history[key] as StoreItem;
-    if (element.filename) {
       return true;
     }
   }
@@ -976,47 +1038,47 @@ const clearIncomplete = async () => {
 const setIcon = (item: StoreItem) => {
   if ('finished' === item.status) {
     if (!item.filename) {
-      return 'fa-solid fa-exclamation';
+      return 'i-lucide-triangle-alert';
     }
     if (item.extras?.is_premiere) {
-      return 'fa-solid fa-star';
+      return 'i-lucide-star';
     }
-    return item.is_live ? 'fa-solid fa-globe' : 'fa-solid fa-circle-check';
+    return item.is_live ? 'i-lucide-globe' : 'i-lucide-circle-check-big';
   }
   if ('error' === item.status) {
-    return 'fa-solid fa-circle-xmark';
+    return 'i-lucide-circle-x';
   }
   if ('cancelled' === item.status) {
-    return 'fa-solid fa-eject';
+    return 'i-lucide-circle-off';
   }
   if ('not_live' === item.status) {
-    return item.extras?.is_premiere ? 'fa-solid fa-star' : 'fa-solid fa-headset';
+    return item.extras?.is_premiere ? 'i-lucide-star' : 'i-lucide-headphones';
   }
   if ('skip' === item.status) {
-    return 'fa-solid fa-ban';
+    return 'i-lucide-ban';
   }
-  return 'fa-solid fa-circle';
+  return 'i-lucide-circle';
 };
 
 const setIconColor = (item: StoreItem) => {
   if ('finished' === item.status) {
     if (!item.filename) {
-      return 'has-text-warning';
+      return 'text-warning';
     }
-    return 'has-text-success';
+    return 'text-success';
   }
   if ('not_live' === item.status) {
-    return 'has-text-info';
+    return 'text-info';
   }
   if ('cancelled' === item.status || 'skip' === item.status) {
-    return 'has-text-warning';
+    return 'text-warning';
   }
 
   if ('error' === item.status && item.filename) {
-    return 'has-text-warning';
+    return 'text-warning';
   }
 
-  return 'has-text-danger';
+  return 'text-error';
 };
 
 const setStatus = (item: StoreItem) => {
@@ -1060,19 +1122,26 @@ const retryIncomplete = async () => {
   }
 };
 
-const addArchiveDialog = (item: StoreItem) => {
-  dialog_confirm.value.visible = true;
-  dialog_confirm.value.title = 'Archive Item';
-  dialog_confirm.value.message = `Archive '${item.title || item.id || item.url || '??'}'?`;
-  dialog_confirm.value.options = [{ key: 'remove_history', label: 'Also, Remove from history.' }];
-  dialog_confirm.value.confirm = (opts: any) => archiveItem(item, opts);
+const addArchiveDialog = async (item: StoreItem): Promise<void> => {
+  const { status, value } = await confirmDialog({
+    title: 'Archive Item',
+    message: `Archive '${item.title || item.id || item.url || '??'}'?`,
+    confirmText: 'Archive',
+    confirmColor: 'warning',
+    options: [{ key: 'remove_history', label: 'Also, Remove from history.' }],
+  });
+
+  if (!status) {
+    return;
+  }
+
+  await archiveItem(item, value ?? undefined);
 };
 
 const archiveItem = async (item: StoreItem, opts = {}) => {
   try {
     const req = await request(`/api/history/${item._id}/archive`, { method: 'POST' });
     const data = await req.json();
-    dialog_confirm.value.visible = false;
     if (!req.ok) {
       toast.error(data.error);
       return;
@@ -1213,19 +1282,29 @@ const toggle_class = (e: Event) =>
     (e.currentTarget as HTMLElement).classList.toggle(c),
   );
 
-const removeFromArchiveDialog = (item: StoreItem) => {
-  dialog_confirm.value.visible = true;
-  dialog_confirm.value.title = 'Remove from Archive';
-  dialog_confirm.value.message = `Remove '${item.title || item.id || item.url || '??'}' from archive?`;
-  const opts = [
+const removeFromArchiveDialog = async (item: StoreItem): Promise<void> => {
+  const options = [
     { key: 'remove_history', label: 'Remove from history.' },
     { key: 're_add', label: 'Re-add to download form.' },
   ];
+
   if (config.app.remove_files) {
-    opts.push({ key: 'dont_remove_file', label: "Don't remove associated files." });
+    options.push({ key: 'dont_remove_file', label: "Don't remove associated files." });
   }
-  dialog_confirm.value.options = opts;
-  dialog_confirm.value.confirm = (opts: any) => removeFromArchive(item, opts);
+
+  const { status, value } = await confirmDialog({
+    title: 'Remove from Archive',
+    message: `Remove '${item.title || item.id || item.url || '??'}' from archive?`,
+    confirmText: 'Remove',
+    confirmColor: 'error',
+    options,
+  });
+
+  if (!status) {
+    return;
+  }
+
+  await removeFromArchive(item, value ?? undefined);
 };
 
 const removeFromArchive = async (
@@ -1245,8 +1324,6 @@ const removeFromArchive = async (
   } catch (e: any) {
     console.error(e);
     toast.error(`Error: ${e.message}`);
-  } finally {
-    dialog_confirm.value.visible = false;
   }
 
   let file_delete = config.app.remove_files;
@@ -1264,13 +1341,11 @@ const removeFromArchive = async (
   }
 };
 
-const is_queued = (item: StoreItem) => {
+const isQueuedAnimation = (item: StoreItem) => {
   if (!item?.status || 'not_live' !== item.status) {
     return '';
   }
-  return item.live_in || item.extras?.live_in || item.extras?.release_in
-    ? 'fa-spin fa-spin-10'
-    : '';
+  return item.live_in || item.extras?.live_in || item.extras?.release_in ? 'animate-spin' : '';
 };
 
 const generateNfo = async (item: StoreItem) => {

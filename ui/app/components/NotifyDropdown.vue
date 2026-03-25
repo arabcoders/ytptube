@@ -1,142 +1,201 @@
-<style scoped>
-.notification-item {
-  border-left: 4px solid transparent;
-  padding-left: 0.75rem;
-  border-bottom: 1px solid #f5f5f5;
-}
-
-.notification-info {
-  border-color: var(--bulma-info);
-}
-
-.notification-success {
-  border-color: var(--bulma-primary);
-}
-
-.notification-warning {
-  border-color: var(--bulma-warning);
-}
-
-.notification-error {
-  border-color: var(--bulma-danger);
-}
-
-.notification-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.notification-message {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-  max-width: 280px;
-}
-
-.notification-message.expanded {
-  white-space: normal;
-  word-break: break-word;
-  max-width: 100%;
-}
-</style>
-
 <template>
-  <div class="navbar-item has-dropdown is-hoverable">
-    <a class="navbar-link">
-      <span class="icon"><i class="fas fa-bell" /></span>
-      <span class="tag ml-2" :class="store.severityColor">
-        <span :class="{ 'is-bold': store.unreadCount }">{{ store.unreadCount }}</span>
-        <span>&nbsp;/&nbsp;</span>
-        <span class="is-underlined">{{ store.notifications.length }}</span>
-      </span>
-      <span class="icon ml-2" v-if="store.severityIcon"><i :class="store.severityIcon" /></span>
-    </a>
-    <div class="navbar-dropdown is-right" style="width: 400px">
-      <template v-if="store.notifications.length > 0">
-        <div class="px-3 py-2 is-flex is-justify-content-space-between is-align-items-center">
-          <span class="has-text-grey"></span>
-
-          <div class="field is-grouped">
-            <div class="control" v-if="store.unreadCount > 0">
-              <button class="button is-small is-light mr-1" @click="store.markAllRead">
-                <span class="icon"><i class="fas fa-check" /></span>
-                <span>Mark all read</span>
-              </button>
-            </div>
-
-            <div class="control">
-              <button class="button is-small is-danger is-light" @click="store.clear">
-                <span class="icon"><i class="fas fa-trash" /></span>
-                <span>Clear all</span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <hr class="navbar-divider" />
+  <UPopover :content="{ align: 'end', side: 'bottom', sideOffset: 8 }">
+    <UButton color="neutral" variant="ghost" size="sm">
+      <template #leading>
+        <UIcon name="i-lucide-bell" class="size-4" />
       </template>
-      <div class="notification-list">
-        <div
-          v-for="n in store.notifications"
-          :key="n.id"
-          class="pr-1 pl-1 navbar-item is-flex is-align-items-start"
-          :class="['notification-item', 'notification-' + n.level]"
+      <span class="hidden sm:inline">Notifications</span>
+      <template #trailing>
+        <UBadge :color="severityTone" variant="soft" size="sm"
+          >{{ store.unreadCount }}/{{ store.notifications.length }}</UBadge
         >
-          <div class="is-flex-grow-1">
-            <p
-              class="is-size-7 mb-1 notification-message"
-              :class="{ expanded: expandedId === n.id }"
-              @click="toggleExpand(n.id)"
-            >
-              {{ n.message }}
-            </p>
-            <p class="is-size-7 has-text-grey">
-              <span
-                :date-datetime="n.created"
-                v-tooltip="moment(n.created).format('YYYY-M-DD H:mm Z')"
-                v-rtime="n.created"
-              />
-              -
-              <NuxtLink @click="copy_text(n.id, n.message)">
-                <span v-if="copiedId === n.id" class="has-text-success">Copied!</span>
-                <span v-else>Copy</span>
-              </NuxtLink>
-            </p>
+      </template>
+    </UButton>
+
+    <template #content>
+      <UCard
+        class="w-md max-w-[calc(100vw-1rem)]"
+        :ui="{
+          header: 'flex items-center justify-between gap-3',
+          body: 'sm:p-2 p-0',
+          footer: 'flex justify-end gap-2',
+        }"
+      >
+        <template #header>
+          <div>
+            <p class="text-sm font-semibold text-highlighted">Notifications</p>
+            <p class="text-xs text-toned">Recent activity and errors.</p>
           </div>
-          <div class="ml-3 is-flex is-flex-direction-column is-justify-content-center">
-            <div class="field is-grouped">
-              <div class="control" v-if="!n.seen">
-                <button class="button is-small is-light" @click="store.markRead(n.id)">
-                  <span class="icon"><i class="fas fa-check" /></span>
-                </button>
-              </div>
-              <div class="control">
-                <button class="button is-danger is-small" @click="store.remove(n.id)">
-                  <span class="icon"><i class="fas fa-trash" /></span>
-                </button>
-              </div>
+
+          <UBadge :color="severityTone" variant="soft" size="sm">
+            {{ store.unreadCount }} unread
+          </UBadge>
+        </template>
+
+        <template #default>
+          <div v-if="store.sortedNotifications.length > 0" class="max-h-104 overflow-y-auto p-0">
+            <div class="space-y-2">
+              <UAlert
+                v-for="item in store.sortedNotifications"
+                :key="item.id"
+                orientation="horizontal"
+                variant="outline"
+                color="neutral"
+                :icon="notificationIcon(item.level)"
+                :title="item.message"
+                :description="moment(item.created).fromNow()"
+                :ui="{
+                  root: 'rounded-md border border-default border-l-4 bg-default px-3 py-2 transition-colors hover:bg-muted/40',
+                  icon: 'size-4 mt-0.5',
+                  title:
+                    expandedId === item.id
+                      ? 'whitespace-normal break-words text-sm'
+                      : 'truncate text-sm',
+                  description: 'mt-1 text-xs text-toned',
+                  actions: 'items-center gap-1 ml-2',
+                }"
+                :class="notificationAlertClass(item.level, item.id)"
+                @click="handleNotificationClick(item.id)"
+              >
+                <template #description>
+                  <span class="flex items-center gap-1 text-xs text-toned">
+                    <UTooltip :text="moment(item.created).format('YYYY-M-DD H:mm Z')">
+                      <span :date-datetime="item.created" v-rtime="item.created" />
+                    </UTooltip>
+                    <span>-</span>
+                    <button
+                      type="button"
+                      class="underline underline-offset-2"
+                      @click.stop="copy_text(item.id, item.message)"
+                    >
+                      <span v-if="copiedId === item.id" class="text-success">Copied!</span>
+                      <span v-else>Copy</span>
+                    </button>
+                  </span>
+                </template>
+
+                <template #actions>
+                  <UButton
+                    v-if="!item.seen"
+                    color="neutral"
+                    variant="ghost"
+                    size="xs"
+                    square
+                    @click.stop="store.markRead(item.id)"
+                  >
+                    <UIcon name="i-lucide-check" class="size-3.5" />
+                  </UButton>
+                  <UButton
+                    color="error"
+                    variant="ghost"
+                    size="xs"
+                    square
+                    @click.stop="store.remove(item.id)"
+                  >
+                    <UIcon name="i-lucide-trash" class="size-3.5" />
+                  </UButton>
+                </template>
+              </UAlert>
             </div>
           </div>
-        </div>
-        <div v-if="store.notifications.length < 1" class="navbar-item is-flex is-align-items-start">
-          <div class="is-flex-grow-1 has-text-centered has-text-grey">
-            <p class="is-size-7">No notifications</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+
+          <UEmpty
+            v-else
+            icon="i-lucide-inbox"
+            title="No notifications"
+            description="You do not have any stored notifications yet."
+            class="px-4 py-8"
+          />
+        </template>
+
+        <template #footer>
+          <UButton
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-check"
+            :disabled="store.unreadCount === 0"
+            @click="store.markAllRead()"
+          >
+            Mark all read
+          </UButton>
+
+          <UButton
+            color="error"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-trash"
+            :disabled="store.notifications.length === 0"
+            @click="store.clear()"
+          >
+            Clear all
+          </UButton>
+        </template>
+      </UCard>
+    </template>
+  </UPopover>
 </template>
 
 <script setup lang="ts">
 import moment from 'moment';
+import type { notificationType } from '~/composables/useNotification';
 
 const store = useNotificationStore();
 
 const copiedId = ref<string | null>(null);
 const expandedId = ref<string | null>(null);
 
+const severityTone = computed(() => {
+  switch (store.severityLevel) {
+    case 'error':
+      return 'error' as const;
+    case 'warning':
+      return 'warning' as const;
+    case 'success':
+      return 'success' as const;
+    case 'info':
+      return 'info' as const;
+    default:
+      return 'neutral' as const;
+  }
+});
+
+const notificationIcon = (level: notificationType): string => {
+  switch (level) {
+    case 'error':
+      return 'i-lucide-triangle-alert';
+    case 'warning':
+      return 'i-lucide-circle-alert';
+    case 'success':
+      return 'i-lucide-badge-check';
+    case 'info':
+    default:
+      return 'i-lucide-info';
+  }
+};
+
+const notificationAlertClass = (level: notificationType, id: string): string => {
+  const selectedClass = expandedId.value === id ? 'bg-muted/55 ring-1 ring-inset ring-default' : '';
+
+  switch (level) {
+    case 'error':
+      return `border-l-error text-default ${selectedClass}`.trim();
+    case 'warning':
+      return `border-l-warning text-default ${selectedClass}`.trim();
+    case 'success':
+      return `border-l-success text-default ${selectedClass}`.trim();
+    case 'info':
+    default:
+      return `border-l-info text-default ${selectedClass}`.trim();
+  }
+};
+
 const toggleExpand = (id: string) => (expandedId.value = expandedId.value === id ? null : id);
+
+const handleNotificationClick = (id: string) => {
+  toggleExpand(id);
+  store.markRead(id);
+};
 
 const copy_text = (id: string, text: string): void => {
   copiedId.value = id;

@@ -16,7 +16,7 @@ type DLField = {
   /** The kind of the field. i.e. string, bool */
   kind: DLFieldType;
 
-  /** The icon of the field, it can be a font-awesome icon */
+  /** The icon of the field, use a Lucide/Iconify name like `i-lucide-image` */
   icon?: string;
 
   /** The order of the field, used to sort the fields in the UI. */

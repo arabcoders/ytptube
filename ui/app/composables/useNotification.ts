@@ -1,8 +1,15 @@
 import { useStorage } from '@vueuse/core';
-import { POSITION, useToast } from 'vue-toastification';
+import { getNuxtToastManager } from '~/utils/nuxtToastManager';
 
 export type notificationType = 'info' | 'success' | 'warning' | 'error';
 export type notificationTarget = 'toast' | 'browser';
+export type toastPosition =
+  | 'top-left'
+  | 'top-center'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-center'
+  | 'bottom-right';
 
 export interface notification {
   id: string;
@@ -16,18 +23,30 @@ export interface notificationOptions {
   timeout?: number;
   force?: boolean;
   closeOnClick?: boolean;
-  position?: POSITION;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  onClick?: (closeToast: Function) => void;
+  position?: toastPosition;
+  onClick?: (toast: { id: string | number }) => void;
   store?: boolean;
   lowPriority?: boolean;
 }
 
 const allowToast = useStorage<boolean>('allow_toasts', true);
-const toastPosition = useStorage<POSITION>('toast_position', POSITION.TOP_RIGHT);
+const toastPosition = useStorage<toastPosition>('toast_position', 'top-right');
 const toastDismissOnClick = useStorage<boolean>('toast_dismiss_on_click', true);
 const toastTarget = useStorage<notificationTarget>('toast_target', 'toast');
-const toast = useToast();
+
+const toastMeta = (type: notificationType) => {
+  switch (type) {
+    case 'success':
+      return { color: 'success' as const, icon: 'i-lucide-badge-check' };
+    case 'warning':
+      return { color: 'warning' as const, icon: 'i-lucide-circle-alert' };
+    case 'error':
+      return { color: 'error' as const, icon: 'i-lucide-triangle-alert' };
+    case 'info':
+    default:
+      return { color: 'info' as const, icon: 'i-lucide-info' };
+  }
+};
 
 const requestBrowserPermission = async (): Promise<NotificationPermission> => {
   if (!('Notification' in window)) {
@@ -60,23 +79,21 @@ const sendMessage = (
     'granted' !== Notification.permission;
 
   if (useToastNotification) {
-    switch (type) {
-      case 'info':
-        toast.info(message, opts);
-        break;
-      case 'success':
-        toast.success(message, opts);
-        break;
-      case 'warning':
-        toast.warning(message, opts);
-        break;
-      case 'error':
-        toast.error(message, opts);
-        break;
-      default:
-        toast.error(`Unknown notification type: ${type}. ${message}`, opts);
-        break;
+    const toast = getNuxtToastManager();
+    if (!toast) {
+      console.warn('Nuxt toast manager is not ready yet; skipping toast notification.');
+      return;
     }
+
+    const meta = toastMeta(type);
+    toast.add({
+      title: message,
+      color: meta.color,
+      icon: meta.icon,
+      duration: opts?.timeout,
+      close: true,
+      onClick: opts?.onClick,
+    });
     return;
   }
 
@@ -122,14 +139,17 @@ const notify = (type: notificationType, message: string, opts?: notificationOpti
   }
 
   opts.closeOnClick = toastDismissOnClick.value;
-  opts.position = toastPosition.value ?? POSITION.TOP_RIGHT;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  opts.onClick = (closeToast: Function) => {
-    if (opts?.closeOnClick !== false) {
-      closeToast();
-    }
+  opts.position = toastPosition.value ?? 'top-right';
+  opts.onClick = (toastInstance: { id: string | number }) => {
     if (notificationStore) {
       notificationStore.markRead(id);
+    }
+    if (opts?.closeOnClick !== false) {
+      const toast = getNuxtToastManager();
+      if (!toast) {
+        return;
+      }
+      toast.remove(toastInstance.id);
     }
   };
 

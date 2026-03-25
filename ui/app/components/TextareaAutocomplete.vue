@@ -1,45 +1,52 @@
 <template>
-  <div
-    class="dropdown"
-    :class="{ 'is-active': showList && filteredOptions.length }"
-    style="width: 100%"
-  >
-    <div class="control" style="width: 100%">
-      <textarea
-        :id="id"
-        ref="textareaRef"
-        v-model="localValue"
-        @input="onInput"
-        @focus="onFocus"
-        @blur="hideList"
-        @keydown="onKeydown"
-        @keyup="updateCaret"
-        @click="updateCaret"
-        @mouseup="updateCaret"
-        class="control is-fullwidth textarea"
-        :placeholder="placeholder"
-        autocomplete="off"
-        style="width: 100%; position: relative; z-index: 2"
-        rows="4"
-        :disabled="disabled"
-      />
-    </div>
-    <div class="dropdown-menu" role="menu" style="width: 100%; z-index: 3">
-      <div class="dropdown-content" style="width: 100%; max-height: 11em; overflow-y: auto">
-        <a
-          v-for="(option, idx) in filteredOptions"
-          :key="option.value"
-          @mousedown.prevent="appendFlag(option.value)"
-          :class="['dropdown-item', { 'is-active': idx === highlightedIndex }]"
-          style="display: flex; justify-content: space-between"
-          ref="dropdownItems"
-        >
-          <span class="has-text-weight-bold">{{ option.value }}</span>
-          <span class="has-text-grey-light is-text-overflow" style="margin-left: 1em">{{
-            option.description
-          }}</span>
-        </a>
-      </div>
+  <div class="relative flex h-full w-full flex-col">
+    <UTextarea
+      :id="id"
+      ref="textareaRef"
+      v-model="localValue"
+      :placeholder="placeholder"
+      autocomplete="off"
+      :rows="rows ?? 4"
+      :disabled="disabled"
+      size="lg"
+      variant="outline"
+      color="neutral"
+      class="h-full w-full"
+      :ui="{
+        root: 'w-full',
+        base: 'min-h-[10rem] w-full bg-elevated/60 font-mono text-sm ring-default focus-visible:ring-primary',
+      }"
+      @input="onInput"
+      @focus="onFocus"
+      @blur="hideList"
+      @keydown="onKeydown"
+      @keyup="updateCaret"
+      @click="updateCaret"
+      @mouseup="updateCaret"
+    />
+
+    <div
+      v-if="showList && filteredOptions.length"
+      class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md border border-default bg-default shadow-lg"
+      role="menu"
+    >
+      <button
+        v-for="(option, idx) in filteredOptions"
+        :key="option.value"
+        ref="dropdownItems"
+        data-autocomplete-item
+        type="button"
+        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-left text-sm transition-colors"
+        :class="
+          idx === highlightedIndex
+            ? 'bg-elevated text-highlighted'
+            : 'text-default hover:bg-elevated/60'
+        "
+        @mousedown.prevent="appendFlag(option.value)"
+      >
+        <span class="shrink-0 font-semibold text-highlighted">{{ option.value }}</span>
+        <span class="min-w-0 flex-1 truncate text-xs text-toned">{{ option.description }}</span>
+      </button>
     </div>
   </div>
 </template>
@@ -53,11 +60,12 @@ const props = defineProps<{
   placeholder?: string;
   disabled?: boolean;
   id?: string;
+  rows?: number;
 }>();
 
 const model = defineModel<string>();
 const localValue = ref(model.value || '');
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
+const textareaRef = ref<{ textareaRef?: HTMLTextAreaElement | null } | null>(null);
 const caretIndex = ref(0);
 const showList = ref(false);
 const highlightedIndex = ref(-1);
@@ -66,7 +74,6 @@ const dropdownItems = ref<HTMLElement[]>([]);
 watch(model, (val) => (localValue.value = val || ''));
 watch(localValue, (val) => (model.value = val));
 
-// Compute token at caret position
 const getCurrentToken = (value: string, caret: number) => {
   const left = value.slice(0, caret);
   const right = value.slice(caret);
@@ -82,15 +89,12 @@ const getCurrentToken = (value: string, caret: number) => {
 
 const filteredOptions = computed(() => {
   const { token } = getCurrentToken(localValue.value, caretIndex.value);
-  // Hide suggestions once '=' is present in the current token
   if (!token || token.includes('=')) {
     return [];
   }
-  // Only suggest when typing a long flag starting with `--`
   if (!token.startsWith('--')) {
     return [];
   }
-  // Hide suggestions if token exactly matches an option value
   if (props.options.some((opt) => opt.value === token)) {
     return [];
   }
@@ -117,25 +121,25 @@ const appendFlag = (flag: string) => {
   const caret = caretIndex.value;
   const { token, start, end } = getCurrentToken(value, caret);
   if (token) {
-    // Replace only the flag part of the token, preserving any '=value' suffix in the same token
     const eqPos = token.indexOf('=');
     const after = eqPos !== -1 ? token.slice(eqPos) : '';
     localValue.value = value.slice(0, start) + flag + after + value.slice(end);
     nextTick(() => {
       const pos = start + flag.length + after.length;
-      if (textareaRef.value) {
-        textareaRef.value.selectionStart = textareaRef.value.selectionEnd = pos;
+      if (textareaRef.value?.textareaRef) {
+        textareaRef.value.textareaRef.selectionStart = textareaRef.value.textareaRef.selectionEnd =
+          pos;
         caretIndex.value = pos;
       }
     });
   } else {
-    // No token at caret: append at caret position
     const needsSpace = caret > 0 && value[caret - 1] !== ' ';
     localValue.value = value.slice(0, caret) + (needsSpace ? ' ' : '') + flag + value.slice(caret);
     nextTick(() => {
       const pos = caret + (needsSpace ? 1 : 0) + flag.length;
-      if (textareaRef.value) {
-        textareaRef.value.selectionStart = textareaRef.value.selectionEnd = pos;
+      if (textareaRef.value?.textareaRef) {
+        textareaRef.value.textareaRef.selectionStart = textareaRef.value.textareaRef.selectionEnd =
+          pos;
         caretIndex.value = pos;
       }
     });
@@ -145,8 +149,8 @@ const appendFlag = (flag: string) => {
 };
 
 const updateCaret = () => {
-  caretIndex.value = textareaRef.value
-    ? (textareaRef.value.selectionStart ?? localValue.value.length)
+  caretIndex.value = textareaRef.value?.textareaRef
+    ? (textareaRef.value.textareaRef.selectionStart ?? localValue.value.length)
     : localValue.value.length;
 };
 
@@ -164,16 +168,12 @@ const onInput = () => {
   highlightedIndex.value = showList.value ? 0 : -1;
 };
 
-// Reset scroll position when filtered options change
 watch(filteredOptions, () => {
   highlightedIndex.value = filteredOptions.value.length > 0 && showList.value ? 0 : -1;
   nextTick(() => {
-    const dropdown = document.querySelector('.dropdown-content');
-    if (dropdown) {
-      dropdown.scrollTop = 0;
-    }
-    const items = document.querySelectorAll('.dropdown-item');
-    dropdownItems.value = Array.from(items) as HTMLElement[];
+    dropdownItems.value = Array.from(
+      document.querySelectorAll('[data-autocomplete-item]'),
+    ) as HTMLElement[];
   });
 });
 
@@ -184,7 +184,6 @@ const hideList = () =>
   }, 100);
 
 const onKeydown = (e: KeyboardEvent) => {
-  // Track caret and allow ESC to immediately close suggestions and restore normal keys
   updateCaret();
   if (e.key === 'Escape') {
     showList.value = false;
@@ -200,34 +199,30 @@ const onKeydown = (e: KeyboardEvent) => {
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     highlightedIndex.value = Math.min(highlightedIndex.value + 1, filteredOptions.value.length - 1);
-    nextTick(() => {
-      const el = dropdownItems.value[highlightedIndex.value];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    });
+    nextTick(() =>
+      dropdownItems.value[highlightedIndex.value]?.scrollIntoView({ block: 'nearest' }),
+    );
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
     highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0);
-    nextTick(() => {
-      const el = dropdownItems.value[highlightedIndex.value];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    });
+    nextTick(() =>
+      dropdownItems.value[highlightedIndex.value]?.scrollIntoView({ block: 'nearest' }),
+    );
   } else if (e.key === 'PageDown') {
     e.preventDefault();
     highlightedIndex.value = Math.min(
       highlightedIndex.value + pageSize,
       filteredOptions.value.length - 1,
     );
-    nextTick(() => {
-      const el = dropdownItems.value[highlightedIndex.value];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    });
+    nextTick(() =>
+      dropdownItems.value[highlightedIndex.value]?.scrollIntoView({ block: 'nearest' }),
+    );
   } else if (e.key === 'PageUp') {
     e.preventDefault();
     highlightedIndex.value = Math.max(highlightedIndex.value - pageSize, 0);
-    nextTick(() => {
-      const el = dropdownItems.value[highlightedIndex.value];
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    });
+    nextTick(() =>
+      dropdownItems.value[highlightedIndex.value]?.scrollIntoView({ block: 'nearest' }),
+    );
   } else if (e.key === 'Enter' || e.key === 'Tab') {
     const { token } = getCurrentToken(localValue.value, caretIndex.value);
     const hasEqual = token.includes('=');
@@ -236,13 +231,10 @@ const onKeydown = (e: KeyboardEvent) => {
       highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length
         ? filteredOptions.value[highlightedIndex.value]
         : undefined;
-    // Only autocomplete if there's a partial word being typed
     if (selected && isFlagTrigger) {
       e.preventDefault();
       appendFlag(selected.value);
     }
   }
-
-  // dropdownItems is updated via a single top-level watch(filteredOptions)
 };
 </script>

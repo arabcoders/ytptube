@@ -1,295 +1,325 @@
 <template>
-  <div>
-    <div class="mt-1 columns is-multiline">
-      <div class="column is-12 is-clearfix is-unselectable">
-        <span class="title is-4">
-          <span class="icon-text">
-            <template v-if="toggleForm">
-              <span class="icon"
-                ><i class="fa-solid" :class="{ 'fa-edit': itemRef, 'fa-plus': !itemRef }"
-              /></span>
-              <span>{{ itemRef ? `Edit - ${item.name}` : 'Add new field' }}</span>
-            </template>
-            <template v-else>
-              <span class="icon"><i class="fa-solid fa-file-lines" /></span>
-              <span>Custom Fields</span>
-            </template>
+  <main class="w-full min-w-0 max-w-full space-y-4">
+    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div class="min-w-0 space-y-1">
+        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+          <UIcon name="i-lucide-braces" class="size-5 text-toned" />
+          <span>Custom Fields</span>
+        </div>
+
+        <p class="text-sm text-toned">
+          Custom fields allow you to add new fields to the download form.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <div v-if="showFilter && items.length > 0" class="relative w-full sm:w-80">
+          <span
+            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
+          >
+            <UIcon name="i-lucide-filter" class="size-4" />
           </span>
-        </span>
-        <div class="is-pulled-right" v-if="!toggleForm">
-          <div class="field is-grouped">
-            <p class="control has-icons-left" v-if="toggleFilter && items && items.length > 0">
-              <input
-                type="search"
-                v-model.lazy="query"
-                class="input"
-                id="filter"
-                placeholder="Filter displayed content"
-              />
-              <span class="icon is-left"><i class="fas fa-filter" /></span>
-            </p>
+          <input
+            id="filter"
+            ref="filterInput"
+            v-model="query"
+            type="search"
+            placeholder="Filter displayed content"
+            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
+          />
+        </div>
 
-            <p class="control" v-if="items && items.length > 0">
-              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
-                <span class="icon"><i class="fas fa-filter" /></span>
-                <span v-if="!isMobile">Filter</span>
-              </button>
-            </p>
+        <UButton
+          v-if="items.length > 0"
+          color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilterPanel"
+        >
+          <span v-if="!isMobile">Filter</span>
+        </UButton>
 
-            <p class="control">
-              <button
-                class="button is-primary"
-                @click="
-                  resetForm(false);
-                  toggleForm = !toggleForm;
-                "
-              >
-                <span class="icon"><i class="fas fa-add" /></span>
-                <span v-if="!isMobile">New Field</span>
-              </button>
-            </p>
-            <p class="control">
-              <button
-                v-tooltip.bottom="'Change display style'"
-                class="button has-tooltip-bottom"
-                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
-              >
-                <span class="icon">
-                  <i
-                    class="fa-solid"
-                    :class="{
-                      'fa-table': display_style !== 'list',
-                      'fa-table-list': display_style === 'list',
-                    }"
-                /></span>
-                <span v-if="!isMobile">
-                  {{ display_style === 'list' ? 'List' : 'Grid' }}
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="openCreate"
+        >
+          <span v-if="!isMobile">New Field</span>
+        </UButton>
+
+        <UButton
+          v-if="items.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          @click="toggleDisplayStyle"
+        >
+          <span v-if="!isMobile">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
+
+        <UButton
+          v-if="items.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent()"
+        >
+          <span v-if="!isMobile">Reload</span>
+        </UButton>
+      </div>
+    </div>
+
+    <Pager
+      v-if="paging?.total_pages > 1"
+      :page="paging.page"
+      :last_page="paging.total_pages"
+      :isLoading="isLoading"
+      @navigate="navigatePage"
+    />
+
+    <div
+      v-if="displayStyle === 'list' && filteredItems.length > 0"
+      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+    >
+      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table class="min-w-225 w-full text-sm">
+          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-full text-left">Field</th>
+              <th class="w-[1%]">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-default">
+            <tr v-for="field in filteredItems" :key="field.id" class="hover:bg-muted/20">
+              <td class="px-3 py-3 align-middle">
+                <div class="space-y-2">
+                  <div class="font-semibold text-highlighted">{{ field.name }}</div>
+
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-terminal" class="size-3.5" />
+                      <span>{{ field.field }}</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                      <span>Order: {{ field.order }}</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-shapes" class="size-3.5" />
+                      <span>{{ field.kind }}</span>
+                    </span>
+                  </div>
+
+                  <div v-if="field.description" class="text-xs text-toned">
+                    {{ field.description }}
+                  </div>
+                </div>
+              </td>
+
+              <td class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <UButton
+                    color="info"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-file-up"
+                    @click="exportItem(field)"
+                  >
+                    <span v-if="!isMobile">Export</span>
+                  </UButton>
+
+                  <UButton
+                    color="warning"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-pencil"
+                    @click="editItem(field)"
+                  >
+                    <span v-if="!isMobile">Edit</span>
+                  </UButton>
+
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-trash"
+                    @click="() => void deleteItem(field)"
+                  >
+                    <span v-if="!isMobile">Delete</span>
+                  </UButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-else-if="filteredItems.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <UCard
+        v-for="field in filteredItems"
+        :key="field.id"
+        class="flex h-full flex-col border bg-default"
+        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+      >
+        <template #header>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1 space-y-2">
+              <div class="truncate text-sm font-semibold text-highlighted">{{ field.name }}</div>
+
+              <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+                <span
+                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                >
+                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                  <span>Order {{ field.order }}</span>
                 </span>
-              </button>
-            </p>
-            <p class="control">
-              <button
-                class="button is-info"
-                @click="async () => await loadContent(page)"
-                :class="{ 'is-loading': isLoading }"
-                :disabled="isLoading"
-                v-if="items && items.length > 0"
-              >
-                <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="!isMobile">Reload</span>
-              </button>
-            </p>
+
+                <span
+                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                >
+                  <UIcon name="i-lucide-shapes" class="size-3.5" />
+                  <span>{{ field.kind }}</span>
+                </span>
+              </div>
+            </div>
+
+            <UButton
+              color="info"
+              variant="ghost"
+              size="xs"
+              icon="i-lucide-file-up"
+              square
+              @click="exportItem(field)"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-2 text-sm text-default">
+          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <span class="wrap-break-word">{{ field.field }}</span>
+            </div>
+          </div>
+
+          <div
+            v-if="field.description"
+            class="rounded-md border border-default bg-muted/20 px-3 py-2"
+          >
+            <div class="flex items-start gap-2">
+              <UIcon
+                name="i-lucide-message-square-text"
+                class="mt-0.5 size-4 shrink-0 text-toned"
+              />
+              <span class="wrap-break-word">{{ field.description }}</span>
+            </div>
           </div>
         </div>
-        <div class="is-hidden-mobile" v-if="!toggleForm">
-          <span class="subtitle">
-            Custom fields allow you to add new fields to the download form.
-          </span>
+
+        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+          <UButton
+            color="warning"
+            variant="outline"
+            icon="i-lucide-pencil"
+            class="w-full justify-center"
+            @click="editItem(field)"
+          >
+            Edit
+          </UButton>
+
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash"
+            class="w-full justify-center"
+            @click="() => void deleteItem(field)"
+          >
+            Delete
+          </UButton>
         </div>
-      </div>
+      </UCard>
+    </div>
 
-      <div class="column is-12" v-if="!toggleForm && paging?.total_pages > 1">
-        <Pager
-          :page="paging.page"
-          :last_page="paging.total_pages"
-          :isLoading="isLoading"
-          @navigate="
-            async (newPage) => {
-              page = newPage;
-              await loadContent(newPage);
-            }
-          "
-        />
-      </div>
+    <UAlert
+      v-if="isLoading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading"
+      description="Loading data. Please wait..."
+    />
 
-      <div class="column is-12" v-if="toggleForm">
+    <div v-else-if="query && filteredItems.length < 1" class="space-y-3">
+      <UAlert
+        color="warning"
+        variant="soft"
+        icon="i-lucide-search"
+        title="No Results"
+        :description="`No results found for the query: ${query}. Please try a different search term.`"
+      />
+
+      <UButton color="neutral" variant="outline" size="sm" @click="query = ''">
+        Clear filter
+      </UButton>
+    </div>
+
+    <UAlert
+      v-else-if="!filteredItems.length"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-circle-alert"
+      title="No items"
+      description="There are no custom defined fields yet. Click the New Field button to add your first field."
+    />
+
+    <UModal
+      v-if="editorOpen"
+      :open="editorOpen"
+      :title="modalTitle"
+      :description="modalDescription"
+      :dismissible="!dlFields.addInProgress.value"
+      :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
+      @update:open="(open) => !open && closeEditor()"
+    >
+      <template #body>
         <DLFieldForm
+          :key="modalKey"
           :addInProgress="dlFields.addInProgress.value"
           :reference="itemRef"
           :item="item as DLField"
-          @cancel="resetForm(true)"
+          @cancel="closeEditor()"
           @submit="updateItem"
         />
-      </div>
-    </div>
-
-    <div
-      class="columns is-multiline"
-      v-if="!isLoading && !toggleForm && filteredItems && filteredItems.length > 0"
-    >
-      <div class="column is-12" v-if="'list' === display_style">
-        <div class="table-container">
-          <table
-            class="table is-striped is-hoverable is-fullwidth is-bordered"
-            style="min-width: 850px; table-layout: fixed"
-          >
-            <thead>
-              <tr class="has-text-centered is-unselectable">
-                <th width="80%">
-                  <span class="icon"><i class="fa-solid fa-filter" /></span>
-                  <span>Field</span>
-                </th>
-                <th width="20%">
-                  <span class="icon"><i class="fa-solid fa-gear" /></span>
-                  <span>Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="field in filteredItems" :key="field.id">
-                <td class="is-vcentered">
-                  <div class="is-text-overflow is-bold">
-                    {{ field.name }}
-                  </div>
-                  <div class="is-unselectable">
-                    <span class="icon-text">
-                      <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                      <span>{{ field.field }}</span>
-                    </span>
-                    &nbsp;
-                    <span class="icon-text">
-                      <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                      <span>Order: {{ field.order }}</span>
-                    </span>
-                  </div>
-                </td>
-                <td class="is-vcentered is-items-center">
-                  <div class="field is-grouped is-grouped-centered">
-                    <div class="control">
-                      <button
-                        class="button is-info is-small is-fullwidth"
-                        @click="exportItem(field)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                        <span v-if="!isMobile">Export</span>
-                      </button>
-                    </div>
-                    <div class="control">
-                      <button
-                        class="button is-warning is-small is-fullwidth"
-                        @click="editItem(field)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-edit" /></span>
-                        <span v-if="!isMobile">Edit</span>
-                      </button>
-                    </div>
-                    <div class="control">
-                      <button
-                        class="button is-danger is-small is-fullwidth"
-                        @click="deleteItem(field)"
-                      >
-                        <span class="icon"><i class="fa-solid fa-trash" /></span>
-                        <span v-if="!isMobile">Delete</span>
-                      </button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <template v-else>
-        <div class="column is-6" v-for="field in filteredItems" :key="field.id">
-          <div class="card is-flex is-full-height is-flex-direction-column">
-            <header class="card-header">
-              <div class="card-header-title is-text-overflow is-block" v-text="field.name" />
-              <div class="card-header-icon">
-                <div class="field is-grouped">
-                  <div class="control">
-                    <span class="tag is-dark">
-                      <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                      <span v-text="field.order" />
-                    </span>
-                  </div>
-                  <div class="control">
-                    <a
-                      class="has-text-info"
-                      v-tooltip="'Export item'"
-                      @click.prevent="exportItem(field)"
-                    >
-                      <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </header>
-            <div class="card-content is-flex-grow-1">
-              <div class="content">
-                <p class="is-text-overflow">
-                  <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                  <span v-text="field.field" />
-                </p>
-                <p class="is-text-overflow" v-if="field.description">
-                  <span class="icon"><i class="fa-solid fa-comment" /></span>
-                  <span>{{ field.description }}</span>
-                </p>
-              </div>
-            </div>
-            <div class="card-footer mt-auto">
-              <div class="card-footer-item">
-                <button class="button is-warning is-fullwidth" @click="editItem(field)">
-                  <span class="icon"><i class="fa-solid fa-edit" /></span>
-                  <span>Edit</span>
-                </button>
-              </div>
-              <div class="card-footer-item">
-                <button class="button is-danger is-fullwidth" @click="deleteItem(field)">
-                  <span class="icon"><i class="fa-solid fa-trash" /></span>
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </template>
-    </div>
-
-    <div
-      class="columns is-multiline"
-      v-if="!toggleForm && (isLoading || !filteredItems || filteredItems.length < 1)"
-    >
-      <div class="column is-12">
-        <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
-          Loading data. Please wait...
-        </Message>
-        <Message
-          title="No Results"
-          class="is-warning"
-          icon="fas fa-search"
-          v-else-if="query"
-          :useClose="true"
-          @close="query = ''"
-        >
-          <p>
-            No results found for the query: <code>{{ query }}</code
-            >.
-          </p>
-          <p>Please try a different search term.</p>
-        </Message>
-        <Message v-else title="No items" class="is-warning" icon="fas fa-exclamation-circle">
-          There are no custom defined fields yet. Click the
-          <span class="icon"><i class="fas fa-add" /></span> <strong>New Field</strong> button to
-          add your first field.
-        </Message>
-      </div>
-    </div>
-  </div>
+    </UModal>
+  </main>
 </template>
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
-import type { DLField } from '~/types/dl_fields';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDlFields } from '~/composables/useDlFields';
+import type { DLField } from '~/types/dl_fields';
 import type { APIResponse } from '~/types/responses';
 import { copyText, encode } from '~/utils';
 
 const box = useConfirm();
 const isMobile = useMediaQuery({ maxWidth: 1024 });
-const display_style = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
+const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
 const dlFields = useDlFields();
 const route = useRoute();
+const router = useRouter();
 
 const items = dlFields.dlFields as Ref<DLField[]>;
 const paging = dlFields.pagination;
@@ -297,42 +327,97 @@ const isLoading = dlFields.isLoading;
 const page = ref<number>(route.query.page ? parseInt(route.query.page as string, 10) : 1);
 const item = ref<Partial<DLField>>({});
 const itemRef = ref<number | null | undefined>(null);
-const toggleForm = ref(false);
-const query = ref<string>('');
-const toggleFilter = ref(false);
+const editorOpen = ref(false);
+const query = ref('');
+const showFilter = ref(false);
+const filterInput = ref<HTMLInputElement | null>(null);
 
 const filteredItems = computed<DLField[]>(() => {
-  const q = query.value?.toLowerCase();
-  if (!q) return items.value;
-  return items.value.filter((entry) => deepIncludes(entry, q, new WeakSet()));
+  const normalizedQuery = query.value?.toLowerCase();
+  if (!normalizedQuery) {
+    return items.value;
+  }
+
+  return items.value.filter((entry) => deepIncludes(entry, normalizedQuery, new WeakSet()));
 });
 
-const loadContent = async (pageNumber: number = 1): Promise<void> => {
-  await dlFields.loadDlFields(pageNumber);
-  await nextTick();
-  if (dlFields.pagination.value.total_pages > 1) {
-    useRouter().replace({ query: { ...route.query, page: pageNumber.toString() } });
-  }
-};
+const modalTitle = computed(() => (itemRef.value ? `Edit - ${item.value.name}` : 'Add new field'));
+const modalDescription = computed(
+  () => 'Custom fields allow you to add new fields to the download form.',
+);
+const modalKey = computed(
+  () => `${itemRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
+);
 
-watch(toggleFilter, (value) => {
+watch(showFilter, (value) => {
   if (!value) {
     query.value = '';
   }
 });
 
-const resetForm = (closeForm = false): void => {
+const syncPageQuery = async (pageNumber: number): Promise<void> => {
+  const totalPages = dlFields.pagination.value.total_pages;
+  const nextQuery = { ...route.query };
+
+  if (totalPages > 1) {
+    nextQuery.page = String(pageNumber);
+  } else {
+    delete nextQuery.page;
+  }
+
+  await router.replace({ query: nextQuery });
+};
+
+const toggleFilterPanel = async (): Promise<void> => {
+  showFilter.value = !showFilter.value;
+  if (!showFilter.value) {
+    query.value = '';
+    return;
+  }
+
+  await nextTick();
+  filterInput.value?.focus();
+};
+
+const loadContent = async (pageNumber = 1): Promise<void> => {
+  page.value = pageNumber;
+  await dlFields.loadDlFields(pageNumber);
+  await nextTick();
+  await syncPageQuery(pageNumber);
+};
+
+const reloadContent = async (): Promise<void> => {
+  await loadContent(page.value);
+};
+
+const navigatePage = async (newPage: number): Promise<void> => {
+  await loadContent(newPage);
+};
+
+const resetEditor = (): void => {
   item.value = {};
   itemRef.value = null;
-  if (closeForm) {
-    toggleForm.value = false;
-  }
+};
+
+const closeEditor = (): void => {
+  editorOpen.value = false;
+  resetEditor();
+};
+
+const openCreate = (): void => {
+  resetEditor();
+  editorOpen.value = true;
+};
+
+const toggleDisplayStyle = (): void => {
+  displayStyle.value = displayStyle.value === 'list' ? 'grid' : 'list';
 };
 
 const deleteItem = async (field: DLField): Promise<void> => {
   if (true !== (await box.confirm(`Delete '${field.name}'?`))) {
     return;
   }
+
   await dlFields.deleteDlField(field.id!);
 };
 
@@ -343,33 +428,36 @@ const updateItem = async ({
   reference: number | null | undefined;
   item: DLField;
 }): Promise<void> => {
-  const cb = (resp: APIResponse) => {
-    if (resp.success) {
-      resetForm(true);
+  const callback = (response: APIResponse) => {
+    if (response.success) {
+      closeEditor();
     }
   };
 
   if (reference) {
-    await dlFields.patchDlField(reference, updatedItem, cb);
+    await dlFields.patchDlField(reference, updatedItem, callback);
   } else {
-    await dlFields.createDlField(updatedItem, cb);
+    await dlFields.createDlField(updatedItem, callback);
   }
 };
 
 const editItem = (field: DLField): void => {
-  item.value = { ...field };
+  item.value = JSON.parse(JSON.stringify(field)) as DLField;
   itemRef.value = field.id;
-  toggleForm.value = true;
+  editorOpen.value = true;
 };
 
-const exportItem = (field: DLField): void =>
+const exportItem = (field: DLField): void => {
   copyText(
     encode({
-      ...Object.fromEntries(Object.entries(field).filter(([k, v]) => !!v && 'id' !== k)),
+      ...Object.fromEntries(
+        Object.entries(field).filter(([key, value]) => !!value && 'id' !== key),
+      ),
       _type: 'dl_field',
       _version: '1.0',
     }),
   );
+};
 
 onMounted(async () => await loadContent(page.value));
 </script>

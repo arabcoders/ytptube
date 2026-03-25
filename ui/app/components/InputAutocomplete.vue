@@ -1,50 +1,60 @@
 <template>
-  <div
-    class="dropdown"
-    :class="{ 'is-active': showList && filteredOptions.length }"
-    style="width: 100%"
-  >
-    <div class="control" style="width: 100%">
-      <input
-        v-model="model"
-        @focus="onFocus"
-        @blur="hideList"
-        @keydown="handleKeydown"
-        @input="onInput"
-        class="input"
-        :placeholder="placeholder"
-        autocomplete="new-password"
-        style="width: 100%; position: relative; z-index: 2"
-        :disabled="disabled"
-        :id="id"
-      />
-    </div>
-    <div class="dropdown-menu" role="menu" style="width: 100%; z-index: 3">
-      <div class="dropdown-content" style="width: 100%; max-height: 10em; overflow-y: auto">
-        <a
-          v-for="(option, idx) in filteredOptions"
-          :key="option.value"
-          @mousedown.prevent="selectOption(option.value)"
-          :class="['dropdown-item', { 'is-active': idx === highlightedIndex }]"
-          style="display: flex; justify-content: space-between"
-          :ref="(el) => setDropdownItemRef(el, idx)"
+  <div class="relative w-full">
+    <UInput
+      :id="id"
+      ref="inputRef"
+      v-model="model"
+      :placeholder="placeholder"
+      autocomplete="new-password"
+      :disabled="disabled"
+      size="lg"
+      variant="outline"
+      color="neutral"
+      class="w-full"
+      :ui="{ root: 'w-full', base: 'w-full bg-default/90' }"
+      @focus="onFocus"
+      @blur="hideList"
+      @input="onInput"
+      @keydown="handleKeydown"
+      @keyup="updateCaretFromInput"
+      @click="updateCaretFromInput"
+      @mouseup="updateCaretFromInput"
+    />
+
+    <div
+      v-if="showList && filteredOptions.length"
+      ref="dropdownRef"
+      class="absolute inset-x-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-default bg-default shadow-lg"
+      role="menu"
+    >
+      <button
+        v-for="(option, idx) in filteredOptions"
+        :key="option.value"
+        type="button"
+        class="flex w-full items-start justify-between gap-4 px-3 py-2 text-left text-sm transition-colors"
+        :class="
+          idx === highlightedIndex
+            ? 'bg-elevated text-highlighted'
+            : 'text-default hover:bg-elevated/60'
+        "
+        @mousedown.prevent="selectOption(option.value)"
+        :ref="(el) => setDropdownItemRef(el, idx)"
+      >
+        <span class="shrink-0 font-semibold text-highlighted">{{ option.value }}</span>
+        <abbr
+          class="min-w-0 flex-1 truncate text-xs text-toned no-underline"
+          :title="option.description"
         >
-          <span class="has-text-weight-bold">{{ option.value }}</span>
-          <abbr
-            class="has-text-grey-light is-text-overflow"
-            :title="option.description"
-            style="margin-left: 1em"
-          >
-            {{ option.description }}
-          </abbr>
-        </a>
-      </div>
+          {{ option.description }}
+        </abbr>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, nextTick, toRefs } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 
 const props = withDefaults(
@@ -67,21 +77,31 @@ const props = withDefaults(
   },
 );
 
-const model = defineModel<string>();
+const { placeholder, disabled, id, multiple, openOnFocus, allowShortFlags } = toRefs(props);
 
-const onInput = () => {
-  showList.value = isFlagTrigger.value && filteredOptions.value.length > 0;
-  highlightedIndex.value = showList.value ? 0 : -1;
-};
+const model = defineModel<string>();
 
 const showList = ref(false);
 const highlightedIndex = ref(-1);
 const dropdownItemRefs = ref<(HTMLElement | null)[]>([]);
+const dropdownRef = ref<HTMLElement | null>(null);
+const inputRef = ref<{
+  inputRef?: { value?: HTMLInputElement | null };
+  $el?: Element | null;
+} | null>(null);
+const caretIndex = ref(0);
 
-// Extract the last non-space token and its bounds
-const getLastToken = (value: string) => {
-  // If multiple is disabled, treat the entire input as a single token
-  if (!props.multiple) {
+const getNativeInput = () => {
+  const direct = inputRef.value?.inputRef?.value;
+  if (direct) {
+    return direct;
+  }
+  const fallback = inputRef.value?.$el?.querySelector('input');
+  return fallback instanceof HTMLInputElement ? fallback : null;
+};
+
+const getCurrentToken = (value: string) => {
+  if (!multiple.value) {
     return {
       token: value,
       start: 0,
@@ -89,12 +109,22 @@ const getLastToken = (value: string) => {
     };
   }
 
-  // Multiple enabled: extract last token for multi-flag support
-  const m = (value || '').match(/(\S+)$/);
-  const token: string = m?.[1] ?? '';
-  const start = m ? (m.index as number) : value.length;
-  const end = m ? start + token.length : value.length;
+  const caret = Math.min(caretIndex.value, value.length);
+  const left = value.slice(0, caret);
+  const right = value.slice(caret);
+  const leftMatch = left.match(/(\S+)$/);
+  const rightMatch = right.match(/^(\S+)/);
+  const leftToken = leftMatch?.[1] ?? '';
+  const rightToken = rightMatch?.[1] ?? '';
+  const token = leftToken + rightToken;
+  const start = leftMatch ? caret - leftToken.length : caret;
+  const end = rightMatch ? caret + rightToken.length : caret;
   return { token, start, end };
+};
+
+const updateCaretFromInput = () => {
+  const input = getNativeInput();
+  caretIndex.value = input?.selectionStart ?? (model.value || '').length;
 };
 
 const filteredOptions = computed(() => {
@@ -102,27 +132,21 @@ const filteredOptions = computed(() => {
   if (!value) {
     return props.options;
   }
-  const { token } = getLastToken(value);
 
-  // If openOnFocus is enabled and token is empty/just whitespace, show all options
-  if (props.openOnFocus && !token) {
+  const { token } = getCurrentToken(value);
+  if (openOnFocus.value && !token) {
     return props.options;
   }
-
-  // Hide suggestions when token has '='
   if (!token || token.includes('=')) {
     return [];
   }
 
-  // Check if token is a valid flag format
   const isLongFlag = token.startsWith('--');
-  const isShortFlag = props.allowShortFlags && token.startsWith('-') && !token.startsWith('--');
-
+  const isShortFlag = allowShortFlags.value && token.startsWith('-') && !token.startsWith('--');
   if (!isLongFlag && !isShortFlag) {
     return [];
   }
 
-  // Check for exact match first - if found, only show that
   const exactMatch = props.options.find((opt) => opt.value === token);
   if (exactMatch) {
     return [exactMatch];
@@ -137,7 +161,6 @@ const filteredOptions = computed(() => {
     const desc = opt.description.toLowerCase();
 
     if (isShortFlag) {
-      // Short flags: case-sensitive matching for flag, case-insensitive for description
       if (flag === token) {
         startsWithFlag.push(opt);
       } else if (flag.includes(token)) {
@@ -145,48 +168,78 @@ const filteredOptions = computed(() => {
       } else if (desc.includes(token.toLowerCase())) {
         includesDesc.push(opt);
       }
-    } else {
-      // Long flags: case-insensitive matching
-      const val = token.toLowerCase();
-      const flagLower = flag.toLowerCase();
+      continue;
+    }
 
-      if (flagLower.startsWith(val)) {
-        startsWithFlag.push(opt);
-      } else if (flagLower.includes(val)) {
-        includesFlag.push(opt);
-      } else if (desc.includes(val)) {
-        includesDesc.push(opt);
-      }
+    const normalizedToken = token.toLowerCase();
+    const flagLower = flag.toLowerCase();
+    if (flagLower.startsWith(normalizedToken)) {
+      startsWithFlag.push(opt);
+    } else if (flagLower.includes(normalizedToken)) {
+      includesFlag.push(opt);
+    } else if (desc.includes(normalizedToken)) {
+      includesDesc.push(opt);
     }
   }
 
   return [...startsWithFlag, ...includesFlag, ...includesDesc];
 });
 
+const isFlagTrigger = computed(() => {
+  const { token } = getCurrentToken(model.value || '');
+  if (openOnFocus.value && !token) {
+    return true;
+  }
+  if (!token || token.includes('=')) {
+    return false;
+  }
+
+  const isLongFlag = token.startsWith('--');
+  const isShortFlag = allowShortFlags.value && token.startsWith('-') && !token.startsWith('--');
+  return isLongFlag || isShortFlag;
+});
+
+const onInput = () => {
+  updateCaretFromInput();
+  showList.value = isFlagTrigger.value && filteredOptions.value.length > 0;
+  highlightedIndex.value = showList.value ? 0 : -1;
+};
+
 const selectOption = (val: string) => {
   const value = model.value || '';
-  const { token, start, end } = getLastToken(value);
+  const { token, start, end } = getCurrentToken(value);
 
-  // If multiple is disabled, replace entire value
-  if (!props.multiple) {
-    // Preserve any '=value' suffix already typed
+  if (!multiple.value) {
     const eqPos = token.indexOf('=');
     const after = eqPos !== -1 ? token.slice(eqPos) : '';
     model.value = val + after;
     showList.value = false;
     highlightedIndex.value = -1;
+    nextTick(() => getNativeInput()?.focus());
     return;
   }
 
-  // Multiple enabled: replace only the last token
   if (token) {
-    // Preserve any '=value' suffix already typed for this token
     const eqPos = token.indexOf('=');
     const after = eqPos !== -1 ? token.slice(eqPos) : '';
     model.value = value.slice(0, start) + val + after + value.slice(end);
+    nextTick(() => {
+      const input = getNativeInput();
+      const nextPos = start + val.length + after.length;
+      input?.focus();
+      input?.setSelectionRange(nextPos, nextPos);
+      caretIndex.value = nextPos;
+    });
   } else {
     model.value = val;
+    nextTick(() => {
+      const input = getNativeInput();
+      input?.focus();
+      input?.setSelectionRange(val.length, val.length);
+      caretIndex.value = val.length;
+    });
   }
+
   showList.value = false;
   highlightedIndex.value = -1;
 };
@@ -200,10 +253,10 @@ const hideList = () => {
 };
 
 const onFocus = () => {
-  if (!props.openOnFocus) {
+  updateCaretFromInput();
+  if (!openOnFocus.value) {
     return;
   }
-  // When openOnFocus is enabled, show dropdown if there are options
   const hasOptions = filteredOptions.value.length > 0;
   showList.value = hasOptions;
   highlightedIndex.value = hasOptions ? 0 : -1;
@@ -217,37 +270,23 @@ watch(filteredOptions, () => {
   highlightedIndex.value = filteredOptions.value.length ? 0 : -1;
   dropdownItemRefs.value = Array(filteredOptions.value.length).fill(null);
   nextTick(() => {
-    const dropdown = document.querySelector('.dropdown-content');
-    if (dropdown) {
-      dropdown.scrollTop = 0;
+    if (dropdownRef.value) {
+      dropdownRef.value.scrollTop = 0;
     }
   });
 });
 
-const isFlagTrigger = computed(() => {
-  const { token } = getLastToken(model.value || '');
-
-  // If openOnFocus is enabled and input is empty, allow trigger
-  if (props.openOnFocus && !token) {
-    return true;
+const scrollHighlightedIntoView = () => {
+  const el = dropdownItemRefs.value[highlightedIndex.value];
+  if (!el) {
+    return;
   }
-
-  if (!token || token.includes('=')) return false;
-
-  // Check if token is a valid flag format
-  const isLongFlag = token.startsWith('--');
-  const isShortFlag = props.allowShortFlags && token.startsWith('-') && !token.startsWith('--');
-
-  if (!isLongFlag && !isShortFlag) {
-    return false;
-  }
-
-  // Allow trigger even for exact matches so users can see descriptions
-  return true;
-});
+  el.scrollIntoView({ block: 'nearest' });
+};
 
 const handleKeydown = (e: KeyboardEvent) => {
-  // Escape closes dropdown and lets arrows navigate the input
+  updateCaretFromInput();
+
   if (e.key === 'Escape') {
     showList.value = false;
     highlightedIndex.value = -1;
@@ -262,22 +301,22 @@ const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'ArrowDown') {
     e.preventDefault();
     highlightedIndex.value = Math.min(highlightedIndex.value + 1, filteredOptions.value.length - 1);
-    nextTick(() => scrollHighlightedIntoView());
+    nextTick(scrollHighlightedIntoView);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
     highlightedIndex.value = Math.max(highlightedIndex.value - 1, 0);
-    nextTick(() => scrollHighlightedIntoView());
+    nextTick(scrollHighlightedIntoView);
   } else if (e.key === 'PageDown') {
     e.preventDefault();
     highlightedIndex.value = Math.min(
       highlightedIndex.value + pageSize,
       filteredOptions.value.length - 1,
     );
-    nextTick(() => scrollHighlightedIntoView());
+    nextTick(scrollHighlightedIntoView);
   } else if (e.key === 'PageUp') {
     e.preventDefault();
     highlightedIndex.value = Math.max(highlightedIndex.value - pageSize, 0);
-    nextTick(() => scrollHighlightedIntoView());
+    nextTick(scrollHighlightedIntoView);
   } else if (e.key === 'Enter' || e.key === 'Tab') {
     const selected =
       highlightedIndex.value >= 0 && highlightedIndex.value < filteredOptions.value.length
@@ -289,12 +328,4 @@ const handleKeydown = (e: KeyboardEvent) => {
     }
   }
 };
-
-function scrollHighlightedIntoView() {
-  const el = dropdownItemRefs.value[highlightedIndex.value];
-  if (!el) {
-    return;
-  }
-  el.scrollIntoView({ block: 'nearest' });
-}
 </script>

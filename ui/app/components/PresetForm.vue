@@ -1,354 +1,350 @@
 <template>
-  <main class="columns mt-2 is-multiline">
-    <div class="column is-12">
-      <form autocomplete="off" id="presetForm" @submit.prevent="checkInfo">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-header-title is-text-overflow is-block">
-              <span class="icon-text">
-                <span class="icon"
-                  ><i class="fa-solid" :class="reference ? 'fa-cog' : 'fa-plus'"
-                /></span>
-                <span>{{ reference ? 'Edit' : 'Add' }}</span>
-              </span>
+  <form id="presetForm" autocomplete="off" class="space-y-6" @submit.prevent="checkInfo">
+    <div class="grid gap-4 md:grid-cols-2">
+      <div v-if="reference" class="md:col-span-2 flex justify-end">
+        <UButton
+          type="button"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :icon="showImport ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          @click="showImport = !showImport"
+        >
+          {{ showImport ? 'Hide' : 'Show' }} import
+        </UButton>
+      </div>
+
+      <template v-if="showImport || !reference">
+        <UFormField class="w-full" :ui="fieldUi">
+          <template #label>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-lucide-copy" class="size-4 text-toned" />
+              <span class="font-semibold text-default">Import from pre-existing preset</span>
             </div>
-            <div class="card-header-icon" v-if="reference">
-              <button type="button" @click="showImport = !showImport">
-                <span class="icon"
-                  ><i
-                    class="fa-solid"
-                    :class="{
-                      'fa-arrow-down': !showImport,
-                      'fa-arrow-up': showImport,
-                    }"
-                /></span>
-                <span>{{ showImport ? 'Hide' : 'Show' }} import</span>
-              </button>
+          </template>
+
+          <template #description>
+            <span>
+              Select a preset to import its data. Warning: This will overwrite the current form
+              data.
+            </span>
+          </template>
+
+          <USelect
+            v-model="selectedPreset"
+            :items="importPresetItems"
+            placeholder="Select a preset"
+            value-key="value"
+            label-key="label"
+            size="lg"
+            class="w-full"
+            :ui="{ base: 'w-full' }"
+            @update:model-value="() => void importExistingPreset()"
+          />
+        </UFormField>
+
+        <UFormField class="w-full" :ui="fieldUi">
+          <template #label>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-lucide-import" class="size-4 text-toned" />
+              <span class="font-semibold text-default">Import string</span>
             </div>
+          </template>
+
+          <template #description>
+            <span>
+              Paste shared preset string here to import it. Warning: This will overwrite the current
+              form data.
+            </span>
+          </template>
+
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <UInput
+              id="import_string"
+              v-model="importString"
+              type="text"
+              autocomplete="off"
+              size="lg"
+              class="w-full"
+              :ui="inputUi"
+            />
+
+            <UButton
+              type="button"
+              color="primary"
+              icon="i-lucide-import"
+              size="lg"
+              :disabled="!importString"
+              class="justify-center sm:min-w-28"
+              @click="() => void importItem()"
+            >
+              Import
+            </UButton>
           </div>
+        </UFormField>
+      </template>
 
-          <div class="card-content">
-            <div class="columns is-multiline is-mobile">
-              <template v-if="showImport || !reference">
-                <div class="column is-6-tablet is-12-mobile">
-                  <div class="field">
-                    <label class="label is-inline" for="import_string">
-                      <span class="icon"><i class="fa-solid fa-file-import" /></span>
-                      Import from pre-existing preset
-                    </label>
-                    <div class="control is-expanded">
-                      <div class="select is-fullwidth">
-                        <select
-                          class="is-fullwidth"
-                          v-model="selected_preset"
-                          @change="import_existing_preset"
-                        >
-                          <option value="" disabled>Select a preset</option>
-                          <optgroup
-                            label="Custom presets"
-                            v-if="config?.presets.filter((p) => !p?.default).length > 0"
-                          >
-                            <option
-                              v-for="item in filter_presets(false)"
-                              :key="item.name"
-                              :value="item.name"
-                            >
-                              {{ prettyName(item.name) }}
-                            </option>
-                          </optgroup>
-                          <optgroup label="Default presets">
-                            <option
-                              v-for="item in filter_presets(true)"
-                              :key="item.name"
-                              :value="item.name"
-                            >
-                              {{ prettyName(item.name) }}
-                            </option>
-                          </optgroup>
-                        </select>
-                      </div>
-                    </div>
-                    <span class="help is-bold">
-                      <span class="icon"><i class="fa-solid fa-info" /></span>
-                      <span
-                        >Select a preset to import its data.
-                        <span class="has-text-danger"
-                          >Warning: This will overwrite the current form data.</span
-                        ></span
-                      >
-                    </span>
-                  </div>
-                </div>
-
-                <div class="column is-6-tablet is-12-mobile">
-                  <div class="field">
-                    <label class="label is-inline" for="import_string">
-                      <span class="icon"><i class="fa-solid fa-file-import" /></span>
-                      Import string
-                    </label>
-                    <div class="field-body">
-                      <div class="field has-addons">
-                        <div class="control is-expanded">
-                          <input
-                            type="text"
-                            class="input"
-                            id="import_string"
-                            v-model="import_string"
-                            autocomplete="off"
-                          />
-                        </div>
-                        <div class="control">
-                          <button
-                            class="button is-primary"
-                            :disabled="!import_string"
-                            type="button"
-                            @click="importItem"
-                          >
-                            <span class="icon"><i class="fa-solid fa-add" /></span>
-                            <span>Import</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                    <span class="help is-bold">
-                      <span class="icon"><i class="fa-solid fa-info" /></span>
-                      <span
-                        >Paste shared preset string here to import it.
-                        <span class="has-text-danger"
-                          >Warning: This will overwrite the current form data.</span
-                        ></span
-                      >
-                    </span>
-                  </div>
-                </div>
-              </template>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="name">
-                    <span class="icon"><i class="fa-solid fa-tag" /></span>
-                    Name
-                  </label>
-                  <div class="control">
-                    <input
-                      type="text"
-                      class="input"
-                      id="name"
-                      v-model="form.name"
-                      :disabled="addInProgress"
-                    />
-                  </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Names are stored in lowercase with underscores (no spaces).</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="priority">
-                    <span class="icon"><i class="fa-solid fa-sort-numeric-down" /></span>
-                    Priority
-                  </label>
-                  <div class="control">
-                    <input
-                      type="number"
-                      class="input"
-                      id="priority"
-                      v-model.number="form.priority"
-                      :disabled="addInProgress"
-                      min="0"
-                      placeholder="0"
-                    />
-                  </div>
-                  <span class="help">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span class="is-bold">Higher priority presets appear first in the list.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <label class="label is-inline" for="folder">
-                  <span class="icon"><i class="fa-solid fa-save" /></span>
-                  download path
-                </label>
-                <div class="field has-addons">
-                  <div class="control" v-tooltip="`Full Path: ${config.app.download_path}`">
-                    <span class="button is-static">
-                      <span>{{ shortPath(config.app.download_path) }}</span>
-                    </span>
-                  </div>
-                  <div class="control is-expanded">
-                    <input
-                      type="text"
-                      class="input"
-                      id="folder"
-                      placeholder="Leave empty to use default download path"
-                      v-model="form.folder"
-                      :disabled="addInProgress"
-                      list="folders"
-                    />
-                  </div>
-                </div>
-                <span class="help is-bold">
-                  <span class="icon"><i class="fa-solid fa-info" /></span>
-                  <span>Use this defined path if non are given with the URL.</span>
-                </span>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="output_template">
-                    <span class="icon"><i class="fa-solid fa-file" /></span>
-                    Output template
-                  </label>
-                  <div class="control">
-                    <input
-                      type="text"
-                      class="input"
-                      id="output_template"
-                      :disabled="addInProgress"
-                      placeholder="Leave empty to use default template."
-                      v-model="form.template"
-                    />
-                  </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this output template if non are given with URL.</span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-12">
-                <div class="field">
-                  <label class="label is-unselectable" for="cli_options">
-                    <span class="icon"><i class="fa-solid fa-terminal" /></span>
-                    <span>Command options for yt-dlp</span>
-                  </label>
-                  <TextareaAutocomplete
-                    id="cli_options"
-                    v-model="form.cli"
-                    :options="ytDlpOpt"
-                    :disabled="addInProgress"
-                  />
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>
-                      <NuxtLink @click="showOptions = true">View all options</NuxtLink>. Not all
-                      options are supported
-                      <NuxtLink
-                        target="_blank"
-                        to="https://github.com/arabcoders/ytptube/blob/master/app/library/Utils.py#L26"
-                        >some are ignored</NuxtLink
-                      >. Use with caution.
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label
-                    class="label is-inline"
-                    for="cookies"
-                    v-tooltip="'Netscape HTTP Cookie format.'"
-                  >
-                    <span class="icon"><i class="fa-solid fa-cookie" /></span>
-                    Cookies -
-                    <NuxtLink @click="cookiesDropzoneRef?.triggerFileSelect()"
-                      >Upload file</NuxtLink
-                    >
-                  </label>
-                  <div class="control">
-                    <TextDropzone
-                      ref="cookiesDropzoneRef"
-                      id="cookies"
-                      v-model="form.cookies"
-                      :disabled="addInProgress"
-                      @error="(msg: string) => toast.error(msg)"
-                      placeholder="Leave empty to use default cookies. Or drag & drop a cookie file here."
-                    />
-                  </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span
-                      >Use this cookies if non are given with the URL. Use the
-                      <NuxtLink
-                        target="_blank"
-                        to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
-                      >
-                        Recommended addon</NuxtLink
-                      >
-                      by yt-dlp to export cookies. The cookies MUST be in Netscape HTTP Cookie
-                      format.
-                    </span>
-                  </span>
-                </div>
-              </div>
-
-              <div class="column is-6-tablet is-12-mobile">
-                <div class="field">
-                  <label class="label is-inline" for="description">
-                    <span class="icon"><i class="fa-solid fa-comment" /></span>
-                    Description
-                  </label>
-                  <div class="control">
-                    <textarea
-                      class="textarea"
-                      id="description"
-                      v-model="form.description"
-                      :disabled="addInProgress"
-                      placeholder="Extras instructions for users to follow"
-                    />
-                  </div>
-                  <span class="help is-bold">
-                    <span class="icon"><i class="fa-solid fa-info" /></span>
-                    <span>Use this field to help users to understand how to use this preset.</span>
-                  </span>
-                </div>
-              </div>
-            </div>
+      <UFormField class="w-full" :ui="fieldUi">
+        <template #label>
+          <div class="flex flex-wrap items-center gap-2">
+            <UIcon name="i-lucide-type" class="size-4 text-toned" />
+            <span class="font-semibold text-default">Name</span>
           </div>
+        </template>
 
-          <div class="card-footer">
-            <div class="card-footer-item">
-              <button
-                class="button is-fullwidth is-primary"
-                :disabled="addInProgress"
-                type="submit"
-                :class="{ 'is-loading': addInProgress }"
-                form="presetForm"
-              >
-                <span class="icon"><i class="fa-solid fa-save" /></span>
-                <span>Save</span>
-              </button>
-            </div>
-            <div class="card-footer-item">
-              <button
-                class="button is-fullwidth is-danger"
-                @click="emitter('cancel')"
-                :disabled="addInProgress"
-                type="button"
-              >
-                <span class="icon"><i class="fa-solid fa-times" /></span>
-                <span>Cancel</span>
-              </button>
-            </div>
+        <template #description>
+          <span>Names are stored in lowercase with underscores (no spaces).</span>
+        </template>
+
+        <UInput
+          id="name"
+          v-model="form.name"
+          type="text"
+          size="lg"
+          :disabled="addInProgress"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
+
+      <UFormField class="w-full" :ui="fieldUi">
+        <template #label>
+          <div class="flex flex-wrap items-center gap-2">
+            <UIcon name="i-lucide-list-ordered" class="size-4 text-toned" />
+            <span class="font-semibold text-default">Priority</span>
           </div>
+        </template>
+
+        <template #description>
+          <span>Higher priority presets appear first in the list.</span>
+        </template>
+
+        <UInput
+          id="priority"
+          v-model.number="form.priority"
+          type="number"
+          min="0"
+          placeholder="0"
+          size="lg"
+          :disabled="addInProgress"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
+
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        description="Use this defined path if none are given with the URL."
+      >
+        <template #label>
+          <div class="flex flex-wrap items-center gap-2">
+            <UIcon name="i-lucide-folder-output" class="size-4 text-toned" />
+            <span class="font-semibold text-default">Download path</span>
+          </div>
+        </template>
+
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <UTooltip :text="`Full Path: ${config.app.download_path}`">
+            <div
+              class="inline-flex min-h-11 items-center rounded-md border border-default bg-muted/30 px-3 text-sm text-toned"
+            >
+              {{ shortPath(config.app.download_path) }}
+            </div>
+          </UTooltip>
+
+          <UInput
+            id="folder"
+            v-model="form.folder"
+            type="text"
+            list="folders"
+            placeholder="Leave empty to use default download path"
+            size="lg"
+            :disabled="addInProgress"
+            class="w-full"
+            :ui="inputUi"
+          />
         </div>
-      </form>
+      </UFormField>
+
+      <UFormField
+        class="w-full"
+        :ui="fieldUi"
+        description="Use this output template if none are given with URL."
+      >
+        <template #label>
+          <div class="flex flex-wrap items-center gap-2">
+            <UIcon name="i-lucide-file-code-2" class="size-4 text-toned" />
+            <span class="font-semibold text-default">Output template</span>
+          </div>
+        </template>
+
+        <UInput
+          id="output_template"
+          v-model="form.template"
+          type="text"
+          placeholder="Leave empty to use default template."
+          size="lg"
+          :disabled="addInProgress"
+          class="w-full"
+          :ui="inputUi"
+        />
+      </UFormField>
     </div>
 
-    <datalist id="folders" v-if="config?.folders">
+    <div class="space-y-5 border-t border-default pt-5">
+      <UFormField class="w-full" :ui="editorFieldUi">
+        <template #label>
+          <div class="flex flex-wrap items-center gap-2">
+            <UIcon name="i-lucide-terminal" class="size-4 text-toned" />
+            <span class="font-semibold text-default">Command options for yt-dlp</span>
+          </div>
+        </template>
+
+        <template #description>
+          <p class="text-sm text-toned">
+            <button type="button" class="text-primary hover:underline" @click="showOptions = true">
+              View all options</button
+            >. Not all options are supported;
+            <a
+              target="_blank"
+              class="text-primary hover:underline"
+              href="https://github.com/arabcoders/ytptube/blob/master/app/features/ytdlp/utils.py#L29"
+            >
+              some are ignored.
+            </a>
+          </p>
+        </template>
+        <TextareaAutocomplete
+          id="cli_options"
+          v-model="form.cli"
+          :options="ytDlpOpt"
+          :disabled="addInProgress"
+        />
+      </UFormField>
+    </div>
+
+    <div class="grid gap-5 border-t border-default pt-5 md:grid-cols-2">
+      <div class="space-y-3">
+        <UFormField class="h-full w-full" :ui="editorFieldUi">
+          <template #label>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-lucide-cookie" class="size-4 text-toned" />
+              <span>Cookies</span>
+            </div>
+          </template>
+          <template #description>
+            <p class="text-sm text-toned">
+              Use this cookies if none are given with the URL.
+              <NuxtLink
+                target="_blank"
+                to="https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+                class="text-sm text-primary hover:underline"
+                >Recommended addon</NuxtLink
+              >
+            </p>
+          </template>
+          <template #hint>
+            <button
+              type="button"
+              class="text-sm font-medium text-primary hover:underline"
+              @click="triggerCookieUpload"
+            >
+              Upload file
+            </button>
+          </template>
+          <TextDropzone
+            ref="cookiesDropzoneRef"
+            id="cookies"
+            :rows="7"
+            v-model="form.cookies"
+            :disabled="addInProgress"
+            @error="(msg: string) => toast.error(msg)"
+            placeholder="Leave empty to use default cookies. Or drag & drop a cookie file here."
+          />
+        </UFormField>
+      </div>
+
+      <div class="space-y-3">
+        <UFormField class="h-full w-full" :ui="editorFieldUi">
+          <template #label>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-lucide-message-square-text" class="size-4 text-toned" />
+              <span class="font-semibold text-default">Description</span>
+            </div>
+          </template>
+
+          <template #description>
+            <p class="text-sm text-toned">
+              Use this field to help users to understand how to use this preset.
+            </p>
+          </template>
+
+          <UTextarea
+            id="description"
+            v-model="form.description"
+            :disabled="addInProgress"
+            placeholder="Extras instructions for users to follow"
+            :rows="7"
+            size="lg"
+            variant="outline"
+            color="neutral"
+            class="w-full"
+            :ui="textareaUi"
+          />
+        </UFormField>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-col-reverse gap-2 border-t border-default pt-5 sm:flex-row sm:justify-end"
+    >
+      <UButton
+        type="button"
+        color="neutral"
+        variant="outline"
+        size="lg"
+        icon="i-lucide-x"
+        :disabled="addInProgress"
+        class="justify-center"
+        @click="emitter('cancel')"
+      >
+        Cancel
+      </UButton>
+
+      <UButton
+        type="submit"
+        color="primary"
+        size="lg"
+        icon="i-lucide-save"
+        :disabled="addInProgress"
+        :loading="addInProgress"
+        class="justify-center"
+      >
+        Save
+      </UButton>
+    </div>
+
+    <datalist v-if="config?.folders" id="folders">
       <option v-for="dir in config.folders" :key="dir" :value="dir" />
     </datalist>
 
-    <Modal v-if="showOptions" @close="showOptions = false" :contentClass="'modal-content-max'">
-      <YTDLPOptions />
-    </Modal>
-  </main>
+    <UModal
+      v-if="showOptions"
+      v-model:open="showOptions"
+      title="yt-dlp options"
+      :dismissible="true"
+      :ui="{ content: 'sm:max-w-6xl', body: 'p-0' }"
+    >
+      <template #description>
+        <span class="sr-only">Browse available yt-dlp flags and descriptions.</span>
+      </template>
+
+      <template #body>
+        <YTDLPOptions />
+      </template>
+    </UModal>
+  </form>
 </template>
 
 <script setup lang="ts">
@@ -358,7 +354,7 @@ import TextDropzone from '~/components/TextDropzone.vue';
 import type { ImportedItem } from '~/types';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 import type { Preset } from '~/types/presets';
-import { normalizePresetName, prettyName } from '~/utils';
+import { normalizePresetName } from '~/utils';
 
 const emitter = defineEmits<{
   (event: 'cancel'): void;
@@ -374,17 +370,72 @@ const props = defineProps<{
 
 const config = useConfigStore();
 const toast = useNotification();
-const form = reactive<Preset>(JSON.parse(JSON.stringify(props.preset)));
-const import_string = ref<string>('');
+const dialog = useDialog();
+const { presets, findPreset, selectItems } = usePresetOptions(() => props.presets);
+
+const form = reactive<Preset>({
+  name: '',
+  description: '',
+  folder: '',
+  template: '',
+  cookies: '',
+  cli: '',
+  default: false,
+  priority: 0,
+  ...JSON.parse(JSON.stringify(props.preset || {})),
+});
+
+const importString = ref('');
 const showImport = useStorage<boolean>('showImport', false);
-const selected_preset = ref<string>('');
-const showOptions = ref<boolean>(false);
+const selectedPreset = ref<string>('');
+const showOptions = ref(false);
 const ytDlpOpt = ref<AutoCompleteOptions>([]);
 const cookiesDropzoneRef = ref<InstanceType<typeof TextDropzone> | null>(null);
 
-if (form.priority === undefined) {
-  form.priority = 0;
-}
+const fieldUi = {
+  label: 'font-semibold text-default',
+  container: 'space-y-2',
+  description: 'text-sm text-toned',
+  hint: 'text-sm text-toned',
+};
+
+const editorFieldUi = {
+  root: 'w-full',
+  label: 'font-semibold text-default',
+  container: 'flex flex-col space-y-2',
+  description: 'text-sm text-toned',
+  hint: 'text-sm text-toned',
+};
+
+const inputUi = {
+  root: 'w-full',
+  base: 'w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const textareaUi = {
+  root: 'w-full',
+  base: 'min-h-[10rem] w-full bg-elevated/60 ring-default focus-visible:ring-primary',
+};
+
+const importPresetItems = computed(() => selectItems.value);
+
+watch(
+  () => props.preset,
+  (value) => {
+    Object.assign(form, {
+      name: '',
+      description: '',
+      folder: '',
+      template: '',
+      cookies: '',
+      cli: '',
+      default: false,
+      priority: 0,
+      ...JSON.parse(JSON.stringify(value || {})),
+    });
+  },
+  { deep: true },
+);
 
 watch(
   () => config.ytdlp_options,
@@ -399,6 +450,57 @@ watch(
   { immediate: true },
 );
 
+const triggerCookieUpload = (): void => {
+  cookiesDropzoneRef.value?.triggerFileSelect();
+};
+
+const hasFormContent = computed(() => {
+  return Boolean(
+    form.name ||
+    form.cli ||
+    form.template ||
+    form.folder ||
+    form.cookies ||
+    form.description ||
+    (form.priority ?? 0) > 0,
+  );
+});
+
+const confirmImportOverwrite = async (): Promise<boolean> => {
+  if (!hasFormContent.value) {
+    return true;
+  }
+
+  const { status } = await dialog.confirmDialog({
+    title: 'Overwrite current form?',
+    message: 'Importing will overwrite the current preset form fields.',
+    confirmText: 'Overwrite',
+    cancelText: 'Cancel',
+    confirmColor: 'warning',
+  });
+
+  return status === true;
+};
+
+const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
+  try {
+    const response = await convertCliOptions(args);
+
+    if (response.output_template) {
+      form.template = response.output_template;
+    }
+
+    if (response.download_path) {
+      form.folder = response.download_path;
+    }
+
+    return response.opts as Record<string, any>;
+  } catch (error: any) {
+    toast.error(error.message);
+    return null;
+  }
+};
+
 const checkInfo = async (): Promise<void> => {
   for (const key of ['name']) {
     if (!form[key as keyof Preset]) {
@@ -412,6 +514,7 @@ const checkInfo = async (): Promise<void> => {
     toast.error('The name field is required.');
     return;
   }
+
   form.name = normalizedName;
 
   if (form.folder) {
@@ -428,17 +531,9 @@ const checkInfo = async (): Promise<void> => {
   }
 
   const copy: Preset = JSON.parse(JSON.stringify(form));
-  let usedName = false;
-  const name = normalizedName;
-
-  props.presets?.forEach((p) => {
-    if (p.id === props.reference) {
-      return;
-    }
-    if (p.name === name) {
-      usedName = true;
-    }
-  });
+  const usedName = presets.value.some(
+    (item) => item.id !== props.reference && item.name === normalizedName,
+  );
 
   if (usedName) {
     toast.error('The preset name is already in use.');
@@ -446,43 +541,28 @@ const checkInfo = async (): Promise<void> => {
   }
 
   for (const key in copy) {
-    const val = copy[key as keyof Preset];
-    if ('string' === typeof val) {
-      (copy as any)[key] = val.trim();
+    const value = copy[key as keyof Preset];
+    if (typeof value === 'string') {
+      (copy as any)[key] = value.trim();
     }
   }
 
   emitter('submit', { reference: toRaw(props.reference ?? null), preset: toRaw(copy) });
 };
 
-const convertOptions = async (args: string): Promise<Record<string, any> | null> => {
-  try {
-    const response = await convertCliOptions(args);
-
-    if (response.output_template) {
-      form.template = response.output_template;
-    }
-
-    if (response.download_path) {
-      form.folder = response.download_path;
-    }
-
-    return response.opts as Record<string, any>;
-  } catch (e: any) {
-    toast.error(e.message);
-    return null;
-  }
-};
-
 const importItem = async (): Promise<void> => {
-  const val = import_string.value.trim();
-  if (!val) {
+  const value = importString.value.trim();
+  if (!value) {
     toast.error('The import string is required.');
     return;
   }
 
+  if (!(await confirmImportOverwrite())) {
+    return;
+  }
+
   try {
-    const item = decode(val) as Preset & ImportedItem;
+    const item = decode(value) as Preset & ImportedItem;
 
     if (!item?._type || 'preset' !== item._type) {
       toast.error(
@@ -494,44 +574,41 @@ const importItem = async (): Promise<void> => {
     if (item.name) {
       form.name = item.name;
     }
-
     if (item.cli) {
       form.cli = item.cli;
     }
-
     if (item.template) {
       form.template = item.template;
     }
-
     if (item.folder) {
       form.folder = item.folder;
     }
-
     if (item.description) {
       form.description = item.description;
     }
-
     if (item.priority !== undefined) {
       form.priority = item.priority;
     }
 
-    import_string.value = '';
+    importString.value = '';
     showImport.value = false;
-  } catch (e: any) {
-    console.error(e);
-    toast.error(`Failed to parse. ${e.message}`);
+  } catch (error: any) {
+    console.error(error);
+    toast.error(`Failed to parse. ${error.message}`);
   }
 };
 
-const filter_presets = (flag = true): Preset[] =>
-  config.presets.filter((item) => item.default === flag);
-
-const import_existing_preset = async (): Promise<void> => {
-  if (!selected_preset.value) {
+const importExistingPreset = async (): Promise<void> => {
+  if (!selectedPreset.value) {
     return;
   }
 
-  const preset = config.presets.find((p) => p.name === selected_preset.value);
+  if (!(await confirmImportOverwrite())) {
+    selectedPreset.value = '';
+    return;
+  }
+
+  const preset = findPreset(selectedPreset.value);
   if (!preset) {
     toast.error('Preset not found.');
     return;
@@ -545,6 +622,6 @@ const import_existing_preset = async (): Promise<void> => {
   form.priority = preset.priority ?? 0;
 
   await nextTick();
-  selected_preset.value = '';
+  selectedPreset.value = '';
 };
 </script>

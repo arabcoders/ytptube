@@ -1,374 +1,407 @@
 <template>
-  <div>
-    <div class="mt-1 columns is-multiline">
-      <div class="column is-12 is-clearfix is-unselectable">
-        <span class="title is-4">
-          <span class="icon-text">
-            <template v-if="toggleForm">
-              <span class="icon"
-                ><i class="fa-solid" :class="{ 'fa-edit': targetRef, 'fa-plus': !targetRef }"
-              /></span>
-              <span>{{ targetRef ? `Edit - ${target.name}` : 'Add new notification target' }}</span>
-            </template>
-            <template v-else>
-              <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
-              <span>Notifications</span>
-            </template>
+  <main class="w-full min-w-0 max-w-full space-y-4">
+    <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+      <div class="min-w-0 space-y-1">
+        <div class="flex items-center gap-2 text-lg font-semibold text-highlighted">
+          <UIcon name="i-lucide-bell" class="size-5 text-toned" />
+          <span>Notifications</span>
+        </div>
+
+        <p class="text-sm text-toned">
+          Send notifications to your webhooks based on specified events or presets.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <div v-if="showFilter && notifications.length > 0" class="relative w-full sm:w-80">
+          <span
+            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-toned"
+          >
+            <UIcon name="i-lucide-filter" class="size-4" />
           </span>
-        </span>
-        <div class="is-pulled-right" v-if="!toggleForm">
-          <div class="field is-grouped">
-            <p
-              class="control has-icons-left"
-              v-if="toggleFilter && notifications && notifications.length > 0"
-            >
-              <input
-                type="search"
-                v-model.lazy="query"
-                class="input"
-                id="filter"
-                placeholder="Filter displayed content"
-              />
-              <span class="icon is-left"><i class="fas fa-filter" /></span>
-            </p>
+          <input
+            id="filter"
+            ref="filterInput"
+            v-model="query"
+            type="search"
+            placeholder="Filter displayed content"
+            class="w-full rounded-md border border-default bg-elevated py-2 pr-3 pl-9 text-sm text-default outline-none transition focus:border-primary"
+          />
+        </div>
 
-            <p class="control" v-if="notifications && notifications.length > 0">
-              <button class="button is-danger is-light" @click="toggleFilter = !toggleFilter">
-                <span class="icon"><i class="fas fa-filter" /></span>
-                <span v-if="!isMobile">Filter</span>
-              </button>
-            </p>
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          :variant="showFilter ? 'soft' : 'outline'"
+          size="sm"
+          icon="i-lucide-filter"
+          @click="toggleFilterPanel"
+        >
+          <span v-if="!isMobile">Filter</span>
+        </UButton>
 
-            <p class="control">
-              <button
-                class="button is-primary"
-                @click="
-                  resetForm(false);
-                  toggleForm = true;
-                "
-                v-tooltip="'Add new notification target.'"
-              >
-                <span class="icon"><i class="fas fa-add" /></span>
-                <span v-if="!isMobile">New Notification</span>
-              </button>
-            </p>
-            <p class="control" v-if="notifications.length > 0">
-              <button
-                class="button is-warning"
-                @click="sendTest"
-                v-tooltip="'Send test notification.'"
-                :class="{ 'is-loading': sendingTest }"
-                :disabled="!notifications.length || sendingTest"
-              >
-                <span class="icon"><i class="fas fa-paper-plane" /></span>
-                <span v-if="!isMobile">Send Test</span>
-              </button>
-            </p>
-            <p class="control" v-if="notifications.length > 0">
-              <button
-                v-tooltip.bottom="'Change display style'"
-                class="button has-tooltip-bottom"
-                @click="() => (display_style = display_style === 'list' ? 'grid' : 'list')"
-              >
-                <span class="icon">
-                  <i
-                    class="fa-solid"
-                    :class="{
-                      'fa-table': display_style !== 'list',
-                      'fa-table-list': display_style === 'list',
-                    }"
-                /></span>
-                <span v-if="!isMobile">
-                  {{ display_style === 'list' ? 'List' : 'Grid' }}
-                </span>
-              </button>
-            </p>
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-plus"
+          @click="openCreate"
+        >
+          <span v-if="!isMobile">New Notification</span>
+        </UButton>
 
-            <p class="control" v-if="notifications.length > 0">
-              <button
-                class="button is-info"
-                @click="loadContent(page)"
-                :class="{ 'is-loading': isLoading }"
-                :disabled="isLoading || notifications.length < 1"
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-send"
+          :loading="sendingTest"
+          :disabled="sendingTest"
+          @click="() => void sendTest()"
+        >
+          <span v-if="!isMobile">Send Test</span>
+        </UButton>
+
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="displayStyle === 'list' ? 'i-lucide-list' : 'i-lucide-grid-2x2'"
+          @click="toggleDisplayStyle"
+        >
+          <span v-if="!isMobile">{{ displayStyle === 'list' ? 'List' : 'Grid' }}</span>
+        </UButton>
+
+        <UButton
+          v-if="notifications.length > 0"
+          color="neutral"
+          variant="outline"
+          size="sm"
+          icon="i-lucide-refresh-cw"
+          :loading="isLoading"
+          :disabled="isLoading"
+          @click="() => void reloadContent()"
+        >
+          <span v-if="!isMobile">Reload</span>
+        </UButton>
+      </div>
+    </div>
+
+    <Pager
+      v-if="paging?.total_pages > 1"
+      :page="paging.page"
+      :last_page="paging.total_pages"
+      :isLoading="isLoading"
+      @navigate="navigatePage"
+    />
+
+    <div
+      v-if="displayStyle === 'list' && filteredTargets.length > 0"
+      class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
+    >
+      <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
+        <table class="min-w-225 w-full text-sm">
+          <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
+            <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-full text-left">Targets</th>
+              <th class="w-[1%]">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody class="divide-y divide-default">
+            <tr v-for="item in filteredTargets" :key="item.id" class="hover:bg-muted/20">
+              <td class="px-3 py-3 align-middle">
+                <div class="space-y-2">
+                  <div class="min-w-0 text-sm font-semibold text-highlighted">
+                    {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
+                    <a
+                      :href="item.request.url"
+                      target="_blank"
+                      rel="noreferrer"
+                      class="break-all text-primary hover:underline"
+                    >
+                      {{ item.name }}
+                    </a>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                      :disabled="addInProgress"
+                      @click="() => void toggleEnabled(item)"
+                    >
+                      <UIcon
+                        name="i-lucide-power"
+                        class="size-3.5"
+                        :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                      />
+                      <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                    </button>
+
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-bell-ring" class="size-3.5" />
+                      <span>On: {{ joinEvents(item.on) }}</span>
+                    </span>
+
+                    <span class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-sliders-horizontal" class="size-3.5" />
+                      <span>Presets: {{ joinPresets(item.presets) }}</span>
+                    </span>
+
+                    <span v-if="headerKeys(item).length > 0" class="inline-flex items-center gap-1">
+                      <UIcon name="i-lucide-key" class="size-3.5" />
+                      <span>Headers: {{ headerKeys(item).join(', ') }}</span>
+                    </span>
+                  </div>
+                </div>
+              </td>
+
+              <td class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <UButton
+                    color="info"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-file-up"
+                    @click="exportItem(item)"
+                  >
+                    <span v-if="!isMobile">Export</span>
+                  </UButton>
+
+                  <UButton
+                    color="warning"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-pencil"
+                    @click="editItem(item)"
+                  >
+                    <span v-if="!isMobile">Edit</span>
+                  </UButton>
+
+                  <UButton
+                    color="error"
+                    variant="outline"
+                    size="xs"
+                    icon="i-lucide-trash"
+                    @click="() => void deleteItem(item)"
+                  >
+                    <span v-if="!isMobile">Delete</span>
+                  </UButton>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-else-if="filteredTargets.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <UCard
+        v-for="item in filteredTargets"
+        :key="item.id"
+        class="flex h-full flex-col border bg-default"
+        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+      >
+        <template #header>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1 space-y-2">
+              <span class="text-sm font-semibold text-highlighted">
+                {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }})
+              </span>
+              @
+              <a
+                :href="item.request.url"
+                target="_blank"
+                rel="noreferrer"
+                class="text-sm text-primary hover:underline"
               >
-                <span class="icon"><i class="fas fa-refresh" /></span>
-                <span v-if="!isMobile">Reload</span>
-              </button>
-            </p>
+                {{ item.name }}
+              </a>
+
+              <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                  :disabled="addInProgress"
+                  @click="() => void toggleEnabled(item)"
+                >
+                  <UIcon
+                    name="i-lucide-power"
+                    class="size-3.5"
+                    :class="item.enabled !== false ? 'text-success' : 'text-error'"
+                  />
+                  <span>{{ item.enabled !== false ? 'Enabled' : 'Disabled' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <UButton
+              color="info"
+              variant="ghost"
+              size="xs"
+              icon="i-lucide-file-up"
+              square
+              @click="exportItem(item)"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-2 text-sm text-default">
+          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-bell-ring" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <span class="wrap-break-word">On: {{ joinEvents(item.on) }}</span>
+            </div>
+          </div>
+
+          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-sliders-horizontal" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <span class="wrap-break-word">Presets: {{ joinPresets(item.presets) }}</span>
+            </div>
+          </div>
+
+          <div
+            v-if="headerKeys(item).length > 0"
+            class="rounded-md border border-default bg-muted/20 px-3 py-2"
+          >
+            <div class="flex items-start gap-2">
+              <UIcon name="i-lucide-key" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <span class="wrap-break-word">Headers: {{ headerKeys(item).join(', ') }}</span>
+            </div>
           </div>
         </div>
-        <div class="is-hidden-mobile" v-if="!toggleForm">
-          <span class="subtitle">
-            Send notifications to your webhooks based on specified events or presets.
-          </span>
+
+        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+          <UButton
+            color="warning"
+            variant="outline"
+            icon="i-lucide-pencil"
+            class="w-full justify-center"
+            @click="editItem(item)"
+          >
+            Edit
+          </UButton>
+
+          <UButton
+            color="error"
+            variant="outline"
+            icon="i-lucide-trash"
+            class="w-full justify-center"
+            @click="() => void deleteItem(item)"
+          >
+            Delete
+          </UButton>
         </div>
-      </div>
+      </UCard>
+    </div>
 
-      <div class="column is-12" v-if="!toggleForm && paging?.total_pages > 1">
-        <Pager
-          :page="paging.page"
-          :last_page="paging.total_pages"
-          :isLoading="isLoading"
-          @navigate="
-            async (newPage) => {
-              page = newPage;
-              await loadContent(newPage);
-            }
-          "
-        />
-      </div>
+    <UAlert
+      v-if="isLoading"
+      color="info"
+      variant="soft"
+      icon="i-lucide-loader-circle"
+      title="Loading"
+      description="Loading data. Please wait..."
+    />
 
-      <div class="column is-12" v-if="toggleForm">
+    <div v-else-if="query && filteredTargets.length < 1" class="space-y-3">
+      <UAlert
+        color="warning"
+        variant="soft"
+        icon="i-lucide-search"
+        title="No Results"
+        :description="`No results found for the query: ${query}. Please try a different search term.`"
+      />
+
+      <UButton color="neutral" variant="outline" size="sm" @click="query = ''">
+        Clear filter
+      </UButton>
+    </div>
+
+    <UAlert
+      v-else-if="!filteredTargets.length"
+      color="warning"
+      variant="soft"
+      icon="i-lucide-circle-alert"
+      title="No targets"
+      description="No notification targets found. Click on the New Notification button to add your first notification target."
+    />
+
+    <div
+      v-if="!query && filteredTargets.length > 0"
+      class="rounded-lg border border-info/30 bg-info/10 p-4 text-sm text-default"
+    >
+      <ul class="list-disc space-y-2 pl-5 text-sm text-default">
+        <li>
+          When you export notification target, We remove <code>Authorization</code> header key by
+          default, However this might not be enough to remove credentials from the exported data.
+          it's your responsibility to ensure that the exported data does not contain any sensitive
+          information for sharing.
+        </li>
+        <li>
+          When you set the request type as <code>Form</code>, the event data will be JSON encoded
+          and sent as <code>...&amp;data_key=json_string</code>, only the <code>data</code> field
+          will be JSON encoded. The other keys <code>id</code>, <code>event</code> and
+          <code>created_at</code> will be sent as they are.
+        </li>
+        <li>
+          We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with the
+          request.
+        </li>
+        <li>
+          If you have selected specific presets or events, this will take priority, For example, if
+          you limited the target to <code>default</code> preset and selected
+          <code>ALL</code> events, only events that reference the <code>default</code> preset will
+          be sent to that target. Like wise, if you have limited both events and presets, then ONLY
+          events that satisfy both conditions will be sent to that target. Only the
+          <code>test</code> events can bypass these conditions.
+        </li>
+      </ul>
+    </div>
+
+    <UModal
+      v-if="editorOpen"
+      :open="editorOpen"
+      :title="modalTitle"
+      :description="modalDescription"
+      :dismissible="!addInProgress"
+      :ui="{ content: 'w-full sm:max-w-5xl', body: 'max-h-[85vh] overflow-y-auto p-4 sm:p-6' }"
+      @update:open="(open) => !open && closeEditor()"
+    >
+      <template #body>
         <NotificationForm
+          :key="modalKey"
           :addInProgress="addInProgress"
           :reference="targetRef"
           :item="target"
-          @cancel="resetForm(true)"
-          @submit="updateItem"
           :allowedEvents="allowedEvents"
+          @cancel="closeEditor()"
+          @submit="updateItem"
         />
-      </div>
-    </div>
-
-    <div
-      class="columns is-multiline"
-      v-if="!isLoading && !toggleForm && filteredTargets && filteredTargets.length > 0"
-    >
-      <template v-if="'list' === display_style">
-        <div class="column is-12">
-          <div class="table-container">
-            <table
-              class="table is-striped is-hoverable is-fullwidth is-bordered"
-              style="min-width: 850px; table-layout: fixed"
-            >
-              <thead>
-                <tr class="has-text-centered is-unselectable">
-                  <th width="80%">
-                    <span class="icon"><i class="fa-solid fa-paper-plane" /></span>
-                    <span>Targets</span>
-                  </th>
-                  <th width="20%">
-                    <span class="icon"><i class="fa-solid fa-gear" /></span>
-                    <span>Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="item in filteredTargets" :key="item.id">
-                  <td class="is-text-overflow is-vcentered">
-                    <div class="is-bold">
-                      {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                      <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
-                    </div>
-                    <div class="is-unselectable">
-                      <span class="icon-text">
-                        <span class="icon"><i class="fa-solid fa-list-ul" /></span>
-                        <span>On: {{ join_events(item.on) }}</span>
-                      </span>
-                      &nbsp;
-                      <span class="icon-text">
-                        <span class="icon"><i class="fa-solid fa-sliders" /></span>
-                        <span>Presets: {{ join_presets(item.presets) }}</span>
-                      </span>
-                      &nbsp;
-                      <span class="icon-text is-clickable" @click="toggleEnabled(item)">
-                        <span
-                          class="icon"
-                          :class="item.enabled ? 'has-text-success' : 'has-text-danger'"
-                          v-tooltip="
-                            `Notification is ${item.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`
-                          "
-                        >
-                          <i class="fa-solid fa-power-off" />
-                        </span>
-                        <span>{{ item.enabled ? 'Enabled' : 'Disabled' }}</span>
-                      </span>
-                    </div>
-                  </td>
-                  <td class="is-vcentered is-items-center">
-                    <div class="field is-grouped is-grouped-centered">
-                      <div class="control">
-                        <button
-                          class="button is-info is-small is-fullwidth"
-                          @click="exportItem(item)"
-                        >
-                          <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                          <span v-if="!isMobile">Export</span>
-                        </button>
-                      </div>
-                      <div class="control">
-                        <button
-                          class="button is-warning is-small is-fullwidth"
-                          @click="editItem(item)"
-                        >
-                          <span class="icon"><i class="fa-solid fa-edit" /></span>
-                          <span v-if="!isMobile">Edit</span>
-                        </button>
-                      </div>
-                      <div class="control">
-                        <button
-                          class="button is-danger is-small is-fullwidth"
-                          @click="deleteItem(item)"
-                        >
-                          <span class="icon"><i class="fa-solid fa-trash" /></span>
-                          <span v-if="!isMobile">Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </template>
-      <template v-else>
-        <div class="column is-6 is-12-mobile" v-for="item in filteredTargets" :key="item.id">
-          <div class="card is-flex is-full-height is-flex-direction-column">
-            <header class="card-header">
-              <div class="card-header-title is-text-overflow is-block">
-                {{ item.request.method.toUpperCase() }}({{ ucFirst(item.request.type) }}) @
-                <NuxtLink target="_blank" :href="item.request.url">{{ item.name }}</NuxtLink>
-              </div>
-              <div class="card-header-icon">
-                <div class="field is-grouped">
-                  <div class="control" @click="toggleEnabled(item)">
-                    <span
-                      class="icon"
-                      :class="item.enabled ? 'has-text-success' : 'has-text-danger'"
-                      v-tooltip="
-                        `Notification is ${item.enabled !== false ? 'enabled' : 'disabled'}. Click to toggle.`
-                      "
-                    >
-                      <i class="fa-solid fa-power-off" />
-                    </span>
-                  </div>
-                  <div class="control">
-                    <a
-                      class="has-text-info"
-                      v-tooltip="'Export target.'"
-                      @click.prevent="exportItem(item)"
-                    >
-                      <span class="icon"><i class="fa-solid fa-file-export" /></span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </header>
-            <div class="card-content is-flex-grow-1">
-              <div class="content">
-                <p>
-                  <span class="icon"><i class="fa-solid fa-list-ul" /></span>
-                  <span>On: {{ join_events(item.on) }}</span>
-                </p>
-                <p>
-                  <span class="icon"><i class="fa-solid fa-sliders" /></span>
-                  <span>Presets: {{ join_presets(item.presets) }}</span>
-                </p>
-                <p v-if="item.request?.headers && item.request.headers.length > 0">
-                  <span class="icon"><i class="fa-solid fa-heading" /></span>
-                  <span>Headers: {{ item.request.headers.map((h) => h.key).join(', ') }}</span>
-                </p>
-              </div>
-            </div>
-            <div class="card-footer mt-auto">
-              <div class="card-footer-item">
-                <button class="button is-warning is-fullwidth" @click="editItem(item)">
-                  <span class="icon"><i class="fa-solid fa-edit" /></span>
-                  <span>Edit</span>
-                </button>
-              </div>
-              <div class="card-footer-item">
-                <button class="button is-danger is-fullwidth" @click="deleteItem(item)">
-                  <span class="icon"><i class="fa-solid fa-trash" /></span>
-                  <span>Delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </div>
-
-    <div
-      class="columns is-multiline"
-      v-if="!toggleForm && (isLoading || !filteredTargets || filteredTargets.length < 1)"
-    >
-      <div class="column is-12">
-        <Message v-if="isLoading" class="is-info" title="Loading" icon="fas fa-spinner fa-spin">
-          Loading data. Please wait...
-        </Message>
-        <Message
-          title="No Results"
-          class="is-warning"
-          icon="fas fa-search"
-          v-else-if="query"
-          :useClose="true"
-          @close="query = ''"
-        >
-          <p>
-            No results found for the query: <code>{{ query }}</code
-            >.
-          </p>
-          <p>Please try a different search term.</p>
-        </Message>
-        <Message v-else title="No targets" class="is-warning" icon="fas fa-exclamation-circle">
-          No notification targets found. Click on the
-          <span class="icon"><i class="fas fa-add" /></span>
-          <strong>New Notification</strong> button to add your first notification target.
-        </Message>
-      </div>
-    </div>
-
-    <div
-      class="columns is-multiline"
-      v-if="!toggleForm && filteredTargets && filteredTargets.length > 0"
-    >
-      <div class="column is-12">
-        <Message class="is-info" :body_class="'pl-0'">
-          <ul>
-            <li>
-              When you export notification target, We remove <code>Authorization</code> header key
-              by default, However this might not be enough to remove credentials from the exported
-              data. it's your responsibility to ensure that the exported data does not contain any
-              sensitive information for sharing.
-            </li>
-            <li>
-              When you set the request type as <code>Form</code>, the event data will be JSON
-              encoded and sent as <code>...&data_key=json_string</code>, only the
-              <code>data</code> field will be JSON encoded. The other keys <code>id</code>,
-              <code>event</code> and <code>created_at</code> will be sent as they are.
-            </li>
-            <li>
-              We also send two special headers <code>X-Event-ID</code> and <code>X-Event</code> with
-              the request.
-            </li>
-            <li>
-              If you have selected specific presets or events, this will take priority, For example,
-              if you limited the target to <code>default</code> preset and selected
-              <code>ALL</code> events, only events that reference the <code>default</code> preset
-              will be sent to that target. Like wise, if you have limited both events and presets,
-              then ONLY events that satisfy both conditions will be sent to that target. Only the
-              <code>test</code> events can bypass these conditions.
-            </li>
-          </ul>
-        </Message>
-      </div>
-    </div>
-  </div>
+    </UModal>
+  </main>
 </template>
 
 <script setup lang="ts">
 import { useStorage } from '@vueuse/core';
-import type { notification } from '~/types/notification';
 import { useConfirm } from '~/composables/useConfirm';
 import { useNotifications } from '~/composables/useNotifications';
+import { copyText, encode, parse_api_error, request, ucFirst } from '~/utils';
 import type { ImportedItem } from '~/types';
+import type { notification } from '~/types/notification';
 
 const toast = useNotification();
 const box = useConfirm();
-const display_style = useStorage<string>('notification_display_style', 'cards');
 const isMobile = useMediaQuery({ maxWidth: 1024 });
+const displayStyleState = useStorage<'list' | 'grid' | 'cards'>(
+  'notification_display_style',
+  'cards',
+);
 
 const notificationsStore = useNotifications();
 const notifications = notificationsStore.notifications;
@@ -380,47 +413,100 @@ const lastError = notificationsStore.lastError;
 
 const page = ref(1);
 const targetRef = ref<number | undefined>(undefined);
-const toggleForm = ref(false);
-const sendingTest = ref(false);
-
-const defaultState = (): notification => ({
-  name: '',
-  on: [],
-  presets: [],
-  enabled: true,
-  request: { method: 'POST', url: '', type: 'json', headers: [], data_key: 'data' },
-});
-
 const target = ref<notification>(defaultState());
-const query = ref<string>('');
-const toggleFilter = ref(false);
+const editorOpen = ref(false);
+const sendingTest = ref(false);
+const query = ref('');
+const showFilter = ref(false);
+const filterInput = ref<HTMLInputElement | null>(null);
+
+const displayStyle = computed<'list' | 'grid'>(() =>
+  displayStyleState.value === 'list' ? 'list' : 'grid',
+);
+
+const modalTitle = computed(() =>
+  targetRef.value ? `Edit - ${target.value.name}` : 'Add new notification target',
+);
+const modalDescription = computed(
+  () => 'Send notifications to your webhooks based on specified events or presets.',
+);
+const modalKey = computed(
+  () => `${targetRef.value ?? 'new'}-${editorOpen.value ? 'open' : 'closed'}`,
+);
 
 const filteredTargets = computed<notification[]>(() => {
-  const q = query.value?.toLowerCase();
-  const items = notifications.value.map((item) => ({ ...item })) as notification[];
-  if (!q) return items;
-  return items.filter((item: notification) => deepIncludes(item, q, new WeakSet()));
+  const normalizedQuery = query.value?.toLowerCase();
+  const items = notifications.value as notification[];
+
+  if (!normalizedQuery) {
+    return items;
+  }
+
+  return items.filter((item) => deepIncludes(item, normalizedQuery, new WeakSet()));
 });
 
-watch(toggleFilter, (val) => {
-  if (!val) {
+watch(showFilter, (value) => {
+  if (!value) {
     query.value = '';
   }
 });
 
-const loadContent = async (pageNumber = page.value) => {
+function defaultState(): notification {
+  return {
+    name: '',
+    on: [],
+    presets: [],
+    enabled: true,
+    request: { method: 'POST', url: '', type: 'json', headers: [], data_key: 'data' },
+  };
+}
+
+const toggleFilterPanel = async (): Promise<void> => {
+  showFilter.value = !showFilter.value;
+  if (!showFilter.value) {
+    query.value = '';
+    return;
+  }
+
+  await nextTick();
+  filterInput.value?.focus();
+};
+
+const loadContent = async (pageNumber = page.value): Promise<void> => {
+  page.value = pageNumber;
   await notificationsStore.loadNotifications(pageNumber);
 };
 
-const resetForm = (closeForm = false) => {
-  target.value = defaultState();
-  targetRef.value = undefined;
-  if (closeForm) {
-    toggleForm.value = false;
-  }
+const reloadContent = async (): Promise<void> => {
+  await loadContent(page.value);
 };
 
-const deleteItem = async (item: notification) => {
+const navigatePage = async (newPage: number): Promise<void> => {
+  await loadContent(newPage);
+};
+
+const resetEditor = (): void => {
+  target.value = defaultState();
+  targetRef.value = undefined;
+};
+
+const closeEditor = (): void => {
+  editorOpen.value = false;
+  resetEditor();
+};
+
+const openCreate = (): void => {
+  resetEditor();
+  editorOpen.value = true;
+};
+
+const editItem = (item: notification): void => {
+  target.value = JSON.parse(JSON.stringify(item)) as notification;
+  targetRef.value = item.id ?? undefined;
+  editorOpen.value = true;
+};
+
+const deleteItem = async (item: notification): Promise<void> => {
   if (true !== (await box.confirm(`Delete '${item.name}'?`))) {
     return;
   }
@@ -433,7 +519,7 @@ const deleteItem = async (item: notification) => {
   await notificationsStore.deleteNotification(item.id);
 };
 
-const toggleEnabled = async (item: notification) => {
+const toggleEnabled = async (item: notification): Promise<void> => {
   if (!item.id) {
     toast.error('Notification target not found.');
     return;
@@ -448,7 +534,7 @@ const updateItem = async ({
 }: {
   reference: number | undefined;
   item: notification;
-}) => {
+}): Promise<void> => {
   if (reference) {
     await notificationsStore.updateNotification(reference, item);
   } else {
@@ -456,22 +542,24 @@ const updateItem = async ({
   }
 
   if (!lastError.value) {
-    resetForm(true);
+    closeEditor();
   }
 };
 
-const editItem = (item: notification) => {
-  target.value = JSON.parse(JSON.stringify(item)) as notification;
-  targetRef.value = item.id ?? undefined;
-  toggleForm.value = true;
+const toggleDisplayStyle = (): void => {
+  displayStyleState.value = displayStyle.value === 'list' ? 'grid' : 'list';
 };
 
-const join_events = (events: Array<string>) =>
-  !events || events.length < 1 ? 'ALL' : events.map((e) => ucFirst(e)).join(', ');
-const join_presets = (presets: Array<string>) =>
-  !presets || presets.length < 1 ? 'ALL' : presets.map((e) => ucFirst(e)).join(', ');
+const joinEvents = (events: string[]): string =>
+  !events || events.length < 1 ? 'ALL' : events.map((event) => ucFirst(event)).join(', ');
 
-const sendTest = async () => {
+const joinPresets = (presets: string[]): string =>
+  !presets || presets.length < 1 ? 'ALL' : presets.map((preset) => ucFirst(preset)).join(', ');
+
+const headerKeys = (item: notification): string[] =>
+  item.request?.headers?.map((header) => header.key).filter(Boolean) ?? [];
+
+const sendTest = async (): Promise<void> => {
   if (true !== (await box.confirm('Send test notification?'))) {
     return;
   }
@@ -489,7 +577,6 @@ const sendTest = async () => {
 
     toast.success('Test notification sent.');
   } catch (error: any) {
-    console.error(error);
     const message = error?.message || 'Unknown error';
     toast.error(`Failed to send test notification. ${message}`);
   } finally {
@@ -497,9 +584,7 @@ const sendTest = async () => {
   }
 };
 
-onMounted(async () => await notificationsStore.loadNotifications(page.value));
-
-const exportItem = async (item: notification) => {
+const exportItem = async (item: notification): Promise<void> => {
   const data: notification & ImportedItem = {
     ...JSON.parse(JSON.stringify(item)),
     _type: 'notification',
@@ -507,19 +592,21 @@ const exportItem = async (item: notification) => {
   };
 
   const keys = ['id', 'raw'];
-  keys.forEach((k) => {
-    if (Object.prototype.hasOwnProperty.call(data, k)) {
-      const { [k]: _, ...rest } = data as any;
+  keys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      const { [key]: _, ...rest } = data as Record<string, unknown>;
       Object.assign(data, rest);
     }
   });
 
   if (data.request?.headers?.length) {
     data.request.headers = data.request.headers.filter(
-      (h) => 'authorization' !== h.key.toLowerCase(),
+      (header) => 'authorization' !== header.key.toLowerCase(),
     );
   }
 
   copyText(encode(data));
 };
+
+onMounted(async () => await loadContent(page.value));
 </script>
