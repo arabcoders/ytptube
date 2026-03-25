@@ -1,8 +1,50 @@
 [
     {
-        "tag": "master-20260318-932f51c5",
-        "date": "2026-03-18T18:46:27+00:00",
+        "tag": "master-20260325-4bea8a31",
+        "date": "2026-03-25T20:48:31+00:00",
         "commits": [
+            {
+                "sha": "218832a4",
+                "message": "chore: update package versions",
+                "author": "arabcoders",
+                "date": "2026-03-25T20:38:40+00:00",
+                "full_sha": "218832a493ef72b0499e22f8cf42502925529143"
+            },
+            {
+                "sha": "4e60f4bc",
+                "message": "chore: update screenshots",
+                "author": "arabcoders",
+                "date": "2026-03-25T20:28:27+00:00",
+                "full_sha": "4e60f4bc8ae0c1fabb90f30dfbc150a13a9a8bb7"
+            },
+            {
+                "sha": "d41f9a6f",
+                "message": "feat: add dark theme preference",
+                "author": "arabcoders",
+                "date": "2026-03-25T20:21:47+00:00",
+                "full_sha": "d41f9a6f41fef8f366a0443842678dcc5e23284d"
+            },
+            {
+                "sha": "295c74b9",
+                "message": "Refactor: rebase the UI on top of nuxt/ui",
+                "author": "arabcoders",
+                "date": "2026-03-25T19:59:53+00:00",
+                "full_sha": "295c74b985524678c53c309d59af34227e4aeaa5"
+            },
+            {
+                "sha": "980f39d5",
+                "message": "feat: add sorting and ordering functionality to paginated presets list",
+                "author": "arabcoders",
+                "date": "2026-03-22T16:21:31+00:00",
+                "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f"
+            },
+            {
+                "sha": "67074489",
+                "message": "chore: update dependencies",
+                "author": "arabcoders",
+                "date": "2026-03-22T16:20:57+00:00",
+                "full_sha": "670744890c38149ecf81f231602f6b2118d999b3"
+            },
             {
                 "sha": "58fc5573",
                 "message": "chore: updating external packages.",
@@ -4197,7 +4239,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "932f51c5833cee4d83a12ae918fcae1d2627e280"
+        "full_sha": "4bea8a315af59df1fc7925a9931b0ba4c5ab8647"
     },
     {
         "tag": "master-20250616-c07465a6",
