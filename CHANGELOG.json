@@ -1,9 +1,30 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f",
-    "date": "2026-03-22T16:21:31+00:00",
+    "full_sha": "4e60f4bc8ae0c1fabb90f30dfbc150a13a9a8bb7",
+    "date": "2026-03-25T20:28:27+00:00",
     "commits": [
+      {
+        "sha": "4e60f4bc",
+        "full_sha": "4e60f4bc8ae0c1fabb90f30dfbc150a13a9a8bb7",
+        "message": "chore: update screenshots",
+        "author": "arabcoders",
+        "date": "2026-03-25T20:28:27+00:00"
+      },
+      {
+        "sha": "d41f9a6f",
+        "full_sha": "d41f9a6f41fef8f366a0443842678dcc5e23284d",
+        "message": "feat: add dark theme preference",
+        "author": "arabcoders",
+        "date": "2026-03-25T20:21:47+00:00"
+      },
+      {
+        "sha": "295c74b9",
+        "full_sha": "295c74b985524678c53c309d59af34227e4aeaa5",
+        "message": "Refactor: rebase the UI on top of nuxt/ui",
+        "author": "arabcoders",
+        "date": "2026-03-25T19:59:53+00:00"
+      },
       {
         "sha": "980f39d5",
         "full_sha": "980f39d52cbe6785d8714d73dbb086b3814c174f",
