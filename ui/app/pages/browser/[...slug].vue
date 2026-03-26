@@ -84,7 +84,7 @@
           <span v-if="!isMobile">{{ display_style === 'list' ? 'List' : 'Grid' }}</span>
         </UButton>
 
-        <UDropdownMenu v-if="hasItems" :items="sortGroups">
+        <UDropdownMenu v-if="hasItems" :items="sortGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
@@ -364,7 +364,7 @@
           </div>
         </template>
 
-        <div class="grid grid-cols-3 gap-2 text-sm">
+        <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
           <div
             class="min-w-0 rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
           >
@@ -386,7 +386,7 @@
           </div>
         </div>
 
-        <div v-if="controlEnabled" class="mt-auto grid grid-cols-3 gap-2 pt-1">
+        <div v-if="controlEnabled" class="mt-auto flex flex-wrap gap-2 pt-1 *:min-w-32 *:flex-1">
           <UButton
             color="warning"
             variant="outline"

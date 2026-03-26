@@ -16,7 +16,7 @@
           {{ selectedElms.length }}
         </UBadge>
 
-        <UDropdownMenu :items="bulkActionGroups">
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
@@ -52,7 +52,7 @@
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-325 w-full text-sm">
+        <table class="min-w-325 max-w-455 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
               <th class="w-[5%]">
@@ -63,11 +63,11 @@
                   />
                 </button>
               </th>
-              <th class="w-full text-left">Title</th>
-              <th class="w-[15%]">Status</th>
-              <th class="w-[15%]">Created</th>
-              <th class="w-[10%]">Size/Starts</th>
-              <th class="w-[1%]">Actions</th>
+              <th class="text-left">Title</th>
+              <th class="w-[7%]">Status</th>
+              <th class="w-[7%]">Created</th>
+              <th class="w-[7%]">Size/Starts</th>
+              <th class="w-[8%]">Actions</th>
             </tr>
           </thead>
 
@@ -85,8 +85,8 @@
                 </label>
               </td>
 
-              <td class="px-3 py-3 align-top">
-                <div class="flex items-start justify-between gap-3">
+              <td class="w-0 px-3 py-3 align-top">
+                <div class="flex min-w-0 items-start justify-between gap-3">
                   <div class="min-w-0 flex-1">
                     <UTooltip
                       :text="
@@ -159,16 +159,16 @@
 
                 <p
                   v-if="item.error"
-                  class="is-text-overflow mt-2 cursor-pointer text-sm text-error"
-                  @click="toggle_class($event)"
+                  :class="messageClass(item._id, 'error', 'list', 'mt-2')"
+                  @click="toggleMessage(item._id, 'error', 'list')"
                 >
                   {{ item.error }}
                 </p>
 
                 <p
                   v-if="showMessage(item)"
-                  class="is-text-overflow mt-1 cursor-pointer text-sm text-error"
-                  @click="toggle_class($event)"
+                  :class="messageClass(item._id, 'msg', 'list', 'mt-1')"
+                  @click="toggleMessage(item._id, 'msg', 'list')"
                 >
                   {{ item.msg }}
                 </p>
@@ -244,7 +244,7 @@
                     @click="() => void removeItem(item)"
                   />
 
-                  <UDropdownMenu v-if="item.url" :items="itemActionGroups(item)">
+                  <UDropdownMenu v-if="item.url" :items="itemActionGroups(item)" :modal="false">
                     <UButton
                       color="neutral"
                       variant="outline"
@@ -389,7 +389,7 @@
             </figure>
           </div>
 
-          <div class="grid gap-2 text-sm sm:auto-cols-fr sm:grid-flow-col">
+          <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
             <div
               class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
             >
@@ -440,7 +440,7 @@
             </div>
           </div>
 
-          <div class="grid gap-2 sm:grid-cols-3">
+          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
             <UButton
               v-if="!item.filename"
               color="warning"
@@ -475,7 +475,7 @@
               {{ config.app.remove_files ? 'Remove' : 'Clear' }}
             </UButton>
 
-            <UDropdownMenu :items="itemActionGroups(item)" class="w-full">
+            <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
               <UButton
                 color="neutral"
                 variant="outline"
@@ -494,16 +494,16 @@
           >
             <p
               v-if="item.error"
-              class="is-text-overflow cursor-pointer text-sm text-error"
-              @click="toggle_class($event)"
+              :class="messageClass(item._id, 'error', 'card')"
+              @click="toggleMessage(item._id, 'error', 'card')"
             >
               {{ item.error }}
             </p>
 
             <p
               v-if="showMessage(item)"
-              class="is-text-overflow cursor-pointer text-sm text-error"
-              @click="toggle_class($event)"
+              :class="messageClass(item._id, 'msg', 'card')"
+              @click="toggleMessage(item._id, 'msg', 'card')"
             >
               {{ item.msg }}
             </p>
@@ -652,6 +652,7 @@ const masterSelectAll = ref(false);
 const embed_url = ref('');
 const video_item = ref<StoreItem | null>(null);
 const loadMoreTrigger = ref<HTMLElement | null>(null);
+const expandedMessages = reactive<Record<string, Set<string>>>({});
 
 const paginationInfo = computed(() => stateStore.getPagination());
 
@@ -1277,10 +1278,45 @@ const downloadSelected = async () => {
   }
 };
 
-const toggle_class = (e: Event) =>
-  ['is-text-overflow', 'is-word-break'].forEach((c) =>
-    (e.currentTarget as HTMLElement).classList.toggle(c),
-  );
+const toggleMessage = (itemId: string, field: 'error' | 'msg', view: 'list' | 'card') => {
+  const key = `${itemId}:${view}`;
+
+  if (!expandedMessages[key]) {
+    expandedMessages[key] = new Set();
+  }
+
+  if (expandedMessages[key].has(field)) {
+    expandedMessages[key].delete(field);
+    return;
+  }
+
+  expandedMessages[key].add(field);
+};
+
+const isMessageExpanded = (itemId: string, field: 'error' | 'msg', view: 'list' | 'card') =>
+  expandedMessages[`${itemId}:${view}`]?.has(field) ?? false;
+
+const messageClass = (
+  itemId: string,
+  field: 'error' | 'msg',
+  view: 'list' | 'card',
+  spacingClass = '',
+) => {
+  const expanded = isMessageExpanded(itemId, field, view);
+  const base = ['cursor-pointer', 'text-sm', 'text-error'];
+
+  if (spacingClass) {
+    base.push(spacingClass);
+  }
+
+  if ('card' === view) {
+    base.push(expanded ? 'whitespace-pre-wrap break-words' : 'line-clamp-2 break-words');
+    return base;
+  }
+
+  base.push(expanded ? 'whitespace-pre-wrap break-words' : 'block max-w-full truncate');
+  return base;
+};
 
 const removeFromArchiveDialog = async (item: StoreItem): Promise<void> => {
   const options = [

@@ -139,6 +139,16 @@
                   <template #left>
                     <div class="flex items-center gap-2">
                       <UDashboardSidebarToggle class="lg:hidden" />
+                      <UButton
+                        to="/"
+                        color="neutral"
+                        variant="ghost"
+                        size="sm"
+                        icon="i-lucide-house"
+                        class="lg:hidden"
+                      >
+                        Home
+                      </UButton>
                       <UDashboardSidebarCollapse class="hidden lg:inline-flex" />
                     </div>
                   </template>
@@ -480,6 +490,7 @@ import type { version_check } from '~/types';
 type NavEntry = {
   id: string;
   label: string;
+  description?: string;
   icon: string;
   to?: string;
   children?: NavEntry[];
@@ -544,21 +555,65 @@ const makeNavigationItem = (item: NavEntry): NavigationMenuItem => ({
 const docsNavigationEntries = getDocsNavigationEntries();
 
 const allNavItems = computed<NavEntry[]>(() => [
-  { id: 'downloads', label: 'Downloads', icon: 'i-lucide-download', to: '/' },
-  { id: 'files', label: 'Files', icon: 'i-lucide-folder-tree', to: '/browser' },
-  { id: 'presets', label: 'Presets', icon: 'i-lucide-sliders-horizontal', to: '/presets' },
-  { id: 'custom-fields', label: 'Custom Fields', icon: 'i-lucide-braces', to: '/dl_fields' },
-  { id: 'conditions', label: 'Conditions', icon: 'i-lucide-filter', to: '/conditions' },
-  { id: 'notifications', label: 'Notifications', icon: 'i-lucide-bell', to: '/notifications' },
+  {
+    id: 'downloads',
+    label: 'Downloads',
+    description: 'Queued and completed downloads list.',
+    icon: 'i-lucide-download',
+    to: '/',
+  },
+  {
+    id: 'files',
+    label: 'Files',
+    description: 'Browse downloaded files.',
+    icon: 'i-lucide-folder-tree',
+    to: '/browser',
+  },
+  {
+    id: 'presets',
+    label: 'Presets',
+    description:
+      'Presets are pre-defined command options for yt-dlp that you want to apply to given download.',
+    icon: 'i-lucide-sliders-horizontal',
+    to: '/presets',
+  },
+  {
+    id: 'custom-fields',
+    label: 'Custom Fields',
+    description: 'Custom fields allow you to add new fields to the download form.',
+    icon: 'i-lucide-braces',
+    to: '/dl_fields',
+  },
+  {
+    id: 'conditions',
+    label: 'Conditions',
+    description: 'Run yt-dlp custom match filter on returned info and apply options.',
+    icon: 'i-lucide-filter',
+    to: '/conditions',
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    description: 'Send notifications to your webhooks based on specified events or presets.',
+    icon: 'i-lucide-bell',
+    to: '/notifications',
+  },
   {
     id: 'tasks',
     label: 'Tasks',
     icon: 'i-lucide-list-todo',
     children: [
-      { id: 'tasks-list', label: 'Tasks', icon: 'i-lucide-list-todo', to: '/tasks' },
+      {
+        id: 'tasks-list',
+        label: 'Tasks',
+        description: 'Queue playlist/channels for automatic download at specified intervals.',
+        icon: 'i-lucide-list-todo',
+        to: '/tasks',
+      },
       {
         id: 'task-definitions',
         label: 'Task Definitions',
+        description: 'Create definitions to turn any website into a downloadable feed of links.',
         icon: 'i-lucide-workflow',
         to: '/task_definitions',
       },
@@ -570,10 +625,26 @@ const allNavItems = computed<NavEntry[]>(() => [
     icon: 'i-lucide-wrench',
     children: [
       ...(config.app?.file_logging
-        ? [{ id: 'logs', label: 'Logs', icon: 'i-lucide-file-text', to: '/logs' }]
+        ? [
+            {
+              id: 'logs',
+              label: 'Logs',
+              description: 'Scroll near the top to load older logs.',
+              icon: 'i-lucide-file-text',
+              to: '/logs',
+            },
+          ]
         : []),
       ...(config.app.console_enabled
-        ? [{ id: 'console', label: 'Console', icon: 'i-lucide-terminal', to: '/console' }]
+        ? [
+            {
+              id: 'console',
+              label: 'Console',
+              description: 'Run yt-dlp commands directly in a non-interactive session.',
+              icon: 'i-lucide-terminal',
+              to: '/console',
+            },
+          ]
         : []),
     ],
   },
@@ -583,7 +654,14 @@ const allNavItems = computed<NavEntry[]>(() => [
     icon: 'i-lucide-book-open',
     children: [
       ...docsNavigationEntries,
-      { id: 'changelog', label: 'Changelog', icon: 'i-lucide-list', to: '/changelog' },
+      {
+        id: 'changelog',
+        label: 'Changelog',
+        description:
+          'Latest project changes, loaded remotely when available and falling back to the bundled changelog file.',
+        icon: 'i-lucide-list',
+        to: '/changelog',
+      },
     ],
   },
 ]);
@@ -674,6 +752,7 @@ const routeSearchGroups = computed(() => [
         ? [
             {
               label: item.label,
+              description: item.description,
               icon: item.icon,
               suffix: item.to,
               onSelect: () => handleRouteSelect(item),
@@ -683,6 +762,7 @@ const routeSearchGroups = computed(() => [
 
       const children = (item.children || []).map((child) => ({
         label: child.label,
+        description: child.description,
         icon: child.icon,
         suffix: child.to || '',
         onSelect: () => handleRouteSelect(child),
@@ -698,16 +778,28 @@ const routeSearchGroups = computed(() => [
       config.paused
         ? {
             label: 'Resume Downloads',
-            description: 'Resume the global download queue so pending items can start again.',
+            description: 'Resume globally paused downloads.',
             icon: 'i-lucide-play',
             onSelect: () => void resumeDownloads(),
           }
         : {
             label: 'Pause Downloads',
-            description: 'Pause pending downloads without stopping items already in progress.',
+            description: 'Globally pause all non-active downloads.',
             icon: 'i-lucide-pause',
             onSelect: () => void pauseDownloads(),
           },
+    ],
+  },
+  {
+    id: 'preferences',
+    label: 'Preferences',
+    items: [
+      {
+        label: 'WebUI Settings',
+        description: 'Adjust interface behavior and download defaults.',
+        icon: 'i-lucide-settings-2',
+        onSelect: () => void openSettings(),
+      },
     ],
   },
 ]);
@@ -723,25 +815,17 @@ const closeRouteSearch = async (): Promise<void> => {
 
 const pauseDownloads = async (): Promise<void> => {
   await closeRouteSearch();
-
-  const { status } = await confirmDialog({
-    title: 'Pause Downloads',
-    confirmText: 'Pause',
-    cancelText: 'Cancel',
-    confirmColor: 'warning',
-    message: 'Are you sure you want to pause all non-active downloads?',
-  });
-
-  if (!status) {
-    return;
-  }
-
   await request('/api/system/pause', { method: 'POST' });
 };
 
 const resumeDownloads = async (): Promise<void> => {
   await closeRouteSearch();
   await request('/api/system/resume', { method: 'POST' });
+};
+
+const openSettings = async (): Promise<void> => {
+  await closeRouteSearch();
+  show_settings.value = true;
 };
 
 const syncShellModeClass = () => {
