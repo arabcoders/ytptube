@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260325-218832a4",
-        "date": "2026-03-25T20:38:40+00:00",
+        "tag": "dev-20260326-cdca27d4",
+        "date": "2026-03-26T16:12:40+00:00",
         "commits": [
+            {
+                "sha": "cdca27d4",
+                "message": "refactor: minor fixes for better mobile view.",
+                "author": "arabcoders",
+                "date": "2026-03-26T16:12:40+00:00",
+                "full_sha": "cdca27d4b98c2fa40a52c9b7f123d40972cffb82"
+            },
             {
                 "sha": "218832a4",
                 "message": "chore: update package versions",
@@ -4239,7 +4246,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "218832a493ef72b0499e22f8cf42502925529143"
+        "full_sha": "cdca27d4b98c2fa40a52c9b7f123d40972cffb82"
     },
     {
         "tag": "dev-20250616-c07465a6",

@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "cdca27d4b98c2fa40a52c9b7f123d40972cffb82",
+    "date": "2026-03-26T16:12:40+00:00",
+    "commits": [
+      {
+        "sha": "cdca27d4",
+        "full_sha": "cdca27d4b98c2fa40a52c9b7f123d40972cffb82",
+        "message": "refactor: minor fixes for better mobile view.",
+        "author": "arabcoders",
+        "date": "2026-03-26T16:12:40+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.0",
     "full_sha": "4bea8a315af59df1fc7925a9931b0ba4c5ab8647",
     "date": "2026-03-25T20:48:31+00:00",
