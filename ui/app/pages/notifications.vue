@@ -275,7 +275,7 @@
           </div>
         </div>
 
-        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
           <UButton
             color="warning"
             variant="outline"

@@ -29,7 +29,7 @@
           {{ selectedElms.length }}
         </UBadge>
 
-        <UDropdownMenu :items="bulkActionGroups">
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
@@ -225,7 +225,7 @@
                     @click="() => void pauseItem(item)"
                   />
 
-                  <UDropdownMenu :items="itemActionGroups(item)">
+                  <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
                     <UButton
                       color="neutral"
                       variant="outline"
@@ -380,7 +380,7 @@
             </div>
           </div>
 
-          <div class="grid gap-2 text-sm sm:auto-cols-fr sm:grid-flow-col">
+          <div class="flex flex-wrap gap-2 text-sm *:min-w-32 *:flex-1">
             <div
               class="rounded-md border border-default bg-muted/20 px-3 py-2 text-center text-default"
             >
@@ -417,7 +417,7 @@
             </div>
           </div>
 
-          <div class="grid gap-2 sm:auto-cols-fr sm:grid-flow-col">
+          <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
             <UButton
               color="warning"
               variant="outline"
@@ -450,7 +450,7 @@
               Pause
             </UButton>
 
-            <UDropdownMenu :items="itemActionGroups(item)" class="w-full">
+            <UDropdownMenu :items="itemActionGroups(item)" :modal="false" class="w-full">
               <UButton
                 color="neutral"
                 variant="outline"

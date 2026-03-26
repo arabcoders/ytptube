@@ -177,7 +177,7 @@
             <div class="min-w-0 flex-1 space-y-2">
               <div class="truncate text-sm font-semibold text-highlighted">{{ field.name }}</div>
 
-              <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
                 <span
                   class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
                 >
@@ -227,7 +227,7 @@
           </div>
         </div>
 
-        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
           <UButton
             color="warning"
             variant="outline"

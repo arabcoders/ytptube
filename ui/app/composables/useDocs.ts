@@ -27,7 +27,7 @@ const DOCS_ENTRIES: DocsEntry[] = [
   {
     id: 'faq',
     title: 'FAQ',
-    description: 'Answers for setup details, task handlers, and common issues.',
+    description: 'Frequently asked questions about the project and troubleshooting.',
     file: 'FAQ.md',
     route: '/docs/faq',
     slug: ['faq'],
@@ -77,6 +77,7 @@ const getDocsNavigationEntries = () =>
   DOCS_ENTRIES.map((entry) => ({
     id: entry.id,
     label: entry.navLabel,
+    description: entry.description,
     icon: entry.icon,
     to: entry.route,
   }));

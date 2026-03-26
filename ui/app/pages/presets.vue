@@ -186,7 +186,7 @@
             />
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+          <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
             <span
               class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
               :class="item.cookies ? 'border-info/40 text-info' : ''"
@@ -247,7 +247,7 @@
           </button>
         </div>
 
-        <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-2">
+        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
           <UButton
             color="warning"
             variant="outline"

@@ -95,7 +95,7 @@
           {{ selectedElms.length }}
         </UBadge>
 
-        <UDropdownMenu :items="bulkActionGroups">
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
           <UButton
             color="neutral"
             variant="outline"
@@ -308,7 +308,7 @@
                     <span v-if="!isMobile">Delete</span>
                   </UButton>
 
-                  <UDropdownMenu :items="itemActionGroups(item)">
+                  <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
                     <UButton
                       color="neutral"
                       variant="outline"
@@ -391,7 +391,7 @@
           </template>
 
           <div class="space-y-2 text-sm text-default">
-            <div class="flex flex-wrap items-center gap-2 text-xs text-toned">
+            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
               <button
                 type="button"
                 class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
@@ -500,7 +500,7 @@
             </div>
           </div>
 
-          <div class="mt-auto grid gap-2 pt-2 sm:grid-cols-3">
+          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
             <UButton
               color="warning"
               variant="outline"
@@ -521,7 +521,7 @@
               Delete
             </UButton>
 
-            <UDropdownMenu :items="itemActionGroups(item)">
+            <UDropdownMenu :items="itemActionGroups(item)" :modal="false">
               <UButton
                 color="neutral"
                 variant="outline"

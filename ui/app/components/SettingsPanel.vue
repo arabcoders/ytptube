@@ -8,11 +8,21 @@
     @update:open="(open) => !open && emitter('close')"
   >
     <template #header>
-      <div class="flex items-center justify-between gap-3">
-        <div>
+      <div class="flex w-full items-start gap-3">
+        <div class="min-w-0 flex-1">
           <p class="text-base font-semibold text-highlighted">WebUI Settings</p>
-          <p class="text-sm text-toned">Adjust interface behavior and download defaults.</p>
+          <p class="text-sm text-toned">Adjust interface behavior.</p>
         </div>
+
+        <UButton
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          icon="i-lucide-x"
+          class="ml-auto shrink-0 sm:hidden"
+          @click="emitter('close')"
+        />
       </div>
     </template>
 

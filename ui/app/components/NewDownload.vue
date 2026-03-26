@@ -375,7 +375,7 @@
           <div
             class="flex flex-wrap items-center justify-between gap-2 border-t border-default pt-4"
           >
-            <UDropdownMenu class="sm:hidden" :items="mobileActionGroups">
+            <UDropdownMenu class="sm:hidden" :items="mobileActionGroups" :modal="false">
               <UButton
                 color="neutral"
                 variant="outline"
