@@ -1,5 +1,26 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8",
+    "date": "2026-03-29T19:20:40+00:00",
+    "commits": [
+      {
+        "sha": "90ebf44a",
+        "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8",
+        "message": "fix: some type issues and dependcies update",
+        "author": "arabcoders",
+        "date": "2026-03-29T19:20:40+00:00"
+      },
+      {
+        "sha": "7d8df4f0",
+        "full_sha": "7d8df4f0870971e5cf86872bc59d33f08e67e86c",
+        "message": "feat: improve MiniFilter tokenization",
+        "author": "arabcoders",
+        "date": "2026-03-29T19:15:51+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.1",
     "full_sha": "235438af51a7bdcc6101e169211f68941e6aea66",
     "date": "2026-03-26T21:20:49+00:00",

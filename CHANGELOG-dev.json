@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260326-cdca27d4",
-        "date": "2026-03-26T16:12:40+00:00",
+        "tag": "dev-20260329-90ebf44a",
+        "date": "2026-03-29T19:20:40+00:00",
         "commits": [
+            {
+                "sha": "90ebf44a",
+                "message": "fix: some type issues and dependcies update",
+                "author": "arabcoders",
+                "date": "2026-03-29T19:20:40+00:00",
+                "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8"
+            },
+            {
+                "sha": "7d8df4f0",
+                "message": "feat: improve MiniFilter tokenization",
+                "author": "arabcoders",
+                "date": "2026-03-29T19:15:51+00:00",
+                "full_sha": "7d8df4f0870971e5cf86872bc59d33f08e67e86c"
+            },
             {
                 "sha": "cdca27d4",
                 "message": "refactor: minor fixes for better mobile view.",
@@ -4246,7 +4260,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "cdca27d4b98c2fa40a52c9b7f123d40972cffb82"
+        "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8"
     },
     {
         "tag": "dev-20250616-c07465a6",
