@@ -638,6 +638,7 @@
 
 <script setup lang="ts">
 import moment from 'moment';
+import type { DropdownMenuItem } from '@nuxt/ui';
 import { useStorage } from '@vueuse/core';
 import { CronExpressionParser } from 'cron-parser';
 import { useConfirm } from '~/composables/useConfirm';
@@ -734,7 +735,7 @@ const allSelected = computed(
 
 const hasSelected = computed(() => selectedElms.value.length > 0);
 
-const bulkActionGroups = computed(() => [
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
   [
     {
       label: 'Run Selected',
@@ -1296,7 +1297,7 @@ const generateMeta = async (item: Task) => {
   }
 };
 
-const itemActionGroups = (item: Task) => [
+const itemActionGroups = (item: Task): DropdownMenuItem[][] => [
   [
     {
       label: 'Run now',

@@ -513,6 +513,7 @@
 <script setup lang="ts">
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
+import type { DropdownMenuItem } from '@nuxt/ui';
 import type { FileItem } from '~/types/filebrowser';
 
 const route = useRoute();
@@ -554,7 +555,7 @@ const sortOptions = [
 
 const breadcrumbItems = computed(() => makeBreadCrumb(browserPath.value));
 
-const sortGroups = computed(() => [
+const sortGroups = computed<DropdownMenuItem[][]>(() => [
   sortOptions.map((option) => ({
     label:
       sort_by.value === option.value
