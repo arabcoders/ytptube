@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import operator
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-TOKEN = tuple[str, str]
-AST_NODE = tuple[str, ...]
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+type TOKEN = tuple[str, str]
+type AST_NODE = tuple[Any, ...]
 
 
 def match_str(expr: str, dct: dict) -> bool:
@@ -42,7 +47,7 @@ class MiniFilter:
     ASTNode = tuple[str, ...]
 
     # Supported string operators
-    STRING_OPERATORS: dict[str, callable] = {
+    STRING_OPERATORS: dict[str, Callable[[Any, Any], bool]] = {
         "*=": operator.contains,
         "^=": lambda attr, value: isinstance(attr, str) and attr.startswith(value),
         "$=": lambda attr, value: isinstance(attr, str) and attr.endswith(value),
@@ -50,7 +55,7 @@ class MiniFilter:
     }
 
     # Comparison operators (numeric + string)
-    COMPARISON_OPERATORS: dict[str, callable] = {
+    COMPARISON_OPERATORS: dict[str, Callable[[Any, Any], bool]] = {
         **STRING_OPERATORS,
         "<=": operator.le,
         "<": operator.lt,
@@ -60,7 +65,7 @@ class MiniFilter:
     }
 
     # Unary operators (for presence/absence checks)
-    UNARY_OPERATORS: dict[str, callable] = {
+    UNARY_OPERATORS: dict[str, Callable[[Any], bool]] = {
         "": lambda v: (v is True) if isinstance(v, bool) else (v is not None),
         "!": lambda v: (v is False) if isinstance(v, bool) else (v is None),
     }
@@ -75,9 +80,12 @@ class MiniFilter:
         self.tokens: list[TOKEN] = self._tokenize(expr)
         self.pos: int = 0
         self.ast: AST_NODE = self._parse_or()
+        if self.pos != len(self.tokens):
+            msg = f"Unexpected token {self.tokens[self.pos][1]!r}"
+            raise SyntaxError(msg)
 
     @staticmethod
-    def run(expr: str, dct: dict | bool = False) -> bool:
+    def run(expr: str, dct: dict[str, Any] | bool = False) -> bool:
         """
         Convenience method to evaluate an expression directly.
 
@@ -87,14 +95,15 @@ class MiniFilter:
         """
         return MiniFilter(expr).evaluate(dct)
 
-    def evaluate(self, dct: dict | bool = False) -> bool:
+    def evaluate(self, dct: dict[str, Any] | bool = False) -> bool:
         """
         Evaluate the parsed expression against a dictionary.
 
         :param dct: Dictionary of attributes (video metadata, etc.)
         :return:    True/False result of expression
         """
-        return self._eval(self.ast, dct)
+        data: dict[str, Any] = dct if isinstance(dct, dict) else {}
+        return self._eval(self.ast, data)
 
     def export(self) -> list[str]:
         """
@@ -115,33 +124,123 @@ class MiniFilter:
     def _tokenize(self, expr: str) -> list[TOKEN]:
         """
         Split expression into tokens (AND, OR, LPAREN, RPAREN, ATOM).
-        Ensures that OR (||) and AND (&) are recognized before ATOM.
+        Parentheses, OR, and AND are only treated as syntax outside quoted values.
         """
-        # First, let's normalize spaces around operators to make parsing easier
-        # Replace spaced operators with non-spaced ones
-        normalized_expr: str = expr
-        for op in ["<=", ">=", "<", ">", "*=", "^=", "$=", "~=", "="]:
-            # Replace "key op value" with "key op value" (removing extra spaces)
-            pattern: str = rf"([a-z_]+)\s*(!?)\s*({re.escape(op)})\s*"
-            replacement = r"\1\2\3"
-            normalized_expr = re.sub(pattern, replacement, normalized_expr)
-
-        token_spec: list[set] = [
-            (r"\|\|", "OR"),  # must come before ATOM
-            (r"&", "AND"),
-            (r"\(", "LPAREN"),
-            (r"\)", "RPAREN"),
-            (r"[^\s&|()]+", "ATOM"),  # don't allow whitespace in ATOM
-            (r"\s+", None),  # skip whitespace
-        ]
-        regex: str = "|".join(f"(?P<{name}>{pat})" for pat, name in token_spec if name)
-        master: re.Pattern[str] = re.compile(regex)
         tokens: list[TOKEN] = []
-        for m in master.finditer(normalized_expr):
-            kind: str | None = m.lastgroup
-            if kind:
-                tokens.append((kind, m.group()))
+        atom: list[str] = []
+        quote: str | None = None
+        escaped: bool = False
+        idx: int = 0
+
+        def flush_atom() -> None:
+            if not atom:
+                return
+
+            normalized_atom: str = self._normalize_atom("".join(atom))
+            if normalized_atom:
+                tokens.append(("ATOM", normalized_atom))
+            atom.clear()
+
+        while idx < len(expr):
+            char: str = expr[idx]
+
+            if quote:
+                atom.append(char)
+                if escaped:
+                    escaped = False
+                elif "\\" == char:
+                    escaped = True
+                elif quote == char:
+                    quote = None
+                idx += 1
+                continue
+
+            if escaped:
+                atom.append(char)
+                escaped = False
+                idx += 1
+                continue
+
+            if "\\" == char:
+                atom.append(char)
+                escaped = True
+                idx += 1
+                continue
+
+            if char in {'"', "'"}:
+                atom.append(char)
+                quote = char
+                idx += 1
+                continue
+
+            if expr.startswith("||", idx):
+                flush_atom()
+                tokens.append(("OR", "||"))
+                idx += 2
+                continue
+
+            if "&" == char:
+                flush_atom()
+                tokens.append(("AND", "&"))
+                idx += 1
+                continue
+
+            if "(" == char:
+                flush_atom()
+                tokens.append(("LPAREN", "("))
+                idx += 1
+                continue
+
+            if ")" == char:
+                flush_atom()
+                tokens.append(("RPAREN", ")"))
+                idx += 1
+                continue
+
+            if char.isspace() and not atom:
+                idx += 1
+                continue
+
+            atom.append(char)
+            idx += 1
+
+        if quote:
+            msg = "Unterminated quoted string in filter expression"
+            raise SyntaxError(msg)
+
+        flush_atom()
         return tokens
+
+    def _normalize_atom(self, atom: str) -> str:
+        normalized_atom: str = atom.strip()
+
+        for op in ["<=", ">=", "<", ">", "*=", "^=", "$=", "~=", "="]:
+            pattern: str = rf"([a-z_]+)\s*(!?)\s*({re.escape(op)})\s*"
+            normalized_atom = re.sub(pattern, r"\1\2\3", normalized_atom, count=1)
+
+        quote: str | None = None
+        escaped: bool = False
+        for idx, char in enumerate(normalized_atom):
+            if quote:
+                if escaped:
+                    escaped = False
+                elif "\\" == char:
+                    escaped = True
+                elif quote == char:
+                    quote = None
+                continue
+
+            if char in {'"', "'"}:
+                quote = char
+                continue
+
+            if char.isspace():
+                unexpected: str = normalized_atom[idx:].strip()
+                if unexpected:
+                    msg = f"Unexpected token {unexpected!r}"
+                    raise SyntaxError(msg)
+
+        return normalized_atom
 
     def _parse_or(self) -> AST_NODE:
         """
@@ -197,7 +296,7 @@ class MiniFilter:
 
         raise SyntaxError("Expected " + kind)
 
-    def _eval(self, node: AST_NODE, dct: dict) -> bool:
+    def _eval(self, node: AST_NODE, dct: dict[str, Any]) -> bool:
         """
         Recursively evaluate AST node against dict.
         """
@@ -234,7 +333,9 @@ class MiniFilter:
 
         raise ValueError("Invalid AST node " + node_type)
 
-    def _match_one(self, filter_part: str, dct: dict) -> bool:
+    def _match_one(self, filter_part: str, dct: dict[str, Any]) -> bool:
+        filter_part = filter_part.replace(r"\&", "&")
+
         operator_rex: re.Pattern[str] = re.compile(
             r"""(?x)
             (?P<key>[a-z_]+)

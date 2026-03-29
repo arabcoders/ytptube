@@ -1,6 +1,8 @@
 import unittest
 from typing import Any
 
+import pytest
+
 from app.features.ytdlp.mini_filter import MiniFilter
 
 
@@ -274,6 +276,65 @@ class TestMiniFilter(unittest.TestCase):
         self._test("uploader^='CNN'", d, expected_result=False, test_name="string_startswith_negative")
         self._test("uploader$='BBC'", d, expected_result=False, test_name="string_endswith_negative")
 
+    def test_regex_inline_flags_tokenization(self):
+        expr = "artist ~= '(?i)^[0-9A-L]'"
+
+        parser = MiniFilter(expr)
+
+        assert parser.tokens == [("ATOM", "artist~='(?i)^[0-9A-L]'")]
+        assert parser.ast == ("ATOM", "artist~='(?i)^[0-9A-L]'")
+        assert parser.export() == ["artist~='(?i)^[0-9A-L]'"]
+
+        self._test(expr, {"artist": "Adele"}, expected_result=True, test_name="regex_inline_flags_match")
+        self._test(expr, {"artist": "muse"}, expected_result=False, test_name="regex_inline_flags_no_match")
+
+    def test_quoted_values_with_spaces(self):
+        expr = "uploader = 'BBC News'"
+
+        parser = MiniFilter(expr)
+
+        assert parser.tokens == [("ATOM", "uploader='BBC News'")]
+        assert parser.export() == ["uploader='BBC News'"]
+
+        self._test(expr, {"uploader": "BBC News"}, expected_result=True, test_name="quoted_spaces_match")
+        self._test(expr, {"uploader": "BBC"}, expected_result=False, test_name="quoted_spaces_no_match")
+
+    def test_quoted_values_with_parentheses(self):
+        expr = "title='a(b)c'"
+
+        parser = MiniFilter(expr)
+
+        assert parser.tokens == [("ATOM", "title='a(b)c'")]
+        assert parser.export() == ["title='a(b)c'"]
+
+        self._test(expr, {"title": "a(b)c"}, expected_result=True, test_name="quoted_parentheses_match")
+        self._test(expr, {"title": "abc"}, expected_result=False, test_name="quoted_parentheses_no_match")
+
+    def test_escaped_ampersand_inside_quoted_regex(self):
+        expr = r"description~='(?i)\bcats \& dogs\b'"
+
+        parser = MiniFilter(expr)
+
+        assert parser.tokens == [("ATOM", r"description~='(?i)\bcats \& dogs\b'")]
+        assert parser.export() == [r"description~='(?i)\bcats \& dogs\b'"]
+
+        self._test(
+            expr,
+            {"description": "Cats & Dogs are great"},
+            expected_result=True,
+            test_name="quoted_regex_escaped_ampersand_match",
+        )
+        self._test(
+            expr,
+            {"description": "Cats and dogs are great"},
+            expected_result=False,
+            test_name="quoted_regex_escaped_ampersand_no_match",
+        )
+
+    def test_parser_rejects_trailing_tokens(self):
+        with pytest.raises(SyntaxError, match="Unexpected token"):
+            MiniFilter("uploader='BBC' stray")
+
     def test_spaces_around_operators(self):
         """Test that spaces around operators are handled correctly."""
         d: dict[str, str] = {"channel_id": "UC-7oMv6E4Uz2tF51w5Sj49w", "uploader": "BBC"}
@@ -467,7 +528,7 @@ class TestMiniFilter(unittest.TestCase):
     def test_export_and_yt_dlp_compat(self):
         from yt_dlp.utils import match_str
 
-        d: dict[str, str] = {"filesize": 2000000, "duration": 200, "uploader": "BBC"}
+        d: dict[str, Any] = {"filesize": 2000000, "duration": 200, "uploader": "BBC"}
         # Use numeric values to avoid yt-dlp unit parsing inconsistencies
         expr = "(filesize>1000000 & duration<600) || uploader='BBC'"
 
