@@ -92,6 +92,10 @@ export default defineNuxtConfig({
   telemetry: false,
   compatibilityDate: '2025-08-03',
   experimental: {
-    checkOutdatedBuildInterval: 1000 * 60 * 10,
+    checkOutdatedBuildInterval: 1000 * 60 * 60,
+    payloadExtraction: 'client',
+  },
+  typescript: {
+    typeCheck: true,
   },
 });

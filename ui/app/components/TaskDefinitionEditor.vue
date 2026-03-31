@@ -429,7 +429,7 @@
           class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
         >
           <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <table class="min-w-215 w-full table-fixed text-sm">
+            <table class="min-w-215 table-fixed w-full text-sm">
               <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
                 <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
                   <th class="w-40">

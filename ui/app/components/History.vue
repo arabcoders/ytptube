@@ -52,10 +52,10 @@
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-325 max-w-455 table-fixed w-full text-sm">
+        <table class="min-w-190 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
-              <th class="w-[5%]">
+              <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
                   <UIcon
                     :name="masterSelectAll ? 'i-lucide-square' : 'i-lucide-check'"
@@ -64,10 +64,10 @@
                 </button>
               </th>
               <th class="text-left">Title</th>
-              <th class="w-[7%]">Status</th>
-              <th class="w-[7%]">Created</th>
-              <th class="w-[7%]">Size/Starts</th>
-              <th class="w-[8%]">Actions</th>
+              <th class="w-32 whitespace-nowrap">Status</th>
+              <th class="w-36 whitespace-nowrap">Created</th>
+              <th class="w-36 whitespace-nowrap">Size/Starts</th>
+              <th class="w-44 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -211,7 +211,7 @@
                 </template>
               </td>
 
-              <td class="w-[1%] px-3 py-3 align-top whitespace-nowrap">
+              <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-1">
                   <UButton
                     v-if="!item.filename"

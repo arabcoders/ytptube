@@ -102,9 +102,9 @@
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
               <th class="w-full text-left">Definition</th>
-              <th class="w-[18%]">Priority</th>
-              <th class="w-[18%]">Updated</th>
-              <th class="w-[1%]">Actions</th>
+              <th class="w-28 whitespace-nowrap">Priority</th>
+              <th class="w-36 whitespace-nowrap">Updated</th>
+              <th class="w-44 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -158,7 +158,7 @@
                 </UTooltip>
               </td>
 
-              <td class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="info"

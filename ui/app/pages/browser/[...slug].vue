@@ -191,7 +191,7 @@
                   class="ml-1 inline-flex size-3.5"
                 />
               </th>
-              <th class="w-[1%] whitespace-nowrap">
+              <th class="w-28 whitespace-nowrap">
                 Size
                 <UIcon
                   v-if="sort_by === 'size'"
@@ -199,7 +199,7 @@
                   class="ml-1 inline-flex size-3.5"
                 />
               </th>
-              <th class="w-[1%] whitespace-nowrap">
+              <th class="w-40 whitespace-nowrap">
                 Date
                 <UIcon
                   v-if="sort_by === 'date'"
@@ -207,7 +207,7 @@
                   class="ml-1 inline-flex size-3.5"
                 />
               </th>
-              <th v-if="controlEnabled" class="w-[1%]">Actions</th>
+              <th v-if="controlEnabled" class="w-80 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -271,7 +271,7 @@
                 </UTooltip>
               </td>
 
-              <td v-if="controlEnabled" class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+              <td v-if="controlEnabled" class="w-80 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="warning"
@@ -513,6 +513,7 @@
 <script setup lang="ts">
 import moment from 'moment';
 import { useStorage } from '@vueuse/core';
+import type { DropdownMenuItem } from '@nuxt/ui';
 import type { FileItem } from '~/types/filebrowser';
 
 const route = useRoute();
@@ -554,7 +555,7 @@ const sortOptions = [
 
 const breadcrumbItems = computed(() => makeBreadCrumb(browserPath.value));
 
-const sortGroups = computed(() => [
+const sortGroups = computed<DropdownMenuItem[][]>(() => [
   sortOptions.map((option) => ({
     label:
       sort_by.value === option.value
