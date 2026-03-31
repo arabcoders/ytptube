@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8",
-    "date": "2026-03-29T19:20:40+00:00",
+    "full_sha": "ca03bf716b3afa77e9fa0c728c032dce57bb7e42",
+    "date": "2026-03-31T15:34:59+00:00",
     "commits": [
+      {
+        "sha": "ca03bf71",
+        "full_sha": "ca03bf716b3afa77e9fa0c728c032dce57bb7e42",
+        "message": "refactor: use static width for table cells.",
+        "author": "arabcoders",
+        "date": "2026-03-31T15:34:59+00:00"
+      },
       {
         "sha": "90ebf44a",
         "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8",
