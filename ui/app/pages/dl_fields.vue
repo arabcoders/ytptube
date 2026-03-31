@@ -93,7 +93,7 @@
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
               <th class="w-full text-left">Field</th>
-              <th class="w-[1%]">Actions</th>
+              <th class="w-44 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -126,7 +126,7 @@
                 </div>
               </td>
 
-              <td class="w-[1%] px-3 py-3 align-middle whitespace-nowrap">
+              <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="info"

@@ -116,10 +116,10 @@
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
       <div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-        <table class="min-w-290 w-full text-sm">
+        <table class="min-w-190 table-fixed w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
-              <th class="w-[5%]">
+              <th class="w-12">
                 <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
                   <UIcon
                     :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
@@ -128,8 +128,8 @@
                 </button>
               </th>
               <th class="w-full text-left">Task</th>
-              <th class="w-[18%]">Timer</th>
-              <th class="w-[1%]">Actions</th>
+              <th class="w-100 whitespace-nowrap">Timer</th>
+              <th class="w-44 whitespace-nowrap">Actions</th>
             </tr>
           </thead>
 
@@ -146,7 +146,7 @@
                 </label>
               </td>
 
-              <td class="px-3 py-3 align-top">
+              <td class="w-0 px-3 py-3 align-top">
                 <div class="flex items-start justify-between gap-3">
                   <div class="min-w-0 flex-1 space-y-2">
                     <div class="flex items-start gap-2">
@@ -286,7 +286,7 @@
                 </div>
               </td>
 
-              <td class="w-[1%] px-3 py-3 align-top whitespace-nowrap">
+              <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
                     color="warning"

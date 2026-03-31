@@ -122,7 +122,7 @@
             <table class="min-w-180 w-full table-auto text-sm">
               <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
                 <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
-                  <th class="w-[1%] whitespace-nowrap">Flags</th>
+                  <th class="w-80 whitespace-nowrap">Flags</th>
                   <th>Description</th>
                 </tr>
               </thead>
@@ -132,7 +132,7 @@
                   :key="opt.flags.join('|')"
                   class="align-top hover:bg-muted/20"
                 >
-                  <td class="w-[1%] px-3 py-3 align-top whitespace-nowrap">
+                  <td class="w-80 px-3 py-3 align-top">
                     <div class="flex items-start gap-2">
                       <div class="flex flex-wrap gap-1.5">
                         <UBadge
@@ -186,8 +186,8 @@
         <table class="min-w-215 w-full table-auto text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-left [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
-              <th class="w-[1%] whitespace-nowrap">Flags</th>
-              <th class="w-[1%] whitespace-nowrap">Group</th>
+              <th class="w-80 whitespace-nowrap">Flags</th>
+              <th class="w-36 whitespace-nowrap">Group</th>
               <th>Description</th>
             </tr>
           </thead>
@@ -197,7 +197,7 @@
               :key="opt.flags.join('|')"
               class="align-top hover:bg-muted/20"
             >
-              <td class="w-[1%] px-3 py-3 align-top">
+              <td class="w-80 px-3 py-3 align-top">
                 <div class="flex items-start gap-2">
                   <div class="flex flex-wrap gap-1.5">
                     <UBadge
@@ -227,7 +227,7 @@
                   </UTooltip>
                 </div>
               </td>
-              <td class="w-[1%] px-3 py-3 align-top font-medium text-default whitespace-nowrap">
+              <td class="w-36 px-3 py-3 align-top font-medium text-default whitespace-nowrap">
                 {{ opt.group || 'root' }}
               </td>
               <td class="px-3 py-3 align-top text-default">

@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Node: Nuxt3",
+      "name": "UI: Dev",
       "request": "launch",
       "runtimeArgs": [
         "run",
@@ -21,7 +21,7 @@
       "outputCapture": "std"
     },
     {
-      "name": "Python: main.py ",
+      "name": "Python: main.py",
       "type": "debugpy",
       "request": "launch",
       "program": "app/main.py",
@@ -38,7 +38,7 @@
       },
     },
     {
-      "name": "Node: Generate UI",
+      "name": "UI: Generate",
       "request": "launch",
       "runtimeArgs": [
         "run",

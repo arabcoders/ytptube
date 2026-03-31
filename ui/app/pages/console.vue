@@ -151,7 +151,7 @@
                                 </td>
 
                                 <td
-                                  class="w-[2%] px-3 py-3 text-center align-middle whitespace-nowrap"
+                                  class="w-12 px-3 py-3 text-center align-middle whitespace-nowrap"
                                 >
                                   <UButton
                                     color="error"
