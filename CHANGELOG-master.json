@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20260327-235438af",
-        "date": "2026-03-26T21:20:49+00:00",
+        "tag": "master-20260331-dbf1f59e",
+        "date": "2026-03-31T16:15:34+00:00",
         "commits": [
+            {
+                "sha": "ca03bf71",
+                "message": "refactor: use static width for table cells.",
+                "author": "arabcoders",
+                "date": "2026-03-31T15:34:59+00:00",
+                "full_sha": "ca03bf716b3afa77e9fa0c728c032dce57bb7e42"
+            },
+            {
+                "sha": "90ebf44a",
+                "message": "fix: some type issues and dependcies update",
+                "author": "arabcoders",
+                "date": "2026-03-29T19:20:40+00:00",
+                "full_sha": "90ebf44ad4a38b289e432a2f07cedbc6088929a8"
+            },
+            {
+                "sha": "7d8df4f0",
+                "message": "feat: improve MiniFilter tokenization",
+                "author": "arabcoders",
+                "date": "2026-03-29T19:15:51+00:00",
+                "full_sha": "7d8df4f0870971e5cf86872bc59d33f08e67e86c"
+            },
             {
                 "sha": "cdca27d4",
                 "message": "refactor: minor fixes for better mobile view.",
@@ -4246,7 +4267,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "235438af51a7bdcc6101e169211f68941e6aea66"
+        "full_sha": "dbf1f59efbe3d811f5b2ac2c29fc80a3d14fcede"
     },
     {
         "tag": "master-20250616-c07465a6",
