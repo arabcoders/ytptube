@@ -1,12 +1,16 @@
 <style scoped>
+.player-shell {
+  position: relative;
+  width: 100%;
+}
+
 .player {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: block;
+  width: 100%;
   height: auto;
   max-height: 80vh;
   max-width: 100%;
-  position: relative;
+  object-fit: contain;
 }
 
 .keyboard-help {
@@ -83,7 +87,7 @@
 
 <template>
   <div v-if="infoLoaded">
-    <div style="position: relative">
+    <div class="player-shell">
       <video
         class="player"
         ref="video"
