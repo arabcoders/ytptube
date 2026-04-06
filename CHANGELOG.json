@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476",
+    "date": "2026-04-05T19:59:50+00:00",
+    "commits": [
+      {
+        "sha": "846e89f5",
+        "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476",
+        "message": "fix: video player responsiveness",
+        "author": "arabcoders",
+        "date": "2026-04-05T19:59:50+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.2",
     "full_sha": "dbf1f59efbe3d811f5b2ac2c29fc80a3d14fcede",
     "date": "2026-03-31T16:15:34+00:00",

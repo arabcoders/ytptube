@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260331-ca03bf71",
-        "date": "2026-03-31T15:34:59+00:00",
+        "tag": "dev-20260405-846e89f5",
+        "date": "2026-04-05T19:59:50+00:00",
         "commits": [
+            {
+                "sha": "846e89f5",
+                "message": "fix: video player responsiveness",
+                "author": "arabcoders",
+                "date": "2026-04-05T19:59:50+00:00",
+                "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476"
+            },
             {
                 "sha": "ca03bf71",
                 "message": "refactor: use static width for table cells.",
@@ -4267,7 +4274,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "ca03bf716b3afa77e9fa0c728c032dce57bb7e42"
+        "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476"
     },
     {
         "tag": "dev-20250616-c07465a6",
