@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476",
-    "date": "2026-04-05T19:59:50+00:00",
+    "full_sha": "6553d0d9574b9d202ce007529d90822f31a192d4",
+    "date": "2026-04-07T22:10:43+00:00",
     "commits": [
+      {
+        "sha": "6553d0d9",
+        "full_sha": "6553d0d9574b9d202ce007529d90822f31a192d4",
+        "message": "fix: use custom-first in presets",
+        "author": "arabcoders",
+        "date": "2026-04-07T22:10:43+00:00"
+      },
       {
         "sha": "846e89f5",
         "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476",
