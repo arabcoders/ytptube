@@ -523,9 +523,7 @@ const emitter = defineEmits<{
 const config = useConfigStore();
 const toast = useNotification();
 const dialog = useDialog();
-const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions(undefined, {
-  order: 'default-first',
-});
+const { findPreset, hasPreset, selectItems, getPresetDefault } = usePresetOptions();
 
 const showAdvanced = useStorage<boolean>('show_advanced', false);
 const separator = useStorage<string>('url_separator', separators[0]?.value ?? ',');

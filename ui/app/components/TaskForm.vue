@@ -521,9 +521,7 @@ const emitter = defineEmits<{
 const toast = useNotification();
 const config = useConfigStore();
 const dialog = useDialog();
-const { findPreset, getPresetDefault, selectItems } = usePresetOptions(undefined, {
-  order: 'default-first',
-});
+const { findPreset, getPresetDefault, selectItems } = usePresetOptions();
 const showImport = useStorage('showTaskImport', false);
 
 const createDefaultTask = (source?: Partial<Task>): Task => ({

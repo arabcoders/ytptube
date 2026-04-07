@@ -475,7 +475,7 @@ const box = useConfirm();
 const app = toRef(configStore, 'app');
 const paused = toRef(configStore, 'paused');
 const presets = toRef(configStore, 'presets');
-const { selectItems: presetItems } = usePresetOptions(presets, { order: 'custom-first' });
+const { selectItems: presetItems } = usePresetOptions(presets);
 const { queue, history } = storeToRefs(stateStore);
 
 const embedUrl = ref('');

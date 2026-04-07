@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "bun-types",
+      "../app/types/globals"
+    ]
+  },
+  "include": [
+    "./**/*.ts",
+    "../app/**/*.ts",
+    "../app/**/*.d.ts",
+    "../app/**/*.vue",
+    "../.nuxt/**/*.d.ts"
+  ]
+}
