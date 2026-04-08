@@ -1,8 +1,22 @@
 [
     {
-        "tag": "master-20260331-dbf1f59e",
-        "date": "2026-03-31T16:15:34+00:00",
+        "tag": "master-20260409-10875964",
+        "date": "2026-04-08T21:42:56+00:00",
         "commits": [
+            {
+                "sha": "6553d0d9",
+                "message": "fix: use custom-first in presets",
+                "author": "arabcoders",
+                "date": "2026-04-07T22:10:43+00:00",
+                "full_sha": "6553d0d9574b9d202ce007529d90822f31a192d4"
+            },
+            {
+                "sha": "846e89f5",
+                "message": "fix: video player responsiveness",
+                "author": "arabcoders",
+                "date": "2026-04-05T19:59:50+00:00",
+                "full_sha": "846e89f58eb13d13ed0527797d89fafc8ea92476"
+            },
             {
                 "sha": "ca03bf71",
                 "message": "refactor: use static width for table cells.",
@@ -4267,7 +4281,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dbf1f59efbe3d811f5b2ac2c29fc80a3d14fcede"
+        "full_sha": "1087596486bc0784188f0c1a946f99a6a47207ae"
     },
     {
         "tag": "master-20250616-c07465a6",
