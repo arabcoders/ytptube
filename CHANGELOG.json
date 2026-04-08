@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "c552c63274314d65983fe1ba7d435ac9168cdfa1",
+    "date": "2026-04-08T22:37:52+00:00",
+    "commits": [
+      {
+        "sha": "c552c632",
+        "full_sha": "c552c63274314d65983fe1ba7d435ac9168cdfa1",
+        "message": "refactor: swap icon for real favicon and better status indicator",
+        "author": "arabcoders",
+        "date": "2026-04-08T22:37:52+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.3",
     "full_sha": "1087596486bc0784188f0c1a946f99a6a47207ae",
     "date": "2026-04-08T21:42:56+00:00",
