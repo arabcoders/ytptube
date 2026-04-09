@@ -3,16 +3,18 @@
     <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
       <div class="min-w-0 space-y-1">
         <div class="flex flex-wrap items-center gap-2 text-lg font-semibold text-highlighted">
-          <UIcon name="i-lucide-file-text" class="size-5 text-toned" />
+          <UIcon
+            name="i-lucide-file-text"
+            :class="[
+              'size-5 transition-colors',
+              loading ? 'text-info' : 'animate-pulse text-success',
+            ]"
+            :title="loading ? 'Loading history' : 'Live stream active'"
+            :aria-label="loading ? 'Loading history' : 'Live stream active'"
+          />
           <span>Logs</span>
 
-          <UBadge :color="loading ? 'info' : 'success'" variant="soft" size="sm">
-            {{ loading ? 'Loading history' : 'Live stream' }}
-          </UBadge>
-
-          <UBadge :color="autoScroll ? 'success' : 'neutral'" variant="soft" size="sm">
-            {{ autoScroll ? 'Auto-follow' : 'Manual scroll' }}
-          </UBadge>
+          <UBadge v-if="loading" color="info" variant="soft" size="sm">Loading history</UBadge>
 
           <UBadge color="neutral" variant="soft" size="sm">
             {{ filteredLogs.length }} shown
@@ -77,19 +79,24 @@
           Filter
         </UButton>
 
-        <USwitch
-          v-model="textWrap"
-          color="primary"
+        <UButton
+          color="neutral"
+          :variant="textWrap ? 'soft' : 'outline'"
           size="sm"
-          :label="textWrap ? 'Wrap lines' : 'Horizontal scroll'"
-          :ui="{ root: 'items-center gap-2', wrapper: 'ms-0 text-xs text-toned' }"
-        />
+          icon="i-lucide-wrap-text"
+          :aria-pressed="textWrap"
+          :title="textWrap ? 'Wrap lines enabled' : 'Wrap lines disabled'"
+          :class="['transition-all', textWrap ? '-translate-y-px ring ring-default shadow-xs' : '']"
+          @click="textWrap = !textWrap"
+        >
+          Wrap lines
+        </UButton>
       </div>
     </div>
 
     <UPageCard variant="naked" :ui="pageCardUi">
       <template #body>
-        <div class="space-y-3">
+        <div class="w-full min-w-0 max-w-full space-y-3">
           <div class="flex flex-wrap items-center justify-end gap-2 text-xs text-toned">
             <span v-if="searchTerm">
               Query: <code>{{ searchTerm }}</code>
@@ -100,57 +107,69 @@
             </span>
           </div>
 
-          <div ref="logContainer" class="logbox overflow-auto" @scroll.passive="handleScroll">
+          <div class="w-full min-w-0 max-w-full overflow-hidden">
             <div
-              class="min-w-full space-y-2 font-mono text-[12px] leading-6 text-default"
-              role="log"
-              aria-live="polite"
+              ref="logContainer"
+              class="logbox overflow-x-auto overflow-y-auto overscroll-x-contain"
+              @scroll.passive="handleScroll"
             >
-              <div v-if="reachedEnd && !hasActiveFilter" class="flex justify-center">
-                <div
-                  class="rounded-full border border-default bg-muted/40 px-3 py-1 text-[11px] text-toned"
-                >
-                  No older lines remain in this file.
-                </div>
-              </div>
-
-              <div v-if="filteredLogs.length > 0" class="space-y-1.5">
-                <article
-                  v-for="(entry, index) in filteredLogs"
-                  :key="entry.log.id"
-                  :class="logRowClass(entry, index)"
-                >
-                  <span class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
-                    {{ logTimeLabel(entry.log.datetime) }}
-                  </span>
-
-                  <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
-                    {{ entry.log.line }}
-                  </p>
-                </article>
-              </div>
-
               <div
-                v-else
-                class="rounded-xl border border-default bg-muted/20 px-4 py-6 text-center"
+                :class="[
+                  'space-y-2 font-mono text-[12px] leading-6 text-default',
+                  textWrap ? 'w-full min-w-0' : 'w-max min-w-full',
+                ]"
+                role="log"
+                aria-live="polite"
               >
-                <div class="space-y-2">
-                  <p class="text-sm font-semibold text-highlighted">
-                    {{
-                      hasActiveFilter
-                        ? 'No log lines match the current filter.'
-                        : 'No log lines are available yet.'
-                    }}
-                  </p>
-
-                  <p v-if="hasActiveFilter" class="text-xs text-toned">
-                    Try a different term or clear <code>{{ query }}</code
-                    >.
-                  </p>
+                <div v-if="reachedEnd && !hasActiveFilter" class="flex justify-center">
+                  <div
+                    class="rounded-full border border-default bg-muted/40 px-3 py-1 text-[11px] text-toned"
+                  >
+                    No older lines remain in this file.
+                  </div>
                 </div>
-              </div>
 
-              <div ref="bottomMarker" />
+                <div v-if="filteredLogs.length > 0" class="space-y-1.5">
+                  <article
+                    v-for="(entry, index) in filteredLogs"
+                    :key="entry.log.id"
+                    :class="[
+                      logRowClass(entry, index),
+                      textWrap ? 'log-row--wrap-fit' : 'log-row--nowrap-fit',
+                    ]"
+                  >
+                    <span class="log-timestamp" :title="logTimeTitle(entry.log.datetime)">
+                      {{ logTimeLabel(entry.log.datetime) }}
+                    </span>
+
+                    <p class="log-line" :class="textWrap ? 'log-line--wrap' : 'log-line--nowrap'">
+                      {{ entry.log.line }}
+                    </p>
+                  </article>
+                </div>
+
+                <div
+                  v-else
+                  class="rounded-xl border border-default bg-muted/20 px-4 py-6 text-center"
+                >
+                  <div class="space-y-2">
+                    <p class="text-sm font-semibold text-highlighted">
+                      {{
+                        hasActiveFilter
+                          ? 'No log lines match the current filter.'
+                          : 'No log lines are available yet.'
+                      }}
+                    </p>
+
+                    <p v-if="hasActiveFilter" class="text-xs text-toned">
+                      Try a different term or clear <code>{{ query }}</code
+                      >.
+                    </p>
+                  </div>
+                </div>
+
+                <div ref="bottomMarker" />
+              </div>
             </div>
           </div>
         </div>
@@ -195,10 +214,10 @@ const autoScroll = ref(true);
 const reachedEnd = ref(false);
 
 const pageCardUi = {
-  root: 'w-full bg-transparent',
-  container: 'w-full p-4 sm:p-5',
-  wrapper: 'w-full items-stretch',
-  body: 'w-full',
+  root: 'w-full min-w-0 max-w-full bg-transparent',
+  container: 'w-full min-w-0 max-w-full p-4 sm:p-5',
+  wrapper: 'w-full min-w-0 items-stretch',
+  body: 'w-full min-w-0 max-w-full overflow-hidden',
 };
 
 const query = ref<string>(
@@ -511,7 +530,9 @@ useHead({ title: 'Logs' });
 
 <style scoped>
 .logbox {
-  min-width: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 55vh;
   max-height: 60vh;
   background: transparent;
@@ -520,15 +541,26 @@ useHead({ title: 'Logs' });
 
 .log-row {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   gap: 0.75rem;
   border: 1px solid transparent;
   border-radius: 0.75rem;
+  box-sizing: border-box;
   padding: 0.625rem 0.75rem;
   background: var(--ui-bg);
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease;
+}
+
+.log-row--wrap-fit {
+  width: 100%;
+}
+
+.log-row--nowrap-fit {
+  min-width: 100%;
+  width: max-content;
 }
 
 .log-row--alt {
