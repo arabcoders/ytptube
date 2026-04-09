@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260409-c552c632",
-        "date": "2026-04-08T22:37:52+00:00",
+        "tag": "dev-20260409-f77cb7cf",
+        "date": "2026-04-09T17:33:48+00:00",
         "commits": [
+            {
+                "sha": "f77cb7cf",
+                "message": "docs: update README",
+                "author": "arabcoders",
+                "date": "2026-04-09T17:33:48+00:00",
+                "full_sha": "f77cb7cff8f3f625d364e81a1b65cecb5f66c341"
+            },
             {
                 "sha": "c552c632",
                 "message": "refactor: swap icon for real favicon and better status indicator",
@@ -4288,7 +4295,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "c552c63274314d65983fe1ba7d435ac9168cdfa1"
+        "full_sha": "f77cb7cff8f3f625d364e81a1b65cecb5f66c341"
     },
     {
         "tag": "dev-20250616-c07465a6",
