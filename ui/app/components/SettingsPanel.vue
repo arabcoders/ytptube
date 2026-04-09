@@ -88,7 +88,7 @@
                 v-model="bgOpacityModel"
                 :min="0.5"
                 :max="1"
-                :step="0.05"
+                :step="0.01"
                 size="lg"
                 class="w-full"
               />
