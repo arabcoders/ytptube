@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "7992e1a1c335dc3902d419e1fab59c5cd0df10d6",
-    "date": "2026-04-09T18:17:49+00:00",
+    "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9",
+    "date": "2026-04-09T19:02:16+00:00",
     "commits": [
+      {
+        "sha": "acf1de5c",
+        "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9",
+        "message": "fix: adjust step value for background opacity slider",
+        "author": "arabcoders",
+        "date": "2026-04-09T19:02:16+00:00"
+      },
       {
         "sha": "7992e1a1",
         "full_sha": "7992e1a1c335dc3902d419e1fab59c5cd0df10d6",

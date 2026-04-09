@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260409-7992e1a1",
-        "date": "2026-04-09T18:17:49+00:00",
+        "tag": "dev-20260409-acf1de5c",
+        "date": "2026-04-09T19:02:16+00:00",
         "commits": [
+            {
+                "sha": "acf1de5c",
+                "message": "fix: adjust step value for background opacity slider",
+                "author": "arabcoders",
+                "date": "2026-04-09T19:02:16+00:00",
+                "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9"
+            },
             {
                 "sha": "7992e1a1",
                 "message": "refactor: minor logs view changes",
@@ -4309,7 +4316,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "7992e1a1c335dc3902d419e1fab59c5cd0df10d6"
+        "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9"
     },
     {
         "tag": "dev-20250616-c07465a6",
