@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9",
-    "date": "2026-04-09T19:02:16+00:00",
+    "full_sha": "c3132858e7c19b361a0df095345ecd0844f591fc",
+    "date": "2026-04-10T15:07:05+00:00",
     "commits": [
+      {
+        "sha": "c3132858",
+        "full_sha": "c3132858e7c19b361a0df095345ecd0844f591fc",
+        "message": "feat: add download_skipped flag to track intentionally skipped downloads",
+        "author": "arabcoders",
+        "date": "2026-04-10T15:07:05+00:00"
+      },
       {
         "sha": "acf1de5c",
         "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9",
