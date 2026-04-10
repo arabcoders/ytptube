@@ -1,8 +1,57 @@
 [
     {
-        "tag": "master-20260409-10875964",
-        "date": "2026-04-08T21:42:56+00:00",
+        "tag": "master-20260410-2139e203",
+        "date": "2026-04-10T15:33:29+00:00",
         "commits": [
+            {
+                "sha": "1fa60c39",
+                "message": "fix: playlist keys pre-processing. Closes #585",
+                "author": "arabcoders",
+                "date": "2026-04-10T15:26:54+00:00",
+                "full_sha": "1fa60c3909de6abfce528723230ec6d46376de19"
+            },
+            {
+                "sha": "c3132858",
+                "message": "feat: add download_skipped flag to track intentionally skipped downloads",
+                "author": "arabcoders",
+                "date": "2026-04-10T15:07:05+00:00",
+                "full_sha": "c3132858e7c19b361a0df095345ecd0844f591fc"
+            },
+            {
+                "sha": "acf1de5c",
+                "message": "fix: adjust step value for background opacity slider",
+                "author": "arabcoders",
+                "date": "2026-04-09T19:02:16+00:00",
+                "full_sha": "acf1de5c6906ce40f3dfff6359efb984159e12e9"
+            },
+            {
+                "sha": "7992e1a1",
+                "message": "refactor: minor logs view changes",
+                "author": "arabcoders",
+                "date": "2026-04-09T18:17:49+00:00",
+                "full_sha": "7992e1a1c335dc3902d419e1fab59c5cd0df10d6"
+            },
+            {
+                "sha": "684f3740",
+                "message": "docs: remove redundant sentence about future UI/UX refactoring",
+                "author": "arabcoders",
+                "date": "2026-04-09T17:35:00+00:00",
+                "full_sha": "684f3740a8173f37dd0ae03c50583a41fa405707"
+            },
+            {
+                "sha": "f77cb7cf",
+                "message": "docs: update README",
+                "author": "arabcoders",
+                "date": "2026-04-09T17:33:48+00:00",
+                "full_sha": "f77cb7cff8f3f625d364e81a1b65cecb5f66c341"
+            },
+            {
+                "sha": "c552c632",
+                "message": "refactor: swap icon for real favicon and better status indicator",
+                "author": "arabcoders",
+                "date": "2026-04-08T22:37:52+00:00",
+                "full_sha": "c552c63274314d65983fe1ba7d435ac9168cdfa1"
+            },
             {
                 "sha": "6553d0d9",
                 "message": "fix: use custom-first in presets",
@@ -4281,7 +4330,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1087596486bc0784188f0c1a946f99a6a47207ae"
+        "full_sha": "2139e203329407917a89fce2e4edc1f7c3496cc8"
     },
     {
         "tag": "master-20250616-c07465a6",
