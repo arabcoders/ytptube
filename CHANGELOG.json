@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "4620d1aaed31cf40c4cd30dab051480a9bc6f78e",
+    "date": "2026-04-10T16:58:36+00:00",
+    "commits": [
+      {
+        "sha": "4620d1aa",
+        "full_sha": "4620d1aaed31cf40c4cd30dab051480a9bc6f78e",
+        "message": "fix: improve the native build",
+        "author": "arabcoders",
+        "date": "2026-04-10T16:58:36+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.4",
     "full_sha": "2139e203329407917a89fce2e4edc1f7c3496cc8",
     "date": "2026-04-10T15:33:29+00:00",
