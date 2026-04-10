@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260410-4620d1aa",
-        "date": "2026-04-10T16:58:36+00:00",
+        "tag": "dev-20260410-ae20b518",
+        "date": "2026-04-10T17:22:25+00:00",
         "commits": [
+            {
+                "sha": "ae20b518",
+                "message": "fix: version tagging in native build",
+                "author": "arabcoders",
+                "date": "2026-04-10T17:22:25+00:00",
+                "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d"
+            },
             {
                 "sha": "4620d1aa",
                 "message": "fix: improve the native build",
@@ -4337,7 +4344,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "4620d1aaed31cf40c4cd30dab051480a9bc6f78e"
+        "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d"
     },
     {
         "tag": "dev-20250616-c07465a6",

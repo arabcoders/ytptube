@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d",
+    "date": "2026-04-10T17:22:25+00:00",
+    "commits": [
+      {
+        "sha": "ae20b518",
+        "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d",
+        "message": "fix: version tagging in native build",
+        "author": "arabcoders",
+        "date": "2026-04-10T17:22:25+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.5",
     "full_sha": "28ec496430032e656c8bd5a8b9dbd1504f05bdfd",
     "date": "2026-04-10T17:11:51+00:00",
