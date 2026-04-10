@@ -1,8 +1,15 @@
 [
     {
-        "tag": "master-20260410-2139e203",
-        "date": "2026-04-10T15:33:29+00:00",
+        "tag": "master-20260410-28ec4964",
+        "date": "2026-04-10T17:11:51+00:00",
         "commits": [
+            {
+                "sha": "4620d1aa",
+                "message": "fix: improve the native build",
+                "author": "arabcoders",
+                "date": "2026-04-10T16:58:36+00:00",
+                "full_sha": "4620d1aaed31cf40c4cd30dab051480a9bc6f78e"
+            },
             {
                 "sha": "1fa60c39",
                 "message": "fix: playlist keys pre-processing. Closes #585",
@@ -4330,7 +4337,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "2139e203329407917a89fce2e4edc1f7c3496cc8"
+        "full_sha": "28ec496430032e656c8bd5a8b9dbd1504f05bdfd"
     },
     {
         "tag": "master-20250616-c07465a6",
