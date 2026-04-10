@@ -225,7 +225,18 @@ class Download:
                         {
                             k: v
                             for k, v in self.info.extras.items()
-                            if k not in _dct and v is not None and k not in ("is_live",)
+                            if v is not None
+                            and k not in ("is_live",)
+                            and (
+                                k not in _dct
+                                or (
+                                    (
+                                        k.startswith("playlist_")
+                                        or k in {"playlist", "n_entries", "__last_playlist_index"}
+                                    )
+                                    and _dct.get(k) in (None, "", "NA")
+                                )
+                            )
                         }
                     )
 

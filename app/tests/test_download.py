@@ -75,7 +75,7 @@ class TestDownloadHooks:
             max_workers = 1
             temp_keep = False
             temp_disabled = True
-            download_info_expires = 3600
+            download_info_expires = 0
 
             @staticmethod
             def get_instance():
@@ -148,7 +148,7 @@ class TestDownloadStale:
             max_workers = 1
             temp_keep = False
             temp_disabled = True
-            download_info_expires = 3600
+            download_info_expires = 0
 
             @staticmethod
             def get_instance():
@@ -323,6 +323,78 @@ class TestDownloadFlow:
         queue = cast(DummyQueue, download.status_queue)
         assert queue.items[0]["download_skipped"] is True
         assert queue.items[1]["download_skipped"] is True
+
+    def test_download_prefers_real_playlist_extras_over_placeholder_preinfo(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 0
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        item = make_item()
+        item.extras = {
+            "playlist": "Internet Dating Slang",
+            "playlist_title": "Internet Dating Slang",
+            "playlist_index": 1,
+            "playlist_autonumber": 1,
+            "n_entries": 2,
+        }
+        download = Download(
+            info=item,
+            info_dict={
+                "id": "test-id",
+                "url": "http://u",
+                "title": "Video Title",
+                "formats": [{"format_id": "18"}],
+                "playlist": "NA",
+                "playlist_title": None,
+                "playlist_index": "NA",
+                "playlist_autonumber": "",
+                "n_entries": None,
+            },
+        )
+        download.status_queue = cast(Any, DummyQueue())
+        download._hook_handlers = Mock(
+            progress_hook=Mock(),
+            postprocessor_hook=Mock(),
+            post_hook=Mock(),
+        )
+        download.info.get_ytdlp_opts = Mock(
+            return_value=Mock(add=Mock(return_value=Mock(get_all=Mock(return_value={}))))
+        )
+
+        captured: dict[str, Any] = {}
+
+        class FakeYTDLP:
+            def __init__(self, params):
+                self.params = params
+                self._download_retcode = 0
+                self._interrupted = False
+
+            def process_ie_result(self, ie_result, download):
+                captured["ie_result"] = ie_result
+                return ie_result, download
+
+        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+
+        download._download()
+
+        ie_result = captured["ie_result"]
+        assert ie_result["playlist"] == "Internet Dating Slang"
+        assert ie_result["playlist_title"] == "Internet Dating Slang"
+        assert ie_result["playlist_index"] == 1
+        assert ie_result["playlist_autonumber"] == 1
+        assert ie_result["n_entries"] == 2
 
     @pytest.mark.asyncio
     async def test_download_flow_inline_process(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
