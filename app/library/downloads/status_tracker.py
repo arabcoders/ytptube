@@ -128,6 +128,8 @@ class StatusTracker:
         self.tmpfilename = status.get("tmpfilename")
 
         self.info.status = status.get("status", self.info.status)
+        if "download_skipped" in status:
+            self.info.download_skipped = bool(status.get("download_skipped"))
         self.info.msg = status.get("msg")
         self.info.postprocessor = status.get("postprocessor", None)
 

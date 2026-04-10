@@ -37,9 +37,7 @@ class _DATA:
         {
             "quiet": "-q, --quiet",
             "no_warnings": "--no-warnings",
-            "skip_download": "--skip-download",
             "forceprint": "-O, --print",
-            "simulate": "--simulate",
             "noprogress": "--no-progress",
             "wait_for_video": "--wait-for-video",
             "progress_delta": " --progress-delta",

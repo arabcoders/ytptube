@@ -17,13 +17,15 @@ async def make_store() -> SqliteStore:
     return store
 
 
-def make_item(idx: int, *, status: str = "finished") -> ItemDTO:
+def make_item(idx: int, *, status: str = "finished", cli: str = "", download_skipped: bool = False) -> ItemDTO:
     return ItemDTO(
         id=f"vid{idx}",
         title=f"Video {idx}",
         url=f"https://example.com/{idx}",
         folder="/downloads",
         status=status,
+        cli=cli,
+        download_skipped=download_skipped,
     )
 
 
@@ -87,6 +89,22 @@ async def test_enqueue_upsert_and_fetch_saved():
     key, loaded = saved[0]
     assert key == item._id
     assert loaded.title == item.title
+    await store.close()
+
+
+@pytest.mark.asyncio
+async def test_enqueue_upsert_persists_download_skipped_flag():
+    store = await make_store()
+    item = make_item(2, download_skipped=True)
+
+    await store.enqueue_upsert("history", item)
+    await store.flush()
+
+    saved = await store.fetch_saved("history")
+    assert len(saved) == 1
+    _, loaded = saved[0]
+    assert item.download_skipped is True
+    assert loaded.download_skipped is True
     await store.close()
 
 

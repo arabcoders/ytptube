@@ -92,9 +92,11 @@ class Download:
         download using yt-dlp.
         """
         cookie_file: Path | None = None
+        params: dict[str, Any] = {}
+        download_skipped = False
 
         try:
-            params: dict = (
+            params = (
                 self.info.get_ytdlp_opts()
                 .add(
                     config={
@@ -116,6 +118,7 @@ class Download:
                 )
                 .get_all()
             )
+            download_skipped = bool(params.get("skip_download") or params.get("simulate"))
 
             params.update(
                 {
@@ -212,7 +215,7 @@ class Download:
 
                 signal.signal(signal.SIGUSR1, mark_cancelled)
 
-            self.status_queue.put({"id": self.id, "status": "downloading"})
+            self.status_queue.put({"id": self.id, "status": "downloading", "download_skipped": download_skipped})
 
             if isinstance(self.info_dict, dict) and len(self.info_dict) > 1:
                 self.logger.debug(f"Downloading '{self.info.url}' using pre-info.")
@@ -232,14 +235,35 @@ class Download:
                 self.logger.debug(f"Downloading using url: {self.info.url}")
                 ret = cls.download(url_list=[self.info.url])
 
-            self.status_queue.put({"id": self.id, "status": "finished" if 0 == ret else "error"})
+            self.status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "finished" if 0 == ret else "error",
+                    "download_skipped": download_skipped,
+                }
+            )
         except yt_dlp.utils.ExistingVideoReached as exc:
             self.logger.error(exc)
-            self.status_queue.put({"id": self.id, "status": "skip", "msg": "Item has already been downloaded."})
+            self.status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "skip",
+                    "msg": "Item has already been downloaded.",
+                    "download_skipped": download_skipped,
+                }
+            )
         except Exception as exc:
             self.logger.exception(exc)
             self.logger.error(exc)
-            self.status_queue.put({"id": self.id, "status": "error", "msg": str(exc), "error": str(exc)})
+            self.status_queue.put(
+                {
+                    "id": self.id,
+                    "status": "error",
+                    "msg": str(exc),
+                    "error": str(exc),
+                    "download_skipped": download_skipped,
+                }
+            )
         finally:
             self.status_queue.put(Terminator())
             if cookie_file and cookie_file.exists():

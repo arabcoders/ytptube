@@ -214,7 +214,7 @@
               <td class="w-44 px-3 py-3 align-top whitespace-nowrap">
                 <div class="flex items-center justify-end gap-1">
                   <UButton
-                    v-if="!item.filename"
+                    v-if="showRetryAction(item)"
                     color="warning"
                     variant="outline"
                     size="xs"
@@ -442,7 +442,7 @@
 
           <div class="flex flex-wrap gap-2 *:min-w-32 *:flex-1">
             <UButton
-              v-if="!item.filename"
+              v-if="showRetryAction(item)"
               color="warning"
               variant="outline"
               icon="i-lucide-rotate-cw"
@@ -616,7 +616,7 @@ import { useStorage, useIntersectionObserver } from '@vueuse/core';
 import { useDialog } from '~/composables/useDialog';
 import type { StoreItem } from '~/types/store';
 import { useConfirm } from '~/composables/useConfirm';
-import { deepIncludes, getPath, getImage } from '~/utils';
+import { deepIncludes, getPath, getImage, isDownloadSkipped } from '~/utils';
 import type { item_request } from '~/types/item';
 
 const emitter = defineEmits<{
@@ -815,6 +815,8 @@ const getListImage = (item: StoreItem): string =>
   getImage(config.app.download_path, item, false) || '';
 
 const getGridImage = (item: StoreItem): string => getImage(config.app.download_path, item) || '';
+
+const showRetryAction = (item: StoreItem): boolean => !item.filename && !isDownloadSkipped(item);
 
 const historyCardClass = (item: StoreItem): string => {
   if (item.status === 'error') {
@@ -1038,6 +1040,9 @@ const clearIncomplete = async () => {
 
 const setIcon = (item: StoreItem) => {
   if ('finished' === item.status) {
+    if (isDownloadSkipped(item)) {
+      return 'i-lucide-ban';
+    }
     if (!item.filename) {
       return 'i-lucide-triangle-alert';
     }
@@ -1063,6 +1068,9 @@ const setIcon = (item: StoreItem) => {
 
 const setIconColor = (item: StoreItem) => {
   if ('finished' === item.status) {
+    if (isDownloadSkipped(item)) {
+      return 'text-info';
+    }
     if (!item.filename) {
       return 'text-warning';
     }
@@ -1084,6 +1092,9 @@ const setIconColor = (item: StoreItem) => {
 
 const setStatus = (item: StoreItem) => {
   if ('finished' === item.status) {
+    if (isDownloadSkipped(item)) {
+      return 'Download skipped';
+    }
     if (item.extras?.is_premiere) {
       return 'Premiered';
     }

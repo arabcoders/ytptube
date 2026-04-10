@@ -445,6 +445,7 @@ import {
   ag,
   encodePath,
   formatTime,
+  isDownloadSkipped,
   makeDownload,
   request,
   stripPath,
@@ -812,6 +813,10 @@ const getStatusLabel = (item: StoreItem): string => {
     return 'Queued';
   }
 
+  if (isDownloadSkipped(item)) {
+    return 'Download skipped';
+  }
+
   if (item.status === 'error' && item.filename) {
     return 'Partial Error';
   }
@@ -822,6 +827,10 @@ const getStatusLabel = (item: StoreItem): string => {
 const getStatusColor = (item: StoreItem): 'neutral' | 'info' | 'success' | 'error' | 'warning' => {
   if (item.status === null) {
     return 'neutral';
+  }
+
+  if (isDownloadSkipped(item)) {
+    return 'info';
   }
 
   if (item.status === 'error' && item.filename) {

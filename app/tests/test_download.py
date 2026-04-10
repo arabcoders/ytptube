@@ -272,6 +272,58 @@ class TestDownloadStale:
 
 
 class TestDownloadFlow:
+    def test_download_pushes_download_skipped_flag(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        download = Download(
+            info=make_item(),
+            info_dict={"id": "test-id", "url": "http://u", "formats": [{"format_id": "18"}]},
+        )
+        download.status_queue = cast(Any, DummyQueue())
+        download._hook_handlers = Mock(
+            progress_hook=Mock(),
+            postprocessor_hook=Mock(),
+            post_hook=Mock(),
+        )
+        download.info.get_ytdlp_opts = Mock(
+            return_value=Mock(
+                add=Mock(
+                    return_value=Mock(
+                        get_all=Mock(return_value={"skip_download": True}),
+                    )
+                )
+            )
+        )
+
+        class FakeYTDLP:
+            def __init__(self, params):
+                self.params = params
+                self._download_retcode = 0
+                self._interrupted = False
+
+            def process_ie_result(self, ie_result, download):
+                return ie_result, download
+
+        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+
+        download._download()
+
+        queue = cast(DummyQueue, download.status_queue)
+        assert queue.items[0]["download_skipped"] is True
+        assert queue.items[1]["download_skipped"] is True
+
     @pytest.mark.asyncio
     async def test_download_flow_inline_process(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         class Cfg:
@@ -723,6 +775,14 @@ class TestStatusTracker:
 
         await st.process_status_update(status)
         assert st.info.status == "downloading", "Should update info status"
+
+    @pytest.mark.asyncio
+    async def test_process_status_update_sets_download_skipped(self, mock_config: dict) -> None:
+        st = StatusTracker(**mock_config)
+        status = {"id": "test-id", "status": "downloading", "download_skipped": True}
+
+        await st.process_status_update(status)
+        assert st.info.download_skipped is True, "Should update download_skipped from status queue"
 
     @pytest.mark.asyncio
     async def test_process_status_update_sets_tmpfilename(self, mock_config: dict) -> None:
