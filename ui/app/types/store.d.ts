@@ -70,6 +70,8 @@ type StoreItem = {
     subtitle?: Array<sideCarSubtitle>;
     image?: Array<SideCar>;
   };
+  /** If the primary media download was intentionally skipped */
+  download_skipped?: boolean;
   /** Extras for the item */
   extras: {
     /** Which channel the item belongs to */

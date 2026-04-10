@@ -107,9 +107,11 @@ This project is not affiliated with yt-dlp or any other service.
 It’s a personal project designed to make downloading videos from the internet more convenient. It’s not intended for 
 piracy or any unlawful use.
 
+AI-based tools may have been used to assist with parts of this project. Regardless of how a change is produced, every 
+change is reviewed and approved by the human maintainer before it is included.
+
 This project was built primarily for my own needs and preferences. The UI might not be the most polished or visually 
-refined, but I’m happy with it as it is. You can, however, create and load your own UI for complete customization. I 
-plan to refactor the UI/UX in the future using [Nuxt/ui](https://ui.nuxt.com/).
+refined, but I’m happy with it as it is. You can, however, create and load your own UI for complete customization.
 
 Contributions are welcome, but I may decline changes that don’t align with my vision for the project. Unsolicited pull 
 requests may be ignored. For suggestions or feature requests, please open a discussion or join the Discord server.

@@ -793,6 +793,10 @@ const shortPath = (path: string, prefix: string = '...'): string => {
   return `${prefix}/${parts.at(-1)}${hasTrailingSlash ? '/' : ''}`;
 };
 
+const isDownloadSkipped = (
+  item: Pick<StoreItem, 'status' | 'download_skipped'> | null | undefined,
+): boolean => Boolean(item && item.status === 'finished' && item.download_skipped);
+
 /**
  * Recursively test if a value (including nested objects/arrays) contains a query string.
  * - Plain queries match keys or values (case-insensitive).
@@ -1028,6 +1032,7 @@ export {
   enableOpacity,
   stripPath,
   shortPath,
+  isDownloadSkipped,
   deepIncludes,
   getPath,
   getImage,

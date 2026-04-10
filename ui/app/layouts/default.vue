@@ -74,37 +74,44 @@
               :ui="dashboardSidebarUi"
             >
               <template #header="{ collapsed }">
-                <div
-                  class="flex w-full min-w-0 items-center gap-2"
-                  :class="collapsed ? 'justify-center' : ''"
-                >
-                  <span
-                    class="inline-flex shrink-0 items-center justify-center transition-all duration-200"
-                    :class="
-                      collapsed
-                        ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
-                        : ''
-                    "
+                <UTooltip :text="connectionStatusLabel">
+                  <NuxtLink
+                    to="/"
+                    class="flex w-full min-w-0 items-center gap-2 rounded-xl transition-colors hover:bg-elevated/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    :class="collapsed ? 'justify-center p-1' : 'px-1.5 py-1'"
+                    aria-label="Go to home"
                   >
-                    <UIcon
-                      v-if="'connecting' === socket.connectionStatus"
-                      name="i-lucide-loader-circle"
-                      :class="[collapsed ? 'size-6' : 'size-4', 'animate-spin']"
-                    />
-                    <UIcon v-else name="i-lucide-house" :class="collapsed ? 'size-6' : 'size-4'" />
-                  </span>
+                    <span
+                      class="relative inline-flex shrink-0 items-center justify-center transition-all duration-200"
+                      :class="
+                        collapsed
+                          ? 'size-10 rounded-xl bg-elevated/80 ring ring-default shadow-xs'
+                          : 'size-9 rounded-lg'
+                      "
+                    >
+                      <img
+                        :src="uri('/images/favicon.png')"
+                        alt="YTPTube"
+                        class="rounded-lg object-contain"
+                        :class="collapsed ? 'size-6' : 'size-5'"
+                      />
+                      <span
+                        aria-hidden="true"
+                        class="absolute right-0 bottom-0 size-2.5 rounded-full ring-2 ring-default"
+                        :class="connectionStatusDotClass"
+                      />
+                    </span>
 
-                  <div v-if="false === collapsed" class="min-w-0">
-                    <UTooltip :text="connectionStatusLabel">
+                    <div v-if="false === collapsed" class="min-w-0">
                       <p class="truncate text-sm font-semibold" :class="connectionStatusColor">
                         YTPTube
                       </p>
-                    </UTooltip>
-                    <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
-                      {{ config.app.instance_title }}
-                    </p>
-                  </div>
-                </div>
+                      <p v-if="config?.app?.instance_title" class="truncate text-xs text-toned">
+                        {{ config.app.instance_title }}
+                      </p>
+                    </div>
+                  </NuxtLink>
+                </UTooltip>
               </template>
 
               <template #default="{ collapsed }">
@@ -1069,6 +1076,18 @@ const connectionStatusColor = computed(() => {
     case 'disconnected':
     default:
       return 'text-error';
+  }
+});
+
+const connectionStatusDotClass = computed(() => {
+  switch (socket.connectionStatus) {
+    case 'connected':
+      return 'bg-success';
+    case 'connecting':
+      return 'bg-warning';
+    case 'disconnected':
+    default:
+      return 'bg-error';
   }
 });
 

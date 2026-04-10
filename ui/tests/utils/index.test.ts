@@ -388,6 +388,16 @@ describe('data conversion helpers', () => {
     const url = utils.makeDownload({}, { filename: 'playlist' }, 'm3u8');
     expect(url).toBe('/base-path/api/player/m3u8/video/playlist.m3u8');
   });
+
+  it('isDownloadSkipped detects finished skipped-download items', () => {
+    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: true } as any)).toBe(true);
+  });
+
+  it('isDownloadSkipped ignores unfinished or unflagged items', () => {
+    expect(utils.isDownloadSkipped({ status: 'finished', download_skipped: false } as any)).toBe(false);
+    expect(utils.isDownloadSkipped({ status: 'downloading', download_skipped: true } as any)).toBe(false);
+    expect(utils.isDownloadSkipped(undefined as any)).toBe(false);
+  });
 });
 
 describe('dom and browser helpers', () => {

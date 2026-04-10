@@ -110,6 +110,23 @@ class TestItemDTO:
         assert dto.is_archivable is True
         assert dto.is_archived is True
 
+    @patch("app.library.ItemDTO.get_archive_id")
+    @patch("app.library.ItemDTO.YTDLPOpts")
+    @patch("app.library.ItemDTO.archive_read")
+    def test_post_init_does_not_infer_download_skipped_flag(self, mock_read, mock_opts, mock_get_id):
+        mock_get_id.return_value = {"archive_id": "arch", "id": "arch", "ie_key": "YT"}
+        mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
+        mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
+        mock_opts.get_instance.return_value.get_all.return_value = {
+            "download_archive": "/tmp/a.txt",
+            "skip_download": True,
+        }
+        mock_read.return_value = ["arch"]
+
+        dto = ItemDTO(id="vid", title="t", url="u", folder="f")
+
+        assert dto.download_skipped is False
+
     @patch("app.library.ItemDTO.archive_read")
     def test_serialize_triggers_archive_status_when_finished(self, mock_read):
         # Given a finished item with archive info
@@ -126,11 +143,31 @@ class TestItemDTO:
             assert key not in data
 
     @patch("app.library.ItemDTO.YTDLPOpts")
+    def test_serialize_does_not_recompute_download_skipped(self, mock_opts):
+        mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
+        mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
+        mock_opts.get_instance.return_value.get_all.return_value = {}
+
+        dto = ItemDTO(id="vid", title="t", url="u", folder="f", download_skipped=True)
+
+        mock_opts.get_instance.reset_mock()
+
+        data = dto.serialize()
+
+        assert data["download_skipped"] is True
+        mock_opts.get_instance.assert_not_called()
+
+    @patch("app.library.ItemDTO.YTDLPOpts")
     def test_get_ytdlp_opts_uses_preset_and_cli(self, mock_opts):
         mock_opts.get_instance.return_value.preset.return_value = mock_opts.get_instance.return_value
         mock_opts.get_instance.return_value.add_cli.return_value = mock_opts.get_instance.return_value
 
         dto = ItemDTO(id="id", title="t", url="u", folder="f", preset="p", cli="--x")
+
+        mock_opts.get_instance.reset_mock()
+        mock_opts.get_instance.return_value.preset.reset_mock()
+        mock_opts.get_instance.return_value.add_cli.reset_mock()
+
         opts = dto.get_ytdlp_opts()
 
         mock_opts.get_instance.assert_called_once()

@@ -381,6 +381,8 @@ class ItemDTO:
     """ The archive ID of the item. """
     sidecar: dict = field(default_factory=dict)
     """ Sidecar data associated with the item. """
+    download_skipped: bool = False
+    """ True when yt-dlp intentionally skips the primary media download. """
 
     # yt-dlp injected fields.
     tmpfilename: str | None = None
