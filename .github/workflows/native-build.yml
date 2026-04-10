@@ -82,12 +82,14 @@ jobs:
           echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
           echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
 
-          sed -i \
+          sed -i.bak \
             -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
             -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
             -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
             -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
             app/library/version.py
+
+          rm -f app/library/version.py.bak
 
           echo "Updated version info:"
           cat app/library/version.py
