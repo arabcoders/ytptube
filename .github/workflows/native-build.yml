@@ -37,7 +37,7 @@ jobs:
       contents: write
 
     env:
-      PYTHON_VERSION: 3.11
+      PYTHON_VERSION: "3.13"
       BUN_VERSION: latest
       NODE_VERSION: 20
       TAG_NAME: ${{ github.event.inputs.tag || github.ref_name }}
@@ -62,6 +62,35 @@ jobs:
         if: ${{ github.event.inputs.useWorkflowSpec == 'true' }}
         shell: bash
         run: cp temp-spec/app.spec ./app.spec
+
+      - name: Update app/library/version.py
+        shell: bash
+        run: |
+          VERSION="${TAG_NAME}"
+          SHA=$(git rev-parse HEAD)
+          DATE=$(date -u +"%Y%m%d")
+          BRANCH=$(git branch --show-current)
+
+          if [ -z "${BRANCH}" ]; then
+            BRANCH="${TAG_NAME}"
+          fi
+
+          BRANCH=$(echo "${BRANCH}" | sed 's#/#-#g')
+
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "APP_SHA=${SHA}" >> "$GITHUB_ENV"
+          echo "APP_DATE=${DATE}" >> "$GITHUB_ENV"
+          echo "APP_BRANCH=${BRANCH}" >> "$GITHUB_ENV"
+
+          sed -i \
+            -e "s/^APP_VERSION = \".*\"/APP_VERSION = \"${VERSION}\"/" \
+            -e "s/^APP_COMMIT_SHA = \".*\"/APP_COMMIT_SHA = \"${SHA}\"/" \
+            -e "s/^APP_BUILD_DATE = \".*\"/APP_BUILD_DATE = \"${DATE}\"/" \
+            -e "s/^APP_BRANCH = \".*\"/APP_BRANCH = \"${BRANCH}\"/" \
+            app/library/version.py
+
+          echo "Updated version info:"
+          cat app/library/version.py
 
       - name: Cache Python venv
         id: cache-python
@@ -161,7 +190,7 @@ jobs:
           rm -rf "dist/${PKG_DIR}"
           mv "dist/YTPTube" "dist/${PKG_DIR}"
 
-          zip -r "release/${ZIP_NAME}" "dist/${PKG_DIR}"
+          zip -yr "release/${ZIP_NAME}" "dist/${PKG_DIR}"
 
       - name: Package artifact (Windows)
         if: startsWith(env.TAG_NAME, 'v') && runner.os == 'Windows'

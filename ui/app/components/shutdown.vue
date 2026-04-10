@@ -1,93 +1,64 @@
 <template>
-  <div id="main_container" class="container">
-    <div class="columns">
-      <div class="column">
-        <section
-          class="hero has-text-centered is-flex is-align-items-center is-justify-content-center"
-        >
-          <div class="goodbye-box">
-            <div class="goodbye-title">Goodbye!</div>
-            <p class="goodbye-subtitle">YTPTube has shut down.</p>
-            <p class="goodbye-hint">You may now close this window.</p>
-            <div class="goodbye-spinner" />
-          </div>
-        </section>
-      </div>
+  <div
+    class="relative flex min-h-screen flex-1 items-center justify-center overflow-hidden px-4 py-6 sm:px-6"
+  >
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+      <div
+        class="absolute top-1/2 left-1/2 size-72 -translate-x-[68%] -translate-y-[70%] rounded-full bg-primary/12 blur-3xl"
+      />
+      <div
+        class="absolute top-1/2 left-1/2 size-64 translate-x-[8%] translate-y-[4%] rounded-full bg-secondary/12 blur-3xl"
+      />
     </div>
+
+    <UPageCard
+      variant="outline"
+      :ui="pageCardUi"
+      class="relative w-full max-w-xl overflow-hidden bg-default/95"
+    >
+      <template #body>
+        <div class="space-y-6 px-5 py-6 sm:px-7 sm:py-8" role="status" aria-live="polite">
+          <div
+            class="inline-flex items-center gap-2 rounded-full border border-default bg-elevated/60 px-3 py-1.5 text-xs font-semibold tracking-[0.22em] text-toned uppercase"
+          >
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="size-4 animate-spin text-info"
+              aria-hidden="true"
+            />
+            <span>Shutdown in progress</span>
+          </div>
+
+          <div class="space-y-3">
+            <h1 class="text-3xl font-semibold tracking-tight text-highlighted sm:text-4xl">
+              Goodbye!
+            </h1>
+
+            <p class="text-base leading-7 text-default sm:text-lg">YTPTube is shutting down.</p>
+
+            <p class="max-w-lg text-sm leading-6 text-toned sm:text-base">
+              You may now close this window. Thanks for using YTPTube.
+            </p>
+          </div>
+
+          <UAlert
+            color="info"
+            variant="soft"
+            icon="i-lucide-power"
+            title="Wrapping things up"
+            description="The native app is closing background services and should exit shortly."
+          />
+        </div>
+      </template>
+    </UPageCard>
   </div>
 </template>
 
-<style scoped>
-.goodbye-box {
-  animation: fadeInUp 0.6s ease-out;
-  background: radial-gradient(circle at top left, #6f42c1, #f66d9b);
-  color: white;
-  padding: 3rem 4rem;
-  border-radius: 1rem;
-  box-shadow: 0 0 50px rgba(255, 255, 255, 0.15);
-  max-width: 480px;
-  margin: 2rem auto;
-  position: relative;
-  overflow: hidden;
-  transform-style: preserve-3d;
-}
-
-.goodbye-title {
-  font-size: 3rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  animation: floatTitle 3s ease-in-out infinite;
-}
-
-.goodbye-subtitle {
-  font-size: 1.5rem;
-  margin-bottom: 0.75rem;
-  opacity: 0.95;
-}
-
-.goodbye-hint {
-  opacity: 0.75;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-
-.goodbye-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 1rem auto 0;
-}
-
-@keyframes fadeInUp {
-  from {
-    transform: translateY(40px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes floatTitle {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>
+<script setup lang="ts">
+const pageCardUi = {
+  root: 'w-full bg-transparent shadow-2xl shadow-primary/5',
+  container: 'w-full p-0',
+  wrapper: 'w-full items-stretch',
+  body: 'w-full p-0',
+};
+</script>
