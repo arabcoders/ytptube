@@ -1,7 +1,9 @@
 import asyncio
 import functools
 import logging
+import multiprocessing
 import pickle
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from typing import Any
@@ -14,6 +16,14 @@ from app.library.Services import Services
 from app.library.Singleton import Singleton
 
 LOG: logging.Logger = logging.getLogger("downloads.extractor")
+
+
+def _get_process_pool_kwargs() -> dict[str, Any]:
+    """Use a fork-based pool for frozen Linux builds."""
+    if sys.platform == "linux" and getattr(sys, "frozen", False):
+        return {"mp_context": multiprocessing.get_context("fork")}
+
+    return {}
 
 
 class ExtractorConfig:
@@ -83,7 +93,7 @@ class ExtractorPool(metaclass=Singleton):
             self._semaphore = asyncio.Semaphore(config.concurrency)
 
         if self._pool is None:
-            self._pool = ProcessPoolExecutor(max_workers=config.concurrency)
+            self._pool = ProcessPoolExecutor(max_workers=config.concurrency, **_get_process_pool_kwargs())
             LOG.info("Initialized extractor process pool with %s workers", config.concurrency)
 
     def get_pool(self, config: ExtractorConfig) -> ProcessPoolExecutor:
@@ -366,6 +376,7 @@ async def fetch_info(
             )
 
         except Exception as exc:
+            LOG.exception(exc)
             LOG.warning("extract_info process pool failed, falling back to thread pool url=%s error=%s", url, exc)
             return await asyncio.wait_for(
                 fut=loop.run_in_executor(

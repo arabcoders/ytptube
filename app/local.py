@@ -10,6 +10,11 @@ import time
 import urllib.request
 import webbrowser
 
+if __name__ == "__main__":
+    from multiprocessing import freeze_support
+
+    freeze_support()
+
 import dotenv
 
 os.environ["PYTHONUTF8"] = "1"
@@ -135,7 +140,4 @@ def main():
 
 
 if __name__ == "__main__":
-    from multiprocessing import freeze_support
-
-    freeze_support()
     main()

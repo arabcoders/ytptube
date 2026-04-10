@@ -2,6 +2,11 @@
 import sys
 from pathlib import Path
 
+if __name__ == "__main__":
+    from multiprocessing import freeze_support
+
+    freeze_support()
+
 APP_ROOT = str((Path(__file__).parent / "..").resolve())
 if APP_ROOT not in sys.path:
     sys.path.insert(0, APP_ROOT)
@@ -179,7 +184,4 @@ class Main:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    from multiprocessing import freeze_support
-
-    freeze_support()
     Main().start()
