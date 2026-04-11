@@ -113,7 +113,9 @@ jobs:
         shell: bash
         run: |
           pip install uv
-          uv venv --system-site-packages --relocatable
+          if [ ! -d .venv ]; then
+            uv venv --system-site-packages --relocatable
+          fi
           uv sync --link-mode=copy --active --extra installer
 
       - name: Cache bun installation
