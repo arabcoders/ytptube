@@ -1,8 +1,29 @@
 [
     {
-        "tag": "master-20260410-28ec4964",
-        "date": "2026-04-10T17:11:51+00:00",
+        "tag": "master-20260411-0eabc219",
+        "date": "2026-04-11T16:27:44+00:00",
         "commits": [
+            {
+                "sha": "890aae8a",
+                "message": "chore: external packages update",
+                "author": "arabcoders",
+                "date": "2026-04-11T16:17:55+00:00",
+                "full_sha": "890aae8a724b64bc94c476d34ae9409e64c8fa0d"
+            },
+            {
+                "sha": "f9119f5a",
+                "message": "fix: better partial live download handling",
+                "author": "arabcoders",
+                "date": "2026-04-11T16:13:00+00:00",
+                "full_sha": "f9119f5a332eb39451904a985feb1ab3dab4a221"
+            },
+            {
+                "sha": "ae20b518",
+                "message": "fix: version tagging in native build",
+                "author": "arabcoders",
+                "date": "2026-04-10T17:22:25+00:00",
+                "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d"
+            },
             {
                 "sha": "4620d1aa",
                 "message": "fix: improve the native build",
@@ -4337,7 +4358,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "28ec496430032e656c8bd5a8b9dbd1504f05bdfd"
+        "full_sha": "0eabc2197b3060be87d06c62361b013277c7da84"
     },
     {
         "tag": "master-20250616-c07465a6",
