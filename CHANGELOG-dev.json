@@ -1,8 +1,15 @@
 [
     {
-        "tag": "dev-20260411-1786db46",
-        "date": "2026-04-11T16:48:48+00:00",
+        "tag": "dev-20260411-c70d5340",
+        "date": "2026-04-11T20:31:48+00:00",
         "commits": [
+            {
+                "sha": "c70d5340",
+                "message": "feat: implement patch to make Windows Popen support stopping live stream",
+                "author": "arabcoders",
+                "date": "2026-04-11T20:31:48+00:00",
+                "full_sha": "c70d5340f13473f2b5ea986d14b87c764498af96"
+            },
             {
                 "sha": "1786db46",
                 "message": "fix: native build could fail due to cache restore",
@@ -4365,7 +4372,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "1786db46ccbd6d5ca2a26f1e36fb656b2dc18391"
+        "full_sha": "c70d5340f13473f2b5ea986d14b87c764498af96"
     },
     {
         "tag": "dev-20250616-c07465a6",
