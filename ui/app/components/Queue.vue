@@ -167,7 +167,11 @@
                         :name="progressIcon(item)"
                         :class="[
                           'mr-1 size-4',
-                          progressIcon(item) === 'i-lucide-settings-2' ? 'animate-spin' : '',
+                          ['i-lucide-settings-2', 'i-lucide-loader-circle'].includes(
+                            progressIcon(item),
+                          )
+                            ? 'animate-spin'
+                            : '',
                         ]"
                       />
                     </template>
@@ -202,6 +206,8 @@
                     size="xs"
                     icon="i-lucide-circle-off"
                     square
+                    :title="item.is_live ? 'Stop Stream' : 'Cancel Download'"
+                    :aria-label="item.is_live ? 'Stop Stream' : 'Cancel Download'"
                     @click="() => void confirmCancel(item)"
                   />
 
@@ -425,7 +431,7 @@
               class="w-full justify-center"
               @click="() => void confirmCancel(item)"
             >
-              Cancel
+              {{ item.is_live ? 'Stop' : 'Cancel' }}
             </UButton>
 
             <UButton
@@ -652,7 +658,6 @@ const displayedItems = computed<StoreItem[]>(() => {
 const hasItems = computed(() => displayedItems.value.length > 0);
 const hasSelected = computed(() => selectedElms.value.length > 0);
 const displayedItemIds = computed(() => displayedItems.value.map((item) => item._id));
-
 const hasManualStart = computed(() =>
   Object.values(stateStore.queue).some((item) => !item.status && false === item.auto_start),
 );
@@ -723,6 +728,12 @@ const canPauseItem = (item: StoreItem): boolean => item.auto_start && !item.stat
 
 const bulkActionGroups = computed(() => {
   const groups: Array<Array<Record<string, unknown>>> = [[]];
+  const selectedLiveOnly =
+    selectedElms.value.length > 0 &&
+    selectedElms.value.every((id) => {
+      const item = stateStore.get('queue', id) as StoreItem | undefined;
+      return Boolean(item?.is_live);
+    });
 
   if (hasManualStart.value) {
     groups[0]?.push({
@@ -745,7 +756,7 @@ const bulkActionGroups = computed(() => {
   }
 
   groups[0]?.push({
-    label: 'Cancel',
+    label: selectedLiveOnly ? 'Stop' : 'Cancel',
     icon: 'i-lucide-circle-off',
     color: 'warning',
     disabled: !hasSelected.value,
@@ -771,7 +782,7 @@ const itemActionGroups = (item: StoreItem) => {
   }
 
   primaryActions.push({
-    label: 'Cancel Download',
+    label: item.is_live ? 'Stop Stream' : 'Cancel Download',
     icon: 'i-lucide-circle-off',
     color: 'warning',
     onSelect: () => void confirmCancel(item),
@@ -932,6 +943,10 @@ const progressWidth = (item: StoreItem): string => {
 };
 
 const progressIcon = (item: StoreItem): string => {
+  if (null != item.status && item.is_live && !item.speed) {
+    return 'i-lucide-loader-circle';
+  }
+
   if ('postprocessing' === item.status) {
     return 'i-lucide-settings-2';
   }
@@ -959,6 +974,10 @@ const progressText = (item: StoreItem): string => {
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
   }
 
+  if (null != item.status && item.is_live && !item.speed) {
+    return 'Recording live stream';
+  }
+
   let value = '';
   if (null != item.status) {
     value += item.percent && !item.is_live ? `${percentPipe(item.percent)}%` : 'Live';
@@ -971,7 +990,7 @@ const progressText = (item: StoreItem): string => {
 };
 
 const confirmCancel = async (item: StoreItem) => {
-  if (true !== (await box.confirm(`Cancel '${item.title}'?`))) {
+  if (true !== (await box.confirm(`${item.is_live ? 'Stop' : 'Cancel'} '${item.title}'?`))) {
     return false;
   }
   cancelItems(item._id);
@@ -979,7 +998,19 @@ const confirmCancel = async (item: StoreItem) => {
 };
 
 const cancelSelected = async () => {
-  if (true !== (await box.confirm(`Cancel '${selectedElms.value.length}' selected items?`))) {
+  const selectedLiveOnly =
+    selectedElms.value.length > 0 &&
+    selectedElms.value.every((id) => {
+      const item = stateStore.get('queue', id) as StoreItem | undefined;
+      return Boolean(item?.is_live);
+    });
+
+  if (
+    true !==
+    (await box.confirm(
+      `${selectedLiveOnly ? 'Stop' : 'Cancel'} '${selectedElms.value.length}' selected items?`,
+    ))
+  ) {
     return false;
   }
   cancelItems(selectedElms.value);

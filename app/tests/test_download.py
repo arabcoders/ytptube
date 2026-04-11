@@ -4,14 +4,16 @@ import signal
 from multiprocessing.reduction import ForkingPickler
 from pathlib import Path
 from typing import Any, cast
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
 from app.library.Events import EventBus, Events
 from app.library.downloads import Download, NestedLogger, Terminator
 from app.library.downloads.hooks import HookHandlers
+from app.library.downloads.pool_manager import PoolManager
 from app.library.downloads.process_manager import ProcessManager
+from app.library.downloads.queue_manager import DownloadQueue
 from app.library.downloads.status_tracker import StatusTracker
 from app.library.downloads.temp_manager import TempManager
 from app.library.ItemDTO import ItemDTO
@@ -324,6 +326,82 @@ class TestDownloadFlow:
         assert queue.items[0]["download_skipped"] is True
         assert queue.items[1]["download_skipped"] is True
 
+    def test_download_resets_sigint_handler_in_worker(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        item = make_item(id="live-id")
+        item.is_live = True
+        download = Download(
+            info=item,
+            info_dict={"id": "live-id", "url": "http://u", "formats": [{"format_id": "18"}]},
+        )
+        download._process_manager.cancel_event = Mock(wait=Mock())
+        download.status_queue = cast(Any, DummyQueue())
+        download._hook_handlers = Mock(
+            progress_hook=Mock(),
+            postprocessor_hook=Mock(),
+            post_hook=Mock(),
+        )
+        download.info.get_ytdlp_opts = Mock(
+            return_value=Mock(add=Mock(return_value=Mock(get_all=Mock(return_value={}))))
+        )
+
+        created_ydl: list[Any] = []
+
+        class FakeYTDLP:
+            def __init__(self, params):
+                self.params = params
+                self._download_retcode = 0
+                self._interrupted = False
+                self.to_screen = Mock()
+                created_ydl.append(self)
+
+            def process_ie_result(self, ie_result, download):
+                return ie_result, download
+
+        signal_mock = Mock()
+        thread_instance = Mock(start=Mock())
+        thread_mock = Mock(return_value=thread_instance)
+        monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
+        monkeypatch.setattr("app.library.downloads.core.signal.signal", signal_mock)
+        monkeypatch.setattr("app.library.downloads.core.threading.Thread", thread_mock)
+
+        download._download()
+
+        thread_mock.assert_called_once()
+        thread_instance.start.assert_called_once()
+        signal_mock.assert_any_call(signal.SIGINT, signal.default_int_handler)
+
+        target = thread_mock.call_args.kwargs["target"]
+        ydl = created_ydl[0]
+
+        if "posix" == os.name:
+            with (
+                patch("app.library.downloads.core.os.getpid", return_value=12345),
+                patch("app.library.downloads.core.os.kill") as mock_kill,
+            ):
+                target()
+                mock_kill.assert_called_once_with(12345, signal.SIGINT)
+        else:
+            with patch("app.library.downloads.core.signal.raise_signal") as mock_raise_signal:
+                target()
+                mock_raise_signal.assert_called_once_with(signal.SIGINT)
+
+        assert ydl._interrupted is True
+        ydl.to_screen.assert_called_once_with("[info] Interrupt received, exiting cleanly...")
+
     def test_download_prefers_real_playlist_extras_over_placeholder_preinfo(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -514,6 +592,181 @@ class TestDownloadFlow:
         assert download.info.status == "finished", "Download should finish via inline process"
         assert download.info.filename == "video.mp4", "Final filename should be set from status update"
 
+    @pytest.mark.asyncio
+    async def test_live_cancelled_download_drains_final_status_updates(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+            @staticmethod
+            def get_manager():
+                class DummyManager:
+                    def Queue(self):
+                        return DummyQueue()
+
+                return DummyManager()
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        class EB:
+            @staticmethod
+            def get_instance():
+                return EB
+
+            @staticmethod
+            def emit(*_args, **_kwargs):
+                return None
+
+        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+
+        item = ItemDTO(
+            id="id-live",
+            title="Live",
+            url="http://u",
+            folder="f",
+            download_dir=str(tmp_path),
+            temp_dir=str(tmp_path),
+            is_live=True,
+        )
+        download = Download(info=item)
+        final_file = tmp_path / "live.mp4"
+        final_file.write_text("test content")
+
+        def fake_download():
+            queue = cast(Any, download.status_queue)
+            queue.put({"id": download.id, "status": "downloading", "downloaded_bytes": 10})
+            queue.put({"id": download.id, "status": "finished", "final_name": str(final_file)})
+            queue.put(Terminator())
+
+        download._download = fake_download
+
+        class InlineProcess:
+            def __init__(self, target):
+                self._target = target
+                self.pid = 12345
+                self.ident = 12345
+
+            def start(self):
+                self._target()
+
+            def join(self):
+                return 0
+
+            def is_alive(self):
+                return False
+
+            def terminate(self):
+                return None
+
+            def kill(self):
+                return None
+
+            def close(self):
+                return None
+
+        def create_process(target):
+            inline_proc = InlineProcess(target)
+            download._process_manager.proc = cast(Any, inline_proc)
+            return download._process_manager.proc
+
+        def start_process():
+            assert download._process_manager.proc is not None
+            download._process_manager.proc.start()
+            download._process_manager.cancelled = True
+
+        def mock_create_task(coro, **_kwargs):
+            coro.close()
+            return MagicMock()
+
+        monkeypatch.setattr(download._process_manager, "create_process", create_process)
+        monkeypatch.setattr(download._process_manager, "start", start_process)
+        monkeypatch.setattr("asyncio.create_task", mock_create_task)
+
+        await download.start()
+
+        assert download.info.status == "finished", "Final live file should win over cancel state"
+        assert download.info.filename == "live.mp4", "Finalized live filename should be preserved"
+
+    @pytest.mark.asyncio
+    async def test_regular_cancelled_download_skips_live_drain_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        class Cfg:
+            debug = False
+            ytdlp_debug = False
+            max_workers = 1
+            temp_keep = False
+            temp_disabled = True
+            download_info_expires = 3600
+
+            @staticmethod
+            def get_instance():
+                return Cfg
+
+            @staticmethod
+            def get_manager():
+                class DummyManager:
+                    def Queue(self):
+                        return DummyQueue()
+
+                return DummyManager()
+
+        monkeypatch.setattr("app.library.downloads.core.Config", Cfg)
+
+        class EB:
+            @staticmethod
+            def get_instance():
+                return EB
+
+            @staticmethod
+            def emit(*_args, **_kwargs):
+                return None
+
+        monkeypatch.setattr("app.library.downloads.core.EventBus", EB)
+
+        tracker = Mock()
+        tracker.final_update = False
+        tracker.drain_queue = AsyncMock()
+
+        async def progress_update():
+            return None
+
+        tracker.progress_update = progress_update
+
+        monkeypatch.setattr("app.library.downloads.core.StatusTracker", Mock(return_value=tracker))
+        monkeypatch.setattr("app.library.downloads.core.HookHandlers", Mock())
+
+        download = Download(make_item(id="regular-id"))
+
+        mock_proc = Mock()
+        mock_proc.join = Mock(return_value=0)
+
+        def start_process():
+            download._process_manager.cancelled = True
+
+        def mock_create_task(coro, **_kwargs):
+            coro.close()
+            return MagicMock()
+
+        monkeypatch.setattr(download._process_manager, "create_process", Mock(return_value=mock_proc))
+        monkeypatch.setattr(download._process_manager, "start", start_process)
+        monkeypatch.setattr("asyncio.create_task", mock_create_task)
+
+        download._process_manager.proc = mock_proc
+
+        await download.start()
+
+        tracker.drain_queue.assert_not_awaited()
+        assert download.info.status == "cancelled", "Regular cancels should keep the fast cancel path"
+
 
 class TestDownloadSpawnPickling:
     def setup_method(self):
@@ -687,6 +940,7 @@ class TestProcessManager:
     def test_create_process(self) -> None:
         logger = logging.getLogger("test")
         pm = ProcessManager("test-id", is_live=False, logger=logger)
+        pm.cancel_event.set()
 
         def dummy_target():
             pass
@@ -694,6 +948,7 @@ class TestProcessManager:
         proc = pm.create_process(dummy_target)
         assert proc is not None, "Should create a process"
         assert pm.proc is proc, "Should store process reference"
+        assert pm.cancel_event.is_set() is False, "Should clear stale cancel events before starting"
         assert "download-test-id" == proc.name, "Process name should include download ID"
 
     def test_started_returns_true_when_process_created(self) -> None:
@@ -757,7 +1012,7 @@ class TestProcessManager:
             mock_kill.assert_called_once_with(12345, signal.SIGUSR1)
             assert result is True, "Should return True when process killed successfully"
 
-    def test_kill_uses_shorter_timeout_for_live_streams(self) -> None:
+    def test_kill_uses_live_cancel_event_and_longer_graceful_timeout(self) -> None:
         logger = logging.getLogger("test")
         pm_live = ProcessManager("test-id", is_live=True, logger=logger)
         pm_regular = ProcessManager("test-id", is_live=False, logger=logger)
@@ -765,12 +1020,36 @@ class TestProcessManager:
         pm_live.proc = Mock()
         pm_live.proc.pid = 12345
         pm_live.proc.ident = 67890
-        pm_live.proc.is_alive = Mock(return_value=False)
+        pm_live.proc.is_alive = Mock(return_value=True)
 
         pm_regular.proc = Mock()
         pm_regular.proc.pid = 12346
         pm_regular.proc.ident = 67891
-        pm_regular.proc.is_alive = Mock(return_value=False)
+        pm_regular.proc.is_alive = Mock(return_value=True)
+
+        with (
+            patch("app.library.downloads.process_manager.os.kill") as mock_kill,
+            patch(
+                "app.library.downloads.process_manager.wait_for_process_with_timeout", return_value=True
+            ) as mock_wait,
+        ):
+            assert pm_live.kill() is True, "Live downloads should stop via the shared cancel event"
+            assert pm_live.cancel_event.is_set() is True, "Live kill should signal the worker cancel event"
+            mock_kill.assert_not_called()
+            mock_wait.assert_called_once_with(pm_live.proc, 10)
+
+        if "posix" != os.name:
+            pytest.skip("Regular SIGUSR1 path only runs on POSIX systems")
+
+        with (
+            patch("app.library.downloads.process_manager.os.kill") as mock_kill,
+            patch(
+                "app.library.downloads.process_manager.wait_for_process_with_timeout", return_value=True
+            ) as mock_wait,
+        ):
+            assert pm_regular.kill() is True, "Regular downloads should keep SIGUSR1 behavior"
+            mock_kill.assert_called_once_with(12346, signal.SIGUSR1)
+            mock_wait.assert_called_once_with(pm_regular.proc, 5)
 
     @pytest.mark.asyncio
     async def test_close_returns_false_when_not_started(self) -> None:
@@ -998,3 +1277,145 @@ class TestStatusTracker:
         st.put_terminator()
         assert 1 == len(queue.items), "Should add terminator to queue"
         assert isinstance(queue.items[0], Terminator), "Should add Terminator instance"
+
+
+class TestQueueManager:
+    @pytest.mark.asyncio
+    async def test_cancel_running_live_item_defers_close(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.queue = Mock()
+        queue_manager.done = Mock()
+        queue_manager._notify = Mock()
+
+        item = Mock()
+        item.info = make_item(id="queued-id")
+        item.is_live = True
+        item.running.return_value = True
+        item.cancel.return_value = True
+        item.close = AsyncMock()
+
+        queue_manager.queue.get = AsyncMock(return_value=item)
+
+        status = await DownloadQueue.cancel(queue_manager, [item.info._id])
+
+        item.cancel.assert_called_once()
+        item.close.assert_not_awaited()
+        assert status[item.info._id] == "ok", "Running cancel should still report success"
+
+    @pytest.mark.asyncio
+    async def test_cancel_running_regular_item_closes_immediately(self) -> None:
+        queue_manager = object.__new__(DownloadQueue)
+        queue_manager.queue = Mock()
+        queue_manager.done = Mock()
+        queue_manager._notify = Mock()
+
+        item = Mock()
+        item.info = make_item(id="queued-id")
+        item.is_live = False
+        item.running.return_value = True
+        item.cancel.return_value = True
+        item.close = AsyncMock()
+
+        queue_manager.queue.get = AsyncMock(return_value=item)
+
+        status = await DownloadQueue.cancel(queue_manager, [item.info._id])
+
+        item.cancel.assert_called_once()
+        item.close.assert_awaited_once()
+        assert status[item.info._id] == "ok", "Regular running cancel should still report success"
+
+
+class TestPoolManager:
+    @pytest.mark.asyncio
+    async def test_cancelled_entry_with_final_file_stays_finished(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        emitted_events: list[str] = []
+
+        class EB:
+            @staticmethod
+            def get_instance():
+                return EB
+
+            @staticmethod
+            def emit(event, **_kwargs):
+                emitted_events.append(event)
+
+        monkeypatch.setattr("app.library.downloads.pool_manager.EventBus", EB)
+
+        queue_store = Mock()
+        queue_store.exists = AsyncMock(return_value=True)
+        queue_store.delete = AsyncMock()
+        done_store = Mock()
+        done_store.put = AsyncMock()
+        queue = Mock(queue=queue_store, done=done_store)
+        config = Mock(max_workers=1, max_workers_per_extractor=1, download_path="/tmp")
+        pool = PoolManager(queue=queue, config=config)
+
+        info = make_item(id="done-id", title="Live clip")
+        info.status = "finished"
+        info.filename = "live.mp4"
+        info.is_archivable = False
+        info.is_archived = False
+
+        entry = Mock()
+        entry.id = info._id
+        entry.is_live = True
+        entry.info = info
+        entry.start = AsyncMock()
+        entry.close = AsyncMock()
+        entry.is_cancelled.return_value = True
+
+        await pool._download_file(info._id, entry)
+
+        assert info.status == "finished", "Finished live downloads should not be rewritten to cancelled"
+        assert Events.ITEM_COMPLETED in emitted_events, "Completed event should be emitted for finalized file"
+        assert Events.ITEM_CANCELLED not in emitted_events, "Cancelled event should not be emitted once finalized"
+        done_store.put.assert_awaited_once_with(entry)
+
+    @pytest.mark.asyncio
+    async def test_cancelled_regular_entry_with_final_file_stays_cancelled(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        emitted_events: list[str] = []
+
+        class EB:
+            @staticmethod
+            def get_instance():
+                return EB
+
+            @staticmethod
+            def emit(event, **_kwargs):
+                emitted_events.append(event)
+
+        monkeypatch.setattr("app.library.downloads.pool_manager.EventBus", EB)
+
+        queue_store = Mock()
+        queue_store.exists = AsyncMock(return_value=True)
+        queue_store.delete = AsyncMock()
+        done_store = Mock()
+        done_store.put = AsyncMock()
+        queue = Mock(queue=queue_store, done=done_store)
+        config = Mock(max_workers=1, max_workers_per_extractor=1, download_path="/tmp")
+        pool = PoolManager(queue=queue, config=config)
+
+        info = make_item(id="done-id", title="Regular clip")
+        info.status = "finished"
+        info.filename = "video.mp4"
+        info.is_archivable = False
+        info.is_archived = False
+
+        entry = Mock()
+        entry.id = info._id
+        entry.is_live = False
+        entry.info = info
+        entry.start = AsyncMock()
+        entry.close = AsyncMock()
+        entry.is_cancelled.return_value = True
+
+        await pool._download_file(info._id, entry)
+
+        assert info.status == "cancelled", "Regular cancelled downloads should keep cancelled status"
+        assert Events.ITEM_CANCELLED in emitted_events, "Cancelled event should be emitted for regular downloads"
+        assert Events.ITEM_COMPLETED not in emitted_events, (
+            "Completed event should remain live-only for cancel finalization"
+        )
+        done_store.put.assert_awaited_once_with(entry)

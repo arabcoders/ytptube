@@ -6,6 +6,8 @@ import os
 import signal
 from collections.abc import Callable
 
+from app.library.config import Config
+
 from .utils import wait_for_process_with_timeout
 
 
@@ -31,7 +33,9 @@ class ProcessManager:
         self.download_id = download_id
         self.is_live = is_live
         self.logger = logger
+        self._context = multiprocessing.get_context()
         self.proc: multiprocessing.Process | None = None
+        self.cancel_event = Config.get_manager().Event()
         self.cancelled = False
         self.cancel_in_progress = False
 
@@ -46,7 +50,8 @@ class ProcessManager:
             Created but not started process
 
         """
-        self.proc = multiprocessing.Process(name=f"download-{self.download_id}", target=target)
+        self.cancel_event.clear()
+        self.proc = self._context.Process(name=f"download-{self.download_id}", target=target)
         return self.proc
 
     def start(self) -> None:
@@ -83,9 +88,9 @@ class ProcessManager:
         """
         Kill the download process.
 
-        Attempts graceful termination via SIGUSR1 signal first (POSIX only),
-        then escalates to terminate() and finally kill() if needed.
-        Live streams get shorter timeouts as they're more likely to be unresponsive.
+        Attempts graceful termination first, then escalates to terminate() and
+        finally kill() if needed. Live streams use a shared cancel event so the
+        worker can raise SIGINT inside itself and let yt-dlp finalize cleanly.
 
         Returns:
             True if process was killed successfully, False otherwise
@@ -98,22 +103,34 @@ class ProcessManager:
         try:
             self.logger.info(f"Killing download process: PID={self.proc.pid}, ident={procId}.")
 
-            if self.proc.pid and "posix" == os.name:
+            if self.is_live:
+                self.logger.debug(f"Requesting graceful live cancellation for PID={self.proc.pid}.")
+                self.cancel_event.set()
+
+                if wait_for_process_with_timeout(self.proc, 10):
+                    self.logger.debug(f"Process PID={self.proc.pid} terminated gracefully.")
+                    return True
+                self.logger.warning(
+                    f"Process PID={self.proc.pid} did not respond to live cancellation, forcing termination."
+                )
+
+            elif self.proc.pid and "posix" == os.name:
+                signal_name = "SIGUSR1"
+
                 try:
-                    self.logger.debug(f"Sending SIGUSR1 signal to PID={self.proc.pid}.")
+                    self.logger.debug(f"Sending {signal_name} signal to PID={self.proc.pid}.")
                     os.kill(self.proc.pid, signal.SIGUSR1)
 
-                    if wait_for_process_with_timeout(self.proc, 2 if self.is_live else 5):
+                    if wait_for_process_with_timeout(self.proc, 5):
                         self.logger.debug(f"Process PID={self.proc.pid} terminated gracefully.")
                         return True
                     self.logger.warning(
-                        f"Process PID={self.proc.pid} did not respond to SIGUSR1 "
-                        f"({'live stream' if self.is_live else 'regular download'}), "
+                        f"Process PID={self.proc.pid} did not respond to {signal_name} (regular download), "
                         f"forcing termination."
                     )
 
                 except (OSError, AttributeError) as e:
-                    self.logger.debug(f"Failed to send SIGUSR1 signal: {e}")
+                    self.logger.debug(f"Failed to send {signal_name} signal: {e}")
 
             if self.proc.is_alive():
                 self.logger.info(f"Force-terminating process PID={self.proc.pid}.")

@@ -196,7 +196,14 @@
                 class="space-y-2"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-toned">
-                  <span class="font-medium text-highlighted">{{ updateProgress(entry.item) }}</span>
+                  <span class="inline-flex items-center gap-1 font-medium text-highlighted">
+                    <UIcon
+                      v-if="entry.item.is_live && entry.item.status !== null && !entry.item.speed"
+                      name="i-lucide-loader-circle"
+                      class="size-3.5 animate-spin"
+                    />
+                    <span>{{ updateProgress(entry.item) }}</span>
+                  </span>
                   <span>{{ getProgressWidth(entry.item) }}</span>
                 </div>
 
@@ -321,7 +328,7 @@
                       icon="i-lucide-x"
                       @click="() => void cancelDownload(entry.item)"
                     >
-                      Cancel
+                      {{ entry.item.is_live ? 'Stop' : 'Cancel' }}
                     </UButton>
                   </template>
 
@@ -909,6 +916,10 @@ const updateProgress = (item: StoreItem): string => {
 
   if (item.status === 'preparing') {
     return ag(item, 'extras.external_downloader') ? 'External downloader.' : 'Preparing';
+  }
+
+  if (item.status !== null && item.is_live && !item.speed) {
+    return 'Recording live stream';
   }
 
   if (item.status !== null) {
