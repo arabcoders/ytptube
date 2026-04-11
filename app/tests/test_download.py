@@ -371,20 +371,32 @@ class TestDownloadFlow:
             def process_ie_result(self, ie_result, download):
                 return ie_result, download
 
+            def download(self, url_list):
+                return 0
+
         signal_mock = Mock()
-        thread_instance = Mock(start=Mock())
-        thread_mock = Mock(return_value=thread_instance)
+        thread_instances: list[Mock] = []
+
+        def build_thread(*_args, **_kwargs):
+            thread = Mock(start=Mock())
+            thread_instances.append(thread)
+            return thread
+
+        thread_mock = Mock(side_effect=build_thread)
         monkeypatch.setattr("app.library.downloads.core.YTDLP", FakeYTDLP)
         monkeypatch.setattr("app.library.downloads.core.signal.signal", signal_mock)
         monkeypatch.setattr("app.library.downloads.core.threading.Thread", thread_mock)
 
         download._download()
 
-        thread_mock.assert_called_once()
-        thread_instance.start.assert_called_once()
         signal_mock.assert_any_call(signal.SIGINT, signal.default_int_handler)
 
-        target = thread_mock.call_args.kwargs["target"]
+        live_cancel_thread = next(
+            call for call in thread_mock.call_args_list if call.kwargs.get("name", "").startswith("cancel-watch-")
+        )
+        live_cancel_thread_index = thread_mock.call_args_list.index(live_cancel_thread)
+        thread_instances[live_cancel_thread_index].start.assert_called_once()
+        target = live_cancel_thread.kwargs["target"]
         ydl = created_ydl[0]
 
         if "posix" == os.name:
@@ -395,9 +407,9 @@ class TestDownloadFlow:
                 target()
                 mock_kill.assert_called_once_with(12345, signal.SIGINT)
         else:
-            with patch("app.library.downloads.core.signal.raise_signal") as mock_raise_signal:
+            with patch("app.library.downloads.core._thread.interrupt_main") as mock_interrupt_main:
                 target()
-                mock_raise_signal.assert_called_once_with(signal.SIGINT)
+                mock_interrupt_main.assert_called_once_with()
 
         assert ydl._interrupted is True
         ydl.to_screen.assert_called_once_with("[info] Interrupt received, exiting cleanly...")

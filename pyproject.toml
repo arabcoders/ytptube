@@ -194,6 +194,7 @@ testpaths = ["app/tests", "app/features"]
 addopts = "-v --tb=short"
 filterwarnings = [
   "ignore:Parsing dates involving a day of month without a year:DeprecationWarning",
+  "ignore:This process \\(pid\\=.*\\) is multi-threaded, use of fork\\(\\) may lead to deadlocks in the child\\.:DeprecationWarning",
 ]
 
 [dependency-groups]
