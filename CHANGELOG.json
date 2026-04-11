@@ -1,9 +1,23 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d",
-    "date": "2026-04-10T17:22:25+00:00",
+    "full_sha": "890aae8a724b64bc94c476d34ae9409e64c8fa0d",
+    "date": "2026-04-11T16:17:55+00:00",
     "commits": [
+      {
+        "sha": "890aae8a",
+        "full_sha": "890aae8a724b64bc94c476d34ae9409e64c8fa0d",
+        "message": "chore: external packages update",
+        "author": "arabcoders",
+        "date": "2026-04-11T16:17:55+00:00"
+      },
+      {
+        "sha": "f9119f5a",
+        "full_sha": "f9119f5a332eb39451904a985feb1ab3dab4a221",
+        "message": "fix: better partial live download handling",
+        "author": "arabcoders",
+        "date": "2026-04-11T16:13:00+00:00"
+      },
       {
         "sha": "ae20b518",
         "full_sha": "ae20b518f0562f5ee08dbd22c922f5f1357fd80d",
