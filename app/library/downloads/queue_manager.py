@@ -261,7 +261,8 @@ class DownloadQueue(metaclass=Singleton):
                 LOG.debug(f"Canceling {item_ref}")
                 item.cancel()
                 LOG.info(f"Cancelled {item_ref}")
-                await item.close()
+                if not item.is_live:
+                    await item.close()
             else:
                 await item.close()
                 LOG.debug(f"Deleting from queue {item_ref}")

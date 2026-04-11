@@ -181,14 +181,21 @@ class PoolManager:
 
             nTitle: str | None = None
             nMessage: str | None = None
+            finalized_live = entry.is_live and entry.info.status == "finished" and bool(entry.info.filename)
 
-            if entry.is_cancelled() is True:
+            if finalized_live:
+                nTitle = "Download Completed"
+                nMessage = f"Completed '{entry.info.title}' download."
+                if entry.info.is_archivable and not entry.info.is_archived:
+                    entry.info.is_archived = True
+
+                self._notify.emit(Events.ITEM_COMPLETED, data=entry.info, title=nTitle, message=nMessage)
+            elif entry.is_cancelled() is True:
                 nTitle = "Download Cancelled"
                 nMessage = f"Cancelled '{entry.info.title}' download."
                 self._notify.emit(Events.ITEM_CANCELLED, data=entry.info, title=nTitle, message=nMessage)
                 entry.info.status = "cancelled"
-
-            if entry.info.status == "finished" and entry.info.filename:
+            elif entry.info.status == "finished" and entry.info.filename:
                 nTitle = "Download Completed"
                 nMessage = f"Completed '{entry.info.title}' download."
                 if entry.info.is_archivable and not entry.info.is_archived:

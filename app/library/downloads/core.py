@@ -6,6 +6,7 @@ import asyncio
 import logging
 import os
 import signal
+import threading
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -206,7 +207,21 @@ class Download:
 
             cls = YTDLP(params=params)
 
-            if "posix" == os.name:
+            if self.is_live:
+                signal.signal(signal.SIGINT, signal.default_int_handler)
+
+                def trigger_live_cancel() -> None:
+                    self._process_manager.cancel_event.wait()
+                    cls._interrupted = True
+                    cls.to_screen("[info] Interrupt received, exiting cleanly...")
+                    if "posix" == os.name:
+                        os.kill(os.getpid(), signal.SIGINT)
+                    else:
+                        signal.raise_signal(signal.SIGINT)
+
+                threading.Thread(target=trigger_live_cancel, name=f"cancel-watch-{self.id}", daemon=True).start()
+
+            if "posix" == os.name and not self.is_live:
 
                 def mark_cancelled(*_) -> None:
                     cls._interrupted = True
@@ -331,9 +346,15 @@ class Download:
 
         ret = await asyncio.get_running_loop().run_in_executor(None, self._process_manager.proc.join)
 
-        if self._status_tracker.final_update or self._process_manager.is_cancelled():
-            if self._process_manager.is_cancelled():
-                self.info.status = "cancelled"
+        if self._status_tracker.final_update:
+            return ret
+
+        if self._process_manager.is_cancelled():
+            if self.is_live:
+                await self._status_tracker.drain_queue()
+                if self._status_tracker.final_update:
+                    return ret
+            self.info.status = "cancelled"
             return ret
 
         await self._status_tracker.drain_queue()
