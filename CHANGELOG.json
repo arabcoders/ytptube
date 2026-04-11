@@ -1,5 +1,19 @@
 [
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "1786db46ccbd6d5ca2a26f1e36fb656b2dc18391",
+    "date": "2026-04-11T16:48:48+00:00",
+    "commits": [
+      {
+        "sha": "1786db46",
+        "full_sha": "1786db46ccbd6d5ca2a26f1e36fb656b2dc18391",
+        "message": "fix: native build could fail due to cache restore",
+        "author": "arabcoders",
+        "date": "2026-04-11T16:48:48+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.6",
     "full_sha": "0eabc2197b3060be87d06c62361b013277c7da84",
     "date": "2026-04-11T16:27:44+00:00",
