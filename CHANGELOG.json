@@ -1,9 +1,16 @@
 [
   {
     "tag": "Unmerged (dev branch)",
-    "full_sha": "c70d5340f13473f2b5ea986d14b87c764498af96",
-    "date": "2026-04-11T20:31:48+00:00",
+    "full_sha": "dbff4c679893ab9128f060ef2c30497fe667857b",
+    "date": "2026-04-13T23:19:35+00:00",
     "commits": [
+      {
+        "sha": "dbff4c67",
+        "full_sha": "dbff4c679893ab9128f060ef2c30497fe667857b",
+        "message": "feat(console): make terminal window more durable and support reloading and stopping commands.",
+        "author": "arabcoders",
+        "date": "2026-04-13T23:19:35+00:00"
+      },
       {
         "sha": "c70d5340",
         "full_sha": "c70d5340f13473f2b5ea986d14b87c764498af96",
