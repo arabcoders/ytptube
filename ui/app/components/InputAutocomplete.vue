@@ -7,11 +7,12 @@
       :placeholder="placeholder"
       autocomplete="new-password"
       :disabled="disabled"
+      :icon="icon"
       size="lg"
       variant="outline"
       color="neutral"
       class="w-full"
-      :ui="{ root: 'w-full', base: 'w-full bg-default/90' }"
+      :ui="{ root: 'w-full', base: 'w-full bg-default/90', leadingIcon: iconClass }"
       @focus="onFocus"
       @blur="hideList"
       @input="onInput"
@@ -63,6 +64,8 @@ const props = withDefaults(
     placeholder?: string;
     disabled?: boolean;
     id?: string;
+    icon?: string;
+    iconClass?: string;
     multiple?: boolean;
     openOnFocus?: boolean;
     allowShortFlags?: boolean;
@@ -71,13 +74,16 @@ const props = withDefaults(
     placeholder: '',
     disabled: false,
     id: '',
+    icon: undefined,
+    iconClass: '',
     multiple: true,
     openOnFocus: false,
     allowShortFlags: false,
   },
 );
 
-const { placeholder, disabled, id, multiple, openOnFocus, allowShortFlags } = toRefs(props);
+const { placeholder, disabled, id, icon, iconClass, multiple, openOnFocus, allowShortFlags } =
+  toRefs(props);
 
 const model = defineModel<string>();
 

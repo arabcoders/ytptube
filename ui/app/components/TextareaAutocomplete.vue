@@ -25,6 +25,13 @@
       @mouseup="updateCaret"
     />
 
+    <UIcon
+      v-if="icon"
+      :name="icon"
+      class="pointer-events-none absolute top-3 right-3 z-10 size-4 text-toned"
+      :class="iconClass"
+    />
+
     <div
       v-if="showList && filteredOptions.length"
       class="absolute inset-x-0 top-full z-20 mt-1 overflow-hidden rounded-md border border-default bg-default shadow-lg"
@@ -55,13 +62,25 @@
 import { ref, computed, watch, nextTick } from 'vue';
 import type { AutoCompleteOptions } from '~/types/autocomplete';
 
-const props = defineProps<{
-  options: AutoCompleteOptions;
-  placeholder?: string;
-  disabled?: boolean;
-  id?: string;
-  rows?: number;
-}>();
+const props = withDefaults(
+  defineProps<{
+    options: AutoCompleteOptions;
+    placeholder?: string;
+    disabled?: boolean;
+    id?: string;
+    rows?: number;
+    icon?: string;
+    iconClass?: string;
+  }>(),
+  {
+    placeholder: '',
+    disabled: false,
+    id: '',
+    rows: 4,
+    icon: undefined,
+    iconClass: '',
+  },
+);
 
 const model = defineModel<string>();
 const localValue = ref(model.value || '');
