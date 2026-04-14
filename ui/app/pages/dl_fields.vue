@@ -85,6 +85,41 @@
     />
 
     <div
+      v-if="!isLoading && filteredItems.length > 0"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          @click="toggleMasterSelection"
+        >
+          {{ allSelected ? 'Unselect' : 'Select' }}
+        </UButton>
+
+        <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
+          {{ selectedIds.length }}
+        </UBadge>
+
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
+      </div>
+
+      <div class="text-xs text-toned">{{ filteredItems.length }} displayed</div>
+    </div>
+
+    <div
       v-if="displayStyle === 'list' && filteredItems.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
@@ -92,6 +127,14 @@
         <table class="min-w-225 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-12">
+                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                  <UIcon
+                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+                    class="size-4"
+                  />
+                </button>
+              </th>
               <th class="w-full text-left">Field</th>
               <th class="w-44 whitespace-nowrap">Actions</th>
             </tr>
@@ -99,29 +142,42 @@
 
           <tbody class="divide-y divide-default">
             <tr v-for="field in filteredItems" :key="field.id" class="hover:bg-muted/20">
+              <td class="px-3 py-3 text-center align-middle">
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="field.id"
+                  />
+                </label>
+              </td>
+
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-2">
                   <div class="font-semibold text-highlighted">{{ field.name }}</div>
 
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
-                    <span class="inline-flex items-center gap-1">
-                      <UIcon name="i-lucide-terminal" class="size-3.5" />
-                      <span>{{ field.field }}</span>
-                    </span>
-
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-list-ordered" class="size-3.5" />
                       <span>Order: {{ field.order }}</span>
                     </span>
 
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-shapes" class="size-3.5" />
-                      <span>{{ field.kind }}</span>
+                      <span>Type: {{ field.kind }}</span>
                     </span>
-                  </div>
 
-                  <div v-if="field.description" class="text-xs text-toned">
-                    {{ field.description }}
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
+                      <UIcon name="i-lucide-terminal" class="size-3.5" />
+                      <span>Option: {{ field.field }}</span>
+                    </span>
                   </div>
                 </div>
               </td>
@@ -129,7 +185,7 @@
               <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-file-up"
@@ -139,7 +195,7 @@
                   </UButton>
 
                   <UButton
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pencil"
@@ -149,7 +205,7 @@
                   </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
@@ -166,89 +222,125 @@
     </div>
 
     <div v-else-if="filteredItems.length > 0" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      <UCard
-        v-for="field in filteredItems"
-        :key="field.id"
-        class="flex h-full flex-col border bg-default"
-        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
-      >
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1 space-y-2">
-              <div class="truncate text-sm font-semibold text-highlighted">{{ field.name }}</div>
+      <div v-for="field in filteredItems" :key="field.id" class="min-w-0 w-full max-w-full">
+        <UCard
+          class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
+          :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+        >
+          <template #header>
+            <div class="flex min-w-0 items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-2">
+                  <button
+                    type="button"
+                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    @click="toggleExpand(field.id, 'title')"
+                  >
+                    <span :class="['block', expandClass(field.id, 'title')]">{{ field.name }}</span>
+                  </button>
+                </div>
+              </div>
 
-              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              <div class="flex shrink-0 items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-file-up"
+                  square
+                  @click="exportItem(field)"
                 >
-                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Order {{ field.order }}</span>
-                </span>
+                  <span class="hidden sm:inline">Export</span>
+                </UButton>
 
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-shapes" class="size-3.5" />
-                  <span>{{ field.kind }}</span>
-                </span>
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="field.id"
+                  />
+                </label>
               </div>
             </div>
+          </template>
+
+          <div class="space-y-2 text-sm text-default">
+            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                <span>Order: {{ field.order }}</span>
+              </span>
+
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-shapes" class="size-3.5" />
+                <span>Type: {{ field.kind }}</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                :class="[
+                  'flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left',
+                  !field.description && 'sm:col-span-2',
+                ]"
+                @click="toggleExpand(field.id, 'field')"
+              >
+                <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Associated option</div>
+                  <span :class="['block', expandClass(field.id, 'field')]">{{ field.field }}</span>
+                </div>
+              </button>
+
+              <button
+                v-if="field.description"
+                type="button"
+                class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+                @click="toggleExpand(field.id, 'description')"
+              >
+                <UIcon
+                  name="i-lucide-message-square-text"
+                  class="mt-0.5 size-4 shrink-0 text-toned"
+                />
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs font-medium text-toned">Description</div>
+                  <span :class="['block', expandClass(field.id, 'description')]">
+                    {{ field.description }}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-pencil"
+              class="w-full justify-center"
+              @click="editItem(field)"
+            >
+              Edit
+            </UButton>
 
             <UButton
-              color="info"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-file-up"
-              square
-              @click="exportItem(field)"
-            />
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-trash"
+              class="w-full justify-center"
+              @click="() => void deleteItem(field)"
+            >
+              Delete
+            </UButton>
           </div>
-        </template>
-
-        <div class="space-y-2 text-sm text-default">
-          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
-            <div class="flex items-start gap-2">
-              <UIcon name="i-lucide-terminal" class="mt-0.5 size-4 shrink-0 text-toned" />
-              <span class="wrap-break-word">{{ field.field }}</span>
-            </div>
-          </div>
-
-          <div
-            v-if="field.description"
-            class="rounded-md border border-default bg-muted/20 px-3 py-2"
-          >
-            <div class="flex items-start gap-2">
-              <UIcon
-                name="i-lucide-message-square-text"
-                class="mt-0.5 size-4 shrink-0 text-toned"
-              />
-              <span class="wrap-break-word">{{ field.description }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-          <UButton
-            color="warning"
-            variant="outline"
-            icon="i-lucide-pencil"
-            class="w-full justify-center"
-            @click="editItem(field)"
-          >
-            Edit
-          </UButton>
-
-          <UButton
-            color="error"
-            variant="outline"
-            icon="i-lucide-trash"
-            class="w-full justify-center"
-            @click="() => void deleteItem(field)"
-          >
-            Delete
-          </UButton>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
 
     <UAlert
@@ -307,7 +399,10 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import { useStorage } from '@vueuse/core';
+import { useDialog } from '~/composables/useDialog';
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import { useConfirm } from '~/composables/useConfirm';
 import { useDlFields } from '~/composables/useDlFields';
 import type { DLField } from '~/types/dl_fields';
@@ -316,10 +411,12 @@ import { copyText, encode } from '~/utils';
 
 const box = useConfirm();
 const isMobile = useMediaQuery({ maxWidth: 1024 });
+const { toggleExpand, expandClass } = useExpandableMeta();
 const displayStyle = useStorage<'list' | 'grid'>('dl_fields_display_style', 'grid');
 const dlFields = useDlFields();
 const route = useRoute();
 const router = useRouter();
+const { confirmDialog } = useDialog();
 
 const items = dlFields.dlFields as Ref<DLField[]>;
 const paging = dlFields.pagination;
@@ -331,6 +428,8 @@ const editorOpen = ref(false);
 const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<HTMLInputElement | null>(null);
+const selectedIds = ref<number[]>([]);
+const massDelete = ref(false);
 
 const filteredItems = computed<DLField[]>(() => {
   const normalizedQuery = query.value?.toLowerCase();
@@ -340,6 +439,30 @@ const filteredItems = computed<DLField[]>(() => {
 
   return items.value.filter((entry) => deepIncludes(entry, normalizedQuery, new WeakSet()));
 });
+
+const selectableFieldIds = computed(() =>
+  filteredItems.value.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+);
+
+const allSelected = computed(
+  () =>
+    selectableFieldIds.value.length > 0 &&
+    selectableFieldIds.value.every((id) => selectedIds.value.includes(id)),
+);
+
+const hasSelected = computed(() => selectedIds.value.length > 0);
+
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Remove Selected',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      disabled: !hasSelected.value || massDelete.value,
+      onSelect: () => void deleteSelected(),
+    },
+  ],
+]);
 
 const modalTitle = computed(() => (itemRef.value ? `Edit - ${item.value.name}` : 'Add new field'));
 const modalDescription = computed(
@@ -354,6 +477,17 @@ watch(showFilter, (value) => {
     query.value = '';
   }
 });
+
+watch(
+  filteredItems,
+  (items) => {
+    const validIds = new Set(
+      items.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+    );
+    selectedIds.value = selectedIds.value.filter((id) => validIds.has(id));
+  },
+  { deep: true },
+);
 
 const syncPageQuery = async (pageNumber: number): Promise<void> => {
   const totalPages = dlFields.pagination.value.total_pages;
@@ -413,12 +547,65 @@ const toggleDisplayStyle = (): void => {
   displayStyle.value = displayStyle.value === 'list' ? 'grid' : 'list';
 };
 
+const toggleMasterSelection = (): void => {
+  if (allSelected.value) {
+    selectedIds.value = [];
+    return;
+  }
+
+  selectedIds.value = [...selectableFieldIds.value];
+};
+
 const deleteItem = async (field: DLField): Promise<void> => {
   if (true !== (await box.confirm(`Delete '${field.name}'?`))) {
     return;
   }
 
   await dlFields.deleteDlField(field.id!);
+};
+
+const deleteSelected = async (): Promise<void> => {
+  if (selectedIds.value.length < 1) {
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: 'Delete Selected Fields',
+    rawHTML:
+      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> field/s?<ul>` +
+      selectedIds.value
+        .map((id) => {
+          const item = filteredItems.value.find((field) => field.id === id);
+          return item ? `<li>${item.id}: ${item.name}</li>` : '';
+        })
+        .join('') +
+      '</ul>',
+    confirmText: 'Delete',
+    confirmColor: 'error',
+  });
+
+  if (true !== status) {
+    return;
+  }
+
+  const itemsToDelete = filteredItems.value.filter(
+    (item) => item.id && selectedIds.value.includes(item.id),
+  );
+  if (itemsToDelete.length < 1) {
+    return;
+  }
+
+  massDelete.value = true;
+
+  for (const item of itemsToDelete) {
+    if (!item.id) {
+      continue;
+    }
+    await dlFields.deleteDlField(item.id);
+  }
+
+  selectedIds.value = [];
+  massDelete.value = false;
 };
 
 const updateItem = async ({

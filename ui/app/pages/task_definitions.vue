@@ -94,6 +94,41 @@
     />
 
     <div
+      v-if="!isLoading && filteredDefinitions.length > 0"
+      class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-default bg-default px-3 py-3"
+    >
+      <div class="flex flex-wrap items-center gap-2">
+        <UButton
+          color="neutral"
+          variant="outline"
+          size="sm"
+          :icon="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+          @click="toggleMasterSelection"
+        >
+          {{ allSelected ? 'Unselect' : 'Select' }}
+        </UButton>
+
+        <UBadge v-if="selectedIds.length > 0" color="error" variant="soft" size="sm">
+          {{ selectedIds.length }}
+        </UBadge>
+
+        <UDropdownMenu :items="bulkActionGroups" :modal="false">
+          <UButton
+            color="neutral"
+            variant="outline"
+            size="sm"
+            icon="i-lucide-list"
+            trailing-icon="i-lucide-chevron-down"
+          >
+            Actions
+          </UButton>
+        </UDropdownMenu>
+      </div>
+
+      <div class="text-xs text-toned">{{ filteredDefinitions.length }} displayed</div>
+    </div>
+
+    <div
       v-if="display_style === 'list' && filteredDefinitions.length > 0"
       class="w-full min-w-0 max-w-full overflow-hidden rounded-lg border border-default bg-default"
     >
@@ -101,6 +136,14 @@
         <table class="min-w-245 w-full text-sm">
           <thead class="bg-muted/40 text-xs uppercase tracking-wide text-toned">
             <tr class="text-center [&>th]:px-3 [&>th]:py-3 [&>th]:font-semibold">
+              <th class="w-12">
+                <button type="button" class="cursor-pointer" @click="toggleMasterSelection">
+                  <UIcon
+                    :name="allSelected ? 'i-lucide-square' : 'i-lucide-square-check-big'"
+                    class="size-4"
+                  />
+                </button>
+              </th>
               <th class="w-full text-left">Definition</th>
               <th class="w-28 whitespace-nowrap">Priority</th>
               <th class="w-36 whitespace-nowrap">Updated</th>
@@ -114,6 +157,17 @@
               :key="definition.id"
               class="hover:bg-muted/20"
             >
+              <td class="px-3 py-3 text-center align-middle">
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="definition.id"
+                  />
+                </label>
+              </td>
+
               <td class="px-3 py-3 align-middle">
                 <div class="space-y-1">
                   <div class="font-semibold text-highlighted">
@@ -123,7 +177,7 @@
                   <div class="flex flex-wrap items-center gap-3 text-xs text-toned">
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition hover:bg-muted"
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
                       @click="() => void toggle(definition)"
                     >
                       <UIcon
@@ -134,13 +188,11 @@
                       <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
                     </button>
 
-                    <span class="inline-flex items-center gap-1">
+                    <span
+                      class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+                    >
                       <UIcon name="i-lucide-link" class="size-3.5" />
-                      <span
-                        >{{ definition.match_url.length }} match pattern{{
-                          definition.match_url.length === 1 ? '' : 's'
-                        }}</span
-                      >
+                      <span>Patterns: {{ definition.match_url.length }} match/s</span>
                     </span>
                   </div>
                 </div>
@@ -161,7 +213,7 @@
               <td class="w-44 px-3 py-3 align-middle whitespace-nowrap">
                 <div class="flex items-center justify-end gap-2">
                   <UButton
-                    color="info"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-file-up"
@@ -171,7 +223,7 @@
                   </UButton>
 
                   <UButton
-                    color="warning"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-pencil"
@@ -181,7 +233,7 @@
                   </UButton>
 
                   <UButton
-                    color="error"
+                    color="neutral"
                     variant="outline"
                     size="xs"
                     icon="i-lucide-trash"
@@ -201,110 +253,116 @@
       v-else-if="filteredDefinitions.length > 0"
       class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
     >
-      <UCard
+      <div
         v-for="definition in filteredDefinitions"
         :key="definition.id"
-        class="flex h-full flex-col border bg-default"
-        :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+        class="min-w-0 w-full max-w-full"
       >
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0 flex-1 space-y-2">
-              <div class="text-sm font-semibold text-highlighted wrap-break-word">
-                {{ definition.name || '(Unnamed definition)' }}
+        <UCard
+          class="flex h-full min-w-0 w-full max-w-full flex-col border bg-default"
+          :ui="{ header: 'p-4 pb-3', body: 'flex flex-1 flex-col gap-4 p-4 pt-0' }"
+        >
+          <template #header>
+            <div class="flex min-w-0 items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start gap-2">
+                  <button
+                    type="button"
+                    class="min-w-0 flex-1 text-left text-sm font-semibold text-highlighted"
+                    @click="toggleExpand(definition.id, 'title')"
+                  >
+                    <span :class="['block', expandClass(definition.id, 'title')]">
+                      {{ definition.name || '(Unnamed)' }}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
-                  @click="() => void toggle(definition)"
+              <div class="flex shrink-0 items-center gap-2">
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  size="xs"
+                  icon="i-lucide-file-up"
+                  square
+                  @click="() => void exportDefinition(definition)"
                 >
-                  <UIcon
-                    name="i-lucide-power"
-                    class="size-3.5"
-                    :class="definition.enabled ? 'text-success' : 'text-error'"
+                  <span class="hidden sm:inline">Export Definition</span>
+                </UButton>
+
+                <label class="inline-flex cursor-pointer items-center justify-center">
+                  <input
+                    v-model="selectedIds"
+                    class="completed-checkbox size-4 rounded border-default"
+                    type="checkbox"
+                    :value="definition.id"
                   />
-                  <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
-                </button>
-
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-list-ordered" class="size-3.5" />
-                  <span>Priority {{ definition.priority }}</span>
-                </span>
-
-                <span
-                  class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
-                >
-                  <UIcon name="i-lucide-link" class="size-3.5" />
-                  <span
-                    >{{ definition.match_url.length }} match pattern{{
-                      definition.match_url.length === 1 ? '' : 's'
-                    }}</span
-                  >
-                </span>
+                </label>
               </div>
             </div>
+          </template>
+
+          <div class="space-y-2 text-sm text-default">
+            <div class="flex flex-wrap gap-2 text-xs text-toned *:min-w-32 *:flex-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1 transition hover:border-primary hover:text-default"
+                @click="() => void toggle(definition)"
+              >
+                <UIcon
+                  name="i-lucide-power"
+                  class="size-3.5"
+                  :class="definition.enabled ? 'text-success' : 'text-error'"
+                />
+                <span>{{ definition.enabled ? 'Enabled' : 'Disabled' }}</span>
+              </button>
+
+              <span
+                class="inline-flex items-center gap-1 rounded-md border border-default px-2 py-1"
+              >
+                <UIcon name="i-lucide-list-ordered" class="size-3.5" />
+                <span>Priority: {{ definition.priority }}</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              class="flex min-w-0 w-full items-start gap-2 rounded-md border border-default bg-muted/20 px-3 py-2 text-left"
+              @click="toggleExpand(definition.id, 'patterns')"
+            >
+              <UIcon name="i-lucide-link" class="mt-0.5 size-4 shrink-0 text-toned" />
+              <div class="min-w-0 flex-1">
+                <div class="text-xs font-medium text-toned">URL patterns</div>
+                <span :class="['block', expandClass(definition.id, 'patterns')]">
+                  {{ definition.match_url.join('\n') }}
+                </span>
+              </div>
+            </button>
+          </div>
+
+          <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-pencil"
+              class="w-full justify-center"
+              @click="() => void openEdit(definition)"
+            >
+              Edit
+            </UButton>
 
             <UButton
-              color="info"
-              variant="ghost"
-              size="xs"
-              icon="i-lucide-file-up"
-              square
-              @click="() => void exportDefinition(definition)"
-            />
-          </div>
-        </template>
-
-        <div class="space-y-3 text-sm text-default">
-          <div class="rounded-md border border-default bg-muted/20 px-3 py-2">
-            <div
-              class="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-toned"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-trash"
+              class="w-full justify-center"
+              @click="() => void remove(definition)"
             >
-              <UIcon name="i-lucide-link" class="size-3.5" />
-              <span>Match patterns</span>
-            </div>
-
-            <div class="space-y-1 text-sm">
-              <div
-                v-for="pattern in definition.match_url.slice(0, 3)"
-                :key="pattern"
-                class="truncate text-default"
-              >
-                {{ pattern }}
-              </div>
-              <div v-if="definition.match_url.length > 3" class="text-xs text-toned">
-                +{{ definition.match_url.length - 3 }} more
-              </div>
-            </div>
+              Delete
+            </UButton>
           </div>
-        </div>
-
-        <div class="mt-auto flex flex-wrap gap-2 pt-2 *:min-w-32 *:flex-1">
-          <UButton
-            color="warning"
-            variant="outline"
-            icon="i-lucide-pencil"
-            class="w-full justify-center"
-            @click="() => void openEdit(definition)"
-          >
-            Edit
-          </UButton>
-
-          <UButton
-            color="error"
-            variant="outline"
-            icon="i-lucide-trash"
-            class="w-full justify-center"
-            @click="() => void remove(definition)"
-          >
-            Delete
-          </UButton>
-        </div>
-      </UCard>
+        </UCard>
+      </div>
     </div>
 
     <UAlert
@@ -378,10 +436,12 @@
 </template>
 
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui';
 import moment from 'moment';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useStorage } from '@vueuse/core';
 
+import { useExpandableMeta } from '~/composables/useExpandableMeta';
 import useTaskDefinitionsComposable from '~/composables/useTaskDefinitions';
 import { useDialog } from '~/composables/useDialog';
 import { useMediaQuery } from '~/composables/useMediaQuery';
@@ -413,6 +473,7 @@ const DEFAULT_DEFINITION: TaskDefinitionDocument = {
 };
 
 const isMobile = useMediaQuery({ maxWidth: 1024 });
+const { toggleExpand, expandClass } = useExpandableMeta();
 
 const taskDefs = useTaskDefinitionsComposable();
 const definitionsRef = taskDefs.definitions;
@@ -442,6 +503,8 @@ const query = ref('');
 const showFilter = ref(false);
 const filterInput = ref<HTMLInputElement | null>(null);
 const hideImportByDefault = ref(false);
+const selectedIds = ref<number[]>([]);
+const massDelete = ref(false);
 
 const filteredDefinitions = computed<TaskDefinitionSummary[]>(() => {
   const normalizedQuery = query.value.trim().toLowerCase();
@@ -462,6 +525,32 @@ const filteredDefinitions = computed<TaskDefinitionSummary[]>(() => {
     return haystack.includes(normalizedQuery);
   });
 });
+
+const selectableDefinitionIds = computed(() =>
+  filteredDefinitions.value
+    .map((item) => item.id)
+    .filter((id): id is number => typeof id === 'number'),
+);
+
+const allSelected = computed(
+  () =>
+    selectableDefinitionIds.value.length > 0 &&
+    selectableDefinitionIds.value.every((id) => selectedIds.value.includes(id)),
+);
+
+const hasSelected = computed(() => selectedIds.value.length > 0);
+
+const bulkActionGroups = computed<DropdownMenuItem[][]>(() => [
+  [
+    {
+      label: 'Remove Selected',
+      icon: 'i-lucide-trash',
+      color: 'error',
+      disabled: !hasSelected.value || massDelete.value,
+      onSelect: () => void deleteSelected(),
+    },
+  ],
+]);
 
 const currentSummary = computed<TaskDefinitionSummary | undefined>(() => {
   if (editorMode.value !== 'edit' || !workingId.value) {
@@ -495,6 +584,17 @@ watch(showFilter, (value) => {
   }
 });
 
+watch(
+  filteredDefinitions,
+  (items) => {
+    const validIds = new Set(
+      items.map((item) => item.id).filter((id): id is number => typeof id === 'number'),
+    );
+    selectedIds.value = selectedIds.value.filter((id) => validIds.has(id));
+  },
+  { deep: true },
+);
+
 const cloneDocument = (document: TaskDefinitionDocument): TaskDefinitionDocument => {
   return JSON.parse(JSON.stringify(document)) as TaskDefinitionDocument;
 };
@@ -516,6 +616,15 @@ const reloadContent = async (): Promise<void> => {
 
 const toggleDisplayStyle = (): void => {
   display_style.value = display_style.value === 'list' ? 'grid' : 'list';
+};
+
+const toggleMasterSelection = (): void => {
+  if (allSelected.value) {
+    selectedIds.value = [];
+    return;
+  }
+
+  selectedIds.value = [...selectableDefinitionIds.value];
 };
 
 const openCreate = (): void => {
@@ -623,6 +732,47 @@ const remove = async (summary: TaskDefinitionSummary): Promise<void> => {
   }
 
   await deleteDefinition(summary.id);
+};
+
+const deleteSelected = async (): Promise<void> => {
+  if (selectedIds.value.length < 1) {
+    return;
+  }
+
+  const { status } = await confirmDialog({
+    title: 'Delete Selected Task Definitions',
+    rawHTML:
+      `Delete <strong class="text-red-500">${selectedIds.value.length}</strong> task definition/s?<ul>` +
+      selectedIds.value
+        .map((id) => {
+          const item = filteredDefinitions.value.find((definition) => definition.id === id);
+          return item ? `<li>${item.id}: ${item.name || '(Unnamed definition)'}</li>` : '';
+        })
+        .join('') +
+      '</ul>',
+    confirmText: 'Delete',
+    confirmColor: 'error',
+  });
+
+  if (true !== status) {
+    return;
+  }
+
+  const itemsToDelete = filteredDefinitions.value.filter(
+    (item) => item.id && selectedIds.value.includes(item.id),
+  );
+  if (itemsToDelete.length < 1) {
+    return;
+  }
+
+  massDelete.value = true;
+
+  for (const item of itemsToDelete) {
+    await deleteDefinition(item.id);
+  }
+
+  selectedIds.value = [];
+  massDelete.value = false;
 };
 
 const toggle = async (summary: TaskDefinitionSummary): Promise<void> => {

@@ -40,7 +40,8 @@
 
             <UButton
               type="button"
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-import"
               size="lg"
               class="justify-center sm:min-w-28"
@@ -382,7 +383,7 @@
           <div class="flex items-end">
             <UButton
               type="button"
-              color="error"
+              color="neutral"
               variant="outline"
               icon="i-lucide-trash"
               :disabled="addInProgress"

@@ -17,7 +17,7 @@
 
           <UButton
             type="button"
-            color="warning"
+            color="neutral"
             variant="outline"
             size="sm"
             :loading="convertInProgress"
@@ -94,7 +94,8 @@
 
             <UButton
               type="button"
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-import"
               size="lg"
               :disabled="!import_string"

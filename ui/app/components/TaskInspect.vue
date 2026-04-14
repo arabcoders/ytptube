@@ -66,7 +66,7 @@
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <UButton
           type="button"
-          color="warning"
+          color="neutral"
           variant="outline"
           icon="i-lucide-rotate-ccw"
           :disabled="loading"
