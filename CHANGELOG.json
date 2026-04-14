@@ -28,6 +28,27 @@
     ]
   },
   {
+    "tag": "Unmerged (dev branch)",
+    "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784",
+    "date": "2026-04-14T21:37:12+00:00",
+    "commits": [
+      {
+        "sha": "182a2e97",
+        "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784",
+        "message": "feat: add form guards to prevent accidental data loss",
+        "author": "arabcoders",
+        "date": "2026-04-14T21:37:12+00:00"
+      },
+      {
+        "sha": "360d2f3d",
+        "full_sha": "360d2f3df8765b5174ecdefd701f8ae68ed1791e",
+        "message": "refactor: minor fixes to overall design.",
+        "author": "arabcoders",
+        "date": "2026-04-14T20:43:48+00:00"
+      }
+    ]
+  },
+  {
     "tag": "v2.0.6",
     "full_sha": "0eabc2197b3060be87d06c62361b013277c7da84",
     "date": "2026-04-11T16:27:44+00:00",

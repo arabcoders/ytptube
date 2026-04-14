@@ -1,8 +1,22 @@
 [
     {
-        "tag": "dev-20260414-dbff4c67",
-        "date": "2026-04-13T23:19:35+00:00",
+        "tag": "dev-20260415-182a2e97",
+        "date": "2026-04-14T21:37:12+00:00",
         "commits": [
+            {
+                "sha": "182a2e97",
+                "message": "feat: add form guards to prevent accidental data loss",
+                "author": "arabcoders",
+                "date": "2026-04-14T21:37:12+00:00",
+                "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784"
+            },
+            {
+                "sha": "360d2f3d",
+                "message": "refactor: minor fixes to overall design.",
+                "author": "arabcoders",
+                "date": "2026-04-14T20:43:48+00:00",
+                "full_sha": "360d2f3df8765b5174ecdefd701f8ae68ed1791e"
+            },
             {
                 "sha": "dbff4c67",
                 "message": "feat(console): make terminal window more durable and support reloading and stopping commands.",
@@ -4379,7 +4393,7 @@
                 "full_sha": "8694e82965453019b5f6d01ef181bfd541f87173"
             }
         ],
-        "full_sha": "dbff4c679893ab9128f060ef2c30497fe667857b"
+        "full_sha": "182a2e97e63420f686c3590a3303d4ea37bad784"
     },
     {
         "tag": "dev-20250616-c07465a6",
